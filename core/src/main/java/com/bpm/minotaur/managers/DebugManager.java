@@ -1,22 +1,24 @@
 package com.bpm.minotaur.managers;
 
 /**
- * A singleton manager for handling global debug flags and states.
- * This allows easy access to debug information from any part of the application.
+ * Singleton manager for handling global debug state.
  */
 public class DebugManager {
-    /** The single, globally accessible instance of the DebugManager. */
-    public static final DebugManager INSTANCE = new DebugManager();
+    private static final DebugManager INSTANCE = new DebugManager();
+    private boolean isDebugOverlayVisible = false;
 
-    public boolean isDebugOverlayVisible = false;
+    private DebugManager() {}
 
-    // Private constructor to prevent instantiation from outside.
-    private DebugManager() { }
+    public static DebugManager getInstance() {
+        return INSTANCE;
+    }
 
-    /**
-     * Toggles the visibility of the debug overlay.
-     */
+    public boolean isDebugOverlayVisible() {
+        return isDebugOverlayVisible;
+    }
+
     public void toggleOverlay() {
         isDebugOverlayVisible = !isDebugOverlayVisible;
     }
 }
+

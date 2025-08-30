@@ -4,69 +4,59 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Player;
 
 public class DebugRenderer {
-    // Bitmask constants for wall detection
-    private static final int WALL_TOP = 0b01000000;
-    private static final int WALL_RIGHT = 0b00010000;
-    private static final int WALL_BOTTOM = 0b00000100;
-    private static final int WALL_LEFT = 0b00000001;
 
-    public void render(ShapeRenderer shapeRenderer, Viewport viewport, Maze maze, Player player) {
-        // Calculate the total size and position for the maze rendering
-        float totalMazeHeight = viewport.getWorldHeight() * 0.8f;
-        float cellHeight = totalMazeHeight / Maze.MAZE_HEIGHT;
-        float cellWidth = cellHeight; // Maintain aspect ratio
-        float totalMazeWidth = cellWidth * Maze.MAZE_WIDTH;
-        float mazeX = (viewport.getWorldWidth() - totalMazeWidth) / 2f;
-        float mazeY = (viewport.getWorldHeight() - totalMazeHeight) / 2f;
-
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport) {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        // Define maze rendering area (e.g., top-right quadrant)
+        float totalMazeHeight = viewport.getWorldHeight() / 2;
+        float cellHeight = totalMazeHeight / maze.getHeight();
+        float cellWidth = cellHeight; // Maintain aspect ratio
+        float totalMazeWidth = cellWidth * maze.getWidth();
+        float mazeStartX = viewport.getWorldWidth() - totalMazeWidth - 10;
+        float mazeStartY = viewport.getWorldHeight() - totalMazeHeight - 10;
+
+
+        // Draw maze walls
         shapeRenderer.setColor(Color.WHITE);
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                int mask = maze.getWallDataAt(x, y);
 
-        // --- Render Maze Walls ---
-        // Iterate through each cell of the maze data
-        for (int y = 0; y < Maze.MAZE_HEIGHT; y++) {
-            for (int x = 0; x < Maze.MAZE_WIDTH; x++) {
-                int mask = maze.getWallData(x, y);
+                float drawX = mazeStartX + x * cellWidth;
+                float drawY = mazeStartY + y * cellHeight;
 
-                // Calculate the bottom-left corner for the current cell's drawing position
-                final float drawX = mazeX + (x * cellWidth);
-                final float drawY = mazeY + (y * cellHeight);
-
-                // Draw walls based on the bitmask for each cell.
-                if ((mask & WALL_TOP) != 0) {
+                if ((mask & Direction.NORTH.getWallMask()) != 0) {
                     shapeRenderer.line(drawX, drawY + cellHeight, drawX + cellWidth, drawY + cellHeight);
                 }
-                if ((mask & WALL_RIGHT) != 0) {
+                if ((mask & Direction.EAST.getWallMask()) != 0) {
                     shapeRenderer.line(drawX + cellWidth, drawY, drawX + cellWidth, drawY + cellHeight);
                 }
-                if ((mask & WALL_BOTTOM) != 0) {
+                if ((mask & Direction.SOUTH.getWallMask()) != 0) {
                     shapeRenderer.line(drawX, drawY, drawX + cellWidth, drawY);
                 }
-                if ((mask & WALL_LEFT) != 0) {
+                if ((mask & Direction.WEST.getWallMask()) != 0) {
                     shapeRenderer.line(drawX, drawY, drawX, drawY + cellHeight);
                 }
             }
         }
 
-        // --- Render Player ---
-        float playerDrawX = mazeX + (player.getPosition().x * cellWidth) + (cellWidth / 2f);
-        float playerDrawY = mazeY + (player.getPosition().y * cellHeight) + (cellHeight / 2f);
-        float playerRadius = cellWidth / 4f;
-
-        // Draw player circle
+        // Draw Player
         shapeRenderer.setColor(Color.GREEN);
-        shapeRenderer.circle(playerDrawX, playerDrawY, playerRadius);
+        float playerDrawX = mazeStartX + player.getPosition().x * cellWidth;
+        float playerDrawY = mazeStartY + player.getPosition().y * cellHeight;
+        shapeRenderer.circle(playerDrawX, playerDrawY, cellWidth * 0.25f, 20);
 
-        // Draw player direction indicator
+
+        // Draw player direction
         shapeRenderer.setColor(Color.YELLOW);
         Vector2 directionVector = player.getFacing().getVector();
-        shapeRenderer.line(playerDrawX, playerDrawY,
-            playerDrawX + directionVector.x * playerRadius,
-            playerDrawY + directionVector.y * playerRadius);
+        shapeRenderer.line(playerDrawX, playerDrawY, playerDrawX + directionVector.x * cellWidth * 0.4f, playerDrawY + directionVector.y * cellHeight * 0.4f);
 
         shapeRenderer.end();
     }
