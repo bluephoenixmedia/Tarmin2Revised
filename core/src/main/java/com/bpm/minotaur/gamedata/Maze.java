@@ -5,13 +5,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Maze {
-    // FIX: Re-added constants for compatibility with MazeGenerator.
     public static final int MAZE_WIDTH = 20;
     public static final int MAZE_HEIGHT = 20;
 
     private final int level;
     private final int[][] wallData;
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
+    private final Map<GridPoint2, Item> items = new HashMap<>();
 
     public Maze(int level, int[][] wallData) {
         this.level = level;
@@ -33,7 +33,6 @@ public class Maze {
     }
 
     public int getWallDataAt(int x, int y) {
-        // Use actual maze dimensions for bounds checking to prevent crashes.
         if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
             return 0b11111111; // Out of bounds is a solid wall
         }
@@ -48,19 +47,28 @@ public class Maze {
         gameObjects.put(new GridPoint2(x, y), object);
     }
 
+    public Map<GridPoint2, Item> getItems() {
+        return items;
+    }
+
+    public void addItem(Item item) {
+        items.put(new GridPoint2((int)item.getPosition().x, (int)item.getPosition().y), item);
+    }
+
+
     public boolean isWallBlocking(int x, int y, Direction direction) {
-        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
-            return true; // Out of bounds is always blocking
-        }
-        // Check for an object first
-        Object obj = getGameObjectAt(x, y);
-        if (obj instanceof Door) {
-            // Doors only block if they are closed.
-            return ((Door) obj).getState() == Door.DoorState.CLOSED;
+        int wallMask = direction.getWallMask();
+        int currentCellData = getWallDataAt(x, y);
+
+        if ((currentCellData & wallMask) != 0) {
+            Object obj = getGameObjectAt(x, y);
+            if (obj instanceof Door) {
+                return ((Door) obj).getState() != Door.DoorState.OPEN;
+            }
+            return true;
         }
 
-        // Check for a solid wall in the bitmask
-        return (wallData[y][x] & direction.getWallMask()) != 0;
+        return false;
     }
 
     public void openDoorAt(int x, int y) {

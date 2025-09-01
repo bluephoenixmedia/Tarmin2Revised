@@ -8,11 +8,13 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Door;
+import com.bpm.minotaur.gamedata.Item;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Player;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
 import com.bpm.minotaur.rendering.FirstPersonRenderer;
+import com.bpm.minotaur.rendering.ItemRenderer;
 
 public class GameScreen extends BaseScreen implements InputProcessor {
 
@@ -21,6 +23,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final BitmapFont font = new BitmapFont();
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
+    private final ItemRenderer itemRenderer = new ItemRenderer();
 
     private Player player;
     private Maze maze;
@@ -34,80 +37,74 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         Gdx.input.setInputProcessor(this);
         createMazeFromText(new String[]{
             "############",
-            "#...#....#.#",
-            "#.P......#.#",
+            "#S..#....#.#",
+            "#P.......#.#",
             "#...#......#",
             "#####.####.#",
-            "#...#....#.#",
-            "#.#.#####..#",
+            "#...#......#",
+            "#.#.#####.##",
             "#.#........#",
-            "#.##D##.####",
+            "#.#####.####",
             "#.#...#....#",
-            "#.....#....#",
+            "#..H#......#",
             "############"
         });
-        // Call the new console print method for debugging
         DebugRenderer.printMazeToConsole(maze);
     }
 
     private void createMazeFromText(String[] layout) {
-        int width = layout[0].length();
         int height = layout.length;
+        int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
+
+        // Instantiate the maze first
+        maze = new Maze(1, bitmaskedData);
         int playerStartX = 1, playerStartY = 1;
 
-        // This new logic defines walls from the perspective of walkable cells.
-        // A walkable cell has a wall bitmask set if its neighbor is a solid block ('#') or a door ('D').
+        // First pass: Set up walls, doors, items, and player start
         for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
-                int layoutY = height - 1 - y;
-                char me = layout[layoutY].charAt(x);
+                char c = layout[layoutY].charAt(x);
 
-                // Wall blocks themselves don't have paths, so we skip them.
-                if (me == '#') {
-                    continue;
+                if (c == '#') {
+                    bitmaskedData[y][x] = 0; // Solid walls have no openings
                 }
 
-                if (me == 'P') {
+                if (c == 'P') {
                     playerStartX = x;
                     playerStartY = y;
+                } else if (c == 'D') {
+                    maze.addGameObject(new Door(), x, y);
+                } else if (c == 'S') {
+                    maze.addItem(new Item(Item.ItemType.POTION_STRENGTH, x, y));
+                } else if (c == 'H') {
+                    maze.addItem(new Item(Item.ItemType.POTION_HEALING, x, y));
                 }
-
-                int mask = 0;
-
-                // Check North neighbor
-                char north = (layoutY > 0) ? layout[layoutY - 1].charAt(x) : '#';
-                if (north == '#') mask |= 0b01000000; // WALL_NORTH
-                else if (north == 'D') mask |= 0b10000000; // DOOR_NORTH
-
-                // Check South neighbor
-                char south = (layoutY < height - 1) ? layout[layoutY + 1].charAt(x) : '#';
-                if (south == '#') mask |= 0b00010000; // WALL_SOUTH
-                else if (south == 'D') mask |= 0b00100000; // DOOR_SOUTH
-
-                // Check East neighbor
-                char east = (x < width - 1) ? layout[layoutY].charAt(x + 1) : '#';
-                if (east == '#') mask |= 0b00000100; // WALL_EAST
-                else if (east == 'D') mask |= 0b00001000; // DOOR_EAST
-
-                // Check West neighbor
-                char west = (x > 0) ? layout[layoutY].charAt(x - 1) : '#';
-                if (west == '#') mask |= 0b00000001; // WALL_WEST
-                else if (west == 'D') mask |= 0b00000010; // DOOR_WEST
-
-                bitmaskedData[y][x] = mask;
             }
         }
-
-        maze = new Maze(1, bitmaskedData);
         player = new Player(playerStartX, playerStartY);
 
-        // Add the Door game objects at the 'D' locations.
+        // Second pass: Calculate wall bitmasks based on neighbors
         for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
-                int layoutY = height - 1 - y;
-                if (layout[layoutY].charAt(x) == 'D') {
-                    maze.addGameObject(new Door(), x, y);
+                if (layout[layoutY].charAt(x) != '#') {
+                    int mask = 0;
+                    // Check North
+                    if (y + 1 >= height || layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
+                    else if (layout[layoutY - 1].charAt(x) == 'D') mask |= 0b10000000;
+                    // Check East
+                    if (x + 1 >= width || layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
+                    else if (layout[layoutY].charAt(x + 1) == 'D') mask |= 0b00001000;
+                    // Check South
+                    if (y - 1 < 0 || layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
+                    else if (layout[layoutY + 1].charAt(x) == 'D') mask |= 0b00100000;
+                    // Check West
+                    if (x - 1 < 0 || layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
+                    else if (layout[layoutY].charAt(x - 1) == 'D') mask |= 0b00000010;
+
+                    bitmaskedData[y][x] = mask;
                 }
             }
         }
@@ -119,7 +116,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         maze.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
+        itemRenderer.render(shapeRenderer, player, maze, game.viewport);
 
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
@@ -137,7 +136,6 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
-        Gdx.app.log("Input", "Key pressed: " + Input.Keys.toString(keycode));
         switch (keycode) {
             case Input.Keys.UP:
                 player.moveForward(maze);
@@ -161,7 +159,6 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         return true;
     }
 
-    // --- Unused InputProcessor methods ---
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
