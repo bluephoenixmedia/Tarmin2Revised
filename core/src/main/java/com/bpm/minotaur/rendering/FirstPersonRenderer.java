@@ -28,7 +28,18 @@ public class FirstPersonRenderer {
     private static final int DOOR_SOUTH  = 0b00100000;
     private static final int DOOR_NORTH  = 0b10000000;
 
+    private float[] depthBuffer;
+
+    public float[] getDepthBuffer() {
+        return depthBuffer;
+    }
+
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport) {
+        // Initialize or resize the depth buffer if necessary
+        if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
+            depthBuffer = new float[(int)viewport.getScreenWidth()];
+        }
+
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         shapeRenderer.setColor(ceilingColor);
@@ -40,6 +51,9 @@ public class FirstPersonRenderer {
             RaycastResult result = castRay(player, maze, x, viewport);
             if (result != null) {
                 renderWallSlice(shapeRenderer, result, x, viewport);
+                depthBuffer[x] = result.distance;
+            } else {
+                depthBuffer[x] = Float.MAX_VALUE;
             }
         }
 
@@ -96,7 +110,6 @@ public class FirstPersonRenderer {
                 hit = true;
             } else {
                 int wallData = maze.getWallDataAt(mapX, mapY);
-                // Get the cell we came from to check its walls too
                 int prevMapX = (side == 0) ? mapX - stepX : mapX;
                 int prevMapY = (side == 1) ? mapY - stepY : mapY;
                 int prevWallData = maze.getWallDataAt(prevMapX, prevMapY);
@@ -146,7 +159,6 @@ public class FirstPersonRenderer {
         return x < 0 || x >= maze.getWidth() || y < 0 || y >= maze.getHeight();
     }
 
-    // FIX: Check walls from both the cell being entered and the cell being exited.
     private boolean hasWallCollision(int currentData, int prevData, int side, int stepX, int stepY) {
         if (side == 0) { // Vertical wall (moved East/West)
             return (stepX > 0) ? (prevData & WALL_EAST) != 0 || (currentData & WALL_WEST) != 0

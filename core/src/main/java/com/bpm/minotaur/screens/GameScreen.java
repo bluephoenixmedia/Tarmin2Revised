@@ -57,18 +57,16 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
 
-        // Instantiate the maze first
         maze = new Maze(1, bitmaskedData);
         int playerStartX = 1, playerStartY = 1;
 
-        // First pass: Set up walls, doors, items, and player start
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
 
                 if (c == '#') {
-                    bitmaskedData[y][x] = 0; // Solid walls have no openings
+                    bitmaskedData[y][x] = 0;
                 }
 
                 if (c == 'P') {
@@ -85,24 +83,22 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         }
         player = new Player(playerStartX, playerStartY);
 
-        // Second pass: Calculate wall bitmasks based on neighbors
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 if (layout[layoutY].charAt(x) != '#') {
                     int mask = 0;
-                    // Check North
-                    if (y + 1 >= height || layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
-                    else if (layout[layoutY - 1].charAt(x) == 'D') mask |= 0b10000000;
-                    // Check East
-                    if (x + 1 >= width || layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
-                    else if (layout[layoutY].charAt(x + 1) == 'D') mask |= 0b00001000;
-                    // Check South
-                    if (y - 1 < 0 || layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
-                    else if (layout[layoutY + 1].charAt(x) == 'D') mask |= 0b00100000;
-                    // Check West
-                    if (x - 1 < 0 || layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
-                    else if (layout[layoutY].charAt(x - 1) == 'D') mask |= 0b00000010;
+                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
+                    else if (y + 1 < height && layout[layoutY - 1].charAt(x) == 'D') mask |= 0b10000000;
+
+                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
+                    else if (x + 1 < width && layout[layoutY].charAt(x + 1) == 'D') mask |= 0b00001000;
+
+                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
+                    else if (y > 0 && layout[layoutY + 1].charAt(x) == 'D') mask |= 0b00100000;
+
+                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
+                    else if (x > 0 && layout[layoutY].charAt(x - 1) == 'D') mask |= 0b00000010;
 
                     bitmaskedData[y][x] = mask;
                 }
@@ -117,8 +113,11 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
 
+        // Render walls and populate the depth buffer
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
-        itemRenderer.render(shapeRenderer, player, maze, game.viewport);
+
+        // Render items using the depth buffer for occlusion
+        itemRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
 
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
