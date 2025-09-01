@@ -5,8 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Maze {
-    public static final int MAZE_WIDTH = 31;
-    public static final int MAZE_HEIGHT = 31;
+    // FIX: Re-added constants for compatibility with MazeGenerator.
+    public static final int MAZE_WIDTH = 20;
+    public static final int MAZE_HEIGHT = 20;
 
     private final int level;
     private final int[][] wallData;
@@ -18,11 +19,13 @@ public class Maze {
     }
 
     public int getWidth() {
-        return MAZE_WIDTH;
+        if (wallData == null || wallData.length == 0) return 0;
+        return wallData[0].length;
     }
 
     public int getHeight() {
-        return MAZE_HEIGHT;
+        if (wallData == null) return 0;
+        return wallData.length;
     }
 
     public int[][] getWallData() {
@@ -30,7 +33,8 @@ public class Maze {
     }
 
     public int getWallDataAt(int x, int y) {
-        if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) {
+        // Use actual maze dimensions for bounds checking to prevent crashes.
+        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
             return 0b11111111; // Out of bounds is a solid wall
         }
         return wallData[y][x];
@@ -45,7 +49,7 @@ public class Maze {
     }
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
-        if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) {
+        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
             return true; // Out of bounds is always blocking
         }
         // Check for an object first

@@ -10,11 +10,9 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Door;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Player;
-import com.bpm.minotaur.generation.MazeGenerator;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
 import com.bpm.minotaur.rendering.FirstPersonRenderer;
-
 
 public class GameScreen extends BaseScreen implements InputProcessor {
 
@@ -23,11 +21,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final BitmapFont font = new BitmapFont();
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
-    private final MazeGenerator mazeGenerator = new MazeGenerator();
 
     private Player player;
     private Maze maze;
-    private int currentLevel = 1;
 
     public GameScreen(Tarmin2 game) {
         super(game);
@@ -36,26 +32,87 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-        generateNewLevel(currentLevel);
+        createMazeFromText(new String[]{
+            "############",
+            "#...#....#.#",
+            "#.P......#.#",
+            "#...#......#",
+            "#####.####.#",
+            "#...#....#.#",
+            "#.#.#####..#",
+            "#.#........#",
+            "#.##D##.####",
+            "#.#...#....#",
+            "#.....#....#",
+            "############"
+        });
+        // Call the new console print method for debugging
+        DebugRenderer.printMazeToConsole(maze);
     }
 
-    private void generateNewLevel(int level) {
-        // Generate new maze with optional seed for reproducible results during development
-        if (debugManager.isDebugOverlayVisible()) {
-            mazeGenerator.setSeed(level * 12345L); // Reproducible levels for debugging
+    private void createMazeFromText(String[] layout) {
+        int width = layout[0].length();
+        int height = layout.length;
+        int[][] bitmaskedData = new int[height][width];
+        int playerStartX = 1, playerStartY = 1;
+
+        // This new logic defines walls from the perspective of walkable cells.
+        // A walkable cell has a wall bitmask set if its neighbor is a solid block ('#') or a door ('D').
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int layoutY = height - 1 - y;
+                char me = layout[layoutY].charAt(x);
+
+                // Wall blocks themselves don't have paths, so we skip them.
+                if (me == '#') {
+                    continue;
+                }
+
+                if (me == 'P') {
+                    playerStartX = x;
+                    playerStartY = y;
+                }
+
+                int mask = 0;
+
+                // Check North neighbor
+                char north = (layoutY > 0) ? layout[layoutY - 1].charAt(x) : '#';
+                if (north == '#') mask |= 0b01000000; // WALL_NORTH
+                else if (north == 'D') mask |= 0b10000000; // DOOR_NORTH
+
+                // Check South neighbor
+                char south = (layoutY < height - 1) ? layout[layoutY + 1].charAt(x) : '#';
+                if (south == '#') mask |= 0b00010000; // WALL_SOUTH
+                else if (south == 'D') mask |= 0b00100000; // DOOR_SOUTH
+
+                // Check East neighbor
+                char east = (x < width - 1) ? layout[layoutY].charAt(x + 1) : '#';
+                if (east == '#') mask |= 0b00000100; // WALL_EAST
+                else if (east == 'D') mask |= 0b00001000; // DOOR_EAST
+
+                // Check West neighbor
+                char west = (x > 0) ? layout[layoutY].charAt(x - 1) : '#';
+                if (west == '#') mask |= 0b00000001; // WALL_WEST
+                else if (west == 'D') mask |= 0b00000010; // DOOR_WEST
+
+                bitmaskedData[y][x] = mask;
+            }
         }
 
-        maze = mazeGenerator.generate(level);
+        maze = new Maze(1, bitmaskedData);
+        player = new Player(playerStartX, playerStartY);
 
-        // Create player at the starting position provided by the generator
-        player = new Player(mazeGenerator.getPlayerStartX(), mazeGenerator.getPlayerStartY());
-
-        // Log generation info for debugging
-        //Gdx.app.log("MazeGen", "Generated level " + level + " with " + mazeGenerator.getRoomCount() + " rooms");
-        Gdx.app.log("MazeGen", "Player start: (" + player.getPositionAsGridX() + ", " + player.getPositionAsGridY() + ")");
-
-        printMazeToConsole();
+        // Add the Door game objects at the 'D' locations.
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int layoutY = height - 1 - y;
+                if (layout[layoutY].charAt(x) == 'D') {
+                    maze.addGameObject(new Door(), x, y);
+                }
+            }
+        }
     }
+
 
     @Override
     public void render(float delta) {
@@ -68,90 +125,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
             game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
             game.batch.begin();
-            font.draw(game.batch, "DEBUG MODE - (F1 to toggle, R to regenerate, N for next level)", 10, game.viewport.getWorldHeight() - 10);
-           // font.draw(game.batch, "Level: " + currentLevel + " | Rooms: " + mazeGenerator.getRoomCount(), 10, game.viewport.getWorldHeight() - 30);
-            font.draw(game.batch, "Player: (" + player.getPositionAsGridX() + ", " + player.getPositionAsGridY() + ")", 10, game.viewport.getWorldHeight() - 50);
+            font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 10);
             game.batch.end();
         }
-    }
-
-    private void printMazeToConsole() {
-        System.out.println("--- Level " + currentLevel + " Maze Layout (Console View) ---");
-        int[][] wallData = maze.getWallData();
-        int width = maze.getWidth();
-        int height = maze.getHeight();
-
-        for (int y = height - 1; y >= 0; y--) {
-            // Print the top wall of each cell in the row
-            for (int x = 0; x < width; x++) {
-                System.out.print("+");
-                int topState = (wallData[y][x] >> 6) & 0b11;
-                if (topState == 0b01) { // Wall only
-                    System.out.print("---");
-                } else if (topState == 0b10) { // Door only
-                    System.out.print("-D-");
-                } else if (topState == 0b11) { // Wall with door
-                    System.out.print("-D-");
-                } else {
-                    System.out.print("   "); // No wall
-                }
-            }
-            System.out.println("+");
-
-            // Print the side walls and content of each cell in the row
-            for (int x = 0; x < width; x++) {
-                int leftState = wallData[y][x] & 0b11;
-                if (leftState == 0b01) { // Wall only
-                    System.out.print("|");
-                } else if (leftState == 0b10) { // Door only
-                    System.out.print("D");
-                } else if (leftState == 0b11) { // Wall with door
-                    System.out.print("D");
-                } else {
-                    System.out.print(" "); // No wall
-                }
-
-                // Cell content
-                if (player.getPositionAsGridX() == x && player.getPositionAsGridY() == y) {
-                    System.out.print(" P ");
-                } else if (maze.getGameObjectAt(x, y) instanceof Door) {
-                    System.out.print(" d "); // Show door object in cell
-                } else {
-                    System.out.print("   ");
-                }
-            }
-
-            // Rightmost wall of the maze for this row
-            int rightState = (wallData[y][width - 1] >> 4) & 0b11;
-            if (rightState == 0b01) { // Wall only
-                System.out.println("|");
-            } else if (rightState == 0b10) { // Door only
-                System.out.println("D");
-            } else if (rightState == 0b11) { // Wall with door
-                System.out.println("D");
-            } else {
-                System.out.println(" "); // No wall
-            }
-        }
-
-        // Print the bottom-most line of the maze
-        for (int x = 0; x < width; x++) {
-            System.out.print("+");
-            int bottomState = (wallData[0][x] >> 2) & 0b11;
-            if (bottomState == 0b01) { // Wall only
-                System.out.print("---");
-            } else if (bottomState == 0b10) { // Door only
-                System.out.print("-D-");
-            } else if (bottomState == 0b11) { // Wall with door
-                System.out.print("-D-");
-            } else {
-                System.out.print("   "); // No wall
-            }
-        }
-        System.out.println("+");
-       // System.out.println("Level: " + currentLevel + " | Rooms: " + mazeGenerator.getRoomCount() +
-        //    " | Player: (" + player.getPositionAsGridX() + ", " + player.getPositionAsGridY() + ")");
-        System.out.println("---------------------------------------------------------------------");
     }
 
     @Override
@@ -181,43 +157,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             case Input.Keys.O:
                 player.interact(maze);
                 break;
-            case Input.Keys.R:
-                // Regenerate current level (useful for testing)
-                if (debugManager.isDebugOverlayVisible()) {
-                    generateNewLevel(currentLevel);
-                }
-                break;
-            case Input.Keys.N:
-                // Generate next level (useful for testing different level seeds)
-                if (debugManager.isDebugOverlayVisible()) {
-                    currentLevel++;
-                    generateNewLevel(currentLevel);
-                }
-                break;
-            case Input.Keys.P:
-                // Generate previous level
-                if (debugManager.isDebugOverlayVisible() && currentLevel > 1) {
-                    currentLevel--;
-                    generateNewLevel(currentLevel);
-                }
-                break;
         }
-
-        // Only reprint maze after movement or generation changes
-        if (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
-            keycode == Input.Keys.R || keycode == Input.Keys.N || keycode == Input.Keys.P) {
-            printMazeToConsole();
-        }
-
         return true;
-    }
-
-    @Override
-    public void dispose() {
-        shapeRenderer.dispose();
-        font.dispose();
-      //  debugRenderer.dispose();
-      //  firstPersonRenderer.dispose();
     }
 
     // --- Unused InputProcessor methods ---
@@ -230,3 +171,4 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
 }
+

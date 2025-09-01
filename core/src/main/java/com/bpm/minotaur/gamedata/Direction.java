@@ -3,15 +3,15 @@ package com.bpm.minotaur.gamedata;
 import com.badlogic.gdx.math.Vector2;
 
 public enum Direction {
-    NORTH(0, 1, 0b11000000),
-    EAST(1, 0, 0b00110000),
-    SOUTH(0, -1, 0b00001100),
-    WEST(-1, 0, 0b00000011);
+    NORTH(0, 1, 0b01000000),
+    EAST(1, 0, 0b00000100),
+    SOUTH(0, -1, 0b00010000),
+    WEST(-1, 0, 0b00000001);
 
     private final Vector2 vector;
     private final int wallMask;
 
-    Direction(float x, float y, int wallMask) {
+    Direction(int x, int y, int wallMask) {
         this.vector = new Vector2(x, y);
         this.wallMask = wallMask;
     }
@@ -24,34 +24,33 @@ public enum Direction {
         return wallMask;
     }
 
-    public Direction turnLeft() {
-        switch (this) {
-            case NORTH: return WEST;
-            case WEST: return SOUTH;
-            case SOUTH: return EAST;
-            case EAST: return NORTH;
-        }
-        return this; // Should not happen
-    }
-
-    public Direction turnRight() {
-        switch (this) {
-            case NORTH: return EAST;
-            case EAST: return SOUTH;
-            case SOUTH: return WEST;
-            case WEST: return NORTH;
-        }
-        return this; // Should not happen
-    }
-
-    public Direction opposite() {
+    public Direction getOpposite() {
         switch (this) {
             case NORTH: return SOUTH;
+            case EAST:  return WEST;
             case SOUTH: return NORTH;
-            case EAST: return WEST;
-            case WEST: return EAST;
+            case WEST:  return EAST;
+            default: throw new IllegalStateException("Unexpected direction: " + this);
         }
-        return this; // Should not happen
+    }
+
+    public Direction getLeft() {
+        switch (this) {
+            case NORTH: return WEST;
+            case EAST:  return NORTH;
+            case SOUTH: return EAST;
+            case WEST:  return SOUTH;
+            default: throw new IllegalStateException("Unexpected direction: " + this);
+        }
+    }
+
+    public Direction getRight() {
+        switch (this) {
+            case NORTH: return EAST;
+            case EAST:  return SOUTH;
+            case SOUTH: return WEST;
+            case WEST:  return NORTH;
+            default: throw new IllegalStateException("Unexpected direction: " + this);
+        }
     }
 }
-
