@@ -35,19 +35,20 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-        createMazeFromText(new String[]{
-            "############",
-            "#S..#....#.#",
-            "#P.......#.#",
-            "#...#......#",
-            "#####.####.#",
-            "#...#......#",
-            "#.#.#####.##",
+        createMazeFromText( new String[]{
+            //1234567891012
+            "###.########",
             "#.#........#",
-            "#.#####.####",
-            "#.#...#....#",
-            "#..H#......#",
-            "############"
+            "#.D.######.#",
+            "###.#....#.#",
+            "....#....#.#",
+            "#D###D####.#",
+            "#...#......#",
+            "#...#......#",
+            "#...#..###D#",
+            "#...#..#...#",
+            "#...#..#...#",
+            "#####.######"
         });
         DebugRenderer.printMazeToConsole(maze);
     }
