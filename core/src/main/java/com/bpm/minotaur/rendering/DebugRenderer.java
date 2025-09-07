@@ -2,10 +2,13 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Door;
+import com.bpm.minotaur.gamedata.Item;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.Monster;
 import com.bpm.minotaur.gamedata.Player;
 
 public class DebugRenderer {
@@ -62,6 +65,20 @@ public class DebugRenderer {
         Vector2 dir = player.getDirectionVector();
         shapeRenderer.line(playerCenterX, playerCenterY, playerCenterX + dir.x * cellSize * 0.4f, playerCenterY + dir.y * cellSize * 0.4f);
 
+        for (Monster monster : maze.getMonsters().values()) {
+            shapeRenderer.setColor(Color.RED);
+            float monsterCenterX = mazeStartX + (monster.getPosition().x * cellSize);
+            float monsterCenterY = mazeStartY + (monster.getPosition().y * cellSize);
+            shapeRenderer.circle(monsterCenterX, monsterCenterY, cellSize * 0.3f, 12);
+        }
+
+        for (Item item : maze.getItems().values()) {
+            shapeRenderer.setColor(Color.YELLOW);
+            float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+            float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+            shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
+        }
+
         shapeRenderer.end();
     }
 
@@ -93,7 +110,12 @@ public class DebugRenderer {
                 Object obj = maze.getGameObjectAt(x, y);
                 if (obj instanceof Door) {
                     midWall.append("D ");
-                } else {
+                } else if (maze.getMonsters().containsKey(new GridPoint2(x, y))) {
+                    midWall.append("M ");
+                } else if (maze.getItems().containsKey(new GridPoint2(x,y))) {
+                    midWall.append("I ");
+                }
+                else {
                     midWall.append("  ");
                 }
             }
@@ -113,4 +135,3 @@ public class DebugRenderer {
         System.out.println("[MazeDebug] --- End of Maze Layout ---");
     }
 }
-

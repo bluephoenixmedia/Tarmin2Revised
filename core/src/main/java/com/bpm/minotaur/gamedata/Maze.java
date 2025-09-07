@@ -12,6 +12,7 @@ public class Maze {
     private final int[][] wallData;
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
+    private final Map<GridPoint2, Monster> monsters = new HashMap<>(); // Add this line
 
     public Maze(int level, int[][] wallData) {
         this.level = level;
@@ -55,6 +56,15 @@ public class Maze {
         items.put(new GridPoint2((int)item.getPosition().x, (int)item.getPosition().y), item);
     }
 
+    // Add the following methods
+    public Map<GridPoint2, Monster> getMonsters() {
+        return monsters;
+    }
+
+    public void addMonster(Monster monster) {
+        monsters.put(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y), monster);
+    }
+    // End of new methods
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
@@ -89,4 +99,3 @@ public class Maze {
         }
     }
 }
-

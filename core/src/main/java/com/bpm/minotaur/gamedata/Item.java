@@ -3,7 +3,7 @@ package com.bpm.minotaur.gamedata;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 
-public class Item {
+public class Item implements Renderable {
 
     public enum ItemType {
         POTION_STRENGTH,
@@ -44,10 +44,12 @@ public class Item {
         return type;
     }
 
+    @Override
     public Vector2 getPosition() {
         return position;
     }
 
+    @Override
     public Color getColor() {
         return color;
     }
@@ -56,4 +58,3 @@ public class Item {
         return liquidColor;
     }
 }
-
