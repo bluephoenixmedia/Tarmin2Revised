@@ -5,26 +5,20 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
-import com.bpm.minotaur.gamedata.Door;
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
+import com.bpm.minotaur.rendering.EntityRenderer;
 import com.bpm.minotaur.rendering.FirstPersonRenderer;
-import com.bpm.minotaur.rendering.ItemRenderer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-/**
- * GameScreen is the main screen for gameplay. It handles the rendering of the maze,
- * player, and items, as well as processing player input and managing game state updates.
- */
 public class GameScreen extends BaseScreen implements InputProcessor {
 
     // --- Core Dependencies ---
@@ -35,287 +29,42 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
-    private final ItemRenderer itemRenderer = new ItemRenderer();
+    private final EntityRenderer entityRenderer = new EntityRenderer(); // Replaced old renderers
 
     // --- Game State ---
     private Player player;
     private Maze maze;
     private final Random random = new Random();
+    private String[] finalLayout;
 
     // --- Maze Content Tile Definitions ---
-    String[] tile1 = new String[]{
-        //123456789101112
-        "#####.#.####",//1
-        "#...#.#D##.#",//2
-        "#.#D#....#.#",//3
-        "#.D...P..D.#",//4
-        "###..###.###",//5
-        ".....#.D....",//6
-        "###..#.#####",//7
-        "#.#..#.#####",//8
-        "#D#..#.D....",//9
-        "#.#..###....",//10
-        "#.....##....",//11
-        "#####.######"//12
-    };
-
-    String[] tile2 = new String[]{
-        //123456789101112
-        "#####.######",//1
-        "#...D.D....#",//2
-        "#####.######",//3
-        "#...D.D....#",//4
-        "#####.######",//5
-        "....D.D.....",//6
-        "#####.######",//7
-        "#...D.D....#",//8
-        "#####.######",//9
-        "#...D.D....#",//10
-        "#####.######",//11
-        "#####.######"//12
-    };
-
-    String[] tile3 = new String[]{
-        //123456789101112
-        "#####.######",//1
-        "#..........#",//2
-        "###D###D####",//3
-        "............",//4
-        "#.#D#..###.#",//5
-        "..#.#..#.#..",//6
-        "#.#.#..#.#.#",//7
-        "#.#.#..#.D.#",//8
-        "#.#.#..#.#.#",//9
-        "#.#.#..#.#.#",//10
-        "#.#.####.#.#",//11
-        "#.#......#.#"//12
-    };
-
-    String[] tile4 = new String[]{
-        //123456789101112
-        "#####..#####",//1
-        "#...#..#...#",//2
-        "#...#..#...#",//3
-        "#...D..#...#",//4
-        "#...#..#...#",//5
-        ".####D###D#.",//6
-        "....D...D...",//7
-        "###D#D######",//8
-        "#...#..D...#",//9
-        "#...#..#...#",//10
-        "#...#..#...#",//11
-        "#####..#####"//12
-    };
-
-    String[] tile5 = new String[]{
-        //123456789101112
-        "#####.###...",//1
-        "#.##....#.##",//2
-        "#D##D##D#.D.",//3
-        "#.#...#.#.##",//4
-        "#D#...#D#...",//5
-        "........D...",//6
-        "#D#...#D#...",//7
-        "#.#...#.#...",//8
-        "#D#...#D#.##",//9
-        "#.##D##.#.D.",//10
-        "####...##.##",//11
-        "#####..##...."//12
-    };
-
-    String[] tile6 = new String[]{
-        //123456789101112
-        "#####..#####",//1
-        "#....#.#...#",//2
-        "#....#.#...#",//3
-        "#....#.#...#",//4
-        "#....D.D...#",//5
-        ".#####.####.",//6
-        "............",//7
-        "######.#####",//8
-        "#....D.D...#",//9
-        "#....#.#...#",//10
-        "#....#.#...#",//11
-        "#####..#####"//12
-    };
-
-    String[] tile7 = new String[]{
-        //123456789101112
-        "#####.######",//1
-        "#.#........#",//2
-        "#.D.######.#",//3
-        "###.#....#.#",//4
-        "....#....#.#",//5
-        ".#D##D####..",//6
-        "#...#......#",//7
-        "#...#......#",//8
-        "#...#..###D#",//9
-        "#...#..#...#",//10
-        "#...#..#...#",//11
-        "#####.######"//12
-    };
-
-    String[] tile8 = new String[]{
-        //123456789101112
-        "###.#..#.###",//1
-        "#.#D#..#D#.#",//2
-        "#.#.#..#.#.#",//3
-        "....#..#...#",//4
-        "###D#..#D###",//5
-        "............",//6
-        "######D#####",//7
-        "#.#....#...#",//8
-        "#.D....D...#",//9
-        "#.#....#...#",//10
-        "#.#....#...#",//11
-        "###....#####"//12
-    };
-
-    String[] tile9 = new String[]{
-        //123456789101112
-        ".####.#....",//1
-        ".#..D.#..###",//2
-        ".####.#..#.#",//3
-        "......#..#.#",//4
-        "##D####..#D#",//5
-        "....D.D.....",//6
-        "....####D###",//7
-        "#D#..#......",//8
-        "#.#..#......",//9
-        "#.#..#.####.",//10
-        "###..#.D..#.",//11
-        ".....#.####."//12
-    };
-
-    String[] tile10 = new String[]{
-        //123456789101112
-        "####........",//1
-        "#..#.#D#####",//2
-        "#..#.#..#..#",//3
-        "#..#.#..#..#",//4
-        "##D#######D#",//5
-        "...D.D......",//6
-        "##D#####D###",//7
-        "#....#......",//8
-        "#....#......",//9
-        "#....#.####.",//10
-        "#....#.D..#.",//11
-        "######.####."//12
-    };
-
-    String[] tile11 = new String[]{
-        //123456789101112
-        "#####.######",//1
-        "#.#.D.D.#..#",//2
-        "#.###.###..#",//3
-        "#.#.D.D.#..#",//4
-        "#D###.###D##",//5
-        "..D.D.#.#..#",//6
-        "#D###.#D#..#",//7
-        "#.#.D.D.##D#",//8
-        "#.###.###..#",//9
-        "#.#.D.D.D..#",//10
-        "#.#.#.#.#..#",//11
-        "#####.######"//12
-    };
-
-    String[] tile12 = new String[]{
-        //123456789101112
-        "############",//1
-        "#...D.D....#",//2
-        "#D###.####D#",//3
-        "....#.#.....",//4
-        "#D#.#.#..###",//5
-        "#.#.#.#..#.#",//6
-        "###.#.#..#D#",//7
-        "....#.#.....",//8
-        "#D###.####D#",//9
-        "#...D.D....#",//10
-        "#####.######",//11
-        "............"//12
-    };
-
-    String[] tile13 = new String[]{
-        //123456789101112
-        "....#.######",//1
-        "....D.D....#",//2
-        "#D###.#....#",//3
-        "#.#...#....#",//4
-        "###.########",//5
-        "....D.D.....",//6
-        "#######.....",//7
-        "....#....###",//8
-        "....#....#.#",//9
-        "....#.####D#",//10
-        "....D.D....#",//11
-        "....#.######"//12
-    };
-    String[] tile14 = new String[]{
-        //123456789101112
-        "############",//1
-        "#...D.D..#.#",//2
-        "#.#D#.##.D.#",//3
-        "#D#.....##D#",//4
-        "#...####...#",//5
-        "....D..#....",//6
-        "#...###....#",//7
-        "#D#.....#D##",//8
-        "#.D.....#..#",//9
-        "#.###.#D#..#",//10
-        "#...D.D....#",//11
-        "############"//12
-    };
-
-    String[] tile15 = new String[]{
-        //123456789101112
-        "#####.######",//1
-        "#...D.D....#",//2
-        "#...#.#....#",//3
-        "#...#.#....#",//4
-        "##D##.##D###",//5
-        "....D.......",//6
-        "#####D######",//7
-        "#...#.#....#",//8
-        "#...D.D....#",//9
-        "#...#.#....#",//10
-        "#...#.#....#",//11
-        "#####.######"//12
-    };
-
-    String[] tile16 = new String[]{
-        //123456789101112
-        "..##########",//1
-        "..D........#",//2
-        "..#####..###",//3
-        "......D..#.#",//4
-        "####D##..#.#",//5
-        "......#..D.#",//6
-        "......#..#.#",//7
-        "..###.#..#.#",//8
-        "..D.#.#..#.#",//9
-        "..###.#..#.#",//10
-        "......#..#.#",//11
-        "......#..#.#"//12
-    };
+    // ... (rest of your tile definitions remain the same)
+    String[] tile1 = new String[]{ "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###", ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....", "#####.######" };
+    String[] tile2 = new String[]{ "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "....D.D.....", "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "#####.######" };
+    String[] tile3 = new String[]{ "#####.######", "#..........#", "###D###D####", "............", "#.#D#..###.#", "..#.#..#.#..", "#.#.#..#.#.#", "#.#.#..#.D.#", "#.#.#..#.#.#", "#.#.#..#.#.#", "#.#.####.#.#", "#.#......#.#" };
+    String[] tile4 = new String[]{ "#####..#####", "#...#..#...#", "#...#..#...#", "#...D..#...#", "#...#..#...#", ".####D###D#.", "....D...D...", "###D#D######", "#...#..D...#", "#...#..#...#", "#...#..#...#", "#####..#####" };
+    String[] tile5 = new String[]{ "#####.###...", "#.##....#.##", "#D##D##D#.D.", "#.#...#.#.##", "#D#...#D#...", "........D...", "#D#...#D#...", "#.#...#.#...", "#D#...#D#.##", "#.##D##.#.D.", "####...##.##", "#####..##...." };
+    String[] tile6 = new String[]{ "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#", ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#", "#####..#####" };
+    String[] tile7 = new String[]{ "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#", ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#", "#####.######" };
+    String[] tile8 = new String[]{ "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###", "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#", "###....#####" };
+    String[] tile9 = new String[]{ ".####.#....", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#", "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.", ".....#.####." };
+    String[] tile10 = new String[]{ "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#", "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.", "######.####." };
+    String[] tile11 = new String[]{ "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##", "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#", "#####.######" };
+    String[] tile12 = new String[]{ "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###", "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######", "............" };
+    String[] tile13 = new String[]{ "....#.######", "....D.D....#", "#D###.#....#", "#.#...#....#", "###.########", "....D.D.....", "#######.....", "....#....###", "....#....#.#", "....#.####D#", "....D.D....#", "....#.######" };
+    String[] tile14 = new String[]{ "############", "#...D.D..#.#", "#.#D#.##.D.#", "#D#.....##D#", "#...####...#", "....D..#....", "#...###....#", "#D#.....#D##", "#.D.....#..#", "#.###.#D#..#", "#...D.D....#", "############" };
+    String[] tile15 = new String[]{ "#####.######", "#...D.D....#", "#...#.#....#", "#...#.#....#", "##D##.##D###", "....D.......", "#####D######", "#...#.#....#", "#...D.D....#", "#...#.#....#", "#...#.#....#", "#####.######" };
+    String[] tile16 = new String[]{ "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#", "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#", "......#..#.#" };
 
     // --- Corridor Tile Templates ---
-    /** Template for the Upper-Left corner of the maze. */
     String[] corridorUL = new String[]{ "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    /** Template for the Top edge of the maze. */
     String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
-    /** Template for the Upper-Right corner of the maze. */
     String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    /** Template for the Left edge of the maze. */
     String[] corridorL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    /** Template for the Right edge of the maze. */
     String[] corridorR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    /** Template for the Lower-Left corner of the maze. */
     String[] corridorLL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........", "############" };
-    /** Template for the Bottom edge of the maze. */
     String[] corridorB = new String[]{ "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............", "############" };
-    /** Template for the Lower-Right corner of the maze. */
     String[] corridorLR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#", "############" };
-
 
     private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
 
@@ -325,13 +74,37 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     public void show() {
         Gdx.input.setInputProcessor(this);
         createMazeFromArrayTiles();
+        spawnEntities();
         DebugRenderer.printMazeToConsole(maze);
     }
 
-    /**
-     * Constructs a large maze by first procedurally generating a layout of content tiles,
-     * and then merging them into appropriate corridor templates to form a seamless outer boundary.
-     */
+    private void spawnEntities() {
+        int itemsToSpawn = 10;
+        int monstersToSpawn = 5;
+
+        for (int i = 0; i < itemsToSpawn; i++) {
+            int x, y;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+            } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getItems().containsKey(new GridPoint2(x, y)));
+
+            Item.ItemType type = Item.ItemType.values()[random.nextInt(Item.ItemType.values().length)];
+            maze.addItem(new Item(type, x, y));
+        }
+
+        for (int i = 0; i < monstersToSpawn; i++) {
+            int x, y;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+            } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getMonsters().containsKey(new GridPoint2(x, y)));
+
+            Monster.MonsterType type = Monster.MonsterType.values()[random.nextInt(Monster.MonsterType.values().length)];
+            maze.addMonster(new Monster(type, x, y));
+        }
+    }
+
     private void createMazeFromArrayTiles() {
         final int MAP_ROWS = 2;
         final int MAP_COLS = 2;
@@ -383,7 +156,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
         int tileHeight = allTiles.get(0).length;
         int finalHeight = MAP_ROWS * tileHeight;
-        String[] finalLayout = new String[finalHeight];
+        this.finalLayout = new String[finalHeight];
 
         for (int mapY = 0; mapY < MAP_ROWS; mapY++) {
             for (int tileY = 0; tileY < tileHeight; tileY++) {
@@ -393,22 +166,15 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     String[] contentTile = rotateTile(allTiles.get(info.id), info.rotation);
                     String[] corridorTile = getCorridorTemplate(mapX, mapY, MAP_COLS, MAP_ROWS);
 
-                    // Merge the content tile into the corridor template.
                     String mergedRow = mergeTileRow(corridorTile[tileY], contentTile[tileY]);
                     rowBuilder.append(mergedRow);
                 }
-                finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
+                this.finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
             }
         }
-        createMazeFromText(finalLayout);
+        createMazeFromText(this.finalLayout);
     }
 
-    /**
-     * Merges a content tile row into a corridor template row by replacing 'x' characters.
-     * @param corridorRow The row from the corridor template (e.g., "#.xxxxxxxxxx").
-     * @param contentRow The row from the content tile (e.g., "#...#.#D##.#").
-     * @return The merged row.
-     */
     private String mergeTileRow(String corridorRow, String contentRow) {
         StringBuilder merged = new StringBuilder(corridorRow);
         for (int i = 0; i < corridorRow.length(); i++) {
@@ -419,14 +185,6 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         return merged.toString();
     }
 
-    /**
-     * Selects the correct corridor template based on a tile's position within the overall map grid.
-     * @param x The column index of the tile in the map grid.
-     * @param y The row index of the tile in the map grid.
-     * @param cols The total number of columns in the map grid.
-     * @param rows The total number of rows in the map grid.
-     * @return The appropriate corridor template as a String array.
-     */
     private String[] getCorridorTemplate(int x, int y, int cols, int rows) {
         boolean isTop = (y == 0);
         boolean isBottom = (y == rows - 1);
@@ -442,8 +200,6 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         if (isLeft) return corridorL;
         if (isRight) return corridorR;
 
-        // If not on any edge, it's a center piece which has no corridor.
-        // We return a tile made of 'x' placeholders so the content tile is used completely.
         return new String[]{"xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx"};
     }
 
@@ -512,7 +268,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
-        itemRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
+        entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
             game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
@@ -547,4 +303,3 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
 }
-
