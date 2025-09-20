@@ -3,8 +3,6 @@ package com.bpm.minotaur.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
@@ -15,7 +13,6 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
 import com.bpm.minotaur.rendering.EntityRenderer;
 import com.bpm.minotaur.rendering.FirstPersonRenderer;
-import com.bpm.minotaur.rendering.Hud;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,12 +31,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
 
-    // --- UI ---
-    private Hud hud;
-
     // --- Game State ---
     private Player player;
     private Maze maze;
+    private int currentLevel = 1;
     private final Random random = new Random();
     private String[] finalLayout;
 
@@ -52,7 +47,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     String[] tile6 = new String[]{ "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#", ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#", "#####..#####" };
     String[] tile7 = new String[]{ "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#", ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#", "#####.######" };
     String[] tile8 = new String[]{ "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###", "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#", "###....#####" };
-    String[] tile9 = new String[]{ ".####.#....#", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#", "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.", ".....#.####." };
+    String[] tile9 = new String[]{ ".####.#....", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#", "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.", ".....#.####." };
     String[] tile10 = new String[]{ "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#", "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.", "######.####." };
     String[] tile11 = new String[]{ "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##", "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#", "#####.######" };
     String[] tile12 = new String[]{ "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###", "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######", "............" };
@@ -78,10 +73,54 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
+        generateLevel(currentLevel);
+    }
+
+    private void descendToNextLevel() {
+        currentLevel++;
+        Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
+        generateLevel(currentLevel);
+    }
+
+    private void generateLevel(int levelNumber) {
         createMazeFromArrayTiles();
         spawnEntities();
-        hud = new Hud(game.batch, player, maze); // Pass the maze object here
+        spawnLadder();
+        if (player == null) {
+            createPlayerAtStart();
+        } else {
+            resetPlayerPosition();
+        }
         DebugRenderer.printMazeToConsole(maze);
+    }
+
+    private void createPlayerAtStart() {
+        int playerStartX = 1, playerStartY = 1;
+        for (int y = 0; y < finalLayout.length; y++) {
+            for (int x = 0; x < finalLayout[0].length(); x++) {
+                if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
+                    playerStartX = x;
+                    playerStartY = y;
+                    player = new Player(playerStartX, playerStartY);
+                    return;
+                }
+            }
+        }
+        player = new Player(playerStartX, playerStartY);
+    }
+
+    private void resetPlayerPosition() {
+        int playerStartX = 1, playerStartY = 1;
+        for (int y = 0; y < finalLayout.length; y++) {
+            for (int x = 0; x < finalLayout[0].length(); x++) {
+                if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
+                    playerStartX = x;
+                    playerStartY = y;
+                    break;
+                }
+            }
+        }
+        player.getPosition().set(playerStartX + 0.5f, playerStartY + 0.5f);
     }
 
     private void spawnEntities() {
@@ -90,12 +129,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
         for (int i = 0; i < itemsToSpawn; i++) {
             int x, y;
-            char tileChar;
             do {
                 x = random.nextInt(maze.getWidth());
                 y = random.nextInt(maze.getHeight());
-                tileChar = finalLayout[maze.getHeight() - 1 - y].charAt(x);
-            } while (tileChar != '.' || maze.getItems().containsKey(new GridPoint2(x, y)));
+            } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getItems().containsKey(new GridPoint2(x, y)));
 
             Item.ItemType type = Item.ItemType.values()[random.nextInt(Item.ItemType.values().length)];
             maze.addItem(new Item(type, x, y));
@@ -103,17 +140,30 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
         for (int i = 0; i < monstersToSpawn; i++) {
             int x, y;
-            char tileChar;
             do {
                 x = random.nextInt(maze.getWidth());
                 y = random.nextInt(maze.getHeight());
-                tileChar = finalLayout[maze.getHeight() - 1 - y].charAt(x);
-            } while (tileChar != '.' || maze.getMonsters().containsKey(new GridPoint2(x, y)));
+            } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getMonsters().containsKey(new GridPoint2(x, y)));
 
             Monster.MonsterType type = Monster.MonsterType.values()[random.nextInt(Monster.MonsterType.values().length)];
             maze.addMonster(new Monster(type, x, y));
         }
     }
+
+    private void spawnLadder() {
+        int x, y;
+        do {
+            x = random.nextInt(maze.getWidth());
+            y = random.nextInt(maze.getHeight());
+        } while (
+            finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
+                maze.getItems().containsKey(new GridPoint2(x, y)) ||
+                maze.getMonsters().containsKey(new GridPoint2(x, y))
+        );
+        maze.addLadder(new Ladder(x, y));
+        Gdx.app.log("GameScreen", "Ladder spawned at (" + x + ", " + y + ")");
+    }
+
 
     private void createMazeFromArrayTiles() {
         final int MAP_ROWS = 2;
@@ -139,14 +189,14 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                         if (mapX > 0) {
                             TileInfo leftNeighborInfo = mapLayout[mapY][mapX - 1];
                             String[] leftNeighborTile = rotateTile(allTiles.get(leftNeighborInfo.id), leftNeighborInfo.rotation);
-                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(leftNeighborTile[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) {
+                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) {
                                 fits = false;
                             }
                         }
                         if (fits && mapY > 0) {
                             TileInfo topNeighborInfo = mapLayout[mapY - 1][mapX];
                             String[] topNeighborTile = rotateTile(allTiles.get(topNeighborInfo.id), topNeighborInfo.rotation);
-                            if (isWall(topNeighborTile[topNeighborTile.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) {
+                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) {
                                 fits = false;
                             }
                         }
@@ -240,19 +290,18 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
-        maze = new Maze(1, bitmaskedData);
-        int playerStartX = 1, playerStartY = 1;
+        maze = new Maze(currentLevel, bitmaskedData);
+
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
-                if (c == 'P') { playerStartX = x; playerStartY = y; }
-                else if (c == 'D') { maze.addGameObject(new Door(), x, y); }
+                if (c == 'D') { maze.addGameObject(new Door(), x, y); }
                 else if (c == 'S') { maze.addItem(new Item(Item.ItemType.POTION_STRENGTH, x, y)); }
                 else if (c == 'H') { maze.addItem(new Item(Item.ItemType.POTION_HEALING, x, y)); }
             }
         }
-        player = new Player(playerStartX, playerStartY);
+
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
@@ -277,46 +326,26 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         maze.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
 
-        // Render the 3D world
+        // --- All ShapeRenderer calls happen here ---
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
         entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
-
-        // Draw the solid black background for the HUD
-        shapeRenderer.setProjectionMatrix(hud.stage.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.BLACK); // Solid Black
-        shapeRenderer.rect(0, 0, 1920, 180); // Adjusted height
-        shapeRenderer.end();
-
-        // Render the HUD text
-        hud.update(delta);
-        hud.render();
-
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
-            game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
-            game.batch.begin();
-            font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, 1070);
-            game.batch.end();
         }
+
+        // --- All SpriteBatch (text) calls happen here ---
+        game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
+        game.batch.begin();
+        font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
+        if (debugManager.isDebugOverlayVisible()) {
+            font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
+        }
+        game.batch.end();
     }
 
     @Override
-    public void dispose() {
-        super.dispose();
-        shapeRenderer.dispose();
-        font.dispose();
-        if (hud != null) {
-            hud.dispose();
-        }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        game.viewport.update(width, height, true);
-        hud.resize(width, height);
-    }
+    public void resize(int width, int height) { game.viewport.update(width, height, true); }
 
     @Override
     public boolean keyDown(int keycode) {
@@ -327,6 +356,12 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             case Input.Keys.RIGHT: player.turnRight(); break;
             case Input.Keys.F1: debugManager.toggleOverlay(); break;
             case Input.Keys.O: player.interact(maze); break;
+            case Input.Keys.D: // Key for Descend
+                GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+                if (maze.getLadders().containsKey(playerPos)) {
+                    descendToNextLevel();
+                }
+                break;
         }
         return true;
     }
