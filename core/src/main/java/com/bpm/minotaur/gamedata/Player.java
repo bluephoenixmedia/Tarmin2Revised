@@ -36,6 +36,14 @@ public class Player {
         cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);
     }
 
+    public void takeDamage(int amount) {
+        this.warStrength -= amount;
+        if (this.warStrength < 0) {
+            this.warStrength = 0;
+        }
+        Gdx.app.log("Player", "Player takes " + amount + " damage. WS is now " + this.warStrength);
+    }
+
     public void checkForItemPickup(Maze maze) {
         GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
         if (maze.getItems().containsKey(playerTile)) {

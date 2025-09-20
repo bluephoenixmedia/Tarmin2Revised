@@ -16,8 +16,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.gamedata.Item;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.Monster;
 import com.bpm.minotaur.gamedata.Player;
 
 public class Hud implements Disposable {
@@ -25,7 +27,8 @@ public class Hud implements Disposable {
     public Stage stage;
     private final Viewport viewport;
     private final Player player;
-    private final Maze maze; // Added maze reference
+    private final Maze maze;
+    private final CombatManager combatManager;
     private final BitmapFont font;
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
@@ -38,13 +41,17 @@ public class Hud implements Disposable {
     private final Label foodValueLabel;
     private final Label arrowsValueLabel;
     private final Label directionLabel;
-    private final Label dungeonLevelLabel; // Added this line
+    private final Label dungeonLevelLabel;
+    private final Label monsterStrengthLabel;
+    private final Label combatStatusLabel;
+
 
     private final Actor[] inventorySlots = new Actor[8];
 
-    public Hud(SpriteBatch sb, Player player, Maze maze) { // Added maze parameter
+    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager) {
         this.player = player;
-        this.maze = maze; // Store maze reference
+        this.maze = maze;
+        this.combatManager = combatManager;
         this.spriteBatch = sb;
         this.shapeRenderer = new ShapeRenderer();
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
@@ -67,10 +74,8 @@ public class Hud implements Disposable {
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
         Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
 
-        // This table will contain the left and right sides of the HUD
         Table mainContentTable = new Table();
 
-        // --- Left Side of HUD ---
         Table leftTable = new Table();
         directionLabel = new Label("", directionLabelStyle);
         for(int i = 0; i < 8; i++) { inventorySlots[i] = new Actor(); }
@@ -87,7 +92,6 @@ public class Hud implements Disposable {
         leftTable.add(inventorySlots[6]).width(slotSize).height(slotSize);
         leftTable.add(inventorySlots[7]).width(slotSize).height(slotSize);
 
-        // --- Right Side of HUD ---
         Table rightTable = new Table();
         warStrengthValueLabel = new Label("", labelStyle);
         Table warTable = new Table();
@@ -115,16 +119,21 @@ public class Hud implements Disposable {
         rightTable.add(foodTable).left().padRight(100f);
         rightTable.add(arrowsTable).right().expandX();
 
-        // Add left and right tables to the main content table
+        monsterStrengthLabel = new Label("", labelStyle);
+        combatStatusLabel = new Label("", labelStyle);
+        rightTable.row();
+        rightTable.add(new Label("MONSTER", labelStyle)).left().padTop(20);
+        rightTable.add(monsterStrengthLabel).right().expandX().padTop(20);
+        rightTable.row();
+        rightTable.add(combatStatusLabel).colspan(2).center().padTop(10);
+
         mainContentTable.add(leftTable).width(500).padLeft(50);
         mainContentTable.add(rightTable).expandX().right().padRight(50);
 
-        // --- Dungeon Level Table (Bottom Center) ---
         dungeonLevelLabel = new Label("", labelStyle);
         Table levelTable = new Table();
         levelTable.add(dungeonLevelLabel);
 
-        // --- Main container table ---
         Table mainContainer = new Table();
         mainContainer.bottom();
         mainContainer.setFillParent(true);
@@ -141,10 +150,31 @@ public class Hud implements Disposable {
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(player.getFacing().name().substring(0,1));
-        dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel()); // Update level text
+        dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel());
+
+        if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
+            Monster monster = combatManager.getMonster();
+            monsterStrengthLabel.setText("WS:" + monster.getWarStrength() + " SS:" + monster.getSpiritualStrength());
+            monsterStrengthLabel.setVisible(true);
+            combatStatusLabel.setVisible(true);
+
+            switch(combatManager.getCurrentState()){
+                case PLAYER_TURN:
+                    combatStatusLabel.setText("YOUR TURN. PRESS 'A' TO ATTACK.");
+                    break;
+                case MONSTER_TURN:
+                    combatStatusLabel.setText(monster.getType() + " ATTACKS!");
+                    break;
+                default:
+                    combatStatusLabel.setText("");
+                    break;
+            }
+        } else {
+            monsterStrengthLabel.setVisible(false);
+            combatStatusLabel.setVisible(false);
+        }
     }
 
-    // ... (render, drawInventory, resize, and dispose methods are unchanged) ...
     public void render() {
         viewport.apply();
 
