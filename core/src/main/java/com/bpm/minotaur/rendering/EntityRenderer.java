@@ -13,14 +13,13 @@ public class EntityRenderer {
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, float[] depthBuffer) {
         if (depthBuffer == null) return;
 
-        // 1. Combine all renderable entities into a single list
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
         entities.addAll(maze.getMonsters().values());
-        entities.addAll(maze.getLadders().values()); // Add this line
+        entities.addAll(maze.getLadders().values());
+        entities.addAll(maze.getProjectiles());
 
 
-        // 2. Sort the list from farthest to nearest
         entities.sort((a, b) -> Float.compare(
             player.getPosition().dst2(b.getPosition()),
             player.getPosition().dst2(a.getPosition())
@@ -28,7 +27,6 @@ public class EntityRenderer {
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // 3. Render each entity in the sorted order
         for (Renderable entity : entities) {
             drawEntity(shapeRenderer, player, entity, viewport, depthBuffer);
         }
@@ -43,6 +41,15 @@ public class EntityRenderer {
         drawEntity(shapeRenderer, player, monster, viewport, depthBuffer);
         shapeRenderer.end();
     }
+
+    public void renderSingleProjectile(ShapeRenderer shapeRenderer, Player player, Projectile projectile, Viewport viewport, float[] depthBuffer) {
+        if (depthBuffer == null || projectile == null) return;
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        drawEntity(shapeRenderer, player, projectile, viewport, depthBuffer);
+        shapeRenderer.end();
+    }
+
 
 
     private void drawEntity(ShapeRenderer shapeRenderer, Player player, Renderable entity, Viewport viewport, float[] depthBuffer) {
@@ -62,8 +69,27 @@ public class EntityRenderer {
                 drawMonsterSprite(shapeRenderer, entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
                 drawItemSprite(shapeRenderer, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
-            }  else if (entity instanceof Ladder) { // Add this else-if block
+            }  else if (entity instanceof Ladder) {
                 drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
+            } else if (entity instanceof Projectile) {
+                drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
+            }
+        }
+    }
+
+    private void drawProjectile(ShapeRenderer shapeRenderer, Projectile projectile, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+        float floorOffset = 0.5f;
+        int spriteScreenY = (int) (camera.viewportHeight / 2 * (1 + floorOffset / transformY));
+        int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 4;
+        int spriteWidth = spriteHeight;
+        float drawY = spriteScreenY - spriteHeight / 2.0f;
+        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (transformY < depthBuffer[stripe]) {
+                shapeRenderer.setColor(projectile.getColor());
+                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
             }
         }
     }
@@ -71,7 +97,7 @@ public class EntityRenderer {
     private void drawMonsterSprite(ShapeRenderer shapeRenderer, Renderable monster, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
         float floorOffset = 0.0f;
         int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
-        int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY));
+        int spriteHeight = (int) (Math.abs((int) (camera.viewportHeight / transformY)) * 0.8f);
         int spriteWidth = spriteHeight;
         float drawY = spriteScreenY - spriteHeight / 2.0f;
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
@@ -96,13 +122,10 @@ public class EntityRenderer {
 
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (transformY < depthBuffer[stripe]) {
-                // Body of the potion
                 shapeRenderer.setColor(item.getColor());
                 shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
-                // Liquid part
                 shapeRenderer.setColor(item.getLiquidColor());
                 shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
-                // Cork
                 shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
                 shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
             }
@@ -110,12 +133,12 @@ public class EntityRenderer {
     }
 
     private void drawLadderSprite(ShapeRenderer shapeRenderer, Ladder ladder, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        float floorOffset = 0.5f; // Makes it appear flat on the ground
+        float floorOffset = 0.5f;
         int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
-        int spriteHeight = (int) (camera.viewportHeight / transformY); // Full tile height
-        int spriteWidth = (int) (spriteHeight * 0.5f); // Half a tile wide
+        int spriteHeight = (int) (camera.viewportHeight / transformY);
+        int spriteWidth = (int) (spriteHeight * 0.5f);
 
-        float drawY = spriteScreenY - spriteHeight; // Position it on the floor
+        float drawY = spriteScreenY - spriteHeight;
 
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
@@ -123,11 +146,9 @@ public class EntityRenderer {
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (transformY < depthBuffer[stripe]) {
                 shapeRenderer.setColor(ladder.getColor());
-                // Draw two vertical rails
                 if (stripe == drawStartX || stripe == drawEndX - 1) {
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
-                // Draw rungs
                 for (int i = 1; i < 5; i++) {
                     shapeRenderer.rect(stripe, drawY + (spriteHeight * (i/5.0f)), 1, 3);
                 }

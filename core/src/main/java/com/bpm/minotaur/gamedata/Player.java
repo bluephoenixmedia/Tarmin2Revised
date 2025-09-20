@@ -11,12 +11,15 @@ public class Player {
     private int food;
     private int arrows;
 
+    private final int maxWarStrength;
+    private final int maxSpiritualStrength;
+
     private final Vector2 position;
     private Direction facing;
     private final Vector2 directionVector;
     private final Vector2 cameraPlane;
 
-    private final Inventory inventory = new Inventory(); // Add this line
+    private final Inventory inventory = new Inventory();
 
     public Player(float startX, float startY) {
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
@@ -25,10 +28,15 @@ public class Player {
         this.cameraPlane = new Vector2();
         updateVectors();
 
-        this.warStrength = 20;
-        this.spiritualStrength = 10;
-        this.food = 50;
-        this.arrows = 15;
+        // --- STATS BOOSTED FOR TESTING ---
+        this.warStrength = 80;
+        this.spiritualStrength = 40;
+        this.food = 99;
+        this.arrows = 99;
+
+        // Set max values higher for testing
+        this.maxWarStrength = 150;
+        this.maxSpiritualStrength = 100;
     }
 
     private void updateVectors() {
@@ -36,13 +44,46 @@ public class Player {
         cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);
     }
 
+    public void rest() {
+        if (food > 0) {
+            food--;
+
+            // Restore WS and SS, ensuring they don't exceed the max values
+            int warStrengthGained = 5;
+            int spiritualStrengthGained = 2;
+
+            this.warStrength = Math.min(this.maxWarStrength, this.warStrength + warStrengthGained);
+            this.spiritualStrength = Math.min(this.maxSpiritualStrength, this.spiritualStrength + spiritualStrengthGained);
+
+            Gdx.app.log("Player", "Player rests. Food remaining: " + food);
+            Gdx.app.log("Player", "WS restored to " + warStrength + ", SS restored to " + spiritualStrength);
+        } else {
+            Gdx.app.log("Player", "Cannot rest. No food remaining.");
+        }
+    }
+
+
+    public void setFacing(Direction facing) {
+        this.facing = facing;
+        updateVectors();
+    }
+
     public void takeDamage(int amount) {
-        this.warStrength -= amount;
+        int damageReduction = getArmor();
+        int finalDamage = Math.max(0, amount - damageReduction);
+        this.warStrength -= finalDamage;
+
         if (this.warStrength < 0) {
             this.warStrength = 0;
         }
-        Gdx.app.log("Player", "Player takes " + amount + " damage. WS is now " + this.warStrength);
+        Gdx.app.log("Player", "Player takes " + finalDamage + " damage. WS is now " + this.warStrength);
     }
+
+    public int getArmor() {
+        // For now, a placeholder value. This will be calculated based on equipped armor.
+        return 2;
+    }
+
 
     public void checkForItemPickup(Maze maze) {
         GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
@@ -124,5 +165,5 @@ public class Player {
     public int getSpiritualStrength() { return spiritualStrength; }
     public int getFood() { return food; }
     public int getArrows() { return arrows; }
-    public Inventory getInventory() { return inventory; } // Add this line
+    public Inventory getInventory() { return inventory; }
 }

@@ -8,13 +8,27 @@ public class Item implements Renderable {
     public enum ItemType {
         POTION_STRENGTH,
         POTION_HEALING,
-        KEY
+        KEY,
+        PROJECTILE
+    }
+
+    public static class WeaponStats {
+        public int damage;
+        public int range;
+        public boolean isRanged;
+
+        public WeaponStats(int damage, int range, boolean isRanged) {
+            this.damage = damage;
+            this.range = range;
+            this.isRanged = isRanged;
+        }
     }
 
     private final ItemType type;
     private final Vector2 position;
     private final Color color;
     private final Color liquidColor;
+    private WeaponStats weaponStats;
 
     public Item(ItemType type, int x, int y) {
         this.type = type;
@@ -33,11 +47,22 @@ public class Item implements Renderable {
                 this.color = Color.GOLD;
                 this.liquidColor = Color.YELLOW;
                 break;
+            case PROJECTILE:
+                this.color = Color.WHITE;
+                this.liquidColor = Color.WHITE;
+                break;
             default:
                 this.color = Color.GRAY;
                 this.liquidColor = Color.WHITE;
                 break;
         }
+    }
+
+    public Item(ItemType type, Vector2 position, Color color) {
+        this.type = type;
+        this.position = position;
+        this.color = color;
+        this.liquidColor = color;
     }
 
     public ItemType getType() {
@@ -56,5 +81,9 @@ public class Item implements Renderable {
 
     public Color getLiquidColor() {
         return liquidColor;
+    }
+
+    public WeaponStats getWeaponStats() {
+        return weaponStats;
     }
 }

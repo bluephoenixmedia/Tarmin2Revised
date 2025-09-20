@@ -11,10 +11,7 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager;
-import com.bpm.minotaur.rendering.DebugRenderer;
-import com.bpm.minotaur.rendering.EntityRenderer;
-import com.bpm.minotaur.rendering.FirstPersonRenderer;
-import com.bpm.minotaur.rendering.Hud;
+import com.bpm.minotaur.rendering.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +30,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
     private Hud hud;
+    private AnimationManager animationManager;
 
 
     // --- Game State ---
@@ -78,6 +76,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
+        animationManager = new AnimationManager();
         generateLevel(currentLevel);
     }
 
@@ -97,7 +96,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             resetPlayerPosition();
         }
 
-        combatManager = new CombatManager(player, maze, game);
+        combatManager = new CombatManager(player, maze, game, animationManager);
         hud = new Hud(game.batch, player, maze, combatManager);
 
         DebugRenderer.printMazeToConsole(maze);
@@ -332,12 +331,12 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public void render(float delta) {
-        combatManager.update(delta); // Update combat logic every frame
+        combatManager.update(delta);
+        animationManager.update(delta);
         maze.update(delta);
         hud.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
 
-        // --- All ShapeRenderer calls happen here ---
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
 
@@ -347,13 +346,14 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer());
         }
 
+        animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer());
+
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
         }
 
         hud.render();
 
-        // --- All SpriteBatch (text) calls happen here ---
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
         game.batch.begin();
         font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
@@ -398,7 +398,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 case Input.Keys.O:
                     player.interact(maze);
                     break;
-                case Input.Keys.D: // Key for Descend
+                case Input.Keys.R:
+                    player.rest();
+                    break;
+                case Input.Keys.D:
                     GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
                     if (maze.getLadders().containsKey(playerPos)) {
                         descendToNextLevel();

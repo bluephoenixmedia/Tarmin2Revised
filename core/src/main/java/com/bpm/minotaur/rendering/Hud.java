@@ -16,19 +16,19 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.CombatManager;
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Monster;
-import com.bpm.minotaur.gamedata.Player;
+
 
 public class Hud implements Disposable {
 
+    private final CombatManager combatManager;
     public Stage stage;
     private final Viewport viewport;
     private final Player player;
     private final Maze maze;
-    private final CombatManager combatManager;
+
     private final BitmapFont font;
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
