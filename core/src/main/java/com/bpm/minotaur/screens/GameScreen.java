@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
 import com.bpm.minotaur.rendering.EntityRenderer;
@@ -40,6 +41,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private int currentLevel = 1;
     private final Random random = new Random();
     private String[] finalLayout;
+    private CombatManager combatManager;
 
     // --- Maze Content Tile Definitions ---
     String[] tile1 = new String[]{ "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###", ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....", "#####.######" };
@@ -95,7 +97,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             resetPlayerPosition();
         }
 
-        hud = new Hud(game.batch, player, maze);
+        combatManager = new CombatManager(player, maze, game);
+        hud = new Hud(game.batch, player, maze, combatManager);
 
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -329,6 +332,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public void render(float delta) {
+        combatManager.update(delta); // Update combat logic every frame
         maze.update(delta);
         hud.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
@@ -336,7 +340,13 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         // --- All ShapeRenderer calls happen here ---
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
-        entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
+
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+            entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
+        } else {
+            entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer());
+        }
+
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
         }
@@ -353,27 +363,52 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         game.batch.end();
     }
 
+
     @Override
     public void resize(int width, int height) { game.viewport.update(width, height, true); }
 
     @Override
     public boolean keyDown(int keycode) {
-        switch (keycode) {
-            case Input.Keys.UP: player.moveForward(maze); break;
-            case Input.Keys.DOWN: player.moveBackward(maze); break;
-            case Input.Keys.LEFT: player.turnLeft(); break;
-            case Input.Keys.RIGHT: player.turnRight(); break;
-            case Input.Keys.F1: debugManager.toggleOverlay(); break;
-            case Input.Keys.O: player.interact(maze); break;
-            case Input.Keys.D: // Key for Descend
-                GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
-                if (maze.getLadders().containsKey(playerPos)) {
-                    descendToNextLevel();
-                }
-                break;
+        if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            if (keycode == Input.Keys.A) {
+                combatManager.playerAttack();
+                return true;
+            }
+        }
+
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+            switch (keycode) {
+                case Input.Keys.UP:
+                    player.moveForward(maze);
+                    combatManager.checkForAdjacentMonsters();
+                    break;
+                case Input.Keys.DOWN:
+                    player.moveBackward(maze);
+                    combatManager.checkForAdjacentMonsters();
+                    break;
+                case Input.Keys.LEFT:
+                    player.turnLeft();
+                    break;
+                case Input.Keys.RIGHT:
+                    player.turnRight();
+                    break;
+                case Input.Keys.F1:
+                    debugManager.toggleOverlay();
+                    break;
+                case Input.Keys.O:
+                    player.interact(maze);
+                    break;
+                case Input.Keys.D: // Key for Descend
+                    GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+                    if (maze.getLadders().containsKey(playerPos)) {
+                        descendToNextLevel();
+                    }
+                    break;
+            }
         }
         return true;
     }
+
 
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }

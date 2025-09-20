@@ -22,8 +22,8 @@ public class EntityRenderer {
 
         // 2. Sort the list from farthest to nearest
         entities.sort((a, b) -> Float.compare(
-                player.getPosition().dst2(b.getPosition()),
-                player.getPosition().dst2(a.getPosition())
+            player.getPosition().dst2(b.getPosition()),
+            player.getPosition().dst2(a.getPosition())
         ));
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -35,6 +35,15 @@ public class EntityRenderer {
 
         shapeRenderer.end();
     }
+
+    public void renderSingleMonster(ShapeRenderer shapeRenderer, Player player, Monster monster, Viewport viewport, float[] depthBuffer) {
+        if (depthBuffer == null || monster == null) return;
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        drawEntity(shapeRenderer, player, monster, viewport, depthBuffer);
+        shapeRenderer.end();
+    }
+
 
     private void drawEntity(ShapeRenderer shapeRenderer, Player player, Renderable entity, Viewport viewport, float[] depthBuffer) {
         float spriteX = entity.getPosition().x - player.getPosition().x;
