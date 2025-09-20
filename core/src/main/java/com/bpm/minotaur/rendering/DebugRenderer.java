@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Door;
 import com.bpm.minotaur.gamedata.Item;
+import com.bpm.minotaur.gamedata.Ladder;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Monster;
 import com.bpm.minotaur.gamedata.Player;
@@ -79,6 +80,20 @@ public class DebugRenderer {
             shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
         }
 
+        // --- START: New code for rendering ladders ---
+        shapeRenderer.end(); // End line mode to draw filled rects
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        for (Ladder ladder : maze.getLadders().values()) {
+            shapeRenderer.setColor(Color.BROWN);
+            float ladderX = mazeStartX + (ladder.getPosition().x * cellSize) - (cellSize * 0.2f);
+            float ladderY = mazeStartY + (ladder.getPosition().y * cellSize) - (cellSize * 0.2f);
+            shapeRenderer.rect(ladderX, ladderY, cellSize * 0.4f, cellSize * 0.4f);
+        }
+        shapeRenderer.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Re-begin line mode for anything that might come after
+        // --- END: New code for rendering ladders ---
+
         shapeRenderer.end();
     }
 
@@ -114,6 +129,8 @@ public class DebugRenderer {
                     midWall.append("M ");
                 } else if (maze.getItems().containsKey(new GridPoint2(x,y))) {
                     midWall.append("I ");
+                } else if (maze.getLadders().containsKey(new GridPoint2(x,y))) {
+                    midWall.append("L "); // Also add ladder representation here
                 }
                 else {
                     midWall.append("  ");

@@ -3,11 +3,7 @@ package com.bpm.minotaur.rendering;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Monster;
-import com.bpm.minotaur.gamedata.Player;
-import com.bpm.minotaur.gamedata.Renderable;
+import com.bpm.minotaur.gamedata.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +17,8 @@ public class EntityRenderer {
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
         entities.addAll(maze.getMonsters().values());
+        entities.addAll(maze.getLadders().values()); // Add this line
+
 
         // 2. Sort the list from farthest to nearest
         entities.sort((a, b) -> Float.compare(
@@ -55,6 +53,8 @@ public class EntityRenderer {
                 drawMonsterSprite(shapeRenderer, entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
                 drawItemSprite(shapeRenderer, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
+            }  else if (entity instanceof Ladder) { // Add this else-if block
+                drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
             }
         }
     }
@@ -96,6 +96,32 @@ public class EntityRenderer {
                 // Cork
                 shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
                 shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
+            }
+        }
+    }
+
+    private void drawLadderSprite(ShapeRenderer shapeRenderer, Ladder ladder, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+        float floorOffset = 0.5f; // Makes it appear flat on the ground
+        int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
+        int spriteHeight = (int) (camera.viewportHeight / transformY); // Full tile height
+        int spriteWidth = (int) (spriteHeight * 0.5f); // Half a tile wide
+
+        float drawY = spriteScreenY - spriteHeight; // Position it on the floor
+
+        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (transformY < depthBuffer[stripe]) {
+                shapeRenderer.setColor(ladder.getColor());
+                // Draw two vertical rails
+                if (stripe == drawStartX || stripe == drawEndX - 1) {
+                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+                }
+                // Draw rungs
+                for (int i = 1; i < 5; i++) {
+                    shapeRenderer.rect(stripe, drawY + (spriteHeight * (i/5.0f)), 1, 3);
+                }
             }
         }
     }
