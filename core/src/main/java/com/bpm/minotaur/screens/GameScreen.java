@@ -13,6 +13,7 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.DebugRenderer;
 import com.bpm.minotaur.rendering.EntityRenderer;
 import com.bpm.minotaur.rendering.FirstPersonRenderer;
+import com.bpm.minotaur.rendering.Hud;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +31,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
+    private Hud hud;
+
 
     // --- Game State ---
     private Player player;
@@ -91,6 +94,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         } else {
             resetPlayerPosition();
         }
+
+        hud = new Hud(game.batch, player, maze);
+
         DebugRenderer.printMazeToConsole(maze);
     }
 
@@ -324,6 +330,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override
     public void render(float delta) {
         maze.update(delta);
+        hud.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
 
         // --- All ShapeRenderer calls happen here ---
@@ -333,6 +340,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
         }
+
+        hud.render();
 
         // --- All SpriteBatch (text) calls happen here ---
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
