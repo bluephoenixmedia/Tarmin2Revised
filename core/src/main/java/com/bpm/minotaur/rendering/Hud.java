@@ -16,24 +16,22 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.CombatManager;
-
+import com.bpm.minotaur.managers.GameEventManager;
 
 public class Hud implements Disposable {
 
-    private final CombatManager combatManager;
     public Stage stage;
     private final Viewport viewport;
     private final Player player;
     private final Maze maze;
-
+    private final CombatManager combatManager;
+    private final GameEventManager eventManager;
     private final BitmapFont font;
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
     private final ShapeRenderer shapeRenderer;
-
     private final Texture hudBackground;
 
     private final Label warStrengthValueLabel;
@@ -44,14 +42,18 @@ public class Hud implements Disposable {
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
+    private final Label messageLabel;
+
+    private final Actor[] backpackSlots = new Actor[6];
+    private Actor leftHandSlot;
+    private Actor rightHandSlot;
 
 
-    private final Actor[] inventorySlots = new Actor[8];
-
-    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager) {
+    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager) {
         this.player = player;
         this.maze = maze;
         this.combatManager = combatManager;
+        this.eventManager = eventManager;
         this.spriteBatch = sb;
         this.shapeRenderer = new ShapeRenderer();
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
@@ -75,22 +77,17 @@ public class Hud implements Disposable {
         Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
 
         Table mainContentTable = new Table();
-
         Table leftTable = new Table();
-        directionLabel = new Label("", directionLabelStyle);
-        for(int i = 0; i < 8; i++) { inventorySlots[i] = new Actor(); }
         float slotSize = 60f;
-        leftTable.add(inventorySlots[0]).width(slotSize).height(slotSize);
-        leftTable.add(inventorySlots[1]).width(slotSize).height(slotSize);
-        leftTable.add(inventorySlots[2]).width(slotSize).height(slotSize);
+        for(int i = 0; i < 6; i++) { backpackSlots[i] = new Actor(); }
+        leftTable.add(backpackSlots[0]).width(slotSize).height(slotSize);
+        leftTable.add(backpackSlots[1]).width(slotSize).height(slotSize);
+        leftTable.add(backpackSlots[2]).width(slotSize).height(slotSize);
         leftTable.row();
-        leftTable.add(inventorySlots[3]).width(slotSize).height(slotSize);
-        leftTable.add(directionLabel).width(slotSize).height(slotSize);
-        leftTable.add(inventorySlots[4]).width(slotSize).height(slotSize);
-        leftTable.row();
-        leftTable.add(inventorySlots[5]).width(slotSize).height(slotSize);
-        leftTable.add(inventorySlots[6]).width(slotSize).height(slotSize);
-        leftTable.add(inventorySlots[7]).width(slotSize).height(slotSize);
+        leftTable.add(backpackSlots[3]).width(slotSize).height(slotSize);
+        leftTable.add(backpackSlots[4]).width(slotSize).height(slotSize);
+        leftTable.add(backpackSlots[5]).width(slotSize).height(slotSize);
+
 
         Table rightTable = new Table();
         warStrengthValueLabel = new Label("", labelStyle);
@@ -130,16 +127,35 @@ public class Hud implements Disposable {
         mainContentTable.add(leftTable).width(500).padLeft(50);
         mainContentTable.add(rightTable).expandX().right().padRight(50);
 
+        Table handsAndCompassTable = new Table();
+        leftHandSlot = new Actor();
+        rightHandSlot = new Actor();
+        directionLabel = new Label("", directionLabelStyle);
+        handsAndCompassTable.add(leftHandSlot).width(slotSize).height(slotSize).padRight(20);
+        handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
+        handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
+
         dungeonLevelLabel = new Label("", labelStyle);
         Table levelTable = new Table();
         levelTable.add(dungeonLevelLabel);
 
+        messageLabel = new Label("", labelStyle);
+        Table messageTable = new Table();
+        messageTable.add(messageLabel).center();
+
         Table mainContainer = new Table();
         mainContainer.bottom();
         mainContainer.setFillParent(true);
-        mainContainer.add(mainContentTable).expandX().fillX();
+        mainContainer.add(messageTable).colspan(3).expandX().padBottom(10);
         mainContainer.row();
-        mainContainer.add(levelTable).expandX().padBottom(10);
+        mainContainer.add(mainContentTable).colspan(3).expandX().fillX();
+        mainContainer.row();
+        mainContainer.add(new Actor()).expandX();
+        mainContainer.add(handsAndCompassTable).padBottom(5);
+        mainContainer.add(new Actor()).expandX();
+        mainContainer.row();
+        mainContainer.add(levelTable).colspan(3).expandX().padBottom(10);
+
 
         stage.addActor(mainContainer);
     }
@@ -173,18 +189,21 @@ public class Hud implements Disposable {
             monsterStrengthLabel.setVisible(false);
             combatStatusLabel.setVisible(false);
         }
+
+        if (!eventManager.getEvents().isEmpty()) {
+            messageLabel.setText(eventManager.getEvents().get(0).message);
+        } else {
+            messageLabel.setText("");
+        }
     }
 
     public void render() {
         viewport.apply();
-
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
         spriteBatch.draw(hudBackground, 0, 0, 1920, 1080);
         spriteBatch.end();
-
         drawInventory();
-
         stage.draw();
     }
 
@@ -193,24 +212,28 @@ public class Hud implements Disposable {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         Item[] backpack = player.getInventory().getBackpack();
-        Item leftHand = player.getInventory().getLeftHand();
-        Item rightHand = player.getInventory().getRightHand();
-
-        Item[] itemsToDraw = new Item[] {
-            backpack[0], backpack[1], backpack[2],
-            leftHand, rightHand,
-            backpack[3], backpack[4], backpack[5]
-        };
-
-        for (int i = 0; i < itemsToDraw.length; i++) {
-            Item item = itemsToDraw[i];
-            Actor slot = inventorySlots[i];
-
+        for (int i = 0; i < backpack.length; i++) {
+            Item item = backpack[i];
+            Actor slot = backpackSlots[i];
             if (item != null) {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 shapeRenderer.setColor(item.getColor());
                 shapeRenderer.rect(pos.x, pos.y, slot.getWidth(), slot.getHeight());
             }
+        }
+
+        Item leftHand = player.getInventory().getLeftHand();
+        if (leftHand != null) {
+            Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            shapeRenderer.setColor(leftHand.getColor());
+            shapeRenderer.rect(pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight());
+        }
+
+        Item rightHand = player.getInventory().getRightHand();
+        if (rightHand != null) {
+            Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            shapeRenderer.setColor(rightHand.getColor());
+            shapeRenderer.rect(pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight());
         }
 
         shapeRenderer.end();

@@ -9,7 +9,8 @@ public class Item implements Renderable {
         POTION_STRENGTH,
         POTION_HEALING,
         KEY,
-        PROJECTILE
+        PROJECTILE,
+        BOW
     }
 
     public static class WeaponStats {
@@ -50,6 +51,11 @@ public class Item implements Renderable {
             case PROJECTILE:
                 this.color = Color.WHITE;
                 this.liquidColor = Color.WHITE;
+                break;
+            case BOW:
+                this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
+                this.liquidColor = Color.TAN;
+                this.weaponStats = new WeaponStats(8, 10, true);
                 break;
             default:
                 this.color = Color.GRAY;

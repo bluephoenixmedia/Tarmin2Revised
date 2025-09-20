@@ -11,6 +11,7 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.rendering.*;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final EntityRenderer entityRenderer = new EntityRenderer();
     private Hud hud;
     private AnimationManager animationManager;
-
+    private GameEventManager eventManager;
 
     // --- Game State ---
     private Player player;
@@ -77,6 +78,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     public void show() {
         Gdx.input.setInputProcessor(this);
         animationManager = new AnimationManager();
+        eventManager = new GameEventManager();
         generateLevel(currentLevel);
     }
 
@@ -97,7 +99,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         }
 
         combatManager = new CombatManager(player, maze, game, animationManager);
-        hud = new Hud(game.batch, player, maze, combatManager);
+        hud = new Hud(game.batch, player, maze, combatManager, eventManager);
 
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -335,6 +337,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         animationManager.update(delta);
         maze.update(delta);
         hud.update(delta);
+        eventManager.update(delta);
         ScreenUtils.clear(0, 0, 0, 1);
 
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
@@ -400,6 +403,18 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     break;
                 case Input.Keys.R:
                     player.rest();
+                    break;
+                case Input.Keys.S:
+                    player.getInventory().swapHands();
+                    break;
+                case Input.Keys.E:
+                    player.getInventory().swapWithPack();
+                    break;
+                case Input.Keys.T:
+                    player.getInventory().rotatePack();
+                    break;
+                case Input.Keys.U:
+                    player.useItem(eventManager);
                     break;
                 case Input.Keys.D:
                     GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);

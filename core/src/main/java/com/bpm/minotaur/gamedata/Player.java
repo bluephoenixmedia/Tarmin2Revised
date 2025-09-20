@@ -3,6 +3,7 @@ package com.bpm.minotaur.gamedata;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.managers.GameEventManager;
 
 public class Player {
 
@@ -37,6 +38,28 @@ public class Player {
         // Set max values higher for testing
         this.maxWarStrength = 150;
         this.maxSpiritualStrength = 100;
+
+        // Give player a starting weapon
+        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
+    }
+
+    public void useItem(GameEventManager eventManager) {
+        Item itemInHand = inventory.getRightHand();
+        if (itemInHand == null) {
+            eventManager.addEvent(new GameEvent("Right hand is empty.", 2f));
+            return;
+        }
+
+        if (itemInHand.getType() == Item.ItemType.POTION_HEALING) {
+            int healAmount = 25; // Example heal amount
+            this.warStrength = Math.min(this.maxWarStrength, this.warStrength + healAmount);
+            inventory.setRightHand(null); // Consume the potion
+            eventManager.addEvent(new GameEvent("You used a Healing Potion.", 2f));
+            Gdx.app.log("Player", "Used healing potion. WS is now " + this.warStrength);
+        } else {
+            eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
+            Gdx.app.log("Player", "Cannot use " + itemInHand.getType());
+        }
     }
 
     private void updateVectors() {
@@ -48,7 +71,6 @@ public class Player {
         if (food > 0) {
             food--;
 
-            // Restore WS and SS, ensuring they don't exceed the max values
             int warStrengthGained = 5;
             int spiritualStrengthGained = 2;
 
@@ -61,7 +83,6 @@ public class Player {
             Gdx.app.log("Player", "Cannot rest. No food remaining.");
         }
     }
-
 
     public void setFacing(Direction facing) {
         this.facing = facing;
@@ -80,7 +101,6 @@ public class Player {
     }
 
     public int getArmor() {
-        // For now, a placeholder value. This will be calculated based on equipped armor.
         return 2;
     }
 
@@ -118,7 +138,7 @@ public class Player {
             position.set(nextX + 0.5f, nextY + 0.5f);
             Gdx.app.log("PlayerMovement", "Moved to (" + (int)position.x + "," + (int)position.y + ")");
 
-            checkForItemPickup(maze); // Check for items after moving
+            checkForItemPickup(maze);
 
             Object objectOnCurrentTile = maze.getGameObjectAt((int)position.x, (int)position.y);
             if (objectOnCurrentTile instanceof Door) {
@@ -130,7 +150,7 @@ public class Player {
                     int finalY = doorY + (int)direction.getVector().y;
                     position.set(finalX + 0.5f, finalY + 0.5f);
                     Gdx.app.log("PlayerMovement", "Auto-moved to (" + (int)position.x + "," + (int)position.y + ")");
-                    checkForItemPickup(maze); // Check again after passing through door
+                    checkForItemPickup(maze);
                 }
             }
         } else {
