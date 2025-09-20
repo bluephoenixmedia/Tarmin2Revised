@@ -17,6 +17,7 @@ public class Monster implements Renderable {
     private final Color color;
     private int warStrength;
     private int spiritualStrength;
+    private int armor;
 
     public Monster(MonsterType type, int x, int y) {
         this.type = type;
@@ -27,31 +28,38 @@ public class Monster implements Renderable {
                 this.color = Color.WHITE;
                 this.warStrength = 15;
                 this.spiritualStrength = 0;
+                this.armor = 3;
                 break;
             case SPIDER:
                 this.color = Color.BLACK;
                 this.warStrength = 10;
                 this.spiritualStrength = 5;
+                this.armor = 1;
                 break;
             case ORC:
                 this.color = Color.GREEN;
                 this.warStrength = 25;
                 this.spiritualStrength = 5;
+                this.armor = 5;
                 break;
             default:
                 this.color = Color.RED;
                 this.warStrength = 10;
                 this.spiritualStrength = 10;
+                this.armor = 2;
                 break;
         }
     }
 
     public void takeDamage(int amount) {
-        this.warStrength -= amount;
+        int damageReduction = this.armor;
+        int finalDamage = Math.max(0, amount - damageReduction);
+        this.warStrength -= finalDamage;
+
         if (this.warStrength < 0) {
             this.warStrength = 0;
         }
-        Gdx.app.log("Monster", this.getType() + " takes " + amount + " damage. WS is now " + this.warStrength);
+        Gdx.app.log("Monster", this.getType() + " takes " + finalDamage + " damage. WS is now " + this.warStrength);
     }
 
     public MonsterType getType() { return type; }

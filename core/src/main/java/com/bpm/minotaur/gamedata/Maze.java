@@ -1,7 +1,9 @@
 package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.math.GridPoint2;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Maze {
@@ -13,7 +15,8 @@ public class Maze {
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
     private final Map<GridPoint2, Monster> monsters = new HashMap<>();
-    private final Map<GridPoint2, Ladder> ladders = new HashMap<>(); // Add this line
+    private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
+    private final List<Projectile> projectiles = new ArrayList<>();
 
 
     public Maze(int level, int[][] wallData) {
@@ -21,15 +24,9 @@ public class Maze {
         this.wallData = wallData;
     }
 
-    // --- START OF CHANGE ---
-    /**
-     * Gets the current dungeon level number.
-     * @return The level number.
-     */
     public int getLevel() {
         return level;
     }
-    // --- END OF CHANGE ---
 
     public int getWidth() {
         if (wallData == null || wallData.length == 0) return 0;
@@ -76,7 +73,6 @@ public class Maze {
         monsters.put(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y), monster);
     }
 
-    // Add these new methods for ladders
     public Map<GridPoint2, Ladder> getLadders() {
         return ladders;
     }
@@ -84,6 +80,15 @@ public class Maze {
     public void addLadder(Ladder ladder) {
         ladders.put(new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y), ladder);
     }
+
+    public List<Projectile> getProjectiles() {
+        return projectiles;
+    }
+
+    public void addProjectile(Projectile projectile) {
+        projectiles.add(projectile);
+    }
+
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
@@ -116,5 +121,9 @@ public class Maze {
                 ((Door) object).update(delta);
             }
         }
+        projectiles.removeIf(projectile -> {
+            projectile.update(delta);
+            return !projectile.isAlive();
+        });
     }
 }
