@@ -81,7 +81,6 @@ public class FirstPersonRenderer {
             renderPosition = player.getPosition().cpy().sub(player.getDirectionVector());
         }
 
-        // --- START OF NEW LOGIC ---
         // Check if the renderer is starting inside a door tile. If so, we need to ignore it during collision checks.
         int startTileX = (int) renderPosition.x;
         int startTileY = (int) renderPosition.y;
@@ -90,7 +89,6 @@ public class FirstPersonRenderer {
         if (startObject instanceof Door) {
             doorToIgnore = (Door) startObject;
         }
-        // --- END OF NEW LOGIC ---
 
         float cameraX = 1 - 2 * screenX / (float) viewport.getScreenWidth();
         Vector2 rayDir = new Vector2(player.getDirectionVector()).add(new Vector2(player.getCameraPlane()).scl(cameraX));
@@ -125,6 +123,13 @@ public class FirstPersonRenderer {
         int maxDistance = 50;
         int distanceTraveled = 0;
 
+        // Track if we hit a door frame (for rendering purposes)
+        boolean hitDoorFrame = false;
+        int doorFrameMapX = -1, doorFrameMapY = -1;
+        int doorFrameSide = -1;
+        float doorFrameDistance = 0;
+        Door doorFrameObject = null;
+
         while (!hit && distanceTraveled < maxDistance) {
             if (sideDist.x < sideDist.y) {
                 sideDist.x += deltaDist.x;
@@ -144,24 +149,80 @@ public class FirstPersonRenderer {
                 int prevMapY = (side == 1) ? mapY - stepY : mapY;
                 int prevWallData = maze.getWallDataAt(prevMapX, prevMapY);
 
+                // Check for wall collision first
                 if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
                     hit = true;
-                } else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                }
+                // Check for door collision
+                else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
                     Object obj = maze.getGameObjectAt(mapX, mapY);
                     if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
 
-                    // --- MODIFIED COLLISION CHECK ---
-                    // Hit is only true if the door is NOT the one we started in AND it is not open.
-                    if (obj instanceof Door && obj != doorToIgnore && ((Door) obj).getState() != Door.DoorState.OPEN) {
-                        hit = true;
+                    if (obj instanceof Door && obj != doorToIgnore) {
+                        Door door = (Door) obj;
+
+                        if (door.getState() == Door.DoorState.OPEN) {
+                            // Door is open - record the frame position but continue raycasting
+                            if (!hitDoorFrame) { // Only record the first door frame we encounter
+                                hitDoorFrame = true;
+                                doorFrameMapX = mapX;
+                                doorFrameMapY = mapY;
+                                doorFrameSide = side;
+                                doorFrameDistance = (side == 0) ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
+                                doorFrameObject = door;
+                            }
+                            // Continue raycasting through the open door
+                        } else {
+                            // Door is closed or opening - stop here
+                            hit = true;
+                        }
                     }
                 }
             }
             distanceTraveled++;
         }
 
+        // If we hit something beyond an open door, we need to decide what to render
+        if (hit && hitDoorFrame) {
+            // We passed through an open door and hit something beyond it
+            // We need to determine if the ray passes through the door opening or hits the door frame
+
+            // Recalculate the door frame intersection from current render position
+            // This ensures we get the correct perspective as the player moves
+            float actualFrameDistance;
+            if (doorFrameSide == 0) {
+                // Vertical wall intersection
+                float wallXPos = (stepX > 0) ? doorFrameMapX : doorFrameMapX + 1;
+                actualFrameDistance = Math.abs((wallXPos - renderPosition.x) / rayDir.x);
+            } else {
+                // Horizontal wall intersection
+                float wallYPos = (stepY > 0) ? doorFrameMapY : doorFrameMapY + 1;
+                actualFrameDistance = Math.abs((wallYPos - renderPosition.y) / rayDir.y);
+            }
+
+            // Calculate the wall position within the door frame using the recalculated distance
+            float frameWallX;
+            if (doorFrameSide == 0) {
+                frameWallX = renderPosition.y + actualFrameDistance * rayDir.y;
+            } else {
+                frameWallX = renderPosition.x + actualFrameDistance * rayDir.x;
+            }
+            frameWallX -= Math.floor(frameWallX);
+
+            // Check if the ray hits the door frame (not the opening)
+            float doorEdgeMargin = (1.0f - DOOR_WIDTH) / 2.0f;
+            boolean hitsFrame = frameWallX < doorEdgeMargin || frameWallX > 1.0f - doorEdgeMargin;
+
+            if (hitsFrame) {
+                // Ray hits the door frame - render the frame with the correct distance
+                return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, frameWallX);
+            }
+            // else: Ray passes through the door opening - continue with the original hit beyond the door
+        }
+
         if (!hit) return null;
 
+        // Calculate distance and wall position for the final hit
         float perpWallDist;
         if (side == 0) {
             perpWallDist = (sideDist.x - deltaDist.x);
