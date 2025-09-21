@@ -136,8 +136,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             resetPlayerPosition();
         }
 
-        combatManager = new CombatManager(player, maze, game, animationManager);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager);
         hud = new Hud(game.batch, player, maze, combatManager, eventManager);
+
 
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -198,6 +199,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getMonsters().containsKey(new GridPoint2(x, y)));
 
             Monster.MonsterType type = Monster.MonsterType.values()[random.nextInt(Monster.MonsterType.values().length)];
+            //Monster.MonsterType type = Monster.MonsterType.GIANT_ANT;
             maze.addMonster(new Monster(type, x, y));
         }
 

@@ -8,6 +8,8 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
+import com.bpm.minotaur.gamedata.GameEvent; // Add this import
+
 
 import java.util.Random;
 
@@ -28,12 +30,15 @@ public class CombatManager {
     private final Random random = new Random();
     private final Tarmin2 game;
     private final AnimationManager animationManager;
+    private final GameEventManager eventManager; // Add this line
 
-    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager) {
+    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,  GameEventManager eventManager) {
         this.player = player;
         this.maze = maze;
         this.game = game;
         this.animationManager = animationManager;
+        this.eventManager = eventManager; // Add this line
+
     }
 
     public void startCombat(Monster monster) {
@@ -76,10 +81,19 @@ public class CombatManager {
 
     public void playerAttack() {
         if (currentState == CombatState.PLAYER_TURN) {
-            Gdx.app.log("CombatManager", "Player attacks " + monster.getType());
-            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
             Item weapon = player.getInventory().getRightHand();
             int damage;
+
+            // Check for ranged attack with no arrows BEFORE doing anything else
+            if (weapon != null && weapon.getType() == Item.ItemType.BOW && player.getArrows() <= 0) {
+                Gdx.app.log("CombatManager", "Player has no arrows!");
+                eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
+                // IMPORTANT: Do not change the state. It remains the player's turn.
+                return;
+            }
+
+            Gdx.app.log("CombatManager", "Player attacks " + monster.getType());
+            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
 
             if (weapon != null && weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
                 damage = weapon.getSpiritualWeaponStats().damage + player.getSpiritualStrength() / 10 + random.nextInt(5);
@@ -93,14 +107,9 @@ public class CombatManager {
                 }
             } else {
                 if (weapon != null && weapon.getType() == Item.ItemType.BOW) {
-                    if (player.getArrows() > 0) {
-                        player.decrementArrow();
-                        damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
-                        Gdx.app.log("CombatManager", "Player fires an arrow, dealing " + damage + " damage.");
-                    } else {
-                        damage = 0; // No arrows, no damage
-                        Gdx.app.log("CombatManager", "Player has no arrows!");
-                    }
+                    player.decrementArrow();
+                    damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
+                    Gdx.app.log("CombatManager", "Player fires an arrow, dealing " + damage + " damage.");
                 } else if (weapon != null && weapon.getWeaponStats() != null) {
                     damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
                     Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
@@ -117,6 +126,7 @@ public class CombatManager {
                 }
             }
         }
+
     }
 
     public void monsterAttack() {

@@ -239,8 +239,11 @@ public class Player {
 
     public void takeDamage(int amount) {
         int damageReduction = getArmorDefense();
-        int initialDamage = Math.max(0, amount - damageReduction);
-        int finalDamage = (int)(initialDamage * vulnerabilityMultiplier); // Apply vulnerability
+        // Apply vulnerability multiplier to the incoming damage amount first
+        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // Then, subtract armor defense
+        finalDamage = Math.max(0, finalDamage - damageReduction);
+
         this.warStrength -= finalDamage;
 
         if (this.warStrength < 0) {
@@ -251,8 +254,11 @@ public class Player {
 
     public void takeSpiritualDamage(int amount) {
         int damageReduction = getRingDefense();
-        int initialDamage = Math.max(0, amount - damageReduction);
-        int finalDamage = (int)(initialDamage * vulnerabilityMultiplier); // Apply vulnerability
+        // Apply vulnerability multiplier to the incoming damage amount first
+        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // Then, subtract ring defense
+        finalDamage = Math.max(0, finalDamage - damageReduction);
+
         this.spiritualStrength -= finalDamage;
 
         if (this.spiritualStrength < 0) {
