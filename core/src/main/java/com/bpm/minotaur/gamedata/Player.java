@@ -28,6 +28,9 @@ public class Player {
 
     private final Inventory inventory = new Inventory();
 
+    private final float vulnerabilityMultiplier; // Add this line
+
+
     // Equipment slots
     private Item wornHelmet = null;
     private Item wornShield = null;
@@ -36,20 +39,21 @@ public class Player {
 
 
 
-    public Player(float startX, float startY) {
+    public Player(float startX, float startY, Difficulty difficulty) {
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
         this.directionVector = new Vector2();
         this.cameraPlane = new Vector2();
         updateVectors();
 
-        // --- STATS BOOSTED FOR TESTING ---
-        this.warStrength = 80;
-        this.spiritualStrength = 40;
-        this.food = 99;
-        this.arrows = 99;
+        // Set stats based on difficulty
+        this.warStrength = difficulty.startWarStrength;
+        this.spiritualStrength = difficulty.startSpiritualStrength;
+        this.food = difficulty.startFood;
+        this.arrows = difficulty.startArrows;
+        this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
-        this.maxWarStrength = 150;
+        this.maxWarStrength = 150; // These can remain as game-wide maximums
         this.maxSpiritualStrength = 100;
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
@@ -235,7 +239,11 @@ public class Player {
 
     public void takeDamage(int amount) {
         int damageReduction = getArmorDefense();
-        int finalDamage = Math.max(0, amount - damageReduction);
+        // Apply vulnerability multiplier to the incoming damage amount first
+        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // Then, subtract armor defense
+        finalDamage = Math.max(0, finalDamage - damageReduction);
+
         this.warStrength -= finalDamage;
 
         if (this.warStrength < 0) {
@@ -246,7 +254,11 @@ public class Player {
 
     public void takeSpiritualDamage(int amount) {
         int damageReduction = getRingDefense();
-        int finalDamage = Math.max(0, amount - damageReduction);
+        // Apply vulnerability multiplier to the incoming damage amount first
+        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // Then, subtract ring defense
+        finalDamage = Math.max(0, finalDamage - damageReduction);
+
         this.spiritualStrength -= finalDamage;
 
         if (this.spiritualStrength < 0) {
@@ -291,43 +303,45 @@ public class Player {
         move(facing.getOpposite(), maze);
     }
 
+    // In Player.java
+
     private void move(Direction direction, Maze maze) {
         Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
 
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
+        // First, check if the immediate path is blocked. This handles walls and closed doors.
+        if (maze.isWallBlocking(currentX, currentY, direction)) {
+            Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
+            return;
+        }
+
+        // If not blocked, calculate the next tile's position.
         int nextX = currentX + (int)direction.getVector().x;
         int nextY = currentY + (int)direction.getVector().y;
 
-        // Check if the tile in front of the player contains a door
+        // Check if the tile we are moving onto contains a door.
         Object nextObject = maze.getGameObjectAt(nextX, nextY);
 
         if (nextObject instanceof Door) {
-            Door door = (Door) nextObject;
-            if (door.getState() == Door.DoorState.OPEN) {
-                // The door is open, so we move two tiles forward, passing through the door.
-                int finalX = nextX + (int)direction.getVector().x;
-                int finalY = nextY + (int)direction.getVector().y;
+            // Since isWallBlocking was false, the door must be open.
+            // We move an extra tile to "skip" over the door's space.
+            int finalX = nextX + (int)direction.getVector().x;
+            int finalY = nextY + (int)direction.getVector().y;
 
-                // Before moving, check if the path beyond the door is clear.
-                if (!maze.isWallBlocking(nextX, nextY, direction)) {
-                    position.set(finalX + 0.5f, finalY + 0.5f);
-                    door.close(); // Close the door after passing through.
-                    Gdx.app.log("PlayerMovement", "Passed through open door to (" + finalX + "," + finalY + ")");
-                } else {
-                    Gdx.app.log("PlayerMovement", "Movement blocked by a wall after the door.");
-                }
-                return; // Movement action is complete.
+            // As a safety measure, check that the space beyond the door is also clear.
+            if (!maze.isWallBlocking(nextX, nextY, direction)) {
+                position.set(finalX + 0.5f, finalY + 0.5f);
+                Gdx.app.log("PlayerMovement", "Passed through open door to (" + finalX + "," + finalY + ")");
+            } else {
+                // This case would be rare, like a door leading directly into a wall.
+                Gdx.app.log("PlayerMovement", "Movement blocked by a wall immediately after the door.");
             }
-        }
-
-        // Standard movement logic for non-door tiles.
-        if (!maze.isWallBlocking(currentX, currentY, direction)) {
+        } else {
+            // Standard movement for non-door tiles.
             position.set(nextX + 0.5f, nextY + 0.5f);
             Gdx.app.log("PlayerMovement", "Moved to (" + nextX + "," + nextY + ")");
-        } else {
-            Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
         }
     }
 

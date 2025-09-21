@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.gamedata.Difficulty;
 
 /**
  * An authentic recreation of the original game's title screen,
@@ -146,7 +147,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     public boolean keyDown(int keycode) {
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Key pressed. Starting game...");
-            game.setScreen(new GameScreen(game));
+            game.setScreen(new GameScreen(game, Difficulty.EASIEST));
             return true;
         }
         return false;
@@ -156,7 +157,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Screen touched. Starting game...");
-            game.setScreen(new GameScreen(game));
+            game.setScreen(new GameScreen(game, Difficulty.EASIEST));
             return true;
         }
         return false;
@@ -173,4 +174,3 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
 }
-

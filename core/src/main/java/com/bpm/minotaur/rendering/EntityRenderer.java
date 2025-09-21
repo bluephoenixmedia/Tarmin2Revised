@@ -99,7 +99,8 @@ public class EntityRenderer {
         }
     }
 
-    private void drawMonsterSprite(ShapeRenderer shapeRenderer, Renderable monster, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+    private void drawMonsterSprite(ShapeRenderer shapeRenderer, Renderable renderable, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+        Monster monster = (Monster) renderable;
         float floorOffset = 0.0f;
         int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
         int spriteHeight = (int) (Math.abs((int) (camera.viewportHeight / transformY)) * 0.8f);
@@ -108,10 +109,43 @@ public class EntityRenderer {
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
+        String[] spriteData = monster.getSpriteData();
+
+        // Fallback for monsters that don't have ASCII data yet
+        if (spriteData == null || spriteData.length == 0) {
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                if (transformY < depthBuffer[stripe]) {
+                    shapeRenderer.setColor(monster.getColor());
+                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+                }
+            }
+            return;
+        }
+
+        int spritePixelHeight = spriteData.length;
+        int spritePixelWidth = spriteData[0].length();
+        float pixelHeight = (float)spriteHeight / spritePixelHeight;
+        float pixelWidth = (float)spriteWidth / spritePixelWidth;
+
+        // Loop through each vertical stripe of the sprite that is visible on screen
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            // Check if this stripe is in front of a wall
             if (transformY < depthBuffer[stripe]) {
-                shapeRenderer.setColor(monster.getColor());
-                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+                // Map the screen stripe coordinate to a pixel column in our ASCII sprite
+                int spriteColumn = (int)((stripe - (screenX - spriteWidth / 2.0f)) / pixelWidth);
+
+                if (spriteColumn >= 0 && spriteColumn < spritePixelWidth) {
+                    // Draw the vertical pixels for this column
+                    for (int y = 0; y < spritePixelHeight; y++) {
+                        // If the character is not a space, draw a pixel
+                        if (spriteData[y].charAt(spriteColumn) != ' ') {
+                            shapeRenderer.setColor(monster.getColor());
+                            // We calculate the Y position, inverting it because array index 0 is the top row
+                            float pixelY = drawY + (spritePixelHeight - 1 - y) * pixelHeight;
+                            shapeRenderer.rect(stripe, pixelY, 1, pixelHeight);
+                        }
+                    }
+                }
             }
         }
     }

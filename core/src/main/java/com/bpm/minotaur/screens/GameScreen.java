@@ -33,6 +33,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
+    private final Difficulty difficulty; // Add this line
+
     private Hud hud;
     private AnimationManager animationManager;
     private GameEventManager eventManager;
@@ -101,7 +103,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
 
-    public GameScreen(Tarmin2 game) { super(game); }
+    public GameScreen(Tarmin2 game, Difficulty difficulty) {
+        super(game);
+        this.difficulty = difficulty; // Store the selected difficulty
+    }
 
     @Override
     public void show() {
@@ -131,8 +136,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             resetPlayerPosition();
         }
 
-        combatManager = new CombatManager(player, maze, game, animationManager);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager);
         hud = new Hud(game.batch, player, maze, combatManager, eventManager);
+
 
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -144,13 +150,16 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
                     playerStartX = x;
                     playerStartY = y;
-                    player = new Player(playerStartX, playerStartY);
+                    // Pass the difficulty to the Player constructor
+                    player = new Player(playerStartX, playerStartY, difficulty);
                     return;
                 }
             }
         }
-        player = new Player(playerStartX, playerStartY);
+        // Fallback if 'P' is not in the layout
+        player = new Player(playerStartX, playerStartY, difficulty);
     }
+
 
     private void resetPlayerPosition() {
         int playerStartX = 1, playerStartY = 1;
@@ -190,6 +199,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getMonsters().containsKey(new GridPoint2(x, y)));
 
             Monster.MonsterType type = Monster.MonsterType.values()[random.nextInt(Monster.MonsterType.values().length)];
+            //Monster.MonsterType type = Monster.MonsterType.GIANT_ANT;
             maze.addMonster(new Monster(type, x, y));
         }
 
@@ -504,6 +514,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 case Input.Keys.O:
                     player.interact(maze, eventManager);
                     needsAsciiRender = true;
+                    break;
+                case Input.Keys.M:  // Add this case
+                    game.setScreen(new CastleMapScreen(game, player, maze, this));
                     break;
                 case Input.Keys.R:
                     player.rest();
