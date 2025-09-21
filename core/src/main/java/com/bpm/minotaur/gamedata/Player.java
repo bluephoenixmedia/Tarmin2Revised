@@ -214,26 +214,40 @@ public class Player {
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
-        if (!maze.isWallBlocking(currentX, currentY, direction)) {
-            int nextX = currentX + (int)direction.getVector().x;
-            int nextY = currentY + (int)direction.getVector().y;
-            position.set(nextX + 0.5f, nextY + 0.5f);
-            Gdx.app.log("PlayerMovement", "Moved to (" + (int)position.x + "," + (int)position.y + ")");
+        // Check for a wall on the current tile blocking the path
+        if (maze.isWallBlocking(currentX, currentY, direction)) {
+            Gdx.app.log("PlayerMovement", "Movement blocked by a wall.");
+            return;
+        }
 
-            Object objectOnCurrentTile = maze.getGameObjectAt((int)position.x, (int)position.y);
-            if (objectOnCurrentTile instanceof Door) {
-                Gdx.app.log("PlayerMovement", "Landed on an open door. Passing through.");
-                int doorX = (int) position.x;
-                int doorY = (int) position.y;
-                if (!maze.isWallBlocking(doorX, doorY, direction)) {
-                    int finalX = doorX + (int)direction.getVector().x;
-                    int finalY = doorY + (int)direction.getVector().y;
+        int nextX = currentX + (int)direction.getVector().x;
+        int nextY = currentY + (int)direction.getVector().y;
+
+        Object nextObject = maze.getGameObjectAt(nextX, nextY);
+
+        if (nextObject instanceof Door) {
+            Door door = (Door) nextObject;
+            if (door.getState() == Door.DoorState.OPEN) {
+                // If the door is open, move the player to the tile *beyond* the door
+                int finalX = nextX + (int)direction.getVector().x;
+                int finalY = nextY + (int)direction.getVector().y;
+
+                // Before the final move, check for a wall after the door.
+                if (!maze.isWallBlocking(nextX, nextY, direction)) {
                     position.set(finalX + 0.5f, finalY + 0.5f);
-                    Gdx.app.log("PlayerMovement", "Auto-moved to (" + (int)position.x + "," + (int)position.y + ")");
+                    Gdx.app.log("PlayerMovement", "Passed through open door to (" + finalX + "," + finalY + ")");
+                } else {
+                    Gdx.app.log("PlayerMovement", "Movement blocked by a wall after the door.");
                 }
+
+            } else {
+                // If the door is not open, the player cannot move.
+                Gdx.app.log("PlayerMovement", "Door is not open. Movement blocked.");
             }
         } else {
-            Gdx.app.log("PlayerMovement", "Collision detected. Movement blocked.");
+            // If there's no door, it's a regular move.
+            position.set(nextX + 0.5f, nextY + 0.5f);
+            Gdx.app.log("PlayerMovement", "Moved to (" + nextX + "," + nextY + ")");
         }
     }
 
