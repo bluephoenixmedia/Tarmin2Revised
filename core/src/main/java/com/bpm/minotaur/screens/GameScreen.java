@@ -416,6 +416,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 case Input.Keys.U:
                     player.useItem(eventManager);
                     break;
+                case Input.Keys.P:
+                    player.interactWithItem(maze, eventManager);
+                    break;
                 case Input.Keys.D:
                     GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
                     if (maze.getLadders().containsKey(playerPos)) {
