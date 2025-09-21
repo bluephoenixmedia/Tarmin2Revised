@@ -33,6 +33,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
+    private final Difficulty difficulty; // Add this line
+
     private Hud hud;
     private AnimationManager animationManager;
     private GameEventManager eventManager;
@@ -101,7 +103,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
 
-    public GameScreen(Tarmin2 game) { super(game); }
+    public GameScreen(Tarmin2 game, Difficulty difficulty) {
+        super(game);
+        this.difficulty = difficulty; // Store the selected difficulty
+    }
 
     @Override
     public void show() {
@@ -144,13 +149,16 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
                     playerStartX = x;
                     playerStartY = y;
-                    player = new Player(playerStartX, playerStartY);
+                    // Pass the difficulty to the Player constructor
+                    player = new Player(playerStartX, playerStartY, difficulty);
                     return;
                 }
             }
         }
-        player = new Player(playerStartX, playerStartY);
+        // Fallback if 'P' is not in the layout
+        player = new Player(playerStartX, playerStartY, difficulty);
     }
+
 
     private void resetPlayerPosition() {
         int playerStartX = 1, playerStartY = 1;
@@ -506,7 +514,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     needsAsciiRender = true;
                     break;
                 case Input.Keys.M:  // Add this case
-                    game.setScreen(new CastleMapScreen(game, player, maze));
+                    game.setScreen(new CastleMapScreen(game, player, maze, this));
                     break;
                 case Input.Keys.R:
                     player.rest();

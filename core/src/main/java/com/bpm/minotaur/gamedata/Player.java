@@ -28,6 +28,9 @@ public class Player {
 
     private final Inventory inventory = new Inventory();
 
+    private final float vulnerabilityMultiplier; // Add this line
+
+
     // Equipment slots
     private Item wornHelmet = null;
     private Item wornShield = null;
@@ -36,20 +39,21 @@ public class Player {
 
 
 
-    public Player(float startX, float startY) {
+    public Player(float startX, float startY, Difficulty difficulty) {
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
         this.directionVector = new Vector2();
         this.cameraPlane = new Vector2();
         updateVectors();
 
-        // --- STATS BOOSTED FOR TESTING ---
-        this.warStrength = 80;
-        this.spiritualStrength = 40;
-        this.food = 99;
-        this.arrows = 99;
+        // Set stats based on difficulty
+        this.warStrength = difficulty.startWarStrength;
+        this.spiritualStrength = difficulty.startSpiritualStrength;
+        this.food = difficulty.startFood;
+        this.arrows = difficulty.startArrows;
+        this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
-        this.maxWarStrength = 150;
+        this.maxWarStrength = 150; // These can remain as game-wide maximums
         this.maxSpiritualStrength = 100;
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
@@ -235,7 +239,8 @@ public class Player {
 
     public void takeDamage(int amount) {
         int damageReduction = getArmorDefense();
-        int finalDamage = Math.max(0, amount - damageReduction);
+        int initialDamage = Math.max(0, amount - damageReduction);
+        int finalDamage = (int)(initialDamage * vulnerabilityMultiplier); // Apply vulnerability
         this.warStrength -= finalDamage;
 
         if (this.warStrength < 0) {
@@ -246,7 +251,8 @@ public class Player {
 
     public void takeSpiritualDamage(int amount) {
         int damageReduction = getRingDefense();
-        int finalDamage = Math.max(0, amount - damageReduction);
+        int initialDamage = Math.max(0, amount - damageReduction);
+        int finalDamage = (int)(initialDamage * vulnerabilityMultiplier); // Apply vulnerability
         this.spiritualStrength -= finalDamage;
 
         if (this.spiritualStrength < 0) {

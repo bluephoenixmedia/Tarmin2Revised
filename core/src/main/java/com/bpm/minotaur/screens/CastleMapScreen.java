@@ -15,14 +15,16 @@ public class CastleMapScreen extends BaseScreen {
 
     private final Player player;
     private final Maze maze;
+    private final GameScreen gameScreen;
     private final BitmapFont font;
     private final ShapeRenderer shapeRenderer;
     private float animationTimer = 0f;
 
-    public CastleMapScreen(Tarmin2 game, Player player, Maze maze) {
+    public CastleMapScreen(Tarmin2 game, Player player, Maze maze, GameScreen gameScreen) {
         super(game);
         this.player = player;
         this.maze = maze;
+        this.gameScreen = gameScreen; // Store the GameScreen instance
         this.font = new BitmapFont();
         this.shapeRenderer = new ShapeRenderer();
     }
@@ -32,8 +34,9 @@ public class CastleMapScreen extends BaseScreen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
+                // Return to the existing GameScreen instance
                 if (keycode == Input.Keys.M) {
-                    game.setScreen(new GameScreen(game));
+                    game.setScreen(gameScreen);
                     return true;
                 }
                 return false;
