@@ -7,6 +7,7 @@ import com.bpm.minotaur.managers.GameEventManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Player {
 
@@ -66,6 +67,15 @@ public class Player {
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getType() + "! Your treasure score is now " + treasureScore, 2f));
                 Gdx.app.log("Player", "Picked up " + itemInFront.getType() + " with value " + itemInFront.getValue());
+                return;
+            }
+
+            // Handle Quiver pickup
+            if (itemInFront.getType() == Item.ItemType.QUIVER) {
+                int arrowsFound = new Random().nextInt(4) + 6; // 6 to 9 arrows, as per the manual
+                addArrows(arrowsFound);
+                maze.getItems().remove(targetTile);
+                eventManager.addEvent(new GameEvent("You found a quiver with " + arrowsFound + " arrows.", 2f));
                 return;
             }
 
@@ -369,6 +379,19 @@ public class Player {
                 inv.getBackpack()[i] = null;
                 return;
             }
+        }
+    }
+
+    public void addArrows(int amount) {
+        this.arrows += amount;
+        if (this.arrows > 99) {
+            this.arrows = 99; // Cap at 99 as per the manual
+        }
+    }
+
+    public void decrementArrow() {
+        if (this.arrows > 0) {
+            this.arrows--;
         }
     }
     public int getTreasureScore() { return treasureScore; }

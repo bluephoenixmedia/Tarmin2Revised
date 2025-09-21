@@ -92,13 +92,22 @@ public class CombatManager {
                     currentState = CombatState.MONSTER_TURN;
                 }
             } else {
-                if (weapon != null && weapon.getWeaponStats() != null) {
+                if (weapon != null && weapon.getType() == Item.ItemType.BOW) {
+                    if (player.getArrows() > 0) {
+                        player.decrementArrow();
+                        damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
+                        Gdx.app.log("CombatManager", "Player fires an arrow, dealing " + damage + " damage.");
+                    } else {
+                        damage = 0; // No arrows, no damage
+                        Gdx.app.log("CombatManager", "Player has no arrows!");
+                    }
+                } else if (weapon != null && weapon.getWeaponStats() != null) {
                     damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
+                    Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
                 } else {
                     damage = player.getWarStrength() / 10 + random.nextInt(2);
                     Gdx.app.log("CombatManager", "Player is unarmed!");
                 }
-                Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
                 monster.takeDamage(damage);
 
                 if (monster.getWarStrength() <= 0) {

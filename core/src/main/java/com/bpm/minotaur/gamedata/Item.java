@@ -18,6 +18,8 @@ public class Item implements Renderable {
         LARGE_FIREBALL,
         SMALL_LIGHTNING_BOLT,
         LARGE_LIGHTNING_BOLT,
+        QUIVER, // Add this line
+
 
         // Armor
         SHIELD,
@@ -107,6 +109,12 @@ public class Item implements Renderable {
                 this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
                 this.weaponStats = new WeaponStats(8, 10, true);
                 break;
+
+            case QUIVER:
+                this.category = ItemCategory.USEFUL;
+                this.color = new Color(0.6f, 0.3f, 0.1f, 1); // A leathery brown color
+                break;
+
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.TAN;
