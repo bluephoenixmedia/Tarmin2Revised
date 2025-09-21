@@ -249,40 +249,37 @@ public class Player {
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
-        // Check for a wall on the current tile blocking the path
-        if (maze.isWallBlocking(currentX, currentY, direction)) {
-            Gdx.app.log("PlayerMovement", "Movement blocked by a wall.");
-            return;
-        }
-
         int nextX = currentX + (int)direction.getVector().x;
         int nextY = currentY + (int)direction.getVector().y;
 
+        // Check if the tile in front of the player contains a door
         Object nextObject = maze.getGameObjectAt(nextX, nextY);
 
         if (nextObject instanceof Door) {
             Door door = (Door) nextObject;
             if (door.getState() == Door.DoorState.OPEN) {
-                // If the door is open, move the player to the tile *beyond* the door
+                // The door is open, so we move two tiles forward, passing through the door.
                 int finalX = nextX + (int)direction.getVector().x;
                 int finalY = nextY + (int)direction.getVector().y;
 
-                // Before the final move, check for a wall after the door.
+                // Before moving, check if the path beyond the door is clear.
                 if (!maze.isWallBlocking(nextX, nextY, direction)) {
                     position.set(finalX + 0.5f, finalY + 0.5f);
+                    door.close(); // Close the door after passing through.
                     Gdx.app.log("PlayerMovement", "Passed through open door to (" + finalX + "," + finalY + ")");
                 } else {
                     Gdx.app.log("PlayerMovement", "Movement blocked by a wall after the door.");
                 }
-
-            } else {
-                // If the door is not open, the player cannot move.
-                Gdx.app.log("PlayerMovement", "Door is not open. Movement blocked.");
+                return; // Movement action is complete.
             }
-        } else {
-            // If there's no door, it's a regular move.
+        }
+
+        // Standard movement logic for non-door tiles.
+        if (!maze.isWallBlocking(currentX, currentY, direction)) {
             position.set(nextX + 0.5f, nextY + 0.5f);
             Gdx.app.log("PlayerMovement", "Moved to (" + nextX + "," + nextY + ")");
+        } else {
+            Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
         }
     }
 
