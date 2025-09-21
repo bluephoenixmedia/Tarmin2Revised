@@ -2,9 +2,9 @@ package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Item implements Renderable {
 
@@ -18,17 +18,22 @@ public class Item implements Renderable {
         LARGE_FIREBALL,
         SMALL_LIGHTNING_BOLT,
         LARGE_LIGHTNING_BOLT,
-        QUIVER, // Add this line
-
 
         // Armor
         SHIELD,
         HELMET,
 
+        // Rings
+        RING_BLUE,
+        RING_PINK,
+        RING_GREEN,
+        RING_PURPLE,
+
         // Useful
         POTION_STRENGTH,
         POTION_HEALING,
         KEY,
+        QUIVER,
 
         // Containers
         MONEY_BELT,
@@ -48,7 +53,7 @@ public class Item implements Renderable {
     }
 
     public enum ItemCategory {
-        WAR_WEAPON,
+        WAR_WEOPON,
         SPIRITUAL_WEAPON,
         ARMOR,
         RING,
@@ -85,6 +90,14 @@ public class Item implements Renderable {
         }
     }
 
+    public static class RingStats {
+        public int defense;
+
+        public RingStats(int defense) {
+            this.defense = defense;
+        }
+    }
+
 
     private final ItemType type;
     private final ItemCategory category;
@@ -94,6 +107,7 @@ public class Item implements Renderable {
     private WeaponStats weaponStats;
     private SpiritualWeaponStats spiritualWeaponStats;
     private ArmorStats armorStats;
+    private RingStats ringStats;
     private final List<Item> contents = new ArrayList<>();
     private boolean isLocked = false;
     private int value = 0;
@@ -105,16 +119,10 @@ public class Item implements Renderable {
         switch (type) {
             // --- WEAPONS ---
             case BOW:
-                this.category = ItemCategory.WAR_WEAPON;
+                this.category = ItemCategory.WAR_WEOPON;
                 this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
                 this.weaponStats = new WeaponStats(8, 10, true);
                 break;
-
-            case QUIVER:
-                this.category = ItemCategory.USEFUL;
-                this.color = new Color(0.6f, 0.3f, 0.1f, 1); // A leathery brown color
-                break;
-
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.TAN;
@@ -150,6 +158,28 @@ public class Item implements Renderable {
                 this.armorStats = new ArmorStats(3);
                 break;
 
+            // --- RINGS ---
+            case RING_BLUE:
+                this.category = ItemCategory.RING;
+                this.color = Color.BLUE;
+                this.ringStats = new RingStats(5);
+                break;
+            case RING_PINK:
+                this.category = ItemCategory.RING;
+                this.color = Color.PINK;
+                this.ringStats = new RingStats(10);
+                break;
+            case RING_GREEN:
+                this.category = ItemCategory.RING;
+                this.color = Color.GREEN;
+                this.ringStats = new RingStats(15);
+                break;
+            case RING_PURPLE:
+                this.category = ItemCategory.RING;
+                this.color = Color.PURPLE;
+                this.ringStats = new RingStats(20);
+                break;
+
             // --- USEFUL ---
             case POTION_STRENGTH:
                 this.category = ItemCategory.USEFUL;
@@ -164,6 +194,10 @@ public class Item implements Renderable {
             case KEY:
                 this.category = ItemCategory.USEFUL;
                 this.color = Color.GOLD;
+                break;
+            case QUIVER:
+                this.category = ItemCategory.USEFUL;
+                this.color = new Color(0.6f, 0.3f, 0.1f, 1);
                 break;
 
             // --- CONTAINERS ---
@@ -242,7 +276,6 @@ public class Item implements Renderable {
         isLocked = false;
     }
 
-
     public Color getLiquidColor() {
         return liquidColor;
     }
@@ -254,4 +287,5 @@ public class Item implements Renderable {
     public WeaponStats getWeaponStats() { return weaponStats; }
     public SpiritualWeaponStats getSpiritualWeaponStats() { return spiritualWeaponStats; }
     public ArmorStats getArmorStats() { return armorStats; }
+    public RingStats getRingStats() { return ringStats; }
 }

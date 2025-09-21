@@ -18,7 +18,7 @@ public class Player {
 
     private int treasureScore = 0;
 
-    private final int maxWarStrength;
+    private int maxWarStrength;
     private final int maxSpiritualStrength;
 
     private final Vector2 position;
@@ -31,6 +31,9 @@ public class Player {
     // Equipment slots
     private Item wornHelmet = null;
     private Item wornShield = null;
+    private Item wornRing; // ADD THIS LINE
+
+
 
 
     public Player(float startX, float startY) {
@@ -125,14 +128,46 @@ public class Player {
             case ARMOR:
                 equipArmor(itemInHand, eventManager);
                 break;
+            case RING:
+                equipRing(itemInHand, eventManager);
+                break;
             case USEFUL:
-                useConsumable(itemInHand, eventManager);
+                switch (itemInHand.getType()) {
+                    case POTION_HEALING:
+                        setWarStrength(getWarStrength() + 20);
+                        inventory.setRightHand(null);
+                        eventManager.addEvent(new GameEvent("You feel healthier.", 2f));
+                        break;
+                    case POTION_STRENGTH:
+                        setMaxWarStrength(getMaxWarStrength() + 10);
+                        setWarStrength(getMaxWarStrength());
+                        inventory.setRightHand(null);
+                        eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
+                        break;
+                    default:
+                        eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
+                        break;
+                }
                 break;
             default:
                 eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
-                Gdx.app.log("Player", "Cannot use " + itemInHand.getType());
                 break;
         }
+    }
+
+    private int getMaxWarStrength() {
+        return maxWarStrength;
+    }
+
+    private void equipRing(Item ring, GameEventManager eventManager) {
+        if (ring.getCategory() != Item.ItemCategory.RING) return;
+
+        eventManager.addEvent(new GameEvent("Equipped " + ring.getType(), 2f));
+
+        // Swap the ring in hand with the worn ring
+        Item previouslyWornRing = this.wornRing;
+        this.wornRing = ring;
+        inventory.setRightHand(previouslyWornRing);
     }
 
     private void equipArmor(Item armor, GameEventManager eventManager) {
@@ -231,7 +266,20 @@ public class Player {
         return totalDefense;
     }
 
-    public int getRingDefense() {
+    public Item getWornRing() {
+        return wornRing;
+    }
+
+    public void setWarStrength(int amount) {
+        this.warStrength = Math.min(amount, this.maxWarStrength);
+    }
+    public void setMaxWarStrength(int amount) { this.maxWarStrength = amount; }
+
+
+    private int getRingDefense() {
+        if (wornRing != null && wornRing.getRingStats() != null) {
+            return wornRing.getRingStats().defense;
+        }
         return 0;
     }
 
