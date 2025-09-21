@@ -18,7 +18,7 @@ public class Player {
 
     private int treasureScore = 0;
 
-    private final int maxWarStrength;
+    private int maxWarStrength;
     private final int maxSpiritualStrength;
 
     private final Vector2 position;
@@ -31,6 +31,9 @@ public class Player {
     // Equipment slots
     private Item wornHelmet = null;
     private Item wornShield = null;
+    private Item wornRing; // ADD THIS LINE
+
+
 
 
     public Player(float startX, float startY) {
@@ -125,14 +128,46 @@ public class Player {
             case ARMOR:
                 equipArmor(itemInHand, eventManager);
                 break;
+            case RING:
+                equipRing(itemInHand, eventManager);
+                break;
             case USEFUL:
-                useConsumable(itemInHand, eventManager);
+                switch (itemInHand.getType()) {
+                    case POTION_HEALING:
+                        setWarStrength(getWarStrength() + 20);
+                        inventory.setRightHand(null);
+                        eventManager.addEvent(new GameEvent("You feel healthier.", 2f));
+                        break;
+                    case POTION_STRENGTH:
+                        setMaxWarStrength(getMaxWarStrength() + 10);
+                        setWarStrength(getMaxWarStrength());
+                        inventory.setRightHand(null);
+                        eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
+                        break;
+                    default:
+                        eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
+                        break;
+                }
                 break;
             default:
                 eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
-                Gdx.app.log("Player", "Cannot use " + itemInHand.getType());
                 break;
         }
+    }
+
+    private int getMaxWarStrength() {
+        return maxWarStrength;
+    }
+
+    private void equipRing(Item ring, GameEventManager eventManager) {
+        if (ring.getCategory() != Item.ItemCategory.RING) return;
+
+        eventManager.addEvent(new GameEvent("Equipped " + ring.getType(), 2f));
+
+        // Swap the ring in hand with the worn ring
+        Item previouslyWornRing = this.wornRing;
+        this.wornRing = ring;
+        inventory.setRightHand(previouslyWornRing);
     }
 
     private void equipArmor(Item armor, GameEventManager eventManager) {
@@ -231,7 +266,20 @@ public class Player {
         return totalDefense;
     }
 
-    public int getRingDefense() {
+    public Item getWornRing() {
+        return wornRing;
+    }
+
+    public void setWarStrength(int amount) {
+        this.warStrength = Math.min(amount, this.maxWarStrength);
+    }
+    public void setMaxWarStrength(int amount) { this.maxWarStrength = amount; }
+
+
+    private int getRingDefense() {
+        if (wornRing != null && wornRing.getRingStats() != null) {
+            return wornRing.getRingStats().defense;
+        }
         return 0;
     }
 
@@ -301,6 +349,12 @@ public class Player {
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
         Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ")");
 
+        if (maze.getGates().containsKey(targetTile)) {
+            useGate(maze, eventManager);
+            return;
+        }
+
+
         // Priority 1: Open a door
         Object obj = maze.getGameObjectAt(targetX, targetY);
         if (obj instanceof Door) {
@@ -359,6 +413,49 @@ public class Player {
             }
         }
         return false;
+    }
+
+    private void useGate(Maze maze, GameEventManager eventManager) {
+        Gdx.app.log("Player", "Player used a gate.");
+        eventManager.addEvent(new GameEvent("You touch the strange mural...", 2f));
+
+        // Stat Jumbling Logic
+        int outcome = new Random().nextInt(4); // 4 possible outcomes
+        switch (outcome) {
+            case 1: // Swap stats
+                int temp = warStrength;
+                setWarStrength(getSpiritualStrength());
+                spiritualStrength = temp;
+                Gdx.app.log("Player", "Gate swapped stats!");
+                break;
+            case 2: // Reduce War Strength
+                setWarStrength((int)(getWarStrength() * 0.75f)); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced War Strength!");
+                break;
+            case 3: // Reduce Spiritual Strength
+                spiritualStrength = (int)(spiritualStrength * 0.75f); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced Spiritual Strength!");
+                break;
+            default: // No change
+                Gdx.app.log("Player", "Gate had no effect on stats.");
+                break;
+        }
+
+        // Teleport Logic
+        List<GridPoint2> emptyTiles = new ArrayList<>();
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                if (maze.getWallDataAt(x, y) == 0 && maze.getGameObjectAt(x, y) == null) {
+                    emptyTiles.add(new GridPoint2(x, y));
+                }
+            }
+        }
+
+        if (!emptyTiles.isEmpty()) {
+            GridPoint2 newPos = emptyTiles.get(new Random().nextInt(emptyTiles.size()));
+            position.set(newPos.x + 0.5f, newPos.y + 0.5f);
+            Gdx.app.log("Player", "Teleported to (" + newPos.x + ", " + newPos.y + ")");
+        }
     }
 
     private void consumeKey() {
