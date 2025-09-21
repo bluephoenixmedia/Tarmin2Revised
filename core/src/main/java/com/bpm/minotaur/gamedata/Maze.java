@@ -102,16 +102,38 @@ public class Maze {
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
+        int doorMask = wallMask << 1; // Door masks are bit-shifted versions of wall masks
         int currentCellData = getWallDataAt(x, y);
 
+        // Check for a solid wall on the edge of the current tile
         if ((currentCellData & wallMask) != 0) {
-            Object obj = getGameObjectAt(x, y);
-            if (obj instanceof Door) {
-                return ((Door) obj).getState() != Door.DoorState.OPEN;
-            }
             return true;
         }
 
+        // Check for a door on the edge of the current tile
+        if ((currentCellData & doorMask) != 0) {
+            // A door exists. We need to find the actual Door object to check its state.
+            // The door object is located on the tile it was placed on.
+            int nextX = x + (int)direction.getVector().x;
+            int nextY = y + (int)direction.getVector().y;
+
+            Object obj = getGameObjectAt(x, y); // Check current tile for a door object
+            if (obj instanceof Door) {
+                // A door is blocking if it is not open.
+                return ((Door) obj).getState() != Door.DoorState.OPEN;
+            }
+
+            obj = getGameObjectAt(nextX, nextY); // Check next tile for a door object
+            if (obj instanceof Door) {
+                // A door is blocking if it is not open.
+                return ((Door) obj).getState() != Door.DoorState.OPEN;
+            }
+
+            // If a door bitmask was found but no Door object, treat it as a wall for safety.
+            return true;
+        }
+
+        // No wall or closed door was found, so movement is not blocked.
         return false;
     }
 
