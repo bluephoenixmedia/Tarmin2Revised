@@ -68,7 +68,12 @@ public class EntityRenderer {
             if (entity instanceof Monster) {
                 drawMonsterSprite(shapeRenderer, entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
-                drawItemSprite(shapeRenderer, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
+                Item item = (Item) entity;
+                if (item.getCategory() == Item.ItemCategory.CONTAINER) {
+                    drawContainerSprite(shapeRenderer, item, screenX, transformY, camera, viewport, depthBuffer);
+                } else {
+                    drawItemSprite(shapeRenderer, item, screenX, transformY, camera, viewport, depthBuffer);
+                }
             }  else if (entity instanceof Ladder) {
                 drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Projectile) {
@@ -124,10 +129,33 @@ public class EntityRenderer {
             if (transformY < depthBuffer[stripe]) {
                 shapeRenderer.setColor(item.getColor());
                 shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
-                shapeRenderer.setColor(item.getLiquidColor());
-                shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
-                shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
-                shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
+
+                // Only draw liquid and cork for potions
+                if (item.getType() == Item.ItemType.POTION_HEALING || item.getType() == Item.ItemType.POTION_STRENGTH) {
+                    if (item.getLiquidColor() != null) {
+                        shapeRenderer.setColor(item.getLiquidColor());
+                        shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
+                    }
+                    shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
+                    shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
+                }
+            }
+        }
+    }
+
+    private void drawContainerSprite(ShapeRenderer shapeRenderer, Item container, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+        float floorOffset = 0.4f; // On the floor
+        int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
+        int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
+        int spriteWidth = spriteHeight; // Make it square like a box/chest
+        float drawY = spriteScreenY - spriteHeight; // Sit it on the floor
+        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (transformY < depthBuffer[stripe]) {
+                shapeRenderer.setColor(container.getColor());
+                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
             }
         }
     }

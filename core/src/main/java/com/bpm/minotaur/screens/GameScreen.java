@@ -51,7 +51,19 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     String[] tile6 = new String[]{ "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#", ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#", "#####..#####" };
     String[] tile7 = new String[]{ "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#", ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#", "#####.######" };
     String[] tile8 = new String[]{ "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###", "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#", "###....#####" };
-    String[] tile9 = new String[]{ ".####.#....", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#", "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.", ".....#.####." };
+    String[] tile9 = new String[]{
+        ".####.#.....",
+        ".#..D.#..###",
+        ".####.#..#.#",
+        "......#..#.#",
+        "##D####..#D#",
+        "....D.D.....",
+        "....####D###",
+        "#D#..#......",
+        "#.#..#......",
+        "#.#..#.####.",
+        "###..#.D..#.",
+        ".....#.####." };
     String[] tile10 = new String[]{ "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#", "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.", "######.####." };
     String[] tile11 = new String[]{ "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##", "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#", "#####.######" };
     String[] tile12 = new String[]{ "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###", "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######", "............" };
@@ -61,7 +73,21 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     String[] tile16 = new String[]{ "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#", "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#", "......#..#.#" };
 
     // --- Corridor Tile Templates ---
-    String[] corridorUL = new String[]{ "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
+    // --- Corridor Tile Templates ---
+    String[] corridorUL = new String[]{
+        "############",
+        "#...........",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx",
+        "#.xxxxxxxxxx"
+    };
     String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
     String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
     String[] corridorL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
@@ -136,6 +162,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private void spawnEntities() {
         int itemsToSpawn = 10;
         int monstersToSpawn = 5;
+        int containersToSpawn = 3;
 
         for (int i = 0; i < itemsToSpawn; i++) {
             int x, y;
@@ -157,6 +184,34 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
             Monster.MonsterType type = Monster.MonsterType.values()[random.nextInt(Monster.MonsterType.values().length)];
             maze.addMonster(new Monster(type, x, y));
+        }
+
+        for (int i = 0; i < containersToSpawn; i++) {
+            int x, y;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+            } while (finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' || maze.getItems().containsKey(new GridPoint2(x, y)));
+
+            // Spawn a random container type
+            Item.ItemType containerType;
+            int containerRoll = random.nextInt(6);
+            switch (containerRoll) {
+                case 0: containerType = Item.ItemType.MONEY_BELT; break;
+                case 1: containerType = Item.ItemType.SMALL_BAG; break;
+                case 2: containerType = Item.ItemType.BOX; break;
+                case 3: containerType = Item.ItemType.PACK; break;
+                case 4: containerType = Item.ItemType.LARGE_BAG; break;
+                default: containerType = Item.ItemType.CHEST; break;
+            }
+
+            Item container = new Item(containerType, x, y);
+
+            // Add a random item to the container
+            Item.ItemType contentType = Item.ItemType.values()[random.nextInt(Item.ItemType.values().length)];
+            container.addItem(new Item(contentType, 0, 0)); // Position doesn't matter for contained items
+
+            maze.addItem(container);
         }
     }
 
@@ -399,7 +454,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     debugManager.toggleOverlay();
                     break;
                 case Input.Keys.O:
-                    player.interact(maze);
+                    player.interact(maze, eventManager); // Corrected this line
                     break;
                 case Input.Keys.R:
                     player.rest();

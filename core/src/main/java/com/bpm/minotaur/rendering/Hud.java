@@ -43,6 +43,7 @@ public class Hud implements Disposable {
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
     private final Label messageLabel;
+    private final Label treasureValueLabel;
 
     private final Actor[] backpackSlots = new Actor[6];
     private Actor leftHandSlot;
@@ -110,11 +111,19 @@ public class Hud implements Disposable {
         arrowsTable.add(new Label("ARROWS", labelStyle)).padRight(10);
         arrowsTable.add(new Label("[>]", labelStyle)).padRight(10);
         arrowsTable.add(arrowsValueLabel);
+        treasureValueLabel = new Label("", labelStyle);
+        Table treasureTable = new Table();
+        treasureTable.add(new Label("TREASURE", labelStyle)).padRight(10);
+        treasureTable.add(treasureValueLabel);
+
+
         rightTable.add(warTable).left().padBottom(20);
         rightTable.add(spiritualTable).right().expandX().padBottom(20);
         rightTable.row();
         rightTable.add(foodTable).left().padRight(100f);
         rightTable.add(arrowsTable).right().expandX();
+        rightTable.row();
+        rightTable.add(treasureTable).colspan(2).center().padTop(10);
 
         monsterStrengthLabel = new Label("", labelStyle);
         combatStatusLabel = new Label("", labelStyle);
@@ -167,6 +176,7 @@ public class Hud implements Disposable {
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(player.getFacing().name().substring(0,1));
         dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel());
+        treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
 
         if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();

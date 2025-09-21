@@ -80,20 +80,32 @@ public class CombatManager {
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
             Item weapon = player.getInventory().getRightHand();
             int damage;
-            if (weapon != null && weapon.getWeaponStats() != null) {
-                damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
-            } else {
-                damage = player.getWarStrength() / 10 + random.nextInt(2);
-                Gdx.app.log("CombatManager", "Player is unarmed!");
-            }
 
-            Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
-            monster.takeDamage(damage);
+            if (weapon != null && weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
+                damage = weapon.getSpiritualWeaponStats().damage + player.getSpiritualStrength() / 10 + random.nextInt(5);
+                Gdx.app.log("CombatManager", "Player deals " + damage + " spiritual damage.");
+                monster.takeSpiritualDamage(damage);
 
-            if (monster.getWarStrength() <= 0) {
-                currentState = CombatState.VICTORY;
+                if (monster.getSpiritualStrength() <= 0) {
+                    currentState = CombatState.VICTORY;
+                } else {
+                    currentState = CombatState.MONSTER_TURN;
+                }
             } else {
-                currentState = CombatState.MONSTER_TURN;
+                if (weapon != null && weapon.getWeaponStats() != null) {
+                    damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
+                } else {
+                    damage = player.getWarStrength() / 10 + random.nextInt(2);
+                    Gdx.app.log("CombatManager", "Player is unarmed!");
+                }
+                Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
+                monster.takeDamage(damage);
+
+                if (monster.getWarStrength() <= 0) {
+                    currentState = CombatState.VICTORY;
+                } else {
+                    currentState = CombatState.MONSTER_TURN;
+                }
             }
         }
     }
@@ -102,14 +114,77 @@ public class CombatManager {
         if (currentState == CombatState.MONSTER_TURN) {
             Gdx.app.log("CombatManager", "Monster attacks player");
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, monster.getPosition(), player.getPosition(), monster.getColor(), 0.5f));
-            int damage = monster.getWarStrength() / 4 + random.nextInt(3);
-            Gdx.app.log("CombatManager", "Monster deals " + damage + " damage.");
-            player.takeDamage(damage);
+            int damage;
 
-            if (player.getWarStrength() <= 0) {
-                currentState = CombatState.DEFEAT;
-            } else {
-                currentState = CombatState.PLAYER_TURN;
+            // Determine attack type based on monster category
+            switch (monster.getType()) {
+                // Bad Monsters use Spiritual attacks
+                case GIANT_ANT:
+                case DWARF:
+                case GIANT_SCORPION:
+                case GIANT_SNAKE:
+                    damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
+                    Gdx.app.log("CombatManager", "Monster deals " + damage + " spiritual damage.");
+                    player.takeSpiritualDamage(damage);
+                    if (player.getSpiritualStrength() <= 0) {
+                        currentState = CombatState.DEFEAT;
+                    } else {
+                        currentState = CombatState.PLAYER_TURN;
+                    }
+                    break;
+
+                // Nasty Monsters use War attacks
+                case GHOUL:
+                case SKELETON:
+                case CLOAKED_SKELETON:
+                    damage = monster.getWarStrength() / 4 + random.nextInt(3);
+                    Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
+                    player.takeDamage(damage);
+                    if (player.getWarStrength() <= 0) {
+                        currentState = CombatState.DEFEAT;
+                    } else {
+                        currentState = CombatState.PLAYER_TURN;
+                    }
+                    break;
+
+                // Horrible Monsters can use either War or Spiritual attacks
+                case ALLIGATOR:
+                case DRAGON:
+                case WRAITH:
+                case GIANT:
+                case MINOTAUR:
+                    if (random.nextBoolean()) { // 50/50 chance for either attack
+                        damage = monster.getWarStrength() / 4 + random.nextInt(3);
+                        Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
+                        player.takeDamage(damage);
+                        if (player.getWarStrength() <= 0) {
+                            currentState = CombatState.DEFEAT;
+                        } else {
+                            currentState = CombatState.PLAYER_TURN;
+                        }
+                    } else {
+                        damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
+                        Gdx.app.log("CombatManager", "Monster deals " + damage + " spiritual damage.");
+                        player.takeSpiritualDamage(damage);
+                        if (player.getSpiritualStrength() <= 0) {
+                            currentState = CombatState.DEFEAT;
+                        } else {
+                            currentState = CombatState.PLAYER_TURN;
+                        }
+                    }
+                    break;
+
+                // Default to war attacks for any other monster type
+                default:
+                    damage = monster.getWarStrength() / 4 + random.nextInt(3);
+                    Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
+                    player.takeDamage(damage);
+                    if (player.getWarStrength() <= 0) {
+                        currentState = CombatState.DEFEAT;
+                    } else {
+                        currentState = CombatState.PLAYER_TURN;
+                    }
+                    break;
             }
         }
     }
