@@ -66,7 +66,8 @@ public class EntityRenderer {
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
             if (entity instanceof Monster) {
-                drawMonsterSprite(shapeRenderer, entity, screenX, transformY, camera, viewport, depthBuffer);
+                // FIX: Cast the entity to a Monster before passing it to the method.
+                drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
                 Item item = (Item) entity;
                 if (item.getCategory() == Item.ItemCategory.CONTAINER) {
@@ -99,52 +100,23 @@ public class EntityRenderer {
         }
     }
 
-    private void drawMonsterSprite(ShapeRenderer shapeRenderer, Renderable renderable, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        Monster monster = (Monster) renderable;
+    private void drawMonsterSprite(ShapeRenderer shapeRenderer, Monster monster, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
         float floorOffset = 0.0f;
         int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
         int spriteHeight = (int) (Math.abs((int) (camera.viewportHeight / transformY)) * 0.8f);
         int spriteWidth = spriteHeight;
         float drawY = spriteScreenY - spriteHeight / 2.0f;
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
-        String[] spriteData = monster.getSpriteData();
-
-        // Fallback for monsters that don't have ASCII data yet
-        if (spriteData == null || spriteData.length == 0) {
+        if (monster.getSpriteData() != null) {
+            drawAsciiSprite(shapeRenderer, monster, monster.getSpriteData(), screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
+        } else {
+            // Fallback for monsters without sprite data
+            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY < depthBuffer[stripe]) {
                     shapeRenderer.setColor(monster.getColor());
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
-                }
-            }
-            return;
-        }
-
-        int spritePixelHeight = spriteData.length;
-        int spritePixelWidth = spriteData[0].length();
-        float pixelHeight = (float)spriteHeight / spritePixelHeight;
-        float pixelWidth = (float)spriteWidth / spritePixelWidth;
-
-        // Loop through each vertical stripe of the sprite that is visible on screen
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            // Check if this stripe is in front of a wall
-            if (transformY < depthBuffer[stripe]) {
-                // Map the screen stripe coordinate to a pixel column in our ASCII sprite
-                int spriteColumn = (int)((stripe - (screenX - spriteWidth / 2.0f)) / pixelWidth);
-
-                if (spriteColumn >= 0 && spriteColumn < spritePixelWidth) {
-                    // Draw the vertical pixels for this column
-                    for (int y = 0; y < spritePixelHeight; y++) {
-                        // If the character is not a space, draw a pixel
-                        if (spriteData[y].charAt(spriteColumn) != ' ') {
-                            shapeRenderer.setColor(monster.getColor());
-                            // We calculate the Y position, inverting it because array index 0 is the top row
-                            float pixelY = drawY + (spritePixelHeight - 1 - y) * pixelHeight;
-                            shapeRenderer.rect(stripe, pixelY, 1, pixelHeight);
-                        }
-                    }
                 }
             }
         }
@@ -156,22 +128,27 @@ public class EntityRenderer {
         int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
         int spriteWidth = spriteHeight / 2;
         float drawY = spriteScreenY - spriteHeight;
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            if (transformY < depthBuffer[stripe]) {
-                shapeRenderer.setColor(item.getColor());
-                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+        if (item.getSpriteData() != null) {
+            drawAsciiSprite(shapeRenderer, item, item.getSpriteData(), screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
+        } else {
+            // This is the original code for drawing potions, which we keep as a fallback
+            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
-                // Only draw liquid and cork for potions
-                if (item.getType() == Item.ItemType.POTION_HEALING || item.getType() == Item.ItemType.POTION_STRENGTH) {
-                    if (item.getLiquidColor() != null) {
-                        shapeRenderer.setColor(item.getLiquidColor());
-                        shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                if (transformY < depthBuffer[stripe]) {
+                    shapeRenderer.setColor(item.getColor());
+                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+
+                    if (item.getType() == Item.ItemType.POTION_HEALING || item.getType() == Item.ItemType.POTION_STRENGTH) {
+                        if (item.getLiquidColor() != null) {
+                            shapeRenderer.setColor(item.getLiquidColor());
+                            shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
+                        }
+                        shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
+                        shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
                     }
-                    shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
-                    shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
                 }
             }
         }
@@ -213,6 +190,31 @@ public class EntityRenderer {
                 }
                 for (int i = 1; i < 5; i++) {
                     shapeRenderer.rect(stripe, drawY + (spriteHeight * (i/5.0f)), 1, 3);
+                }
+            }
+        }
+    }
+    private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) {
+        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        int spritePixelHeight = spriteData.length;
+        int spritePixelWidth = spriteData[0].length();
+        float pixelHeight = (float)spriteHeight / spritePixelHeight;
+        float pixelWidth = (float)spriteWidth / spritePixelWidth;
+
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            if (transformY < depthBuffer[stripe]) {
+                int spriteColumn = (int)((stripe - (screenX - spriteWidth / 2.0f)) / pixelWidth);
+
+                if (spriteColumn >= 0 && spriteColumn < spritePixelWidth) {
+                    for (int y = 0; y < spritePixelHeight; y++) {
+                        if (spriteData[y].charAt(spriteColumn) != ' ') {
+                            shapeRenderer.setColor(entity.getColor());
+                            float pixelY = drawY + (spritePixelHeight - 1 - y) * pixelHeight;
+                            shapeRenderer.rect(stripe, pixelY, 1, pixelHeight);
+                        }
+                    }
                 }
             }
         }

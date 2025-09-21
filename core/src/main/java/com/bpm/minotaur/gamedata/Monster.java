@@ -55,21 +55,21 @@ public class Monster implements Renderable {
                 this.warStrength = 10;
                 this.spiritualStrength = 10;
                 this.armor = 4;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.DWARF; // Add this line
                 break;
             case GIANT_SCORPION:
                 this.color = Color.BLUE;
                 this.warStrength = 8;
                 this.spiritualStrength = 20;
                 this.armor = 3;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.GIANT_SCORPION; // Add this line
                 break;
             case GIANT_SNAKE:
                 this.color = Color.ORANGE;
                 this.warStrength = 12;
                 this.spiritualStrength = 15;
                 this.armor = 2;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.GIANT_SNAKE; // Add this line
                 break;
 
             // --- NASTY MONSTERS (War Attacks) ---
@@ -78,21 +78,21 @@ public class Monster implements Renderable {
                 this.warStrength = 20;
                 this.spiritualStrength = 5;
                 this.armor = 3;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.GHOUL; // Add this line
                 break;
             case SKELETON:
                 this.color = Color.WHITE;
                 this.warStrength = 15;
                 this.spiritualStrength = 0;
                 this.armor = 3;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.SKELETON; // Add this line
                 break;
             case CLOAKED_SKELETON:
                 this.color = Color.GRAY;
                 this.warStrength = 18;
                 this.spiritualStrength = 5;
                 this.armor = 4;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.CLOAKED_SKELETON; // Add this line
                 break;
 
             // --- HORRIBLE MONSTERS (War & Spiritual Attacks) ---
@@ -101,51 +101,35 @@ public class Monster implements Renderable {
                 this.warStrength = 30;
                 this.spiritualStrength = 15;
                 this.armor = 6;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.ALLIGATOR; // Add this line
                 break;
             case DRAGON:
                 this.color = Color.ORANGE;
                 this.warStrength = 40;
                 this.spiritualStrength = 30;
                 this.armor = 8;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.DRAGON; // Add this line
                 break;
             case WRAITH:
                 this.color = Color.WHITE;
                 this.warStrength = 25;
                 this.spiritualStrength = 35;
                 this.armor = 5;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.WRAITH; // Add this line
                 break;
             case GIANT:
                 this.color = Color.YELLOW;
                 this.warStrength = 35;
                 this.spiritualStrength = 10;
                 this.armor = 7;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.GIANT; // Add this line
                 break;
             case MINOTAUR:
                 this.color = Color.PURPLE;
                 this.warStrength = 50;
                 this.spiritualStrength = 25;
                 this.armor = 10;
-                this.spriteData = null; // Add this line
-                break;
-
-            // --- EXISTING MONSTERS ---
-            case SPIDER:
-                this.color = Color.BLACK;
-                this.warStrength = 10;
-                this.spiritualStrength = 5;
-                this.armor = 1;
-                this.spriteData = null; // Add this line
-                break;
-            case ORC:
-                this.color = Color.GREEN;
-                this.warStrength = 25;
-                this.spiritualStrength = 5;
-                this.armor = 5;
-                this.spriteData = null; // Add this line
+                this.spriteData = MonsterSpriteData.MINOTAUR; // Add this line
                 break;
 
             default:
