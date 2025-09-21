@@ -5,12 +5,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.bpm.minotaur.gamedata.Door;
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.Ladder;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Monster;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.*;
 
 public class DebugRenderer {
 
@@ -80,8 +75,7 @@ public class DebugRenderer {
             shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
         }
 
-        // --- START: New code for rendering ladders ---
-        shapeRenderer.end(); // End line mode to draw filled rects
+        shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (Ladder ladder : maze.getLadders().values()) {
@@ -90,9 +84,15 @@ public class DebugRenderer {
             float ladderY = mazeStartY + (ladder.getPosition().y * cellSize) - (cellSize * 0.2f);
             shapeRenderer.rect(ladderX, ladderY, cellSize * 0.4f, cellSize * 0.4f);
         }
-        shapeRenderer.end();
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Re-begin line mode for anything that might come after
-        // --- END: New code for rendering ladders ---
+
+        // --- START: New code for rendering gates ---
+        for (Gate gate : maze.getGates().values()) {
+            shapeRenderer.setColor(Color.CYAN);
+            float gateX = mazeStartX + (gate.getPosition().x * cellSize) - (cellSize * 0.25f);
+            float gateY = mazeStartY + (gate.getPosition().y * cellSize) - (cellSize * 0.25f);
+            shapeRenderer.rect(gateX, gateY, cellSize * 0.5f, cellSize * 0.5f);
+        }
+        // --- END: New code for rendering gates ---
 
         shapeRenderer.end();
     }
@@ -122,15 +122,19 @@ public class DebugRenderer {
                 boolean hasWestWall = (wallData[y][x] & (WALL_WEST | DOOR_WEST)) != 0;
                 midWall.append(hasWestWall ? "| " : "  ");
 
+                GridPoint2 currentTile = new GridPoint2(x, y);
                 Object obj = maze.getGameObjectAt(x, y);
+
                 if (obj instanceof Door) {
                     midWall.append("D ");
-                } else if (maze.getMonsters().containsKey(new GridPoint2(x, y))) {
+                } else if (maze.getGates().containsKey(currentTile)) { // This is the new check for Gates
+                    midWall.append("G ");
+                } else if (maze.getMonsters().containsKey(currentTile)) {
                     midWall.append("M ");
-                } else if (maze.getItems().containsKey(new GridPoint2(x,y))) {
+                } else if (maze.getItems().containsKey(currentTile)) {
                     midWall.append("I ");
-                } else if (maze.getLadders().containsKey(new GridPoint2(x,y))) {
-                    midWall.append("L "); // Also add ladder representation here
+                } else if (maze.getLadders().containsKey(currentTile)) {
+                    midWall.append("L ");
                 }
                 else {
                     midWall.append("  ");

@@ -119,6 +119,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     private void generateLevel(int levelNumber) {
         createMazeFromArrayTiles();
+
+        if (levelNumber > 1) { // Only spawn gates on level 2 and higher
+            spawnGate();
+        }
         spawnEntities();
         spawnLadder();
         if (player == null) {
@@ -216,6 +220,38 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
             maze.addItem(container);
         }
+    }
+
+    private void spawnGate() {
+        if (finalLayout == null || finalLayout.length <= 2) return;
+
+        List<GridPoint2> validGateLocations = new ArrayList<>();
+        int height = finalLayout.length;
+        int width = finalLayout[0].length();
+
+        // Check top and bottom walls
+        for (int x = 1; x < width - 1; x++) {
+            if (finalLayout[0].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, height - 1));
+            if (finalLayout[height - 1].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, 0));
+        }
+        // Check left and right walls
+        for (int y = 1; y < height - 1; y++) {
+            if (finalLayout[y].charAt(0) == '#') validGateLocations.add(new GridPoint2(0, height - 1 - y));
+            if (finalLayout[y].charAt(width - 1) == '#') validGateLocations.add(new GridPoint2(width - 1, height - 1 - y));
+        }
+
+        if (validGateLocations.isEmpty()) return;
+
+        // Pick a random valid location
+        GridPoint2 gatePos = validGateLocations.get(random.nextInt(validGateLocations.size()));
+
+        // Modify the layout to place the gate
+        int layoutY = height - 1 - gatePos.y;
+        char[] row = finalLayout[layoutY].toCharArray();
+        row[gatePos.x] = 'G';
+        finalLayout[layoutY] = new String(row);
+
+        Gdx.app.log("GameScreen", "Gate spawned at (" + gatePos.x + ", " + gatePos.y + ")");
     }
 
     private void spawnLadder() {
@@ -365,6 +401,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
                 if (c == 'D') { maze.addGameObject(new Door(), x, y); }
+                else if (c == 'G') { maze.addGate(new Gate(x, y)); } // This line now works with the procedural gate
                 else if (c == 'S') { maze.addItem(new Item(Item.ItemType.POTION_STRENGTH, x, y)); }
                 else if (c == 'H') { maze.addItem(new Item(Item.ItemType.POTION_HEALING, x, y)); }
             }

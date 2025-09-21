@@ -4,10 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.bpm.minotaur.gamedata.Direction;
-import com.bpm.minotaur.gamedata.Door;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.*;
 
 /**
  * Renders the 3D first-person view of the maze using a raycasting algorithm.
@@ -38,6 +35,9 @@ public class FirstPersonRenderer {
     private static final int DOOR_EAST   = 0b00001000;
     private static final int DOOR_SOUTH  = 0b00100000;
     private static final int DOOR_NORTH  = 0b10000000;
+
+    private enum WallType { WALL, DOOR, GATE }
+
 
     private float[] depthBuffer;
 
@@ -284,18 +284,20 @@ public class FirstPersonRenderer {
         wallX -= Math.floor(wallX);  // Get fractional part
 
         // Determine what type of surface we hit and get door reference if applicable
-        WallType wallType = WallType.WALL;  // Default to regular wall
+        WallType wallType = WallType.WALL;
         Door hitDoor = null;
+        Object hitObject = null;
         if (!isOutOfBounds(mapX, mapY, maze)) {
-            // Check both current and previous tiles for door objects
             int prevMapX = (side == 0) ? mapX - stepX : mapX;
             int prevMapY = (side == 1) ? mapY - stepY : mapY;
-            Object obj = maze.getGameObjectAt(mapX, mapY);
-            if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
-            if (obj instanceof Door) {
-                // We hit a door surface
+            hitObject = maze.getGameObjectAt(mapX, mapY);
+            if (hitObject == null) hitObject = maze.getGameObjectAt(prevMapX, prevMapY);
+
+            if (hitObject instanceof Door) {
                 wallType = WallType.DOOR;
-                hitDoor = (Door) obj;
+                hitDoor = (Door) hitObject;
+            } else if (hitObject instanceof Gate) { // ADD THIS ELSE IF BLOCK
+                wallType = WallType.GATE;
             }
         }
 
@@ -363,8 +365,13 @@ public class FirstPersonRenderer {
                     shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
             }
-        } else {
-            Color renderColor = (result.side == 1) ? wallDarkColor : wallColor;
+        }  else { // This handles solid walls, open door frames, and gates
+            Color renderColor;
+            if (result.wallType == WallType.GATE) {
+                renderColor = Color.CYAN; // Gate color
+            } else {
+                renderColor = (result.side == 1) ? wallDarkColor : wallColor; // Wall color
+            }
             shapeRenderer.setColor(renderColor);
             shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
         }
@@ -485,8 +492,6 @@ public class FirstPersonRenderer {
         }
         System.out.println(sb.toString());
     }
-
-    private enum WallType { WALL, DOOR }
 
     private static class RaycastResult {
         final float distance;

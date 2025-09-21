@@ -349,6 +349,12 @@ public class Player {
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
         Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ")");
 
+        if (maze.getGates().containsKey(targetTile)) {
+            useGate(maze, eventManager);
+            return;
+        }
+
+
         // Priority 1: Open a door
         Object obj = maze.getGameObjectAt(targetX, targetY);
         if (obj instanceof Door) {
@@ -407,6 +413,49 @@ public class Player {
             }
         }
         return false;
+    }
+
+    private void useGate(Maze maze, GameEventManager eventManager) {
+        Gdx.app.log("Player", "Player used a gate.");
+        eventManager.addEvent(new GameEvent("You touch the strange mural...", 2f));
+
+        // Stat Jumbling Logic
+        int outcome = new Random().nextInt(4); // 4 possible outcomes
+        switch (outcome) {
+            case 1: // Swap stats
+                int temp = warStrength;
+                setWarStrength(getSpiritualStrength());
+                spiritualStrength = temp;
+                Gdx.app.log("Player", "Gate swapped stats!");
+                break;
+            case 2: // Reduce War Strength
+                setWarStrength((int)(getWarStrength() * 0.75f)); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced War Strength!");
+                break;
+            case 3: // Reduce Spiritual Strength
+                spiritualStrength = (int)(spiritualStrength * 0.75f); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced Spiritual Strength!");
+                break;
+            default: // No change
+                Gdx.app.log("Player", "Gate had no effect on stats.");
+                break;
+        }
+
+        // Teleport Logic
+        List<GridPoint2> emptyTiles = new ArrayList<>();
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                if (maze.getWallDataAt(x, y) == 0 && maze.getGameObjectAt(x, y) == null) {
+                    emptyTiles.add(new GridPoint2(x, y));
+                }
+            }
+        }
+
+        if (!emptyTiles.isEmpty()) {
+            GridPoint2 newPos = emptyTiles.get(new Random().nextInt(emptyTiles.size()));
+            position.set(newPos.x + 0.5f, newPos.y + 0.5f);
+            Gdx.app.log("Player", "Teleported to (" + newPos.x + ", " + newPos.y + ")");
+        }
     }
 
     private void consumeKey() {

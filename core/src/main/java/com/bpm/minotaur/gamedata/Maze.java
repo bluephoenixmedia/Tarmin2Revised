@@ -17,6 +17,8 @@ public class Maze {
     private final Map<GridPoint2, Monster> monsters = new HashMap<>();
     private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
     private final List<Projectile> projectiles = new ArrayList<>();
+    private final Map<GridPoint2, Gate> gates = new HashMap<>();
+
 
 
     public Maze(int level, int[][] wallData) {
@@ -24,6 +26,14 @@ public class Maze {
         this.wallData = wallData;
     }
 
+    // Add these methods to the Maze class
+    public void addGate(Gate gate) {
+        gates.put(new GridPoint2((int)gate.getPosition().x, (int)gate.getPosition().y), gate);
+    }
+
+    public Map<GridPoint2, Gate> getGates() {
+        return gates;
+    }
     public int getLevel() {
         return level;
     }
