@@ -68,4 +68,8 @@ public class Inventory {
     public Item[] getBackpack() {
         return backpack;
     }
+
+    public void setLeftHand(Item item) {
+        this.leftHand = item;
+    }
 }

@@ -7,9 +7,25 @@ import com.badlogic.gdx.math.Vector2;
 public class Monster implements Renderable {
 
     public enum MonsterType {
+        // Bad Monsters
+        GIANT_ANT,
+        DWARF,
+        GIANT_SCORPION,
+        GIANT_SNAKE,
+
+        // Nasty Monsters
+        GHOUL,
         SKELETON,
-        SPIDER,
-        ORC
+        CLOAKED_SKELETON,
+
+        // Horrible Monsters
+        ALLIGATOR,
+        DRAGON,
+        WRAITH,
+        GIANT,
+        MINOTAUR,
+        SPIDER, // Existing monster
+        ORC     // Existing monster
     }
 
     private final MonsterType type;
@@ -24,12 +40,85 @@ public class Monster implements Renderable {
         this.position = new Vector2(x + 0.5f, y + 0.5f); // Center of the tile
 
         switch (type) {
+            // --- BAD MONSTERS (Spiritual Attacks) ---
+            case GIANT_ANT:
+                this.color = Color.PURPLE;
+                this.warStrength = 5;
+                this.spiritualStrength = 15;
+                this.armor = 2;
+                break;
+            case DWARF:
+                this.color = Color.TAN;
+                this.warStrength = 10;
+                this.spiritualStrength = 10;
+                this.armor = 4;
+                break;
+            case GIANT_SCORPION:
+                this.color = Color.BLUE;
+                this.warStrength = 8;
+                this.spiritualStrength = 20;
+                this.armor = 3;
+                break;
+            case GIANT_SNAKE:
+                this.color = Color.ORANGE;
+                this.warStrength = 12;
+                this.spiritualStrength = 15;
+                this.armor = 2;
+                break;
+
+            // --- NASTY MONSTERS (War Attacks) ---
+            case GHOUL:
+                this.color = Color.PINK;
+                this.warStrength = 20;
+                this.spiritualStrength = 5;
+                this.armor = 3;
+                break;
             case SKELETON:
                 this.color = Color.WHITE;
                 this.warStrength = 15;
                 this.spiritualStrength = 0;
                 this.armor = 3;
                 break;
+            case CLOAKED_SKELETON:
+                this.color = Color.GRAY;
+                this.warStrength = 18;
+                this.spiritualStrength = 5;
+                this.armor = 4;
+                break;
+
+            // --- HORRIBLE MONSTERS (War & Spiritual Attacks) ---
+            case ALLIGATOR:
+                this.color = Color.PURPLE;
+                this.warStrength = 30;
+                this.spiritualStrength = 15;
+                this.armor = 6;
+                break;
+            case DRAGON:
+                this.color = Color.ORANGE;
+                this.warStrength = 40;
+                this.spiritualStrength = 30;
+                this.armor = 8;
+                break;
+            case WRAITH:
+                this.color = Color.WHITE;
+                this.warStrength = 25;
+                this.spiritualStrength = 35;
+                this.armor = 5;
+                break;
+            case GIANT:
+                this.color = Color.YELLOW;
+                this.warStrength = 35;
+                this.spiritualStrength = 10;
+                this.armor = 7;
+                break;
+            case MINOTAUR:
+                this.color = Color.PURPLE;
+                this.warStrength = 50;
+                this.spiritualStrength = 25;
+                this.armor = 10;
+                break;
+
+            // --- EXISTING MONSTERS ---
             case SPIDER:
                 this.color = Color.BLACK;
                 this.warStrength = 10;
@@ -42,6 +131,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 5;
                 this.armor = 5;
                 break;
+
             default:
                 this.color = Color.RED;
                 this.warStrength = 10;
@@ -60,6 +150,15 @@ public class Monster implements Renderable {
             this.warStrength = 0;
         }
         Gdx.app.log("Monster", this.getType() + " takes " + finalDamage + " damage. WS is now " + this.warStrength);
+    }
+
+    public void takeSpiritualDamage(int amount) {
+        this.spiritualStrength -= amount;
+
+        if (this.spiritualStrength < 0) {
+            this.spiritualStrength = 0;
+        }
+        Gdx.app.log("Monster", this.getType() + " takes " + amount + " spiritual damage. SS is now " + this.spiritualStrength);
     }
 
     public MonsterType getType() { return type; }
