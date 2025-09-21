@@ -505,6 +505,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     player.interact(maze, eventManager);
                     needsAsciiRender = true;
                     break;
+                case Input.Keys.M:  // Add this case
+                    game.setScreen(new CastleMapScreen(game, player, maze));
+                    break;
                 case Input.Keys.R:
                     player.rest();
                     break;
