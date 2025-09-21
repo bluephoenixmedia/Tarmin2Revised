@@ -26,6 +26,9 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
     private final BitmapFont font = new BitmapFont();
 
+    private boolean needsAsciiRender = false;
+
+
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
@@ -408,6 +411,10 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
+            if (needsAsciiRender) {
+                firstPersonRenderer.renderAsciiViewToConsole(player, maze);
+                needsAsciiRender = false; // Reset the flag
+            }
         }
 
         hud.render();
@@ -439,22 +446,27 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 case Input.Keys.UP:
                     player.moveForward(maze);
                     combatManager.checkForAdjacentMonsters();
+                    needsAsciiRender = true;
                     break;
                 case Input.Keys.DOWN:
                     player.moveBackward(maze);
                     combatManager.checkForAdjacentMonsters();
+                    needsAsciiRender = true;
                     break;
                 case Input.Keys.LEFT:
                     player.turnLeft();
+                    needsAsciiRender = true;
                     break;
                 case Input.Keys.RIGHT:
                     player.turnRight();
+                    needsAsciiRender = true;
                     break;
                 case Input.Keys.F1:
                     debugManager.toggleOverlay();
                     break;
                 case Input.Keys.O:
-                    player.interact(maze, eventManager); // Corrected this line
+                    player.interact(maze, eventManager);
+                    needsAsciiRender = true;
                     break;
                 case Input.Keys.R:
                     player.rest();

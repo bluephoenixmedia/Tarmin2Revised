@@ -11,6 +11,11 @@ public class Door {
         return state;
     }
 
+    public void close() {
+        state = DoorState.CLOSED;
+        animationProgress = 0f;
+    }
+
     public float getAnimationProgress() {
         return animationProgress;
     }

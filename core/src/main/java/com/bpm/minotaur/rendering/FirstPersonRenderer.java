@@ -151,7 +151,7 @@ public class FirstPersonRenderer {
                     if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
 
                     // --- MODIFIED COLLISION CHECK ---
-                    // Hit is only true if the door is NOT the one we started in.
+                    // Hit is only true if the door is NOT the one we started in AND it is not open.
                     if (obj instanceof Door && obj != doorToIgnore && ((Door) obj).getState() != Door.DoorState.OPEN) {
                         hit = true;
                     }
@@ -258,6 +258,122 @@ public class FirstPersonRenderer {
             shapeRenderer.setColor(renderColor);
             shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
         }
+    }
+
+    public void renderAsciiViewToConsole(Player player, Maze maze) {
+        int asciiWidth = 120;
+        int asciiHeight = 30;
+        char[][] screen = new char[asciiHeight][asciiWidth];
+
+        // Initialize screen
+        for (int r = 0; r < asciiHeight; r++) {
+            for (int c = 0; c < asciiWidth; c++) {
+                if (r < asciiHeight / 2) screen[r][c] = '`'; // Ceiling
+                else screen[r][c] = '.'; // Floor
+            }
+        }
+
+        for (int x = 0; x < asciiWidth; x++) {
+            float cameraX = 2 * x / (float)asciiWidth - 1;
+            Vector2 rayDir = new Vector2(player.getDirectionVector()).add(new Vector2(player.getCameraPlane()).scl(cameraX));
+
+            int mapX = (int)player.getPosition().x;
+            int mapY = (int)player.getPosition().y;
+
+            Vector2 sideDist = new Vector2();
+            Vector2 deltaDist = new Vector2(
+                (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
+                (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y)
+            );
+
+            int stepX, stepY;
+            if (rayDir.x < 0) {
+                stepX = -1;
+                sideDist.x = (player.getPosition().x - mapX) * deltaDist.x;
+            } else {
+                stepX = 1;
+                sideDist.x = (mapX + 1.0f - player.getPosition().x) * deltaDist.x;
+            }
+            if (rayDir.y < 0) {
+                stepY = -1;
+                sideDist.y = (player.getPosition().y - mapY) * deltaDist.y;
+            } else {
+                stepY = 1;
+                sideDist.y = (mapY + 1.0f - player.getPosition().y) * deltaDist.y;
+            }
+
+            boolean hit = false;
+            int side = 0;
+            int maxDistance = 50;
+            int distanceTraveled = 0;
+
+            while (!hit && distanceTraveled < maxDistance) {
+                if (sideDist.x < sideDist.y) {
+                    sideDist.x += deltaDist.x;
+                    mapX += stepX;
+                    side = 0;
+                } else {
+                    sideDist.y += deltaDist.y;
+                    mapY += stepY;
+                    side = 1;
+                }
+
+                if (!isOutOfBounds(mapX, mapY, maze)) {
+                    Object obj = maze.getGameObjectAt(mapX, mapY);
+                    if (obj instanceof Door) {
+                        Door door = (Door) obj;
+                        if (door.getState() != Door.DoorState.OPEN) {
+                            hit = true;
+                        }
+                    } else if (maze.isWallBlocking(mapX, mapY, player.getFacing())) {
+                        // A more robust check for walls
+                        hit = true;
+                    }
+                } else {
+                    hit = true;
+                }
+                distanceTraveled++;
+            }
+
+            if (hit) {
+                float perpWallDist;
+                if (side == 0) perpWallDist = (sideDist.x - deltaDist.x);
+                else perpWallDist = (sideDist.y - deltaDist.y);
+
+                if (perpWallDist <= 0) perpWallDist = 0.1f;
+
+                int lineHeight = (int)(asciiHeight / perpWallDist);
+                int drawStart = Math.max(0, -lineHeight / 2 + asciiHeight / 2);
+                int drawEnd = Math.min(asciiHeight - 1, lineHeight / 2 + asciiHeight / 2);
+
+                char wallChar = '#'; // Default wall
+                if(side == 1) wallChar = '|';
+                Object obj = maze.getGameObjectAt(mapX, mapY);
+                if (obj instanceof Door) {
+                    Door door = (Door) obj;
+                    if (door.getState() == Door.DoorState.CLOSED) wallChar = 'D';
+                    if (door.getState() == Door.DoorState.OPENING) wallChar = 'd';
+                    if (door.getState() == Door.DoorState.OPEN) wallChar = 'O'; // Should not be seen if logic is correct
+                }
+
+                for (int y = drawStart; y <= drawEnd; y++) {
+                    if (x >= 0 && x < asciiWidth && y >= 0 && y < asciiHeight) {
+                        screen[y][x] = wallChar;
+                    }
+                }
+            }
+        }
+
+        // Print the char array to console
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n--- ASCII RENDERER --- Position: (").append(player.getPosition().x).append(", ").append(player.getPosition().y).append(") Facing: ").append(player.getFacing()).append("\n");
+        for (int r = 0; r < asciiHeight; r++) {
+            for (int c = 0; c < asciiWidth; c++) {
+                sb.append(screen[r][c]);
+            }
+            sb.append('\n');
+        }
+        System.out.println(sb.toString());
     }
 
     private enum WallType { WALL, DOOR }
