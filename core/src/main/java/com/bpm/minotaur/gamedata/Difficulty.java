@@ -1,7 +1,7 @@
 package com.bpm.minotaur.gamedata;
 
 public enum Difficulty {
-    EASIEST(18, 9, 9, 9, 0.25f), // 1/4 Vulnerability
+    EASIEST(18, 9, 9, 99, 0.25f), // 1/4 Vulnerability
     EASY(16, 8, 8, 8, 0.50f),    // 1/2 Vulnerability
     MEDIUM(14, 7, 7, 7, 0.75f),   // 3/4 Vulnerability
     HARD(12, 6, 6, 6, 1.0f);     // Full Vulnerability

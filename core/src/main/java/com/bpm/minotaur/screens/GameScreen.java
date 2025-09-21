@@ -3,6 +3,7 @@ package com.bpm.minotaur.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
@@ -13,7 +14,7 @@ import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.rendering.*;
-
+;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -438,14 +439,17 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public void render(float delta) {
+        // --- UPDATE LOGIC ---
         combatManager.update(delta);
         animationManager.update(delta);
         maze.update(delta);
         hud.update(delta);
         eventManager.update(delta);
-        ScreenUtils.clear(0, 0, 0, 1);
 
+        // --- WORLD RENDERING (using ShapeRenderer) ---
+        ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -460,21 +464,55 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
             if (needsAsciiRender) {
                 firstPersonRenderer.renderAsciiViewToConsole(player, maze);
-                needsAsciiRender = false; // Reset the flag
+                needsAsciiRender = false;
             }
         }
 
+        // --- HUD RENDERING ---
+        // The HUD manages its own SpriteBatch calls for its Stage and background.
         hud.render();
 
+        // --- SCREEN-LEVEL TEXT RENDERING (using SpriteBatch) ---
+        // This is the final drawing step, consolidated into one block.
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-        game.batch.begin();
+        game.batch.begin(); // <-- Batch starts here
+
+        font.setColor(Color.WHITE);
         font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
+
         if (debugManager.isDebugOverlayVisible()) {
             font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
-        }
-        game.batch.end();
-    }
 
+            font.setColor(Color.YELLOW);
+            String[] keyMappings = {
+                "--- CONTROLS ---",
+                "UP   : Move Forward",
+                "DOWN : Move Backward",
+                "LEFT : Turn Left",
+                "RIGHT: Turn Right",
+                "", // Spacer
+                "O    : Open/Interact",
+                "P    : Pickup/Drop Item",
+                "U    : Use Item",
+                "D    : Descend Ladder",
+                "R    : Rest",
+                "", // Spacer
+                "S    : Swap Hands",
+                "E    : Swap with Pack",
+                "T    : Rotate Pack",
+                "", // Spacer
+                "A    : Attack (Combat)",
+                "M    : Castle Map"
+            };
+            float y = game.viewport.getWorldHeight() - 60;
+            for (String mapping : keyMappings) {
+                font.draw(game.batch, mapping, 10, y);
+                y -= 20;
+            }
+        }
+
+        game.batch.end(); // <-- Batch ends here
+    }
 
     @Override
     public void resize(int width, int height) { game.viewport.update(width, height, true); }
