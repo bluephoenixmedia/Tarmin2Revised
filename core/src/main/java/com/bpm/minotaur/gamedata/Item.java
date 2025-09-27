@@ -1,6 +1,8 @@
 package com.bpm.minotaur.gamedata;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,7 @@ public class Item implements Renderable {
     }
 
     private final String[] spriteData; // Add this line
+    private Texture texture = null; // Add this field to store the item's texture
 
 
     public static class WeaponStats {
@@ -130,42 +133,56 @@ public class Item implements Renderable {
                 this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
                 this.weaponStats = new WeaponStats(8, 10, true);
                 this.spriteData = ItemSpriteData.BOW;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png")); // Load the texture
+
                 break;
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.TAN;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(10);
                 this.spriteData = ItemSpriteData.SCROLL;
+                this.texture = new Texture(Gdx.files.internal("images/items/scroll.png")); // Load the texture
+
                 break;
             case BOOK:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.BLUE;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(15);
                 this.spriteData = ItemSpriteData.BOOK;
+                this.texture = new Texture(Gdx.files.internal("images/items/book.png")); // Load the texture
+
                 break;
             case SMALL_FIREBALL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.RED;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(20);
                 this.spriteData = ItemSpriteData.SMALL_FIREBALL;
+                this.texture = new Texture(Gdx.files.internal("images/items/firenball.png")); // Load the texture
+
                 break;
             case LARGE_FIREBALL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.RED;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(30);
                 this.spriteData = ItemSpriteData.LARGE_FIREBALL;
+                this.texture = new Texture(Gdx.files.internal("images/items/big_fireball.png")); // Load the texture
+
                 break;
             case SMALL_LIGHTNING_BOLT:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.CYAN;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(25);
                 this.spriteData = ItemSpriteData.SMALL_LIGHTNING;
+                this.texture = new Texture(Gdx.files.internal("images/items/lightning_bolt.png")); // Load the texture
+
                 break;
             case LARGE_LIGHTNING_BOLT:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.CYAN;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(35);
                 this.spriteData = ItemSpriteData.LARGE_LIGHTNING;
+                this.texture = new Texture(Gdx.files.internal("images/items/big_bolt.png")); // Load the texture
+
                 break;
 
             // --- ARMOR ---
@@ -174,12 +191,16 @@ public class Item implements Renderable {
                 this.color = Color.GRAY;
                 this.armorStats = new ArmorStats(5);
                 this.spriteData = ItemSpriteData.SMALL_SHIELD; // Using SMALL_SHIELD for now
+                this.texture = new Texture(Gdx.files.internal("images/items/shield.png")); // Load the texture
+
                 break;
             case HELMET:
                 this.category = ItemCategory.ARMOR;
                 this.color = Color.LIGHT_GRAY;
                 this.armorStats = new ArmorStats(3);
                 this.spriteData = ItemSpriteData.HELMET;
+                this.texture = new Texture(Gdx.files.internal("images/items/helmet.png")); // Load the texture
+
                 break;
 
             // --- RINGS ---
@@ -188,24 +209,32 @@ public class Item implements Renderable {
                 this.color = Color.BLUE;
                 this.ringStats = new RingStats(5);
                 this.spriteData = ItemSpriteData.SMALL_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/blue_ring.png")); // Load the texture
+
                 break;
             case RING_PINK:
                 this.category = ItemCategory.RING;
                 this.color = Color.PINK;
                 this.ringStats = new RingStats(10);
                 this.spriteData = ItemSpriteData.SMALL_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/pink_ring.png")); // Load the texture
+
                 break;
             case RING_GREEN:
                 this.category = ItemCategory.RING;
                 this.color = Color.GREEN;
                 this.ringStats = new RingStats(15);
                 this.spriteData = ItemSpriteData.SMALL_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/green_ring.png")); // Load the texture
+
                 break;
             case RING_PURPLE:
                 this.category = ItemCategory.RING;
                 this.color = Color.PURPLE;
                 this.ringStats = new RingStats(20);
                 this.spriteData = ItemSpriteData.SMALL_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/pink_ring.png")); // Load the texture
+
                 break;
 
             // --- USEFUL ---
@@ -214,22 +243,30 @@ public class Item implements Renderable {
                 this.color = new Color(0.6f, 0.2f, 0.2f, 1);
                 this.liquidColor = Color.RED;
                 this.spriteData = ItemSpriteData.SMALL_POTION;
+                this.texture = new Texture(Gdx.files.internal("images/items/potion_gold.png")); // Load the texture
+
                 break;
             case POTION_HEALING:
                 this.category = ItemCategory.USEFUL;
                 this.color = new Color(0.2f, 0.6f, 0.2f, 1);
                 this.liquidColor = Color.GREEN;
                 this.spriteData = ItemSpriteData.SMALL_POTION;
+                this.texture = new Texture(Gdx.files.internal("images/items/potion_blue.png")); // Load the texture
+
                 break;
             case KEY:
                 this.category = ItemCategory.USEFUL;
                 this.color = Color.GOLD;
                 this.spriteData = ItemSpriteData.KEY;
+                this.texture = new Texture(Gdx.files.internal("images/items/key.png")); // Load the texture
+
                 break;
             case QUIVER:
                 this.category = ItemCategory.USEFUL;
                 this.color = new Color(0.6f, 0.3f, 0.1f, 1);
                 this.spriteData = ItemSpriteData.QUIVER;
+                this.texture = new Texture(Gdx.files.internal("images/items/quiver.png")); // Load the texture
+
                 break;
 
             // --- CONTAINERS ---
@@ -332,6 +369,10 @@ public class Item implements Renderable {
 
     public boolean isLocked() {
         return isLocked;
+    }
+
+    public Texture getTexture() {
+        return texture;
     }
 
     public void unlock() {

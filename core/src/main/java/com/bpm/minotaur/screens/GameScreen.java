@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
@@ -20,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class GameScreen extends BaseScreen implements InputProcessor {
+public class GameScreen extends BaseScreen implements InputProcessor, Disposable {
 
     // --- Core Dependencies ---
     private final DebugManager debugManager = DebugManager.getInstance();
@@ -594,4 +595,16 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
+
+    @Override
+    public void dispose() {
+        shapeRenderer.dispose();
+        font.dispose();
+        if (hud != null) {
+            hud.dispose();
+        }
+        if (entityRenderer != null) {
+            entityRenderer.dispose();
+        }
+    }
 }

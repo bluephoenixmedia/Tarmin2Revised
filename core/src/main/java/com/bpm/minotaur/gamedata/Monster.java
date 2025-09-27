@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 
 public class Monster implements Renderable {
@@ -35,6 +36,8 @@ public class Monster implements Renderable {
     private int spiritualStrength;
     private int armor;
     private final String[] spriteData; // Add this line
+    private Texture texture = null; // Add this line to store the monster's texture
+
 
 
     public Monster(MonsterType type, int x, int y) {
@@ -49,6 +52,8 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 15;
                 this.armor = 2;
                 this.spriteData = MonsterSpriteData.GIANT_ANT; // Correctly assigned
+                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_ant.png")); // Example path
+
                 break;
             case DWARF:
                 this.color = Color.TAN;
@@ -56,6 +61,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 10;
                 this.armor = 4;
                 this.spriteData = MonsterSpriteData.DWARF; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/dwarf.png"));
                 break;
             case GIANT_SCORPION:
                 this.color = Color.BLUE;
@@ -63,6 +69,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 20;
                 this.armor = 3;
                 this.spriteData = MonsterSpriteData.GIANT_SCORPION; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_scorpion.png"));
                 break;
             case GIANT_SNAKE:
                 this.color = Color.ORANGE;
@@ -70,6 +77,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 15;
                 this.armor = 2;
                 this.spriteData = MonsterSpriteData.GIANT_SNAKE; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_snake.png"));
                 break;
 
             // --- NASTY MONSTERS (War Attacks) ---
@@ -79,6 +87,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 5;
                 this.armor = 3;
                 this.spriteData = MonsterSpriteData.GHOUL; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/ghoul.png"));
                 break;
             case SKELETON:
                 this.color = Color.WHITE;
@@ -86,6 +95,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 0;
                 this.armor = 3;
                 this.spriteData = MonsterSpriteData.SKELETON; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/skeleton.png"));
                 break;
             case CLOAKED_SKELETON:
                 this.color = Color.GRAY;
@@ -93,6 +103,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 5;
                 this.armor = 4;
                 this.spriteData = MonsterSpriteData.CLOAKED_SKELETON; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/hooded_skeleton.png"));
                 break;
 
             // --- HORRIBLE MONSTERS (War & Spiritual Attacks) ---
@@ -102,6 +113,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 15;
                 this.armor = 6;
                 this.spriteData = MonsterSpriteData.ALLIGATOR; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/alligator.png"));
                 break;
             case DRAGON:
                 this.color = Color.ORANGE;
@@ -109,6 +121,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 30;
                 this.armor = 8;
                 this.spriteData = MonsterSpriteData.DRAGON; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/dragon.png"));
                 break;
             case WRAITH:
                 this.color = Color.WHITE;
@@ -116,6 +129,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 35;
                 this.armor = 5;
                 this.spriteData = MonsterSpriteData.WRAITH; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/wraith.png"));
                 break;
             case GIANT:
                 this.color = Color.YELLOW;
@@ -123,6 +137,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 10;
                 this.armor = 7;
                 this.spriteData = MonsterSpriteData.GIANT; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/giant.png"));
                 break;
             case MINOTAUR:
                 this.color = Color.PURPLE;
@@ -130,6 +145,7 @@ public class Monster implements Renderable {
                 this.spiritualStrength = 25;
                 this.armor = 10;
                 this.spriteData = MonsterSpriteData.MINOTAUR; // Add this line
+                this.texture = new Texture(Gdx.files.internal("images/monsters/minotaur.png"));
                 break;
 
             default:
@@ -163,6 +179,9 @@ public class Monster implements Renderable {
     }
     public String[] getSpriteData() {
         return spriteData;
+    }
+    public Texture getTexture() {
+        return texture;
     }
     public MonsterType getType() { return type; }
     @Override public Vector2 getPosition() { return position; }
