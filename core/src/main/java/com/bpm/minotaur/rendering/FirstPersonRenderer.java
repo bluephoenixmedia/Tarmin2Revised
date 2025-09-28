@@ -1,10 +1,14 @@
 package com.bpm.minotaur.rendering;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.managers.DebugManager;
 
 /**
  * Renders the 3D first-person view of the maze using a raycasting algorithm.
@@ -38,8 +42,28 @@ public class FirstPersonRenderer {
 
     private enum WallType { WALL, DOOR, GATE }
 
-
     private float[] depthBuffer;
+    private final DebugManager debugManager = DebugManager.getInstance();
+    private final SpriteBatch spriteBatch;
+    private final Texture wallTexture;
+    private final Texture doorTexture;
+    private final Texture floorTexture;
+    private final Texture skyboxNorth;
+    private final Texture skyboxEast;
+    private final Texture skyboxSouth;
+    private final Texture skyboxWest;
+
+    public FirstPersonRenderer() {
+        spriteBatch = new SpriteBatch();
+        wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
+        doorTexture = new Texture(Gdx.files.internal("images/door.png"));
+        floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
+        skyboxNorth = new Texture(Gdx.files.internal("images/skybox_castle.png"));
+        skyboxEast = new Texture(Gdx.files.internal("images/skybox_east.png"));
+        skyboxSouth = new Texture(Gdx.files.internal("images/skybox_south.png"));
+        skyboxWest = new Texture(Gdx.files.internal("images/skybox_west.png"));
+    }
+
 
     public float[] getDepthBuffer() {
         return depthBuffer;
@@ -50,23 +74,104 @@ public class FirstPersonRenderer {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
         }
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(ceilingColor);
-        shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
-        shapeRenderer.setColor(floorColor);
-        shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+            spriteBatch.begin();
+            renderFloorAndCeiling(spriteBatch, player, maze, viewport);
+        } else {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(ceilingColor);
+            shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            shapeRenderer.setColor(floorColor);
+            shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+        }
 
         for (int x = 0; x < viewport.getScreenWidth(); x++) {
             RaycastResult result = castRay(player, maze, x, viewport);
             if (result != null) {
-                renderWallSlice(shapeRenderer, result, x, viewport);
+                if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+                    renderWallSliceTexture(spriteBatch, result, x, viewport);
+                } else {
+                    renderWallSlice(shapeRenderer, result, x, viewport);
+                }
                 depthBuffer[x] = result.distance;
             } else {
                 depthBuffer[x] = Float.MAX_VALUE;
             }
         }
 
-        shapeRenderer.end();
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            spriteBatch.end();
+        } else {
+            shapeRenderer.end();
+        }
+    }
+
+    private void renderFloorAndCeiling(SpriteBatch spriteBatch, Player player, Maze maze, Viewport viewport) {
+        // Render skybox based on player direction
+        Texture skyboxTexture;
+        switch (player.getFacing()) {
+            case EAST:
+                skyboxTexture = skyboxEast;
+                break;
+            case WEST:
+                skyboxTexture = skyboxWest;
+                break;
+            case SOUTH:
+                skyboxTexture = skyboxSouth;
+                break;
+            default:
+                skyboxTexture = skyboxNorth;
+                break;
+        }
+        spriteBatch.draw(skyboxTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+
+        for (int y = 0; y < viewport.getWorldHeight() / 2; y++) {
+            float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
+            float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
+            float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
+            float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
+
+            int p = y - (int)viewport.getWorldHeight() / 2;
+            float posZ = 0.5f * viewport.getWorldHeight();
+            float rowDistance = posZ / p;
+
+            float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
+            float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
+
+            float floorX = player.getPosition().x + rowDistance * rayDirX0;
+            float floorY = player.getPosition().y + rowDistance * rayDirY0;
+
+            for(int x = 0; x < viewport.getWorldWidth(); ++x) {
+                int cellX = (int)(floorX);
+                int cellY = (int)(floorY);
+
+                int tx = (int)(floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
+                int ty = (int)(floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
+
+                floorX += floorStepX;
+                floorY += floorStepY;
+
+                //floor
+                spriteBatch.draw(floorTexture, x, y, 1, 1, tx, ty, 1, 1, false, false);
+            }
+        }
+    }
+
+    private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport) {
+        int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
+        float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
+
+        Texture texture;
+        if (result.wallType == WallType.DOOR) {
+            texture = doorTexture;
+        } else {
+            texture = wallTexture;
+        }
+
+        int texX = (int)(result.wallX * texture.getWidth());
+        spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(), false, false);
     }
 
     /**
