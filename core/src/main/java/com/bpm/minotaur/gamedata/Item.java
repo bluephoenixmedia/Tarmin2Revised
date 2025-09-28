@@ -66,7 +66,7 @@ public class Item implements Renderable {
 
     private final String[] spriteData; // Add this line
     private Texture texture = null; // Add this field to store the item's texture
-
+    public Vector2 scale; // Changed from float to Vector2
 
     public static class WeaponStats {
         public int damage;
@@ -125,7 +125,7 @@ public class Item implements Renderable {
     public Item(ItemType type, int x, int y) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f);
-
+        this.scale = new Vector2(1.0f, 1.0f);
         switch (type) {
             // --- WEAPONS ---
             case BOW:
@@ -134,6 +134,7 @@ public class Item implements Renderable {
                 this.weaponStats = new WeaponStats(8, 10, true);
                 this.spriteData = ItemSpriteData.BOW;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png")); // Load the texture
+                this.scale.set(0.8f, 1.2f);
 
                 break;
             case SCROLL:
@@ -142,6 +143,8 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(10);
                 this.spriteData = ItemSpriteData.SCROLL;
                 this.texture = new Texture(Gdx.files.internal("images/items/scroll.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
+
 
                 break;
             case BOOK:
@@ -150,6 +153,7 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(15);
                 this.spriteData = ItemSpriteData.BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
 
                 break;
             case SMALL_FIREBALL:
@@ -158,6 +162,8 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(20);
                 this.spriteData = ItemSpriteData.SMALL_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/firenball.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
+
 
                 break;
             case LARGE_FIREBALL:
@@ -166,6 +172,7 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(30);
                 this.spriteData = ItemSpriteData.LARGE_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_fireball.png")); // Load the texture
+                this.scale.set(0.8f, 0.8f);
 
                 break;
             case SMALL_LIGHTNING_BOLT:
@@ -174,6 +181,7 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(25);
                 this.spriteData = ItemSpriteData.SMALL_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/lightning_bolt.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
 
                 break;
             case LARGE_LIGHTNING_BOLT:
@@ -182,6 +190,7 @@ public class Item implements Renderable {
                 this.spiritualWeaponStats = new SpiritualWeaponStats(35);
                 this.spriteData = ItemSpriteData.LARGE_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_bolt.png")); // Load the texture
+                this.scale.set(0.9f, 0.9f);
 
                 break;
 
@@ -192,6 +201,7 @@ public class Item implements Renderable {
                 this.armorStats = new ArmorStats(5);
                 this.spriteData = ItemSpriteData.SMALL_SHIELD; // Using SMALL_SHIELD for now
                 this.texture = new Texture(Gdx.files.internal("images/items/shield.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
 
                 break;
             case HELMET:
@@ -200,6 +210,7 @@ public class Item implements Renderable {
                 this.armorStats = new ArmorStats(3);
                 this.spriteData = ItemSpriteData.HELMET;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png")); // Load the texture
+                this.scale.set(0.7f, 0.7f);
 
                 break;
 
@@ -210,6 +221,7 @@ public class Item implements Renderable {
                 this.ringStats = new RingStats(5);
                 this.spriteData = ItemSpriteData.SMALL_RING;
                 this.texture = new Texture(Gdx.files.internal("images/items/blue_ring.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case RING_PINK:
@@ -218,6 +230,7 @@ public class Item implements Renderable {
                 this.ringStats = new RingStats(10);
                 this.spriteData = ItemSpriteData.SMALL_RING;
                 this.texture = new Texture(Gdx.files.internal("images/items/pink_ring.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case RING_GREEN:
@@ -226,6 +239,7 @@ public class Item implements Renderable {
                 this.ringStats = new RingStats(15);
                 this.spriteData = ItemSpriteData.SMALL_RING;
                 this.texture = new Texture(Gdx.files.internal("images/items/green_ring.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case RING_PURPLE:
@@ -234,6 +248,7 @@ public class Item implements Renderable {
                 this.ringStats = new RingStats(20);
                 this.spriteData = ItemSpriteData.SMALL_RING;
                 this.texture = new Texture(Gdx.files.internal("images/items/pink_ring.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
 
@@ -244,6 +259,7 @@ public class Item implements Renderable {
                 this.liquidColor = Color.RED;
                 this.spriteData = ItemSpriteData.SMALL_POTION;
                 this.texture = new Texture(Gdx.files.internal("images/items/potion_gold.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case POTION_HEALING:
@@ -252,6 +268,7 @@ public class Item implements Renderable {
                 this.liquidColor = Color.GREEN;
                 this.spriteData = ItemSpriteData.SMALL_POTION;
                 this.texture = new Texture(Gdx.files.internal("images/items/potion_blue.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case KEY:
@@ -259,6 +276,7 @@ public class Item implements Renderable {
                 this.color = Color.GOLD;
                 this.spriteData = ItemSpriteData.KEY;
                 this.texture = new Texture(Gdx.files.internal("images/items/key.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
             case QUIVER:
@@ -266,6 +284,7 @@ public class Item implements Renderable {
                 this.color = new Color(0.6f, 0.3f, 0.1f, 1);
                 this.spriteData = ItemSpriteData.QUIVER;
                 this.texture = new Texture(Gdx.files.internal("images/items/quiver.png")); // Load the texture
+                this.scale.set(0.2f, 0.2f);
 
                 break;
 
