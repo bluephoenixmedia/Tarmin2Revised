@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Difficulty;
+import com.bpm.minotaur.managers.DebugManager;
 
 /**
  * An authentic recreation of the original game's title screen,
@@ -26,6 +27,8 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private GlyphLayout layout;
     private float animationTimer;
     private boolean textBlink;
+    private final DebugManager debugManager = DebugManager.getInstance();
+    private Texture modernBackground;
 
     // Cooldown timer to prevent immediate screen transition on first input.
     private float inputCooldown = 0.2f;
@@ -71,6 +74,8 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         layout = new GlyphLayout();
         animationTimer = 0f;
         textBlink = false;
+        modernBackground = new Texture(Gdx.files.internal("images/tarmin_title.png"));
+
 
         Gdx.input.setInputProcessor(this);
     }
@@ -82,52 +87,60 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             inputCooldown -= delta;
         }
 
-        // Controls the blinking "PRESS ANY KEY" text.
-        textBlink = animationTimer % 1.6f < 0.8f;
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            ScreenUtils.clear(Color.BLACK);
+            game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
+            game.batch.begin();
+            game.batch.draw(modernBackground, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            game.batch.end();
+        } else {
+            // Controls the blinking "PRESS ANY KEY" text.
+            textBlink = animationTimer % 1.6f < 0.8f;
 
-        // Set the background color to the authentic olive green.
-        ScreenUtils.clear(OLIVE_GREEN);
+            // Set the background color to the authentic olive green.
+            ScreenUtils.clear(OLIVE_GREEN);
 
-        // Update the ShapeRenderer's projection matrix with the viewport's camera.
-        shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+            // Update the ShapeRenderer's projection matrix with the viewport's camera.
+            shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
 
-        // Draw the colored banner rectangles at the top of the screen.
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        float rectWidth = TARGET_WIDTH / 16f;
-        float rectHeight = TARGET_HEIGHT / 20f;
-        float bannerY = TARGET_HEIGHT * 0.85f;
-        float totalBannerWidth = (rectWidth * 8) + (rectWidth * 2);
-        float startX = (TARGET_WIDTH - totalBannerWidth) / 2f;
+            // Draw the colored banner rectangles at the top of the screen.
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            float rectWidth = TARGET_WIDTH / 16f;
+            float rectHeight = TARGET_HEIGHT / 20f;
+            float bannerY = TARGET_HEIGHT * 0.85f;
+            float totalBannerWidth = (rectWidth * 8) + (rectWidth * 2);
+            float startX = (TARGET_WIDTH - totalBannerWidth) / 2f;
 
-        Color[] leftColors = {INTV_WHITE, INTV_YELLOW, INTV_GREEN, INTV_DARK_GREEN};
-        for (int i = 0; i < 4; i++) {
-            shapeRenderer.setColor(leftColors[i]);
-            shapeRenderer.rect(startX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
+            Color[] leftColors = {INTV_WHITE, INTV_YELLOW, INTV_GREEN, INTV_DARK_GREEN};
+            for (int i = 0; i < 4; i++) {
+                shapeRenderer.setColor(leftColors[i]);
+                shapeRenderer.rect(startX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
+            }
+
+            Color[] rightColors = {INTV_TAN, INTV_RED, INTV_BLUE, INTV_BLACK};
+            float rightStartX = startX + (4 * rectWidth) + (rectWidth * 2);
+            for (int i = 0; i < 4; i++) {
+                shapeRenderer.setColor(rightColors[i]);
+                shapeRenderer.rect(rightStartX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
+            }
+            shapeRenderer.end();
+
+            // The SpriteBatch projection matrix is updated in Tarmin2.java's resize method.
+            game.batch.begin();
+            titleFont.setColor(INTV_WHITE);
+            drawCenteredText(titleFont, "ADVANCED", TARGET_HEIGHT * 0.75f);
+            drawCenteredText(titleFont, "DUNGEONS & DRAGONS*", TARGET_HEIGHT * 0.65f);
+            drawCenteredText(titleFont, "CARTRIDGE", TARGET_HEIGHT * 0.55f);
+
+            if (textBlink) {
+                drawCenteredText(regularFont, "PRESS ANY KEY TO START", TARGET_HEIGHT * 0.35f);
+            }
+
+            drawCenteredText(regularFont, "*TM OF TSR HOBBIES", TARGET_HEIGHT * 0.20f);
+            drawCenteredText(regularFont, "TSR", TARGET_HEIGHT * 0.13f);
+
+            game.batch.end();
         }
-
-        Color[] rightColors = {INTV_TAN, INTV_RED, INTV_BLUE, INTV_BLACK};
-        float rightStartX = startX + (4 * rectWidth) + (rectWidth * 2);
-        for (int i = 0; i < 4; i++) {
-            shapeRenderer.setColor(rightColors[i]);
-            shapeRenderer.rect(rightStartX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
-        }
-        shapeRenderer.end();
-
-        // The SpriteBatch projection matrix is updated in Tarmin2.java's resize method.
-        game.batch.begin();
-        titleFont.setColor(INTV_WHITE);
-        drawCenteredText(titleFont, "ADVANCED", TARGET_HEIGHT * 0.75f);
-        drawCenteredText(titleFont, "DUNGEONS & DRAGONS*", TARGET_HEIGHT * 0.65f);
-        drawCenteredText(titleFont, "CARTRIDGE", TARGET_HEIGHT * 0.55f);
-
-        if (textBlink) {
-            drawCenteredText(regularFont, "PRESS ANY KEY TO START", TARGET_HEIGHT * 0.35f);
-        }
-
-        drawCenteredText(regularFont, "*TM OF TSR HOBBIES", TARGET_HEIGHT * 0.20f);
-        drawCenteredText(regularFont, "TSR", TARGET_HEIGHT * 0.13f);
-
-        game.batch.end();
     }
 
     private void drawCenteredText(BitmapFont font, String text, float y) {
@@ -141,10 +154,14 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         if (titleFont != null) titleFont.dispose();
         if (regularFont != null) regularFont.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
+        if (modernBackground != null) modernBackground.dispose();
     }
 
     @Override
     public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.F2) {
+            debugManager.toggleRenderMode();
+        } else
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Key pressed. Starting game...");
             game.setScreen(new GameScreen(game, Difficulty.EASIEST));
