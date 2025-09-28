@@ -428,6 +428,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         if (debugManager.isDebugOverlayVisible()) {
             font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
+            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 10, game.viewport.getWorldHeight() - 50);
+
 
             font.setColor(Color.YELLOW);
             String[] keyMappings = {
@@ -450,7 +452,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 "A    : Attack (Combat)",
                 "M    : Castle Map"
             };
-            float y = game.viewport.getWorldHeight() - 60;
+            float y = game.viewport.getWorldHeight() - 80;
             for (String mapping : keyMappings) {
                 font.draw(game.batch, mapping, 10, y);
                 y -= 20;
@@ -494,6 +496,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     break;
                 case Input.Keys.F1:
                     debugManager.toggleOverlay();
+                    break;
+                case Input.Keys.F2:
+                    debugManager.toggleRenderMode();
                     break;
                 case Input.Keys.O:
                     player.interact(maze, eventManager);

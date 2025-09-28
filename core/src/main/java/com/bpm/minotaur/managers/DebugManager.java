@@ -7,6 +7,13 @@ public class DebugManager {
     private static final DebugManager INSTANCE = new DebugManager();
     private boolean isDebugOverlayVisible = false;
 
+    public enum RenderMode {
+        MODERN,
+        RETRO
+    }
+
+    private RenderMode renderMode = RenderMode.MODERN;
+
     private DebugManager() {}
 
     public static DebugManager getInstance() {
@@ -20,5 +27,16 @@ public class DebugManager {
     public void toggleOverlay() {
         isDebugOverlayVisible = !isDebugOverlayVisible;
     }
-}
 
+    public RenderMode getRenderMode() {
+        return renderMode;
+    }
+
+    public void toggleRenderMode() {
+        if (renderMode == RenderMode.MODERN) {
+            renderMode = RenderMode.RETRO;
+        } else {
+            renderMode = RenderMode.MODERN;
+        }
+    }
+}
