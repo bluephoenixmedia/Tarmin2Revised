@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.managers.DebugManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class EntityRenderer {
     private final SpriteBatch spriteBatch;
     private static final float MONSTER_TEXTURE_SCALE = 1.0f;
     private static final float CLOSE_ITEM_Y_BOOST = 140.0f;
+    private final DebugManager debugManager = DebugManager.getInstance();
 
     public EntityRenderer() {
         this.spriteBatch = new SpriteBatch();
@@ -42,7 +44,7 @@ public class EntityRenderer {
             boolean needsTexture = (entity instanceof Monster && ((Monster) entity).getTexture() != null) ||
                 (entity instanceof Item && ((Item) entity).getTexture() != null);
 
-            if (needsTexture) {
+            if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && needsTexture) {
                 if (isShapeRendererActive) {
                     shapeRenderer.end();
                     isShapeRendererActive = false;
@@ -83,7 +85,7 @@ public class EntityRenderer {
     public void renderSingleMonster(ShapeRenderer shapeRenderer, Player player, Monster monster, Viewport viewport, float[] depthBuffer) {
         if (depthBuffer == null || monster == null) return;
 
-        if (monster.getTexture() != null) {
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && monster.getTexture() != null) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
             drawMonsterTexture(spriteBatch, player, monster, viewport, depthBuffer);
@@ -161,7 +163,7 @@ public class EntityRenderer {
             int itemGridY = (int) item.getPosition().y;
 
             if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
-               // System.out.println("Triggered CLOSE ITEM BOOST for draw item texture");
+                // System.out.println("Triggered CLOSE ITEM BOOST for draw item texture");
                 drawY += CLOSE_ITEM_Y_BOOST;
             }
 
@@ -346,6 +348,25 @@ public class EntityRenderer {
             }
         }
     }
-    private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) { /* ... */ }
+    private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) {
+        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+            int texX = (int) (256 * (stripe - (-spriteWidth / 2 + screenX)) * 8 / spriteWidth) / 256;
+
+            if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth() && transformY < depthBuffer[stripe]) {
+                for (int y = 0; y < spriteHeight; y++) {
+                    int texY = (((y * 256) / spriteHeight) / 256) * 8;
+                    if (texX >= 0 && texX < 8 && texY >= 0 && texY < 8) {
+                        if (spriteData[texY].charAt(texX) == 'X') {
+                            shapeRenderer.setColor(entity.getColor());
+                            shapeRenderer.rect(stripe, drawY + y, 1, 1);
+                        }
+                    }
+                }
+            }
+        }
+    }
     public void dispose() { spriteBatch.dispose(); }
 }
