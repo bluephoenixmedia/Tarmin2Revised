@@ -8,8 +8,6 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
-import com.bpm.minotaur.gamedata.GameEvent; // Add this import
-
 
 import java.util.Random;
 
@@ -30,15 +28,16 @@ public class CombatManager {
     private final Random random = new Random();
     private final Tarmin2 game;
     private final AnimationManager animationManager;
-    private final GameEventManager eventManager; // Add this line
+    private final GameEventManager eventManager;
+    private final SoundManager soundManager;
 
-    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,  GameEventManager eventManager) {
+    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,  GameEventManager eventManager, SoundManager soundManager) {
         this.player = player;
         this.maze = maze;
         this.game = game;
         this.animationManager = animationManager;
-        this.eventManager = eventManager; // Add this line
-
+        this.eventManager = eventManager;
+        this.soundManager = soundManager;
     }
 
     public void startCombat(Monster monster) {
@@ -67,7 +66,7 @@ public class CombatManager {
                 Gdx.app.log("CombatManager", "Player auto-turned to face " + directionToMonster);
             }
             // --- END OF AUTO-TURN LOGIC ---
-
+            soundManager.playCombatStartSound();
             currentState = CombatState.MONSTER_TURN;
             Gdx.app.log("CombatManager", "Combat started with " + monster.getType());
         }
@@ -94,6 +93,7 @@ public class CombatManager {
 
             Gdx.app.log("CombatManager", "Player attacks " + monster.getType());
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
+            soundManager.playPlayerAttackSound(weapon);
 
             if (weapon != null && weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
                 damage = weapon.getSpiritualWeaponStats().damage + player.getSpiritualStrength() / 10 + random.nextInt(5);
@@ -133,6 +133,7 @@ public class CombatManager {
         if (currentState == CombatState.MONSTER_TURN) {
             Gdx.app.log("CombatManager", "Monster attacks player");
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, monster.getPosition(), player.getPosition(), monster.getColor(), 0.5f));
+            soundManager.playMonsterAttackSound(monster);
             int damage;
 
             // Determine attack type based on monster category
