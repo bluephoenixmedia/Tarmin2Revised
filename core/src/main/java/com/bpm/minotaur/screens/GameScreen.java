@@ -11,12 +11,9 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.managers.CombatManager;
-import com.bpm.minotaur.managers.DebugManager;
-import com.bpm.minotaur.managers.GameEventManager;
-import com.bpm.minotaur.managers.SpawnManager; // Import the new manager
+import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
-;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +38,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private Hud hud;
     private AnimationManager animationManager;
     private GameEventManager eventManager;
+    private SoundManager soundManager;
 
     // --- Game State ---
     private Player player;
@@ -116,6 +114,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         Gdx.input.setInputProcessor(this);
         animationManager = new AnimationManager();
         eventManager = new GameEventManager();
+        soundManager = new SoundManager(debugManager);
         generateLevel(currentLevel);
     }
 
@@ -140,7 +139,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             resetPlayerPosition();
         }
 
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
         hud = new Hud(game.batch, player, maze, combatManager, eventManager);
 
 
@@ -501,7 +500,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     debugManager.toggleRenderMode();
                     break;
                 case Input.Keys.O:
-                    player.interact(maze, eventManager);
+                    player.interact(maze, eventManager, soundManager);
                     needsAsciiRender = true;
                     break;
                 case Input.Keys.M:  // Add this case
@@ -523,7 +522,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     player.useItem(eventManager);
                     break;
                 case Input.Keys.P:
-                    player.interactWithItem(maze, eventManager);
+                    player.interactWithItem(maze, eventManager, soundManager);
                     break;
                 case Input.Keys.D:
                     GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
@@ -555,6 +554,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
         if (entityRenderer != null) {
             entityRenderer.dispose();
+        }
+        if (soundManager != null) {
+            soundManager.dispose();
         }
     }
 }

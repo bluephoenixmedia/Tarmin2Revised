@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.managers.GameEventManager;
+import com.bpm.minotaur.managers.SoundManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class Player {
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
     }
 
-    public void interactWithItem(Maze maze, GameEventManager eventManager) {
+    public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
         // Determine the target tile in front of the player
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
@@ -68,6 +69,7 @@ public class Player {
 
         // --- PICKUP/SWAP LOGIC (targets tile in front) ---
         if (itemInFront != null) {
+            soundManager.playPickupItemSound();
             // Handle Treasure pickup
             if (itemInFront.getCategory() == Item.ItemCategory.TREASURE) {
                 treasureScore += itemInFront.getValue();
@@ -357,7 +359,7 @@ public class Player {
         Gdx.app.log("PlayerMovement", "Player turned right, now facing " + facing);
     }
 
-    public void interact(Maze maze, GameEventManager eventManager) {
+    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
@@ -376,6 +378,7 @@ public class Player {
             if (door.getState() == Door.DoorState.CLOSED) {
                 door.startOpening();
                 eventManager.addEvent(new GameEvent("You opened the door.", 2f));
+                soundManager.playDoorOpenSound();
             }
             return; // Interaction handled
         }
