@@ -405,6 +405,12 @@ public class Item implements Renderable {
     public String[] getSpriteData() {
         return spriteData;
     }
+
+    public void setValue(int value) {
+        if (this.category == ItemCategory.TREASURE) {
+            this.value = value;
+        }
+    }
     public int getValue() { return value; }
     public ItemType getType() { return type; }
     public ItemCategory getCategory() { return category; }

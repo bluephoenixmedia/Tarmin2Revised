@@ -12,7 +12,7 @@ public class DebugManager {
         RETRO
     }
 
-    private RenderMode renderMode = RenderMode.MODERN;
+    private RenderMode renderMode = RenderMode.RETRO;
 
     private DebugManager() {}
 

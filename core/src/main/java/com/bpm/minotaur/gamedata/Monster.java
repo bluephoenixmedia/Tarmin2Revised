@@ -210,6 +210,13 @@ public class Monster implements Renderable {
     public Texture getTexture() {
         return texture;
     }
+
+    public void scaleStats(int level) {
+        int levelBonus = level / 2;
+        this.warStrength += levelBonus;
+        this.spiritualStrength += levelBonus;
+        this.armor += levelBonus / 2;
+    }
     public MonsterType getType() { return type; }
     @Override public Vector2 getPosition() { return position; }
     @Override public Color getColor() { return color; }
