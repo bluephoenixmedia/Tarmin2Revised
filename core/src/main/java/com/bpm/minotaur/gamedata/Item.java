@@ -293,34 +293,46 @@ public class Item implements Renderable {
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.TAN;
                 this.spriteData = ItemSpriteData.MONEY_BELT;
+                this.texture = new Texture(Gdx.files.internal("images/items/money_belt.png")); // Load the texture
+
                 break;
             case SMALL_BAG:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.TAN;
                 this.spriteData = ItemSpriteData.SMALL_BAG;
+                this.texture = new Texture(Gdx.files.internal("images/items/small_bag.png")); // Load the texture
+
                 break;
             case BOX:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.ORANGE;
                 this.isLocked = true;
                 this.spriteData = ItemSpriteData.BOX;
+                this.texture = new Texture(Gdx.files.internal("images/items/box_.png")); // Load the texture
+
                 break;
             case PACK:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.ORANGE;
                 this.isLocked = true;
                 this.spriteData = ItemSpriteData.MEDIUM_PACK;
+                this.texture = new Texture(Gdx.files.internal("images/items/pack.png")); // Load the texture
+
                 break;
             case LARGE_BAG:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.TAN;
                 this.spriteData = ItemSpriteData.LARGE_BAG;
+                this.texture = new Texture(Gdx.files.internal("images/items/large_bag.png")); // Load the texture
+
                 break;
             case CHEST:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.BLUE;
                 this.isLocked = true;
                 this.spriteData = ItemSpriteData.REGULAR_CHEST;
+                this.texture = new Texture(Gdx.files.internal("images/items/box.png")); // Load the texture
+
                 break;
 
             // --- TREASURES ---
@@ -329,36 +341,49 @@ public class Item implements Renderable {
                 this.color = Color.GOLD;
                 this.value = 10;
                 this.spriteData = ItemSpriteData.COINS;
+                this.texture = new Texture(Gdx.files.internal("images/items/coins.png")); // Load the texture
+
                 break;
             case NECKLACE:
                 this.category = ItemCategory.TREASURE;
                 this.color = Color.YELLOW;
                 this.value = 20;
                 this.spriteData = ItemSpriteData.NECKLACE;
+                this.texture = new Texture(Gdx.files.internal("images/items/necklace.png")); // Load the texture
+
                 break;
             case INGOT:
                 this.category = ItemCategory.TREASURE;
                 this.color = Color.GOLD;
                 this.value = 50;
                 this.spriteData = ItemSpriteData.INGOT;
+                this.texture = new Texture(Gdx.files.internal("images/items/ingot.png")); // Load the texture
+
                 break;
             case LAMP:
                 this.category = ItemCategory.TREASURE;
                 this.color = Color.GOLD;
                 this.value = 100;
                 this.spriteData = ItemSpriteData.LAMP;
+                this.texture = new Texture(Gdx.files.internal("images/items/lamp.png")); // Load the texture
+
                 break;
             case CHALICE:
                 this.category = ItemCategory.TREASURE;
                 this.color = Color.GOLD;
                 this.value = 120;
                 this.spriteData = ItemSpriteData.CHALICE;
+                this.texture = new Texture(Gdx.files.internal("images/items/chalice.png")); // Load the texture
+
+
                 break;
             case CROWN:
                 this.category = ItemCategory.TREASURE;
                 this.color = Color.GOLD;
                 this.value = 300;
                 this.spriteData = ItemSpriteData.CROWN;
+                this.texture = new Texture(Gdx.files.internal("images/items/crown.png")); // Load the texture
+
                 break;
 
             // --- PROJECTILE: No sprite needed ---
@@ -404,6 +429,12 @@ public class Item implements Renderable {
 
     public String[] getSpriteData() {
         return spriteData;
+    }
+
+    public void setValue(int value) {
+        if (this.category == ItemCategory.TREASURE) {
+            this.value = value;
+        }
     }
     public int getValue() { return value; }
     public ItemType getType() { return type; }
