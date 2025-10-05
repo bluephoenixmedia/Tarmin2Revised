@@ -227,27 +227,48 @@ public class Hud implements Disposable {
             Actor slot = backpackSlots[i];
             if (item != null) {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
-                shapeRenderer.setColor(item.getColor());
-                shapeRenderer.rect(pos.x, pos.y, slot.getWidth(), slot.getHeight());
+                String[] spriteData = ItemSpriteData.getSpriteByType(item.getType().name());
+                if (spriteData != null) {
+                    drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
+                }
             }
         }
 
         Item leftHand = player.getInventory().getLeftHand();
         if (leftHand != null) {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            shapeRenderer.setColor(leftHand.getColor());
-            shapeRenderer.rect(pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight());
+            String[] spriteData = ItemSpriteData.getSpriteByType(leftHand.getType().name());
+            if (spriteData != null) {
+                drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
+            }
         }
 
         Item rightHand = player.getInventory().getRightHand();
         if (rightHand != null) {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            shapeRenderer.setColor(rightHand.getColor());
-            shapeRenderer.rect(pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight());
+            String[] spriteData = ItemSpriteData.getSpriteByType(rightHand.getType().name());
+            if (spriteData != null) {
+                drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
+            }
         }
 
         shapeRenderer.end();
     }
+
+    private void drawItemSprite(ShapeRenderer shapeRenderer, String[] spriteData, float x, float y, float width, float height, Color color) {
+        shapeRenderer.setColor(color);
+        float pixelWidth = width / 24.0f;
+        float pixelHeight = height / 24.0f;
+
+        for (int row = 0; row < 24; row++) {
+            for (int col = 0; col < 24; col++) {
+                if (spriteData[row].charAt(col) == '#') {
+                    shapeRenderer.rect(x + col * pixelWidth, y + (23 - row) * pixelHeight, pixelWidth, pixelHeight);
+                }
+            }
+        }
+    }
+
 
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
