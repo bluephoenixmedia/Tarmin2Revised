@@ -1283,7 +1283,7 @@ public class ItemSpriteData {
             // Armor
             case "SMALL_SHIELD": return SMALL_SHIELD;
             case "LARGE_SHIELD": return LARGE_SHIELD;
-           case "GAUNTLETS": return GAUNTLETS;
+            case "GAUNTLETS": return GAUNTLETS;
             case "HAUBERK": return HAUBERK;
             case "HELMET": return HELMET;
             case "BREASTPLATE": return BREASTPLATE;
@@ -1299,6 +1299,11 @@ public class ItemSpriteData {
             // Rings
             case "SMALL_RING": return SMALL_RING;
             case "LARGE_RING": return LARGE_RING;
+            case "RING_BLUE": return SMALL_RING;
+            case "RING_PINK": return SMALL_RING;
+            case "RING_GREEN": return SMALL_RING;
+            case "RING_PURPLE": return SMALL_RING;
+
 
             // Containers
             case "REGULAR_CHEST": return REGULAR_CHEST;
@@ -1329,10 +1334,9 @@ public class ItemSpriteData {
             case "FLOUR_SACK": return FLOUR_SACK;
 
             //END GAME
-             case "TARMIN_TREASURE": return TARMIN_TREASURE;
+            case "TARMIN_TREASURE": return TARMIN_TREASURE;
 
             default: return COINS; // Default fallback
         }
     }
 }
-

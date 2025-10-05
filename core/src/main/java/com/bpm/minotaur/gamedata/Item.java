@@ -71,7 +71,7 @@ public class Item implements Renderable {
     }
 
     public enum ItemCategory {
-        WAR_WEOPON,
+        WAR_WEAPON,
         SPIRITUAL_WEAPON,
         ARMOR,
         RING,
@@ -145,13 +145,52 @@ public class Item implements Renderable {
         switch (type) {
             // --- WEAPONS ---
             case BOW:
-                this.category = ItemCategory.WAR_WEOPON;
+                this.category = ItemCategory.WAR_WEAPON;
                 this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
                 this.weaponStats = new WeaponStats(8, 10, true);
                 this.spriteData = ItemSpriteData.BOW;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png")); // Load the texture
                 this.scale.set(0.8f, 1.2f);
-
+                break;
+            case CROSSBOW:
+                this.category = ItemCategory.WAR_WEAPON;
+                this.color = new Color(0.6f, 0.4f, 0.1f, 1);
+                this.weaponStats = new WeaponStats(12, 12, true);
+                this.spriteData = ItemSpriteData.CROSSBOW;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
+                this.scale.set(0.9f, 1.3f);
+                break;
+            case KNIFE:
+                this.category = ItemCategory.WAR_WEAPON;
+                this.color = Color.GRAY;
+                this.weaponStats = new WeaponStats(5, 1, false);
+                this.spriteData = ItemSpriteData.KNIFE;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
+                this.scale.set(0.5f, 0.5f);
+                break;
+            case AXE:
+                this.category = ItemCategory.WAR_WEAPON;
+                this.color = Color.DARK_GRAY;
+                this.weaponStats = new WeaponStats(10, 1, false);
+                this.spriteData = ItemSpriteData.AXE;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
+                this.scale.set(0.8f, 0.8f);
+                break;
+            case DART:
+                this.category = ItemCategory.WAR_WEAPON;
+                this.color = Color.LIGHT_GRAY;
+                this.weaponStats = new WeaponStats(4, 8, true);
+                this.spriteData = ItemSpriteData.DART;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
+                this.scale.set(0.3f, 0.3f);
+                break;
+            case SPEAR:
+                this.category = ItemCategory.WAR_WEAPON;
+                this.color = new Color(0.4f, 0.25f, 0.05f, 1);
+                this.weaponStats = new WeaponStats(7, 2, false);
+                this.spriteData = ItemSpriteData.SPEAR;
+                this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
+                this.scale.set(1.0f, 1.5f);
                 break;
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
@@ -160,8 +199,6 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SCROLL;
                 this.texture = new Texture(Gdx.files.internal("images/items/scroll.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
-
-
                 break;
             case BOOK:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
@@ -218,7 +255,30 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SMALL_SHIELD; // Using SMALL_SHIELD for now
                 this.texture = new Texture(Gdx.files.internal("images/items/shield.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
-
+                break;
+            case LARGE_SHIELD:
+                this.category = ItemCategory.ARMOR;
+                this.color = Color.DARK_GRAY;
+                this.armorStats = new ArmorStats(10);
+                this.spriteData = ItemSpriteData.LARGE_SHIELD;
+                this.texture = new Texture(Gdx.files.internal("images/items/shield.png"));
+                this.scale.set(0.9f, 0.9f);
+                break;
+            case GAUNTLETS:
+                this.category = ItemCategory.ARMOR;
+                this.color = Color.LIGHT_GRAY;
+                this.armorStats = new ArmorStats(2);
+                this.spriteData = ItemSpriteData.GAUNTLETS;
+                this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
+                this.scale.set(0.6f, 0.6f);
+                break;
+            case HAUBERK:
+                this.category = ItemCategory.ARMOR;
+                this.color = Color.GRAY;
+                this.armorStats = new ArmorStats(8);
+                this.spriteData = ItemSpriteData.HAUBERK;
+                this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
+                this.scale.set(1.0f, 1.0f);
                 break;
             case HELMET:
                 this.category = ItemCategory.ARMOR;
@@ -227,7 +287,14 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.HELMET;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
-
+                break;
+            case BREASTPLATE:
+                this.category = ItemCategory.ARMOR;
+                this.color = Color.DARK_GRAY;
+                this.armorStats = new ArmorStats(12);
+                this.spriteData = ItemSpriteData.BREASTPLATE;
+                this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
+                this.scale.set(1.0f, 1.0f);
                 break;
 
             // --- RINGS ---
@@ -302,6 +369,34 @@ public class Item implements Renderable {
                 this.texture = new Texture(Gdx.files.internal("images/items/quiver.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
 
+                break;
+            case FLOUR_SACK:
+                this.category = ItemCategory.USEFUL;
+                this.color = Color.WHITE;
+                this.spriteData = ItemSpriteData.FLOUR_SACK;
+                this.texture = new Texture(Gdx.files.internal("images/items/small_bag.png"));
+                this.scale.set(0.6f, 0.6f);
+                break;
+            case WAR_BOOK:
+                this.category = ItemCategory.USEFUL;
+                this.color = Color.RED;
+                this.spriteData = ItemSpriteData.WAR_BOOK;
+                this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
+                this.scale.set(0.7f, 0.7f);
+                break;
+            case SPIRITUAL_BOOK:
+                this.category = ItemCategory.USEFUL;
+                this.color = Color.PURPLE;
+                this.spriteData = ItemSpriteData.SPIRITUAL_BOOK;
+                this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
+                this.scale.set(0.7f, 0.7f);
+                break;
+            case SPECIAL_BOOK:
+                this.category = ItemCategory.USEFUL;
+                this.color = Color.CYAN;
+                this.spriteData = ItemSpriteData.SPECIAL_BOOK;
+                this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
+                this.scale.set(0.7f, 0.7f);
                 break;
 
             // --- CONTAINERS ---
@@ -401,10 +496,18 @@ public class Item implements Renderable {
                 this.texture = new Texture(Gdx.files.internal("images/items/crown.png")); // Load the texture
 
                 break;
+            case TARMIN_TREASURE:
+                this.category = ItemCategory.TREASURE;
+                this.color = Color.YELLOW;
+                this.value = 1000;
+                this.spriteData = ItemSpriteData.TARMIN_TREASURE;
+                this.texture = new Texture(Gdx.files.internal("images/items/crown.png"));
+                this.scale.set(1.2f, 1.2f);
+                break;
 
             // --- PROJECTILE: No sprite needed ---
             case PROJECTILE:
-                this.category = ItemCategory.WAR_WEOPON;
+                this.category = ItemCategory.WAR_WEAPON;
                 this.color = Color.WHITE;
                 this.spriteData = null;
                 break;

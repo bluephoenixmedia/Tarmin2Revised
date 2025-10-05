@@ -46,19 +46,29 @@ public class SpawnData {
     public static final List<ItemSpawnInfo> TIER1_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.SMALL_POTION, 1, 5),
         new ItemSpawnInfo(Item.ItemType.LARGE_POTION, 1, 5),
-        new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 6)
+        new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 6),
+        new ItemSpawnInfo(Item.ItemType.BOW, 1, 4),
+        new ItemSpawnInfo(Item.ItemType.KNIFE, 1, 5),
+        new ItemSpawnInfo(Item.ItemType.AXE, 2, 6)
     );
 
     public static final List<ItemSpawnInfo> TIER2_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.BOOK, 4, 8),
         new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 4, 9),
-        new ItemSpawnInfo(Item.ItemType.HELMET, 5, 10)
+        new ItemSpawnInfo(Item.ItemType.HELMET, 5, 10),
+        new ItemSpawnInfo(Item.ItemType.DART, 3, 7),
+        new ItemSpawnInfo(Item.ItemType.SPEAR, 4, 8),
+        new ItemSpawnInfo(Item.ItemType.CROSSBOW, 5, 9)
     );
 
     public static final List<ItemSpawnInfo> TIER3_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.SMALL_FIREBALL, 7, 12),
         new ItemSpawnInfo(Item.ItemType.SMALL_LIGHTNING, 7, 12),
-        new ItemSpawnInfo(Item.ItemType.RING_BLUE, 8, 13)
+        new ItemSpawnInfo(Item.ItemType.LARGE_FIREBALL, 9, 14),
+        new ItemSpawnInfo(Item.ItemType.LARGE_LIGHTNING, 9, 14),
+        new ItemSpawnInfo(Item.ItemType.RING_BLUE, 8, 13),
+        new ItemSpawnInfo(Item.ItemType.RING_PINK, 10, 15),
+        new ItemSpawnInfo(Item.ItemType.RING_PURPLE, 12, 16)
     );
 
     // Containers are tiered separately. Better containers hold better loot.

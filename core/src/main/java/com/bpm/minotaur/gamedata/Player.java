@@ -20,7 +20,7 @@ public class Player {
     private int treasureScore = 0;
 
     private int maxWarStrength;
-    private final int maxSpiritualStrength;
+    private int maxSpiritualStrength;
 
     private final Vector2 position;
     private Direction facing;
@@ -54,8 +54,9 @@ public class Player {
         this.arrows = difficulty.startArrows;
         this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
-        this.maxWarStrength = 150; // These can remain as game-wide maximums
-        this.maxSpiritualStrength = 100;
+        this.maxWarStrength = difficulty.startWarStrength;
+        this.maxSpiritualStrength = difficulty.startSpiritualStrength;
+
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
     }
@@ -85,6 +86,15 @@ public class Player {
                 addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found a quiver with " + arrowsFound + " arrows.", 2f));
+                return;
+            }
+
+            // Handle Flour Sack pickup
+            if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
+                int foodFound = new Random().nextInt(4) + 6; // 6 to 9 food, as per the manual
+                addFood(foodFound);
+                maze.getItems().remove(targetTile);
+                eventManager.addEvent(new GameEvent("You found a flour sack with " + foodFound + " food.", 2f));
                 return;
             }
 
@@ -138,22 +148,7 @@ public class Player {
                 equipRing(itemInHand, eventManager);
                 break;
             case USEFUL:
-                switch (itemInHand.getType()) {
-                    case SMALL_POTION:
-                        setWarStrength(getWarStrength() + 20);
-                        inventory.setRightHand(null);
-                        eventManager.addEvent(new GameEvent("You feel healthier.", 2f));
-                        break;
-                    case LARGE_POTION:
-                        setMaxWarStrength(getMaxWarStrength() + 10);
-                        setWarStrength(getMaxWarStrength());
-                        inventory.setRightHand(null);
-                        eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
-                        break;
-                    default:
-                        eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
-                        break;
-                }
+                useConsumable(itemInHand, eventManager);
                 break;
             default:
                 eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
@@ -188,6 +183,7 @@ public class Player {
                 }
                 break;
             case SMALL_SHIELD:
+            case LARGE_SHIELD:
                 if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
                     wornShield = armor;
                     inventory.setRightHand(null);
@@ -200,14 +196,35 @@ public class Player {
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
-        if (item.getType() == Item.ItemType.SMALL_POTION) {
-            int healAmount = 25; // Example heal amount
-            this.warStrength = Math.min(this.maxWarStrength, this.warStrength + healAmount);
-            inventory.setRightHand(null); // Consume the potion
-            eventManager.addEvent(new GameEvent("You used a Healing Potion.", 2f));
-            Gdx.app.log("Player", "Used healing potion. WS is now " + this.warStrength);
-        } else {
-            eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
+        switch (item.getType()) {
+            case SMALL_POTION:
+                // Refresh war & spiritual strength to maximum
+                this.warStrength = this.maxWarStrength;
+                this.spiritualStrength = this.maxSpiritualStrength;
+                inventory.setRightHand(null);
+                eventManager.addEvent(new GameEvent("You feel refreshed.", 2f));
+                break;
+            case LARGE_POTION:
+                // Raise war strength score by 10
+                this.warStrength = Math.min(this.maxWarStrength, this.warStrength + 10);
+                inventory.setRightHand(null);
+                eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
+                break;
+            case WAR_BOOK:
+                this.maxWarStrength += 10;
+                this.warStrength = this.maxWarStrength;
+                inventory.setRightHand(null);
+                eventManager.addEvent(new GameEvent("Your knowledge of war grows.", 2f));
+                break;
+            case SPIRITUAL_BOOK:
+                this.maxSpiritualStrength += 10;
+                this.spiritualStrength = this.maxSpiritualStrength;
+                inventory.setRightHand(null);
+                eventManager.addEvent(new GameEvent("Your spiritual knowledge grows.", 2f));
+                break;
+            default:
+                eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
+                break;
         }
     }
 
@@ -497,6 +514,13 @@ public class Player {
         this.arrows += amount;
         if (this.arrows > 99) {
             this.arrows = 99; // Cap at 99 as per the manual
+        }
+    }
+
+    public void addFood(int amount) {
+        this.food += amount;
+        if (this.food > 99) {
+            this.food = 99; // Cap at 99 as per the manual
         }
     }
 

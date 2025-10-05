@@ -193,12 +193,7 @@ public class EntityRenderer {
             if (entity instanceof Monster) {
                 drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
-                Item item = (Item) entity;
-                if (item.getCategory() == Item.ItemCategory.CONTAINER) {
-                    drawContainerSprite(shapeRenderer, player, item, screenX, transformY, camera, viewport, depthBuffer);
-                } else {
-                    drawItemSprite(shapeRenderer, player, item, screenX, transformY, camera, viewport, depthBuffer);
-                }
+                drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
             }  else if (entity instanceof Ladder) {
                 drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Projectile) {
@@ -283,37 +278,6 @@ public class EntityRenderer {
                     shapeRenderer.setColor(item.getColor());
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
-            }
-        }
-    }
-
-    // --- METHOD SIGNATURE CORRECTED ---
-    private void drawContainerSprite(ShapeRenderer shapeRenderer, Player player, Item container, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
-        float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
-
-        int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-
-        int spriteHeight = (int)(baseSpriteHeight * container.scale.y);
-        int spriteWidth = (int)(baseSpriteHeight * container.scale.x);
-        float drawY = floorY;
-
-        int playerGridX = (int) player.getPosition().x;
-        int playerGridY = (int) player.getPosition().y;
-        int itemGridX = (int) container.getPosition().x;
-        int itemGridY = (int) container.getPosition().y;
-
-        if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
-            drawY += CLOSE_ITEM_Y_BOOST;
-        }
-
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
-
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            if (transformY < depthBuffer[stripe]) {
-                shapeRenderer.setColor(container.getColor());
-                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
             }
         }
     }
