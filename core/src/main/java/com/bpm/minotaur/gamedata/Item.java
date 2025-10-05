@@ -150,8 +150,9 @@ public class Item implements Renderable {
                 this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
                 this.weaponStats = new WeaponStats(8, 10, true);
                 this.spriteData = ItemSpriteData.BOW;
+
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png")); // Load the texture
-                this.scale.set(0.8f, 1.2f);
+                this.scale.set(0.5f, 0.5f);
                 break;
             case CROSSBOW:
                 this.category = ItemCategory.WAR_WEAPON;
@@ -535,6 +536,10 @@ public class Item implements Renderable {
         }
     }
 
+    public Vector2 getScale() {
+        return scale;
+    }
+
     public List<Item> getContents() {
         return contents;
     }
@@ -570,6 +575,7 @@ public class Item implements Renderable {
     }
     public int getValue() { return value; }
     public ItemType getType() { return type; }
+    public String getTypeName() { return type.name(); }
     public ItemCategory getCategory() { return category; }
     @Override public Vector2 getPosition() { return position; }
     @Override public Color getColor() { return color; }

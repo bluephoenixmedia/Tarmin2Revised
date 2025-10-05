@@ -2,10 +2,12 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Monster;
 import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.MonsterSpriteData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,23 +45,45 @@ public class MonsterRenderer {
             Camera camera = viewport.getCamera();
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
-            float floorOffset = 0.0f; // Adjust to make monsters appear at the correct height
-            int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
-
             int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY));
             int spriteWidth = spriteHeight;
 
-            float drawY = spriteScreenY - spriteHeight / 2.0f;
+            String[] spriteData = MonsterSpriteData.getSpriteByType(monster.getMonsterType());
 
-            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+            if (spriteData == null) {
+                return;
+            }
 
-            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-                if (transformY < depthBuffer[stripe]) {
-                    shapeRenderer.setColor(monster.getColor());
-                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+            Vector2 monsterScale = monster.getScale();
+
+            int spritePixelHeight = spriteData.length;
+            int spritePixelWidth = spriteData[0].length();
+
+            float pixelWidth = (float)spriteWidth / spritePixelWidth * monsterScale.x;
+            float pixelHeight = (float)spriteHeight / spritePixelHeight * monsterScale.y;
+
+            float totalWidth = spritePixelWidth * pixelWidth;
+            float totalHeight = spritePixelHeight * pixelHeight;
+
+            float drawStartX = screenX - totalWidth / 2;
+            float drawStartY = (camera.viewportHeight / 2) - totalHeight / 2;
+
+
+            for (int px = 0; px < spritePixelWidth; px++) {
+                float currentX = drawStartX + px * pixelWidth;
+                int screenStripe = (int) currentX;
+
+                if (screenStripe >= 0 && screenStripe < viewport.getScreenWidth() && transformY < depthBuffer[screenStripe]) {
+                    for (int py = 0; py < spritePixelHeight; py++) {
+                        if (spriteData[py].charAt(px) == '#') {
+                            float currentY = drawStartY + (spritePixelHeight - 1 - py) * pixelHeight;
+                            shapeRenderer.setColor(monster.getColor());
+                            shapeRenderer.rect(currentX, currentY, pixelWidth, pixelHeight);
+                        }
+                    }
                 }
             }
         }
+
     }
 }

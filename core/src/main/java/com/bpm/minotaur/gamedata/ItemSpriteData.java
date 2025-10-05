@@ -1369,4 +1369,41 @@ public class ItemSpriteData {
             default: return null;
         }
     }
+
+    /**
+     * Scales a sprite represented by a String array to a new size.
+     *
+     * @param spriteData The original sprite data.
+     * @param scale The scaling factor (e.g., 0.5f for 50%, 2.0f for 200%).
+     * @return A new String array representing the scaled sprite.
+     */
+    public static String[] scaleSprite(String[] spriteData, float scale) {
+        if (spriteData == null || spriteData.length == 0) {
+            return null;
+        }
+
+        int originalHeight = spriteData.length;
+        int originalWidth = spriteData[0].length();
+
+        int newWidth = (int) (originalWidth * scale);
+        int newHeight = (int) (originalHeight * scale);
+
+        if (newWidth <= 0 || newHeight <= 0) {
+            return new String[]{" "}; // Return a minimal sprite if scaled too small
+        }
+
+        String[] newSprite = new String[newHeight];
+
+        for (int y = 0; y < newHeight; y++) {
+            StringBuilder row = new StringBuilder();
+            for (int x = 0; x < newWidth; x++) {
+                int originalX = (int) (x / scale);
+                int originalY = (int) (y / scale);
+                row.append(spriteData[originalY].charAt(originalX));
+            }
+            newSprite[y] = row.toString();
+        }
+
+        return newSprite;
+    }
 }
