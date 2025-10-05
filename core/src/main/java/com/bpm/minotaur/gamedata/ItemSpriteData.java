@@ -1336,7 +1336,7 @@ public class ItemSpriteData {
             //END GAME
             case "TARMIN_TREASURE": return TARMIN_TREASURE;
 
-            default: return COINS; // Default fallback
+            default: return null;
         }
     }
 }
