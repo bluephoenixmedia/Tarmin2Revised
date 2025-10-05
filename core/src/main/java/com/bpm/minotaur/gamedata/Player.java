@@ -231,7 +231,7 @@ public class Player {
 
     private void updateVectors() {
         directionVector.set(facing.getVector());
-        cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);
+        cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);  // Changed second component
     }
 
     public void rest() {
