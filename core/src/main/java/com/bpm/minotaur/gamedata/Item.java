@@ -13,37 +13,52 @@ public class Item implements Renderable {
     public enum ItemType {
         // Weapons
         BOW,
+        CROSSBOW,
+        KNIFE,
+        AXE,
+        DART,
+        SPEAR,
         PROJECTILE,
         SCROLL,
         BOOK,
         SMALL_FIREBALL,
         LARGE_FIREBALL,
-        SMALL_LIGHTNING_BOLT,
-        LARGE_LIGHTNING_BOLT,
+        SMALL_LIGHTNING,
+        LARGE_LIGHTNING,
 
         // Armor
-        SHIELD,
+        SMALL_SHIELD,
+        LARGE_SHIELD,
+        GAUNTLETS,
+        HAUBERK,
         HELMET,
+        BREASTPLATE,
 
         // Rings
+        SMALL_RING,
+        LARGE_RING,
         RING_BLUE,
         RING_PINK,
         RING_GREEN,
         RING_PURPLE,
 
         // Useful
-        POTION_STRENGTH,
-        POTION_HEALING,
+        SMALL_POTION,
+        LARGE_POTION,
         KEY,
         QUIVER,
+        WAR_BOOK,
+        SPIRITUAL_BOOK,
+        SPECIAL_BOOK,
+        FLOUR_SACK,
 
         // Containers
         MONEY_BELT,
         SMALL_BAG,
         BOX,
-        PACK,
+        MEDIUM_PACK,
         LARGE_BAG,
-        CHEST,
+        REGULAR_CHEST,
 
         // Treasures
         COINS,
@@ -51,7 +66,8 @@ public class Item implements Renderable {
         INGOT,
         LAMP,
         CHALICE,
-        CROWN
+        CROWN,
+        TARMIN_TREASURE
     }
 
     public enum ItemCategory {
@@ -175,7 +191,7 @@ public class Item implements Renderable {
                 this.scale.set(0.8f, 0.8f);
 
                 break;
-            case SMALL_LIGHTNING_BOLT:
+            case SMALL_LIGHTNING:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.CYAN;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(25);
@@ -184,7 +200,7 @@ public class Item implements Renderable {
                 this.scale.set(0.7f, 0.7f);
 
                 break;
-            case LARGE_LIGHTNING_BOLT:
+            case LARGE_LIGHTNING:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 this.color = Color.CYAN;
                 this.spiritualWeaponStats = new SpiritualWeaponStats(35);
@@ -195,7 +211,7 @@ public class Item implements Renderable {
                 break;
 
             // --- ARMOR ---
-            case SHIELD:
+            case SMALL_SHIELD:
                 this.category = ItemCategory.ARMOR;
                 this.color = Color.GRAY;
                 this.armorStats = new ArmorStats(5);
@@ -253,7 +269,7 @@ public class Item implements Renderable {
                 break;
 
             // --- USEFUL ---
-            case POTION_STRENGTH:
+            case SMALL_POTION:
                 this.category = ItemCategory.USEFUL;
                 this.color = new Color(0.6f, 0.2f, 0.2f, 1);
                 this.liquidColor = Color.RED;
@@ -262,11 +278,11 @@ public class Item implements Renderable {
                 this.scale.set(0.2f, 0.2f);
 
                 break;
-            case POTION_HEALING:
+            case LARGE_POTION:
                 this.category = ItemCategory.USEFUL;
                 this.color = new Color(0.2f, 0.6f, 0.2f, 1);
                 this.liquidColor = Color.GREEN;
-                this.spriteData = ItemSpriteData.SMALL_POTION;
+                this.spriteData = ItemSpriteData.LARGE_POTION;
                 this.texture = new Texture(Gdx.files.internal("images/items/potion_blue.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
 
@@ -311,7 +327,7 @@ public class Item implements Renderable {
                 this.texture = new Texture(Gdx.files.internal("images/items/box_.png")); // Load the texture
 
                 break;
-            case PACK:
+            case MEDIUM_PACK:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.ORANGE;
                 this.isLocked = true;
@@ -326,7 +342,7 @@ public class Item implements Renderable {
                 this.texture = new Texture(Gdx.files.internal("images/items/large_bag.png")); // Load the texture
 
                 break;
-            case CHEST:
+            case REGULAR_CHEST:
                 this.category = ItemCategory.CONTAINER;
                 this.color = Color.BLUE;
                 this.isLocked = true;

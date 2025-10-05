@@ -44,20 +44,20 @@ public class SpawnData {
     // Items are also tiered to provide better loot in deeper levels.
 
     public static final List<ItemSpawnInfo> TIER1_ITEMS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.POTION_HEALING, 1, 5),
-        new ItemSpawnInfo(Item.ItemType.POTION_STRENGTH, 1, 5),
+        new ItemSpawnInfo(Item.ItemType.SMALL_POTION, 1, 5),
+        new ItemSpawnInfo(Item.ItemType.LARGE_POTION, 1, 5),
         new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 6)
     );
 
     public static final List<ItemSpawnInfo> TIER2_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.BOOK, 4, 8),
-        new ItemSpawnInfo(Item.ItemType.SHIELD, 4, 9),
+        new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 4, 9),
         new ItemSpawnInfo(Item.ItemType.HELMET, 5, 10)
     );
 
     public static final List<ItemSpawnInfo> TIER3_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.SMALL_FIREBALL, 7, 12),
-        new ItemSpawnInfo(Item.ItemType.SMALL_LIGHTNING_BOLT, 7, 12),
+        new ItemSpawnInfo(Item.ItemType.SMALL_LIGHTNING, 7, 12),
         new ItemSpawnInfo(Item.ItemType.RING_BLUE, 8, 13)
     );
 
@@ -69,12 +69,12 @@ public class SpawnData {
 
     public static final List<ItemSpawnInfo> TIER2_CONTAINERS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.BOX, 3, 7),
-        new ItemSpawnInfo(Item.ItemType.PACK, 4, 8)
+        new ItemSpawnInfo(Item.ItemType.MEDIUM_PACK, 4, 8)
     );
 
     public static final List<ItemSpawnInfo> TIER3_CONTAINERS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.LARGE_BAG, 6, 10),
-        new ItemSpawnInfo(Item.ItemType.CHEST, 8, 12)
+        new ItemSpawnInfo(Item.ItemType.REGULAR_CHEST, 8, 12)
     );
 
     // Treasures that can be found inside containers.

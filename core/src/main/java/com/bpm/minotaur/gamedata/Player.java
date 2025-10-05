@@ -139,12 +139,12 @@ public class Player {
                 break;
             case USEFUL:
                 switch (itemInHand.getType()) {
-                    case POTION_HEALING:
+                    case SMALL_POTION:
                         setWarStrength(getWarStrength() + 20);
                         inventory.setRightHand(null);
                         eventManager.addEvent(new GameEvent("You feel healthier.", 2f));
                         break;
-                    case POTION_STRENGTH:
+                    case LARGE_POTION:
                         setMaxWarStrength(getMaxWarStrength() + 10);
                         setWarStrength(getMaxWarStrength());
                         inventory.setRightHand(null);
@@ -187,7 +187,7 @@ public class Player {
                     eventManager.addEvent(new GameEvent("This helmet is not better.", 2f));
                 }
                 break;
-            case SHIELD:
+            case SMALL_SHIELD:
                 if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
                     wornShield = armor;
                     inventory.setRightHand(null);
@@ -200,7 +200,7 @@ public class Player {
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
-        if (item.getType() == Item.ItemType.POTION_HEALING) {
+        if (item.getType() == Item.ItemType.SMALL_POTION) {
             int healAmount = 25; // Example heal amount
             this.warStrength = Math.min(this.maxWarStrength, this.warStrength + healAmount);
             inventory.setRightHand(null); // Consume the potion

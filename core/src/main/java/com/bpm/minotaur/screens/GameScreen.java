@@ -384,8 +384,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 char c = layout[layoutY].charAt(x);
                 if (c == 'D') { maze.addGameObject(new Door(), x, y); }
                 else if (c == 'G') { maze.addGate(new Gate(x, y)); } // This line now works with the procedural gate
-                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.POTION_STRENGTH, x, y)); }
-                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.POTION_HEALING, x, y)); }
+                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.LARGE_POTION, x, y)); }
+                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.SMALL_POTION, x, y)); }
             }
         }
 
