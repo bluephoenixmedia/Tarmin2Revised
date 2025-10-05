@@ -282,36 +282,18 @@ public class EntityRenderer {
         }
     }
 
-    // ... (rest of the file is unchanged) ...
     private void drawLadderSprite(ShapeRenderer shapeRenderer, Ladder ladder, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        // Calculate the screen height of a full wall tile at this distance
         int spriteHeight = (int) (camera.viewportHeight / transformY);
-        // Calculate the Y position of the floor at this distance
         float floorY = (camera.viewportHeight / 2) - (spriteHeight / 2f);
-        // The ladder should start from the floor
         float drawY = floorY;
+        int spriteWidth = (int) (spriteHeight * 0.5f);
 
-        int spriteWidth = (int) (spriteHeight * 0.5f); // Ladders are narrower than they are tall
-
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
-
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            if (transformY < depthBuffer[stripe]) {
-                shapeRenderer.setColor(ladder.getColor());
-                // Draw the two vertical rails of the ladder
-                if (stripe == drawStartX || stripe == drawEndX - 1) {
-                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
-                }
-                // Draw the horizontal rungs
-                for (int i = 1; i < 5; i++) {
-                    // A small constant height for the rungs
-                    float rungHeight = Math.max(1, spriteHeight * 0.03f);
-                    shapeRenderer.rect(stripe, drawY + (spriteHeight * (i/5.0f)), 1, rungHeight);
-                }
-            }
+        String[] spriteData = ItemSpriteData.getSpriteByType("LADDER");
+        if (spriteData != null) {
+            drawAsciiSprite(shapeRenderer, ladder, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         }
     }
+
     private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) {
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);

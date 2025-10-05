@@ -492,6 +492,22 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public boolean keyDown(int keycode) {
+        // --- Actions available during player's turn in combat AND out of combat ---
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            switch (keycode) {
+                case Input.Keys.S:
+                    player.getInventory().swapHands();
+                    return true;
+                case Input.Keys.E:
+                    player.getInventory().swapWithPack();
+                    return true;
+                case Input.Keys.T:
+                    player.getInventory().rotatePack();
+                    return true;
+            }
+        }
+
+        // --- Actions available ONLY during combat ---
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             if (keycode == Input.Keys.A) {
                 combatManager.playerAttack();
@@ -499,6 +515,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
+        // --- Actions available ONLY when NOT in combat ---
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             switch (keycode) {
                 case Input.Keys.UP:
@@ -519,45 +536,46 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     player.turnRight();
                     needsAsciiRender = true;
                     break;
-                case Input.Keys.F1:
-                    debugManager.toggleOverlay();
-                    break;
-                case Input.Keys.F2:
-                    debugManager.toggleRenderMode();
-                    break;
                 case Input.Keys.O:
                     player.interact(maze, eventManager, soundManager);
                     needsAsciiRender = true;
                     break;
-                case Input.Keys.M:  // Add this case
-                    game.setScreen(new CastleMapScreen(game, player, maze, this));
-                    break;
-                case Input.Keys.R:
-                    player.rest();
-                    break;
-                case Input.Keys.S:
-                    player.getInventory().swapHands();
-                    break;
-                case Input.Keys.E:
-                    player.getInventory().swapWithPack();
-                    break;
-                case Input.Keys.T:
-                    player.getInventory().rotatePack();
+                case Input.Keys.P:
+                    player.interactWithItem(maze, eventManager, soundManager);
                     break;
                 case Input.Keys.U:
                     player.useItem(eventManager);
                     break;
-                case Input.Keys.P:
-                    player.interactWithItem(maze, eventManager, soundManager);
-                    break;
                 case Input.Keys.D:
-                    GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
-                    if (maze.getLadders().containsKey(playerPos)) {
+                    int targetX = (int) (player.getPosition().x + player.getFacing().getVector().x);
+                    int targetY = (int) (player.getPosition().y + player.getFacing().getVector().y);
+                    GridPoint2 targetTile = new GridPoint2(targetX, targetY);
+                    if (maze.getLadders().containsKey(targetTile)) {
                         descendToNextLevel();
                     }
                     break;
+                case Input.Keys.R:
+                    player.rest();
+                    break;
             }
         }
+
+        // --- Global actions available at any time ---
+        switch (keycode) {
+            case Input.Keys.F1:
+                debugManager.toggleOverlay();
+                break;
+            case Input.Keys.F2:
+                debugManager.toggleRenderMode();
+                break;
+            case Input.Keys.M:
+                // Prevent opening map during combat
+                if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                    game.setScreen(new CastleMapScreen(game, player, maze, this));
+                }
+                break;
+        }
+
         return true;
     }
 
