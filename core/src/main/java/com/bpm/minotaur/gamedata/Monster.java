@@ -211,6 +211,10 @@ public class Monster implements Renderable {
         return texture;
     }
 
+    public Vector2 getScale() {
+        return scale;
+    }
+
     public void scaleStats(int level) {
         int levelBonus = level / 2;
         this.warStrength += levelBonus;
@@ -218,6 +222,7 @@ public class Monster implements Renderable {
         this.armor += levelBonus / 2;
     }
     public MonsterType getType() { return type; }
+    public String getMonsterType() { return type.name(); }
     @Override public Vector2 getPosition() { return position; }
     @Override public Color getColor() { return color; }
     public int getWarStrength() { return warStrength; }

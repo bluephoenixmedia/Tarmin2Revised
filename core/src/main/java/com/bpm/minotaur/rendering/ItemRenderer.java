@@ -2,8 +2,10 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Item;
+import com.bpm.minotaur.gamedata.ItemSpriteData;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Player;
 
@@ -24,13 +26,13 @@ public class ItemRenderer {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (Item item : items) {
-            drawPotion(shapeRenderer, player, item, viewport, depthBuffer);
+            drawItem(shapeRenderer, player, item, viewport, depthBuffer);
         }
 
         shapeRenderer.end();
     }
 
-    private void drawPotion(ShapeRenderer shapeRenderer, Player player, Item item, Viewport viewport, float[] depthBuffer) {
+    private void drawItem(ShapeRenderer shapeRenderer, Player player, Item item, Viewport viewport, float[] depthBuffer) {
         float spriteX = item.getPosition().x - player.getPosition().x;
         float spriteY = item.getPosition().y - player.getPosition().y;
 
@@ -43,33 +45,45 @@ public class ItemRenderer {
             Camera camera = viewport.getCamera();
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
-            float floorOffset = 0.4f;
-            int spriteScreenY = (int)(camera.viewportHeight / 2 * (1 + floorOffset / transformY));
-
             int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-            int spriteWidth = spriteHeight / 2;
+            int spriteWidth = spriteHeight;
 
-            float drawY = spriteScreenY - spriteHeight;
+            String[] spriteData = ItemSpriteData.getSpriteByType(item.getTypeName());
 
-            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+            if (spriteData == null) {
+                return; // No sprite data found for this item
+            }
 
-            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-                if (transformY < depthBuffer[stripe]) {
-                    // Body of the potion
-                    shapeRenderer.setColor(item.getColor());
-                    shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+            Vector2 itemScale = item.getScale();
 
-                    // Liquid part
-                    shapeRenderer.setColor(item.getLiquidColor());
-                    shapeRenderer.rect(stripe, drawY + spriteHeight * 0.1f, 1, spriteHeight * 0.5f);
+            int spritePixelHeight = spriteData.length;
+            int spritePixelWidth = spriteData[0].length();
 
-                    // Cork
-                    shapeRenderer.setColor(item.getColor().cpy().mul(0.7f));
-                    shapeRenderer.rect(stripe, drawY + spriteHeight, 1, spriteHeight * 0.2f);
+            float pixelWidth = (float)spriteWidth / spritePixelWidth * itemScale.x;
+            float pixelHeight = (float)spriteHeight / spritePixelHeight * itemScale.y;
+
+            float totalWidth = spritePixelWidth * pixelWidth;
+            float totalHeight = spritePixelHeight * pixelHeight;
+
+            float drawStartX = screenX - totalWidth / 2;
+            float drawStartY = (camera.viewportHeight / 2) - totalHeight;
+
+
+            for (int px = 0; px < spritePixelWidth; px++) {
+                float currentX = drawStartX + px * pixelWidth;
+                int screenStripe = (int)currentX;
+
+                if (screenStripe >= 0 && screenStripe < viewport.getScreenWidth() && transformY < depthBuffer[screenStripe]) {
+                    for (int py = 0; py < spritePixelHeight; py++) {
+                        if (spriteData[py].charAt(px) == '#') {
+                            float currentY = drawStartY + (spritePixelHeight - 1 - py) * pixelHeight;
+                            shapeRenderer.setColor(item.getColor());
+                            shapeRenderer.rect(currentX, currentY, pixelWidth, pixelHeight);
+                        }
+                    }
                 }
             }
         }
+
     }
 }
-

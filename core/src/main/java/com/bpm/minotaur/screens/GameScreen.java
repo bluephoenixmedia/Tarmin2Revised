@@ -411,6 +411,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     @Override
     public void render(float delta) {
         // --- UPDATE LOGIC ---
+
+        float myRetroPixelScale = 1.0f;
         combatManager.update(delta);
         animationManager.update(delta);
         maze.update(delta);
