@@ -164,7 +164,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         } else
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Key pressed. Starting game...");
-            game.setScreen(new GameScreen(game, Difficulty.EASIEST));
+            game.setScreen(new GameScreen(game, 1, Difficulty.EASIEST));
             return true;
         }
         return false;
@@ -174,7 +174,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Screen touched. Starting game...");
-            game.setScreen(new GameScreen(game, Difficulty.EASIEST));
+            game.setScreen(new GameScreen(game,1,  Difficulty.EASIEST));
             return true;
         }
         return false;
