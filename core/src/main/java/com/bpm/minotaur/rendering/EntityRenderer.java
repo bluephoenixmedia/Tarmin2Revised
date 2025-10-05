@@ -353,15 +353,21 @@ public class EntityRenderer {
         int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            int texX = (int) (256 * (stripe - (-spriteWidth / 2 + screenX)) * 8 / spriteWidth) / 256;
-
             if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth() && transformY < depthBuffer[stripe]) {
+
+                int texX = (int)(((double)(stripe - (screenX - spriteWidth/2)) / spriteWidth) * 24.0);
+
                 for (int y = 0; y < spriteHeight; y++) {
-                    int texY = (((y * 256) / spriteHeight) / 256) * 8;
-                    if (texX >= 0 && texX < 8 && texY >= 0 && texY < 8) {
-                        if (spriteData[texY].charAt(texX) == 'X') {
+                    int screenY = (int)drawY + y;
+                    if(screenY < 0 || screenY >= viewport.getScreenHeight()) continue;
+
+                    // --- VERTICAL FLIP LOGIC ---
+                    int texY = 23 - (int)(((double)y / spriteHeight) * 24.0);
+
+                    if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24) {
+                        if (spriteData[texY].charAt(texX) == '#') {
                             shapeRenderer.setColor(entity.getColor());
-                            shapeRenderer.rect(stripe, drawY + y, 1, 1);
+                            shapeRenderer.rect(stripe, screenY, 1, 1);
                         }
                     }
                 }

@@ -27,6 +27,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final BitmapFont font = new BitmapFont();
 
     private boolean needsAsciiRender = false;
+    private final int level; // <-- ADD THIS LINE
 
 
     // --- Renderers ---
@@ -104,9 +105,28 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
 
-    public GameScreen(Tarmin2 game, Difficulty difficulty) {
+    public GameScreen(Tarmin2 game, int level, Difficulty difficulty) {
         super(game);
         this.difficulty = difficulty; // Store the selected difficulty
+        this.level = level;
+
+        switch (level) {
+            case 1:
+            case 2:
+            case 3:
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_ambient.ogg");
+                break;
+            case 4:
+            case 5:
+            case 6:
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
+                break;
+            // Add more cases for other levels and tracks
+            default:
+                MusicManager.getInstance().stop(); // Or play a default track
+                break;
+        }
+
     }
 
     @Override
@@ -116,6 +136,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         eventManager = new GameEventManager();
         soundManager = new SoundManager(debugManager);
         generateLevel(currentLevel);
+    }
+
+    @Override
+    public void hide() {
+        // Stop the music when leaving the game screen
+        MusicManager.getInstance().stop();
     }
 
     private void descendToNextLevel() {

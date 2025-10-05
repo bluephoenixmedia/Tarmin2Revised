@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.screens.MainMenuScreen;
 
 /**
@@ -27,6 +28,11 @@ public class Tarmin2 extends Game {
         // A FitViewport maintains the aspect ratio by adding black bars if needed.
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
 
+        MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
+        MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
+        // Add more tracks here
+        MusicManager.getInstance().finishLoading(); // Wait for them to load
+
         // Set the initial screen to the main menu.
         this.setScreen(new MainMenuScreen(this));
     }
@@ -45,6 +51,9 @@ public class Tarmin2 extends Game {
         if (getScreen() != null) {
             getScreen().dispose();
         }
+
+        MusicManager.getInstance().dispose();
+
     }
 
     @Override
