@@ -79,54 +79,56 @@ public class CombatManager {
     }
 
     public void playerAttack() {
-        if (currentState == CombatState.PLAYER_TURN) {
-            Item weapon = player.getInventory().getRightHand();
-            int damage;
+        if (currentState != CombatState.PLAYER_TURN) return;
 
-            // Check for ranged attack with no arrows BEFORE doing anything else
-            if (weapon != null && weapon.getType() == Item.ItemType.BOW && player.getArrows() <= 0) {
-                Gdx.app.log("CombatManager", "Player has no arrows!");
-                eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
-                // IMPORTANT: Do not change the state. It remains the player's turn.
-                return;
-            }
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon != null) {
+            if (weapon.getCategory() == Item.ItemCategory.WAR_WEAPON && weapon.getWeaponStats() != null) {
+                // Ranged weapon check
+                if (weapon.getWeaponStats().isRanged) {
+                    if (player.getArrows() > 0) {
+                        player.decrementArrow();
+                       // soundManager.playPlayerAttackSound();
+                        monster.takeDamage(weapon.getWeaponStats().damage);
+                        eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
+                       // animationManager.add(new Animation.Projectile(player, monster, Color.WHITE));
+                    } else {
+                        eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
+                    }
+                } else { // Melee weapon
+                  //  soundManager.playPlayerAttackSound();
+                    monster.takeDamage(weapon.getWeaponStats().damage);
+                    eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
+                }
 
-            Gdx.app.log("CombatManager", "Player attacks " + monster.getType());
-            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
-            soundManager.playPlayerAttackSound(weapon);
+                if (weapon.vanishesOnUse()) {
+                    player.getInventory().setRightHand(null);
+                }
 
-            if (weapon != null && weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
-                damage = weapon.getSpiritualWeaponStats().damage + player.getSpiritualStrength() / 10 + random.nextInt(5);
-                Gdx.app.log("CombatManager", "Player deals " + damage + " spiritual damage.");
-                monster.takeSpiritualDamage(damage);
+            } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
+                //soundManager.playPlayerSpiritualAttackSound();
+                monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage);
+                eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
+               // animationManager.add(new Animation.Projectile(player, monster, weapon.getColor()));
 
-                if (monster.getSpiritualStrength() <= 0) {
-                    currentState = CombatState.VICTORY;
-                } else {
-                    currentState = CombatState.MONSTER_TURN;
+                if (weapon.vanishesOnUse()) {
+                    player.getInventory().setRightHand(null);
                 }
             } else {
-                if (weapon != null && weapon.getType() == Item.ItemType.BOW) {
-                    player.decrementArrow();
-                    damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
-                    Gdx.app.log("CombatManager", "Player fires an arrow, dealing " + damage + " damage.");
-                } else if (weapon != null && weapon.getWeaponStats() != null) {
-                    damage = weapon.getWeaponStats().damage + player.getWarStrength() / 10 + random.nextInt(5);
-                    Gdx.app.log("CombatManager", "Player deals " + damage + " damage.");
-                } else {
-                    damage = player.getWarStrength() / 10 + random.nextInt(2);
-                    Gdx.app.log("CombatManager", "Player is unarmed!");
-                }
-                monster.takeDamage(damage);
-
-                if (monster.getWarStrength() <= 0) {
-                    currentState = CombatState.VICTORY;
-                } else {
-                    currentState = CombatState.MONSTER_TURN;
-                }
+                eventManager.addEvent(new GameEvent("You can't attack with this item.", 2f));
+                return; // Don't switch turns if the attack was invalid
             }
+        } else {
+            eventManager.addEvent(new GameEvent("You have no weapon to attack with.", 2f));
+            return; // Don't switch turns if there's no weapon
         }
 
+
+        if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
+            currentState = CombatState.VICTORY;
+        } else {
+            currentState = CombatState.MONSTER_TURN;
+        }
     }
 
     public void monsterAttack() {

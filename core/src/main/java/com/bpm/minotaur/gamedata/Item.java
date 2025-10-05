@@ -133,6 +133,7 @@ public class Item implements Renderable {
     private final List<Item> contents = new ArrayList<>();
     private boolean isLocked = false;
     private int value = 0;
+    private boolean vanishesOnUse = false;
 
 
 
@@ -167,6 +168,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.KNIFE;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.5f, 0.5f);
+                this.vanishesOnUse = true;
                 break;
             case AXE:
                 this.category = ItemCategory.WAR_WEAPON;
@@ -175,6 +177,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.AXE;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.8f, 0.8f);
+                this.vanishesOnUse = true;
                 break;
             case DART:
                 this.category = ItemCategory.WAR_WEAPON;
@@ -183,6 +186,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.DART;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.3f, 0.3f);
+                this.vanishesOnUse = true;
                 break;
             case SPEAR:
                 this.category = ItemCategory.WAR_WEAPON;
@@ -191,6 +195,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SPEAR;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(1.0f, 1.5f);
+                this.vanishesOnUse = true;
                 break;
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
@@ -216,6 +221,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SMALL_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/firenball.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = true;
 
 
                 break;
@@ -226,6 +232,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.LARGE_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_fireball.png")); // Load the texture
                 this.scale.set(0.8f, 0.8f);
+                this.vanishesOnUse = true;
 
                 break;
             case SMALL_LIGHTNING:
@@ -235,6 +242,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SMALL_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/lightning_bolt.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = true;
 
                 break;
             case LARGE_LIGHTNING:
@@ -244,6 +252,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.LARGE_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_bolt.png")); // Load the texture
                 this.scale.set(0.9f, 0.9f);
+                this.vanishesOnUse = true;
 
                 break;
 
@@ -343,7 +352,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SMALL_POTION;
                 this.texture = new Texture(Gdx.files.internal("images/items/potion_gold.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
-
+                this.vanishesOnUse = true;
                 break;
             case LARGE_POTION:
                 this.category = ItemCategory.USEFUL;
@@ -352,7 +361,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.LARGE_POTION;
                 this.texture = new Texture(Gdx.files.internal("images/items/potion_blue.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
-
+                this.vanishesOnUse = true;
                 break;
             case KEY:
                 this.category = ItemCategory.USEFUL;
@@ -360,7 +369,6 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.KEY;
                 this.texture = new Texture(Gdx.files.internal("images/items/key.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
-
                 break;
             case QUIVER:
                 this.category = ItemCategory.USEFUL;
@@ -368,7 +376,6 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.QUIVER;
                 this.texture = new Texture(Gdx.files.internal("images/items/quiver.png")); // Load the texture
                 this.scale.set(0.2f, 0.2f);
-
                 break;
             case FLOUR_SACK:
                 this.category = ItemCategory.USEFUL;
@@ -383,6 +390,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.WAR_BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = true;
                 break;
             case SPIRITUAL_BOOK:
                 this.category = ItemCategory.USEFUL;
@@ -390,6 +398,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SPIRITUAL_BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = true;
                 break;
             case SPECIAL_BOOK:
                 this.category = ItemCategory.USEFUL;
@@ -548,6 +557,10 @@ public class Item implements Renderable {
 
     public String[] getSpriteData() {
         return spriteData;
+    }
+
+    public boolean vanishesOnUse() {
+        return vanishesOnUse;
     }
 
     public void setValue(int value) {
