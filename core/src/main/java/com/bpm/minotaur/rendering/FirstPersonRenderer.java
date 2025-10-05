@@ -613,4 +613,129 @@ public class FirstPersonRenderer {
             this.wallX = wallX;
         }
     }
+
+    /**
+     * Checks if there is a clear line of sight from the player to a target position.
+     * This is used by EntityRenderer to determine if entities should be visible.
+     *
+     * @param player The player object
+     * @param maze The maze
+     * @param targetPos The world position to check visibility to
+     * @return The distance to the first obstruction, or the distance to target if clear
+     */
+    public float checkLineOfSight(Player player, Maze maze, Vector2 targetPos) {
+        Vector2 renderPosition;
+        int playerX = (int) player.getPosition().x;
+        int playerY = (int) player.getPosition().y;
+        boolean isBehindBlocked = maze.isWallBlocking(playerX, playerY, player.getFacing().getOpposite());
+
+        if (isBehindBlocked) {
+            renderPosition = player.getPosition().cpy();
+        } else {
+            renderPosition = player.getPosition().cpy().sub(player.getDirectionVector());
+        }
+
+        // Calculate direction from render position to target
+        Vector2 rayDir = targetPos.cpy().sub(renderPosition);
+        float targetDistance = rayDir.len();
+        rayDir.nor(); // Normalize to unit vector
+
+        // Check if we're starting inside a door
+        int startTileX = (int) renderPosition.x;
+        int startTileY = (int) renderPosition.y;
+        Object startObject = maze.getGameObjectAt(startTileX, startTileY);
+        Door doorToIgnore = null;
+        if (startObject instanceof Door) {
+            doorToIgnore = (Door) startObject;
+        }
+
+        // DDA setup
+        int mapX = (int) renderPosition.x;
+        int mapY = (int) renderPosition.y;
+
+        Vector2 deltaDist = new Vector2(
+            (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
+            (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y)
+        );
+
+        Vector2 sideDist = new Vector2();
+        int stepX, stepY;
+
+        if (rayDir.x < 0) {
+            stepX = -1;
+            sideDist.x = (renderPosition.x - mapX) * deltaDist.x;
+        } else {
+            stepX = 1;
+            sideDist.x = (mapX + 1.0f - renderPosition.x) * deltaDist.x;
+        }
+
+        if (rayDir.y < 0) {
+            stepY = -1;
+            sideDist.y = (renderPosition.y - mapY) * deltaDist.y;
+        } else {
+            stepY = 1;
+            sideDist.y = (mapY + 1.0f - renderPosition.y) * deltaDist.y;
+        }
+
+        boolean hit = false;
+        int side = 0;
+        int maxDistance = 50;
+        int distanceTraveled = 0;
+        float hitDistance = Float.MAX_VALUE;
+
+        // DDA algorithm
+        while (!hit && distanceTraveled < maxDistance) {
+            float currentDistance;
+            if (sideDist.x < sideDist.y) {
+                currentDistance = sideDist.x;
+                sideDist.x += deltaDist.x;
+                mapX += stepX;
+                side = 0;
+            } else {
+                currentDistance = sideDist.y;
+                sideDist.y += deltaDist.y;
+                mapY += stepY;
+                side = 1;
+            }
+
+            // If we've gone past the target, return target distance (clear line of sight)
+            if (currentDistance > targetDistance) {
+                return targetDistance;
+            }
+
+            if (isOutOfBounds(mapX, mapY, maze)) {
+                hit = true;
+                hitDistance = currentDistance;
+            } else {
+                int wallData = maze.getWallDataAt(mapX, mapY);
+                int prevMapX = (side == 0) ? mapX - stepX : mapX;
+                int prevMapY = (side == 1) ? mapY - stepY : mapY;
+                int prevWallData = maze.getWallDataAt(prevMapX, prevMapY);
+
+                // Check for wall collision
+                if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
+                    hit = true;
+                    hitDistance = currentDistance;
+                }
+                // Check for door collision
+                else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                    Object obj = maze.getGameObjectAt(mapX, mapY);
+                    if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+
+                    if (obj instanceof Door && obj != doorToIgnore) {
+                        Door door = (Door) obj;
+                        if (door.getState() != Door.DoorState.OPEN) {
+                            // Closed door blocks line of sight
+                            hit = true;
+                            hitDistance = currentDistance;
+                        }
+                        // Open door doesn't block - continue
+                    }
+                }
+            }
+            distanceTraveled++;
+        }
+
+        return hit ? hitDistance : targetDistance;
+    }
 }

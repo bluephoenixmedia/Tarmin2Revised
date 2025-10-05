@@ -424,12 +424,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer());
+            entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
         } else {
-            entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer());
+            entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
         }
 
-        animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer());
+        animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
 
         if (debugManager.isDebugOverlayVisible()) {
             debugRenderer.render(shapeRenderer, player, maze, game.viewport);
