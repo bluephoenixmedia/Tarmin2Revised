@@ -240,18 +240,53 @@ private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Rendera
     }
 }
     private void drawProjectile(ShapeRenderer shapeRenderer, Projectile projectile, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        // ... (This method is unchanged)
+        //
+        // --- THIS PART REMAINS THE SAME ---
+        //
         float floorOffset = 0.5f;
         int spriteScreenY = (int) (camera.viewportHeight / 2 * (1 + floorOffset / transformY));
+
+        // You can adjust the overall size of the projectile here if needed
         int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 4;
         int spriteWidth = spriteHeight;
-        float drawY = spriteScreenY - spriteHeight / 2.0f;
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            if (transformY < depthBuffer[stripe]) {
-                shapeRenderer.setColor(projectile.getColor());
-                shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
+
+        // --- THIS IS THE NEW LOGIC ---
+
+        // 1. Get the sprite data for the DART
+        String[] spriteData = ItemSpriteData.DART;
+        if (spriteData == null) return; // Exit if the sprite data doesn't exist
+
+        int spritePixelHeight = spriteData.length;
+        int spritePixelWidth = spriteData[0].length();
+
+        // 2. Calculate the on-screen size of each "pixel" from the sprite data
+        float pixelWidth = (float)spriteWidth / spritePixelWidth;
+        float pixelHeight = (float)spriteHeight / spritePixelHeight;
+
+        // 3. Calculate the starting draw position to center the sprite
+        float totalWidth = spritePixelWidth * pixelWidth;
+        float totalHeight = spritePixelHeight * pixelHeight;
+        float drawStartX = screenX - totalWidth / 2;
+        float drawStartY = spriteScreenY - totalHeight / 2;
+
+        // 4. Loop through each pixel of the sprite data and draw it
+        for (int px = 0; px < spritePixelWidth; px++) {
+            // Calculate the screen x-position for the current column of pixels
+            float currentX = drawStartX + px * pixelWidth;
+            int screenStripe = (int) currentX;
+
+            // Check if this part of the sprite is on screen and in front of a wall
+            if (screenStripe >= 0 && screenStripe < viewport.getScreenWidth() && transformY < depthBuffer[screenStripe]) {
+                for (int py = 0; py < spritePixelHeight; py++) {
+                    // If the character in the sprite data is '#', draw a pixel
+                    if (spriteData[py].charAt(px) == '#') {
+                        // Calculate the screen y-position for the current pixel
+                        // We use (spritePixelHeight - 1 - py) to flip the sprite vertically so it's not upside down
+                        float currentY = drawStartY + (spritePixelHeight - 1 - py) * pixelHeight;
+                        shapeRenderer.setColor(projectile.getColor()); // Use the projectile's color
+                        shapeRenderer.rect(currentX, currentY, pixelWidth, pixelHeight);
+                    }
+                }
             }
         }
     }
