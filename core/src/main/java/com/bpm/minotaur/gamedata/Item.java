@@ -308,6 +308,15 @@ public class Item implements Renderable {
                 break;
 
             // --- RINGS ---
+            case LARGE_RING:
+                this.category = ItemCategory.RING;
+                this.color = Color.BLUE;
+                this.ringStats = new RingStats(5);
+                this.spriteData = ItemSpriteData.LARGE_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/blue_ring.png")); // Load the texture
+                this.scale.set(0.5f, 0.5f);
+                break;
+
             case RING_BLUE:
                 this.category = ItemCategory.RING;
                 this.color = Color.BLUE;
