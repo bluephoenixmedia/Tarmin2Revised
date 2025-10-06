@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -60,6 +61,8 @@ public class Player {
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
     }
+
+
 
     public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
         // Determine the target tile in front of the player
