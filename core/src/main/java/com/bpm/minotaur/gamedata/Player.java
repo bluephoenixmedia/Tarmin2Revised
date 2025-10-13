@@ -59,7 +59,7 @@ public class Player {
         this.maxSpiritualStrength = difficulty.startSpiritualStrength;
 
 
-        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0));
+        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN));
     }
 
 

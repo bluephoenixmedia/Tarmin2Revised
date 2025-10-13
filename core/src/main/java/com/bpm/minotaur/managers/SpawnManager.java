@@ -62,7 +62,9 @@ public class SpawnManager {
             if (spawnPoint == null) break;
 
             Monster.MonsterType type = availableMonsters.get(random.nextInt(availableMonsters.size()));
-            Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y);
+            MonsterColor color = getRandomMonsterColor(type);
+
+            Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y, color);
             monster.scaleStats(level);
             maze.addMonster(monster);
         }
@@ -95,7 +97,9 @@ public class SpawnManager {
         if (availableItems.isEmpty()) return;
 
         Item.ItemType type = availableItems.get(random.nextInt(availableItems.size()));
-        maze.addItem(new Item(type, spawnPoint.x, spawnPoint.y));
+        ItemColor color = getRandomItemColor(type);
+
+        maze.addItem(new Item(type, spawnPoint.x, spawnPoint.y, color));
     }
 
     private void spawnContainer(GridPoint2 spawnPoint) {
@@ -112,15 +116,192 @@ public class SpawnManager {
         if (availableContainers.isEmpty()) return;
 
         Item.ItemType type = availableContainers.get(random.nextInt(availableContainers.size()));
-        Item container = new Item(type, spawnPoint.x, spawnPoint.y);
+
+        // Determine container color based on level
+        ItemColor containerColor = getContainerColorForLevel();
+        Item container = new Item(type, spawnPoint.x, spawnPoint.y, containerColor);
 
         // Add a random treasure to the container
         SpawnData.TreasureSpawnInfo treasureInfo = SpawnData.TREASURES.get(random.nextInt(SpawnData.TREASURES.size()));
-        Item treasure = new Item(treasureInfo.type(), 0, 0);
+        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW);
         treasure.setValue(treasureInfo.baseValue() + (level * treasureInfo.levelModifier()));
         container.addItem(treasure);
 
         maze.addItem(container);
+
+        // Spawn a corresponding key if the container is locked
+        if (container.isLocked()) {
+            spawnKey(containerColor);
+        }
+    }
+    private void spawnKey(ItemColor containerColor) {
+        GridPoint2 spawnPoint = getEmptySpawnPoint();
+        if (spawnPoint == null) return; // No space for the key
+
+        Item key = new Item(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor);
+        maze.addItem(key);
+    }
+
+    private ItemColor getContainerColorForLevel() {
+        if (level < 5) {
+            return ItemColor.CONTAINER_TAN;
+        } else if (level < 12) {
+            // 70% chance for Tan, 30% for Orange
+            return random.nextFloat() < 0.7f ? ItemColor.CONTAINER_TAN : ItemColor.CONTAINER_ORANGE;
+        } else {
+            // 40% Tan, 40% Orange, 20% Blue
+            float chance = random.nextFloat();
+            if (chance < 0.4f) {
+                return ItemColor.CONTAINER_TAN;
+            } else if (chance < 0.8f) {
+                return ItemColor.CONTAINER_ORANGE;
+            } else {
+                return ItemColor.CONTAINER_BLUE;
+            }
+        }
+    }
+
+    private MonsterColor getRandomMonsterColor(Monster.MonsterType type) {
+        List<MonsterColor> possibleColors = new ArrayList<>();
+
+        boolean tier1 = level < 5;
+        boolean tier2 = level >= 3 && level < 10;
+        boolean tier3 = level >= 8;
+
+        switch (type) {
+            case GIANT_ANT:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case GIANT_SCORPION:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case GIANT_SNAKE:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case ALLIGATOR:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case DRAGON:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case WRAITH:
+                if (tier1) possibleColors.add(MonsterColor.BLUE);
+                if (tier2) possibleColors.add(MonsterColor.PINK);
+                if (tier3) possibleColors.add(MonsterColor.PURPLE);
+                break;
+            case DWARF:
+                if (tier1) possibleColors.add(MonsterColor.YELLOW);
+                if (tier2) possibleColors.add(MonsterColor.TAN);
+                if (tier3) possibleColors.add(MonsterColor.ORANGE);
+                break;
+            case GIANT:
+                if (tier1) possibleColors.add(MonsterColor.YELLOW);
+                if (tier2) possibleColors.add(MonsterColor.TAN);
+                if (tier3) possibleColors.add(MonsterColor.ORANGE);
+                break;
+            case GHOUL:
+                if (tier1) possibleColors.add(MonsterColor.WHITE);
+                if (tier2) possibleColors.add(MonsterColor.GRAY);
+                if (tier3) possibleColors.add(MonsterColor.ORANGE);
+                break;
+
+            case SKELETON:
+                if (tier1) possibleColors.add(MonsterColor.WHITE);
+                if (tier2) possibleColors.add(MonsterColor.GRAY);
+                if (tier3) possibleColors.add(MonsterColor.ORANGE);
+                break;
+
+            case CLOAKED_SKELETON:
+                if (tier1) possibleColors.add(MonsterColor.WHITE);
+                if (tier2) possibleColors.add(MonsterColor.GRAY);
+                if (tier3) possibleColors.add(MonsterColor.ORANGE);
+                break;
+            default:
+                possibleColors.add(MonsterColor.TAN);
+        }
+        return possibleColors.get(random.nextInt(possibleColors.size()));
+    }
+
+    private ItemColor getRandomItemColor(Item.ItemType type) {
+        List<ItemColor> possibleColors = new ArrayList<>();
+        Item.ItemCategory category = new Item(type, 0, 0, ItemColor.TAN).getCategory(); // A bit hacky, but works
+
+        boolean tier1 = level < 8;
+        boolean tier2 = level >= 5 && level < 15;
+        boolean tier3 = level >= 12;
+
+        switch (category) {
+            case WAR_WEAPON:
+                if (tier1) {
+                    possibleColors.add(ItemColor.TAN);
+                    possibleColors.add(ItemColor.BLUE_STEEL);
+                }
+                if (tier2) {
+                    possibleColors.add(ItemColor.ORANGE);
+                    possibleColors.add(ItemColor.GRAY);
+                }
+                if (tier3) {
+                    possibleColors.add(ItemColor.YELLOW);
+                    possibleColors.add(ItemColor.WHITE);
+                }
+                break;
+            case ARMOR:
+                if (tier1) {
+                    possibleColors.add(ItemColor.TAN);
+                    possibleColors.add(ItemColor.BLUE_STEEL);
+                }
+                if (tier2) {
+                    possibleColors.add(ItemColor.ORANGE);
+                    possibleColors.add(ItemColor.GRAY);
+                }
+                if (tier3) {
+                    possibleColors.add(ItemColor.YELLOW);
+                    possibleColors.add(ItemColor.WHITE);
+                }
+                break;
+            case SPIRITUAL_WEAPON:
+                if (tier1) {
+                    possibleColors.add(ItemColor.BLUE);
+                    possibleColors.add(ItemColor.GRAY_SPIRITUAL);
+                }
+                if (tier2) {
+                    possibleColors.add(ItemColor.WHITE_SPIRITUAL);
+                    possibleColors.add(ItemColor.PINK);
+                }
+                if (tier3) {
+                    possibleColors.add(ItemColor.RED);
+                    possibleColors.add(ItemColor.PURPLE);
+                }
+                break;
+            case RING:
+                if (tier1) {
+                    possibleColors.add(ItemColor.BLUE);
+                    possibleColors.add(ItemColor.GRAY_SPIRITUAL);
+                }
+                if (tier2) {
+                    possibleColors.add(ItemColor.WHITE_SPIRITUAL);
+                    possibleColors.add(ItemColor.PINK);
+                }
+                if (tier3) {
+                    possibleColors.add(ItemColor.RED);
+                    possibleColors.add(ItemColor.PURPLE);
+                }
+                break;
+            default:
+                return ItemColor.TAN; // Default for other types
+        }
+
+        return possibleColors.get(random.nextInt(possibleColors.size()));
     }
 
     private GridPoint2 getEmptySpawnPoint() {

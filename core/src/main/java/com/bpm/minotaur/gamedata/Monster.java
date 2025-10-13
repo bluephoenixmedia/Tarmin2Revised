@@ -31,7 +31,7 @@ public class Monster implements Renderable {
 
     private final MonsterType type;
     private final Vector2 position;
-    private final Color color;
+    private final MonsterColor monsterColor; // Changed from Color to MonsterColor
     private int warStrength;
     private int spiritualStrength;
     private int armor;
@@ -41,15 +41,16 @@ public class Monster implements Renderable {
 
 
 
-    public Monster(MonsterType type, int x, int y) {
+    public Monster(MonsterType type, int x, int y, MonsterColor monsterColor) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f); // Center of the tile
         this.scale = new Vector2(1.0f, 1.0f); // Default scale
+        this.monsterColor = monsterColor;
 
         switch (type) {
             // --- BAD MONSTERS (Spiritual Attacks) ---
             case GIANT_ANT:
-                this.color = Color.PURPLE;
+              //  this.color = Color.PURPLE;
                 this.warStrength = 5;
                 this.spiritualStrength = 15;
                 this.armor = 2;
@@ -59,7 +60,7 @@ public class Monster implements Renderable {
 
                 break;
             case DWARF:
-                this.color = Color.TAN;
+             //   this.color = Color.TAN;
                 this.warStrength = 10;
                 this.spiritualStrength = 10;
                 this.armor = 4;
@@ -69,7 +70,7 @@ public class Monster implements Renderable {
 
                 break;
             case GIANT_SCORPION:
-                this.color = Color.BLUE;
+            //    this.color = Color.BLUE;
                 this.warStrength = 8;
                 this.spiritualStrength = 20;
                 this.armor = 3;
@@ -79,7 +80,7 @@ public class Monster implements Renderable {
 
                 break;
             case GIANT_SNAKE:
-                this.color = Color.ORANGE;
+             //   this.color = Color.ORANGE;
                 this.warStrength = 12;
                 this.spiritualStrength = 15;
                 this.armor = 2;
@@ -91,7 +92,7 @@ public class Monster implements Renderable {
 
             // --- NASTY MONSTERS (War Attacks) ---
             case GHOUL:
-                this.color = Color.PINK;
+             //   this.color = Color.PINK;
                 this.warStrength = 20;
                 this.spiritualStrength = 5;
                 this.armor = 3;
@@ -101,7 +102,7 @@ public class Monster implements Renderable {
 
                 break;
             case SKELETON:
-                this.color = Color.WHITE;
+             //   this.color = Color.WHITE;
                 this.warStrength = 15;
                 this.spiritualStrength = 0;
                 this.armor = 3;
@@ -111,7 +112,7 @@ public class Monster implements Renderable {
 
                 break;
             case CLOAKED_SKELETON:
-                this.color = Color.GRAY;
+            //    this.color = Color.GRAY;
                 this.warStrength = 18;
                 this.spiritualStrength = 5;
                 this.armor = 4;
@@ -123,7 +124,7 @@ public class Monster implements Renderable {
 
             // --- HORRIBLE MONSTERS (War & Spiritual Attacks) ---
             case ALLIGATOR:
-                this.color = Color.PURPLE;
+            //    this.color = Color.PURPLE;
                 this.warStrength = 30;
                 this.spiritualStrength = 15;
                 this.armor = 6;
@@ -133,7 +134,7 @@ public class Monster implements Renderable {
 
                 break;
             case DRAGON:
-                this.color = Color.ORANGE;
+             //   this.color = Color.ORANGE;
                 this.warStrength = 40;
                 this.spiritualStrength = 30;
                 this.armor = 8;
@@ -143,7 +144,7 @@ public class Monster implements Renderable {
 
                 break;
             case WRAITH:
-                this.color = Color.WHITE;
+             //   this.color = Color.WHITE;
                 this.warStrength = 25;
                 this.spiritualStrength = 35;
                 this.armor = 5;
@@ -153,7 +154,7 @@ public class Monster implements Renderable {
 
                 break;
             case GIANT:
-                this.color = Color.YELLOW;
+            //    this.color = Color.YELLOW;
                 this.warStrength = 35;
                 this.spiritualStrength = 10;
                 this.armor = 7;
@@ -163,7 +164,7 @@ public class Monster implements Renderable {
 
                 break;
             case MINOTAUR:
-                this.color = Color.PURPLE;
+             //   this.color = Color.PURPLE;
                 this.warStrength = 50;
                 this.spiritualStrength = 25;
                 this.armor = 10;
@@ -174,7 +175,7 @@ public class Monster implements Renderable {
                 break;
 
             default:
-                this.color = Color.RED;
+            //    this.color = Color.RED;
                 this.warStrength = 10;
                 this.spiritualStrength = 10;
                 this.armor = 2;
@@ -224,7 +225,12 @@ public class Monster implements Renderable {
     public MonsterType getType() { return type; }
     public String getMonsterType() { return type.name(); }
     @Override public Vector2 getPosition() { return position; }
-    @Override public Color getColor() { return color; }
+   // @Override public Color getColor() { return color; }
     public int getWarStrength() { return warStrength; }
     public int getSpiritualStrength() { return spiritualStrength; }
+
+    @Override
+    public Color getColor() {
+        return monsterColor.getColor();
+    }
 }
