@@ -88,15 +88,16 @@ public class CombatManager {
                 if (weapon.getWeaponStats().isRanged) {
                     if (player.getArrows() > 0) {
                         player.decrementArrow();
-                       // soundManager.playPlayerAttackSound();
+                        // soundManager.playPlayerAttackSound();
+                        animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
                         monster.takeDamage(weapon.getWeaponStats().damage);
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
-                       // animationManager.add(new Animation.Projectile(player, monster, Color.WHITE));
                     } else {
                         eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
                     }
                 } else { // Melee weapon
-                  //  soundManager.playPlayerAttackSound();
+                    //  soundManager.playPlayerAttackSound();
+                    animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
                     monster.takeDamage(weapon.getWeaponStats().damage);
                     eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
                 }
@@ -107,9 +108,9 @@ public class CombatManager {
 
             } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
                 //soundManager.playPlayerSpiritualAttackSound();
+                animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), weapon.getColor(), 0.5f));
                 monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage);
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
-               // animationManager.add(new Animation.Projectile(player, monster, weapon.getColor()));
 
                 if (weapon.vanishesOnUse()) {
                     player.getInventory().setRightHand(null);
