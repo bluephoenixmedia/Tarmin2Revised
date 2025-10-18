@@ -10,6 +10,7 @@ import java.util.Random;
 
 public class Item implements Renderable {
 
+
     public enum ItemType {
         // Weapons
         BOW,
@@ -80,7 +81,7 @@ public class Item implements Renderable {
         CONTAINER
     }
 
-    private final String[] spriteData; // Add this line
+    private String[] spriteData = new String[0]; // Add this line
     private Texture texture = null; // Add this field to store the item's texture
     public Vector2 scale; // Changed from float to Vector2
 
@@ -147,7 +148,7 @@ public class Item implements Renderable {
         this.scale = new Vector2(1.0f, 1.0f);
         this.itemColor = itemColor;
         this.color = itemColor.getColor();
-
+        this.spriteData = spriteData;
         if (isLocked) {
             if (itemColor == ItemColor.CONTAINER_TAN) {
                 this.requiredKeyColor = ItemColor.CONTAINER_TAN;
@@ -759,8 +760,59 @@ public class Item implements Renderable {
             case LARGE_RING:
                 this.category = ItemCategory.RING;
             //    this.color = Color.BLUE;
-                this.ringStats = new RingStats(5);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.ringStats = new RingStats(2);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.ringStats = new RingStats(3);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.ringStats = new RingStats(4);
+                        break;
+                    case PINK:
+                        this.ringStats = new RingStats(5);
+                        break;
+                    case RED:
+                        this.ringStats = new RingStats(10);
+                        break;
+                    case PURPLE:
+                        this.ringStats = new RingStats(20);
+                        break;
+                    default:
+                        this.ringStats = new RingStats(2);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.LARGE_RING;
+                this.texture = new Texture(Gdx.files.internal("images/items/blue_ring.png")); // Load the texture
+                this.scale.set(0.8f, 0.8f);
+                break;
+
+            case SMALL_RING:
+                this.category = ItemCategory.RING;
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.ringStats = new RingStats(1);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.ringStats = new RingStats(2);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.ringStats = new RingStats(3);
+                        break;
+                    case PINK:
+                        this.ringStats = new RingStats(4);
+                        break;
+                    case RED:
+                        this.ringStats = new RingStats(5);
+                        break;
+                    case PURPLE:
+                        this.ringStats = new RingStats(10);
+                        break;
+                    default:
+                        this.ringStats = new RingStats(1);
+                        break;
+                }
                 this.texture = new Texture(Gdx.files.internal("images/items/blue_ring.png")); // Load the texture
                 this.scale.set(0.5f, 0.5f);
                 break;

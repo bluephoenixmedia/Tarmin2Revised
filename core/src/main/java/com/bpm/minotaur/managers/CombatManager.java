@@ -137,7 +137,7 @@ public class CombatManager {
                 //soundManager.playPlayerSpiritualAttackSound();
                 animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), weapon.getColor(), 0.5f));
                 monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage);
-                Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
+                Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritualWeaponStats().damage + " damage");
 
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
 
