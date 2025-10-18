@@ -36,6 +36,7 @@ public class SoundManager {
         // Sounds for monster attacks
         loadSound("monster_attack", "sounds/monster_attack.wav");
         loadSound("monster_roar", "sounds/monster_roar.wav");
+        loadSound("player_level_up", "sounds/level_up.mp3");
     }
 
     private void loadSound(String name, String path) {
@@ -83,6 +84,10 @@ public class SoundManager {
         } else {
             playRetroArpeggio(new int[]{1047, 1319}, 0.05f); // High C6-E6 arpeggio
         }
+    }
+
+    public void playPlayerLevelUpSound() {
+        playSound("player_level_up");
     }
 
     public void playPlayerDeathSound() {

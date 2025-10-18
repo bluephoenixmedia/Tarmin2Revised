@@ -3,6 +3,7 @@ package com.bpm.minotaur.gamedata;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
 
@@ -18,6 +19,13 @@ public class Player {
     private int food;
     private int arrows;
 
+    // --- New Experience and Leveling Fields ---
+    private int level;
+    private int experience;
+    private int experienceToNextLevel;
+    private static final int BASE_XP_REQUIRED = 100;
+    private static final double LOG_BASE = 1.2;
+
     private int treasureScore = 0;
 
     private int maxWarStrength;
@@ -31,6 +39,8 @@ public class Player {
     private final Inventory inventory = new Inventory();
 
     private final float vulnerabilityMultiplier; // Add this line
+    private SoundManager soundManager;
+    private DebugManager debugManager;
 
 
     // Equipment slots
@@ -49,6 +59,7 @@ public class Player {
         this.facing = Direction.NORTH;
         this.directionVector = new Vector2();
         this.cameraPlane = new Vector2();
+        this.soundManager = new SoundManager(null);
         updateVectors();
 
         // Set stats based on difficulty
@@ -63,6 +74,11 @@ public class Player {
 
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN));
+
+        // --- Initialize Leveling Stats ---
+        this.level = 1;
+        this.experience = 0;
+        this.experienceToNextLevel = calculateXpForLevel(2);
     }
 
 
@@ -573,6 +589,62 @@ public class Player {
             this.arrows--;
         }
     }
+
+    // --- Experience and Leveling Logic ---
+
+    private int calculateXpForLevel(int targetLevel) {
+        if (targetLevel <= 1) return 0;
+        // Formula: base * (log_base ^ (level -1))
+        return (int) (BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
+    }
+
+    public void addExperience(int amount, GameEventManager eventManager) {
+        if (amount <= 0) return;
+        this.experience += amount;
+        Gdx.app.log("Player", "Gained " + amount + " XP. Total: " + this.experience + "/" + this.experienceToNextLevel);
+        eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
+
+        while (this.experience >= this.experienceToNextLevel) {
+            levelUp(eventManager);
+        }
+    }
+
+    private void levelUp(GameEventManager eventManager) {
+        soundManager.playPlayerLevelUpSound();
+        this.experience -= this.experienceToNextLevel; // Carry over remaining XP
+        this.level++;
+        this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
+
+
+        // Increase stats
+        int wsIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
+        int ssIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
+        Gdx.app.log("Player", "war strength increase by " + wsIncrease + "!");
+
+        Gdx.app.log("Player", "spiritual strength increase by " + ssIncrease + "!");
+
+        this.maxWarStrength += wsIncrease;
+        this.maxSpiritualStrength += ssIncrease;
+
+        // Fully heal player on level up
+        this.warStrength = this.maxWarStrength;
+        this.spiritualStrength = this.maxSpiritualStrength;
+
+        Gdx.app.log("Player", "Leveled up to level " + this.level + "!");
+        eventManager.addEvent(new GameEvent("You reached level " + this.level + "!", 3f));
+    }
+
+    /**
+     * Attack modifier based on player level.
+     * @return The bonus damage to add to attacks.
+     */
+    public int getAttackModifier() {
+        return this.level; // Simple: +1 damage per level.
+    }
+
+    public int getLevel() { return level; }
+    public int getExperience() { return experience; }
+    public int getExperienceToNextLevel() { return experienceToNextLevel; }
     public int getTreasureScore() { return treasureScore; }
     public Vector2 getPosition() { return position; }
     public Direction getFacing() { return facing; }

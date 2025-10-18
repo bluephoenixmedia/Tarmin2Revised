@@ -82,6 +82,8 @@ public class CombatManager {
         if (currentState != CombatState.PLAYER_TURN) return;
 
         Item weapon = player.getInventory().getRightHand();
+
+        int attackModifier = player.getAttackModifier();
        // Gdx.app.log("CombatManager", "Player equipped weapon = " + weapon.getType().toString());
        // Gdx.app.log("CombatManager", "Player weapon category = " + weapon.getCategory().toString() + ", weapon stats = " + weapon.getWeaponStats().toString());
 
@@ -113,7 +115,7 @@ public class CombatManager {
                         player.decrementArrow();
                         // soundManager.playPlayerAttackSound();
                         animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
-                        monster.takeDamage(weapon.getWeaponStats().damage);
+                        monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
                         Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
 
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
@@ -123,7 +125,7 @@ public class CombatManager {
                 } else { // Melee weapon
                     //  soundManager.playPlayerAttackSound();
                     animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
-                    monster.takeDamage(weapon.getWeaponStats().damage);
+                    monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
                     eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
                 }
 
@@ -136,7 +138,7 @@ public class CombatManager {
 
                 //soundManager.playPlayerSpiritualAttackSound();
                 animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), weapon.getColor(), 0.5f));
-                monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage);
+                monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage + attackModifier);
                 Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritualWeaponStats().damage + " damage");
 
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
@@ -156,6 +158,29 @@ public class CombatManager {
 
         if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
             currentState = CombatState.VICTORY;
+            Gdx.app.log("CombatManager","You have defeated" + monster.getMonsterType());
+            eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
+
+            // --- Experience Calculation ---
+            int baseExp = monster.getBaseExperience();
+            Gdx.app.log("CombatManager","Monster baseExp = " + baseExp);
+
+
+
+            float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
+            Gdx.app.log("CombatManager","Monster colorMultiplier = " + colorMultiplier);
+
+            float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
+            Gdx.app.log("CombatManager","Monster levelMultiplier = " + levelMultiplier);
+
+
+            int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
+            eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
+
+            Gdx.app.log("CombatManager","You have gained " + totalExp + " experience");
+
+            player.addExperience(totalExp, eventManager);
+            // --------------------------
         } else {
             currentState = CombatState.MONSTER_TURN;
         }

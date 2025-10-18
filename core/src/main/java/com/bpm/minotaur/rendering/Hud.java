@@ -44,6 +44,7 @@ public class Hud implements Disposable {
     private final Label combatStatusLabel;
     private final Label messageLabel;
     private final Label treasureValueLabel;
+    private Label levelLabel, xpLabel;
 
     private final Actor[] backpackSlots = new Actor[6];
     private Actor leftHandSlot;
@@ -117,6 +118,14 @@ public class Hud implements Disposable {
         treasureTable.add(treasureValueLabel);
 
 
+        levelLabel = new Label("", labelStyle);
+        xpLabel = new Label("", labelStyle);
+        Table lvlExpTable = new Table();
+        lvlExpTable.add(new Label("LVL:", labelStyle)).padRight(10);
+        lvlExpTable.add(levelLabel);
+        lvlExpTable.add(new Label("EXP:", labelStyle)).padRight(10);
+        lvlExpTable.add(xpLabel);
+
         rightTable.add(warTable).left().padBottom(20);
         rightTable.add(spiritualTable).right().expandX().padBottom(20);
         rightTable.row();
@@ -125,6 +134,7 @@ public class Hud implements Disposable {
         rightTable.row();
         rightTable.add(treasureTable).colspan(2).center().padTop(10);
 
+
         monsterStrengthLabel = new Label("", labelStyle);
         combatStatusLabel = new Label("", labelStyle);
         rightTable.row();
@@ -132,6 +142,9 @@ public class Hud implements Disposable {
         rightTable.add(monsterStrengthLabel).right().expandX().padTop(20);
         rightTable.row();
         rightTable.add(combatStatusLabel).colspan(2).center().padTop(10);
+        rightTable.row();
+        rightTable.add(lvlExpTable).left().colspan(2).center().padTop(10);
+
 
         mainContentTable.add(leftTable).width(500).padLeft(50);
         mainContentTable.add(rightTable).expandX().right().padRight(50);
@@ -143,6 +156,8 @@ public class Hud implements Disposable {
         handsAndCompassTable.add(leftHandSlot).width(slotSize).height(slotSize).padRight(20);
         handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
         handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
+
+
 
         dungeonLevelLabel = new Label("", labelStyle);
         Table levelTable = new Table();
@@ -177,6 +192,8 @@ public class Hud implements Disposable {
         directionLabel.setText(player.getFacing().name().substring(0,1));
         dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel());
         treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
+        xpLabel.setText(String.format("%d", player.getExperience()));
+        levelLabel.setText(String.format("%d", player.getLevel()));
 
         if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();
