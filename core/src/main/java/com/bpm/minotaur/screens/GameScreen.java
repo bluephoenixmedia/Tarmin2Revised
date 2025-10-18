@@ -494,13 +494,16 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
                 weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
-                if (rightHandItem.getWeaponStats() != null) {
+                if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
                     damage = String.valueOf(rightHandItem.getWeaponStats().damage);
                     range = String.valueOf(rightHandItem.getWeaponStats().range);
                     isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
+                } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getWeaponStats() != null) {
+                    damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                    range = "n/a";
+                    isRanged = "n/a";
                 }
             }
-
 
             font.draw(game.batch, "PLAYER INFO: " + "DEFENSE = " + player.getArmorDefense(), 250, game.viewport.getWorldHeight() - 100);
             font.draw(game.batch, "PLAYER INFO: " + "SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), 250, game.viewport.getWorldHeight() - 120);

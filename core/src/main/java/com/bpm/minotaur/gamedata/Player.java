@@ -36,6 +36,9 @@ public class Player {
     // Equipment slots
     private Item wornHelmet = null;
     private Item wornShield = null;
+    private Item wornGauntlets = null;
+    private Item wornHauberk = null;
+    private Item wornBreastplate = null;
     private Item wornRing; // ADD THIS LINE
 
 
@@ -186,15 +189,52 @@ public class Player {
                 }
                 break;
             case SMALL_SHIELD:
-            case LARGE_SHIELD:
                 if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
                     wornShield = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Shield.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped Small Shield.", 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
                 }
                 break;
+            case LARGE_SHIELD:
+                if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
+                    wornShield = armor;
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped LArge Shield.", 2f));
+                } else {
+                    eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
+                }
+                break;
+            case GAUNTLETS:
+                if (wornGauntlets == null || armor.getArmorStats().defense > wornGauntlets.getArmorStats().defense) {
+                    wornGauntlets = armor;
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped Gauntlets.", 2f));
+                } else {
+                    eventManager.addEvent(new GameEvent("These Gauntlets are not better.", 2f));
+                }
+                break;
+            case HAUBERK:
+                if (wornHauberk == null || armor.getArmorStats().defense > wornHauberk.getArmorStats().defense) {
+                    wornHauberk = armor;
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped Hauberk.", 2f));
+                } else {
+                    eventManager.addEvent(new GameEvent("This Hauberk is not better.", 2f));
+                }
+                break;
+            case BREASTPLATE:
+                if (wornBreastplate == null || armor.getArmorStats().defense > wornBreastplate.getArmorStats().defense) {
+                    wornBreastplate = armor;
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped Breastplate.", 2f));
+                } else {
+                    eventManager.addEvent(new GameEvent("This Breastplate is not better.", 2f));
+                }
+                break;
+
+
         }
     }
 
@@ -209,7 +249,8 @@ public class Player {
                 break;
             case LARGE_POTION:
                 // Raise war strength score by 10
-                this.warStrength = Math.min(this.maxWarStrength, this.warStrength + 10);
+                this.maxWarStrength+=10;
+                this.warStrength = this.maxWarStrength;
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
                 break;

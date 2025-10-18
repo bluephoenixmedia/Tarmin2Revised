@@ -52,7 +52,9 @@ public class SpawnData {
         new ItemSpawnInfo(Item.ItemType.BOW, 1, 10),
         new ItemSpawnInfo(Item.ItemType.KNIFE, 1, 5),
         new ItemSpawnInfo(Item.ItemType.AXE, 2, 6),
-        new ItemSpawnInfo(Item.ItemType.FLOUR_SACK, 1, 99)
+        new ItemSpawnInfo(Item.ItemType.FLOUR_SACK, 1, 99),
+        new ItemSpawnInfo(Item.ItemType.SMALL_RING, 3, 99)
+
     );
 
     public static final List<ItemSpawnInfo> TIER2_ITEMS = Arrays.asList(
