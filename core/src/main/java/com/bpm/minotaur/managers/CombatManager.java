@@ -82,15 +82,40 @@ public class CombatManager {
         if (currentState != CombatState.PLAYER_TURN) return;
 
         Item weapon = player.getInventory().getRightHand();
+       // Gdx.app.log("CombatManager", "Player equipped weapon = " + weapon.getType().toString());
+       // Gdx.app.log("CombatManager", "Player weapon category = " + weapon.getCategory().toString() + ", weapon stats = " + weapon.getWeaponStats().toString());
+
         if (weapon != null) {
+            Gdx.app.log("CombatManager", "Weapon is not null");
+            Gdx.app.log("CombatManager", "Weapon category = " + weapon.getCategory().toString());
+            if (weapon.getWeaponStats() != null) {
+                Gdx.app.log("CombatManager", "weapon stats =  " + weapon.getWeaponStats().damage + " damage");
+            } else {
+                Gdx.app.log("CombatManager", "weapon stats are null");
+
+            }
+            if (weapon.getSpiritualWeaponStats() != null) {
+                Gdx.app.log("CombatManager", "spiritual weapon stats =  " + weapon.getSpiritualWeaponStats().damage + " damage");
+            } else {
+                Gdx.app.log("CombatManager", "spiritual weapon stats are null");
+
+            }
             if (weapon.getCategory() == Item.ItemCategory.WAR_WEAPON && weapon.getWeaponStats() != null) {
+                Gdx.app.log("CombatManager", "Weapon is war weapon and stats are not null");
+
                 // Ranged weapon check
                 if (weapon.getWeaponStats().isRanged) {
+                    Gdx.app.log("CombatManager", "Weapon is ranged");
+
                     if (player.getArrows() > 0) {
+                        Gdx.app.log("CombatManager", "Player has arrows");
+
                         player.decrementArrow();
                         // soundManager.playPlayerAttackSound();
                         animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
                         monster.takeDamage(weapon.getWeaponStats().damage);
+                        Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
+
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
                     } else {
                         eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
@@ -107,9 +132,13 @@ public class CombatManager {
                 }
 
             } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
+                Gdx.app.log("CombatManager", "Weapon is spiritual weapon and stats are not null");
+
                 //soundManager.playPlayerSpiritualAttackSound();
                 animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), weapon.getColor(), 0.5f));
                 monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage);
+                Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
+
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
 
                 if (weapon.vanishesOnUse()) {

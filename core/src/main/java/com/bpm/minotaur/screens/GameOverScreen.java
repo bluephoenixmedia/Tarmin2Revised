@@ -7,20 +7,27 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.SoundManager;
 
 public class GameOverScreen extends BaseScreen {
 
     private final BitmapFont font;
+    private SoundManager soundManager;
+    private DebugManager debugManager;
 
     public GameOverScreen(Tarmin2 game) {
         super(game);
         this.font = new BitmapFont();
         this.font.setColor(Color.RED);
         this.font.getData().setScale(3);
+        this.soundManager = new SoundManager(debugManager);
+        this.soundManager.playPlayerDeathSound();
     }
 
     @Override
     public void show() {
+       // soundManager.playPlayerDeathSound();
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
@@ -47,6 +54,7 @@ public class GameOverScreen extends BaseScreen {
         game.batch.begin();
         font.draw(game.batch, "GAME OVER", game.viewport.getWorldWidth() / 2 - 150, game.viewport.getWorldHeight() / 2 + 50);
         font.draw(game.batch, "Press any key to return to the Main Menu", game.viewport.getWorldWidth() / 2 - 450, game.viewport.getWorldHeight() / 2 - 50);
+
         game.batch.end();
     }
 

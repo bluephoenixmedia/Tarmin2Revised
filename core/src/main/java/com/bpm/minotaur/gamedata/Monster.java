@@ -53,7 +53,7 @@ public class Monster implements Renderable {
               //  this.color = Color.PURPLE;
                 this.warStrength = 5;
                 this.spiritualStrength = 15;
-                this.armor = 2;
+                this.armor = 1;
                 this.spriteData = MonsterSpriteData.GIANT_ANT; // Correctly assigned
                 this.texture = new Texture(Gdx.files.internal("images/monsters/giant_ant.png")); // Example path
                 this.scale.set(1.2f, 0.8f); // Make it wider than it is tall
@@ -63,7 +63,7 @@ public class Monster implements Renderable {
              //   this.color = Color.TAN;
                 this.warStrength = 10;
                 this.spiritualStrength = 10;
-                this.armor = 4;
+                this.armor = 1;
                 this.spriteData = MonsterSpriteData.DWARF; // Add this line
                 this.texture = new Texture(Gdx.files.internal("images/monsters/dwarf.png"));
                 this.scale.set(0.8f, 0.9f); // Short and stout
@@ -188,7 +188,12 @@ public class Monster implements Renderable {
 
     public void takeDamage(int amount) {
         int damageReduction = this.armor;
+        Gdx.app.log("MONSTER", "damagereduction =  " + damageReduction);
+
         int finalDamage = Math.max(0, amount - damageReduction);
+        Gdx.app.log("MONSTER", "finalDamage =  " + finalDamage);
+
+
         this.warStrength -= finalDamage;
 
         if (this.warStrength < 0) {

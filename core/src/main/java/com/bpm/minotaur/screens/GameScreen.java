@@ -112,15 +112,14 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         switch (level) {
             case 1:
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
+                break;
             case 2:
             case 3:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_ambient.ogg");
-                break;
+
             case 4:
             case 5:
             case 6:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
-                break;
             // Add more cases for other levels and tracks
             default:
                 MusicManager.getInstance().stop(); // Or play a default track
@@ -455,9 +454,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         if (debugManager.isDebugOverlayVisible()) {
             font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
-            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 10, game.viewport.getWorldHeight() - 50);
-
-
+            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 0, game.viewport.getWorldHeight() - 50);
             font.setColor(Color.YELLOW);
             String[] keyMappings = {
                 "--- CONTROLS ---",
@@ -484,6 +481,46 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 font.draw(game.batch, mapping, 10, y);
                 y -= 20;
             }
+
+            String equippedWeapon = "NOTHING";
+            String damage = "0";
+            String range = "0";
+            String isRanged = "0";
+            String weaponColor = "NOTHING";
+            String weaponType = "NULL";
+            Item rightHandItem = player.getInventory().getRightHand();
+            if (rightHandItem != null) {
+                equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "NOTHING";
+                weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
+                weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+
+                if (rightHandItem.getWeaponStats() != null) {
+                    damage = String.valueOf(rightHandItem.getWeaponStats().damage);
+                    range = String.valueOf(rightHandItem.getWeaponStats().range);
+                    isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
+                }
+            }
+
+
+            font.draw(game.batch, "PLAYER INFO: " + "DEFENSE = " + player.getArmorDefense(), 250, game.viewport.getWorldHeight() - 100);
+            font.draw(game.batch, "PLAYER INFO: " + "SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), 250, game.viewport.getWorldHeight() - 120);
+            font.draw(game.batch, "PLAYER INFO: " + "WAR STRENGTH = " + player.getWarStrength(), 250, game.viewport.getWorldHeight() - 140);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON = "
+                + equippedWeapon, 250, game.viewport.getWorldHeight() - 160);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON DAMAGE = "
+                + damage, 250, game.viewport.getWorldHeight() - 180);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON ISRANGED = "
+                + isRanged, 250, game.viewport.getWorldHeight() - 200);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON RANGE = "
+                + range, 250, game.viewport.getWorldHeight() - 220);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON COLOR = "
+                + weaponColor, 250, game.viewport.getWorldHeight() - 240);
+            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON TYPE = "
+                + weaponType, 250, game.viewport.getWorldHeight() - 260);
+
+
+
+
         }
 
         game.batch.end(); // <-- Batch ends here
@@ -523,20 +560,20 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 case Input.Keys.UP:
                     player.moveForward(maze);
                     combatManager.checkForAdjacentMonsters();
-                    needsAsciiRender = true;
+                    needsAsciiRender = false;
                     break;
                 case Input.Keys.DOWN:
                     player.moveBackward(maze);
                     combatManager.checkForAdjacentMonsters();
-                    needsAsciiRender = true;
+                    needsAsciiRender = false;
                     break;
                 case Input.Keys.LEFT:
                     player.turnLeft();
-                    needsAsciiRender = true;
+                    needsAsciiRender = false;
                     break;
                 case Input.Keys.RIGHT:
                     player.turnRight();
-                    needsAsciiRender = true;
+                    needsAsciiRender = false;
                     break;
                 case Input.Keys.O:
                     player.interact(maze, eventManager, soundManager);
