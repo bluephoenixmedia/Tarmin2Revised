@@ -244,10 +244,10 @@ public class SpawnManager {
             case WAR_WEAPON:
                 if (tier1) {
                     possibleColors.add(ItemColor.TAN);
-                    possibleColors.add(ItemColor.BLUE_STEEL);
+                    possibleColors.add(ItemColor.ORANGE);
                 }
                 if (tier2) {
-                    possibleColors.add(ItemColor.ORANGE);
+                    possibleColors.add(ItemColor.BLUE);
                     possibleColors.add(ItemColor.GRAY);
                 }
                 if (tier3) {
@@ -258,10 +258,10 @@ public class SpawnManager {
             case ARMOR:
                 if (tier1) {
                     possibleColors.add(ItemColor.TAN);
-                    possibleColors.add(ItemColor.BLUE_STEEL);
+                    possibleColors.add(ItemColor.ORANGE);
                 }
                 if (tier2) {
-                    possibleColors.add(ItemColor.ORANGE);
+                    possibleColors.add(ItemColor.BLUE);
                     possibleColors.add(ItemColor.GRAY);
                 }
                 if (tier3) {

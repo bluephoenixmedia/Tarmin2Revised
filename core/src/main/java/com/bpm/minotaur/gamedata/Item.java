@@ -125,6 +125,7 @@ public class Item implements Renderable {
     private final ItemCategory category;
     private final Vector2 position;
     private final ItemColor itemColor; // Changed from Color to ItemColor
+    private final Color color;
     private Color liquidColor;
     private WeaponStats weaponStats;
     private SpiritualWeaponStats spiritualWeaponStats;
@@ -145,6 +146,7 @@ public class Item implements Renderable {
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.scale = new Vector2(1.0f, 1.0f);
         this.itemColor = itemColor;
+        this.color = itemColor.getColor();
 
         if (isLocked) {
             if (itemColor == ItemColor.CONTAINER_TAN) {
@@ -160,8 +162,35 @@ public class Item implements Renderable {
             // --- WEAPONS ---
             case BOW:
                 this.category = ItemCategory.WAR_WEAPON;
-                //this.color = new Color(0.5f, 0.35f, 0.05f, 1); // Brown
-                this.weaponStats = new WeaponStats(8, 10, true);
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(4, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(1);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(5, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(6, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(7, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(10, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(15, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(4, 10, true); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.BOW;
 
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png")); // Load the texture
@@ -170,7 +199,35 @@ public class Item implements Renderable {
             case CROSSBOW:
                 this.category = ItemCategory.WAR_WEAPON;
               //  this.color = new Color(0.6f, 0.4f, 0.1f, 1);
-                this.weaponStats = new WeaponStats(12, 12, true);
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(5, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(6, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(7, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(8, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(15, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(8);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(20, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(5, 10, true); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.CROSSBOW;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.9f, 1.3f);
@@ -178,7 +235,35 @@ public class Item implements Renderable {
             case KNIFE:
                 this.category = ItemCategory.WAR_WEAPON;
              //   this.color = Color.GRAY;
-                this.weaponStats = new WeaponStats(5, 1, false);
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(5, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(6, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(7, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(8, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(15, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(8);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(20, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(5, 10, true); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.KNIFE;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.5f, 0.5f);
@@ -187,7 +272,35 @@ public class Item implements Renderable {
             case AXE:
                 this.category = ItemCategory.WAR_WEAPON;
                // this.color = Color.DARK_GRAY;
-                this.weaponStats = new WeaponStats(10, 1, false);
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(6, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(7, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(8, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(9, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(18, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(22, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(6, 10, true); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.AXE;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.3f, 0.3f);
@@ -196,8 +309,35 @@ public class Item implements Renderable {
             case DART:
                 this.category = ItemCategory.WAR_WEAPON;
                // this.color = Color.LIGHT_GRAY;
-                this.weaponStats = new WeaponStats(4, 8, true);
-                this.spriteData = ItemSpriteData.DART;
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(4, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(1);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(5, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(6, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(7, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(10, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(15, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(4, 10, true); // fallback
+                        break;
+                }                this.spriteData = ItemSpriteData.DART;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(0.3f, 0.3f);
                 this.vanishesOnUse = true;
@@ -205,7 +345,35 @@ public class Item implements Renderable {
             case SPEAR:
                 this.category = ItemCategory.WAR_WEAPON;
                // this.color = new Color(0.4f, 0.25f, 0.05f, 1);
-                this.weaponStats = new WeaponStats(7, 2, false);
+                switch (this.itemColor) {
+                    case TAN:
+                        this.weaponStats = new WeaponStats(6, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(2);
+                        break;
+                    case ORANGE:
+                        this.weaponStats = new WeaponStats(7, 10, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(3);
+                        break;
+                    case BLUE:
+                        this.weaponStats = new WeaponStats(9, 20, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(4);
+                        break;
+                    case GRAY:
+                        this.weaponStats = new WeaponStats(10, 30, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(5);
+                        break;
+                    case YELLOW:
+                        this.weaponStats = new WeaponStats(20, 50, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    case WHITE:
+                        this.weaponStats = new WeaponStats(25, 100, true);
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                        break;
+                    default:
+                        this.weaponStats = new WeaponStats(6, 10, true); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.SPEAR;
                 this.texture = new Texture(Gdx.files.internal("images/items/bow.png"));
                 this.scale.set(1.0f, 1.5f);
@@ -214,24 +382,92 @@ public class Item implements Renderable {
             case SCROLL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                // this.color = Color.TAN;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(12);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(18);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(25);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(30);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.SCROLL;
                 this.texture = new Texture(Gdx.files.internal("images/items/scroll.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = false;
                 break;
             case BOOK:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                 //this.color = Color.BLUE;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(18);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(20);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(25);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(28);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(35);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(50);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(18); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
+                this.vanishesOnUse = false;
 
                 break;
             case SMALL_FIREBALL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                // this.color = Color.RED;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(20);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(9);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(16);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(19);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(21);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(25);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(28); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.SMALL_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/firenball.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
@@ -242,7 +478,29 @@ public class Item implements Renderable {
             case LARGE_FIREBALL:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
               //  this.color = Color.RED;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(30);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(11);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(13);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(20);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(22);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(26);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(29); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.LARGE_FIREBALL;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_fireball.png")); // Load the texture
                 this.scale.set(0.8f, 0.8f);
@@ -252,7 +510,29 @@ public class Item implements Renderable {
             case SMALL_LIGHTNING:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
              //   this.color = Color.CYAN;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(25);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(9);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(10);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(16);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(19);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(21);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(25);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(28); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.SMALL_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/lightning_bolt.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
@@ -262,7 +542,29 @@ public class Item implements Renderable {
             case LARGE_LIGHTNING:
                 this.category = ItemCategory.SPIRITUAL_WEAPON;
                // this.color = Color.CYAN;
-                this.spiritualWeaponStats = new SpiritualWeaponStats(35);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(11);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(13);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(15);
+                        break;
+                    case PINK:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(20);
+                        break;
+                    case RED:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(22);
+                        break;
+                    case PURPLE:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(26);
+                        break;
+                    default:
+                        this.spiritualWeaponStats = new SpiritualWeaponStats(29); // fallback
+                        break;
+                }
                 this.spriteData = ItemSpriteData.LARGE_LIGHTNING;
                 this.texture = new Texture(Gdx.files.internal("images/items/big_bolt.png")); // Load the texture
                 this.scale.set(0.9f, 0.9f);
@@ -274,7 +576,30 @@ public class Item implements Renderable {
             case SMALL_SHIELD:
                 this.category = ItemCategory.ARMOR;
               //  this.color = Color.GRAY;
-                this.armorStats = new ArmorStats(5);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(5);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(6);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(7);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(8);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(10);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(15);
+                        break;
+                }
+               // this.armorStats = new ArmorStats(5);
                 this.spriteData = ItemSpriteData.SMALL_SHIELD; // Using SMALL_SHIELD for now
                 this.texture = new Texture(Gdx.files.internal("images/items/shield.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
@@ -282,7 +607,29 @@ public class Item implements Renderable {
             case LARGE_SHIELD:
                 this.category = ItemCategory.ARMOR;
              //   this.color = Color.DARK_GRAY;
-                this.armorStats = new ArmorStats(10);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(8);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(9);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(10);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(15);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(20);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(8);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.LARGE_SHIELD;
                 this.texture = new Texture(Gdx.files.internal("images/items/shield.png"));
                 this.scale.set(0.9f, 0.9f);
@@ -290,7 +637,29 @@ public class Item implements Renderable {
             case GAUNTLETS:
                 this.category = ItemCategory.ARMOR;
              //   this.color = Color.LIGHT_GRAY;
-                this.armorStats = new ArmorStats(2);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(2);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(3);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(4);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(5);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(10);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(2);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.GAUNTLETS;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
                 this.scale.set(0.6f, 0.6f);
@@ -298,7 +667,29 @@ public class Item implements Renderable {
             case HAUBERK:
                 this.category = ItemCategory.ARMOR;
               //  this.color = Color.GRAY;
-                this.armorStats = new ArmorStats(8);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(8);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(9);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(10);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(15);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(20);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(8);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.HAUBERK;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
                 this.scale.set(1.0f, 1.0f);
@@ -306,7 +697,29 @@ public class Item implements Renderable {
             case HELMET:
                 this.category = ItemCategory.ARMOR;
              //   this.color = Color.LIGHT_GRAY;
-                this.armorStats = new ArmorStats(3);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(3);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(4);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(5);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(7);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(10);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(2);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.HELMET;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png")); // Load the texture
                 this.scale.set(0.7f, 0.7f);
@@ -314,7 +727,29 @@ public class Item implements Renderable {
             case BREASTPLATE:
                 this.category = ItemCategory.ARMOR;
             //    this.color = Color.DARK_GRAY;
-                this.armorStats = new ArmorStats(12);
+                switch (this.itemColor) {
+                    case BLUE:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                    case GRAY_SPIRITUAL:
+                        this.armorStats = new ArmorStats(13);
+                        break;
+                    case WHITE_SPIRITUAL:
+                        this.armorStats = new ArmorStats(15);
+                        break;
+                    case PINK:
+                        this.armorStats = new ArmorStats(20);
+                        break;
+                    case RED:
+                        this.armorStats = new ArmorStats(25);
+                        break;
+                    case PURPLE:
+                        this.armorStats = new ArmorStats(30);
+                        break;
+                    default:
+                        this.armorStats = new ArmorStats(12);
+                        break;
+                }
                 this.spriteData = ItemSpriteData.BREASTPLATE;
                 this.texture = new Texture(Gdx.files.internal("images/items/helmet.png"));
                 this.scale.set(1.0f, 1.0f);
@@ -413,7 +848,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.WAR_BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
                 this.scale.set(0.7f, 0.7f);
-                this.vanishesOnUse = true;
+                this.vanishesOnUse = false;
                 break;
             case SPIRITUAL_BOOK:
                 this.category = ItemCategory.USEFUL;
@@ -421,7 +856,7 @@ public class Item implements Renderable {
                 this.spriteData = ItemSpriteData.SPIRITUAL_BOOK;
                 this.texture = new Texture(Gdx.files.internal("images/items/book.png"));
                 this.scale.set(0.7f, 0.7f);
-                this.vanishesOnUse = true;
+                this.vanishesOnUse = false;
                 break;
             case SPECIAL_BOOK:
                 this.category = ItemCategory.USEFUL;
@@ -627,5 +1062,9 @@ public class Item implements Renderable {
     @Override
     public Color getColor() {
         return itemColor.getColor();
+    }
+
+    public ItemColor getItemColor() {
+        return itemColor;
     }
 }

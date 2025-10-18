@@ -31,6 +31,7 @@ public class SoundManager {
         loadSound("player_spiritual_attack", "sounds/player_spiritual_attack.wav");
         loadSound("pickup_item", "sounds/pickup_item.wav");
         loadSound("door_open", "sounds/door_open.wav");
+        loadSound("player_death", "sounds/music/tarmin_enter_fx.ogg");
 
         // Sounds for monster attacks
         loadSound("monster_attack", "sounds/monster_attack.wav");
@@ -82,6 +83,11 @@ public class SoundManager {
         } else {
             playRetroArpeggio(new int[]{1047, 1319}, 0.05f); // High C6-E6 arpeggio
         }
+    }
+
+    public void playPlayerDeathSound() {
+        playSound("player_death");
+
     }
 
     public void playDoorOpenSound() {
