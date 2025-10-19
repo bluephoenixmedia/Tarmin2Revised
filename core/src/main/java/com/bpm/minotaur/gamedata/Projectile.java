@@ -8,12 +8,16 @@ public class Projectile implements Renderable {
     private final Vector2 velocity;
     private final Color color;
     private float lifetime;
+    private final String[] spriteData; // ADD THIS
 
-    public Projectile(Vector2 startPosition, Vector2 velocity, Color color, float lifetime) {
+
+    public Projectile(Vector2 startPosition, Vector2 velocity, Color color, float lifetime, String[] spriteData) {
         this.position = startPosition.cpy();
         this.velocity = velocity.cpy();
         this.color = color;
         this.lifetime = lifetime;
+        this.spriteData = spriteData; // ADD THIS
+
     }
 
     public void update(float delta) {
@@ -33,5 +37,9 @@ public class Projectile implements Renderable {
     @Override
     public Color getColor() {
         return color;
+    }
+
+    public String[] getSpriteData() {
+        return spriteData;
     }
 }

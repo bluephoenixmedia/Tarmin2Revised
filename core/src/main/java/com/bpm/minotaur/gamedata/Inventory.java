@@ -4,6 +4,7 @@ public class Inventory {
     private final Item[] backpack = new Item[6];
     private Item rightHand = null;
     private Item leftHand = null;
+    //private Item activeProjectile = null;
 
     public boolean pickup(Item item) {
         if (rightHand == null) {
@@ -72,4 +73,6 @@ public class Inventory {
     public void setLeftHand(Item item) {
         this.leftHand = item;
     }
+
+
 }

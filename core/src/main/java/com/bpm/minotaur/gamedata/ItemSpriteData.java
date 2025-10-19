@@ -559,7 +559,7 @@ public class ItemSpriteData {
      * Colors: Same as spiritual weapons
      */
     public static final String[] SMALL_RING = {
-        //123456789012345678901234
+       //123456789012345678901234
         "........................",
         "........................",
         "........................",
@@ -1327,10 +1327,10 @@ public class ItemSpriteData {
             // Rings
             case "SMALL_RING": return SMALL_RING;
             case "LARGE_RING": return LARGE_RING;
-            case "RING_BLUE": return SMALL_RING;
-            case "RING_PINK": return SMALL_RING;
-            case "RING_GREEN": return SMALL_RING;
-            case "RING_PURPLE": return SMALL_RING;
+            //case "RING_BLUE": return SMALL_RING;
+           // case "RING_PINK": return SMALL_RING;
+           // case "RING_GREEN": return SMALL_RING;
+            //case "RING_PURPLE": return SMALL_RING;
 
 
             // Containers

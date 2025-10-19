@@ -31,6 +31,10 @@ public class CombatManager {
     private final GameEventManager eventManager;
     private final SoundManager soundManager;
 
+    private float monsterAttackDelay = 0f;
+    private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f; // Delay in seconds
+
+
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,  GameEventManager eventManager, SoundManager soundManager) {
         this.player = player;
         this.maze = maze;
@@ -68,6 +72,8 @@ public class CombatManager {
             // --- END OF AUTO-TURN LOGIC ---
             soundManager.playCombatStartSound();
             currentState = CombatState.MONSTER_TURN;
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME; // ADD THIS LINE - Set the delay
+
             Gdx.app.log("CombatManager", "Combat started with " + monster.getType());
         }
     }
@@ -75,6 +81,8 @@ public class CombatManager {
     public void endCombat() {
         currentState = CombatState.INACTIVE;
         monster = null;
+        monsterAttackDelay = 0f; // ADD THIS LINE - Reset delay when combat ends
+
         Gdx.app.log("CombatManager", "Combat ended.");
     }
 
@@ -82,26 +90,12 @@ public class CombatManager {
         if (currentState != CombatState.PLAYER_TURN) return;
 
         Item weapon = player.getInventory().getRightHand();
-
         int attackModifier = player.getAttackModifier();
-       // Gdx.app.log("CombatManager", "Player equipped weapon = " + weapon.getType().toString());
-       // Gdx.app.log("CombatManager", "Player weapon category = " + weapon.getCategory().toString() + ", weapon stats = " + weapon.getWeaponStats().toString());
 
         if (weapon != null) {
             Gdx.app.log("CombatManager", "Weapon is not null");
             Gdx.app.log("CombatManager", "Weapon category = " + weapon.getCategory().toString());
-            if (weapon.getWeaponStats() != null) {
-                Gdx.app.log("CombatManager", "weapon stats =  " + weapon.getWeaponStats().damage + " damage");
-            } else {
-                Gdx.app.log("CombatManager", "weapon stats are null");
 
-            }
-            if (weapon.getSpiritualWeaponStats() != null) {
-                Gdx.app.log("CombatManager", "spiritual weapon stats =  " + weapon.getSpiritualWeaponStats().damage + " damage");
-            } else {
-                Gdx.app.log("CombatManager", "spiritual weapon stats are null");
-
-            }
             if (weapon.getCategory() == Item.ItemCategory.WAR_WEAPON && weapon.getWeaponStats() != null) {
                 Gdx.app.log("CombatManager", "Weapon is war weapon and stats are not null");
 
@@ -111,20 +105,43 @@ public class CombatManager {
 
                     if (player.getArrows() > 0) {
                         Gdx.app.log("CombatManager", "Player has arrows");
-
                         player.decrementArrow();
-                        // soundManager.playPlayerAttackSound();
-                        animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
+
+                        // BOW/CROSSBOW always uses DART sprite
+                        animationManager.addAnimation(new Animation(
+                            Animation.AnimationType.PROJECTILE_PLAYER,
+                            player.getPosition(),
+                            monster.getPosition(),
+                            Color.WHITE,
+                            0.5f,
+                            ItemSpriteData.DART
+                        ));
+
                         monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
                         Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
-
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
                     } else {
                         eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
+                        return; // Don't switch turns if no arrows
                     }
                 } else { // Melee weapon
-                    //  soundManager.playPlayerAttackSound();
-                    animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), Color.WHITE, 0.5f));
+                    Gdx.app.log("CombatManager", "Melee weapon attack");
+
+                    // Melee weapons use their own sprite data
+                    String[] meleeSprite = weapon.getSpriteData();
+                    if (meleeSprite == null) {
+                        meleeSprite = ItemSpriteData.DART; // Fallback
+                    }
+
+                    animationManager.addAnimation(new Animation(
+                        Animation.AnimationType.PROJECTILE_PLAYER,
+                        player.getPosition(),
+                        monster.getPosition(),
+                        Color.WHITE,
+                        0.5f,
+                        meleeSprite
+                    ));
+
                     monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
                     eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
                 }
@@ -136,11 +153,18 @@ public class CombatManager {
             } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
                 Gdx.app.log("CombatManager", "Weapon is spiritual weapon and stats are not null");
 
-                //soundManager.playPlayerSpiritualAttackSound();
-                animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, player.getPosition(), monster.getPosition(), weapon.getColor(), 0.5f));
+                // BOOK/SCROLL always uses LARGE_LIGHTNING sprite
+                animationManager.addAnimation(new Animation(
+                    Animation.AnimationType.PROJECTILE_PLAYER,
+                    player.getPosition(),
+                    monster.getPosition(),
+                    weapon.getColor(),
+                    0.5f,
+                    ItemSpriteData.LARGE_LIGHTNING
+                ));
+
                 monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage + attackModifier);
                 Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritualWeaponStats().damage + " damage");
-
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
 
                 if (weapon.vanishesOnUse()) {
@@ -155,7 +179,6 @@ public class CombatManager {
             return; // Don't switch turns if there's no weapon
         }
 
-
         if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
             currentState = CombatState.VICTORY;
             Gdx.app.log("CombatManager","You have defeated" + monster.getMonsterType());
@@ -165,14 +188,11 @@ public class CombatManager {
             int baseExp = monster.getBaseExperience();
             Gdx.app.log("CombatManager","Monster baseExp = " + baseExp);
 
-
-
             float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
             Gdx.app.log("CombatManager","Monster colorMultiplier = " + colorMultiplier);
 
             float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
             Gdx.app.log("CombatManager","Monster levelMultiplier = " + levelMultiplier);
-
 
             int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
             eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
@@ -187,10 +207,17 @@ public class CombatManager {
     }
 
     public void monsterAttack() {
-        if (currentState == CombatState.MONSTER_TURN) {
+        if (currentState == CombatManager.CombatState.MONSTER_TURN && monsterAttackDelay <= 0f) {
             Gdx.app.log("CombatManager", "Monster attacks player");
-            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE, monster.getPosition(), player.getPosition(), monster.getColor(), 0.5f));
-            soundManager.playMonsterAttackSound(monster);
+            // Monster always uses DART sprite
+            animationManager.addAnimation(new Animation(
+                Animation.AnimationType.PROJECTILE_MONSTER,
+                monster.getPosition(),
+                player.getPosition(),
+                monster.getColor(),
+                0.5f,
+                ItemSpriteData.DART
+            ));            soundManager.playMonsterAttackSound(monster);
             int damage;
 
             // Determine attack type based on monster category
@@ -289,7 +316,11 @@ public class CombatManager {
 
     public void update(float delta) {
         if (currentState == CombatState.MONSTER_TURN) {
-            monsterAttack();
+            if (monsterAttackDelay > 0f) {
+                monsterAttackDelay -= delta;
+            } else {
+                monsterAttack();
+            }
         }
 
         if (currentState == CombatState.VICTORY) {
