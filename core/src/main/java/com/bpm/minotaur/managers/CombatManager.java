@@ -107,12 +107,12 @@ public class CombatManager {
                         Gdx.app.log("CombatManager", "Player has arrows");
                         player.decrementArrow();
 
-                        // BOW/CROSSBOW always uses DART sprite
+                        // BOW/CROSSBOW always uses DART sprite with weapon's color
                         animationManager.addAnimation(new Animation(
                             Animation.AnimationType.PROJECTILE_PLAYER,
                             player.getPosition(),
                             monster.getPosition(),
-                            Color.WHITE,
+                            weapon.getColor(),  // CHANGED: Use weapon's color instead of WHITE
                             0.5f,
                             ItemSpriteData.DART
                         ));
@@ -137,7 +137,7 @@ public class CombatManager {
                         Animation.AnimationType.PROJECTILE_PLAYER,
                         player.getPosition(),
                         monster.getPosition(),
-                        Color.WHITE,
+                        weapon.getColor(),  // CHANGED: Use weapon's color instead of WHITE
                         0.5f,
                         meleeSprite
                     ));
@@ -153,12 +153,12 @@ public class CombatManager {
             } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
                 Gdx.app.log("CombatManager", "Weapon is spiritual weapon and stats are not null");
 
-                // BOOK/SCROLL always uses LARGE_LIGHTNING sprite
+                // BOOK/SCROLL always uses LARGE_LIGHTNING sprite with weapon's color
                 animationManager.addAnimation(new Animation(
                     Animation.AnimationType.PROJECTILE_PLAYER,
                     player.getPosition(),
                     monster.getPosition(),
-                    weapon.getColor(),
+                    weapon.getColor(),  // Already correct - uses weapon's color
                     0.5f,
                     ItemSpriteData.LARGE_LIGHTNING
                 ));
