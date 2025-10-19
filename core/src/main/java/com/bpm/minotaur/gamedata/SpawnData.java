@@ -19,24 +19,24 @@ public class SpawnData {
     // Monsters are tiered based on the original game's classifications.
 
     public static final List<MonsterSpawnInfo> BAD_MONSTERS = Arrays.asList(
-        new MonsterSpawnInfo(Monster.MonsterType.GIANT_ANT, 1, 4),
-        new MonsterSpawnInfo(Monster.MonsterType.DWARF, 1, 5),
-        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SCORPION, 2, 6),
-        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SNAKE, 2, 7)
+        new MonsterSpawnInfo(Monster.MonsterType.GIANT_ANT, 1, 10),
+        new MonsterSpawnInfo(Monster.MonsterType.DWARF, 1, 10),
+        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SCORPION, 10, 10),
+        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SNAKE, 2, 10)
     );
 
     public static final List<MonsterSpawnInfo> NASTY_MONSTERS = Arrays.asList(
-        new MonsterSpawnInfo(Monster.MonsterType.GHOUL, 4, 8),
-        new MonsterSpawnInfo(Monster.MonsterType.SKELETON, 4, 9),
-        new MonsterSpawnInfo(Monster.MonsterType.CLOAKED_SKELETON, 5, 10)
+        new MonsterSpawnInfo(Monster.MonsterType.GHOUL, 4, 50),
+        new MonsterSpawnInfo(Monster.MonsterType.SKELETON, 4, 50),
+        new MonsterSpawnInfo(Monster.MonsterType.CLOAKED_SKELETON, 5, 50)
     );
 
     public static final List<MonsterSpawnInfo> HORRIBLE_MONSTERS = Arrays.asList(
-        new MonsterSpawnInfo(Monster.MonsterType.ALLIGATOR, 7, 12),
-        new MonsterSpawnInfo(Monster.MonsterType.WRAITH, 7, 12),
-        new MonsterSpawnInfo(Monster.MonsterType.GIANT, 8, 13),
-        new MonsterSpawnInfo(Monster.MonsterType.DRAGON, 10, 14),
-        new MonsterSpawnInfo(Monster.MonsterType.MINOTAUR, 12, 16) // The Minotaur only appears on level 12 or deeper.
+        new MonsterSpawnInfo(Monster.MonsterType.ALLIGATOR, 7, 99),
+        new MonsterSpawnInfo(Monster.MonsterType.WRAITH, 7, 99),
+        new MonsterSpawnInfo(Monster.MonsterType.GIANT, 8, 99),
+        new MonsterSpawnInfo(Monster.MonsterType.DRAGON, 10, 99),
+        new MonsterSpawnInfo(Monster.MonsterType.MINOTAUR, 50, 50) // The Minotaur only appears on level 12 or deeper.
     );
 
 
@@ -44,60 +44,60 @@ public class SpawnData {
     // Items are also tiered to provide better loot in deeper levels.
 
     public static final List<ItemSpawnInfo> TIER1_ITEMS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.SMALL_POTION, 1, 5),
-        new ItemSpawnInfo(Item.ItemType.LARGE_POTION, 1, 5),
+        new ItemSpawnInfo(Item.ItemType.SMALL_POTION, 1, 50),
+        new ItemSpawnInfo(Item.ItemType.LARGE_POTION, 1, 50),
         new ItemSpawnInfo(Item.ItemType.KEY, 1, 99),
         new ItemSpawnInfo(Item.ItemType.QUIVER, 1, 99),
-        new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 10),
-        new ItemSpawnInfo(Item.ItemType.BOW, 1, 10),
-        new ItemSpawnInfo(Item.ItemType.KNIFE, 1, 5),
-        new ItemSpawnInfo(Item.ItemType.AXE, 2, 6),
+        new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 50),
+        new ItemSpawnInfo(Item.ItemType.BOW, 1, 50),
+        new ItemSpawnInfo(Item.ItemType.KNIFE, 1, 50),
+        new ItemSpawnInfo(Item.ItemType.AXE, 2, 50),
         new ItemSpawnInfo(Item.ItemType.FLOUR_SACK, 1, 99),
         new ItemSpawnInfo(Item.ItemType.SMALL_RING, 3, 99)
 
     );
 
     public static final List<ItemSpawnInfo> TIER2_ITEMS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.BOOK, 4, 8),
-        new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 4, 9),
+        new ItemSpawnInfo(Item.ItemType.BOOK, 4, 99),
+        new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 4, 99),
         new ItemSpawnInfo(Item.ItemType.LARGE_SHIELD, 5, 99),
         new ItemSpawnInfo(Item.ItemType.HELMET, 5, 10),
         new ItemSpawnInfo(Item.ItemType.BREASTPLATE, 5, 99),
         new ItemSpawnInfo(Item.ItemType.GAUNTLETS, 4, 99),
         new ItemSpawnInfo(Item.ItemType.HAUBERK, 6, 99),
-        new ItemSpawnInfo(Item.ItemType.DART, 3, 7),
-        new ItemSpawnInfo(Item.ItemType.SPEAR, 4, 8),
+        new ItemSpawnInfo(Item.ItemType.DART, 3, 99),
+        new ItemSpawnInfo(Item.ItemType.SPEAR, 4, 99),
         new ItemSpawnInfo(Item.ItemType.LARGE_RING, 5, 99),
         new ItemSpawnInfo(Item.ItemType.CROSSBOW, 5, 9)
     );
 
     public static final List<ItemSpawnInfo> TIER3_ITEMS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.SMALL_FIREBALL, 7, 12),
-        new ItemSpawnInfo(Item.ItemType.SMALL_LIGHTNING, 7, 12),
-        new ItemSpawnInfo(Item.ItemType.LARGE_FIREBALL, 9, 14),
-        new ItemSpawnInfo(Item.ItemType.LARGE_LIGHTNING, 9, 14),
-        new ItemSpawnInfo(Item.ItemType.RING_BLUE, 8, 13),
-        new ItemSpawnInfo(Item.ItemType.RING_PINK, 10, 15),
+        new ItemSpawnInfo(Item.ItemType.SMALL_FIREBALL, 7, 50),
+        new ItemSpawnInfo(Item.ItemType.SMALL_LIGHTNING, 7, 50),
+        new ItemSpawnInfo(Item.ItemType.LARGE_FIREBALL, 9, 99),
+        new ItemSpawnInfo(Item.ItemType.LARGE_LIGHTNING, 9, 99),
+        new ItemSpawnInfo(Item.ItemType.RING_BLUE, 8, 99),
+        new ItemSpawnInfo(Item.ItemType.RING_PINK, 10, 99),
         new ItemSpawnInfo(Item.ItemType.WAR_BOOK, 9, 99),
         new ItemSpawnInfo(Item.ItemType.SPIRITUAL_BOOK, 9, 99),
         new ItemSpawnInfo(Item.ItemType.SPECIAL_BOOK, 10, 99),
-        new ItemSpawnInfo(Item.ItemType.RING_PURPLE, 12, 16)
+        new ItemSpawnInfo(Item.ItemType.RING_PURPLE, 12, 99)
     );
 
     // Containers are tiered separately. Better containers hold better loot.
     public static final List<ItemSpawnInfo> TIER1_CONTAINERS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.MONEY_BELT, 1, 4),
-        new ItemSpawnInfo(Item.ItemType.SMALL_BAG, 1, 5)
+        new ItemSpawnInfo(Item.ItemType.MONEY_BELT, 1, 25),
+        new ItemSpawnInfo(Item.ItemType.SMALL_BAG, 1, 25)
     );
 
     public static final List<ItemSpawnInfo> TIER2_CONTAINERS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.BOX, 3, 7),
-        new ItemSpawnInfo(Item.ItemType.MEDIUM_PACK, 4, 8)
+        new ItemSpawnInfo(Item.ItemType.BOX, 3, 5),
+        new ItemSpawnInfo(Item.ItemType.MEDIUM_PACK, 4, 50)
     );
 
     public static final List<ItemSpawnInfo> TIER3_CONTAINERS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.LARGE_BAG, 6, 10),
-        new ItemSpawnInfo(Item.ItemType.REGULAR_CHEST, 8, 12),
+        new ItemSpawnInfo(Item.ItemType.LARGE_BAG, 6, 99),
+        new ItemSpawnInfo(Item.ItemType.REGULAR_CHEST, 8, 99),
         new ItemSpawnInfo(Item.ItemType.TARMIN_TREASURE, 12, 99)
     );
 

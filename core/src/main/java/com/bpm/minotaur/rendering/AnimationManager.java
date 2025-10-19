@@ -29,12 +29,20 @@ public class AnimationManager {
 
     public void render(ShapeRenderer shapeRenderer, Player player, Viewport viewport, float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
         for (Animation animation : animations) {
-            if (animation.getType() == Animation.AnimationType.PROJECTILE) {
+            if (animation.getType() == Animation.AnimationType.PROJECTILE_PLAYER || animation.getType() == Animation.AnimationType.PROJECTILE_MONSTER) {
                 float progress = animation.getProgress();
                 float x = animation.getStartPosition().x + (animation.getEndPosition().x - animation.getStartPosition().x) * progress;
                 float y = animation.getStartPosition().y + (animation.getEndPosition().y - animation.getStartPosition().y) * progress;
 
-                Projectile p = new Projectile(new com.badlogic.gdx.math.Vector2(x, y), new com.badlogic.gdx.math.Vector2(0, 0), animation.getColor(), 1);
+                // Pass the sprite data from the animation to the projectile
+                Projectile p = new Projectile(
+                    new com.badlogic.gdx.math.Vector2(x, y),
+                    new com.badlogic.gdx.math.Vector2(0, 0),
+                    animation.getColor(),
+                    1f,
+                    animation.getSpriteData()
+                );
+
                 entityRenderer.renderSingleProjectile(shapeRenderer, player, p, viewport, depthBuffer, firstPersonRenderer, maze);
             }
         }

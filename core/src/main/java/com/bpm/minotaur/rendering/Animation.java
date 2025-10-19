@@ -6,7 +6,8 @@ import com.badlogic.gdx.math.Vector2;
 public class Animation {
 
     public enum AnimationType {
-        PROJECTILE
+        PROJECTILE_MONSTER,
+        PROJECTILE_PLAYER
     }
 
     private final AnimationType type;
@@ -15,14 +16,18 @@ public class Animation {
     private final Color color;
     private float progress;
     private final float duration;
+    private final String[] spriteData; // ADD THIS
 
-    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration) {
+
+    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration, String[] spriteData) {
         this.type = type;
         this.startPosition = startPosition.cpy();
         this.endPosition = endPosition.cpy();
         this.color = color;
         this.duration = duration;
         this.progress = 0f;
+        this.spriteData = spriteData; // ADD THIS
+
     }
 
     public void update(float delta) {
@@ -51,5 +56,10 @@ public class Animation {
 
     public Color getColor() {
         return color;
+    }
+
+    // ADD THIS METHOD
+    public String[] getSpriteData() {
+        return spriteData;
     }
 }
