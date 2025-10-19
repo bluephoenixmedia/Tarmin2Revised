@@ -47,6 +47,7 @@ configure(subprojects) {
       assetsFile.append(it + "\n")
     }
   }
+
   processResources.dependsOn 'generateAssetList'
 
   compileJava {
