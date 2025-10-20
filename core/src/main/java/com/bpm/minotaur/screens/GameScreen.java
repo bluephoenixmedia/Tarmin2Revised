@@ -317,6 +317,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 this.finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
             }
         }
+
+        cleanUpOrphanedDoors();
         createMazeFromText(this.finalLayout);
     }
 
@@ -619,6 +621,64 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         return true;
+    }
+
+    /**
+     * Scans the finalLayout and removes "orphaned" doors.
+     * An orphaned door is a 'D' tile that is not enclosed by walls on
+     * opposite sides (e.g., sticking out into a corridor).
+     * These are replaced with '.' (floor) to prevent rendering artifacts.
+     */
+    private void cleanUpOrphanedDoors() {
+        if (finalLayout == null) return;
+
+        int height = finalLayout.length;
+        if (height == 0) return;
+        int width = finalLayout[0].length();
+
+        // Convert String[] to char[][] for easier modification
+        char[][] layoutChars = new char[height][width];
+        for (int y = 0; y < height; y++) {
+            layoutChars[y] = finalLayout[y].toCharArray();
+        }
+
+        // We make a *copy* to check neighbors against the original state.
+        // This prevents a check from being affected by a change we just made.
+        char[][] originalChars = new char[height][width];
+        for (int y = 0; y < height; y++) {
+            originalChars[y] = finalLayout[y].toCharArray();
+        }
+
+        // Iterate through the map, skipping the outer border
+        for (int y = 1; y < height - 1; y++) {
+            for (int x = 1; x < width - 1; x++) {
+
+                // Check if the current tile in the *original* layout was a door
+                if (originalChars[y][x] == 'D') {
+
+                    // Check neighbors in the original layout
+                    boolean hasWallTop = (originalChars[y - 1][x] == '#');
+                    boolean hasWallBottom = (originalChars[y + 1][x] == '#');
+                    boolean hasWallLeft = (originalChars[y][x - 1] == '#');
+                    boolean hasWallRight = (originalChars[y][x + 1] == '#');
+
+                    boolean isVerticallyEnclosed = hasWallTop && hasWallBottom;
+                    boolean isHorizontallyEnclosed = hasWallLeft && hasWallRight;
+
+                    // If it's not enclosed either way, it's an invalid orphan.
+                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed) {
+                        // Log in grid coordinates (x, y from bottom-left)
+                        Gdx.app.log("GameScreen", "Removing orphaned door at (" + x + ", " + (height - 1 - y) + ")");
+                        layoutChars[y][x] = '.'; // Replace with a floor tile
+                    }
+                }
+            }
+        }
+
+        // Convert char[][] back to String[]
+        for (int y = 0; y < height; y++) {
+            finalLayout[y] = new String(layoutChars[y]);
+        }
     }
 
 
