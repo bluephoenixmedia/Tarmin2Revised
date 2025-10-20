@@ -258,6 +258,7 @@ public class FirstPersonRenderer {
 
         // Track if we hit a door frame (for rendering purposes when door is open)
         boolean hitDoorFrame = false;    // Whether we encountered an open door frame
+
         int doorFrameMapX = -1, doorFrameMapY = -1;  // Map coordinates of the door frame
         int doorFrameSide = -1;          // Which side the door frame was hit on
         float doorFrameDistance = 0;     // Distance to the door frame
@@ -284,13 +285,29 @@ public class FirstPersonRenderer {
             } else {
                 // Get wall data for current and previous tiles
                 int wallData = maze.getWallDataAt(mapX, mapY);
-                int prevMapX = (side == 0) ? mapX - stepX : mapX;  // Previous tile X
-                int prevMapY = (side == 1) ? mapY - stepY : mapY;  // Previous tile Y
+                int prevMapX = (side == 0) ? mapX - stepX : mapX;
+                int prevMapY = (side == 1) ? mapY - stepY : mapY;
                 int prevWallData = maze.getWallDataAt(prevMapX, prevMapY);
 
+                // Get objects in current and previous tiles
+                Object currentObj = maze.getGameObjectAt(mapX, mapY);
+                Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
+
+                // Determine if these tiles have open doors (treat as empty space)
+                boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
+                    ((Door) currentObj).getState() == Door.DoorState.OPEN &&
+                    currentObj != doorToIgnore);
+                boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
+                    ((Door) prevObj).getState() == Door.DoorState.OPEN &&
+                    prevObj != doorToIgnore);
+
                 // Check for wall collision first (solid walls always stop the ray)
+                // Skip if EITHER tile has an open door - treat open door tiles as completely empty
                 if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                    hit = true;  // Wall blocks the ray
+                    if (!currentTileHasOpenDoor && !prevTileHasOpenDoor) {
+                        hit = true;  // Wall blocks the ray
+                    }
+                    // else: Wall exists but is in an open door tile - ignore it completely
                 }
                 // Check for door collision (doors may or may not block depending on state)
                 else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
@@ -312,6 +329,7 @@ public class FirstPersonRenderer {
                                 // Calculate distance to door frame
                                 doorFrameDistance = (side == 0) ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
                                 doorFrameObject = door;         // Store door reference
+
                             }
                             // Continue raycasting through the open door (don't set hit = true)
                         } else {
