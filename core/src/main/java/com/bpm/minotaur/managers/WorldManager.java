@@ -1,0 +1,89 @@
+package com.bpm.minotaur.managers;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.gamedata.Difficulty;
+import com.bpm.minotaur.gamedata.GameMode;
+import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.generation.ChunkGenerator;
+
+/**
+ * Manages the game world, including loading, saving, and generating
+ * chunks (Maze objects) as the player moves.
+ */
+public class WorldManager {
+
+    private final GameMode gameMode;
+    private final Difficulty difficulty;
+    private int currentLevel;
+    private GridPoint2 currentPlayerChunkId;
+    private final ChunkGenerator chunkGenerator;
+
+    public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel) {
+        this.gameMode = gameMode;
+        this.difficulty = difficulty;
+        this.currentLevel = initialLevel;
+        this.chunkGenerator = new ChunkGenerator();
+        this.currentPlayerChunkId = new GridPoint2(0, 0); // Start at origin chunk
+    }
+
+    /**
+     * Gets the very first Maze for the game to start in.
+     * @return The initial Maze object.
+     */
+    public Maze getInitialMaze() {
+        return loadChunk(currentPlayerChunkId);
+    }
+
+    /**
+     * Loads a chunk from a file or generates it if it doesn't exist.
+     * @param chunkId The (X,Y) coordinates of the chunk to load.
+     * @return The loaded or generated Maze object.
+     */
+    public Maze loadChunk(GridPoint2 chunkId) {
+        // --- STUB: File Loading Logic ---
+        // 1. String fileName = "chunk_" + chunkId.x + "_" + chunkId.y + ".json";
+        // 2. if (Gdx.files.local(fileName).exists()) {
+        // 3.    Gdx.app.log("WorldManager", "Loading chunk from file: " + fileName);
+        // 4.    String json = Gdx.files.local(fileName).readString();
+        // 5.    ChunkData data = new Json().fromJson(ChunkData.class, json);
+        // 6.    this.currentPlayerChunkId = chunkId;
+        // 7.    return reconstructMazeFromData(data); // <-- (Needs new method)
+        // 8. }
+
+        Gdx.app.log("WorldManager", "No save file for " + chunkId + ". Generating new chunk.");
+
+        // --- Generation Logic (if no file) ---
+        Maze newMaze = chunkGenerator.generateChunk(chunkId, currentLevel, difficulty, gameMode);
+        this.currentPlayerChunkId = chunkId;
+
+        // --- STUB: File Saving Logic ---
+        // 1. saveChunk(newMaze, chunkId); // Save the newly generated chunk
+
+        return newMaze;
+    }
+
+    /**
+     * Saves the current state of a Maze (monster health, item positions, etc.)
+     * to a file.
+     * @param maze The Maze object to save.
+     */
+    public void saveCurrentChunk(Maze maze) {
+        // --- STUB: File Saving Logic ---
+        // 1. ChunkData data = new ChunkData(maze); // <-- (Needs new class + constructor)
+        // 2. String json = new Json().prettyPrint(data);
+        // 3. String fileName = "chunk_" + currentPlayerChunkId.x + "_" + currentPlayerChunkId.y + ".json";
+        // 4. Gdx.files.local(fileName).writeString(json, false);
+        // 5. Gdx.app.log("WorldManager", "Saved chunk state to " + fileName);
+
+        Gdx.app.log("WorldManager", "saveCurrentChunk() called for " + currentPlayerChunkId + ". (Saving is stubbed)");
+    }
+
+    /**
+     * Gets the player's starting position for the *initial* maze.
+     * @return The (X,Y) grid coordinate.
+     */
+    public GridPoint2 getInitialPlayerStartPos() {
+        return chunkGenerator.getInitialPlayerStartPos();
+    }
+}

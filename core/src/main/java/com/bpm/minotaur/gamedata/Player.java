@@ -436,61 +436,106 @@ public class Player {
         Gdx.app.log("PlayerMovement", "Player turned right, now facing " + facing);
     }
 
-    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
+    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode) { // <-- Added gameMode parameter
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
-        Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ")");
+        Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ") in mode " + gameMode);
 
+        // --- Gate Interaction Logic ---
         if (maze.getGates().containsKey(targetTile)) {
-            useGate(maze, eventManager);
-            return;
+            Gate gate = maze.getGates().get(targetTile);
+
+            if (gameMode == GameMode.ADVANCED && gate.isChunkTransitionGate()) {
+                // In ADVANCED mode, fire a transition event for transition gates
+                Gdx.app.log("Interaction", "Transition Gate detected. Firing CHUNK_TRANSITION event.");
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.CHUNK_TRANSITION, gate));
+            } else {
+                // In CLASSIC mode, OR if it's not a transition gate in ADVANCED, use old logic
+                Gdx.app.log("Interaction", "Classic Gate detected. Performing stat jumble/teleport.");
+                useGate(maze, eventManager, gate); // Pass the specific gate
+            }
+            return; // Interaction handled
         }
 
-
-        // Priority 1: Open a door
+        // --- Door Interaction Logic ---
         Object obj = maze.getGameObjectAt(targetX, targetY);
         if (obj instanceof Door) {
             Door door = (Door) obj;
             if (door.getState() == Door.DoorState.CLOSED) {
                 door.startOpening();
                 eventManager.addEvent(new GameEvent("You opened the door.", 2f));
-                soundManager.playDoorOpenSound();
+                if (soundManager != null) soundManager.playDoorOpenSound(); // Added null check
             }
             return; // Interaction handled
         }
 
-        // Priority 2: Open a container
+        // --- Container Interaction Logic ---
         Item itemInFront = maze.getItems().get(targetTile);
         if (itemInFront != null && itemInFront.getCategory() == Item.ItemCategory.CONTAINER) {
             if (itemInFront.isLocked()) {
-                if (hasKey()) {
+                Item key = findKey(); // Use helper to find key
+                if (key != null && itemInFront.unlocks(key)) { // Check if key unlocks this container
                     itemInFront.unlock();
-                    consumeKey();
+                    consumeKey(key); // Consume the specific key used
                     eventManager.addEvent(new GameEvent("You unlocked the " + itemInFront.getType() + "!", 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("The " + itemInFront.getType() + " is locked.", 2f));
-                    return;
+                    return; // Locked and no/wrong key
                 }
             }
 
+            // Container is unlocked (or was just unlocked)
             List<Item> contents = new ArrayList<>(itemInFront.getContents());
-            maze.getItems().remove(targetTile); // Remove the container itself from the maze first
+            maze.getItems().remove(targetTile); // Remove the container itself
 
             if (contents.isEmpty()) {
                 eventManager.addEvent(new GameEvent("The " + itemInFront.getType() + " is empty.", 2f));
             } else {
                 eventManager.addEvent(new GameEvent("You open the " + itemInFront.getType() + ".", 2f));
                 for (Item contentItem : contents) {
-                    // Drop the item on the same tile as the container
-                    contentItem.getPosition().set(targetX + 0.5f, targetY + 0.5f);
-                    maze.addItem(contentItem);
+                    // Try to place on the container's tile, fallback to player tile if occupied
+                    GridPoint2 dropTile = targetTile;
+                    if (maze.getItems().containsKey(dropTile)) {
+                        dropTile = new GridPoint2((int)position.x, (int)position.y);
+                    }
+                    // Avoid overwriting if player tile is also occupied
+                    if (!maze.getItems().containsKey(dropTile)) {
+                        contentItem.getPosition().set(dropTile.x + 0.5f, dropTile.y + 0.5f);
+                        maze.addItem(contentItem);
+                        Gdx.app.log("Interaction", "Dropped " + contentItem.getType() + " at " + dropTile);
+                    } else {
+                        eventManager.addEvent(new GameEvent("No space to drop " + contentItem.getType() + ".", 2f));
+                        Gdx.app.log("Interaction", "Failed to drop " + contentItem.getType() + ", tile " + dropTile + " occupied.");
+                        // Item remains 'in limbo' - ideally add back to inventory or handle differently
+                    }
                 }
             }
-            return;
+            return; // Interaction handled
         }
 
-        eventManager.addEvent(new GameEvent("Nothing to open.", 2f));
+        // --- No Interaction ---
+        eventManager.addEvent(new GameEvent("Nothing to interact with here.", 2f));
+    }
+
+    /**
+     * Finds the first available key in the player's inventory (hands first, then backpack).
+     * @return The found Item (key), or null if no key is held.
+     */
+    private Item findKey() {
+        Inventory inv = getInventory();
+        if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
+            return inv.getRightHand();
+        }
+        if (inv.getLeftHand() != null && inv.getLeftHand().getType() == Item.ItemType.KEY) {
+            return inv.getLeftHand();
+        }
+        for (Item item : inv.getBackpack()) {
+            if (item != null && item.getType() == Item.ItemType.KEY) {
+                return item;
+            }
+        }
+        return null;
     }
 
     private boolean hasKey() {
@@ -552,21 +597,96 @@ public class Player {
         }
     }
 
-    private void consumeKey() {
+    /**
+     * Consumes a specific key item from the player's inventory.
+     * @param keyToRemove The specific key item to remove.
+     */
+    private void consumeKey(Item keyToRemove) {
         Inventory inv = getInventory();
-        if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
+        if (inv.getRightHand() == keyToRemove) {
             inv.setRightHand(null);
             return;
         }
-        if (inv.getLeftHand() != null && inv.getLeftHand().getType() == Item.ItemType.KEY) {
+        if (inv.getLeftHand() == keyToRemove) {
             inv.setLeftHand(null);
             return;
         }
         for (int i = 0; i < inv.getBackpack().length; i++) {
-            if (inv.getBackpack()[i] != null && inv.getBackpack()[i].getType() == Item.ItemType.KEY) {
+            if (inv.getBackpack()[i] == keyToRemove) {
                 inv.getBackpack()[i] = null;
                 return;
             }
+        }
+    }
+
+    /**
+     * Handles the original gate logic (stat jumble, teleport within chunk).
+     * Called in CLASSIC mode or for non-transition gates in ADVANCED mode.
+     * @param maze The current maze.
+     * @param eventManager For displaying messages.
+     * @param gate The specific gate being used.
+     */
+    private void useGate(Maze maze, GameEventManager eventManager, Gate gate) {
+        Gdx.app.log("Player", "Player used a non-transition gate at (" + (int)gate.getPosition().x + "," + (int)gate.getPosition().y + ")");
+        eventManager.addEvent(new GameEvent("You touch the strange mural...", 2f));
+
+        // Stat Jumbling Logic
+        int outcome = new Random().nextInt(4); // 4 possible outcomes
+        switch (outcome) {
+            case 1: // Swap stats
+                int temp = warStrength;
+                setWarStrength(getSpiritualStrength()); // Use setter to respect max
+                spiritualStrength = Math.min(temp, maxSpiritualStrength); // Respect max
+                Gdx.app.log("Player", "Gate swapped stats! WS=" + warStrength + ", SS=" + spiritualStrength);
+                eventManager.addEvent(new GameEvent("Your strengths feel reversed!", 2f));
+                break;
+            case 2: // Reduce War Strength
+                setWarStrength((int)(getWarStrength() * 0.75f)); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced War Strength to " + warStrength);
+                eventManager.addEvent(new GameEvent("You feel weaker!", 2f));
+                break;
+            case 3: // Reduce Spiritual Strength
+                spiritualStrength = Math.min((int)(spiritualStrength * 0.75f), maxSpiritualStrength); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced Spiritual Strength to " + spiritualStrength);
+                eventManager.addEvent(new GameEvent("Your spirit feels drained!", 2f));
+                break;
+            default: // No change
+                Gdx.app.log("Player", "Gate had no effect on stats.");
+                eventManager.addEvent(new GameEvent("Nothing seems to happen.", 2f));
+                break;
+        }
+
+        // Teleport Logic (within the current chunk)
+        List<GridPoint2> emptyTiles = new ArrayList<>();
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                // Check for floor tile, no object, no item, no monster
+                if (maze.getWallDataAt(x, y) == 0
+                    && maze.getGameObjectAt(x, y) == null
+                    && !maze.getItems().containsKey(new GridPoint2(x, y))
+                    && !maze.getMonsters().containsKey(new GridPoint2(x, y)))
+                {
+                    emptyTiles.add(new GridPoint2(x, y));
+                }
+            }
+        }
+
+        if (!emptyTiles.isEmpty()) {
+            GridPoint2 currentPos = new GridPoint2((int)position.x, (int)position.y);
+            GridPoint2 newPos;
+            int attempts = 0;
+            // Try to find a *different* empty tile
+            do {
+                newPos = emptyTiles.get(new Random().nextInt(emptyTiles.size()));
+                attempts++;
+            } while (newPos.equals(currentPos) && attempts < 10 && emptyTiles.size() > 1); // Avoid infinite loop if only one empty tile
+
+            position.set(newPos.x + 0.5f, newPos.y + 0.5f);
+            Gdx.app.log("Player", "Teleported within chunk to (" + newPos.x + ", " + newPos.y + ")");
+            eventManager.addEvent(new GameEvent("Space warps around you!", 2f));
+        } else {
+            Gdx.app.log("Player", "Teleport failed - no valid empty tiles found.");
+            eventManager.addEvent(new GameEvent("The mural shimmers weakly.", 2f));
         }
     }
 
