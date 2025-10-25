@@ -1,17 +1,31 @@
 Tarmin2Revised
 Overview
-Tarmin2 is a dungeon-crawling adventure game built with the libGDX framework. The game is a modern tribute to classic first-person dungeon crawlers, featuring procedurally generated mazes, a retro-inspired visual style, and a focus on exploration and survival. The project is structured into a core module for the main game logic and an lwjgl3 module for the desktop launcher.
+Tarmin2Revised is a dungeon-crawling adventure game built with the libGDX framework. The game is a modern tribute to the classic Intellivision game Treasure of Tarmin, featuring procedurally generated mazes, a retro-inspired visual style, and a focus on exploration, combat, and survival. The project is structured into a core module for the main game logic and an lwjgl3 module for the desktop launcher.
 
 Key Features
-Procedurally Generated Mazes: Every playthrough offers a unique dungeon layout, ensuring high replayability.
+Procedural Tile-Based Mazes: Dungeons are built by randomly selecting, rotating, and stitching pre-designed room "tiles" together, creating unique layouts every game.
 
 First-Person Perspective: An immersive 3D view rendered with a raycasting algorithm, reminiscent of classic dungeon crawlers.
 
-Dynamic Doors: Interactive doors that open with a smooth animation, adding a dynamic element to the environment.
+Dynamic Doors: Interactive doors that open with a smooth animation.
 
-Interactive Items: Discover and collect items like strength and healing potions to aid in your adventure.
+Deep Item & Equipment System: Discover dozens of items across categories: War Weapons, Spiritual Weapons, Armor, Rings, Consumables, and Treasure.
 
-Debug Overlay: A toggleable debug screen that displays the maze layout, player position, and direction in real-time.
+Color-Coded Tiers: Items and monsters have colors (e.g., Tan, Orange, Blue) that signify their power, based on the dungeon level.
+
+Locked Containers: Find locked chests and boxes that require a key of the correct color to open.
+
+Turn-Based Combat: Engage in classic turn-based combat against a variety of monsters.
+
+Dual-Strength System: Manage both War Strength (health/melee) and Spiritual Strength (magic/defense), attacked by different monster types.
+
+Player Leveling: Gain experience from victories to level up, increasing your stats and healing you.
+
+Resource Management: Juggle Food (for resting) and Arrows (for ranged combat).
+
+Debug Overlay: A toggleable debug screen (F1) that displays the maze layout, player position, and other technical info.
+
+Dual-Render Mode: Toggle (F2) between a modern, textured renderer and a "Classic" mode with solid, shaded colors.
 
 Getting Started
 To get the project up and running, you'll need to have a Java Development Kit (JDK) installed, version 17 or higher.
@@ -39,15 +53,15 @@ core: Contains the majority of the game's code, including game logic, rendering,
 lwjgl3: The desktop launcher for the game, responsible for creating the application window and starting the game.
 
 Key Files and Directories
-assets/: This directory contains all of the game's assets, such as fonts, images, and data files.
+assets/: Contains all of the game's assets, such as fonts, images, sounds, and music.
 
 core/src/main/java/com/bpm/minotaur/: The main package for the game's source code.
 
-gamedata/: Contains classes that define the game's data structures, such as Maze, Player, and Item.
+gamedata/: Defines core game state classes: Player, Maze, Item, Monster.
 
-generation/: Includes the MazeGenerator class, which is responsible for creating the procedural dungeon layouts.
+managers/: Contains singletons and systems for managing combat, spawning, sound, music, and debug features.
 
-rendering/: Contains the rendering classes, including the FirstPersonRenderer and DebugRenderer.
+rendering/: Contains the rendering classes, including the FirstPersonRenderer and EntityRenderer.
 
 screens/: Manages the different screens of the game, such as the MainMenuScreen and GameScreen.
 
@@ -59,18 +73,14 @@ The game is built around a central Tarmin2 class that extends com.badlogic.gdx.G
 
 MainMenuScreen: The first screen the player sees. It displays the game's title and waits for player input to start the game.
 
-GameScreen: The main screen for gameplay. It handles the rendering of the maze, player, and items, as well as processing player input and managing game state updates.
+GameScreen: The main screen for gameplay. It handles the rendering of the maze, player, and entities, as well as processing player input and managing game state updates.
 
 Rendering
-The game's 3D view is rendered using a raycasting algorithm in the FirstPersonRenderer class. This technique creates a 3D perspective from a 2D map, a hallmark of classic dungeon crawlers.
+The game's 3D view is rendered using a raycasting algorithm in the FirstPersonRenderer class. This technique creates a 3D perspective from a 2D map.
 
-Depth Buffer: The FirstPersonRenderer also generates a depth buffer, which is used to correctly render items and other objects in the world so they appear behind walls when they should.
+Depth Buffer: The FirstPersonRenderer also generates a depthBuffer, which is used by the EntityRenderer to correctly render items and monsters in the world so they appear behind walls when they should.
 
 Debug View: For development and testing, a DebugRenderer is included. It provides a top-down view of the maze, showing the player's position, direction, and the location of walls and doors.
 
 Maze Generation
-The dungeons in Tarmin2 are procedurally generated, ensuring a new experience with every playthrough.
-
-GameScreen.java: This class contains an innovative approach to maze creation by stitching together pre-designed "tiles" of rooms and corridors. The createMazeFromArrayTiles method procedurally arranges and rotates these tiles to form a larger, cohesive map.
-
-MazeGenerator.java: For a more classic roguelike feel, the project also includes a MazeGenerator that uses a combination of room placement and maze-crawling algorithms to create complex and varied dungeons.
+The game's dungeons are procedurally generated in GameScreen.java. The createMazeFromArrayTiles method implements an innovative approach by building a large map (e.g., 2x2) from a grid of smaller, pre-designed "tiles" (12x12). These tiles are randomly selected from a pool of 16 templates, rotated, and then "stitched" together using corridor templates to ensure connectivity. This creates complex, varied, and non-linear dungeon layouts for each level.
