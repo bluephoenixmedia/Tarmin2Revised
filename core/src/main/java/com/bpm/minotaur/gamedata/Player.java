@@ -403,7 +403,11 @@ public class Player {
         // Check if the tile we are moving onto contains a door.
         Object nextObject = maze.getGameObjectAt(nextX, nextY);
 
+      //  Gdx.app.log("Player", "Move - nextObject = " + nextObject.toString());
+
         if (nextObject instanceof Door) {
+            Gdx.app.log("Player", "Move - nextObject = door");
+
             // Since isWallBlocking was false, the door must be open.
             // We move an extra tile to "skip" over the door's space.
             int finalX = nextX + (int)direction.getVector().x;
@@ -417,6 +421,9 @@ public class Player {
                 // This case would be rare, like a door leading directly into a wall.
                 Gdx.app.log("PlayerMovement", "Movement blocked by a wall immediately after the door.");
             }
+        } else if (nextObject instanceof Gate) {
+            Gdx.app.log("Player", "Move - nextObject = Gate");
+
         } else {
             // Standard movement for non-door tiles.
             position.set(nextX + 0.5f, nextY + 0.5f);
@@ -438,7 +445,10 @@ public class Player {
 
     public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode) { // <-- Added gameMode parameter
         int targetX = (int) (position.x + facing.getVector().x);
+        Gdx.app.log("Player", "Interact method: targetX = " + targetX);
+
         int targetY = (int) (position.y + facing.getVector().y);
+        Gdx.app.log("Player", "Interact method: targetY = " + targetY);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
         Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ") in mode " + gameMode);
 
