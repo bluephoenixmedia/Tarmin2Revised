@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.managers.MusicManager;
+import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.screens.MainMenuScreen;
 
 /**
@@ -32,6 +33,10 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         // Add more tracks here
         MusicManager.getInstance().finishLoading(); // Wait for them to load
+
+        // --- ADD THIS LINE ---
+        // Load all saved settings so they're ready for other screens
+        SettingsManager.getInstance().load();
 
         // Set the initial screen to the main menu.
         this.setScreen(new MainMenuScreen(this));

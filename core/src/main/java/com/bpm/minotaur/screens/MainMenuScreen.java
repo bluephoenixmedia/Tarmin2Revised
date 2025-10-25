@@ -128,8 +128,8 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             // The SpriteBatch projection matrix is updated in Tarmin2.java's resize method.
             game.batch.begin();
             titleFont.setColor(INTV_WHITE);
-            drawCenteredText(titleFont, "ADVANCED", TARGET_HEIGHT * 0.75f);
-            drawCenteredText(titleFont, "DUNGEONS & DRAGONS*", TARGET_HEIGHT * 0.65f);
+            drawCenteredText(titleFont, "THE LEGEND OF GALOR", TARGET_HEIGHT * 0.75f);
+            drawCenteredText(titleFont, "TARMIN RETURNS", TARGET_HEIGHT * 0.65f);
             drawCenteredText(titleFont, "CARTRIDGE", TARGET_HEIGHT * 0.55f);
 
             if (textBlink) {
@@ -164,7 +164,8 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         } else
         if (inputCooldown <= 0) {
             Gdx.app.log("MainMenuScreen", "Key pressed. Starting game...");
-            game.setScreen(new GameScreen(game, 1, Difficulty.EASIEST));
+            game.setScreen(new SettingsScreen(game));
+            //game.setScreen(new GameScreen(game, 1, Difficulty.EASIEST));
             return true;
         }
         return false;
