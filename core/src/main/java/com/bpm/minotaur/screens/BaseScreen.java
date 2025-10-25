@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 
@@ -8,7 +9,7 @@ import com.bpm.minotaur.Tarmin2;
  * It implements the libGDX Screen interface and provides a common structure
  * for all game screens to extend.
  */
-public abstract class BaseScreen implements Screen {
+public abstract class BaseScreen implements Screen, InputProcessor {
 
     // A protected reference to the main game class.
     // This allows subclasses to access the game instance, for example, to switch screens.
