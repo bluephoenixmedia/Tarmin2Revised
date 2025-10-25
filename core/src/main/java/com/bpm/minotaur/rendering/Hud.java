@@ -25,6 +25,8 @@ import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager; // <-- ADDED IMPORT
 import com.bpm.minotaur.managers.GameEventManager;
 
+import java.util.List; // <-- IMPORT ADDED FOR LIST
+
 public class Hud implements Disposable {
 
     public Stage stage;
@@ -157,7 +159,7 @@ public class Hud implements Disposable {
         warTable = new Table();
         warTable.padLeft(standardPadLeft); // ADD THIS
         warTable.add(new Label("WS", labelStyle)).padRight(10);
-       // warTable.add(new Label("[S]", labelStyle)).padRight(10);
+        // warTable.add(new Label("[S]", labelStyle)).padRight(10);
         warTable.padBottom(-10);
         warTable.add(warStrengthValueLabel);
 
@@ -166,7 +168,7 @@ public class Hud implements Disposable {
         spiritualTable = new Table();
         spiritualTable.padLeft(standardPadLeft); // ADD THIS
         spiritualTable.add(new Label("SS", labelStyle)).padRight(10);
-       // spiritualTable.add(new Label("[+]", labelStyle)).padRight(10);
+        // spiritualTable.add(new Label("[+]", labelStyle)).padRight(10);
         spiritualTable.padBottom(-10);
         spiritualTable.add(spiritualStrengthValueLabel);
 
@@ -175,7 +177,7 @@ public class Hud implements Disposable {
         foodTable = new Table();
         foodTable.padLeft(standardPadLeft); // ADD THIS
         foodTable.add(new Label("FOOD", labelStyle)).padRight(10);
-      //  foodTable.add(new Label("[F]", labelStyle)).padRight(10);
+        //  foodTable.add(new Label("[F]", labelStyle)).padRight(10);
         foodTable.padBottom(-10);
         foodTable.add(foodValueLabel);
 
@@ -230,7 +232,7 @@ public class Hud implements Disposable {
         rightTable.add(new Label("MONSTER", labelStyle)).left().padTop(50).padLeft(standardPadLeft); // Tweak .padTop() for spacing
         rightTable.add(monsterStrengthLabel).right().padTop(50).padRight(10);
         rightTable.row();
-               rightTable.row();
+        rightTable.row();
         rightTable.add(lvlExpTable).left().padTop(10); // Tweak .padTop()
 
 
@@ -339,9 +341,14 @@ public class Hud implements Disposable {
             combatStatusLabel.setVisible(false);
         }
 
+        // --- MODIFICATION HERE ---
+        // Get only the message events
+        List<GameEvent> messageEvents = eventManager.getMessageEvents();
+
         // Display the oldest game event message, or an empty string if there are no events
-        if (!eventManager.getEvents().isEmpty()) {
-            messageLabel.setText(eventManager.getEvents().get(0).message);
+        if (!messageEvents.isEmpty()) {
+            messageLabel.setText(messageEvents.get(0).message);
+            // --- END MODIFICATION ---
             messageLabel.setVisible(true); // <-- Show text
             messageTable.setBackground(messageBackgroundDrawable); // <-- Show background
         } else {

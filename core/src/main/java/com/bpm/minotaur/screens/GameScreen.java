@@ -11,13 +11,14 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+// No longer needed: import com.bpm.minotaur.generation.ChunkGenerator;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+// No longer needed: import java.util.ArrayList;
+// No longer needed: import java.util.Collections;
+// No longer needed: import java.util.List;
+// No longer needed: import java.util.Random;
 
 public class GameScreen extends BaseScreen implements InputProcessor, Disposable {
 
@@ -27,14 +28,17 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final BitmapFont font = new BitmapFont();
 
     private boolean needsAsciiRender = false;
-    private final int level; // <-- ADD THIS LINE
 
+    // --- NEW: World/Game Mode ---
+    private final GameMode gameMode;
+    private final WorldManager worldManager;
+    private final int level; // Initial dungeon level
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer();
-    private final Difficulty difficulty; // Add this line
+    private final Difficulty difficulty;
 
     private Hud hud;
     private AnimationManager animationManager;
@@ -43,89 +47,34 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     // --- Game State ---
     private Player player;
-    private Maze maze;
-    private int currentLevel = 1;
-    private final Random random = new Random();
-    private String[] finalLayout;
+    private Maze maze; // This is now the "active" maze/chunk
+    private int currentLevel; // Current level number
     private CombatManager combatManager;
 
-    // --- Maze Content Tile Definitions ---
-    String[] tile1 = new String[]{ "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###", ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....", "#####.######" };
-    String[] tile2 = new String[]{ "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "....D.D.....", "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "#####.######" };
-    String[] tile3 = new String[]{ "#####.######", "#..........#", "###D###D####", "............", "#.#D#..###.#", "..#.#..#.#..", "#.#.#..#.#.#", "#.#.#..#.D.#", "#.#.#..#.#.#", "#.#.#..#.#.#", "#.#.####.#.#", "#.#......#.#" };
-    String[] tile4 = new String[]{ "#####..#####", "#...#..#...#", "#...#..#...#", "#...D..#...#", "#...#..#...#", ".####D###D#.", "....D...D...", "###D#D######", "#...#..D...#", "#...#..#...#", "#...#..#...#", "#####..#####" };
-    String[] tile5 = new String[]{ "#####.###...", "#.##....#.##", "#D##D##D#.D.", "#.#...#.#.##", "#D#...#D#...", "........D...", "#D#...#D#...", "#.#...#.#...", "#D#...#D#.##", "#.##D##.#.D.", "####...##.##", "#####..##...." };
-    String[] tile6 = new String[]{ "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#", ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#", "#####..#####" };
-    String[] tile7 = new String[]{ "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#", ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#", "#####.######" };
-    String[] tile8 = new String[]{ "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###", "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#", "###....#####" };
-    String[] tile9 = new String[]{
-        ".####.#.....",
-        ".#..D.#..###",
-        ".####.#..#.#",
-        "......#..#.#",
-        "##D####..#D#",
-        "....D.D.....",
-        "....####D###",
-        "#D#..#......",
-        "#.#..#......",
-        "#.#..#.####.",
-        "###..#.D..#.",
-        ".....#.####." };
-    String[] tile10 = new String[]{ "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#", "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.", "######.####." };
-    String[] tile11 = new String[]{ "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##", "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#", "#####.######" };
-    String[] tile12 = new String[]{ "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###", "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######", "............" };
-    String[] tile13 = new String[]{ "....#.######", "....D.D....#", "#D###.#....#", "#.#...#....#", "###.########", "....D.D.....", "#######.....", "....#....###", "....#....#.#", "....#.####D#", "....D.D....#", "....#.######" };
-    String[] tile14 = new String[]{ "############", "#...D.D..#.#", "#.#D#.##.D.#", "#D#.....##D#", "#...####...#", "....D..#....", "#...###....#", "#D#.....#D##", "#.D.....#..#", "#.###.#D#..#", "#...D.D....#", "############" };
-    String[] tile15 = new String[]{ "#####.######", "#...D.D....#", "#...#.#....#", "#...#.#....#", "##D##.##D###", "....D.......", "#####D######", "#...#.#....#", "#...D.D....#", "#...#.#....#", "#...#.#....#", "#####.######" };
-    String[] tile16 = new String[]{ "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#", "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#", "......#..#.#" };
+    // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
+    // (Moved to ChunkGenerator.java)
 
-    // --- Corridor Tile Templates ---
-    // --- Corridor Tile Templates ---
-    String[] corridorUL = new String[]{
-        "############",
-        "#...........",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx",
-        "#.xxxxxxxxxx"
-    };
-    String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
-    String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    String[] corridorR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorLL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........", "############" };
-    String[] corridorB = new String[]{ "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............", "############" };
-    String[] corridorLR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#", "############" };
-
-    private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
-
-    public GameScreen(Tarmin2 game, int level, Difficulty difficulty) {
+    // --- Constructor Updated ---
+    public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) { // <-- Added gameMode
         super(game);
-        this.difficulty = difficulty; // Store the selected difficulty
-        this.level = level;
+        this.difficulty = difficulty;
+        this.gameMode = gameMode; // <-- Store gameMode
+        this.level = level;       // Store initial level
+        this.currentLevel = level; // Set current level
 
+        // --- NEW: Initialize WorldManager ---
+        this.worldManager = new WorldManager(gameMode, difficulty, level);
+
+        // Music based on initial level
         switch (level) {
             case 1:
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
                 break;
-            case 2:
-            case 3:
-
-            case 4:
-            case 5:
-            case 6:
             // Add more cases for other levels and tracks
             default:
                 MusicManager.getInstance().stop(); // Or play a default track
                 break;
         }
-
     }
 
     @Override
@@ -134,420 +83,271 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         animationManager = new AnimationManager();
         eventManager = new GameEventManager();
         soundManager = new SoundManager(debugManager);
-        generateLevel(currentLevel);
+
+        // --- MODIFIED: Maze Generation is now handled by WorldManager ---
+        generateLevel(currentLevel); // Generate/Load the starting chunk/level
     }
 
     @Override
     public void hide() {
-        // Stop the music when leaving the game screen
         MusicManager.getInstance().stop();
     }
 
     private void descendToNextLevel() {
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
-        generateLevel(currentLevel);
+
+        // --- TODO: In ADVANCED mode, descending might mean loading a new set of chunks ---
+        // For now, it just re-generates the current chunk at a new level.
+        // This logic will need further refinement based on how levels and chunks interact.
+        generateLevel(currentLevel); // Re-generate/reload based on the new level number
     }
 
+    /**
+     * Initializes or re-initializes the game state for a specific level.
+     * In ADVANCED mode, this might involve loading a chunk; in CLASSIC, it generates a single maze.
+     * @param levelNumber The level to load/generate.
+     */
     private void generateLevel(int levelNumber) {
-        createMazeFromArrayTiles();
+        // --- ALL MAZE GENERATION LOGIC REMOVED ---
 
-        if (levelNumber > 1) { // Only spawn gates on level 2 and higher
-            spawnGate();
-        }
-        SpawnManager spawnManager = new SpawnManager(maze, difficulty, levelNumber, finalLayout);
-        spawnManager.spawnEntities();
-        spawnLadder();
+        // --- NEW: Get initial maze from WorldManager ---
+        // The WorldManager handles whether to load or generate based on GameMode and chunkId (implicit for now)
+        this.maze = worldManager.getInitialMaze(); // Or potentially worldManager.loadChunkForLevel(levelNumber)? Needs more design.
+
         if (player == null) {
-            createPlayerAtStart();
+            // Get start position from WorldManager/ChunkGenerator
+            GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
+            player = new Player(startPos.x, startPos.y, difficulty);
         } else {
+            // Player already exists, reset position to the start of the newly loaded/generated maze
             resetPlayerPosition();
         }
 
+        // Initialize systems that depend on the player and maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
         hud = new Hud(game.batch, player, maze, combatManager, eventManager);
 
-
-        DebugRenderer.printMazeToConsole(maze);
+        Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
+        DebugRenderer.printMazeToConsole(maze); // For debugging
     }
 
-    private void createPlayerAtStart() {
-        int playerStartX = 1, playerStartY = 1;
-        for (int y = 0; y < finalLayout.length; y++) {
-            for (int x = 0; x < finalLayout[0].length(); x++) {
-                if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
-                    playerStartX = x;
-                    playerStartY = y;
-                    // Pass the difficulty to the Player constructor
-                    player = new Player(playerStartX, playerStartY, difficulty);
-                    return;
-                }
-            }
-        }
-        // Fallback if 'P' is not in the layout
-        player = new Player(playerStartX, playerStartY, difficulty);
-    }
-
+    // --- createPlayerAtStart() REMOVED (Logic moved to generateLevel) ---
 
     private void resetPlayerPosition() {
-        int playerStartX = 1, playerStartY = 1;
-        for (int y = 0; y < finalLayout.length; y++) {
-            for (int x = 0; x < finalLayout[0].length(); x++) {
-                if (finalLayout[finalLayout.length - 1 - y].charAt(x) == 'P') {
-                    playerStartX = x;
-                    playerStartY = y;
-                    break;
-                }
-            }
-        }
-        player.getPosition().set(playerStartX + 0.5f, playerStartY + 0.5f);
+        // Get start position from WorldManager (which gets it from ChunkGenerator)
+        GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
+        player.getPosition().set(startPos.x + 0.5f, startPos.y + 0.5f);
+        Gdx.app.log("GameScreen", "Reset player position to: " + startPos);
     }
 
-    private void spawnGate() {
-        if (finalLayout == null || finalLayout.length <= 2) return;
-
-        List<GridPoint2> validGateLocations = new ArrayList<>();
-        int height = finalLayout.length;
-        int width = finalLayout[0].length();
-
-        // Check top and bottom walls
-        for (int x = 1; x < width - 1; x++) {
-            if (finalLayout[0].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, height - 1));
-            if (finalLayout[height - 1].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, 0));
-        }
-        // Check left and right walls
-        for (int y = 1; y < height - 1; y++) {
-            if (finalLayout[y].charAt(0) == '#') validGateLocations.add(new GridPoint2(0, height - 1 - y));
-            if (finalLayout[y].charAt(width - 1) == '#') validGateLocations.add(new GridPoint2(width - 1, height - 1 - y));
-        }
-
-        if (validGateLocations.isEmpty()) return;
-
-        // Pick a random valid location
-        GridPoint2 gatePos = validGateLocations.get(random.nextInt(validGateLocations.size()));
-
-        // Modify the layout to place the gate
-        int layoutY = height - 1 - gatePos.y;
-        char[] row = finalLayout[layoutY].toCharArray();
-        row[gatePos.x] = 'G';
-        finalLayout[layoutY] = new String(row);
-
-        Gdx.app.log("GameScreen", "Gate spawned at (" + gatePos.x + ", " + gatePos.y + ")");
-    }
-
-    private void spawnLadder() {
-        int x, y;
-        do {
-            x = random.nextInt(maze.getWidth());
-            y = random.nextInt(maze.getHeight());
-        } while (
-            finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
-                maze.getItems().containsKey(new GridPoint2(x, y)) ||
-                maze.getMonsters().containsKey(new GridPoint2(x, y))
-        );
-        maze.addLadder(new Ladder(x, y));
-        Gdx.app.log("GameScreen", "Ladder spawned at (" + x + ", " + y + ")");
-    }
-
-
-    private void createMazeFromArrayTiles() {
-        final int MAP_ROWS = 2;
-        final int MAP_COLS = 2;
-        final int CONNECTOR_INDEX = 5;
-
-        List<String[]> allTiles = List.of(tile1, tile2, tile3, tile4, tile5, tile6, tile7, tile8, tile9, tile10, tile11, tile12, tile13, tile14, tile15, tile16);
-        TileInfo[][] mapLayout = new TileInfo[MAP_ROWS][MAP_COLS];
-
-        for (int mapY = 0; mapY < MAP_ROWS; mapY++) {
-            for (int mapX = 0; mapX < MAP_COLS; mapX++) {
-                List<Integer> tileIds = new ArrayList<>();
-                for (int i = 0; i < allTiles.size(); i++) tileIds.add(i);
-                Collections.shuffle(tileIds, random);
-                List<Integer> rotations = new ArrayList<>(List.of(0, 1, 2, 3));
-                Collections.shuffle(rotations, random);
-
-                boolean tilePlaced = false;
-                for (int tileId : tileIds) {
-                    for (int rotation : rotations) {
-                        String[] candidateTile = rotateTile(allTiles.get(tileId), rotation);
-                        boolean fits = true;
-                        if (mapX > 0) {
-                            TileInfo leftNeighborInfo = mapLayout[mapY][mapX - 1];
-                            String[] leftNeighborTile = rotateTile(allTiles.get(leftNeighborInfo.id), leftNeighborInfo.rotation);
-                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) {
-                                fits = false;
-                            }
-                        }
-                        if (fits && mapY > 0) {
-                            TileInfo topNeighborInfo = mapLayout[mapY - 1][mapX];
-                            String[] topNeighborTile = rotateTile(allTiles.get(topNeighborInfo.id), topNeighborInfo.rotation);
-                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) {
-                                fits = false;
-                            }
-                        }
-                        if (fits) {
-                            mapLayout[mapY][mapX] = new TileInfo(tileId, rotation);
-                            tilePlaced = true;
-                            break;
-                        }
-                    }
-                    if (tilePlaced) break;
-                }
-                if (!tilePlaced) {
-                    mapLayout[mapY][mapX] = new TileInfo(0, 0);
-                }
-            }
-        }
-
-        int tileHeight = allTiles.get(0).length;
-        int finalHeight = MAP_ROWS * tileHeight;
-        this.finalLayout = new String[finalHeight];
-
-        for (int mapY = 0; mapY < MAP_ROWS; mapY++) {
-            for (int tileY = 0; tileY < tileHeight; tileY++) {
-                StringBuilder rowBuilder = new StringBuilder();
-                for (int mapX = 0; mapX < MAP_COLS; mapX++) {
-                    TileInfo info = mapLayout[mapY][mapX];
-                    String[] contentTile = rotateTile(allTiles.get(info.id), info.rotation);
-                    String[] corridorTile = getCorridorTemplate(mapX, mapY, MAP_COLS, MAP_ROWS);
-
-                    String mergedRow = mergeTileRow(corridorTile[tileY], contentTile[tileY]);
-                    rowBuilder.append(mergedRow);
-                }
-                this.finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
-            }
-        }
-
-        cleanUpOrphanedDoors();
-        createMazeFromText(this.finalLayout);
-    }
-
-    private String mergeTileRow(String corridorRow, String contentRow) {
-        StringBuilder merged = new StringBuilder(corridorRow);
-        for (int i = 0; i < corridorRow.length(); i++) {
-            if (corridorRow.charAt(i) == 'x') {
-                merged.setCharAt(i, contentRow.charAt(i));
-            }
-        }
-        return merged.toString();
-    }
-
-    private String[] getCorridorTemplate(int x, int y, int cols, int rows) {
-        boolean isTop = (y == 0);
-        boolean isBottom = (y == rows - 1);
-        boolean isLeft = (x == 0);
-        boolean isRight = (x == cols - 1);
-
-        if (isTop && isLeft) return corridorUL;
-        if (isTop && isRight) return corridorUR;
-        if (isBottom && isLeft) return corridorLL;
-        if (isBottom && isRight) return corridorLR;
-        if (isTop) return corridorT;
-        if (isBottom) return corridorB;
-        if (isLeft) return corridorL;
-        if (isRight) return corridorR;
-
-        return new String[]{"xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx"};
-    }
-
-    private boolean isWall(char c) { return c == '#'; }
-
-    private String[] rotateTile(String[] tile, int rotation) {
-        if (rotation == 0) return tile;
-        String[] currentTile = tile;
-        for (int i = 0; i < rotation; i++) {
-            int height = currentTile.length;
-            int width = currentTile[0].length();
-            char[][] temp = new char[width][height];
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    temp[x][height - 1 - y] = currentTile[y].charAt(x);
-                }
-            }
-            String[] rotated = new String[width];
-            for(int x = 0; x < width; x++){
-                rotated[x] = new String(temp[x]);
-            }
-            currentTile = rotated;
-        }
-        return currentTile;
-    }
-
-    private void createMazeFromText(String[] layout) {
-        int height = layout.length;
-        int width = layout[0].length();
-        int[][] bitmaskedData = new int[height][width];
-        maze = new Maze(currentLevel, bitmaskedData);
-
-        for (int y = 0; y < height; y++) {
-            int layoutY = height - 1 - y;
-            for (int x = 0; x < width; x++) {
-                char c = layout[layoutY].charAt(x);
-                if (c == 'D') { maze.addGameObject(new Door(), x, y); }
-                else if (c == 'G') { maze.addGate(new Gate(x, y)); } // This line now works with the procedural gate
-                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.LARGE_POTION, x, y, ItemColor.BLUE)); }
-                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.SMALL_POTION, x, y, ItemColor.RED)); }
-            }
-        }
-
-        for (int y = 0; y < height; y++) {
-            int layoutY = height - 1 - y;
-            for (int x = 0; x < width; x++) {
-                if (layout[layoutY].charAt(x) != '#') {
-                    int mask = 0;
-                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
-                    else if (y + 1 < height && layout[layoutY - 1].charAt(x) == 'D') mask |= 0b10000000;
-                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
-                    else if (x + 1 < width && layout[layoutY].charAt(x + 1) == 'D') mask |= 0b00001000;
-                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
-                    else if (y > 0 && layout[layoutY + 1].charAt(x) == 'D') mask |= 0b00100000;
-                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
-                    else if (x > 0 && layout[layoutY].charAt(x - 1) == 'D') mask |= 0b00000010;
-                    bitmaskedData[y][x] = mask;
-                }
-            }
-        }
-    }
+    // --- ALL MAZE/CHUNK GENERATION METHODS REMOVED ---
+    // (spawnGate, spawnLadder, createMazeFromArrayTiles, mergeTileRow,
+    // getCorridorTemplate, isWall, rotateTile, createMazeFromText,
+    // cleanUpOrphanedDoors)
 
     @Override
     public void render(float delta) {
         // --- UPDATE LOGIC ---
-
-        float myRetroPixelScale = 1.0f;
         combatManager.update(delta);
         animationManager.update(delta);
-        maze.update(delta);
-        hud.update(delta);
-        eventManager.update(delta);
+        if (maze != null) { // Add null check for safety during transitions
+            maze.update(delta);
+        }
+        if (hud != null) { // Add null check
+            hud.update(delta);
+        }
+        eventManager.update(delta); // Processes message timers
 
-        // --- WORLD RENDERING (using ShapeRenderer) ---
+        // --- NEW: Check for System Events (like CHUNK_TRANSITION) ---
+        handleSystemEvents();
+        // --- END NEW ---
+
+        // --- WORLD RENDERING ---
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
 
-        firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
+        // Ensure player and maze are not null before rendering
+        if (player != null && maze != null) {
+            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
 
-        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
-        } else {
-            entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
-        }
+            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
+            } else {
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+            }
 
-        animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+            animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
 
-        if (debugManager.isDebugOverlayVisible()) {
-            debugRenderer.render(shapeRenderer, player, maze, game.viewport);
-            if (needsAsciiRender) {
-                firstPersonRenderer.renderAsciiViewToConsole(player, maze);
-                needsAsciiRender = false;
+            if (debugManager.isDebugOverlayVisible()) {
+                debugRenderer.render(shapeRenderer, player, maze, game.viewport);
+                if (needsAsciiRender) {
+                    firstPersonRenderer.renderAsciiViewToConsole(player, maze);
+                    needsAsciiRender = false;
+                }
             }
         }
 
         // --- HUD RENDERING ---
-        // The HUD manages its own SpriteBatch calls for its Stage and background.
-        hud.render();
+        if (hud != null) { // Add null check
+            hud.render();
+        }
 
-        // --- SCREEN-LEVEL TEXT RENDERING (using SpriteBatch) ---
-        // This is the final drawing step, consolidated into one block.
+        // --- SCREEN-LEVEL TEXT RENDERING ---
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-        game.batch.begin(); // <-- Batch starts here
+        game.batch.begin();
 
         font.setColor(Color.WHITE);
         font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
 
+        // Debug text rendering remains the same
         if (debugManager.isDebugOverlayVisible()) {
             font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
-            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 0, game.viewport.getWorldHeight() - 50);
+            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 10, game.viewport.getWorldHeight() - 50); // Adjusted position
             font.setColor(Color.YELLOW);
+            // (Key mappings and Player Info debug text remain unchanged)
             String[] keyMappings = {
                 "--- CONTROLS ---",
-                "UP   : Move Forward",
-                "DOWN : Move Backward",
-                "LEFT : Turn Left",
-                "RIGHT: Turn Right",
-                "", // Spacer
-                "O    : Open/Interact",
-                "P    : Pickup/Drop Item",
-                "U    : Use Item",
-                "D    : Descend Ladder",
-                "R    : Rest",
-                "", // Spacer
-                "S    : Swap Hands",
-                "E    : Swap with Pack",
-                "T    : Rotate Pack",
-                "", // Spacer
-                "A    : Attack (Combat)",
-                "M    : Castle Map"
+                "UP   : Move Forward", "DOWN : Move Backward", "LEFT : Turn Left", "RIGHT: Turn Right",
+                "", "O    : Open/Interact", "P    : Pickup/Drop Item", "U    : Use Item",
+                "D    : Descend Ladder", "R    : Rest", "", "S    : Swap Hands",
+                "E    : Swap with Pack", "T    : Rotate Pack", "", "A    : Attack (Combat)", "M    : Castle Map"
             };
-            float y = game.viewport.getWorldHeight() - 80;
+            float yPos = game.viewport.getWorldHeight() - 80;
             for (String mapping : keyMappings) {
-                font.draw(game.batch, mapping, 10, y);
-                y -= 20;
+                font.draw(game.batch, mapping, 10, yPos);
+                yPos -= 20;
             }
 
-            String equippedWeapon = "NOTHING";
-            String damage = "0";
-            String range = "0";
-            String isRanged = "0";
-            String weaponColor = "NOTHING";
-            String weaponType = "NULL";
-            Item rightHandItem = player.getInventory().getRightHand();
-            if (rightHandItem != null) {
-                equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "NOTHING";
-                weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
-                weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+            if (player != null) { // Add null check for player
+                String equippedWeapon = "NOTHING";
+                String damage = "0";
+                String range = "0";
+                String isRanged = "N/A"; // Changed default
+                String weaponColor = "NONE"; // Changed default
+                String weaponType = "NULL";
+                Item rightHandItem = player.getInventory().getRightHand();
+                if (rightHandItem != null) {
+                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN"; // Changed default
+                    weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
+                    weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
-                if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
-                    damage = String.valueOf(rightHandItem.getWeaponStats().damage);
-                    range = String.valueOf(rightHandItem.getWeaponStats().range);
-                    isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
-                } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getWeaponStats() != null) {
-                    damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
-                    range = "n/a";
-                    isRanged = "n/a";
+                    if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getWeaponStats().damage);
+                        range = String.valueOf(rightHandItem.getWeaponStats().range);
+                        isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
+                    } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getSpiritualWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                        range = "N/A";
+                        isRanged = "N/A";
+                    }
                 }
+                float infoX = 250;
+                float infoY = game.viewport.getWorldHeight() - 100;
+                font.draw(game.batch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength(), infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
+                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
             }
-
-            font.draw(game.batch, "PLAYER INFO: " + "DEFENSE = " + player.getArmorDefense(), 250, game.viewport.getWorldHeight() - 100);
-            font.draw(game.batch, "PLAYER INFO: " + "SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), 250, game.viewport.getWorldHeight() - 120);
-            font.draw(game.batch, "PLAYER INFO: " + "WAR STRENGTH = " + player.getWarStrength(), 250, game.viewport.getWorldHeight() - 140);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON = "
-                + equippedWeapon, 250, game.viewport.getWorldHeight() - 160);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON DAMAGE = "
-                + damage, 250, game.viewport.getWorldHeight() - 180);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON ISRANGED = "
-                + isRanged, 250, game.viewport.getWorldHeight() - 200);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON RANGE = "
-                + range, 250, game.viewport.getWorldHeight() - 220);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON COLOR = "
-                + weaponColor, 250, game.viewport.getWorldHeight() - 240);
-            font.draw(game.batch, "PLAYER INFO: " + "EQUIPPED WEAPON TYPE = "
-                + weaponType, 250, game.viewport.getWorldHeight() - 260);
-
-
-
-
         }
 
-        game.batch.end(); // <-- Batch ends here
+        game.batch.end();
+    }
+
+    /**
+     * NEW: Checks for and processes system events from the event manager.
+     */
+    private void handleSystemEvents() {
+        GameEvent event;
+
+        // Check for chunk transitions only in ADVANCED mode
+        if (gameMode == GameMode.ADVANCED) {
+            while ((event = eventManager.findAndConsume(GameEvent.EventType.CHUNK_TRANSITION)) != null) {
+                if (event.payload instanceof Gate) {
+                    Gate transitionGate = (Gate) event.payload;
+                    // Ensure it's a valid transition gate before proceeding
+                    if (transitionGate.isChunkTransitionGate()) {
+                        performChunkTransition(transitionGate);
+                    } else {
+                        Gdx.app.log("GameScreen", "Attempted transition on non-transition gate.");
+                    }
+                }
+            }
+        }
+
+        // ... (Check for other future system events here) ...
+    }
+
+    /**
+     * NEW: Handles the "hot-swap" of the maze when moving between chunks.
+     * @param transitionGate The gate the player is transitioning through.
+     */
+    private void performChunkTransition(Gate transitionGate) {
+        if (player == null) return; // Cannot transition without a player
+
+        Gdx.app.log("GameScreen", "Performing chunk transition via gate at ("
+            + (int)transitionGate.getPosition().x + "," + (int)transitionGate.getPosition().y + ") to chunk "
+            + transitionGate.getTargetChunkId());
+
+        // 1. Save the state of the current chunk (STUBBED)
+        if (maze != null) { // Only save if there's a maze to save
+            worldManager.saveCurrentChunk(this.maze);
+        }
+
+        // 2. Load the new chunk
+        Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
+        if (newMaze == null) {
+            Gdx.app.error("GameScreen", "Failed to load target chunk: " + transitionGate.getTargetChunkId());
+            // Optionally, prevent the player from moving or show an error
+            return;
+        }
+        this.maze = newMaze; // Hot-swap the maze object
+
+        // 3. Teleport the player
+        player.getPosition().set(
+            transitionGate.getTargetPlayerPos().x + 0.5f,
+            transitionGate.getTargetPlayerPos().y + 0.5f
+        );
+        Gdx.app.log("GameScreen", "Player teleported to: " + transitionGate.getTargetPlayerPos());
+
+        // 4. Update/Re-initialize systems that depend on the maze
+        // TODO: Implement proper setMaze(Maze newMaze) methods in these classes for cleaner transitions.
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
+        hud = new Hud(game.batch, player, maze, combatManager, eventManager); // Recreate HUD
+
+        // Force a redraw/reset of renderers if necessary (might not be needed depending on implementation)
+        // firstPersonRenderer.reset();
+        // entityRenderer.clearEntities();
+
+        Gdx.app.log("GameScreen", "Transition complete. New maze loaded for chunk " + transitionGate.getTargetChunkId());
+        DebugRenderer.printMazeToConsole(maze); // For debugging
+    }
+
+
+    @Override
+    public void resize(int width, int height) {
+        game.viewport.update(width, height, true);
+        if (hud != null) { // Update HUD viewport too
+            hud.resize(width, height);
+        }
     }
 
     @Override
-    public void resize(int width, int height) { game.viewport.update(width, height, true); }
-
-    @Override
     public boolean keyDown(int keycode) {
+        // Ensure player and maze exist before processing input
+        if (player == null || maze == null) return false;
+
         // --- Actions available during player's turn in combat AND out of combat ---
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             switch (keycode) {
-                case Input.Keys.S:
-                    player.getInventory().swapHands();
-                    return true;
-                case Input.Keys.E:
-                    player.getInventory().swapWithPack();
-                    return true;
-                case Input.Keys.T:
-                    player.getInventory().rotatePack();
-                    return true;
+                case Input.Keys.S: player.getInventory().swapHands(); return true;
+                case Input.Keys.E: player.getInventory().swapWithPack(); return true;
+                case Input.Keys.T: player.getInventory().rotatePack(); return true;
             }
         }
 
@@ -564,32 +364,33 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             switch (keycode) {
                 case Input.Keys.UP:
                     player.moveForward(maze);
-                    combatManager.checkForAdjacentMonsters();
+                    combatManager.checkForAdjacentMonsters(); // Check for combat after moving
                     needsAsciiRender = false;
-                    break;
+                    return true; // Added return true
                 case Input.Keys.DOWN:
                     player.moveBackward(maze);
                     combatManager.checkForAdjacentMonsters();
                     needsAsciiRender = false;
-                    break;
+                    return true; // Added return true
                 case Input.Keys.LEFT:
                     player.turnLeft();
                     needsAsciiRender = false;
-                    break;
+                    return true; // Added return true
                 case Input.Keys.RIGHT:
                     player.turnRight();
                     needsAsciiRender = false;
-                    break;
+                    return true; // Added return true
                 case Input.Keys.O:
-                    player.interact(maze, eventManager, soundManager);
+                    // --- MODIFIED CALL: Pass gameMode ---
+                    player.interact(maze, eventManager, soundManager, gameMode);
                     needsAsciiRender = true;
-                    break;
+                    return true;
                 case Input.Keys.P:
                     player.interactWithItem(maze, eventManager, soundManager);
-                    break;
+                    return true; // Added return true
                 case Input.Keys.U:
                     player.useItem(eventManager);
-                    break;
+                    return true; // Added return true
                 case Input.Keys.D:
                     int targetX = (int) (player.getPosition().x + player.getFacing().getVector().x);
                     int targetY = (int) (player.getPosition().y + player.getFacing().getVector().y);
@@ -597,91 +398,30 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     if (maze.getLadders().containsKey(targetTile)) {
                         descendToNextLevel();
                     }
-                    break;
+                    return true; // Added return true
                 case Input.Keys.R:
                     player.rest();
-                    break;
+                    return true; // Added return true
             }
         }
 
-        // --- Global actions available at any time ---
+        // --- Global actions ---
         switch (keycode) {
-            case Input.Keys.F1:
-                debugManager.toggleOverlay();
-                break;
-            case Input.Keys.F2:
-                debugManager.toggleRenderMode();
-                break;
+            case Input.Keys.F1: debugManager.toggleOverlay(); return true;
+            case Input.Keys.F2: debugManager.toggleRenderMode(); return true;
             case Input.Keys.M:
-                // Prevent opening map during combat
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                     game.setScreen(new CastleMapScreen(game, player, maze, this));
                 }
-                break;
+                return true;
         }
 
-        return true;
+        return false; // Return false if key wasn't handled
     }
 
-    /**
-     * Scans the finalLayout and removes "orphaned" doors.
-     * An orphaned door is a 'D' tile that is not enclosed by walls on
-     * opposite sides (e.g., sticking out into a corridor).
-     * These are replaced with '.' (floor) to prevent rendering artifacts.
-     */
-    private void cleanUpOrphanedDoors() {
-        if (finalLayout == null) return;
+    // --- cleanUpOrphanedDoors() REMOVED ---
 
-        int height = finalLayout.length;
-        if (height == 0) return;
-        int width = finalLayout[0].length();
-
-        // Convert String[] to char[][] for easier modification
-        char[][] layoutChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
-            layoutChars[y] = finalLayout[y].toCharArray();
-        }
-
-        // We make a *copy* to check neighbors against the original state.
-        // This prevents a check from being affected by a change we just made.
-        char[][] originalChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
-            originalChars[y] = finalLayout[y].toCharArray();
-        }
-
-        // Iterate through the map, skipping the outer border
-        for (int y = 1; y < height - 1; y++) {
-            for (int x = 1; x < width - 1; x++) {
-
-                // Check if the current tile in the *original* layout was a door
-                if (originalChars[y][x] == 'D') {
-
-                    // Check neighbors in the original layout
-                    boolean hasWallTop = (originalChars[y - 1][x] == '#');
-                    boolean hasWallBottom = (originalChars[y + 1][x] == '#');
-                    boolean hasWallLeft = (originalChars[y][x - 1] == '#');
-                    boolean hasWallRight = (originalChars[y][x + 1] == '#');
-
-                    boolean isVerticallyEnclosed = hasWallTop && hasWallBottom;
-                    boolean isHorizontallyEnclosed = hasWallLeft && hasWallRight;
-
-                    // If it's not enclosed either way, it's an invalid orphan.
-                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed) {
-                        // Log in grid coordinates (x, y from bottom-left)
-                        Gdx.app.log("GameScreen", "Removing orphaned door at (" + x + ", " + (height - 1 - y) + ")");
-                        layoutChars[y][x] = '.'; // Replace with a floor tile
-                    }
-                }
-            }
-        }
-
-        // Convert char[][] back to String[]
-        for (int y = 0; y < height; y++) {
-            finalLayout[y] = new String(layoutChars[y]);
-        }
-    }
-
-
+    // --- Unused InputProcessor methods ---
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
@@ -698,11 +438,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (hud != null) {
             hud.dispose();
         }
+        // Dispose renderers if they own disposable resources
+        // firstPersonRenderer.dispose(); // If needed
         if (entityRenderer != null) {
             entityRenderer.dispose();
         }
+        // debugRenderer.dispose(); // If needed
         if (soundManager != null) {
             soundManager.dispose();
         }
+        // Dispose animationManager? Depends if it holds textures directly
     }
 }

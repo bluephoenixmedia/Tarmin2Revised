@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
+// import com.badlogic.gdx.graphics.GL20; // Unused import
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
@@ -13,7 +13,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Difficulty;
+import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.MusicManager;
+import com.bpm.minotaur.managers.SettingsManager;
+
 
 /**
  * An authentic recreation of the original game's title screen,
@@ -33,11 +37,11 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     // Cooldown timer to prevent immediate screen transition on first input.
     private float inputCooldown = 0.2f;
 
-    // The virtual width and height are now managed by the viewport in Tarmin2.java
-    private static final float TARGET_WIDTH = 1920f;
-    private static final float TARGET_HEIGHT = 1080f;
+    // --- NEW: Game Mode Selection ---
+    private GameMode selectedGameMode = GameMode.CLASSIC; // Default to Classic
 
     // Exact color palette from the original Intellivision title screen.
+    // (Color definitions remain the same)
     private static final Color INTV_WHITE = new Color(253/255f, 253/255f, 253/255f, 1.0f);
     private static final Color INTV_YELLOW = new Color(249/255f, 234/255f, 79/255f, 1.0f);
     private static final Color INTV_GREEN = new Color(0/255f, 167/255f, 88/255f, 1.0f);
@@ -48,26 +52,23 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private static final Color INTV_BLACK = new Color(1/255f, 1/255f, 0/255f, 1.0f);
     private static final Color OLIVE_GREEN = new Color(85/255f, 110/255f, 0/255f, 1.0f);
 
+
     public MainMenuScreen(Tarmin2 game) {
         super(game);
     }
 
     @Override
     public void show() {
-        // Load the custom TTF font.
-        // This requires "intellivision.ttf" in the assets/fonts folder.
+        // (Font loading remains the same)
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-
-        parameter.size = 72;
+        parameter.size = (int)(game.viewport.getWorldHeight() * 0.07f);
         parameter.color = INTV_WHITE;
         parameter.minFilter = Texture.TextureFilter.Nearest;
         parameter.magFilter = Texture.TextureFilter.Nearest;
         titleFont = generator.generateFont(parameter);
-
-        parameter.size = 54;
+        parameter.size = (int)(game.viewport.getWorldHeight() * 0.05f);
         regularFont = generator.generateFont(parameter);
-
         generator.dispose();
 
         shapeRenderer = new ShapeRenderer();
@@ -78,79 +79,105 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
 
         Gdx.input.setInputProcessor(this);
+
+        // --- Start music (Removed isPlaying check) ---
+        MusicManager.getInstance().playTrack("sounds/music/tarmin_ambient.ogg");
     }
 
     @Override
     public void render(float delta) {
+        // (Rendering logic remains mostly the same, ensuring viewport is used)
         animationTimer += delta;
         if (inputCooldown > 0) {
             inputCooldown -= delta;
         }
+        textBlink = animationTimer % 1.6f < 0.8f;
+        float targetWidth = game.viewport.getWorldWidth();
+        float targetHeight = game.viewport.getWorldHeight();
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             ScreenUtils.clear(Color.BLACK);
             game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
             game.batch.begin();
-            game.batch.draw(modernBackground, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            game.batch.draw(modernBackground, 0, 0, targetWidth, targetHeight);
+            regularFont.setColor(INTV_WHITE);
+            String modeText = "Mode: " + selectedGameMode.name() + " (Press M to change)";
+            layout.setText(regularFont, modeText);
+            float modeX = (targetWidth - layout.width) / 2f;
+            regularFont.draw(game.batch, modeText, modeX, targetHeight * 0.25f);
+            if (textBlink) {
+                drawCenteredText(regularFont, "PRESS ANY KEY TO START", targetHeight * 0.15f);
+            }
             game.batch.end();
         } else {
-            // Controls the blinking "PRESS ANY KEY" text.
-            textBlink = animationTimer % 1.6f < 0.8f;
-
-            // Set the background color to the authentic olive green.
             ScreenUtils.clear(OLIVE_GREEN);
-
-            // Update the ShapeRenderer's projection matrix with the viewport's camera.
             shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
-
-            // Draw the colored banner rectangles at the top of the screen.
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            float rectWidth = TARGET_WIDTH / 16f;
-            float rectHeight = TARGET_HEIGHT / 20f;
-            float bannerY = TARGET_HEIGHT * 0.85f;
-            float totalBannerWidth = (rectWidth * 8) + (rectWidth * 2);
-            float startX = (TARGET_WIDTH - totalBannerWidth) / 2f;
-
+            // (Banner drawing logic remains the same)
+            float rectWidth = targetWidth / 16f;
+            float rectHeight = targetHeight / 20f;
+            float bannerY = targetHeight * 0.85f;
+            float totalBannerWidth = (rectWidth * 8);
+            float startX = (targetWidth - totalBannerWidth) / 2f;
             Color[] leftColors = {INTV_WHITE, INTV_YELLOW, INTV_GREEN, INTV_DARK_GREEN};
             for (int i = 0; i < 4; i++) {
                 shapeRenderer.setColor(leftColors[i]);
-                shapeRenderer.rect(startX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
+                shapeRenderer.rect(startX + (i * rectWidth), bannerY, rectWidth * 0.9f, rectHeight);
             }
-
             Color[] rightColors = {INTV_TAN, INTV_RED, INTV_BLUE, INTV_BLACK};
-            float rightStartX = startX + (4 * rectWidth) + (rectWidth * 2);
+            float rightStartX = startX + (4 * rectWidth);
             for (int i = 0; i < 4; i++) {
                 shapeRenderer.setColor(rightColors[i]);
-                shapeRenderer.rect(rightStartX + (i * rectWidth), bannerY, rectWidth - 6, rectHeight);
+                shapeRenderer.rect(rightStartX + (i * rectWidth), bannerY, rectWidth * 0.9f, rectHeight);
             }
             shapeRenderer.end();
 
-            // The SpriteBatch projection matrix is updated in Tarmin2.java's resize method.
+            game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
             game.batch.begin();
+            // (Title text drawing remains the same)
             titleFont.setColor(INTV_WHITE);
-            drawCenteredText(titleFont, "THE LEGEND OF GALOR", TARGET_HEIGHT * 0.75f);
-            drawCenteredText(titleFont, "TARMIN RETURNS", TARGET_HEIGHT * 0.65f);
-            drawCenteredText(titleFont, "CARTRIDGE", TARGET_HEIGHT * 0.55f);
+            drawCenteredText(titleFont, "THE LEGEND OF GALOR", targetHeight * 0.75f);
+            drawCenteredText(titleFont, "TARMIN RETURNS", targetHeight * 0.65f);
+            drawCenteredText(titleFont, "CARTRIDGE", targetHeight * 0.55f);
 
+            regularFont.setColor(INTV_WHITE);
+            String modeText = "Mode: " + selectedGameMode.name() + " (Press M)";
+            layout.setText(regularFont, modeText);
+            float modeX = (targetWidth - layout.width) / 2f;
+            regularFont.draw(game.batch, modeText, modeX, targetHeight * 0.45f);
             if (textBlink) {
-                drawCenteredText(regularFont, "PRESS ANY KEY TO START", TARGET_HEIGHT * 0.35f);
+                drawCenteredText(regularFont, "PRESS ANY KEY TO START", targetHeight * 0.35f);
             }
-
-            drawCenteredText(regularFont, "*TM OF TSR HOBBIES", TARGET_HEIGHT * 0.20f);
-            drawCenteredText(regularFont, "TSR", TARGET_HEIGHT * 0.13f);
-
+            drawCenteredText(regularFont, "*TM OF TSR HOBBIES", targetHeight * 0.20f);
+            drawCenteredText(regularFont, "TSR", targetHeight * 0.13f);
             game.batch.end();
         }
     }
 
     private void drawCenteredText(BitmapFont font, String text, float y) {
+        float targetWidth = game.viewport.getWorldWidth();
         layout.setText(font, text);
-        float x = (TARGET_WIDTH - layout.width) / 2f;
+        float x = (targetWidth - layout.width) / 2f;
         font.draw(game.batch, text, x, y);
     }
 
+    private void startGame() {
+        if (inputCooldown <= 0) {
+            Gdx.app.log("MainMenuScreen", "Starting game in mode: " + selectedGameMode);
+            MusicManager.getInstance().stop(); // Stop menu music
+            // TODO: Add sound effect for starting game if desired
+            // enterSound.play(SettingsManager.getInstance().getSfxVolume());
+
+            // --- FIXED: Call the CORRECT GameScreen constructor (4 args) ---
+            // Pass the selected GameMode along with default difficulty
+            game.setScreen(new GameScreen(game, 1, Difficulty.EASY, selectedGameMode));
+        }
+    }
+
+
     @Override
     public void dispose() {
+        // (Dispose logic remains the same)
         if (titleFont != null) titleFont.dispose();
         if (regularFont != null) regularFont.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
@@ -161,11 +188,13 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.F2) {
             debugManager.toggleRenderMode();
-        } else
-        if (inputCooldown <= 0) {
-            Gdx.app.log("MainMenuScreen", "Key pressed. Starting game...");
-            game.setScreen(new SettingsScreen(game));
-            //game.setScreen(new GameScreen(game, 1, Difficulty.EASIEST));
+            return true;
+        } else if (keycode == Input.Keys.M) {
+            selectedGameMode = (selectedGameMode == GameMode.CLASSIC) ? GameMode.ADVANCED : GameMode.CLASSIC;
+            Gdx.app.log("MainMenuScreen", "GameMode toggled to: " + selectedGameMode);
+            return true;
+        } else if (inputCooldown <= 0) {
+            startGame();
             return true;
         }
         return false;
@@ -173,17 +202,13 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (inputCooldown <= 0) {
-            Gdx.app.log("MainMenuScreen", "Screen touched. Starting game...");
-            game.setScreen(new GameScreen(game,1,  Difficulty.EASIEST));
-            return true;
-        }
-        return false;
+        startGame();
+        // Return based on cooldown check inside startGame
+        return inputCooldown <= 0;
     }
 
     // --- Unused InputProcessor methods ---
-    // The resize method is now handled globally by Tarmin2.java
-    @Override public void resize(int width, int height) { }
+    @Override public void resize(int width, int height) { game.viewport.update(width, height, true); }
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }

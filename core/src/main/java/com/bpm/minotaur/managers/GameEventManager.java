@@ -2,9 +2,11 @@ package com.bpm.minotaur.managers;
 
 import com.bpm.minotaur.gamedata.GameEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class GameEventManager {
+
     private final List<GameEvent> events = new ArrayList<>();
 
     public void addEvent(GameEvent event) {
@@ -12,17 +14,56 @@ public class GameEventManager {
     }
 
     public void update(float delta) {
-        events.removeIf(event -> {
-            event.update(delta);
-            return event.isFinished();
-        });
+        // Iterate over a copy to avoid ConcurrentModificationException
+        Iterator<GameEvent> iterator = new ArrayList<>(events).iterator();
+        while (iterator.hasNext()) {
+            GameEvent event = iterator.next();
+
+            // Only update timed MESSAGE events
+            if (event.type == GameEvent.EventType.MESSAGE) {
+                event.update(delta);
+                if (event.isFinished()) {
+                    events.remove(event);
+                }
+            }
+        }
     }
 
-    public List<GameEvent> getEvents() {
-        return events;
+    /**
+     * Finds, removes, and returns the first event of a specific type.
+     * This is used for consuming system events.
+     *
+     * @param type The EventType to look for.
+     * @return The found GameEvent, or null if not found.
+     */
+    public GameEvent findAndConsume(GameEvent.EventType type) {
+        GameEvent foundEvent = null;
+        for (GameEvent event : events) {
+            if (event.type == type) {
+                foundEvent = event;
+                break;
+            }
+        }
+
+        if (foundEvent != null) {
+            events.remove(foundEvent);
+        }
+
+        return foundEvent;
     }
 
-    public void clear() {
-        events.clear();
+    /**
+     * Gets the list of active events, filtered to only include MESSAGE types
+     * for the HUD to display.
+     * @return A list of message-based GameEvents.
+     */
+    public List<GameEvent> getMessageEvents() {
+        List<GameEvent> messageEvents = new ArrayList<>();
+        for (GameEvent event : events) {
+            if (event.type == GameEvent.EventType.MESSAGE) {
+                messageEvents.add(event);
+            }
+        }
+        return messageEvents;
     }
 }
