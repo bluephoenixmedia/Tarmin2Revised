@@ -178,15 +178,15 @@ public class ChunkGenerator {
         GridPoint2 westTargetPlayer = new GridPoint2(width - 2, height / 2);  // Arrive at right
 
         // Add the four gates
-        maze.addGate(new Gate(northPos.x, northPos.y- 1, northTargetChunk, northTargetPlayer));
+        maze.addGate(new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer));
         Gdx.app.log("ChunkGenerator", "North Gate coordinates x = " + northPos.x + " and y = " + northPos.y);
-        maze.addGate(new Gate(southPos.x, southPos.y + 1, southTargetChunk, southTargetPlayer));
+        maze.addGate(new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer));
         Gdx.app.log("ChunkGenerator", "South Gate coordinates x = " + southPos.x + " and y = " + southPos.y);
 
-        maze.addGate(new Gate(eastPos.x-1, eastPos.y, eastTargetChunk, eastTargetPlayer));
+        maze.addGate(new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer));
         Gdx.app.log("ChunkGenerator", "East Gate coordinates x = " + eastPos.x + " and y = " + eastPos.y);
 
-        maze.addGate(new Gate(westPos.x + 1, westPos.y, westTargetChunk, westTargetPlayer));
+        maze.addGate(new Gate(westPos.x, westPos.y, westTargetChunk, westTargetPlayer));
         Gdx.app.log("ChunkGenerator", "West Gate coordinates x = " + westPos.x + " and y = " + westPos.y);
 
         Gdx.app.log("ChunkGenerator", "Spawned 4 transition gates for chunk " + chunkId);

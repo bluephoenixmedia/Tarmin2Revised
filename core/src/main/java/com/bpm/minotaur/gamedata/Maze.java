@@ -60,7 +60,17 @@ public class Maze {
     }
 
     public Object getGameObjectAt(int x, int y) {
-        return gameObjects.get(new GridPoint2(x, y));
+        // Create the position key once
+        GridPoint2 pos = new GridPoint2(x, y);
+
+        // First, check for a Door object
+        Object obj = gameObjects.get(pos);
+        if (obj != null) {
+            return obj; // Found a Door
+        }
+
+        // If no Door, check for a Gate
+        return gates.get(pos); // Returns the Gate or null
     }
 
     public void addGameObject(Object object, int x, int y) {
