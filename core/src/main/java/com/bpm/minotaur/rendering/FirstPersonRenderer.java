@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.WorldManager;
 
 /**
  * Renders the 3D first-person view of the maze using a raycasting algorithm.
@@ -69,7 +70,7 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
-    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport) {
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager) {
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
         }
@@ -87,7 +88,7 @@ public class FirstPersonRenderer {
         }
 
         for (int x = 0; x < viewport.getScreenWidth(); x++) {
-            RaycastResult result = castRay(player, maze, x, viewport);
+            RaycastResult result = castRay(player, maze, x, viewport, worldManager);
             if (result != null) {
                 if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
                     renderWallSliceTexture(spriteBatch, result, x, viewport);
@@ -184,7 +185,7 @@ public class FirstPersonRenderer {
      * @param viewport The viewport for screen dimensions
      * @return RaycastResult containing hit information, or null if nothing is hit
      */
-    private RaycastResult castRay(Player player, Maze maze, int screenX, Viewport viewport) {
+    private RaycastResult castRay(Player player, Maze maze, int screenX, Viewport viewport, WorldManager worldManager) {
         Vector2 renderPosition;
         // Get the player's current tile coordinates
         int playerX = (int) player.getPosition().x;
@@ -205,10 +206,11 @@ public class FirstPersonRenderer {
         int startTileX = (int) renderPosition.x;
         int startTileY = (int) renderPosition.y;
         Object startObject = maze.getGameObjectAt(startTileX, startTileY);
-        Door doorToIgnore = null;
-        if (startObject instanceof Door) {
+
+        Object objectToIgnore = null;
+        if (startObject instanceof Door || startObject instanceof Gate) {
             // Store reference to starting door so we don't collide with it
-            doorToIgnore = (Door) startObject;
+            objectToIgnore = startObject;
         }
 
         // Calculate the camera plane offset for this screen column (-1 to +1 range)
@@ -281,7 +283,47 @@ public class FirstPersonRenderer {
 
             // Check if we've stepped outside the maze boundaries
             if (isOutOfBounds(mapX, mapY, maze)) {
-                hit = true;  // Stop raycast at boundary
+                // We've hit the edge of the *current* maze.
+                // Check the tile we *just left* to see if it was an open gate.
+                int prevMapX = (side == 0) ? mapX - stepX : mapX;
+                int prevMapY = (side == 1) ? mapY - stepY : mapY;
+                Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
+
+                if (prevObj instanceof Gate && ((Gate) prevObj).getState() == Gate.GateState.OPEN) {
+                    // It was an open gate! Time to portal.
+                    Gate gate = (Gate) prevObj;
+                    Maze nextMaze = worldManager.getChunk(gate.getTargetChunkId());
+
+                    if (nextMaze != null) {
+                        // Portal successful!
+                        maze = nextMaze; // Switch the "active" maze for the rest of the raycast
+
+                        // Update coordinates to wrap to the other side
+                        if (side == 0) { // Vertical wall (East/West)
+                            mapX = (stepX > 0) ? 0 : maze.getWidth() - 1;
+                        } else { // Horizontal wall (North/South)
+                            mapY = (stepY > 0) ? 0 : maze.getHeight() - 1;
+                        }
+
+                        // We MUST ignore the gate we are now entering
+                        Object entryGate = maze.getGameObjectAt(mapX, mapY);
+                        if (entryGate instanceof Gate || entryGate instanceof Door) {
+                            objectToIgnore = entryGate;
+                        } else {
+                            objectToIgnore = null; // We entered an empty tile
+                        }
+
+                        // Continue the DDA loop in the new maze
+                        continue;
+
+                    } else {
+                        // Open gate leads to an unloaded chunk (shouldn't happen, but safety check)
+                        hit = true;
+                    }
+                } else {
+                    // Hit a solid boundary wall
+                    hit = true;
+                }
             } else {
                 // Get wall data for current and previous tiles
                 int wallData = maze.getWallDataAt(mapX, mapY);
@@ -293,57 +335,41 @@ public class FirstPersonRenderer {
                 Object currentObj = maze.getGameObjectAt(mapX, mapY);
                 Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
 
-                // Determine if these tiles have open doors (treat as empty space)
-                boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
-                    ((Door) currentObj).getState() == Door.DoorState.OPEN &&
-                    currentObj != doorToIgnore);
-                boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
-                    ((Door) prevObj).getState() == Door.DoorState.OPEN &&
-                    prevObj != doorToIgnore);
-
-                // Check for wall collision first (solid walls always stop the ray)
-                // Skip if EITHER tile has an open door - treat open door tiles as completely empty
-                if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                    if (!currentTileHasOpenDoor && !prevTileHasOpenDoor) {
-                        hit = true;  // Wall blocks the ray
+                // Check for special objects on the *current* tile first
+                if (currentObj instanceof Gate && currentObj != objectToIgnore) { // <-- Use objectToIgnore
+                    Gate gate = (Gate) currentObj;
+                    if (gate.getState() == Gate.GateState.CLOSED || gate.getState() == Gate.GateState.OPENING) {
+                        hit = true; // Stop, we hit a closed or closing gate
                     }
-                    // else: Wall exists but is in an open door tile - ignore it completely
-                }
-                // Check for door collision (doors may or may not block depending on state)
-                else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
-                    // Find the door object in either current or previous tile
-                    Object obj = maze.getGameObjectAt(mapX, mapY);
-                    if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+                    // If gate is OPEN, we don't hit. Ray continues.
+                }else {
+                    // Determine if these tiles have open doors (treat as empty space)
+                    boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
+                        ((Door) currentObj).getState() == Door.DoorState.OPEN &&
+                        currentObj != objectToIgnore);
+                    boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
+                        ((Door) prevObj).getState() == Door.DoorState.OPEN &&
+                        prevObj != objectToIgnore);
 
-                    // Process door collision if we found a door and it's not the starting door
-                    if (obj instanceof Door && obj != doorToIgnore) {
-                        Door door = (Door) obj;
-
-                        if (door.getState() == Door.DoorState.OPEN) {
-                            // Door is open - record the frame position but continue raycasting
-                            if (!hitDoorFrame) { // Only record the first door frame we encounter
-                                hitDoorFrame = true;
-                                doorFrameMapX = mapX;           // Store frame map coordinates
-                                doorFrameMapY = mapY;
-                                doorFrameSide = side;           // Store which side was hit
-                                // Calculate distance to door frame
-                                doorFrameDistance = (side == 0) ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
-                                doorFrameObject = door;         // Store door reference
-
-                            }
-                            // Continue raycasting through the open door (don't set hit = true)
-                        } else {
-                            // Door is closed or opening - stop here
-                            hit = true;
+                    // Check for wall collision first
+                    if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        if (!currentTileHasOpenDoor && !prevTileHasOpenDoor) {
+                            hit = true;  // Wall blocks the ray
                         }
-                    } else if (obj instanceof Gate) {
-                        // A Gate is not a wall, but it stops the ray.
-                        hit = true;
                     }
+                    // Check for door collision
+                    else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        Object obj = maze.getGameObjectAt(mapX, mapY);
+                        if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
 
+                        if (obj instanceof Door && obj != objectToIgnore) {
+                            Door door = (Door) obj;
+                            if (door.getState() != Door.DoorState.OPEN) {
+                                hit = true;
+                            }
+                        }
+                    }
                 }
-
-
             }
             distanceTraveled++;  // Increment distance counter
         }

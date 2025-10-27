@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.bpm.minotaur.managers.WorldManager;
+
 public class Player {
 
     private int warStrength;
@@ -443,7 +445,7 @@ public class Player {
         Gdx.app.log("PlayerMovement", "Player turned right, now facing " + facing);
     }
 
-    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode) { // <-- Added gameMode parameter
+    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode, WorldManager worldManager) { // <-- Added gameMode parameter
         int targetX = (int) (position.x + facing.getVector().x);
         Gdx.app.log("Player", "Interact method: targetX = " + targetX);
 
@@ -461,7 +463,7 @@ public class Player {
             if (gameMode == GameMode.ADVANCED && gate.isChunkTransitionGate()) {
                 // In ADVANCED mode, just open the gate.
                 if (gate.getState() == Gate.GateState.CLOSED) {
-                    gate.startOpening();
+                    gate.startOpening(worldManager);
                     eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
                     if (soundManager != null) soundManager.playDoorOpenSound(); // Re-use door sound for now
                 }
