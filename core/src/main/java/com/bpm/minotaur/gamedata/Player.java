@@ -376,38 +376,44 @@ public class Player {
         return 0;
     }
 
-    public void moveForward(Maze maze) {
-        move(facing, maze);
+    public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) { // --- ADD PARAMS ---
+        move(facing, maze, eventManager, gameMode); // --- PASS PARAMS ---
     }
 
-    public void moveBackward(Maze maze) {
-        move(facing.getOpposite(), maze);
+    public void moveBackward(Maze maze, GameEventManager eventManager, GameMode gameMode) { // --- ADD PARAMS ---
+        move(facing.getOpposite(), maze, eventManager, gameMode); // --- PASS PARAMS ---
     }
 
     // In Player.java
 
-    private void move(Direction direction, Maze maze) {
-        Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
+    private void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) { // --- ADD PARAMS ---        Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
 
         int currentX = (int) position.x;
         int currentY = (int) position.y;
+
+        // --- NEW CHUNK TRANSITION CHECK ---
+        int nextX = currentX + (int)direction.getVector().x;
+        int nextY = currentY + (int)direction.getVector().y;
+        Object nextObject = maze.getGameObjectAt(nextX, nextY); // This checks gates and doors
+
+        if (nextObject instanceof Gate && gameMode == GameMode.ADVANCED) {
+            Gate gate = (Gate) nextObject;
+            if (gate.isChunkTransitionGate() && gate.getState() == Gate.GateState.OPEN) {
+                Gdx.app.log("PlayerMovement", "Stepped onto open transition gate. Firing event.");
+                // Fire the event. GameScreen will handle the "teleport".
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.CHUNK_TRANSITION, gate));
+                return; // Stop. Do not move normally.
+            }
+        }
 
         // First, check if the immediate path is blocked. This handles walls and closed doors.
         if (maze.isWallBlocking(currentX, currentY, direction)) {
             Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
             return;
         }
+        Object doorObject = maze.getGameObjectAt(nextX, nextY);
 
-        // If not blocked, calculate the next tile's position.
-        int nextX = currentX + (int)direction.getVector().x;
-        int nextY = currentY + (int)direction.getVector().y;
-
-        // Check if the tile we are moving onto contains a door.
-        Object nextObject = maze.getGameObjectAt(nextX, nextY);
-
-      //  Gdx.app.log("Player", "Move - nextObject = " + nextObject.toString());
-
-        if (nextObject instanceof Door) {
+        if (doorObject instanceof Door) {
             Gdx.app.log("Player", "Move - nextObject = door");
 
             // Since isWallBlocking was false, the door must be open.
@@ -423,11 +429,8 @@ public class Player {
                 // This case would be rare, like a door leading directly into a wall.
                 Gdx.app.log("PlayerMovement", "Movement blocked by a wall immediately after the door.");
             }
-        } else if (nextObject instanceof Gate) {
-            Gdx.app.log("Player", "Move - nextObject = Gate");
-
         } else {
-            // Standard movement for non-door tiles.
+            // Standard movement for non-door, non-gate tiles.
             position.set(nextX + 0.5f, nextY + 0.5f);
             Gdx.app.log("PlayerMovement", "Moved to (" + nextX + "," + nextY + ")");
         }

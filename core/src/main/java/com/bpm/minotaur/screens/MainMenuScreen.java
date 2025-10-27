@@ -38,7 +38,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private float inputCooldown = 0.2f;
 
     // --- NEW: Game Mode Selection ---
-    private GameMode selectedGameMode = GameMode.CLASSIC; // Default to Classic
+    private GameMode selectedGameMode = GameMode.ADVANCED; // Default to Classic
 
     // Exact color palette from the original Intellivision title screen.
     // (Color definitions remain the same)

@@ -271,11 +271,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 if (event.payload instanceof Gate) {
                     Gate transitionGate = (Gate) event.payload;
                     // Ensure it's a valid transition gate before proceeding
-                    if (transitionGate.isChunkTransitionGate()) {
-                        performChunkTransition(transitionGate);
-                    } else {
-                        Gdx.app.log("GameScreen", "Attempted transition on non-transition gate.");
-                    }
+                    Gdx.app.log("GameScreen", "CHUNK_TRANSITION event received. Performing transition."); // <-- New log
+                    performChunkTransition(transitionGate); // <-- This is the logic we want!
                 }
             }
         }
@@ -363,12 +360,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             switch (keycode) {
                 case Input.Keys.UP:
-                    player.moveForward(maze);
+                    player.moveForward(maze, eventManager, gameMode);
                     combatManager.checkForAdjacentMonsters(); // Check for combat after moving
                     needsAsciiRender = false;
                     return true; // Added return true
                 case Input.Keys.DOWN:
-                    player.moveBackward(maze);
+                    player.moveBackward(maze, eventManager, gameMode);
                     combatManager.checkForAdjacentMonsters();
                     needsAsciiRender = false;
                     return true; // Added return true
