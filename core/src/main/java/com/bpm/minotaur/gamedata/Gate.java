@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.managers.WorldManager;
 
 public class Gate implements Renderable {
     private final Vector2 position;
@@ -76,11 +77,13 @@ public class Gate implements Renderable {
         return state;
     }
 
-    public void startOpening() {
+    public void startOpening(WorldManager worldManager) {
         if (state == GateState.CLOSED) {
             state = GateState.OPENING;
             animationProgress = 0.0f;
-            // TODO: Here is where we will trigger the chunk load in Phase 2
+            if (isChunkTransitionGate() && worldManager != null) {
+                worldManager.loadChunk(this.getTargetChunkId());
+            }
         }
     }
 

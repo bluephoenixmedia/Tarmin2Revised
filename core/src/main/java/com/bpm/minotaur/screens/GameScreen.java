@@ -169,7 +169,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // Ensure player and maze are not null before rendering
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport);
+            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager);
 
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
@@ -382,7 +382,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     return true; // Added return true
                 case Input.Keys.O:
                     // --- MODIFIED CALL: Pass gameMode ---
-                    player.interact(maze, eventManager, soundManager, gameMode);
+                    player.interact(maze, eventManager, soundManager, gameMode, worldManager);
                     needsAsciiRender = true;
                     return true;
                 case Input.Keys.P:

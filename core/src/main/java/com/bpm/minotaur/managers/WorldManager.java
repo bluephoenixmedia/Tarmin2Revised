@@ -6,6 +6,8 @@ import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.generation.ChunkGenerator;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Manages the game world, including loading, saving, and generating
@@ -18,6 +20,9 @@ public class WorldManager {
     private int currentLevel;
     private GridPoint2 currentPlayerChunkId;
     private final ChunkGenerator chunkGenerator;
+
+    // --- NEW: Map of all loaded chunks ---
+    private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
 
     public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel) {
         this.gameMode = gameMode;
@@ -61,6 +66,24 @@ public class WorldManager {
         // 1. saveChunk(newMaze, chunkId); // Save the newly generated chunk
 
         return newMaze;
+    }
+
+    /**
+     * NEW: Gets a chunk from the cache. Returns null if not loaded.
+     * @param chunkId The (X,Y) coordinates of the chunk.
+     * @return The Maze object, or null.
+     */
+    public Maze getChunk(GridPoint2 chunkId) {
+        return loadedChunks.get(chunkId);
+    }
+
+
+    /**
+     * NEW: Sets the active chunk ID for the player.
+     * @param chunkId The new active chunk ID.
+     */
+    public void setCurrentChunk(GridPoint2 chunkId) {
+        this.currentPlayerChunkId = chunkId;
     }
 
     /**
