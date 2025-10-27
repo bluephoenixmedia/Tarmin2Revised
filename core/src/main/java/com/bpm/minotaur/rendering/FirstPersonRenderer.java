@@ -337,7 +337,14 @@ public class FirstPersonRenderer {
                             hit = true;
                         }
                     }
+                    else if (obj instanceof Gate) {
+                        // A Gate is not a wall, but it stops the ray.
+                        hit = true;
+                    }
+
                 }
+
+
             }
             distanceTraveled++;  // Increment distance counter
         }
@@ -411,16 +418,23 @@ public class FirstPersonRenderer {
         Door hitDoor = null;
         Object hitObject = null;
         if (!isOutOfBounds(mapX, mapY, maze)) {
-            int prevMapX = (side == 0) ? mapX - stepX : mapX;
-            int prevMapY = (side == 1) ? mapY - stepY : mapY;
-            hitObject = maze.getGameObjectAt(mapX, mapY);
-            if (hitObject == null) hitObject = maze.getGameObjectAt(prevMapX, prevMapY);
 
-            if (hitObject instanceof Door) {
+            hitObject = maze.getGameObjectAt(mapX, mapY); // Check the tile we *hit*
+
+            if (hitObject instanceof Gate) {
+                wallType = WallType.GATE;
+            } else if (hitObject instanceof Door) {
                 wallType = WallType.DOOR;
                 hitDoor = (Door) hitObject;
-            } else if (hitObject instanceof Gate) { // ADD THIS ELSE IF BLOCK
-                wallType = WallType.GATE;
+            } else {
+                // No object on hit tile, check previous tile (for doors)
+                int prevMapX = (side == 0) ? mapX - stepX : mapX;
+                int prevMapY = (side == 1) ? mapY - stepY : mapY;
+                Object prevObject = maze.getGameObjectAt(prevMapX, prevMapY);
+                if (prevObject instanceof Door) {
+                    wallType = WallType.DOOR;
+                    hitDoor = (Door) prevObject;
+                }
             }
         }
 
@@ -730,24 +744,40 @@ public class FirstPersonRenderer {
                 int prevMapY = (side == 1) ? mapY - stepY : mapY;
                 int prevWallData = maze.getWallDataAt(prevMapX, prevMapY);
 
-                // Check for wall collision
-                if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                    hit = true;
-                    hitDistance = currentDistance;
-                }
-                // Check for door collision
-                else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
-                    Object obj = maze.getGameObjectAt(mapX, mapY);
-                    if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+                Object currentObj = maze.getGameObjectAt(mapX, mapY); // <-- This will now find the Gate
+                Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
 
-                    if (obj instanceof Door && obj != doorToIgnore) {
-                        Door door = (Door) obj;
-                        if (door.getState() != Door.DoorState.OPEN) {
-                            // Closed door blocks line of sight
-                            hit = true;
-                            hitDistance = currentDistance;
+                // Check for special objects on the *current* tile first
+                if (currentObj instanceof Gate) {
+                    hit = true; // Stop, we hit a gate
+                } else { // No special object, check for walls and doors
+                    // Determine if these tiles have open doors (treat as empty space)
+                    boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
+                        ((Door) currentObj).getState() == Door.DoorState.OPEN &&
+                        currentObj != doorToIgnore);
+                    boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
+                        ((Door) prevObj).getState() == Door.DoorState.OPEN &&
+                        prevObj != doorToIgnore);
+
+                    // Check for wall collision
+                    if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        hit = true;
+                        hitDistance = currentDistance;
+                    }
+                    // Check for door collision
+                    else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        Object obj = maze.getGameObjectAt(mapX, mapY);
+                        if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+
+                        if (obj instanceof Door && obj != doorToIgnore) {
+                            Door door = (Door) obj;
+                            if (door.getState() != Door.DoorState.OPEN) {
+                                // Closed door blocks line of sight
+                                hit = true;
+                                hitDistance = currentDistance;
+                            }
+                            // Open door doesn't block - continue
                         }
-                        // Open door doesn't block - continue
                     }
                 }
             }
