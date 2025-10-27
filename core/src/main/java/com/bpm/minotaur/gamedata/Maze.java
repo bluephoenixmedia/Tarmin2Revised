@@ -163,6 +163,10 @@ public class Maze {
                 ((Door) object).update(delta);
             }
         }
+
+        for (Gate gate : gates.values()) {
+            gate.update(delta);
+        }
         projectiles.removeIf(projectile -> {
             projectile.update(delta);
             return !projectile.isAlive();

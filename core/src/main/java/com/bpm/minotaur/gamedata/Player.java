@@ -453,15 +453,20 @@ public class Player {
         Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ") in mode " + gameMode);
 
         // --- Gate Interaction Logic ---
-        if (maze.getGates().containsKey(targetTile)) {
-            Gate gate = maze.getGates().get(targetTile);
+        Object gateObj = maze.getGates().get(targetTile); // Check gates map
+
+        if (gateObj instanceof Gate) {
+            Gate gate = (Gate) gateObj;
 
             if (gameMode == GameMode.ADVANCED && gate.isChunkTransitionGate()) {
-                // In ADVANCED mode, fire a transition event for transition gates
-                Gdx.app.log("Interaction", "Transition Gate detected. Firing CHUNK_TRANSITION event.");
-                eventManager.addEvent(new GameEvent(GameEvent.EventType.CHUNK_TRANSITION, gate));
+                // In ADVANCED mode, just open the gate.
+                if (gate.getState() == Gate.GateState.CLOSED) {
+                    gate.startOpening();
+                    eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
+                    if (soundManager != null) soundManager.playDoorOpenSound(); // Re-use door sound for now
+                }
             } else {
-                // In CLASSIC mode, OR if it's not a transition gate in ADVANCED, use old logic
+                // In CLASSIC mode, OR if it's not a transition gate, use old logic
                 Gdx.app.log("Interaction", "Classic Gate detected. Performing stat jumble/teleport.");
                 useGate(maze, eventManager, gate); // Pass the specific gate
             }

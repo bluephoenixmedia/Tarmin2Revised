@@ -6,9 +6,19 @@ import com.badlogic.gdx.math.Vector2;
 public class Gate implements Renderable {
     private final Vector2 position;
 
-    // --- NEW FIELDS for Chunk Transitioning ---
     private GridPoint2 targetChunkId;
     private GridPoint2 targetPlayerPos;
+
+    // --- NEW FIELDS (Copied from Door.java) ---
+    public enum GateState {
+        CLOSED,
+        OPENING,
+        OPEN
+    }
+
+    private GateState state = GateState.CLOSED;
+    private float animationProgress = 0.0f;
+    private static final float ANIMATION_TIME = 1.0f; // 1 second to open
 
     /**
      * Original constructor for stat-jumbling gates (CLASSIC mode).
@@ -34,6 +44,8 @@ public class Gate implements Renderable {
         this.targetPlayerPos = targetPlayerPos;
     }
 
+
+
     @Override
     public Vector2 getPosition() {
         return position;
@@ -58,5 +70,31 @@ public class Gate implements Renderable {
 
     public GridPoint2 getTargetPlayerPos() {
         return targetPlayerPos;
+    }
+
+    public GateState getState() {
+        return state;
+    }
+
+    public void startOpening() {
+        if (state == GateState.CLOSED) {
+            state = GateState.OPENING;
+            animationProgress = 0.0f;
+            // TODO: Here is where we will trigger the chunk load in Phase 2
+        }
+    }
+
+    public float getAnimationProgress() {
+        return animationProgress;
+    }
+
+    public void update(float delta) {
+        if (state == GateState.OPENING) {
+            animationProgress += delta / ANIMATION_TIME;
+            if (animationProgress >= 1.0f) {
+                animationProgress = 1.0f;
+                state = GateState.OPEN;
+            }
+        }
     }
 }

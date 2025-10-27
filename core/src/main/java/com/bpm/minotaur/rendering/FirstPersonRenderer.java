@@ -336,8 +336,7 @@ public class FirstPersonRenderer {
                             // Door is closed or opening - stop here
                             hit = true;
                         }
-                    }
-                    else if (obj instanceof Gate) {
+                    } else if (obj instanceof Gate) {
                         // A Gate is not a wall, but it stops the ray.
                         hit = true;
                     }
@@ -384,7 +383,8 @@ public class FirstPersonRenderer {
 
             if (hitsFrame) {
                 // Ray hits the door frame - render the frame with the correct distance
-                return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, frameWallX);
+                //return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, frameWallX);
+                return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, null, frameWallX); // <-- NEW
             }
             // else: Ray passes through the door opening - continue with the original hit beyond the door
         }
@@ -416,13 +416,14 @@ public class FirstPersonRenderer {
         // Determine what type of surface we hit and get door reference if applicable
         WallType wallType = WallType.WALL;
         Door hitDoor = null;
+        Gate hitGate = null; // --- Add This ---
         Object hitObject = null;
         if (!isOutOfBounds(mapX, mapY, maze)) {
-
             hitObject = maze.getGameObjectAt(mapX, mapY); // Check the tile we *hit*
 
             if (hitObject instanceof Gate) {
                 wallType = WallType.GATE;
+                hitGate = (Gate) hitObject; // --- Add This ---
             } else if (hitObject instanceof Door) {
                 wallType = WallType.DOOR;
                 hitDoor = (Door) hitObject;
@@ -439,9 +440,9 @@ public class FirstPersonRenderer {
         }
 
         // Return the raycast result with all calculated information
-        return new RaycastResult(perpWallDist, side, wallType, hitDoor, wallX);
+        return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX); // <-- Pass hitGate
+        // return new RaycastResult(perpWallDist, side, wallType, hitDoor, wallX);    }
     }
-
     private boolean isOutOfBounds(int x, int y, Maze maze) {
         return x < 0 || x >= maze.getWidth() || y < 0 || y >= maze.getHeight();
     }
@@ -502,9 +503,37 @@ public class FirstPersonRenderer {
                     shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
             }
-        }  else { // This handles solid walls, open door frames, and gates
+        } else if (result.wallType == WallType.GATE && result.gate != null) { // Check result.gate
+            // Gates are solid, no frame part
+            float doorHeight = (drawEnd - drawStart) * DOOR_HEIGHT_RATIO;
+            float doorDrawStart = drawStart;
+            float doorDrawEnd = drawStart + doorHeight;
+
+            // Draw the part of the wall above the gate
+            Color frameColor = (result.side == 1) ? wallDarkColor : wallColor; // Use wall color for frame
+            shapeRenderer.setColor(frameColor);
+            if (drawEnd > doorDrawEnd) {
+                shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
+            }
+
+            // Apply opening animation
+            if (result.gate.getState() == Gate.GateState.OPENING) {
+                float openingOffset = (doorDrawEnd - doorDrawStart) * result.gate.getAnimationProgress();
+                doorDrawStart += openingOffset;
+            }
+
+            // Draw the gate itself
+            if (result.gate.getState() != Gate.GateState.OPEN && doorDrawEnd > doorDrawStart) {
+                // Use CYAN for the gate color
+                shapeRenderer.setColor(Color.CYAN);
+                shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
+            }
+        } else { // This handles solid walls, open door frames, and gates
             Color renderColor;
             if (result.wallType == WallType.GATE) {
+                // This will now only be hit if result.gate is null (e.g. classic gate)
+                // or if we change the raycaster to not find the object.
+                // For our new logic, this branch is less likely, but we leave it.
                 renderColor = Color.CYAN; // Gate color
             } else {
                 renderColor = (result.side == 1) ? wallDarkColor : wallColor; // Wall color
@@ -635,13 +664,15 @@ public class FirstPersonRenderer {
         final int side;
         final WallType wallType;
         final Door door;
+        final Gate gate; // --- ADD THIS LINE ---
         final float wallX;
 
-        RaycastResult(float distance, int side, WallType wallType, Door door, float wallX) {
+        RaycastResult(float distance, int side, WallType wallType, Door door, Gate gate, float wallX) {
             this.distance = distance;
             this.side = side;
             this.wallType = wallType;
             this.door = door;
+            this.gate = gate; // --- ADD THIS LINE ---
             this.wallX = wallX;
         }
     }
@@ -749,7 +780,12 @@ public class FirstPersonRenderer {
 
                 // Check for special objects on the *current* tile first
                 if (currentObj instanceof Gate) {
-                    hit = true; // Stop, we hit a gate
+                    Gate gate = (Gate) currentObj;
+                    if (gate.getState() == Gate.GateState.CLOSED || gate.getState() == Gate.GateState.OPENING) {
+                        hit = true; // Stop, we hit a closed or closing gate
+                    }
+                    // If gate is OPEN, we *don't* set hit = true. The ray continues.
+                    // This will render the wall behind it for now, which is OK for Phase 1.
                 } else { // No special object, check for walls and doors
                     // Determine if these tiles have open doors (treat as empty space)
                     boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
