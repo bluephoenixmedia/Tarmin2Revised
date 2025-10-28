@@ -169,8 +169,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // Ensure player and maze are not null before rendering
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager);
-
+            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager, currentLevel);
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
             } else {
