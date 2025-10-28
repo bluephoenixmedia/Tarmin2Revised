@@ -157,7 +157,7 @@ public class FirstPersonRenderer {
             default:    skyboxTexture = retroSkyboxNorth; break; // NORTH
         }
         // Draw only in the top half
-        spriteBatch.draw(skyboxTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+        spriteBatch.draw(skyboxTexture, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(), (viewport.getWorldHeight() / 2)+ 160);
     }
 
     /**
