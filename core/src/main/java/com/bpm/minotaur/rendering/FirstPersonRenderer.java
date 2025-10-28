@@ -53,6 +53,10 @@ public class FirstPersonRenderer {
     private final Texture skyboxEast;
     private final Texture skyboxSouth;
     private final Texture skyboxWest;
+    private final Texture retroSkyboxNorth;
+    private final Texture retroSkyboxEast;
+    private final Texture retroSkyboxSouth;
+    private final Texture retroSkyboxWest;
 
     public FirstPersonRenderer() {
         spriteBatch = new SpriteBatch();
@@ -63,6 +67,10 @@ public class FirstPersonRenderer {
         skyboxEast = new Texture(Gdx.files.internal("images/skybox_east.png"));
         skyboxSouth = new Texture(Gdx.files.internal("images/skybox_south.png"));
         skyboxWest = new Texture(Gdx.files.internal("images/skybox_west.png"));
+        retroSkyboxNorth = new Texture(Gdx.files.internal("images/retro_skybox_castle.jpg"));
+        retroSkyboxEast = new Texture(Gdx.files.internal("images/retro_skybox_east.jpg"));
+        retroSkyboxSouth = new Texture(Gdx.files.internal("images/retro_skybox_south.jpg"));
+        retroSkyboxWest = new Texture(Gdx.files.internal("images/retro_skybox_west.jpg"));
     }
 
 
@@ -70,21 +78,50 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
-    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager) {
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager, int currentLevel) {
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
         }
 
+        // --- REVISED FLOOR/CEILING RENDERING ---
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            // Modern Mode: Use SpriteBatch for everything before walls
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
-            renderFloorAndCeiling(spriteBatch, player, maze, viewport);
+            if (currentLevel == 1) {
+                renderSkyboxCeiling(spriteBatch, player, viewport);
+            }
+            renderTexturedFloor(spriteBatch, player, viewport);
+            // Leave SpriteBatch open for textured walls
         } else {
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(ceilingColor);
-            shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            // Classic/Retro Mode: Use SpriteBatch or ShapeRenderer as needed
+
+            // Ceiling
+            if (currentLevel == 1) {
+                // Draw Skybox using SpriteBatch
+                spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+                spriteBatch.begin();
+                renderSkyboxCeiling(spriteBatch, player, viewport);
+                spriteBatch.end();
+            } else {
+                // Draw Solid Ceiling using ShapeRenderer
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled); // BEGIN Ceiling
+                shapeRenderer.setColor(ceilingColor);
+                shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2); // Line ~100
+                shapeRenderer.end();                                 // END Ceiling
+            }
+
+            // Floor (Always solid color in Classic/Retro)
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);     // BEGIN Floor
             shapeRenderer.setColor(floorColor);
             shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            shapeRenderer.end();                                     // END Floor
+        }
+
+        // --- WALL RENDERING (Raycasting Loop) ---
+        boolean shapeRendererNeedsBegin = (debugManager.getRenderMode() != DebugManager.RenderMode.MODERN);
+        if(shapeRendererNeedsBegin) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         }
 
         for (int x = 0; x < viewport.getScreenWidth(); x++) {
@@ -106,6 +143,93 @@ public class FirstPersonRenderer {
         } else {
             shapeRenderer.end();
         }
+    }
+
+    /**
+     * Renders only the skybox ceiling based on player direction.
+     */
+    private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport) {
+        Texture skyboxTexture;
+        switch (player.getFacing()) {
+            case EAST:  skyboxTexture = retroSkyboxEast;  break;
+            case WEST:  skyboxTexture = retroSkyboxWest;  break;
+            case SOUTH: skyboxTexture = retroSkyboxSouth; break;
+            default:    skyboxTexture = retroSkyboxNorth; break; // NORTH
+        }
+        // Draw only in the top half
+        spriteBatch.draw(skyboxTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+    }
+
+    /**
+     * Renders only the textured floor using raycasting.
+     */
+    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport) {
+        // Loop from the horizon line down to the bottom of the screen
+        // Y goes from screenHeight/2 (horizon) down to 0 (bottom)
+        for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
+            // Leftmost point on the floor row (corresponding to the leftmost ray)
+            float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
+            float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
+            // Rightmost point on the floor row (corresponding to the rightmost ray)
+            float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
+            float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
+
+            // Current y position compared to the center of the screen (horizon)
+            // p = 0 at horizon, positive increases downwards
+            int p = y - (int)(viewport.getWorldHeight() / 2);
+
+            // Vertical position of the camera. Let's assume camera height is 0.5 units
+            // float cameraHeight = 0.5f; // Not explicitly used like this in original formula
+
+            // Vertical position of the camera relative to the center of the screen
+            float posZ = 0.5f * viewport.getWorldHeight(); // Assume camera is halfway up viewport height
+
+
+            // Horizontal distance from the camera to the floor for the current row.
+            // This formula works because triangle similarity:
+            // (ViewportHeight/2) / RowDistance = P / CameraHeight (relative to floor=0)
+            // But the original simplified this. Let's use the original derivation:
+            // rowDistance = posZ / (y - screenHeight/2) if y is screen coordinate.
+            // Since our y loops downwards from screenHeight/2, let's redefine p relative to horizon downwards:
+            int p_down = (int)(viewport.getWorldHeight() / 2) - y; // 0 at horizon, increases going down to bottom
+            float rowDistance = (p_down == 0) ? Float.MAX_VALUE : posZ / p_down; // Avoid divide by zero
+
+            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE) continue; // Safety checks
+
+
+            // Calculate the real world step vector we trace across the floor for each x step
+            float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
+            float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
+
+            // Real world coordinates of the leftmost column.
+            float floorX = player.getPosition().x + rowDistance * rayDirX0;
+            float floorY = player.getPosition().y + rowDistance * rayDirY0;
+
+            // --- Draw the row ---
+            for(int x = 0; x < viewport.getWorldWidth(); ++x) {
+                // The cell coord is simply floor()
+                int cellX = (int)(floorX);
+                int cellY = (int)(floorY);
+
+                // Get texture coordinates, wrap around texture size
+                int tx = (int)(floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
+                int ty = (int)(floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
+
+                // Move to next point in world space
+                floorX += floorStepX;
+                floorY += floorStepY;
+
+                // Simple brightness based on distance
+                float brightness = Math.max(0.1f, Math.min(1.0f, 1.0f - rowDistance / 10.0f)); // Dimmer further away
+                spriteBatch.setColor(brightness, brightness, brightness, 1.0f);
+
+                // Draw the pixel (or a 1x1 rect) for this column `x` at scanline `y`
+                // Y coordinate needs to be correct for libGDX (0 is bottom)
+                spriteBatch.draw(floorTexture, x, y, 1, 1, tx, ty, 1, 1, false, false);
+            }
+            spriteBatch.setColor(Color.WHITE); // Reset color after drawing the row
+        }
+        spriteBatch.setColor(Color.WHITE); // Reset color after drawing all floor rows
     }
 
     private void renderFloorAndCeiling(SpriteBatch spriteBatch, Player player, Maze maze, Viewport viewport) {
