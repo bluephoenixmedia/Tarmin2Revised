@@ -194,6 +194,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             Gdx.app.log("MainMenuScreen", "GameMode toggled to: " + selectedGameMode);
             return true;
         } else if (inputCooldown <= 0) {
+            game.setScreen(new SettingsScreen(game)); // <-- This is CORRECT
             startGame();
             return true;
         }
@@ -202,6 +203,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        game.setScreen(new SettingsScreen(game)); // <-- This is the FIX
         startGame();
         // Return based on cooldown check inside startGame
         return inputCooldown <= 0;

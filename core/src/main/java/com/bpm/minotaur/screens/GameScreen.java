@@ -26,11 +26,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final DebugManager debugManager = DebugManager.getInstance();
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
     private final BitmapFont font = new BitmapFont();
+    private final GameMode gameMode; // <-- 3. CHANGE THIS (from isAdvancedMode boolean)
 
     private boolean needsAsciiRender = false;
 
     // --- NEW: World/Game Mode ---
-    private final GameMode gameMode;
     private final WorldManager worldManager;
     private final int level; // Initial dungeon level
 
@@ -61,7 +61,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.gameMode = gameMode; // <-- Store gameMode
         this.level = level;       // Store initial level
         this.currentLevel = level; // Set current level
-
         // --- NEW: Initialize WorldManager ---
         this.worldManager = new WorldManager(gameMode, difficulty, level);
 
@@ -72,7 +71,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 break;
             // Add more cases for other levels and tracks
             default:
-                MusicManager.getInstance().stop(); // Or play a default track
+             //   MusicManager.getInstance().stop(); // Or play a default track
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
                 break;
         }
     }
@@ -129,6 +129,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         hud = new Hud(game.batch, player, maze, combatManager, eventManager);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
+
+
+        // Set the visual theme based on level and game mode
+        if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
+            firstPersonRenderer.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
+        } else {
+            // Add more rules here for other levels/modes if you want
+            // e.g., if (isAdvancedMode && levelNumber == 2) { ... }
+
+            // Default to standard theme for all other cases
+            firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
+        }
+
         DebugRenderer.printMazeToConsole(maze); // For debugging
     }
 

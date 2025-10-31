@@ -20,12 +20,12 @@ import com.bpm.minotaur.managers.WorldManager;
 public class FirstPersonRenderer {
 
     // --- Colors ---
-    private final Color floorColor = new Color(0.2f, 0.4f, 0.2f, 1);
-    private final Color ceilingColor = new Color(0.3f, 0.5f, 0.3f, 1);
-    private final Color wallColor = new Color(0.5f, 0.8f, 0.5f, 1);
-    private final Color wallDarkColor = new Color(0.4f, 0.7f, 0.4f, 1); // Shaded for vertical walls
-    private final Color doorBlueColor = new Color(0.1f, 0.2f, 0.7f, 1);
-    private final Color doorBlueDarkColor = new Color(0.1f, 0.15f, 0.6f, 1);
+    private Color currentFloorColor;
+    private Color currentCeilingColor;
+    private Color currentWallColor;
+    private Color currentWallDarkColor;
+    private Color currentDoorColor;
+    private Color currentDoorDarkColor;
 
     // --- Rendering Constants ---
     private static final float DOOR_WIDTH = 1.0f / 3.0f;
@@ -71,6 +71,20 @@ public class FirstPersonRenderer {
         retroSkyboxEast = new Texture(Gdx.files.internal("images/retro_skybox_east.jpg"));
         retroSkyboxSouth = new Texture(Gdx.files.internal("images/retro_skybox_south.jpg"));
         retroSkyboxWest = new Texture(Gdx.files.internal("images/retro_skybox_west.jpg"));
+        setTheme(RetroTheme.STANDARD_THEME);
+    }
+
+    /**
+     * Sets the active color theme for the retro (ShapeRenderer) mode.
+     * @param theme The RetroTheme.Theme object containing the new colors.
+     */
+    public void setTheme(RetroTheme.Theme theme) {
+        this.currentFloorColor = theme.floor;
+        this.currentCeilingColor = theme.ceiling;
+        this.currentWallColor = theme.wall;
+        this.currentWallDarkColor = theme.wallDark;
+        this.currentDoorColor = theme.door;
+        this.currentDoorDarkColor = theme.doorDark;
     }
 
 
@@ -106,14 +120,14 @@ public class FirstPersonRenderer {
             } else {
                 // Draw Solid Ceiling using ShapeRenderer
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled); // BEGIN Ceiling
-                shapeRenderer.setColor(ceilingColor);
+                shapeRenderer.setColor(currentCeilingColor);
                 shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2); // Line ~100
                 shapeRenderer.end();                                 // END Ceiling
             }
 
             // Floor (Always solid color in Classic/Retro)
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);     // BEGIN Floor
-            shapeRenderer.setColor(floorColor);
+            shapeRenderer.setColor(currentFloorColor);
             shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
             shapeRenderer.end();                                     // END Floor
         }
@@ -460,29 +474,52 @@ public class FirstPersonRenderer {
                 Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
 
                 // Check for special objects on the *current* tile first
-                if (currentObj instanceof Gate && currentObj != objectToIgnore) { // <-- Use objectToIgnore
+                if (currentObj instanceof Gate && currentObj != objectToIgnore) {
                     Gate gate = (Gate) currentObj;
                     if (gate.getState() == Gate.GateState.CLOSED || gate.getState() == Gate.GateState.OPENING) {
-                        hit = true; // Stop, we hit a closed or closing gate
+                        hit = true;
                     }
-                    // If gate is OPEN, we don't hit. Ray continues.
-                }else {
-                    // Determine if these tiles have open doors (treat as empty space)
-                    boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
-                        ((Door) currentObj).getState() == Door.DoorState.OPEN &&
-                        currentObj != objectToIgnore);
-                    boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
-                        ((Door) prevObj).getState() == Door.DoorState.OPEN &&
-                        prevObj != objectToIgnore);
+                    // If OPEN, don't set hit, ray continues
+                } else if ((currentObj instanceof Door && currentObj != objectToIgnore) ||
+                    (prevObj instanceof Door && prevObj != objectToIgnore)) {
+                    // Check doors on current or previous tile
+                    Door door = (currentObj instanceof Door) ? (Door)currentObj : (Door)prevObj;
 
-                    // Check for wall collision first
-                    if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                        if (!currentTileHasOpenDoor && !prevTileHasOpenDoor) {
-                            hit = true;  // Wall blocks the ray
+                    if (door.getState() != Door.DoorState.OPEN) {
+                        // Closed or opening door - solid hit
+                        hit = true;
+                    } else {
+                        // Door is OPEN - check if ray hits the frame or passes through opening
+                        // Calculate where on the wall the ray hits (0-1 range)
+                        float wallHitX;
+                        if (side == 0) {
+                            wallHitX = renderPosition.y + (sideDist.x - deltaDist.x) * rayDir.y;
+                        } else {
+                            wallHitX = renderPosition.x + (sideDist.y - deltaDist.y) * rayDir.x;
+                        }
+                        wallHitX -= Math.floor(wallHitX);  // Get fractional part
+
+                        // Check if ray hits door frame (not the opening)
+                        float doorEdgeMargin = (1.0f - DOOR_WIDTH) / 2.0f;
+                        boolean hitsFrame = wallHitX < doorEdgeMargin || wallHitX > 1.0f - doorEdgeMargin;
+
+                        if (hitsFrame) {
+                            // Ray hits the door frame - treat as solid wall
+                            hit = true;
+                        } else {
+                            // Ray passes through door opening - ignore this door for rest of raycast
+                            objectToIgnore = door;
                         }
                     }
-                    // Check for door collision
+                } else {
+                    // NOW check walls (only if no special objects were found)
+                    // Check for wall collision first
+                    if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        hit = true;  // Wall blocks the ray
+                    }
+                    // Check for door collision via wall data
                     else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        // This might be redundant now, but check if there's a closed door
                         Object obj = maze.getGameObjectAt(mapX, mapY);
                         if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
 
@@ -628,7 +665,7 @@ public class FirstPersonRenderer {
             boolean isFramePart = result.wallX < doorEdgeMargin || result.wallX > 1.0f - doorEdgeMargin;
 
             if (isFramePart) {
-                Color frameColor = (result.side == 1) ? wallDarkColor : wallColor;
+                Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
                 shapeRenderer.setColor(frameColor);
                 shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
             } else {
@@ -636,7 +673,7 @@ public class FirstPersonRenderer {
                 float doorDrawStart = drawStart;
                 float doorDrawEnd = drawStart + doorHeight;
 
-                Color frameColor = (result.side == 1) ? wallDarkColor : wallColor;
+                Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
                 shapeRenderer.setColor(frameColor);
                 if (drawEnd > doorDrawEnd) {
                     shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
@@ -648,7 +685,7 @@ public class FirstPersonRenderer {
                 }
 
                 if (doorDrawEnd > doorDrawStart) {
-                    Color doorRenderColor = (result.side == 1) ? doorBlueDarkColor : doorBlueColor;
+                    Color doorRenderColor = (result.side == 1) ? currentDoorDarkColor : currentDoorColor;
                     shapeRenderer.setColor(doorRenderColor);
                     shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
@@ -660,7 +697,7 @@ public class FirstPersonRenderer {
             float doorDrawEnd = drawStart + doorHeight;
 
             // Draw the part of the wall above the gate
-            Color frameColor = (result.side == 1) ? wallDarkColor : wallColor; // Use wall color for frame
+            Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Use wall color for frame
             shapeRenderer.setColor(frameColor);
             if (drawEnd > doorDrawEnd) {
                 shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
@@ -686,7 +723,7 @@ public class FirstPersonRenderer {
                 // For our new logic, this branch is less likely, but we leave it.
                 renderColor = Color.CYAN; // Gate color
             } else {
-                renderColor = (result.side == 1) ? wallDarkColor : wallColor; // Wall color
+                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Wall color
             }
             shapeRenderer.setColor(renderColor);
             shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
