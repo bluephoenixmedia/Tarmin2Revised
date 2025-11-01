@@ -70,6 +70,15 @@ public class Gate implements Renderable {
         return com.badlogic.gdx.graphics.Color.CYAN;
     }
 
+    /**
+     * Resets the gate to its closed state.
+     * Used when a transition fails (e.g., hitting an ocean).
+     */
+    public void close() {
+        state = GateState.CLOSED;
+        animationProgress = 0.0f;
+    }
+
     // --- NEW Getters ---
 
     public boolean isChunkTransitionGate() {

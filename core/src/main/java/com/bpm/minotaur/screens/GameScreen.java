@@ -316,10 +316,14 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // 2. Load the new chunk
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
+
         if (newMaze == null) {
-            Gdx.app.error("GameScreen", "Failed to load target chunk: " + transitionGate.getTargetChunkId());
-            // Optionally, prevent the player from moving or show an error
-            return;
+            // This means the target biome was impassable (e.g., Ocean)
+            Gdx.app.error("GameScreen", "Failed to load target chunk (impassable?): " + transitionGate.getTargetChunkId());
+            eventManager.addEvent(new GameEvent("A strange force blocks your path.", 2f));
+            // IMPORTANT: Close the gate the player just tried to open
+            transitionGate.close(); // <-- We need to add this method!
+            return; // Abort the transition
         }
         this.maze = newMaze; // Hot-swap the maze object
 
