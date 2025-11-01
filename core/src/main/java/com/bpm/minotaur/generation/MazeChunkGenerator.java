@@ -15,7 +15,7 @@ import java.util.Random;
  * This class encapsulates all logic moved from GameScreen, including
  * tile-stitching, entity spawning, and transition gate placement.
  */
-public class ChunkGenerator {
+public class MazeChunkGenerator implements IChunkGenerator {
 
     private final Random random = new Random();
     private String[] finalLayout;
@@ -58,6 +58,7 @@ public class ChunkGenerator {
      * @param difficulty The game difficulty.
      * @return A fully populated Maze object.
      */
+    @Override
     public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode) {
         // --- 1. Create Layout ---
         // For ADVANCED mode, we use a 3x2 grid (double the size)
@@ -86,6 +87,7 @@ public class ChunkGenerator {
         return maze;
     }
 
+    @Override
     public GridPoint2 getInitialPlayerStartPos() {
         return playerSpawnPoint;
     }

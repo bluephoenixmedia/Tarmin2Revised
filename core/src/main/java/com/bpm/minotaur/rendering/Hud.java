@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -22,10 +23,8 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.managers.CombatManager;
-import com.bpm.minotaur.managers.DebugManager; // <-- ADDED IMPORT
-import com.bpm.minotaur.managers.GameEventManager;
-import com.bpm.minotaur.managers.WorldManager;
+import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.managers.*;
 
 import java.util.List; // <-- IMPORT ADDED FOR LIST
 
@@ -63,6 +62,8 @@ public class Hud implements Disposable {
     private final Texture messageBackgroundTexture;
 
     private final TextureRegionDrawable messageBackgroundDrawable;
+
+    private final GlyphLayout glyphLayout = new GlyphLayout();
 
     // --- Table References for Debug Toggle ---
     // We store references to all tables to toggle their debug lines in render()
@@ -397,31 +398,27 @@ public class Hud implements Disposable {
         stage.draw();
 
         if (isDebug) {
-
-            // --- 1. Draw the new minimap (with ShapeRenderer) ---
-            shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
-            // We draw the map centered at (X=600, Y=..._
-            drawWorldMinimap(1500, this.viewport.getWorldHeight() - 240);
-            // We must set the projection matrix again for the sprite batch
-            // because stage.draw() might have changed it.
+            // --- 1. PREPARE DEBUG FONT (moved to top) ---
             spriteBatch.setProjectionMatrix(stage.getCamera().combined);
-            spriteBatch.begin();
-
+            shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
 
             FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
             FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 12; // Base font size
+            parameter.size = 12;
             parameter.color = Color.WHITE;
             parameter.minFilter = Texture.TextureFilter.Nearest;
             parameter.magFilter = Texture.TextureFilter.Nearest;
             debugFont = generator.generateFont(parameter);
 
-            // Set a color for the debug text (e.g., bright green)
+            // --- 2. Draw the new minimap (uses ShapeRenderer AND SpriteBatch) ---
+            // We pass the font and batch so it can draw letters
+            drawWorldMinimap(1300, this.viewport.getWorldHeight() - 240, debugFont, spriteBatch);
+
+            // --- 3. Draw all debug text (with SpriteBatch) ---
+            spriteBatch.begin(); // Begin batch for text drawing
             debugFont.setColor(Color.YELLOW);
 
-
-            // Draw each table's name at its top-left corner
-            // localToStageCoordinates(0, height) gets the top-left corner
+            // Draw table names
             drawTableName(mainContainer, "mainContainer");
             drawTableName(mainContentTable, "mainContentTable");
             drawTableName(leftTable, "leftTable");
@@ -436,12 +433,104 @@ public class Hud implements Disposable {
             drawTableName(levelTable, "levelTable");
             drawTableName(messageTable, "messageTable");
 
-            // Reset font color to default (white)
-            font.setColor(Color.WHITE);
-            spriteBatch.end();
+            // Draw "CONTROLS" text block
+            float yPos = this.viewport.getWorldHeight() - 80;
+            String[] keyMappings = {
+                "--- CONTROLS ---",
+                "UP   : Move Forward", "DOWN : Move Backward", "LEFT : Turn Left", "RIGHT: Turn Right",
+                "", "O    : Open/Interact", "P    : Pickup/Drop Item", "U    : Use Item",
+                "D    : Descend Ladder", "R    : Rest", "", "S    : Swap Hands",
+                "E    : Swap with Pack", "T    : Rotate Pack", "", "A    : Attack (Combat)", "M    : Castle Map"
+            };
+            for (String mapping : keyMappings) {
+                font.draw(this.spriteBatch, mapping, 10, yPos);
+                yPos -= 20;
+            }
+            font.setColor(Color.WHITE); // Reset main font color
+
+            // Draw "PLAYER INFO" text block
+            if (player != null) {
+                String equippedWeapon = "NOTHING";
+                String damage = "0";
+                String range = "0";
+                String isRanged = "N/A";
+                String weaponColor = "NONE";
+                String weaponType = "NULL";
+                Item rightHandItem = player.getInventory().getRightHand();
+                if (rightHandItem != null) {
+                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
+                    weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
+                    weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+
+                    if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getWeaponStats().damage);
+                        range = String.valueOf(rightHandItem.getWeaponStats().range);
+                        isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
+                    } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getSpiritualWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                        range = "N/A";
+                        isRanged = "N/A";
+                    }
+                }
+                float infoX = 250;
+                float infoY = this.viewport.getWorldHeight() - 100;
+                debugFont.draw(spriteBatch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength(), infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
+            }
+
+            // --- 4. NEW: World Debug Text ---
+            if (worldManager != null) {
+                GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+                int chunkCount = worldManager.getLoadedChunkIds().size();
+                Biome biome = worldManager.getBiomeManager().getBiome(chunkId); // Get current biome
+
+                float worldDebugX = 1300; // X position for this block
+                float worldDebugY = this.viewport.getWorldHeight() - 100; // Y position
+
+                debugFont.setColor(Color.CYAN); // Different color for this block
+                debugFont.draw(spriteBatch, "WORLD DEBUG", worldDebugX, worldDebugY); worldDebugY -= 20;
+                debugFont.draw(spriteBatch, "Chunk: " + (chunkId != null ? chunkId.toString() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
+                debugFont.draw(spriteBatch, "Biome: " + (biome != null ? biome.name() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
+
+                debugFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY);
+                debugFont.setColor(Color.YELLOW); // Reset to default debug color
+            }
+
+            spriteBatch.end(); // End batch for text drawing
+
+            // Dispose the font (matches existing code's logic)
+            debugFont.dispose();
+            generator.dispose();
         }
+
     }
 
+
+    /**
+     * Gets a single-character representation for a biome.
+     * @param biome The biome.
+     * @return A string letter for the biome.
+     */
+    private String getBiomeLetter(Biome biome) {
+        if (biome == null) return "?";
+        switch (biome) {
+            case MAZE: return "M";
+            case FOREST: return "F";
+            case PLAINS: return "P";
+            case DESERT: return "D";
+            case MOUNTAINS: return "A"; // 'A' for 'Alpine'/'Mountain'
+            case LAKELANDS: return "L";
+            case OCEAN: return "O";
+            default: return "?";
+        }
+    }
 
     /**
      * Helper method to draw a table's variable name at its top-left corner.
@@ -533,26 +622,27 @@ public class Hud implements Disposable {
      * Draws the new world minimap in the debug (F1) view.
      * @param centerX The screen X coordinate to center the map on.
      * @param centerY The screen Y coordinate to center the map on.
+     * @param debugFont The font to use for drawing biome letters.
+     * @param spriteBatch The SpriteBatch to use for drawing text.
      */
-    private void drawWorldMinimap(float centerX, float centerY) {
+    private void drawWorldMinimap(float centerX, float centerY, BitmapFont debugFont, SpriteBatch spriteBatch) {
         if (worldManager == null) return;
 
         java.util.Set<GridPoint2> loadedChunks = worldManager.getLoadedChunkIds();
         GridPoint2 currentChunk = worldManager.getCurrentPlayerChunkId();
-        if (loadedChunks == null || currentChunk == null) return;
+        BiomeManager biomeManager = worldManager.getBiomeManager();
+
+        if (loadedChunks == null || currentChunk == null || biomeManager == null) return;
 
         float chunkSize = 20; // Size of each chunk square
         float gap = 4;        // Gap between chunks
 
-        // Begin drawing filled shapes
+        // --- 1. Draw Squares ---
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (GridPoint2 id : loadedChunks) {
-            // Calculate position relative to the current chunk
             int relX = id.x - currentChunk.x;
             int relY = id.y - currentChunk.y;
-
-            // Calculate final screen position
             float rectX = centerX + (relX * (chunkSize + gap));
             float rectY = centerY + (relY * (chunkSize + gap));
 
@@ -565,14 +655,38 @@ public class Hud implements Disposable {
 
             shapeRenderer.rect(rectX, rectY, chunkSize, chunkSize);
         }
-
         shapeRenderer.end();
+
+        // --- 2. Draw Letters ---
+        spriteBatch.begin();
+        debugFont.setColor(Color.BLACK); // Use black for high contrast
+
+        for (GridPoint2 id : loadedChunks) {
+            int relX = id.x - currentChunk.x;
+            int relY = id.y - currentChunk.y;
+            float rectX = centerX + (relX * (chunkSize + gap));
+            float rectY = centerY + (relY * (chunkSize + gap));
+
+            // Get the biome and its letter
+            Biome biome = biomeManager.getBiome(id);
+            String letter = getBiomeLetter(biome);
+            glyphLayout.setText(debugFont, letter);
+
+            // Calculate centered position
+            float textX = rectX + (chunkSize - glyphLayout.width) / 2;
+            float textY = rectY + (chunkSize + glyphLayout.height) / 2;
+
+            debugFont.draw(spriteBatch, glyphLayout, textX, textY);
+        }
+        spriteBatch.end();
     }
 
     public void resize(int width, int height) {
         // Update the viewport when the window is resized
         stage.getViewport().update(width, height, true);
     }
+
+
 
     @Override
     public void dispose() {
