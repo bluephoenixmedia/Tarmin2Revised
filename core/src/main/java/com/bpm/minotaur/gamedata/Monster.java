@@ -263,6 +263,14 @@ public class Monster implements Renderable {
     public int getSpiritualStrength() { return spiritualStrength; }
     public int getBaseExperience() { return baseExperience;
     }
+
+    public void setWarStrength(int warStrength) {
+        this.warStrength = warStrength;
+    }
+
+    public void setSpiritualStrength(int spiritualStrength) {
+        this.spiritualStrength = spiritualStrength;
+    }
     @Override
     public Color getColor() {
         return monsterColor.getColor();

@@ -90,14 +90,20 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public void hide() {
+        if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
+            worldManager.saveCurrentChunk(maze);
+        }
         MusicManager.getInstance().stop();
     }
 
     private void descendToNextLevel() {
+        if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
+            worldManager.saveCurrentChunk(maze);
+        }
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
 
-        // --- TODO: In ADVANCED mode, descending might mean loading a new set of chunks ---
+
         // For now, it just re-generates the current chunk at a new level.
         // This logic will need further refinement based on how levels and chunks interact.
         generateLevel(currentLevel); // Re-generate/reload based on the new level number

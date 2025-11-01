@@ -32,6 +32,8 @@ public class Gate implements Renderable {
         this.targetPlayerPos = null;
     }
 
+
+
     /**
      * NEW constructor for chunk-transitioning gates (ADVANCED mode).
      * @param x coordinate
@@ -43,6 +45,15 @@ public class Gate implements Renderable {
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.targetChunkId = targetChunkId;
         this.targetPlayerPos = targetPlayerPos;
+    }
+
+    // --- ADD THIS METHOD ---
+    /**
+     * Used by ChunkData to restore a gate's state from a save file.
+     */
+    public void setState(GateState state, float animationProgress) {
+        this.state = state;
+        this.animationProgress = animationProgress;
     }
 
 
