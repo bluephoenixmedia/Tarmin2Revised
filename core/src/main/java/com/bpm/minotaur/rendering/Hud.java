@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -24,6 +25,7 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DebugManager; // <-- ADDED IMPORT
 import com.bpm.minotaur.managers.GameEventManager;
+import com.bpm.minotaur.managers.WorldManager;
 
 import java.util.List; // <-- IMPORT ADDED FOR LIST
 
@@ -77,14 +79,15 @@ public class Hud implements Disposable {
     private final Table levelTable;
     private final Table messageTable;
     private final Table mainContainer;
+    private final WorldManager worldManager; // <-- ADD THIS
 
-
-    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager) {
+    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager) {
         this.player = player;
         this.maze = maze;
         this.combatManager = combatManager;
         this.eventManager = eventManager;
         this.spriteBatch = sb;
+        this.worldManager = worldManager; // <-- ADD THIS
         this.shapeRenderer = new ShapeRenderer();
 
         // --- Viewport and Stage Setup ---
@@ -394,6 +397,11 @@ public class Hud implements Disposable {
         stage.draw();
 
         if (isDebug) {
+
+            // --- 1. Draw the new minimap (with ShapeRenderer) ---
+            shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+            // We draw the map centered at (X=600, Y=..._
+            drawWorldMinimap(1500, this.viewport.getWorldHeight() - 240);
             // We must set the projection matrix again for the sprite batch
             // because stage.draw() might have changed it.
             spriteBatch.setProjectionMatrix(stage.getCamera().combined);
@@ -521,6 +529,45 @@ public class Hud implements Disposable {
         }
     }
 
+    /**
+     * Draws the new world minimap in the debug (F1) view.
+     * @param centerX The screen X coordinate to center the map on.
+     * @param centerY The screen Y coordinate to center the map on.
+     */
+    private void drawWorldMinimap(float centerX, float centerY) {
+        if (worldManager == null) return;
+
+        java.util.Set<GridPoint2> loadedChunks = worldManager.getLoadedChunkIds();
+        GridPoint2 currentChunk = worldManager.getCurrentPlayerChunkId();
+        if (loadedChunks == null || currentChunk == null) return;
+
+        float chunkSize = 20; // Size of each chunk square
+        float gap = 4;        // Gap between chunks
+
+        // Begin drawing filled shapes
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        for (GridPoint2 id : loadedChunks) {
+            // Calculate position relative to the current chunk
+            int relX = id.x - currentChunk.x;
+            int relY = id.y - currentChunk.y;
+
+            // Calculate final screen position
+            float rectX = centerX + (relX * (chunkSize + gap));
+            float rectY = centerY + (relY * (chunkSize + gap));
+
+            // Set color: Green for current, Gray for others
+            if (relX == 0 && relY == 0) {
+                shapeRenderer.setColor(Color.GREEN);
+            } else {
+                shapeRenderer.setColor(Color.GRAY);
+            }
+
+            shapeRenderer.rect(rectX, rectY, chunkSize, chunkSize);
+        }
+
+        shapeRenderer.end();
+    }
 
     public void resize(int width, int height) {
         // Update the viewport when the window is resized

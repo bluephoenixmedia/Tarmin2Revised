@@ -132,7 +132,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // Initialize systems that depend on the player and maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
-        hud = new Hud(game.batch, player, maze, combatManager, eventManager);
+        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
 
@@ -333,7 +333,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // 4. Update/Re-initialize systems that depend on the maze
         // TODO: Implement proper setMaze(Maze newMaze) methods in these classes for cleaner transitions.
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
-        hud = new Hud(game.batch, player, maze, combatManager, eventManager); // Recreate HUD
+        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager); // Recreate HUD
 
         // Force a redraw/reset of renderers if necessary (might not be needed depending on implementation)
         // firstPersonRenderer.reset();
