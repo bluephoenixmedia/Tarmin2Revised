@@ -74,7 +74,16 @@ public class Maze {
     }
 
     public void addGameObject(Object object, int x, int y) {
+
+        if (object instanceof Door) {
+            ((Door) object).setMaze(this);
+        }
+
         gameObjects.put(new GridPoint2(x, y), object);
+    }
+
+    public Map<GridPoint2, Object> getGameObjects() {
+        return gameObjects;
     }
 
     public Map<GridPoint2, Item> getItems() {
