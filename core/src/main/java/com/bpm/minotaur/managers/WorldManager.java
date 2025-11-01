@@ -147,6 +147,25 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "saveCurrentChunk() called for " + currentPlayerChunkId + ". (Saving is stubbed)");
     }
 
+    // In WorldManager.java
+
+    // --- ADD THESE TWO METHODS ---
+
+    /**
+     * Gets the ID of the chunk the player is currently in.
+     * @return The (X,Y) grid coordinate of the current chunk.
+     */
+    public GridPoint2 getCurrentPlayerChunkId() {
+        return currentPlayerChunkId;
+    }
+
+    /**
+     * Gets the set of all chunk IDs that are currently loaded in memory.
+     * @return A Set of GridPoint2 IDs.
+     */
+    public java.util.Set<GridPoint2> getLoadedChunkIds() {
+        return loadedChunks.keySet();
+    }
     /**
      * Gets the player's starting position for the *initial* maze.
      * @return The (X,Y) grid coordinate.
