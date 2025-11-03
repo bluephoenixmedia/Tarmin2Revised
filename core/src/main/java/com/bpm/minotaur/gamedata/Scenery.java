@@ -20,6 +20,7 @@ public class Scenery implements Renderable {
     private final Vector2 position;
     private double distanceToPlayer;
     private final boolean impassable;
+    public Vector2 scale; // <-- ADDED THIS (like Monster.java)
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
@@ -30,14 +31,22 @@ public class Scenery implements Renderable {
     public Scenery(SceneryType type, int x, int y) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f);
+        this.scale = new Vector2(1.0f, 1.0f); // <<<--- THIS IS THE FIX. It must be initialized here.
 
         // Set impassable flag
         switch (type) {
             case TREE:
+                this.impassable = true;
+                this.scale.set(1.0f, 2.0f); // <-- ADDED THIS (2x height)
+                break;
             case ROCK:
                 this.impassable = true;
+                this.scale.set(1.0f, 0.8f); // <-- ADDED THIS (Slightly shorter)
                 break;
             case BUSH:
+                this.impassable = false;
+                this.scale.set(1.0f, 0.75f); // <-- ADDED THIS (Shorter)
+                break;
             default:
                 this.impassable = false;
                 break;
@@ -74,6 +83,11 @@ public class Scenery implements Renderable {
      */
     public String[] getSpriteData() {
         return ScenerySpriteData.getSpriteByType(this.type);
+    }
+
+    // --- NEW: Added getScale() method ---
+    public Vector2 getScale() {
+        return scale;
     }
 
     /**

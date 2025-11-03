@@ -321,16 +321,21 @@ private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Rendera
      * NEW: Draws a Scenery sprite using the retro ASCII method.
      */
     private void drawScenerySprite(ShapeRenderer shapeRenderer, Scenery scenery, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        int spriteHeight = (int) (camera.viewportHeight / transformY); // Full wall height
-        int spriteWidth = spriteHeight; // Square sprite
+        // --- MODIFIED ---
+        // Base size is the height of a wall at this distance
+        int baseSpriteHeight = (int) (camera.viewportHeight / transformY);
+
+        // Apply the scenery's specific x and y scale
+        int spriteHeight = (int) (baseSpriteHeight * scenery.getScale().y);
+        int spriteWidth = (int) (baseSpriteHeight * scenery.getScale().x);
+        // --- END MODIFIED ---
 
         // For bushes, they should be on the floor. Trees/Rocks are full height.
         float drawY;
         if (scenery.getType() == Scenery.SceneryType.BUSH) {
-            float floorY = (camera.viewportHeight / 2) - (spriteHeight / 2f);
+            float floorY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2f); // Use base height for floor calculation
             drawY = floorY;
-            spriteHeight /= 2.5; // Make bushes shorter
-            spriteWidth /= 2.5;
+            // The scale is already applied, so no need to divide here
         } else {
             // Center trees and rocks vertically
             drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
