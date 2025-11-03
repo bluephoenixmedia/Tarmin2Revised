@@ -279,4 +279,7 @@ public class Monster implements Renderable {
     public MonsterColor getMonsterColor() {
         return monsterColor;
     }
+
+
 }
+

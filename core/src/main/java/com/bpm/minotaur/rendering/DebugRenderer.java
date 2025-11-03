@@ -75,6 +75,17 @@ public class DebugRenderer {
             shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
         }
 
+        if (maze.getScenery() != null) {
+            for (Scenery scenery : maze.getScenery().values()) {
+                shapeRenderer.setColor(Color.GREEN);
+                float sceneryCenterX = mazeStartX + (scenery.getPosition().x * cellSize);
+                float sceneryCenterY = mazeStartY + (scenery.getPosition().y * cellSize);
+                shapeRenderer.circle(sceneryCenterX, sceneryCenterY, cellSize * 0.25f, 12);
+            }
+        }
+
+
+
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
