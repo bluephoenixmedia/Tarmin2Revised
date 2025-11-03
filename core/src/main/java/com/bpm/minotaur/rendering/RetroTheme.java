@@ -78,6 +78,8 @@ public class RetroTheme {
     private static final Color INTV_ORANGE_DARK = new Color(177/255f, 84/255f, 11/255f, 1.0f);
     private static final Color INTV_ORANGE_LIGHT = new Color(254/255f, 160/255f, 90/255f, 1.0f);
 
+    private static final Color INTV_BROWN_DARK = new Color(93/255f, 74/255f, 65/255f, 1.0f);
+
 
     // --- STANDARD THEME ---
     // Unchanged. Follows the Floor (dark), WallDark (medium), Wall (light) logic.
@@ -183,5 +185,14 @@ public class RetroTheme {
         INTV_GREY,         // Wall Dark (Medium)
         INTV_WHITE,        // Door
         INTV_WHITE_DARK    // Door Dark
+    );
+
+    public static final Theme FOREST_THEME = new Theme(
+        INTV_BROWN_DARK,                   // Floor (Brown)
+        new Color(0.3f, 0.5f, 0.3f, 1),    // Ceiling (Green)
+        new Color(0.5f, 0.8f, 0.5f, 1),    // Wall (Bright Green)
+        new Color(0.4f, 0.7f, 0.4f, 1),    // Wall Dark (Medium Green)
+        new Color(0.1f, 0.2f, 0.7f, 1),    // Door (Blue)
+        new Color(0.1f, 0.15f, 0.6f, 1)     // Door Dark (Dark Blue)
     );
 }

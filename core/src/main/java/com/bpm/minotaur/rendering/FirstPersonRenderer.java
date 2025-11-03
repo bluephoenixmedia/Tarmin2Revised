@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager;
 
@@ -93,6 +94,13 @@ public class FirstPersonRenderer {
     }
 
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager, int currentLevel) {
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        if (biome == Biome.FOREST || biome == Biome.PLAINS) { // Plains also use forest generator
+            setTheme(RetroTheme.FOREST_THEME);
+        } else {
+            setTheme(RetroTheme.STANDARD_THEME);
+        }
+
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
         }
