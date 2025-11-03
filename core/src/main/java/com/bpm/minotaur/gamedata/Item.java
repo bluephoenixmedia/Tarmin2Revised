@@ -1082,6 +1082,8 @@ public class Item implements Renderable {
         return itemColor.getColor();
     }
 
+
+
     public ItemColor getItemColor() {
         return itemColor;
     }

@@ -19,6 +19,9 @@ public class Maze {
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
 
+    private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
+
+
 
 
     public Maze(int level, int[][] wallData) {
@@ -164,6 +167,17 @@ public class Maze {
                 door.startOpening();
             }
         }
+    }
+
+    // --- NEW: Scenery getters/setters ---
+    public Map<GridPoint2, Scenery> getScenery() {
+        return scenery;
+    }
+
+    public void addScenery(Scenery s) {
+        if (s == null) return;
+        GridPoint2 pos = new GridPoint2((int)s.getPosition().x, (int)s.getPosition().y);
+        scenery.put(pos, s);
     }
 
     public void update(float delta) {

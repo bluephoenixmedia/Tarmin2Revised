@@ -387,6 +387,7 @@ public class Player {
     // In Player.java
 
     private void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) { // --- ADD PARAMS ---        Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
+        Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
 
         int currentX = (int) position.x;
         int currentY = (int) position.y;
@@ -394,6 +395,8 @@ public class Player {
         // --- NEW CHUNK TRANSITION CHECK ---
         int nextX = currentX + (int)direction.getVector().x;
         int nextY = currentY + (int)direction.getVector().y;
+        GridPoint2 nextTile = new GridPoint2(nextX, nextY); // <-- NEW
+
         Object nextObject = maze.getGameObjectAt(nextX, nextY); // This checks gates and doors
 
         if (nextObject instanceof Gate && gameMode == GameMode.ADVANCED) {
@@ -410,6 +413,15 @@ public class Player {
         if (maze.isWallBlocking(currentX, currentY, direction)) {
             Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
             return;
+        }
+
+        // --- NEW: Check for impassable scenery ---
+        if (maze.getScenery().containsKey(nextTile)) {
+            Scenery s = maze.getScenery().get(nextTile);
+            if (s.isImpassable()) {
+                Gdx.app.log("PlayerMovement", "Movement blocked by impassable scenery: " + s.getType());
+                return;
+            }
         }
         Object doorObject = maze.getGameObjectAt(nextX, nextY);
 

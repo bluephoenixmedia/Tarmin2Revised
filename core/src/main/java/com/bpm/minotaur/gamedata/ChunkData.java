@@ -25,6 +25,9 @@ public class ChunkData {
     public List<GateData> gates = new ArrayList<>();
     public List<LadderData> ladders = new ArrayList<>();
 
+    public List<SceneryData> scenery = new ArrayList<>();
+
+
     /**
      * No-arg constructor required for JSON deserialization.
      */
@@ -110,11 +113,27 @@ public class ChunkData {
             maze.addLadder(new Ladder(data.x, data.y));
         }
 
+        for (SceneryData data : scenery) {
+            maze.addScenery(new Scenery(data.type, data.x, data.y));
+        }
+
         return maze;
     }
 
     // --- Nested static classes for serialization ---
     // These must be public or static nested for the JSON serializer to access them.
+
+    public static class SceneryData {
+        public Scenery.SceneryType type;
+        public int x;
+        public int y;
+        public SceneryData() {} // No-arg constructor for JSON
+        public SceneryData(Scenery s) {
+            this.type = s.getType();
+            this.x = (int)s.getPosition().x;
+            this.y = (int)s.getPosition().y;
+        }
+    }
 
     public static class ItemData {
         public Item.ItemType type;

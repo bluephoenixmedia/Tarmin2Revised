@@ -34,6 +34,7 @@ public class EntityRenderer {
         entities.addAll(maze.getMonsters().values());
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getProjectiles());
+        entities.addAll(maze.getScenery().values());
 
         entities.sort((a, b) -> Float.compare(
             player.getPosition().dst2(b.getPosition()),
@@ -238,6 +239,9 @@ private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Rendera
         } else if (entity instanceof Projectile) {
             drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
         }
+        else if (entity instanceof Scenery) {
+            drawScenerySprite(shapeRenderer, (Scenery) entity, screenX, transformY, camera, viewport, depthBuffer);
+        }
     }
 }
     private void drawProjectile(ShapeRenderer shapeRenderer, Projectile projectile, int screenX, float transformY,
@@ -310,6 +314,31 @@ private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Rendera
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
             }
+        }
+    }
+
+    /**
+     * NEW: Draws a Scenery sprite using the retro ASCII method.
+     */
+    private void drawScenerySprite(ShapeRenderer shapeRenderer, Scenery scenery, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
+        int spriteHeight = (int) (camera.viewportHeight / transformY); // Full wall height
+        int spriteWidth = spriteHeight; // Square sprite
+
+        // For bushes, they should be on the floor. Trees/Rocks are full height.
+        float drawY;
+        if (scenery.getType() == Scenery.SceneryType.BUSH) {
+            float floorY = (camera.viewportHeight / 2) - (spriteHeight / 2f);
+            drawY = floorY;
+            spriteHeight /= 2.5; // Make bushes shorter
+            spriteWidth /= 2.5;
+        } else {
+            // Center trees and rocks vertically
+            drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
+        }
+
+        String[] spriteData = scenery.getSpriteData();
+        if (spriteData != null) {
+            drawAsciiSprite(shapeRenderer, scenery, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         }
     }
 

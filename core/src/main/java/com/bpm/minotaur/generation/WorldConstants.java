@@ -16,7 +16,7 @@ public class WorldConstants {
      * Defines the radius of the central Maze area, in chunks.
      * A value of 10 means the maze will be 20x20 (from -10 to +10).
      */
-    public static final int CENTRAL_MAZE_RADIUS = 10;
+    public static final int CENTRAL_MAZE_RADIUS = 1;
 
     /**
      * Defines the thickness of the Forest biome that
