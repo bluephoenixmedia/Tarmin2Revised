@@ -159,6 +159,43 @@ public class Maze {
         return false;
     }
 
+    /**
+     * [NEW] Checks if a specific tile is passable for movement.
+     * This is used for seamless transitions to check the target tile.
+     * @param x The x-coordinate of the tile.
+     * @param y The y-coordinate of the tile.
+     * @return True if the tile is passable, false otherwise.
+     */
+    public boolean isPassable(int x, int y) {
+        // Check for out of bounds
+        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
+            return false;
+        }
+
+        // Check for a solid wall block (e.g., # layout character)
+        if (wallData[y][x] == -1) {
+            return false;
+        }
+
+        // Check for impassable scenery
+        GridPoint2 pos = new GridPoint2(x, y);
+        if (scenery.containsKey(pos) && scenery.get(pos).isImpassable()) {
+            return false;
+        }
+
+        // Check for closed doors or gates
+        Object obj = getGameObjectAt(x, y);
+        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
+            return false;
+        }
+        if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN) {
+            return false;
+        }
+
+        // All checks passed, tile is passable
+        return true;
+    }
+
     public void openDoorAt(int x, int y) {
         Object obj = getGameObjectAt(x, y);
         if (obj instanceof Door) {

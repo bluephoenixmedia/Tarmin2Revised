@@ -7,11 +7,13 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 // No longer needed: import com.bpm.minotaur.generation.ChunkGenerator;
+import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
 
@@ -71,7 +73,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 break;
             // Add more cases for other levels and tracks
             default:
-             //   MusicManager.getInstance().stop(); // Or play a default track
+                //   MusicManager.getInstance().stop(); // Or play a default track
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
                 break;
         }
@@ -125,9 +127,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             // Get start position from WorldManager/ChunkGenerator
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty);
+            player.setMaze(this.maze); // <-- [FIX] Player needs initial maze reference
         } else {
             // Player already exists, reset position to the start of the newly loaded/generated maze
             resetPlayerPosition();
+            player.setMaze(this.maze); // <-- [FIX] Player needs new maze reference
         }
 
         // Initialize systems that depend on the player and maze
@@ -182,17 +186,25 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         handleSystemEvents();
         // --- END NEW ---
 
+        // --- [NEW] PROACTIVE CHUNK LOADING ---
+        if (gameMode == GameMode.ADVANCED) {
+            checkForProactiveChunkLoading();
+        }
+        // --- END NEW ---
+
         // --- WORLD RENDERING ---
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
 
         // Ensure player and maze are not null before rendering
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager, currentLevel);
+            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager, currentLevel, gameMode);
+
+            // --- [FIX] Pass WorldManager to EntityRenderer for Fog of War check ---
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer);
+                entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
             animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
@@ -278,6 +290,57 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
     /**
+     * [NEW] Checks player proximity to borders and requests adjacent chunks to be loaded.
+     */
+    private void checkForProactiveChunkLoading() {
+        if (player == null || worldManager == null || maze == null) { // <-- [FIX] Added maze null check
+            return;
+        }
+
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+
+        // Only run this for seamless biomes
+        if (!biome.isSeamless()) {
+            return;
+        }
+
+        int triggerDistance;
+        if (biome.hasFogOfWar()) {
+            // Trigger load when player is 1 tile *before* the border becomes visible
+            triggerDistance = biome.getFogDistance() + 1;
+        } else {
+            triggerDistance = 5; // Default trigger distance for seamless biomes without fog
+        }
+
+        // Ensure trigger distance is at least 2 tiles away
+        triggerDistance = Math.max(2, triggerDistance);
+
+        GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+        GridPoint2 currentChunkId = worldManager.getCurrentPlayerChunkId();
+
+        // --- [FIX] Use maze.getHeight() and maze.getWidth() ---
+        int height = maze.getHeight();
+        int width = maze.getWidth();
+
+        // Check North
+        if (playerPos.y >= height - 1 - triggerDistance) {
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
+        }
+        // Check South
+        if (playerPos.y <= triggerDistance) {
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
+        }
+        // Check East
+        if (playerPos.x >= width - 1 - triggerDistance) {
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
+        }
+        // Check West
+        if (playerPos.x <= triggerDistance) {
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
+        }
+    }
+
+    /**
      * NEW: Checks for and processes system events from the event manager.
      */
     private void handleSystemEvents() {
@@ -297,6 +360,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // ... (Check for other future system events here) ...
     }
+
+    /**
+     * [NEW] Refactored logic to hot-swap the active maze.
+     * @param newMaze The newly loaded maze to make active.
+     */
+    private void swapToChunk(Maze newMaze) {
+        this.maze = newMaze; // Hot-swap the maze object
+        player.setMaze(newMaze); // Update player's maze reference
+
+        // Re-initialize systems that depend on the maze
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
+        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager); // Recreate HUD
+
+        Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
+        DebugRenderer.printMazeToConsole(maze); // For debugging
+    }
+
 
     /**
      * NEW: Handles the "hot-swap" of the maze when moving between chunks.
@@ -325,7 +405,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             transitionGate.close(); // <-- We need to add this method!
             return; // Abort the transition
         }
-        this.maze = newMaze; // Hot-swap the maze object
 
         // 3. Teleport the player
         player.getPosition().set(
@@ -334,17 +413,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         );
         Gdx.app.log("GameScreen", "Player teleported to: " + transitionGate.getTargetPlayerPos());
 
-        // 4. Update/Re-initialize systems that depend on the maze
-        // TODO: Implement proper setMaze(Maze newMaze) methods in these classes for cleaner transitions.
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager);
-        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager); // Recreate HUD
+        // 4. Update WorldManager's internal state *before* swapping
+        worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
 
-        // Force a redraw/reset of renderers if necessary (might not be needed depending on implementation)
-        // firstPersonRenderer.reset();
-        // entityRenderer.clearEntities();
-
-        Gdx.app.log("GameScreen", "Transition complete. New maze loaded for chunk " + transitionGate.getTargetChunkId());
-        DebugRenderer.printMazeToConsole(maze); // For debugging
+        // 5. Hot-swap maze and re-initialize systems
+        swapToChunk(newMaze);
     }
 
 
@@ -355,6 +428,48 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             hud.resize(width, height);
         }
     }
+
+    /**
+     * [NEW] Helper to check if a player's move would cross a chunk border.
+     * [FIXED] Now checks against dynamic maze height/width.
+     * @param playerPos The player's current grid position.
+     * @param moveDir The direction of movement (e.g., player.getFacing()).
+     * @return True if the move would exit the current chunk, false otherwise.
+     */
+    private boolean isMoveSeamlessTransition(GridPoint2 playerPos, Direction moveDir) {
+        if (maze == null) return false;
+
+        int height = maze.getHeight();
+        int width = maze.getWidth();
+
+        if (moveDir == Direction.NORTH && playerPos.y == height - 1) return true;
+        if (moveDir == Direction.SOUTH && playerPos.y == 0) return true;
+        if (moveDir == Direction.EAST && playerPos.x == width - 1) return true;
+        if (moveDir == Direction.WEST && playerPos.x == 0) return true;
+
+        return false;
+    }
+
+    /**
+     * [NEW] Calculates the player's new position in the adjacent chunk.
+     * [FIXED] Now uses dynamic maze height/width.
+     * @param playerPos The player's current position (before crossing).
+     * @param moveDir The direction of crossing.
+     * @return The new GridPoint2 for the player in the new chunk.
+     */
+    private GridPoint2 getSeamlessTargetPlayerPos(GridPoint2 playerPos, Direction moveDir) {
+        if (maze == null) return playerPos; // Safety check
+
+        int height = maze.getHeight();
+        int width = maze.getWidth();
+
+        if (moveDir == Direction.NORTH) return new GridPoint2(playerPos.x, 0);
+        if (moveDir == Direction.SOUTH) return new GridPoint2(playerPos.x, height - 1);
+        if (moveDir == Direction.EAST)  return new GridPoint2(0, playerPos.y);
+        if (moveDir == Direction.WEST)  return new GridPoint2(width - 1, playerPos.y);
+        return playerPos; // Should not happen
+    }
+
 
     @Override
     public boolean keyDown(int keycode) {
@@ -382,23 +497,64 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             switch (keycode) {
                 case Input.Keys.UP:
-                    player.moveForward(maze, eventManager, gameMode);
+                case Input.Keys.DOWN:
+                    // --- [FIXED] SEAMLESS TRANSITION LOGIC (Forward/Back) ---
+                    // --- [FIXED] SEAMLESS TRANSITION LOGIC (Forward/Back) ---
+                    if (gameMode == GameMode.ADVANCED) {
+                        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+                        if (biome.isSeamless()) {
+                            Direction moveDir = (keycode == Input.Keys.UP) ? player.getFacing() : player.getFacing().getOpposite();
+                            GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+
+                            if (isMoveSeamlessTransition(playerPos, moveDir)) {
+                                GridPoint2 targetChunkId = worldManager.getAdjacentChunkId(moveDir);
+                                GridPoint2 targetPlayerPos = getSeamlessTargetPlayerPos(playerPos, moveDir);
+
+                                Maze targetChunk = worldManager.getChunk(targetChunkId);
+                                if (targetChunk != null && targetChunk.isPassable(targetPlayerPos.x, targetPlayerPos.y)) {
+                                    Gdx.app.log("GameScreen", "Seamless transition triggered to " + targetChunkId);
+                                    worldManager.transitionPlayerToChunk(player, targetChunkId, targetPlayerPos);
+                                    swapToChunk(targetChunk);
+                                    combatManager.checkForAdjacentMonsters();
+                                    return true; // Consume key
+                                } else if (targetChunk == null) {
+                                    Gdx.app.log("GameScreen", "Seamless transition failed: Target chunk not loaded (or PCL hasn't run).");
+                                    return true; // Block move
+                                } else {
+                                    Gdx.app.log("GameScreen", "Seamless transition blocked by impassable tile at target.");
+                                    // --- [THE FIX] ---
+                                    // We MUST return true here to block the move and prevent
+                                    // the player from walking out of bounds.
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    // --- END TRANSITION LOGIC ---
+
+                    // Standard movement
+                    if (keycode == Input.Keys.UP) {
+                        player.moveForward(maze, eventManager, gameMode);
+                    } else {
+                        player.moveBackward(maze, eventManager, gameMode);
+                    }
                     combatManager.checkForAdjacentMonsters(); // Check for combat after moving
                     needsAsciiRender = false;
-                    return true; // Added return true
-                case Input.Keys.DOWN:
-                    player.moveBackward(maze, eventManager, gameMode);
-                    combatManager.checkForAdjacentMonsters();
-                    needsAsciiRender = false;
-                    return true; // Added return true
+                    return true;
+
                 case Input.Keys.LEFT:
-                    player.turnLeft();
-                    needsAsciiRender = false;
-                    return true; // Added return true
                 case Input.Keys.RIGHT:
-                    player.turnRight();
+                    // --- [FIXED] Removed faulty strafe-transition logic ---
+                    // Standard turning
+                    if (keycode == Input.Keys.LEFT) {
+                        player.turnLeft();
+                    } else {
+                        player.turnRight();
+                    }
                     needsAsciiRender = false;
-                    return true; // Added return true
+                    return true;
+
+                // ... (rest of keyDown method) ...
                 case Input.Keys.O:
                     // --- MODIFIED CALL: Pass gameMode ---
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);

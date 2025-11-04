@@ -8,7 +8,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.generation.Biome; // <-- ADD IMPORT
 import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.WorldManager; // <-- ADD IMPORT
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +26,16 @@ public class EntityRenderer {
         this.spriteBatch = new SpriteBatch();
     }
 
-    // Update all render method signatures to accept FirstPersonRenderer
+    // --- [FIX] Updated signature to accept WorldManager ---
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
-                       float[] depthBuffer, FirstPersonRenderer firstPersonRenderer) {
+                       float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
         if (depthBuffer == null) return;
+
+        // --- [NEW] Get Fog Info ---
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        boolean fogEnabled = biome.hasFogOfWar();
+        float fogDistance = biome.getFogDistance();
+        // --- END NEW ---
 
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
@@ -45,6 +53,14 @@ public class EntityRenderer {
         boolean isSpriteBatchActive = false;
 
         for (Renderable entity : entities) {
+
+            // --- [NEW] FOG CULLING ---
+            float distanceToEntity = player.getPosition().dst(entity.getPosition());
+            if (fogEnabled && distanceToEntity > fogDistance) {
+                continue; // Skip rendering this entity, it's in the fog
+            }
+            // --- END NEW ---
+
             boolean needsTexture = (entity instanceof Monster && ((Monster) entity).getTexture() != null) ||
                 (entity instanceof Item && ((Item) entity).getTexture() != null);
 
@@ -86,10 +102,20 @@ public class EntityRenderer {
         }
     }
 
-    // Update renderSingleMonster to accept and use FirstPersonRenderer
+    // --- [FIX] Updated signature to accept WorldManager ---
     public void renderSingleMonster(ShapeRenderer shapeRenderer, Player player, Monster monster, Viewport viewport,
-                                    float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
+                                    float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze, WorldManager worldManager) {
         if (depthBuffer == null || monster == null) return;
+
+        // --- [NEW] FOG CULLING ---
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        if (biome.hasFogOfWar()) {
+            float distanceToMonster = player.getPosition().dst(monster.getPosition());
+            if (distanceToMonster > biome.getFogDistance()) {
+                return; // Monster is in the fog, don't draw
+            }
+        }
+        // --- END NEW ---
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && monster.getTexture() != null) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
@@ -107,6 +133,7 @@ public class EntityRenderer {
     public void renderSingleProjectile(ShapeRenderer shapeRenderer, Player player, Projectile projectile, Viewport viewport,
                                        float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
         if (depthBuffer == null || projectile == null) return;
+        // Note: We don't fog check projectiles, they should be visible
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         drawEntityShape(shapeRenderer, player, projectile, viewport, depthBuffer, firstPersonRenderer, maze);
         shapeRenderer.end();
@@ -154,96 +181,96 @@ public class EntityRenderer {
         }
     }
 
-// Update drawItemTexture similarly
-private void drawItemTexture(SpriteBatch spriteBatch, Player player, Item item, Viewport viewport,
-                             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
-    float spriteX = item.getPosition().x - player.getPosition().x;
-    float spriteY = item.getPosition().y - player.getPosition().y;
-    float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y - player.getDirectionVector().x * player.getCameraPlane().y);
-    float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
-    float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
+    // Update drawItemTexture similarly
+    private void drawItemTexture(SpriteBatch spriteBatch, Player player, Item item, Viewport viewport,
+                                 float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
+        float spriteX = item.getPosition().x - player.getPosition().x;
+        float spriteY = item.getPosition().y - player.getPosition().y;
+        float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y - player.getDirectionVector().x * player.getCameraPlane().y);
+        float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
+        float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
 
-    if (transformY > 0) {
-        // Check line of sight to the item
-        float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, item.getPosition());
-        float distanceToItem = player.getPosition().dst(item.getPosition());
+        if (transformY > 0) {
+            // Check line of sight to the item
+            float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, item.getPosition());
+            float distanceToItem = player.getPosition().dst(item.getPosition());
 
-        // If there's an obstruction closer than the item, don't render
-        if (distanceToObstruction < distanceToItem - 0.1f) {
-            return;
-        }
+            // If there's an obstruction closer than the item, don't render
+            if (distanceToObstruction < distanceToItem - 0.1f) {
+                return;
+            }
 
-        Camera camera = viewport.getCamera();
-        int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+            Camera camera = viewport.getCamera();
+            int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
-        int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
-        float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
+            int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
+            float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
 
-        int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-        int spriteHeight = (int)(baseSpriteHeight * item.scale.y);
-        int spriteWidth = (int)(baseSpriteHeight * item.scale.x);
+            int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
+            int spriteHeight = (int)(baseSpriteHeight * item.scale.y);
+            int spriteWidth = (int)(baseSpriteHeight * item.scale.x);
 
-        float drawY = floorY;
+            float drawY = floorY;
 
-        int playerGridX = (int) player.getPosition().x;
-        int playerGridY = (int) player.getPosition().y;
-        int itemGridX = (int) item.getPosition().x;
-        int itemGridY = (int) item.getPosition().y;
+            int playerGridX = (int) player.getPosition().x;
+            int playerGridY = (int) player.getPosition().y;
+            int itemGridX = (int) item.getPosition().x;
+            int itemGridY = (int) item.getPosition().y;
 
-        if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
-            drawY += CLOSE_ITEM_Y_BOOST;
-        }
+            if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
+                drawY += CLOSE_ITEM_Y_BOOST;
+            }
 
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
-        int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+            int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            // Use transformY (distance to item) instead of checking depthBuffer
-            // The line-of-sight check above already verified no walls block the view
-            if (stripe >= 0 && stripe < depthBuffer.length) {
-                float u = (float) (stripe - drawStartX) / (float) spriteWidth;
-                spriteBatch.draw(item.getTexture(), stripe, drawY, 1, spriteHeight, u, 1, u + (1.0f / spriteWidth), 0);
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                // Use transformY (distance to item) instead of checking depthBuffer
+                // The line-of-sight check above already verified no walls block the view
+                if (stripe >= 0 && stripe < depthBuffer.length) {
+                    float u = (float) (stripe - drawStartX) / (float) spriteWidth;
+                    spriteBatch.draw(item.getTexture(), stripe, drawY, 1, spriteHeight, u, 1, u + (1.0f / spriteWidth), 0);
+                }
             }
         }
     }
-}
 
-// Update drawEntityShape similarly
-private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Renderable entity, Viewport viewport,
-                             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
-    float spriteX = entity.getPosition().x - player.getPosition().x;
-    float spriteY = entity.getPosition().y - player.getPosition().y;
-    float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y - player.getDirectionVector().x * player.getCameraPlane().y);
-    float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
-    float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
+    // Update drawEntityShape similarly
+    private void drawEntityShape(ShapeRenderer shapeRenderer, Player player, Renderable entity, Viewport viewport,
+                                 float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
+        float spriteX = entity.getPosition().x - player.getPosition().x;
+        float spriteY = entity.getPosition().y - player.getPosition().y;
+        float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y - player.getDirectionVector().x * player.getCameraPlane().y);
+        float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
+        float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
 
-    if (transformY > 0) {
-        // Check line of sight
-        float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, entity.getPosition());
-        float distanceToEntity = player.getPosition().dst(entity.getPosition());
+        if (transformY > 0) {
+            // Check line of sight
+            float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, entity.getPosition());
+            float distanceToEntity = player.getPosition().dst(entity.getPosition());
 
-        // If there's an obstruction closer than the entity, don't render
-        if (distanceToObstruction < distanceToEntity - 0.1f) {
-            return;
-        }
+            // If there's an obstruction closer than the entity, don't render
+            if (distanceToObstruction < distanceToEntity - 0.1f) {
+                return;
+            }
 
-        Camera camera = viewport.getCamera();
-        int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+            Camera camera = viewport.getCamera();
+            int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
-        if (entity instanceof Monster) {
-            drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
-        } else if (entity instanceof Item) {
-            drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
-        } else if (entity instanceof Ladder) {
-            drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
-        } else if (entity instanceof Projectile) {
-            drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
-        }
-        else if (entity instanceof Scenery) {
-            drawScenerySprite(shapeRenderer, (Scenery) entity, screenX, transformY, camera, viewport, depthBuffer);
+            if (entity instanceof Monster) {
+                drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
+            } else if (entity instanceof Item) {
+                drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
+            } else if (entity instanceof Ladder) {
+                drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
+            } else if (entity instanceof Projectile) {
+                drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
+            }
+            else if (entity instanceof Scenery) {
+                drawScenerySprite(shapeRenderer, (Scenery) entity, screenX, transformY, camera, viewport, depthBuffer);
+            }
         }
     }
-}
     private void drawProjectile(ShapeRenderer shapeRenderer, Projectile projectile, int screenX, float transformY,
                                 Camera camera, Viewport viewport, float[] depthBuffer) {
         float floorOffset = 0.5f;

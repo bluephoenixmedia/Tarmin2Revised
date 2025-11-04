@@ -53,6 +53,7 @@ public class Player {
     private Item wornBreastplate = null;
     private Item wornRing; // ADD THIS LINE
 
+    private Maze maze; // <-- [NEW] Reference to the player's current maze
 
 
 
@@ -81,6 +82,23 @@ public class Player {
         this.level = 1;
         this.experience = 0;
         this.experienceToNextLevel = calculateXpForLevel(2);
+    }
+
+    /**
+     * Sets the player's current maze reference.
+     * @param maze The new maze the player is in.
+     */
+    public void setMaze(Maze maze) {
+        this.maze = maze;
+    }
+
+    /**
+     * Sets the player's position based on a GridPoint2,
+     * automatically adding 0.5f to center them.
+     * @param newPos The new grid position.
+     */
+    public void setPosition(GridPoint2 newPos) {
+        this.position.set(newPos.x + 0.5f, newPos.y + 0.5f);
     }
 
 
