@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.generation.WorldConstants;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager;
 
@@ -29,7 +30,7 @@ public class FirstPersonRenderer {
     private Color currentDoorDarkColor;
     private final Color fogLerpColor = new Color(); // Re-usable color object
 
-    // --- Rendering Constants ---
+       // --- Rendering Constants ---
     private static final float DOOR_WIDTH = 1.0f / 3.0f;
     private static final float DOOR_HEIGHT_RATIO = 0.8f;
     private static final float FOG_FADE_RATIO = 0.5f; // Fog fades in over 50% of fogDistance
@@ -100,7 +101,9 @@ public class FirstPersonRenderer {
         // --- [NEW] FOG AND BIOME THEME LOGIC ---
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
         float fogDistance = 1000f;
-        Color fogColor = Color.BLACK;
+       // Color darkFloor = applyTorchLighting(currentFloorColor, TORCH_FADE_END, new Color());
+
+        Color fogColor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
         boolean fogEnabled = false;
 
         // Set theme based on biome
@@ -120,6 +123,8 @@ public class FirstPersonRenderer {
             fogEnabled = true;
             fogDistance = biome.getFogDistance();
             fogColor = biome.getFogColor();
+           // fogColor = applyTorchLighting(currentFloorColor, TORCH_FADE_END, new Color());
+
         }
         // --- END NEW LOGIC ---
 
@@ -151,7 +156,8 @@ public class FirstPersonRenderer {
             } else {
                 // Draw Solid Ceiling using ShapeRenderer
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled); // BEGIN Ceiling
-                shapeRenderer.setColor(currentCeilingColor); // Solid ceiling is not fogged
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+; // Solid ceiling is not fogged
                 shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2); // Line ~100
                 shapeRenderer.end();                                 // END Ceiling
             }
@@ -161,12 +167,16 @@ public class FirstPersonRenderer {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);     // BEGIN Floor
             if (fogEnabled) {
                 // Draw a gradient for fog
+
+                Color darkFloor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
+
                 shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2,
-                    fogColor, fogColor, // Bottom color (full fog)
+                    darkFloor, darkFloor, // Bottom color (full fog)
                     currentFloorColor, currentFloorColor // Top color (horizon)
                 );
             } else {
-                shapeRenderer.setColor(currentFloorColor);
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
                 shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
             }
             shapeRenderer.end();                                     // END Floor
@@ -176,6 +186,20 @@ public class FirstPersonRenderer {
         boolean shapeRendererNeedsBegin = (debugManager.getRenderMode() != DebugManager.RenderMode.MODERN);
         if(shapeRendererNeedsBegin) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+            if (fogEnabled) {
+                // Create a vignette effect for the floor
+                // Draw darker at the bottom, lighter toward horizon
+                Color darkFloor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2,
+                    darkFloor, darkFloor, // Bottom (darkest)
+                    currentFloorColor, currentFloorColor // Horizon (lighter)
+                );
+            } else {
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            }
         }
 
         for (int x = 0; x < viewport.getScreenWidth(); x++) {
@@ -196,13 +220,15 @@ public class FirstPersonRenderer {
                     // Draw a solid slice of fog from floor to ceiling
                     if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
                         // Use SpriteBatch: draw a 1x1 texture scaled
-                        spriteBatch.setColor(fogColor);
+                        spriteBatch.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
                         // Draw a 1x1 pixel from wallTexture, stretched to fill the column
                         spriteBatch.draw(wallTexture, x, 0, 1, viewport.getWorldHeight(), 0, 0, 1, 1, false, false);
                         spriteBatch.setColor(Color.WHITE); // Reset color
                     } else {
                         // Use ShapeRenderer
-                        shapeRenderer.setColor(fogColor);
+                        shapeRenderer.setColor( applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
                         shapeRenderer.rect(x, 0, 1, viewport.getWorldHeight());
                     }
                 }
@@ -754,7 +780,7 @@ public class FirstPersonRenderer {
         }
     }
 
-    private void renderWallSlice(ShapeRenderer shapeRenderer, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor) {
+    private void renderWallSlice(ShapeRenderer shapeRenderer, RaycastResult result, int screenX, Viewport viewport, boolean torchEnabled, float maxVisibleDistance, Color ambientDarkness) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
 
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -766,7 +792,7 @@ public class FirstPersonRenderer {
 
             if (isFramePart) {
                 Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
-                shapeRenderer.setColor(getFoggedColor(frameColor, result.distance, fogEnabled, fogDistance, fogColor));
+                shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
                 shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
             } else {
                 float doorHeight = (drawEnd - drawStart) * DOOR_HEIGHT_RATIO;
@@ -774,7 +800,7 @@ public class FirstPersonRenderer {
                 float doorDrawEnd = drawStart + doorHeight;
 
                 Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
-                shapeRenderer.setColor(getFoggedColor(frameColor, result.distance, fogEnabled, fogDistance, fogColor));
+                shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
                 if (drawEnd > doorDrawEnd) {
                     shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
                 }
@@ -786,46 +812,38 @@ public class FirstPersonRenderer {
 
                 if (doorDrawEnd > doorDrawStart) {
                     Color doorRenderColor = (result.side == 1) ? currentDoorDarkColor : currentDoorColor;
-                    shapeRenderer.setColor(getFoggedColor(doorRenderColor, result.distance, fogEnabled, fogDistance, fogColor));
+                    shapeRenderer.setColor(applyTorchLighting(doorRenderColor, result.distance, fogLerpColor));
                     shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
             }
-        } else if (result.wallType == WallType.GATE && result.gate != null) { // Check result.gate
-            // Gates are solid, no frame part
+        } else if (result.wallType == WallType.GATE && result.gate != null) {
             float doorHeight = (drawEnd - drawStart) * DOOR_HEIGHT_RATIO;
             float doorDrawStart = drawStart;
             float doorDrawEnd = drawStart + doorHeight;
 
-            // Draw the part of the wall above the gate
-            Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Use wall color for frame
-            shapeRenderer.setColor(getFoggedColor(frameColor, result.distance, fogEnabled, fogDistance, fogColor));
+            Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
+            shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
             if (drawEnd > doorDrawEnd) {
                 shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
             }
 
-            // Apply opening animation
             if (result.gate.getState() == Gate.GateState.OPENING) {
                 float openingOffset = (doorDrawEnd - doorDrawStart) * result.gate.getAnimationProgress();
                 doorDrawStart += openingOffset;
             }
 
-            // Draw the gate itself
             if (result.gate.getState() != Gate.GateState.OPEN && doorDrawEnd > doorDrawStart) {
-                // Use CYAN for the gate color
-                shapeRenderer.setColor(getFoggedColor(Color.CYAN, result.distance, fogEnabled, fogDistance, fogColor));
+                shapeRenderer.setColor(applyTorchLighting(Color.CYAN, result.distance, fogLerpColor));
                 shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
             }
-        } else { // This handles solid walls, open door frames, and gates
+        } else {
             Color renderColor;
             if (result.wallType == WallType.GATE) {
-                // This will now only be hit if result.gate is null (e.g. classic gate)
-                // or if we change the raycaster to not find the object.
-                // For our new logic, this branch is less likely, but we leave it.
-                renderColor = Color.CYAN; // Gate color
+                renderColor = Color.CYAN;
             } else {
-                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Wall color
+                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
             }
-            shapeRenderer.setColor(getFoggedColor(renderColor, result.distance, fogEnabled, fogDistance, fogColor));
+            shapeRenderer.setColor(applyTorchLighting(renderColor, result.distance, fogLerpColor));
             shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
         }
     }
@@ -839,6 +857,48 @@ public class FirstPersonRenderer {
             return fogLerpColor.set(originalColor).lerp(fogColor, fogAmount);
         }
         return originalColor; // No fog
+    }
+
+    /**
+     * Applies torch lighting to a color by darkening it based on distance.
+     *
+     * @param originalColor The original color to darken
+     * @param distance The distance from the player
+     * @param outputColor Reusable Color object to store the result
+     * @return The darkened color
+     */
+    private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
+        float brightness = calculateTorchBrightness(distance);
+        outputColor.set(
+            originalColor.r * brightness,
+            originalColor.g * brightness,
+            originalColor.b * brightness,
+            originalColor.a
+        );
+        return outputColor;
+    }
+
+    /**
+     * Calculates the brightness multiplier based on distance from player.
+     * Creates a torch effect with full brightness close to player, fading to darkness at distance.
+     *
+     * @param distance The perpendicular distance from the player
+     * @return A brightness value between TORCH_MIN_BRIGHTNESS and 1.0
+     */
+    private float calculateTorchBrightness(float distance) {
+        if (distance <= WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) {
+            return 1.0f; // Full brightness close to player
+        } else if (distance <= WorldConstants.TORCH_FADE_START) {
+            // Gradual fade from full brightness to dimming
+            float fadeRatio = (distance - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) / (WorldConstants.TORCH_FADE_START - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS);
+            return 1.0f - (fadeRatio * (1.0f - 0.8f)); // Fade from 100% to 80%
+        } else if (distance <= WorldConstants.TORCH_FADE_END) {
+            // Main dimming zone
+            float fadeRatio = (distance - WorldConstants.TORCH_FADE_START) / (WorldConstants.TORCH_FADE_END - WorldConstants.TORCH_FADE_START);
+            return Math.max(WorldConstants.TORCH_MIN_BRIGHTNESS, 0.8f - (fadeRatio * (0.8f - WorldConstants.TORCH_MIN_BRIGHTNESS)));
+        } else {
+            return WorldConstants.TORCH_MIN_BRIGHTNESS; // Minimum brightness at maximum distance
+        }
     }
 
     public void renderAsciiViewToConsole(Player player, Maze maze) {

@@ -3,12 +3,14 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.generation.Biome; // <-- ADD IMPORT
+import com.bpm.minotaur.generation.WorldConstants;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager; // <-- ADD IMPORT
 
@@ -24,6 +26,48 @@ public class EntityRenderer {
 
     public EntityRenderer() {
         this.spriteBatch = new SpriteBatch();
+    }
+
+    /**
+     * Applies torch lighting to a color by darkening it based on distance.
+     *
+     * @param originalColor The original color to darken
+     * @param distance The distance from the player
+     * @param outputColor Reusable Color object to store the result
+     * @return The darkened color
+     */
+    private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
+        float brightness = calculateTorchBrightness(distance);
+        outputColor.set(
+            originalColor.r * brightness,
+            originalColor.g * brightness,
+            originalColor.b * brightness,
+            originalColor.a
+        );
+        return outputColor;
+    }
+
+    /**
+     * Calculates the brightness multiplier based on distance from player.
+     * Creates a torch effect with full brightness close to player, fading to darkness at distance.
+     *
+     * @param distance The perpendicular distance from the player
+     * @return A brightness value between TORCH_MIN_BRIGHTNESS and 1.0
+     */
+    private float calculateTorchBrightness(float distance) {
+        if (distance <= WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) {
+            return 1.0f; // Full brightness close to player
+        } else if (distance <= WorldConstants.TORCH_FADE_START) {
+            // Gradual fade from full brightness to dimming
+            float fadeRatio = (distance - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) / (WorldConstants.TORCH_FADE_START - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS);
+            return 1.0f - (fadeRatio * (1.0f - 0.8f)); // Fade from 100% to 80%
+        } else if (distance <= WorldConstants.TORCH_FADE_END) {
+            // Main dimming zone
+            float fadeRatio = (distance - WorldConstants.TORCH_FADE_START) / (WorldConstants.TORCH_FADE_END - WorldConstants.TORCH_FADE_START);
+            return Math.max(WorldConstants.TORCH_MIN_BRIGHTNESS, 0.8f - (fadeRatio * (0.8f - WorldConstants.TORCH_MIN_BRIGHTNESS)));
+        } else {
+            return WorldConstants.TORCH_MIN_BRIGHTNESS; // Minimum brightness at maximum distance
+        }
     }
 
     // --- [FIX] Updated signature to accept WorldManager ---
@@ -337,7 +381,8 @@ public class EntityRenderer {
             int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY < depthBuffer[stripe]) {
-                    shapeRenderer.setColor(monster.getColor());
+                    shapeRenderer.setColor(applyTorchLighting(monster.getColor(), WorldConstants.TORCH_FADE_END, new Color()));
+
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
             }
@@ -406,7 +451,9 @@ public class EntityRenderer {
             int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY < depthBuffer[stripe]) {
-                    shapeRenderer.setColor(item.getColor());
+                    shapeRenderer.setColor(applyTorchLighting(item.getColor(), WorldConstants.TORCH_FADE_END, new Color()));
+
+
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
             }
@@ -443,7 +490,8 @@ public class EntityRenderer {
 
                     if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24) {
                         if (spriteData[texY].charAt(texX) == '#') {
-                            shapeRenderer.setColor(entity.getColor());
+                            shapeRenderer.setColor(applyTorchLighting(entity.getColor(), WorldConstants.TORCH_FADE_END, new Color()));
+
                             shapeRenderer.rect(stripe, screenY, 1, 1);
                         }
                     }

@@ -45,5 +45,11 @@ public class WorldConstants {
      */
     public static final float MOUNTAIN_THRESHOLD = 0.6f;
 
+    public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 2.0f;  // Distance where lighting is at 100%
+    public static final float TORCH_FADE_START = 3.0f;              // Distance where dimming starts
+    public static final float TORCH_FADE_END = 9.0f;               // Distance where it's completely dark
+    public static final float TORCH_MIN_BRIGHTNESS = 0.15f;         // Minimum brightness (never completely black)
+
+
     // Add more thresholds here as needed (e.g., DESERT_THRESHOLD)
 }
