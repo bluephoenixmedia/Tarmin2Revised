@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SpawnManager {
     private final Maze maze;
@@ -16,6 +17,14 @@ public class SpawnManager {
     private final int level;
     private final Random random = new Random();
     private final List<GridPoint2> validSpawnPoints = new ArrayList<>();
+
+
+    public static boolean DEBUG_FORCE_MODIFIERS = true; // Toggle to force spawn
+
+    private static final float BASE_MODIFIER_CHANCE = 0.15f; // 15% base chance for an item to be modified
+    private static final float COLOR_MULTIPLIER_BONUS = 0.1f; // Each 1.0 of multiplier adds 10% chance
+    private static final float SECOND_MODIFIER_CHANCE = 0.25f; // 25% chance for a second modifier
+    private static final float THIRD_MODIFIER_CHANCE = 0.10f; // 10% chance for a third
 
     public SpawnManager(Maze maze, Difficulty difficulty, int level, String[] layout) {
         this.maze = maze;
@@ -99,7 +108,9 @@ public class SpawnManager {
         Item.ItemType type = availableItems.get(random.nextInt(availableItems.size()));
         ItemColor color = getRandomItemColor(type);
 
-        maze.addItem(new Item(type, spawnPoint.x, spawnPoint.y, color));
+        Item item = new Item(type, spawnPoint.x, spawnPoint.y, color);
+        attemptToModifyItem(item, color); // NEW CALL
+        maze.addItem(item);
     }
 
     private void spawnContainer(GridPoint2 spawnPoint) {
@@ -119,12 +130,17 @@ public class SpawnManager {
 
         // Determine container color based on level
         ItemColor containerColor = getContainerColorForLevel();
+
         Item container = new Item(type, spawnPoint.x, spawnPoint.y, containerColor);
+        attemptToModifyItem(container, containerColor); // NEW CALL
 
         // Add a random treasure to the container
+        //TODO make containers able to have any item or weapon type
         SpawnData.TreasureSpawnInfo treasureInfo = SpawnData.TREASURES.get(random.nextInt(SpawnData.TREASURES.size()));
-        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW);
+
+        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW); // Use a default color for treasure
         treasure.setValue(treasureInfo.baseValue() + (level * treasureInfo.levelModifier()));
+        attemptToModifyItem(treasure, ItemColor.YELLOW); // NEW CALL (Treasures can be modified too!)
         container.addItem(treasure);
 
         maze.addItem(container);
@@ -139,7 +155,86 @@ public class SpawnManager {
         if (spawnPoint == null) return; // No space for the key
 
         Item key = new Item(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor);
+        attemptToModifyItem(key, containerColor); // NEW CALL (Keys can be magical... maybe "Skeleton Key"?)
         maze.addItem(key);
+    }
+
+    // --- NEW METHOD ---
+    /**
+     * Attempts to roll for and add modifiers to a newly spawned item.
+     * @param item The item to modify.
+     * @param color The item's color, used to calculate spawn chance.
+     */
+    private void attemptToModifyItem(Item item, ItemColor color) {
+        // Calculate the chance for this item to be modified
+        // e.g., Base 15% + (Multiplier 1.2 - 1.0) * 10% = 15% + 2% = 17%
+        float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS);
+
+        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance) {
+            return; // Roll failed, no modifiers
+        }
+
+        // --- Roll 1: Success! Add one modifier ---
+        addRandomModifier(item);
+
+        // --- Roll 2: Diminishing returns ---
+        if (random.nextFloat() < SECOND_MODIFIER_CHANCE) {
+            addRandomModifier(item);
+        }
+
+        // --- Roll 3: Diminishing returns ---
+        if (random.nextFloat() < THIRD_MODIFIER_CHANCE) {
+            addRandomModifier(item);
+        }
+    }
+
+    /**
+     * Finds a valid modifier from the LootTable, rolls its value, and adds it to the item.
+     * @param item The item to modify.
+     */
+    private void addRandomModifier(Item item) {
+        Item.ItemCategory category = item.getCategory();
+
+        Stream<LootTable.ModInfo> modStream = LootTable.MODIFIER_POOL.stream()
+            .filter(mod -> mod.category == category); // Matches category (e.g., ARMOR, WAR_WEAPON)
+
+        if (!DEBUG_FORCE_MODIFIERS) {
+            // If debug is not on, filter by level normally
+            modStream = modStream.filter(mod -> level >= mod.minLevel && level <= mod.maxLevel); // Matches level (TIER)
+        } else {
+            // If debug IS on, we ignore the level filter to get all mods
+            // (This will allow high-tier mods to spawn on level 1 for testing)
+        }
+
+        // 1. Filter the entire loot pool
+        List<LootTable.ModInfo> validMods = LootTable.MODIFIER_POOL.stream()
+            .filter(mod -> mod.category == category) // Matches category (e.g., ARMOR, WAR_WEAPON)
+            .filter(mod -> level >= mod.minLevel && level <= mod.maxLevel) // Matches level (TIER)
+            .collect(Collectors.toList());
+
+        if (validMods.isEmpty()) {
+            return; // No valid modifiers found for this item at this level
+        }
+
+        // 2. Pick one valid modifier at random
+        LootTable.ModInfo modInfo = validMods.get(random.nextInt(validMods.size()));
+
+        // 3. Roll the value
+        int value = 0;
+        if (modInfo.maxBonus > modInfo.minBonus) {
+            value = random.nextInt(modInfo.maxBonus - modInfo.minBonus + 1) + modInfo.minBonus;
+        } else {
+            value = modInfo.minBonus; // min and max are the same (e.g., for Material tags)
+        }
+
+        // 4. Create and add the modifier
+        // For "+N" bonuses, we need to include the value in the display name
+        String displayName = modInfo.displayName;
+        if (displayName.contains("+")) {
+            displayName = "+" + value;
+        }
+
+        item.addModifier(new ItemModifier(modInfo.type, value, displayName));
     }
 
     private ItemColor getContainerColorForLevel() {
@@ -229,6 +324,13 @@ public class SpawnManager {
             default:
                 possibleColors.add(MonsterColor.TAN);
         }
+
+        if (possibleColors.isEmpty()) {
+            // Fallback if no tiers match (e.g., level 0)
+            possibleColors.add(MonsterColor.BLUE);
+            possibleColors.add(MonsterColor.YELLOW);
+            possibleColors.add(MonsterColor.WHITE);
+        }
         return possibleColors.get(random.nextInt(possibleColors.size()));
     }
 
@@ -299,6 +401,17 @@ public class SpawnManager {
                 break;
             default:
                 return ItemColor.TAN; // Default for other types
+        }
+
+        if (possibleColors.isEmpty()) {
+            // Fallback if no tiers match (e.g. level 0)
+            if (category == Item.ItemCategory.WAR_WEAPON || category == Item.ItemCategory.ARMOR) {
+                possibleColors.add(ItemColor.TAN);
+            } else if (category == Item.ItemCategory.SPIRITUAL_WEAPON || category == Item.ItemCategory.RING) {
+                possibleColors.add(ItemColor.BLUE);
+            } else {
+                possibleColors.add(ItemColor.TAN);
+            }
         }
 
         return possibleColors.get(random.nextInt(possibleColors.size()));

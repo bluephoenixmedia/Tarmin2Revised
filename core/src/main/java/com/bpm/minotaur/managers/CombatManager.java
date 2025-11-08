@@ -9,6 +9,9 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class CombatManager {
@@ -95,6 +98,56 @@ public class CombatManager {
         if (weapon != null) {
             Gdx.app.log("CombatManager", "Weapon is not null");
             Gdx.app.log("CombatManager", "Weapon category = " + weapon.getCategory().toString());
+
+            // --- NEW: Calculate all bonus damages from modifiers ---
+            Map<DamageType, Integer> elementalDamages = new HashMap<>();
+            int bonusDamage = 0;
+            int baneDamage = 0;
+
+            List<ItemModifier> mods = weapon.getModifiers();
+            for (ItemModifier mod : mods) {
+                switch (mod.type) {
+                    case BONUS_DAMAGE:
+                        bonusDamage += mod.value;
+                        break;
+                    case ADD_FIRE_DAMAGE:
+                        elementalDamages.merge(DamageType.FIRE, mod.value, Integer::sum);
+                        break;
+                    case ADD_ICE_DAMAGE:
+                        elementalDamages.merge(DamageType.ICE, mod.value, Integer::sum);
+                        break;
+                    case ADD_POISON_DAMAGE:
+                        elementalDamages.merge(DamageType.POISON, mod.value, Integer::sum);
+                        break;
+                    case ADD_BLEED_DAMAGE:
+                        elementalDamages.merge(DamageType.BLEED, mod.value, Integer::sum);
+                        break;
+                    case ADD_DARK_DAMAGE:
+                        elementalDamages.merge(DamageType.DARK, mod.value, Integer::sum);
+                        break;
+                    case ADD_LIGHT_DAMAGE:
+                        elementalDamages.merge(DamageType.LIGHT, mod.value, Integer::sum);
+                        break;
+                    case ADD_SORCERY_DAMAGE:
+                        elementalDamages.merge(DamageType.SORCERY, mod.value, Integer::sum);
+                        break;
+
+                    // Bane Damage
+                    case BANE_BEAST:
+                        if (monster.getFamily() == MonsterFamily.BEAST) baneDamage += mod.value;
+                        break;
+                    case BANE_HUMANOID:
+                        if (monster.getFamily() == MonsterFamily.HUMANOID) baneDamage += mod.value;
+                        break;
+                    case BANE_UNDEAD:
+                        if (monster.getFamily() == MonsterFamily.UNDEAD) baneDamage += mod.value;
+                        break;
+                    case BANE_MYTHICAL:
+                        if (monster.getFamily() == MonsterFamily.MYTHICAL) baneDamage += mod.value;
+                        break;
+                    // Add other BANE types here
+                }
+            }
 
             if (weapon.getCategory() == Item.ItemCategory.WAR_WEAPON && weapon.getWeaponStats() != null) {
                 Gdx.app.log("CombatManager", "Weapon is war weapon and stats are not null");
@@ -217,78 +270,87 @@ public class CombatManager {
                 monster.getColor(),
                 0.5f,
                 ItemSpriteData.DART
-            ));            soundManager.playMonsterAttackSound(monster);
+            ));
+            soundManager.playMonsterAttackSound(monster);
             int damage;
+            boolean isSpiritual = false;
+            DamageType damageType = DamageType.PHYSICAL; // Default damage type
 
             // Determine attack type based on monster category
             switch (monster.getType()) {
                 // Bad Monsters use Spiritual attacks
                 case GIANT_ANT:
-                case DWARF:
                 case GIANT_SCORPION:
                 case GIANT_SNAKE:
-                    damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
-                    Gdx.app.log("CombatManager", "Monster deals " + damage + " spiritual damage.");
-                    player.takeSpiritualDamage(damage);
-                    if (player.getSpiritualStrength() <= 0) {
-                        currentState = CombatState.DEFEAT;
-                    } else {
-                        currentState = CombatState.PLAYER_TURN;
-                    }
+                    isSpiritual = true;
+                    damageType = DamageType.POISON;
+                    break;
+                case DWARF:
+                    isSpiritual = true;
+                    damageType = DamageType.SPIRITUAL; // Dwarf is a "Bad Monster"
                     break;
 
                 // Nasty Monsters use War attacks
                 case GHOUL:
+                    isSpiritual = false;
+                    damageType = DamageType.DISEASE;
+                    break;
                 case SKELETON:
+                    isSpiritual = false;
+                    damageType = DamageType.PHYSICAL;
+                    break;
                 case CLOAKED_SKELETON:
-                    damage = monster.getWarStrength() / 4 + random.nextInt(3);
-                    Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
-                    player.takeDamage(damage);
-                    if (player.getWarStrength() <= 0) {
-                        currentState = CombatState.DEFEAT;
-                    } else {
-                        currentState = CombatState.PLAYER_TURN;
-                    }
+                    isSpiritual = false;
+                    damageType = DamageType.DARK;
                     break;
 
                 // Horrible Monsters can use either War or Spiritual attacks
                 case ALLIGATOR:
+                    isSpiritual = random.nextBoolean();
+                    damageType = DamageType.PHYSICAL; // Alligator is pure physical
+                    break;
                 case DRAGON:
+                    isSpiritual = random.nextBoolean();
+                    damageType = isSpiritual ? DamageType.FIRE : DamageType.PHYSICAL;
+                    break;
                 case WRAITH:
+                    isSpiritual = true; // Wraiths are always spiritual
+                    damageType = DamageType.DARK;
+                    break;
                 case GIANT:
+                    isSpiritual = random.nextBoolean();
+                    damageType = DamageType.PHYSICAL; // Giant is pure physical
+                    break;
                 case MINOTAUR:
-                    if (random.nextBoolean()) { // 50/50 chance for either attack
-                        damage = monster.getWarStrength() / 4 + random.nextInt(3);
-                        Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
-                        player.takeDamage(damage);
-                        if (player.getWarStrength() <= 0) {
-                            currentState = CombatState.DEFEAT;
-                        } else {
-                            currentState = CombatState.PLAYER_TURN;
-                        }
-                    } else {
-                        damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
-                        Gdx.app.log("CombatManager", "Monster deals " + damage + " spiritual damage.");
-                        player.takeSpiritualDamage(damage);
-                        if (player.getSpiritualStrength() <= 0) {
-                            currentState = CombatState.DEFEAT;
-                        } else {
-                            currentState = CombatState.PLAYER_TURN;
-                        }
-                    }
+                    isSpiritual = random.nextBoolean();
+                    damageType = isSpiritual ? DamageType.SORCERY : DamageType.PHYSICAL;
                     break;
 
                 // Default to war attacks for any other monster type
                 default:
-                    damage = monster.getWarStrength() / 4 + random.nextInt(3);
-                    Gdx.app.log("CombatManager", "Monster deals " + damage + " war damage.");
-                    player.takeDamage(damage);
-                    if (player.getWarStrength() <= 0) {
-                        currentState = CombatState.DEFEAT;
-                    } else {
-                        currentState = CombatState.PLAYER_TURN;
-                    }
+                    isSpiritual = false;
+                    damageType = DamageType.PHYSICAL;
                     break;
+            }
+
+            if (isSpiritual) {
+                damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
+                Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (Spiritual) damage.");
+                player.takeSpiritualDamage(damage, damageType);
+                if (player.getSpiritualStrength() <= 0) {
+                    currentState = CombatState.DEFEAT;
+                } else {
+                    currentState = CombatState.PLAYER_TURN;
+                }
+            } else {
+                damage = monster.getWarStrength() / 4 + random.nextInt(3);
+                Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (War) damage.");
+                player.takeDamage(damage, damageType);
+                if (player.getWarStrength() <= 0) {
+                    currentState = CombatState.DEFEAT;
+                } else {
+                    currentState = CombatState.PLAYER_TURN;
+                }
             }
         }
     }

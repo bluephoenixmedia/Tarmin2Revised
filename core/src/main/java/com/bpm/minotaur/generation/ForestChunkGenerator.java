@@ -283,7 +283,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
         // --- 4. Place Gates ---
         // (Spawns gates only in ADVANCED mode, which is implied by this biome)
-        spawnTransitionGates(maze, this.finalLayout, chunkId);
+       // spawnTransitionGates(maze, this.finalLayout, chunkId);
 
         return maze;
     }

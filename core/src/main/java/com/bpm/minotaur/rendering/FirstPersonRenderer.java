@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.generation.WorldConstants;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager;
 
@@ -27,10 +28,12 @@ public class FirstPersonRenderer {
     private Color currentWallDarkColor;
     private Color currentDoorColor;
     private Color currentDoorDarkColor;
+    private final Color fogLerpColor = new Color(); // Re-usable color object
 
-    // --- Rendering Constants ---
+       // --- Rendering Constants ---
     private static final float DOOR_WIDTH = 1.0f / 3.0f;
     private static final float DOOR_HEIGHT_RATIO = 0.8f;
+    private static final float FOG_FADE_RATIO = 0.5f; // Fog fades in over 50% of fogDistance
 
     // --- Bitmasks ---
     private static final int WALL_WEST   = 0b00000001;
@@ -93,13 +96,38 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
-    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager, int currentLevel) {
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager, int currentLevel, GameMode gameMode) {
+
+        // --- [NEW] FOG AND BIOME THEME LOGIC ---
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-        if (biome == Biome.FOREST || biome == Biome.PLAINS) { // Plains also use forest generator
+        float fogDistance = 1000f;
+       // Color darkFloor = applyTorchLighting(currentFloorColor, TORCH_FADE_END, new Color());
+
+        Color fogColor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
+        boolean fogEnabled = false;
+
+        // Set theme based on biome
+        if (gameMode == GameMode.ADVANCED && (biome == Biome.FOREST || biome == Biome.PLAINS)) {
             setTheme(RetroTheme.FOREST_THEME);
         } else {
+            // Default maze/classic theme
             setTheme(RetroTheme.STANDARD_THEME);
+            // Handle special color themes
+            if (gameMode == GameMode.ADVANCED && currentLevel == 1) {
+                this.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
+            }
         }
+
+        // Set fog parameters
+        if (gameMode == GameMode.ADVANCED && biome.hasFogOfWar()) {
+            fogEnabled = true;
+            fogDistance = biome.getFogDistance();
+            fogColor = biome.getFogColor();
+           // fogColor = applyTorchLighting(currentFloorColor, TORCH_FADE_END, new Color());
+
+        }
+        // --- END NEW LOGIC ---
+
 
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
@@ -111,9 +139,9 @@ public class FirstPersonRenderer {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
             if (currentLevel == 1) {
-                renderSkyboxCeiling(spriteBatch, player, viewport);
+                renderSkyboxCeiling(spriteBatch, player, viewport); // Skybox is not fogged
             }
-            renderTexturedFloor(spriteBatch, player, viewport);
+            renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor);
             // Leave SpriteBatch open for textured walls
         } else {
             // Classic/Retro Mode: Use SpriteBatch or ShapeRenderer as needed
@@ -123,20 +151,34 @@ public class FirstPersonRenderer {
                 // Draw Skybox using SpriteBatch
                 spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
                 spriteBatch.begin();
-                renderSkyboxCeiling(spriteBatch, player, viewport);
+                renderSkyboxCeiling(spriteBatch, player, viewport); // Skybox is not fogged
                 spriteBatch.end();
             } else {
                 // Draw Solid Ceiling using ShapeRenderer
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled); // BEGIN Ceiling
-                shapeRenderer.setColor(currentCeilingColor);
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+; // Solid ceiling is not fogged
                 shapeRenderer.rect(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2); // Line ~100
                 shapeRenderer.end();                                 // END Ceiling
             }
 
             // Floor (Always solid color in Classic/Retro)
+            // [NEW] Apply fog to retro floor
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);     // BEGIN Floor
-            shapeRenderer.setColor(currentFloorColor);
-            shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            if (fogEnabled) {
+                // Draw a gradient for fog
+
+                Color darkFloor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
+
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2,
+                    darkFloor, darkFloor, // Bottom color (full fog)
+                    currentFloorColor, currentFloorColor // Top color (horizon)
+                );
+            } else {
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            }
             shapeRenderer.end();                                     // END Floor
         }
 
@@ -144,19 +186,52 @@ public class FirstPersonRenderer {
         boolean shapeRendererNeedsBegin = (debugManager.getRenderMode() != DebugManager.RenderMode.MODERN);
         if(shapeRendererNeedsBegin) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+            if (fogEnabled) {
+                // Create a vignette effect for the floor
+                // Draw darker at the bottom, lighter toward horizon
+                Color darkFloor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2,
+                    darkFloor, darkFloor, // Bottom (darkest)
+                    currentFloorColor, currentFloorColor // Horizon (lighter)
+                );
+            } else {
+                shapeRenderer.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
+                shapeRenderer.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+            }
         }
 
         for (int x = 0; x < viewport.getScreenWidth(); x++) {
             RaycastResult result = castRay(player, maze, x, viewport, worldManager);
+
             if (result != null) {
                 if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
-                    renderWallSliceTexture(spriteBatch, result, x, viewport);
+                    renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor);
                 } else {
-                    renderWallSlice(shapeRenderer, result, x, viewport);
+                    renderWallSlice(shapeRenderer, result, x, viewport, fogEnabled, fogDistance, fogColor);
                 }
                 depthBuffer[x] = result.distance;
             } else {
+                // --- [FIX] This ray hit the void (seamless biome edge) ---
                 depthBuffer[x] = Float.MAX_VALUE;
+
+                if (fogEnabled) {
+                    // Draw a solid slice of fog from floor to ceiling
+                    if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+                        // Use SpriteBatch: draw a 1x1 texture scaled
+                        spriteBatch.setColor(applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
+                        // Draw a 1x1 pixel from wallTexture, stretched to fill the column
+                        spriteBatch.draw(wallTexture, x, 0, 1, viewport.getWorldHeight(), 0, 0, 1, 1, false, false);
+                        spriteBatch.setColor(Color.WHITE); // Reset color
+                    } else {
+                        // Use ShapeRenderer
+                        shapeRenderer.setColor( applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color()));
+
+                        shapeRenderer.rect(x, 0, 1, viewport.getWorldHeight());
+                    }
+                }
             }
         }
 
@@ -184,8 +259,9 @@ public class FirstPersonRenderer {
 
     /**
      * Renders only the textured floor using raycasting.
+     * [NEW] Added fog parameters.
      */
-    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport) {
+    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor) {
         // Loop from the horizon line down to the bottom of the screen
         // Y goes from screenHeight/2 (horizon) down to 0 (bottom)
         for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
@@ -227,6 +303,14 @@ public class FirstPersonRenderer {
             float floorX = player.getPosition().x + rowDistance * rayDirX0;
             float floorY = player.getPosition().y + rowDistance * rayDirY0;
 
+            // --- [NEW] Calculate fog for this row ---
+            Color rowColor = Color.WHITE;
+            if (fogEnabled) { // [FIX] Apply fog calculation even before fogDistance for smooth fade
+                float fogAmount = Math.max(0, Math.min(1f, (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                rowColor = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+            }
+            // --- END NEW ---
+
             // --- Draw the row ---
             for(int x = 0; x < viewport.getWorldWidth(); ++x) {
                 // The cell coord is simply floor()
@@ -241,15 +325,19 @@ public class FirstPersonRenderer {
                 floorX += floorStepX;
                 floorY += floorStepY;
 
-                // Simple brightness based on distance
-                float brightness = Math.max(0.1f, Math.min(1.0f, 1.0f - rowDistance / 10.0f)); // Dimmer further away
-                spriteBatch.setColor(brightness, brightness, brightness, 1.0f);
+                // Simple brightness based on distance (less harsh)
+                float brightness = Math.max(0.2f, Math.min(1.0f, 1.0f - rowDistance / 20.0f)); // Dimmer further away
+
+                // [NEW] Combine brightness with fog color
+                fogLerpColor.set(rowColor.r * brightness, rowColor.g * brightness, rowColor.b * brightness, 1.0f);
+                spriteBatch.setColor(fogLerpColor);
+
 
                 // Draw the pixel (or a 1x1 rect) for this column `x` at scanline `y`
                 // Y coordinate needs to be correct for libGDX (0 is bottom)
                 spriteBatch.draw(floorTexture, x, y, 1, 1, tx, ty, 1, 1, false, false);
             }
-            spriteBatch.setColor(Color.WHITE); // Reset color after drawing the row
+            // spriteBatch.setColor(Color.WHITE); // Reset color after drawing the row (Handled outside loop)
         }
         spriteBatch.setColor(Color.WHITE); // Reset color after drawing all floor rows
     }
@@ -305,7 +393,7 @@ public class FirstPersonRenderer {
         }
     }
 
-    private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport) {
+    private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -317,8 +405,20 @@ public class FirstPersonRenderer {
             texture = wallTexture;
         }
 
+        // --- [NEW] FOG LOGIC ---
+        if (fogEnabled) {
+            float fogAmount = Math.max(0, Math.min(1f, (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+            fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+            spriteBatch.setColor(fogLerpColor);
+        } else {
+            spriteBatch.setColor(Color.WHITE); // Default
+        }
+        // --- END NEW LOGIC ---
+
         int texX = (int)(result.wallX * texture.getWidth());
         spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(), false, false);
+
+        spriteBatch.setColor(Color.WHITE); // Reset color
     }
 
     /**
@@ -401,7 +501,13 @@ public class FirstPersonRenderer {
         // DDA algorithm state variables
         boolean hit = false;  // Whether we've hit something that stops the ray
         int side = 0;         // Which side was hit (0=vertical wall, 1=horizontal wall)
-        int maxDistance = 50; // Maximum ray distance to prevent infinite loops
+
+        // --- [NEW] Use Fog Distance to limit ray
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        float maxDist = (biome.isSeamless()) ? biome.getFogDistance() + 2 : 50; // Use fog dist as max
+        int maxDistance = (int) maxDist;
+        // --- END NEW ---
+
         int distanceTraveled = 0; // Counter to enforce maximum distance
 
         // Track if we hit a door frame (for rendering purposes when door is open)
@@ -411,6 +517,10 @@ public class FirstPersonRenderer {
         int doorFrameSide = -1;          // Which side the door frame was hit on
         float doorFrameDistance = 0;     // Distance to the door frame
         Door doorFrameObject = null;     // Reference to the door object
+
+        // --- [NEW] Seamless Raycast State ---
+        // This is complex. Deferring full implementation per design pivot.
+        // For now, ray stops at chunk boundary unless it's an open gate.
 
         // DDA algorithm - step through the grid until we hit something
         while (!hit && distanceTraveled < maxDistance) {
@@ -429,6 +539,8 @@ public class FirstPersonRenderer {
 
             // Check if we've stepped outside the maze boundaries
             if (isOutOfBounds(mapX, mapY, maze)) {
+
+                // --- [MODIFIED] Seamless/Gate Logic ---
                 // We've hit the edge of the *current* maze.
                 // Check the tile we *just left* to see if it was an open gate.
                 int prevMapX = (side == 0) ? mapX - stepX : mapX;
@@ -436,7 +548,7 @@ public class FirstPersonRenderer {
                 Object prevObj = maze.getGameObjectAt(prevMapX, prevMapY);
 
                 if (prevObj instanceof Gate && ((Gate) prevObj).getState() == Gate.GateState.OPEN) {
-                    // It was an open gate! Time to portal.
+                    // It was an open gate! Check if the next chunk is loaded.
                     Gate gate = (Gate) prevObj;
                     Maze nextMaze = worldManager.getChunk(gate.getTargetChunkId());
 
@@ -463,13 +575,19 @@ public class FirstPersonRenderer {
                         continue;
 
                     } else {
-                        // Open gate leads to an unloaded chunk (shouldn't happen, but safety check)
+                        // Open gate leads to an unloaded chunk
                         hit = true;
                     }
+                } else if (biome.isSeamless()) {
+                    // [FIX] In a seamless biome, hitting the boundary is not a "hit".
+                    // The ray stops, and we return null.
+                    break;
                 } else {
-                    // Hit a solid boundary wall
+                    // [FIX] Not seamless, so hitting the boundary IS a wall.
                     hit = true;
                 }
+                // --- END MODIFIED LOGIC ---
+
             } else {
                 // Get wall data for current and previous tiles
                 int wallData = maze.getWallDataAt(mapX, mapY);
@@ -662,7 +780,7 @@ public class FirstPersonRenderer {
         }
     }
 
-    private void renderWallSlice(ShapeRenderer shapeRenderer, RaycastResult result, int screenX, Viewport viewport) {
+    private void renderWallSlice(ShapeRenderer shapeRenderer, RaycastResult result, int screenX, Viewport viewport, boolean torchEnabled, float maxVisibleDistance, Color ambientDarkness) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
 
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -674,7 +792,7 @@ public class FirstPersonRenderer {
 
             if (isFramePart) {
                 Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
-                shapeRenderer.setColor(frameColor);
+                shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
                 shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
             } else {
                 float doorHeight = (drawEnd - drawStart) * DOOR_HEIGHT_RATIO;
@@ -682,7 +800,7 @@ public class FirstPersonRenderer {
                 float doorDrawEnd = drawStart + doorHeight;
 
                 Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
-                shapeRenderer.setColor(frameColor);
+                shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
                 if (drawEnd > doorDrawEnd) {
                     shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
                 }
@@ -694,47 +812,92 @@ public class FirstPersonRenderer {
 
                 if (doorDrawEnd > doorDrawStart) {
                     Color doorRenderColor = (result.side == 1) ? currentDoorDarkColor : currentDoorColor;
-                    shapeRenderer.setColor(doorRenderColor);
+                    shapeRenderer.setColor(applyTorchLighting(doorRenderColor, result.distance, fogLerpColor));
                     shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
             }
-        } else if (result.wallType == WallType.GATE && result.gate != null) { // Check result.gate
-            // Gates are solid, no frame part
+        } else if (result.wallType == WallType.GATE && result.gate != null) {
             float doorHeight = (drawEnd - drawStart) * DOOR_HEIGHT_RATIO;
             float doorDrawStart = drawStart;
             float doorDrawEnd = drawStart + doorHeight;
 
-            // Draw the part of the wall above the gate
-            Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Use wall color for frame
-            shapeRenderer.setColor(frameColor);
+            Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
+            shapeRenderer.setColor(applyTorchLighting(frameColor, result.distance, fogLerpColor));
             if (drawEnd > doorDrawEnd) {
                 shapeRenderer.rect(screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
             }
 
-            // Apply opening animation
             if (result.gate.getState() == Gate.GateState.OPENING) {
                 float openingOffset = (doorDrawEnd - doorDrawStart) * result.gate.getAnimationProgress();
                 doorDrawStart += openingOffset;
             }
 
-            // Draw the gate itself
             if (result.gate.getState() != Gate.GateState.OPEN && doorDrawEnd > doorDrawStart) {
-                // Use CYAN for the gate color
-                shapeRenderer.setColor(Color.CYAN);
+                shapeRenderer.setColor(applyTorchLighting(Color.CYAN, result.distance, fogLerpColor));
                 shapeRenderer.rect(screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
             }
-        } else { // This handles solid walls, open door frames, and gates
+        } else {
             Color renderColor;
             if (result.wallType == WallType.GATE) {
-                // This will now only be hit if result.gate is null (e.g. classic gate)
-                // or if we change the raycaster to not find the object.
-                // For our new logic, this branch is less likely, but we leave it.
-                renderColor = Color.CYAN; // Gate color
+                renderColor = Color.CYAN;
             } else {
-                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor; // Wall color
+                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
             }
-            shapeRenderer.setColor(renderColor);
+            shapeRenderer.setColor(applyTorchLighting(renderColor, result.distance, fogLerpColor));
             shapeRenderer.rect(screenX, drawStart, 1, drawEnd - drawStart);
+        }
+    }
+
+    /**
+     * [NEW] Helper method to apply fog to a color.
+     */
+    private Color getFoggedColor(Color originalColor, float distance, boolean fogEnabled, float fogDistance, Color fogColor) {
+        if (fogEnabled) {
+            float fogAmount = Math.max(0, Math.min(1f, (distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+            return fogLerpColor.set(originalColor).lerp(fogColor, fogAmount);
+        }
+        return originalColor; // No fog
+    }
+
+    /**
+     * Applies torch lighting to a color by darkening it based on distance.
+     *
+     * @param originalColor The original color to darken
+     * @param distance The distance from the player
+     * @param outputColor Reusable Color object to store the result
+     * @return The darkened color
+     */
+    private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
+        float brightness = calculateTorchBrightness(distance);
+        outputColor.set(
+            originalColor.r * brightness,
+            originalColor.g * brightness,
+            originalColor.b * brightness,
+            originalColor.a
+        );
+        return outputColor;
+    }
+
+    /**
+     * Calculates the brightness multiplier based on distance from player.
+     * Creates a torch effect with full brightness close to player, fading to darkness at distance.
+     *
+     * @param distance The perpendicular distance from the player
+     * @return A brightness value between TORCH_MIN_BRIGHTNESS and 1.0
+     */
+    private float calculateTorchBrightness(float distance) {
+        if (distance <= WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) {
+            return 1.0f; // Full brightness close to player
+        } else if (distance <= WorldConstants.TORCH_FADE_START) {
+            // Gradual fade from full brightness to dimming
+            float fadeRatio = (distance - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) / (WorldConstants.TORCH_FADE_START - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS);
+            return 1.0f - (fadeRatio * (1.0f - 0.8f)); // Fade from 100% to 80%
+        } else if (distance <= WorldConstants.TORCH_FADE_END) {
+            // Main dimming zone
+            float fadeRatio = (distance - WorldConstants.TORCH_FADE_START) / (WorldConstants.TORCH_FADE_END - WorldConstants.TORCH_FADE_START);
+            return Math.max(WorldConstants.TORCH_MIN_BRIGHTNESS, 0.8f - (fadeRatio * (0.8f - WorldConstants.TORCH_MIN_BRIGHTNESS)));
+        } else {
+            return WorldConstants.TORCH_MIN_BRIGHTNESS; // Minimum brightness at maximum distance
         }
     }
 

@@ -8,13 +8,15 @@ import com.bpm.minotaur.gamedata.ChunkData;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.Direction; // <-- ADD IMPORT
+import com.bpm.minotaur.gamedata.Player; // <-- ADD IMPORT
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set; // <-- ADD IMPORT
+import java.util.Set;
 
 /**
  * Manages the game world, including loading, saving, and generating
@@ -87,7 +89,7 @@ public class WorldManager {
         // --- 2. ADVANCED Mode: Check cache first ---
         if (loadedChunks.containsKey(chunkId)) {
             Gdx.app.log("WorldManager", "Loading chunk from cache: " + chunkId);
-            this.currentPlayerChunkId = chunkId;
+            // Don't set currentPlayerChunkId here, this could be a pre-load
             return loadedChunks.get(chunkId);
         }
 
@@ -109,7 +111,7 @@ public class WorldManager {
                 ChunkData data = json.fromJson(ChunkData.class, file);
                 Maze maze = data.buildMaze();
                 loadedChunks.put(chunkId, maze); // Add to cache
-                this.currentPlayerChunkId = chunkId;
+                // Don't set currentPlayerChunkId here
                 return maze;
             } catch (Exception e) {
                 Gdx.app.error("WorldManager", "Failed to load/parse chunk: " + chunkId, e);
@@ -133,7 +135,7 @@ public class WorldManager {
         loadedChunks.put(chunkId, newMaze); // Add to cache
         saveChunk(newMaze, chunkId); // Save to file
 
-        this.currentPlayerChunkId = chunkId;
+        // Don't set currentPlayerChunkId here
         return newMaze;
     }
 
@@ -189,5 +191,74 @@ public class WorldManager {
 
     public Set<GridPoint2> getLoadedChunkIds() {
         return loadedChunks.keySet();
+    }
+
+    // --- [NEW] METHODS FOR SEAMLESS TRANSITIONS ---
+
+    /**
+     * [NEW] Proactively loads a chunk if it's not already in the cache.
+     * This is called by the PCL system in GameScreen.
+     * @param chunkId The chunk to attempt to load.
+     * @return The loaded chunk, or null if it's impassable.
+     */
+    public Maze requestLoadChunk(GridPoint2 chunkId) {
+        // Check cache first. If it's already loaded, do nothing.
+        if (loadedChunks.containsKey(chunkId)) {
+            return loadedChunks.get(chunkId);
+        }
+
+        // Check for impassable biomes (we can't get this from Biome.java directly,
+        // so we check the BiomeManager)
+        Biome biome = biomeManager.getBiome(chunkId);
+        if (biome == Biome.OCEAN || biome == Biome.MOUNTAINS) {
+            Gdx.app.log("WorldManager", "PCL: Skipping impassable biome: " + biome.name());
+            return null;
+        }
+
+        Gdx.app.log("WorldManager", "Proactively loading chunk: " + chunkId);
+        // This method already handles loading from file or generating and caching.
+        return loadChunk(chunkId);
+    }
+
+    /**
+     * [NEW] Handles the player's transition between two seamless chunks.
+     * @param player The player object.
+     * @param newChunkId The target chunk ID.
+     * @param newPlayerPos The player's new position within the target chunk.
+     */
+    public void transitionPlayerToChunk(Player player, GridPoint2 newChunkId, GridPoint2 newPlayerPos) {
+        Maze newMaze = loadedChunks.get(newChunkId);
+
+        if (newMaze == null) {
+            Gdx.app.error("WorldManager", "CRITICAL: Player tried to transition to a chunk that was not loaded: " + newChunkId);
+            newMaze = this.loadChunk(newChunkId);
+            if (newMaze == null) {
+                Gdx.app.error("WorldManager", "CRITICAL: Failed to load fallback chunk. Transition aborted.");
+                return; // Transition failed
+            }
+        }
+
+        // Update WorldManager's state
+        this.currentPlayerChunkId = newChunkId;
+
+        // Update Player's state
+        player.setMaze(newMaze); // Update player's internal maze reference
+        player.setPosition(newPlayerPos); // Set new grid position
+    }
+
+    /**
+     * [NEW] Helper method to get the chunk ID adjacent to the current one.
+     * @param direction The direction of interest.
+     * @return The adjacent chunk ID.
+     */
+    public GridPoint2 getAdjacentChunkId(Direction direction) {
+        GridPoint2 adj = new GridPoint2(this.currentPlayerChunkId);
+        switch (direction) {
+            case NORTH: adj.y += 1; break;
+            case SOUTH: adj.y -= 1; break;
+            case EAST:  adj.x += 1; break;
+            case WEST:  adj.x -= 1; break;
+        }
+        return adj;
     }
 }

@@ -137,7 +137,7 @@ public class Item implements Renderable {
     private int value = 0;
     private boolean vanishesOnUse = false;
     private ItemColor requiredKeyColor; // Add this field
-
+    private final List<ItemModifier> modifiers = new ArrayList<>();
 
 
 // In Item.java
@@ -1080,6 +1080,65 @@ public class Item implements Renderable {
     @Override
     public Color getColor() {
         return itemColor.getColor();
+    }
+
+    public void addModifier(ItemModifier modifier) {
+        this.modifiers.add(modifier);
+    }
+
+    public List<ItemModifier> getModifiers() {
+        return modifiers;
+    }
+
+    public boolean isModified() {
+        return !modifiers.isEmpty();
+    }
+
+    /**
+     * Gets the full display name of the item, including modifiers.
+     * e.g., "Fiery Bow +1"
+     * @return The formatted display name.
+     */
+    public String getDisplayName() {
+        if (!isModified()) {
+            // Just return the base name, formatted nicely
+            String name = getTypeName().replace('_', ' ');
+            return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
+        }
+
+        StringBuilder nameBuilder = new StringBuilder();
+        String prefix = null;
+        String suffix = null;
+        String bonus = null;
+
+        // This logic builds the name. e.g. [Prefix] [Base Name] [Bonus] [Suffix]
+        for (ItemModifier mod : modifiers) {
+            if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_DEFENSE) {
+                bonus = mod.displayName; // e.g., "+1"
+            } else if (mod.displayName.startsWith("of ")) {
+                suffix = mod.displayName; // e.g., "of Brawn"
+            } else {
+                prefix = mod.displayName; // e.g., "Fiery"
+            }
+        }
+
+        if (prefix != null) {
+            nameBuilder.append(prefix).append(" ");
+        }
+
+        // Add base name
+        String name = getTypeName().replace('_', ' ');
+        nameBuilder.append(name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase());
+
+        if (bonus != null) {
+            nameBuilder.append(" ").append(bonus);
+        }
+
+        if (suffix != null) {
+            nameBuilder.append(" ").append(suffix);
+        }
+
+        return nameBuilder.toString();
     }
 
 
