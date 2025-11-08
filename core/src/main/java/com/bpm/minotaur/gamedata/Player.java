@@ -117,8 +117,8 @@ public class Player {
             if (itemInFront.getCategory() == Item.ItemCategory.TREASURE) {
                 treasureScore += itemInFront.getValue();
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found " + itemInFront.getType() + "! Your treasure score is now " + treasureScore, 2f));
-                Gdx.app.log("Player", "Picked up " + itemInFront.getType() + " with value " + itemInFront.getValue());
+                eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "! Your treasure score is now " + treasureScore, 2f));
+                Gdx.app.log("Player", "Picked up " + itemInFront.getDisplayName() + " with value " + itemInFront.getValue());
                 return;
             }
 
@@ -149,7 +149,7 @@ public class Player {
                 Gdx.app.log("Player", "Swapped with item in front.");
             } else { // Pick up item from front
                 inventory.setRightHand(maze.getItems().remove(targetTile));
-                eventManager.addEvent(new GameEvent("Picked up " + inventory.getRightHand().getType(), 2f));
+                eventManager.addEvent(new GameEvent("Picked up " + inventory.getRightHand().getDisplayName(), 2f));
                 Gdx.app.log("Player", "Picked up item from front.");
             }
         }
@@ -165,7 +165,7 @@ public class Player {
                 itemInHand.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
                 maze.addItem(itemInHand);
                 inventory.setRightHand(null);
-                eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getType(), 2f));
+                eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getDisplayName(), 2f));
                 Gdx.app.log("Player", "Dropped item at feet.");
             }
         }
@@ -205,7 +205,7 @@ public class Player {
     private void equipRing(Item ring, GameEventManager eventManager) {
         if (ring.getCategory() != Item.ItemCategory.RING) return;
 
-        eventManager.addEvent(new GameEvent("Equipped " + ring.getType(), 2f));
+        eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName(), 2f));
 
         // Swap the ring in hand with the worn ring
         Item previouslyWornRing = this.wornRing;
@@ -214,30 +214,23 @@ public class Player {
     }
 
     private void equipArmor(Item armor, GameEventManager eventManager) {
+        // --- MODIFIED: Use getDisplayName ---
         switch (armor.getType()) {
             case HELMET:
                 if (wornHelmet == null || armor.getArmorStats().defense > wornHelmet.getArmorStats().defense) {
                     wornHelmet = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Helmet.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("This helmet is not better.", 2f));
                 }
                 break;
-            case SMALL_SHIELD:
-                if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
-                    wornShield = armor;
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Small Shield.", 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
-                }
-                break;
+            case SMALL_SHIELD: // Fall-through
             case LARGE_SHIELD:
                 if (wornShield == null || armor.getArmorStats().defense > wornShield.getArmorStats().defense) {
                     wornShield = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped LArge Shield.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
                 }
@@ -246,7 +239,7 @@ public class Player {
                 if (wornGauntlets == null || armor.getArmorStats().defense > wornGauntlets.getArmorStats().defense) {
                     wornGauntlets = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Gauntlets.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("These Gauntlets are not better.", 2f));
                 }
@@ -255,7 +248,7 @@ public class Player {
                 if (wornHauberk == null || armor.getArmorStats().defense > wornHauberk.getArmorStats().defense) {
                     wornHauberk = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Hauberk.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("This Hauberk is not better.", 2f));
                 }
@@ -264,13 +257,11 @@ public class Player {
                 if (wornBreastplate == null || armor.getArmorStats().defense > wornBreastplate.getArmorStats().defense) {
                     wornBreastplate = armor;
                     inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped Breastplate.", 2f));
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("This Breastplate is not better.", 2f));
                 }
                 break;
-
-
         }
     }
 
@@ -278,27 +269,29 @@ public class Player {
         switch (item.getType()) {
             case SMALL_POTION:
                 // Refresh war & spiritual strength to maximum
-                this.warStrength = this.maxWarStrength;
-                this.spiritualStrength = this.maxSpiritualStrength;
+                // --- MODIFIED: Use effective max stats ---
+                this.warStrength = this.getEffectiveMaxWarStrength();
+                this.spiritualStrength = this.getEffectiveMaxSpiritualStrength();
+                // --- END MODIFIED ---
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("You feel refreshed.", 2f));
                 break;
             case LARGE_POTION:
                 // Raise war strength score by 10
                 this.maxWarStrength+=10;
-                this.warStrength = this.maxWarStrength;
+                this.warStrength = this.getEffectiveMaxWarStrength(); // Heal to new max
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
                 break;
             case WAR_BOOK:
                 this.maxWarStrength += 10;
-                this.warStrength = this.maxWarStrength;
+                this.warStrength = this.getEffectiveMaxWarStrength();
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your knowledge of war grows.", 2f));
                 break;
             case SPIRITUAL_BOOK:
                 this.maxSpiritualStrength += 10;
-                this.spiritualStrength = this.maxSpiritualStrength;
+                this.spiritualStrength = this.getEffectiveMaxSpiritualStrength();
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your spiritual knowledge grows.", 2f));
                 break;
@@ -321,8 +314,8 @@ public class Player {
             int warStrengthGained = 5;
             int spiritualStrengthGained = 2;
 
-            this.warStrength = Math.min(this.maxWarStrength, this.warStrength + warStrengthGained);
-            this.spiritualStrength = Math.min(this.maxSpiritualStrength, this.spiritualStrength + spiritualStrengthGained);
+            this.warStrength = Math.min(this.getEffectiveMaxWarStrength(), this.warStrength + warStrengthGained);
+            this.spiritualStrength = Math.min(this.getEffectiveMaxSpiritualStrength(), this.spiritualStrength + spiritualStrengthGained);
 
             Gdx.app.log("Player", "Player rests. Food remaining: " + food);
             Gdx.app.log("Player", "WS restored to " + warStrength + ", SS restored to " + spiritualStrength);
@@ -336,45 +329,66 @@ public class Player {
         updateVectors();
     }
 
-    public void takeDamage(int amount) {
-        int damageReduction = getArmorDefense();
+    public void takeDamage(int amount, DamageType type) {
+        int damageReduction = getArmorDefense(); // Gets base armor + BONUS_DEFENSE
+        int resistance = getResistance(type); // Gets elemental/effect resistance
+
         // Apply vulnerability multiplier to the incoming damage amount first
         int finalDamage = (int)(amount * vulnerabilityMultiplier);
-        // Then, subtract armor defense
-        finalDamage = Math.max(0, finalDamage - damageReduction);
+
+        // Then, subtract armor defense and elemental resistance
+        finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
 
         this.warStrength -= finalDamage;
 
         if (this.warStrength < 0) {
             this.warStrength = 0;
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " damage. WS is now " + this.warStrength);
+        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " damage. WS is now " + this.warStrength);
     }
 
-    public void takeSpiritualDamage(int amount) {
-        int damageReduction = getRingDefense();
+    public void takeSpiritualDamage(int amount, DamageType type) {
+        int damageReduction = getRingDefense(); // Gets base ring defense + BONUS_DEFENSE
+        int resistance = getResistance(type); // Gets elemental/effect resistance
+
         // Apply vulnerability multiplier to the incoming damage amount first
         int finalDamage = (int)(amount * vulnerabilityMultiplier);
-        // Then, subtract ring defense
-        finalDamage = Math.max(0, finalDamage - damageReduction);
+
+        // Then, subtract ring defense and elemental resistance
+        finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
 
         this.spiritualStrength -= finalDamage;
 
         if (this.spiritualStrength < 0) {
             this.spiritualStrength = 0;
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " spiritual damage. SS is now " + this.spiritualStrength);
+        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " spiritual damage. SS is now " + this.spiritualStrength);
     }
 
     public int getArmorDefense() {
         int totalDefense = 0;
-        if (wornHelmet != null) {
-            totalDefense += wornHelmet.getArmorStats().defense;
-        }
-        if (wornShield != null) {
-            totalDefense += wornShield.getArmorStats().defense;
-        }
+
+        // Base defense from armor stats
+        if (wornHelmet != null && wornHelmet.getArmorStats() != null) totalDefense += wornHelmet.getArmorStats().defense;
+        if (wornShield != null && wornShield.getArmorStats() != null) totalDefense += wornShield.getArmorStats().defense;
+        if (wornGauntlets != null && wornGauntlets.getArmorStats() != null) totalDefense += wornGauntlets.getArmorStats().defense;
+        if (wornHauberk != null && wornHauberk.getArmorStats() != null) totalDefense += wornHauberk.getArmorStats().defense;
+        if (wornBreastplate != null && wornBreastplate.getArmorStats() != null) totalDefense += wornBreastplate.getArmorStats().defense;
+
+        // Add bonus defense from all equipped items (including rings)
+        totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+
         return totalDefense;
+    }
+
+    public int getEffectiveMaxWarStrength() {
+        return maxWarStrength + getEquippedModifierSum(ModifierType.BONUS_WAR_STRENGTH);
+    }
+    // --- END MODIFIED ---
+
+    // --- NEW METHOD ---
+    public int getEffectiveMaxSpiritualStrength() {
+        return maxSpiritualStrength + getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
     }
 
     public Item getWornRing() {
@@ -382,16 +396,72 @@ public class Player {
     }
 
     public void setWarStrength(int amount) {
-        this.warStrength = Math.min(amount, this.maxWarStrength);
+        this.warStrength = Math.min(amount, this.getEffectiveMaxWarStrength());
     }
+
     public void setMaxWarStrength(int amount) { this.maxWarStrength = amount; }
 
 
     private int getRingDefense() {
+        int totalDefense = 0;
+
+        // Base defense from ring stats
         if (wornRing != null && wornRing.getRingStats() != null) {
-            return wornRing.getRingStats().defense;
+            totalDefense += wornRing.getRingStats().defense;
         }
-        return 0;
+
+        // Add bonus defense from all equipped items (including armor)
+        totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+
+        return totalDefense;
+    }
+
+    /**
+     * Gets the total resistance value for a specific DamageType from all equipped gear.
+     * @param type The DamageType to check for.
+     * @return The total resistance value.
+     */
+    private int getResistance(DamageType type) {
+        // Physical and Spiritual are handled by Armor/Ring defense, not elemental resistance.
+        if (type == DamageType.PHYSICAL || type == DamageType.SPIRITUAL) {
+            return 0;
+        }
+
+        ModifierType modTypeToFind;
+        switch (type) {
+            case FIRE: modTypeToFind = ModifierType.RESIST_FIRE; break;
+            case ICE: modTypeToFind = ModifierType.RESIST_ICE; break;
+            case POISON: modTypeToFind = ModifierType.RESIST_POISON; break;
+            case BLEED: modTypeToFind = ModifierType.RESIST_BLEED; break;
+            case DISEASE: modTypeToFind = ModifierType.RESIST_DISEASE; break;
+            case DARK: modTypeToFind = ModifierType.RESIST_DARK; break;
+            case LIGHT: modTypeToFind = ModifierType.RESIST_LIGHT; break;
+            case SORCERY: modTypeToFind = ModifierType.RESIST_SORCERY; break;
+            default: return 0; // No resistance for this type
+        }
+
+        return getEquippedModifierSum(modTypeToFind);
+    }
+
+    /**
+     * A generic helper to sum up the value of a specific modifier from ALL equipped items.
+     * @param typeToFind The ModifierType to search for.
+     * @return The sum of all values for that modifier.
+     */
+    private int getEquippedModifierSum(ModifierType typeToFind) {
+        int total = 0;
+        Item[] equippedItems = { wornHelmet, wornShield, wornGauntlets, wornHauberk, wornBreastplate, wornRing };
+
+        for (Item item : equippedItems) {
+            if (item != null) {
+                for (ItemModifier mod : item.getModifiers()) {
+                    if (mod.type == typeToFind) {
+                        total += mod.value;
+                    }
+                }
+            }
+        }
+        return total;
     }
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) { // --- ADD PARAMS ---
@@ -523,14 +593,17 @@ public class Player {
         // --- Container Interaction Logic ---
         Item itemInFront = maze.getItems().get(targetTile);
         if (itemInFront != null && itemInFront.getCategory() == Item.ItemCategory.CONTAINER) {
+            // --- MODIFIED: Use getDisplayName ---
+            String containerName = itemInFront.getDisplayName();
+
             if (itemInFront.isLocked()) {
                 Item key = findKey(); // Use helper to find key
                 if (key != null && itemInFront.unlocks(key)) { // Check if key unlocks this container
                     itemInFront.unlock();
                     consumeKey(key); // Consume the specific key used
-                    eventManager.addEvent(new GameEvent("You unlocked the " + itemInFront.getType() + "!", 2f));
+                    eventManager.addEvent(new GameEvent("You unlocked the " + containerName + "!", 2f));
                 } else {
-                    eventManager.addEvent(new GameEvent("The " + itemInFront.getType() + " is locked.", 2f));
+                    eventManager.addEvent(new GameEvent("The " + containerName + " is locked.", 2f));
                     return; // Locked and no/wrong key
                 }
             }
@@ -540,9 +613,9 @@ public class Player {
             maze.getItems().remove(targetTile); // Remove the container itself
 
             if (contents.isEmpty()) {
-                eventManager.addEvent(new GameEvent("The " + itemInFront.getType() + " is empty.", 2f));
+                eventManager.addEvent(new GameEvent("The " + containerName + " is empty.", 2f));
             } else {
-                eventManager.addEvent(new GameEvent("You open the " + itemInFront.getType() + ".", 2f));
+                eventManager.addEvent(new GameEvent("You open the " + containerName + ".", 2f));
                 for (Item contentItem : contents) {
                     // Try to place on the container's tile, fallback to player tile if occupied
                     GridPoint2 dropTile = targetTile;
@@ -553,14 +626,15 @@ public class Player {
                     if (!maze.getItems().containsKey(dropTile)) {
                         contentItem.getPosition().set(dropTile.x + 0.5f, dropTile.y + 0.5f);
                         maze.addItem(contentItem);
-                        Gdx.app.log("Interaction", "Dropped " + contentItem.getType() + " at " + dropTile);
+                        Gdx.app.log("Interaction", "Dropped " + contentItem.getDisplayName() + " at " + dropTile);
                     } else {
-                        eventManager.addEvent(new GameEvent("No space to drop " + contentItem.getType() + ".", 2f));
-                        Gdx.app.log("Interaction", "Failed to drop " + contentItem.getType() + ", tile " + dropTile + " occupied.");
+                        eventManager.addEvent(new GameEvent("No space to drop " + contentItem.getDisplayName() + ".", 2f));
+                        Gdx.app.log("Interaction", "Failed to drop " + contentItem.getDisplayName() + ", tile " + dropTile + " occupied.");
                         // Item remains 'in limbo' - ideally add back to inventory or handle differently
                     }
                 }
             }
+            // --- END MODIFIED ---
             return; // Interaction handled
         }
 

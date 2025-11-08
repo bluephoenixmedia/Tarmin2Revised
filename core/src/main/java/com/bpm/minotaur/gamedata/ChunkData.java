@@ -79,7 +79,13 @@ public class ChunkData {
         Maze maze = new Maze(this.level, this.wallData);
 
         for (ItemData data : items) {
-            maze.addItem(new Item(data.type, data.x, data.y, data.color));
+            Item item = new Item(data.type, data.x, data.y, data.color);
+            if (data.modifiers != null) {
+                for (ItemModifier mod : data.modifiers) {
+                    item.addModifier(mod);
+                }
+            }
+            maze.addItem(item);
         }
 
         for (MonsterData data : monsters) {
@@ -140,12 +146,14 @@ public class ChunkData {
         public ItemColor color;
         public int x;
         public int y;
+        public List<ItemModifier> modifiers = new ArrayList<>(); //
         public ItemData() {} // No-arg constructor for JSON
         public ItemData(Item item) {
             this.type = item.getType();
             this.color = item.getItemColor();
             this.x = (int)item.getPosition().x;
             this.y = (int)item.getPosition().y;
+            this.modifiers = new ArrayList<>(item.getModifiers()); //
         }
     }
 

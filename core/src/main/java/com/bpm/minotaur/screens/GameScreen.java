@@ -584,6 +584,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         switch (keycode) {
             case Input.Keys.F1: debugManager.toggleOverlay(); return true;
             case Input.Keys.F2: debugManager.toggleRenderMode(); return true;
+            case Input.Keys.F3:
+                SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
+                String status = SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF";
+                eventManager.addEvent(new GameEvent("Debug Force Modifiers: " + status, 2f));
+                return true;
             case Input.Keys.M:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                     game.setScreen(new CastleMapScreen(game, player, maze, this));

@@ -54,6 +54,7 @@ public class Hud implements Disposable {
     private final Label messageLabel;
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
+    private Label heldItemLabel; // --- NEW ---
 
     private final Actor[] backpackSlots = new Actor[6];
     private final Actor leftHandSlot;
@@ -66,7 +67,6 @@ public class Hud implements Disposable {
     private final GlyphLayout glyphLayout = new GlyphLayout();
 
     // --- Table References for Debug Toggle ---
-    // We store references to all tables to toggle their debug lines in render()
     private final Table mainContentTable;
     private final Table leftTable;
     private final Table rightTable;
@@ -80,7 +80,12 @@ public class Hud implements Disposable {
     private final Table levelTable;
     private final Table messageTable;
     private final Table mainContainer;
-    private final WorldManager worldManager; // <-- ADD THIS
+    private final WorldManager worldManager;
+
+    // --- NEW: Color for modified item glow in UI ---
+    private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
+    // --- END NEW ---
+
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager) {
         this.player = player;
@@ -88,24 +93,21 @@ public class Hud implements Disposable {
         this.combatManager = combatManager;
         this.eventManager = eventManager;
         this.spriteBatch = sb;
-        this.worldManager = worldManager; // <-- ADD THIS
+        this.worldManager = worldManager;
         this.shapeRenderer = new ShapeRenderer();
 
         // --- Viewport and Stage Setup ---
-        // We use a FitViewport to maintain a 1920x1080 virtual resolution,
-        // scaling it to fit the screen while preserving the aspect ratio.
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
         stage = new Stage(viewport, sb);
 
         hudBackground = new Texture(Gdx.files.internal("images/hud_background.png"));
 
         // --- Create a semi-transparent background for the message table ---
-        // We create a 1x1 white pixmap with 30% alpha (0.3f)
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(1, 1, 1, 0.3f); // White, 30% opaque
         pixmap.fill();
         messageBackgroundTexture = new Texture(pixmap);
-        pixmap.dispose(); // We're done with the pixmap, so dispose it
+        pixmap.dispose();
 
 
         messageBackgroundDrawable = new TextureRegionDrawable(new TextureRegion(messageBackgroundTexture));
@@ -125,16 +127,14 @@ public class Hud implements Disposable {
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
         Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
-
         Label.LabelStyle messageLabelStyle = new Label.LabelStyle(font, Color.BLACK);
+        // --- NEW: Style for held item ---
+        Label.LabelStyle heldItemStyle = new Label.LabelStyle(font, Color.WHITE);
+        heldItemStyle.font.getData().setScale(0.8f); // Make it slightly smaller
+        // --- END NEW ---
 
         // --- Layout Setup (Tables) ---
-        // Debug borders for all tables are now controlled by the DebugManager (F1 key)
-        // and are set in the render() method.
-
-        // This table will hold the left (backpack) and right (stats) sections
         mainContentTable = new Table();
-
 
         // --- Left Table (Backpack) ---
         leftTable = new Table();
@@ -142,8 +142,6 @@ public class Hud implements Disposable {
         float slotSize = 60f; // Tweak this to change the size of all inventory slots
         for(int i = 0; i < 6; i++) { backpackSlots[i] = new Actor(); }
 
-        // Add backpack slots in 2 rows of 3
-        // Tweak .width() and .height() to change slot size
         leftTable.add(backpackSlots[0]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[1]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[2]).width(slotSize).height(slotSize);
@@ -161,53 +159,49 @@ public class Hud implements Disposable {
         // War Strength
         warStrengthValueLabel = new Label("", labelStyle);
         warTable = new Table();
-        warTable.padLeft(standardPadLeft); // ADD THIS
+        warTable.padLeft(standardPadLeft);
         warTable.add(new Label("WS", labelStyle)).padRight(10);
-        // warTable.add(new Label("[S]", labelStyle)).padRight(10);
         warTable.padBottom(-10);
         warTable.add(warStrengthValueLabel);
 
-// Spiritual Strength
+        // Spiritual Strength
         spiritualStrengthValueLabel = new Label("", labelStyle);
         spiritualTable = new Table();
-        spiritualTable.padLeft(standardPadLeft); // ADD THIS
+        spiritualTable.padLeft(standardPadLeft);
         spiritualTable.add(new Label("SS", labelStyle)).padRight(10);
-        // spiritualTable.add(new Label("[+]", labelStyle)).padRight(10);
         spiritualTable.padBottom(-10);
         spiritualTable.add(spiritualStrengthValueLabel);
 
-// Food
+        // Food
         foodValueLabel = new Label("", labelStyle);
         foodTable = new Table();
-        foodTable.padLeft(standardPadLeft); // ADD THIS
+        foodTable.padLeft(standardPadLeft);
         foodTable.add(new Label("FOOD", labelStyle)).padRight(10);
-        //  foodTable.add(new Label("[F]", labelStyle)).padRight(10);
         foodTable.padBottom(-10);
         foodTable.add(foodValueLabel);
 
-// Arrows
+        // Arrows
         arrowsValueLabel = new Label("", labelStyle);
         arrowsTable = new Table();
-        arrowsTable.padLeft(100); // ADD THIS
+        arrowsTable.padLeft(100);
         arrowsTable.add(new Label("ARROWS", labelStyle)).padRight(10);
-        //arrowsTable.add(new Label("[>]", labelStyle)).padRight(10);
         arrowsTable.padBottom(-10);
         arrowsTable.add(arrowsValueLabel);
 
-// Treasure
+        // Treasure
         treasureValueLabel = new Label("", labelStyle);
         treasureTable = new Table();
-        treasureTable.padLeft(standardPadLeft); // ADD THIS
+        treasureTable.padLeft(standardPadLeft);
         treasureTable.add(new Label("TREASURE", labelStyle)).padRight(30);
         treasureTable.padBottom(-50);
         treasureTable.add(treasureValueLabel);
 
-// Level & Experience
+        // Level & Experience
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
 
         lvlExpTable = new Table();
-        lvlExpTable.padLeft(standardPadLeft); // ADD THIS
+        lvlExpTable.padLeft(standardPadLeft);
         lvlExpTable.add(new Label("LVL:", labelStyle)).padRight(10);
         lvlExpTable.add(levelLabel).padRight(30);
         lvlExpTable.add(new Label("EXP:", labelStyle)).padRight(10);
@@ -215,50 +209,47 @@ public class Hud implements Disposable {
 
 
         // --- Assemble Right Table ---
-        // Add WS and SS tables to the first row of rightTable
+        rightTable.add(warTable).left().padTop(10).padBottom(20).padRight(10);
+        rightTable.add(spiritualTable).right().expandX().padTop(10).padBottom(20).padRight(10);
+        rightTable.row();
 
-        rightTable.add(warTable).left().padTop(10).padBottom(20).padRight(10); // .left() aligns this cell's content
-        rightTable.add(spiritualTable).right().expandX().padTop(10).padBottom(20).padRight(10); // .expandX() pushes it right
-        rightTable.row(); // Next row
-
-        // Add Food and Arrows tables
-        rightTable.add(foodTable).left(); // Tweak .padRight() to adjust space between food/arrows
+        rightTable.add(foodTable).left();
         rightTable.add(arrowsTable).right().expandX().padRight(10);
-        rightTable.row(); // Next row
+        rightTable.row();
 
-        // Add Treasure table
-        rightTable.add(treasureTable).left().padTop(10);//.padTop(30).padBottom(20).padRight(10); // .colspan(2) makes it span both columns
+        rightTable.add(treasureTable).left().padTop(10);
 
         // Combat Info
         monsterStrengthLabel = new Label("", labelStyle);
         combatStatusLabel = new Label("", labelStyle);
         rightTable.row();
-        rightTable.add(new Label("MONSTER", labelStyle)).left().padTop(50).padLeft(standardPadLeft); // Tweak .padTop() for spacing
+        rightTable.add(new Label("MONSTER", labelStyle)).left().padTop(50).padLeft(standardPadLeft);
         rightTable.add(monsterStrengthLabel).right().padTop(50).padRight(10);
         rightTable.row();
         rightTable.row();
-        rightTable.add(lvlExpTable).left().padTop(10); // Tweak .padTop()
+        rightTable.add(lvlExpTable).left().padTop(10);
 
 
         // --- Assemble Main Content Table ---
-        // This table holds the backpack (left) and stats (right)
-
-        // Left table: fixed width, aligned left
         mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
-
-        // Right table: expands to fill space, content aligned right
         mainContentTable.add(rightTable).expandX().right().spaceTop(10);
+
         // --- Hands and Compass Table ---
-        // This table holds [Left Hand] [Compass] [Right Hand]
         handsAndCompassTable = new Table();
 
         leftHandSlot = new Actor();
         rightHandSlot = new Actor();
         directionLabel = new Label("", directionLabelStyle);
 
-        handsAndCompassTable.add(leftHandSlot).width(slotSize).height(slotSize).padRight(20); // Tweak .padRight()
+        handsAndCompassTable.add(leftHandSlot).width(slotSize).height(slotSize).padRight(20);
         handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
-        handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20); // Tweak .padLeft()
+        handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
+
+        // --- NEW: Add row for held item label ---
+        handsAndCompassTable.row();
+        heldItemLabel = new Label("Empty", heldItemStyle);
+        handsAndCompassTable.add(heldItemLabel).colspan(3).padTop(10).center();
+        // --- END NEW ---
 
 
         // --- Dungeon Level Table ---
@@ -275,33 +266,23 @@ public class Hud implements Disposable {
         messageTable.add(messageLabel).center().pad(5f);
 
         // --- Root Table (Main Container) ---
-        // This is the main table that organizes all other sections vertically.
-        // It is anchored to the BOTTOM of the screen.
         mainContainer = new Table();
-        mainContainer.bottom(); // Anchors the whole table to the bottom of the stage
-        mainContainer.setFillParent(true); // Makes the table fill the entire stage
+        mainContainer.bottom();
+        mainContainer.setFillParent(true);
 
-        // Row 1: Message Label (at the bottom, but added first)
-        // Tweak .padBottom(10) to adjust space from the Main Content area
         mainContainer.add(messageTable).colspan(3).expandX().padBottom(20);
         mainContainer.row();
 
-        // Row 2: Main Content (Backpack & Stats)
         mainContainer.add(mainContentTable).colspan(3).expandX().fillX();
         mainContainer.row();
 
-        // Row 3: Hands & Compass (centered)
-        // We use empty Actors with .expandX() as "spacers" to center the compass table
         mainContainer.add(new Actor()).expandX(); // Left spacer
-        mainContainer.add(handsAndCompassTable).padBottom(1); // Tweak .padBottom() for spacing
+        mainContainer.add(handsAndCompassTable).padBottom(1);
         mainContainer.add(new Actor()).expandX(); // Right spacer
         mainContainer.row();
 
-        // Row 4: Dungeon Level (at the very bottom)
-        // Tweak .padBottom(10) to adjust space from the bottom of the screen
         mainContainer.add(levelTable).colspan(3).expandX().padBottom(10);
 
-        // Add the fully constructed root table to the stage
         stage.addActor(mainContainer);
 
         messageLabel.setVisible(false);
@@ -309,9 +290,11 @@ public class Hud implements Disposable {
     }
 
     public void update(float dt) {
-        // Update all the label text with the latest player/game data
-        warStrengthValueLabel.setText(String.format("%d", player.getWarStrength()));
-        spiritualStrengthValueLabel.setText(String.format("%d", player.getSpiritualStrength()));
+        // --- MODIFIED: Update stat labels to show Current / Max ---
+        warStrengthValueLabel.setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
+        spiritualStrengthValueLabel.setText(String.format("%d / %d", player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength()));
+        // --- END MODIFIED ---
+
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(player.getFacing().name().substring(0,1));
@@ -319,6 +302,15 @@ public class Hud implements Disposable {
         treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
+
+        // --- NEW: Update Held Item Label ---
+        Item itemInHand = player.getInventory().getRightHand();
+        if (itemInHand != null) {
+            heldItemLabel.setText(itemInHand.getDisplayName());
+        } else {
+            heldItemLabel.setText("Empty");
+        }
+        // --- END NEW ---
 
         // Show combat information only if combat is active
         if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
@@ -336,7 +328,6 @@ public class Hud implements Disposable {
                     eventManager.addEvent((new GameEvent(monster.getType() + " ATTACKS!", 1f)));
                     break;
                 default:
-
                     break;
             }
         } else {
@@ -375,7 +366,6 @@ public class Hud implements Disposable {
         drawInventory();
 
         // --- ADDED: Toggle debug lines based on global DebugManager state ---
-        // Get the debug status from the singleton DebugManager
         boolean isDebug = DebugManager.getInstance().isDebugOverlayVisible();
 
         // Apply the debug status to all tables
@@ -411,7 +401,6 @@ public class Hud implements Disposable {
             debugFont = generator.generateFont(parameter);
 
             // --- 2. Draw the new minimap (uses ShapeRenderer AND SpriteBatch) ---
-            // We pass the font and batch so it can draw letters
             drawWorldMinimap(1300, this.viewport.getWorldHeight() - 240, debugFont, spriteBatch);
 
             // --- 3. Draw all debug text (with SpriteBatch) ---
@@ -458,7 +447,9 @@ public class Hud implements Disposable {
                 String weaponType = "NULL";
                 Item rightHandItem = player.getInventory().getRightHand();
                 if (rightHandItem != null) {
-                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
+                    // --- MODIFIED: Use getDisplayName ---
+                    equippedWeapon = rightHandItem.getDisplayName();
+                    // --- END MODIFIED ---
                     weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
                     weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
@@ -472,11 +463,13 @@ public class Hud implements Disposable {
                         isRanged = "N/A";
                     }
                 }
-                float infoX = 250;
+                float infoX = 450;
                 float infoY = this.viewport.getWorldHeight() - 100;
+                // --- MODIFIED: Use Effective Max Stats ---
                 debugFont.draw(spriteBatch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength(), infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength() + " / " + player.getEffectiveMaxSpiritualStrength(), infoX, infoY); infoY -= 20;
+                debugFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength() + " / " + player.getEffectiveMaxWarStrength(), infoX, infoY); infoY -= 20;
+                // --- END MODIFIED ---
                 debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
                 debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
                 debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
@@ -503,6 +496,26 @@ public class Hud implements Disposable {
                 debugFont.setColor(Color.YELLOW); // Reset to default debug color
             }
 
+            // --- 5. NEW: ITEM MODIFIER DEBUG (as requested) ---
+            if (player != null) {
+                float itemDebugX = 800; // New column for this info
+                float itemDebugY = this.viewport.getWorldHeight() - 100;
+                debugFont.setColor(Color.LIME);
+                debugFont.draw(spriteBatch, "ITEM MODIFIER DEBUG", itemDebugX, itemDebugY); itemDebugY -= 20;
+
+                // Helper to draw item mods
+                itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Right Hand", player.getInventory().getRightHand(), itemDebugX, itemDebugY);
+                itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Left Hand", player.getInventory().getLeftHand(), itemDebugX, itemDebugY);
+
+                Item[] backpack = player.getInventory().getBackpack();
+                for (int i = 0; i < backpack.length; i++) {
+                    itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Backpack " + i, backpack[i], itemDebugX, itemDebugY);
+                }
+                debugFont.setColor(Color.YELLOW); // Reset
+            }
+
+
+
             spriteBatch.end(); // End batch for text drawing
 
             // Dispose the font (matches existing code's logic)
@@ -510,6 +523,27 @@ public class Hud implements Disposable {
             generator.dispose();
         }
 
+    }
+
+    // --- NEW: Helper method for drawing item modifier debug text ---
+    private float drawItemModsDebug(SpriteBatch batch, BitmapFont font, String slotName, Item item, float x, float y) {
+        if (item != null && item.isModified()) {
+            // Draw the item name first
+            font.draw(batch, slotName + ": " + item.getDisplayName(), x, y);
+            y -= 15;
+
+            // Draw all its modifiers
+            for (ItemModifier mod : item.getModifiers()) {
+                String modText = "  - " + mod.type.name() + " (" + mod.value + ") [" + mod.displayName + "]";
+                font.draw(batch, modText, x, y);
+                y -= 15;
+            }
+        } else if (item != null) {
+            // Optional: Show unmodified items
+            // font.draw(batch, slotName + ": " + item.getDisplayName() + " (Unmodified)", x, y);
+            // y -= 15;
+        }
+        return y; // Return the new y-position
     }
 
 
@@ -545,6 +579,7 @@ public class Hud implements Disposable {
         // Draw the text. The 'y' coordinate is the top of the text.
         debugFont.draw(spriteBatch, name, pos.x, pos.y);
     }
+
     /**
      * Draws the player's inventory (backpack and hands) using ShapeRenderer.
      * It gets the position of the placeholder Actors from the Stage.
@@ -563,7 +598,8 @@ public class Hud implements Disposable {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 String[] spriteData = ItemSpriteData.getSpriteByType(item.getType().name());
                 if (spriteData != null) {
-                    drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
+                    // --- MODIFIED: Pass 'item' ---
+                    drawItemSprite(shapeRenderer, item, spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
                 }
             }
         }
@@ -574,7 +610,8 @@ public class Hud implements Disposable {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
             String[] spriteData = ItemSpriteData.getSpriteByType(leftHand.getType().name());
             if (spriteData != null) {
-                drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
+                // --- MODIFIED: Pass 'leftHand' item ---
+                drawItemSprite(shapeRenderer, leftHand, spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
             }
         }
 
@@ -584,7 +621,8 @@ public class Hud implements Disposable {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
             String[] spriteData = ItemSpriteData.getSpriteByType(rightHand.getType().name());
             if (spriteData != null) {
-                drawItemSprite(shapeRenderer, spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
+                // --- MODIFIED: Pass 'rightHand' item ---
+                drawItemSprite(shapeRenderer, rightHand, spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
             }
         }
 
@@ -594,6 +632,7 @@ public class Hud implements Disposable {
     /**
      * Draws a 24x24 sprite (defined by string data) into a given rectangle.
      * @param shapeRenderer The ShapeRenderer to use (must be active).
+     * @param item The Item object (for checking modifiers).  // --- NEW ---
      * @param spriteData The string array defining the sprite pixels.
      * @param x The bottom-left x coordinate of the target rectangle.
      * @param y The bottom-left y coordinate of the target rectangle.
@@ -601,7 +640,17 @@ public class Hud implements Disposable {
      * @param height The height of the target rectangle.
      * @param color The color to draw the sprite.
      */
-    private void drawItemSprite(ShapeRenderer shapeRenderer, String[] spriteData, float x, float y, float width, float height, Color color) {
+    // --- MODIFIED: Signature changed to accept 'Item' ---
+    private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y, float width, float height, Color color) {
+
+        // --- NEW: Glow effect ---
+        if (item.isModified()) {
+            shapeRenderer.setColor(GLOW_COLOR_UI);
+            // Draw a simple glowing box behind the item
+            shapeRenderer.rect(x - 2, y - 2, width + 4, height + 4);
+        }
+        // --- END NEW ---
+
         shapeRenderer.setColor(color);
         // Calculate the size of a single "pixel" in the sprite based on the target area
         float pixelWidth = width / 24.0f;

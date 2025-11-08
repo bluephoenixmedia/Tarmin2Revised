@@ -24,6 +24,9 @@ public class EntityRenderer {
     private static final float CLOSE_ITEM_Y_BOOST = 140.0f;
     private final DebugManager debugManager = DebugManager.getInstance();
 
+    private static final Color GLOW_COLOR_MODERN = new Color(1.0f, 0.9f, 0.2f, 0.4f); // Translucent Gold
+    private static final Color GLOW_COLOR_RETRO = Color.GOLD;
+
     public EntityRenderer() {
         this.spriteBatch = new SpriteBatch();
     }
@@ -273,6 +276,17 @@ public class EntityRenderer {
                 // The line-of-sight check above already verified no walls block the view
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     float u = (float) (stripe - drawStartX) / (float) spriteWidth;
+
+                    // --- NEW: Draw glow behind item ---
+                    if (item.isModified()) {
+                        spriteBatch.setColor(GLOW_COLOR_MODERN);
+                        // Draw a slightly wider/taller slice behind the main one
+                        spriteBatch.draw(item.getTexture(), stripe - 1, drawY - 1, 1, spriteHeight + 2, u, 1, u + (1.0f / spriteWidth), 0);
+                        spriteBatch.setColor(Color.WHITE); // Reset color
+                    }
+                    // --- END NEW ---
+
+                    // Draw main item slice
                     spriteBatch.draw(item.getTexture(), stripe, drawY, 1, spriteHeight, u, 1, u + (1.0f / spriteWidth), 0);
                 }
             }
@@ -451,9 +465,13 @@ public class EntityRenderer {
             int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY < depthBuffer[stripe]) {
-                    shapeRenderer.setColor(applyTorchLighting(item.getColor(), WorldConstants.TORCH_FADE_END, new Color()));
-
-
+                    // --- NEW: Fallback Glow ---
+                    if (item.isModified()) {
+                        shapeRenderer.setColor(GLOW_COLOR_RETRO);
+                        shapeRenderer.rect(stripe - 1, drawY - 1, 1, spriteHeight + 2);
+                    }
+                    // --- END NEW ---
+                    shapeRenderer.setColor(item.getColor());
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
             }
@@ -475,6 +493,34 @@ public class EntityRenderer {
     private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) {
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+        boolean isModifiedItem = (entity instanceof Item && ((Item) entity).isModified());
+        if (isModifiedItem) {
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth() && transformY < depthBuffer[stripe]) {
+
+                    int texX = (int)(((double)(stripe - (screenX - spriteWidth/2)) / spriteWidth) * 24.0);
+
+                    for (int y = 0; y < spriteHeight; y++) {
+                        int screenY = (int)drawY + y;
+                        if(screenY < 0 || screenY >= viewport.getScreenHeight()) continue;
+
+                        int texY = 23 - (int)(((double)y / spriteHeight) * 24.0);
+
+                        if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24) {
+                            if (spriteData[texY].charAt(texX) == '#') {
+                                shapeRenderer.setColor(GLOW_COLOR_RETRO);
+                                // Draw 1px glow pixels around the main pixel
+                                shapeRenderer.rect(stripe - 1, screenY, 1, 1);
+                                shapeRenderer.rect(stripe + 1, screenY, 1, 1);
+                                shapeRenderer.rect(stripe, screenY - 1, 1, 1);
+                                shapeRenderer.rect(stripe, screenY + 1, 1, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth() && transformY < depthBuffer[stripe]) {
