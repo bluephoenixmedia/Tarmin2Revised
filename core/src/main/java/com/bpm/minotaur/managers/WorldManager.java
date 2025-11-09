@@ -8,8 +8,8 @@ import com.bpm.minotaur.gamedata.ChunkData;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Direction; // <-- ADD IMPORT
-import com.bpm.minotaur.gamedata.Player; // <-- ADD IMPORT
+import com.bpm.minotaur.gamedata.Direction;
+import com.bpm.minotaur.gamedata.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
@@ -27,7 +27,7 @@ public class WorldManager {
 
     private final GameMode gameMode;
     private final Difficulty difficulty;
-    private int currentLevel;
+    private int currentLevel; // <-- This is the field we need to update
     private GridPoint2 currentPlayerChunkId;
     private final Json json;
     private static final String SAVE_DIRECTORY = "saves/world/";
@@ -104,8 +104,8 @@ public class WorldManager {
         }
 
         // --- 5. ADVANCED Mode: Check local file system ---
-        FileHandle file = Gdx.files.local(SAVE_DIRECTORY + "chunk_" + chunkId.x + "_" + chunkId.y + ".json");
-        if (file.exists()) {
+            String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
+            FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);        if (file.exists()) {
             Gdx.app.log("WorldManager", "Loading chunk from file: " + file.path());
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
@@ -147,6 +147,19 @@ public class WorldManager {
         this.currentPlayerChunkId = chunkId;
     }
 
+    // --- [NEW METHOD TO ADD] ---
+    /**
+     * Sets the WorldManager's internal concept of the current Z-level (dungeon depth).
+     * This is critical for generating new chunks at the correct level.
+     * @param level The new level number (e.g., 2, 3, etc.)
+     */
+    public void setCurrentLevel(int level) {
+        this.currentLevel = level;
+        Gdx.app.log("WorldManager", "Set current level to: " + level);
+    }
+    // --- [END NEW METHOD] ---
+
+
     public void saveCurrentChunk(Maze maze) {
         if (gameMode == GameMode.CLASSIC) {
             return; // Don't save in classic mode
@@ -162,7 +175,8 @@ public class WorldManager {
         try {
             ChunkData data = new ChunkData(maze);
             String jsonData = json.prettyPrint(data);
-            String fileName = "chunk_" + chunkId.x + "_" + chunkId.y + ".json";
+            // [FIX] Filename must be level-specific
+            String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
             FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);
             file.writeString(jsonData, false); // false = overwrite
             Gdx.app.log("WorldManager", "Saved chunk state to " + file.path());
@@ -177,6 +191,16 @@ public class WorldManager {
         return generators.get(Biome.MAZE).getInitialPlayerStartPos();
     }
 
+    /**
+     * [NEW] Clears the in-memory chunk cache.
+     * This is necessary when changing Z-levels (dungeon levels),
+     * as the 2D chunk coordinates (e.g., 0,0) are no longer valid
+     * and a new chunk must be generated.
+     */
+    public void clearLoadedChunks() {
+        loadedChunks.clear();
+        Gdx.app.log("WorldManager", "Cleared all loaded chunks from cache.");
+    }
     /**
      * Gets the biome manager instance.
      * @return The BiomeManager.
