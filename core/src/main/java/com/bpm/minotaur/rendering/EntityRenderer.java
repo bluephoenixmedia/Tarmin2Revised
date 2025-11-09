@@ -326,8 +326,7 @@ public class EntityRenderer {
         // --- [FIX] ---
         // Check for "at-feet" case for items
         float distance = (float)Math.sqrt(spriteX * spriteX + spriteY * spriteY);
-        boolean atFeet = (entity instanceof Item && distance < 0.1f);
-
+        boolean atFeet = ((entity instanceof Item || entity instanceof Ladder) && distance < 0.1f);
         if (atFeet) {
             transformX = 0.0f; // Center it
             transformY = 0.2f; // Fake a close distance
@@ -354,7 +353,7 @@ public class EntityRenderer {
                 // --- [FIX] Pass the 'atFeet' boolean to drawItemSprite ---
                 drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer, atFeet);
             } else if (entity instanceof Ladder) {
-                drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
+                drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer, atFeet);
             } else if (entity instanceof Projectile) {
                 drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
             }
@@ -529,11 +528,26 @@ public class EntityRenderer {
         }
     }
 
-    private void drawLadderSprite(ShapeRenderer shapeRenderer, Ladder ladder, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        int spriteHeight = (int) (camera.viewportHeight / transformY);
-        float floorY = (camera.viewportHeight / 2) - (spriteHeight / 2f);
-        float drawY = floorY;
-        int spriteWidth = (int) (spriteHeight * 0.5f);
+    private void drawLadderSprite(ShapeRenderer shapeRenderer, Ladder ladder, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, boolean atFeet) {
+
+        float drawY;
+        int spriteHeight;
+        int spriteWidth;
+
+        if (atFeet) {
+            // Use the same "at-feet" logic as items for consistency
+            drawY = camera.viewportHeight / 8; // 1/8th from the bottom
+
+            // Hard-code the size
+            spriteHeight = AT_FEET_SPRITE_HEIGHT;
+            spriteWidth = (int) (AT_FEET_SPRITE_HEIGHT * 0.5f); // Keep 0.5 ratio
+        } else {
+            // Original logic for ladders not at feet
+            spriteHeight = (int) (camera.viewportHeight / transformY);
+            float floorY = (camera.viewportHeight / 2) - (spriteHeight / 2f);
+            drawY = floorY;
+            spriteWidth = (int) (spriteHeight * 0.5f);
+        }
 
         String[] spriteData = ItemSpriteData.getSpriteByType("LADDER");
         if (spriteData != null) {

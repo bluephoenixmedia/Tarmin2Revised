@@ -444,9 +444,27 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // --- Actions available during player's turn in combat AND out of combat ---
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             switch (keycode) {
-                case Input.Keys.S: player.getInventory().swapHands(); return true;
-                case Input.Keys.E: player.getInventory().swapWithPack(); return true;
-                case Input.Keys.T: player.getInventory().rotatePack(); return true;
+                case Input.Keys.S:
+                    player.getInventory().swapHands();
+                    // If in combat, this counts as a turn
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                        combatManager.passTurnToMonster();
+                    }
+                    return true;
+                case Input.Keys.E:
+                    player.getInventory().swapWithPack();
+                    // If in combat, this counts as a turn
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                        combatManager.passTurnToMonster();
+                    }
+                    return true;
+                case Input.Keys.T:
+                    player.getInventory().rotatePack();
+                    // If in combat, this counts as a turn
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                        combatManager.passTurnToMonster();
+                    }
+                    return true;
             }
         }
 
@@ -532,15 +550,28 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     player.useItem(eventManager);
                     return true; // Added return true
                 case Input.Keys.D:
+                    // 1. Check player's CURRENT tile (at-feet)
+                    int playerX = (int) player.getPosition().x;
+                    int playerY = (int) player.getPosition().y;
+                    GridPoint2 playerTile = new GridPoint2(playerX, playerY);
+
+                    if (maze.getLadders().containsKey(playerTile)) {
+                        descendToNextLevel();
+                        return true; // Found ladder at feet, descend
+                    }
+
+                    // 2. If no ladder at feet, check tile IN FRONT
                     int targetX = (int) (player.getPosition().x + player.getFacing().getVector().x);
                     int targetY = (int) (player.getPosition().y + player.getFacing().getVector().y);
                     GridPoint2 targetTile = new GridPoint2(targetX, targetY);
+
                     if (maze.getLadders().containsKey(targetTile)) {
                         descendToNextLevel();
+                        return true; // Found ladder in front, descend
                     }
                     return true; // Added return true
                 case Input.Keys.R:
-                    player.rest();
+                    player.rest(eventManager);
                     return true; // Added return true
             }
         }

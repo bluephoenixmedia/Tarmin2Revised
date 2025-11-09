@@ -178,6 +178,7 @@ public class CombatManager {
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
                     } else {
                         eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
+                        passTurnToMonster(); // New line
                         return; // Don't switch turns if no arrows
                     }
                 } else { // Melee weapon
@@ -232,6 +233,7 @@ public class CombatManager {
             }
         } else {
             eventManager.addEvent(new GameEvent("You have no weapon to attack with.", 2f));
+            passTurnToMonster(); // New line
             return; // Don't switch turns if there's no weapon
         }
 
@@ -401,6 +403,18 @@ public class CombatManager {
             }
 
             game.setScreen(new GameOverScreen(game));
+        }
+    }
+
+    /**
+     * Called when the player performs a non-attack action during their turn
+     * (like swapping inventory). This passes the turn to the monster.
+     */
+    public void passTurnToMonster() {
+        if (currentState == CombatState.PLAYER_TURN) {
+            Gdx.app.log("CombatManager", "Player passed turn. Monster's turn.");
+            currentState = CombatState.MONSTER_TURN;
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
         }
     }
 
