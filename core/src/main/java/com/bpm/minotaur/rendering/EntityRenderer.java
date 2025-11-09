@@ -31,6 +31,10 @@ public class EntityRenderer {
         this.spriteBatch = new SpriteBatch();
     }
 
+    private static final int AT_FEET_SPRITE_HEIGHT = 200;
+
+
+
     /**
      * Applies torch lighting to a color by darkening it based on distance.
      *
@@ -237,56 +241,73 @@ public class EntityRenderer {
         float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
         float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
 
+        // --- [FIX 1] ---
+        float distance = (float)Math.sqrt(spriteX * spriteX + spriteY * spriteY);
+        boolean atFeet = (distance < 0.1f);
+
+        if (atFeet) {
+            transformX = 0.0f; // Center it
+            transformY = 0.2f; // Fake a close distance so (transformY > 0) passes
+        }
+        // --- [END FIX 1] ---
+
         if (transformY > 0) {
-            // Check line of sight to the item
+            // Line of sight check
             float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, item.getPosition());
             float distanceToItem = player.getPosition().dst(item.getPosition());
 
-            // If there's an obstruction closer than the item, don't render
-            if (distanceToObstruction < distanceToItem - 0.1f) {
+            if (!atFeet && distanceToObstruction < distanceToItem - 0.1f) {
                 return;
             }
 
             Camera camera = viewport.getCamera();
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
-            int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
-            float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
+            // --- [FIX 2] Sizing and Y-Position Logic ---
+            float drawY;
+            int spriteHeight, spriteWidth;
 
-            int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-            int spriteHeight = (int)(baseSpriteHeight * item.scale.y);
-            int spriteWidth = (int)(baseSpriteHeight * item.scale.x);
+            if (atFeet) {
+                // --- THIS IS THE "UNIFORM" FIX ---
+                // Hard-code the Y position to be low on the screen
+                drawY = camera.viewportHeight / 8; // e.g., 1/8th from the bottom
 
-            float drawY = floorY;
+                // Hard-code the size to be uniform
+                spriteHeight = AT_FEET_SPRITE_HEIGHT;
+                spriteWidth = AT_FEET_SPRITE_HEIGHT; // Make it square for simplicity
+            } else {
+                // This is the ORIGINAL logic for all other items
+                int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
+                float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
 
-            int playerGridX = (int) player.getPosition().x;
-            int playerGridY = (int) player.getPosition().y;
-            int itemGridX = (int) item.getPosition().x;
-            int itemGridY = (int) item.getPosition().y;
+                int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
+                spriteHeight = (int)(baseSpriteHeight * item.scale.y);
+                spriteWidth = (int)(baseSpriteHeight * item.scale.x);
+                drawY = floorY;
 
-            if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
-                drawY += CLOSE_ITEM_Y_BOOST;
+                // Original boost logic for adjacent items
+                int playerGridX = (int) player.getPosition().x;
+                int playerGridY = (int) player.getPosition().y;
+                int itemGridX = (int) item.getPosition().x;
+                int itemGridY = (int) item.getPosition().y;
+                int manhattanDistance = Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY);
+                if (manhattanDistance == 1) {
+                    drawY += CLOSE_ITEM_Y_BOOST;
+                }
             }
+            // --- [END FIX 2] ---
 
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-                // Use transformY (distance to item) instead of checking depthBuffer
-                // The line-of-sight check above already verified no walls block the view
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     float u = (float) (stripe - drawStartX) / (float) spriteWidth;
-
-                    // --- NEW: Draw glow behind item ---
                     if (item.isModified()) {
                         spriteBatch.setColor(GLOW_COLOR_MODERN);
-                        // Draw a slightly wider/taller slice behind the main one
                         spriteBatch.draw(item.getTexture(), stripe - 1, drawY - 1, 1, spriteHeight + 2, u, 1, u + (1.0f / spriteWidth), 0);
-                        spriteBatch.setColor(Color.WHITE); // Reset color
+                        spriteBatch.setColor(Color.WHITE);
                     }
-                    // --- END NEW ---
-
-                    // Draw main item slice
                     spriteBatch.draw(item.getTexture(), stripe, drawY, 1, spriteHeight, u, 1, u + (1.0f / spriteWidth), 0);
                 }
             }
@@ -302,13 +323,25 @@ public class EntityRenderer {
         float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
         float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
 
+        // --- [FIX] ---
+        // Check for "at-feet" case for items
+        float distance = (float)Math.sqrt(spriteX * spriteX + spriteY * spriteY);
+        boolean atFeet = (entity instanceof Item && distance < 0.1f);
+
+        if (atFeet) {
+            transformX = 0.0f; // Center it
+            transformY = 0.2f; // Fake a close distance
+        }
+        // --- [END FIX] ---
+
         if (transformY > 0) {
             // Check line of sight
             float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, entity.getPosition());
             float distanceToEntity = player.getPosition().dst(entity.getPosition());
 
             // If there's an obstruction closer than the entity, don't render
-            if (distanceToObstruction < distanceToEntity - 0.1f) {
+            // Added 'atFeet' check to prevent culling item we're standing on
+            if (!atFeet && distanceToObstruction < distanceToEntity - 0.1f) {
                 return;
             }
 
@@ -318,7 +351,8 @@ public class EntityRenderer {
             if (entity instanceof Monster) {
                 drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
-                drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer);
+                // --- [FIX] Pass the 'atFeet' boolean to drawItemSprite ---
+                drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer, atFeet);
             } else if (entity instanceof Ladder) {
                 drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Projectile) {
@@ -433,25 +467,44 @@ public class EntityRenderer {
         }
     }
 
-    // --- METHOD SIGNATURE CORRECTED ---
-    private void drawItemSprite(ShapeRenderer shapeRenderer, Player player, Item item, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
-        int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
-        float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
+    // --- [FIX] METHOD SIGNATURE CHANGED ---
+    // Added 'boolean atFeet' parameter
+    private void drawItemSprite(ShapeRenderer shapeRenderer, Player player, Item item, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, boolean atFeet) {
 
-        int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-        int spriteHeight = (int)(baseSpriteHeight * item.scale.y);
-        int spriteWidth = (int)((baseSpriteHeight / 2) * item.scale.x);
+        // --- [FIX 2] Sizing and Y-Position Logic ---
+        float drawY;
+        int spriteHeight, spriteWidth;
 
-        float drawY = floorY;
+        if (atFeet) {
+            // --- THIS IS THE "UNIFORM" FIX ---
+            // Hard-code the Y position to be low on the screen
+            drawY = camera.viewportHeight / 8; // e.g., 1/8th from the bottom
 
-        int playerGridX = (int) player.getPosition().x;
-        int playerGridY = (int) player.getPosition().y;
-        int itemGridX = (int) item.getPosition().x;
-        int itemGridY = (int) item.getPosition().y;
+            // Hard-code the size to be uniform
+            spriteHeight = AT_FEET_SPRITE_HEIGHT;
+            // Respect the retro renderer's 2:1 width ratio
+            spriteWidth = AT_FEET_SPRITE_HEIGHT / 2;
+        } else {
+            // This is the ORIGINAL logic for all other items
+            int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
+            float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
 
-        if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
-            drawY += CLOSE_ITEM_Y_BOOST;
+            int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
+            spriteHeight = (int)(baseSpriteHeight * item.scale.y);
+            spriteWidth = (int)((baseSpriteHeight / 2) * item.scale.x);
+            drawY = floorY;
+
+            // Original boost logic for adjacent items
+            int playerGridX = (int) player.getPosition().x;
+            int playerGridY = (int) player.getPosition().y;
+            int itemGridX = (int) item.getPosition().x;
+            int itemGridY = (int) item.getPosition().y;
+
+            if (Math.abs(playerGridX - itemGridX) + Math.abs(playerGridY - itemGridY) == 1) {
+                drawY += CLOSE_ITEM_Y_BOOST;
+            }
         }
+        // --- [END FIX 2] ---
 
         if (item.getSpriteData() != null && item.getSpriteData().length == 0) {
             System.err.println("ERROR: Item type " + item.getType() + " has empty sprite data!");
@@ -465,12 +518,10 @@ public class EntityRenderer {
             int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY < depthBuffer[stripe]) {
-                    // --- NEW: Fallback Glow ---
                     if (item.isModified()) {
                         shapeRenderer.setColor(GLOW_COLOR_RETRO);
                         shapeRenderer.rect(stripe - 1, drawY - 1, 1, spriteHeight + 2);
                     }
-                    // --- END NEW ---
                     shapeRenderer.setColor(item.getColor());
                     shapeRenderer.rect(stripe, drawY, 1, spriteHeight);
                 }
