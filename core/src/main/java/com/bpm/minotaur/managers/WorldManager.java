@@ -25,6 +25,7 @@ import java.util.Set;
  */
 public class WorldManager {
 
+    private boolean savingEnabled = true; // <-- NEW FIELD: Add this
     private final GameMode gameMode;
     private final Difficulty difficulty;
     private int currentLevel; // <-- This is the field we need to update
@@ -46,7 +47,7 @@ public class WorldManager {
         this.json = new Json();
         this.json.setUsePrototypes(false);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
-
+        this.savingEnabled = true; // <-- NEW: Make sure saving is on by default
         // --- NEW: Initialize Biome Brain and Generators ---
         this.biomeManager = new BiomeManager();
 
@@ -72,6 +73,25 @@ public class WorldManager {
         return loadChunk(new GridPoint2(0, 0));
     }
 
+
+    /**
+     * [NEW] Disables all save operations for the WorldManager.
+     * This is called when the player dies to prevent the GameScreen
+     * from saving chunks one last time before the GameOverScreen.
+     */
+    public void disableSaving() {
+        this.savingEnabled = false;
+        Gdx.app.log("WorldManager", "Saving has been disabled.");
+    }
+
+    /**
+     * [NEW] Enables all save operations.
+     * Called by the constructor or when starting a new game.
+     */
+    public void enableSaving() {
+        this.savingEnabled = true;
+        Gdx.app.log("WorldManager", "Saving has been enabled.");
+    }
     /**
      * Loads a chunk from cache, file, or generates it based on its biome.
      * @param chunkId The (X,Y) coordinates of the chunk to load.
@@ -161,15 +181,16 @@ public class WorldManager {
 
 
     public void saveCurrentChunk(Maze maze) {
-        if (gameMode == GameMode.CLASSIC) {
-            return; // Don't save in classic mode
+
+        if (!savingEnabled || gameMode == GameMode.CLASSIC) {
+            return; // Don't save if disabled or in classic mode
         }
         // Save the specific maze given, using its chunk ID (which we assume is the current one)
         saveChunk(maze, this.currentPlayerChunkId);
     }
 
     private void saveChunk(Maze maze, GridPoint2 chunkId) {
-        if (gameMode == GameMode.CLASSIC) {
+        if (!savingEnabled || gameMode == GameMode.CLASSIC) {
             return;
         }
         try {

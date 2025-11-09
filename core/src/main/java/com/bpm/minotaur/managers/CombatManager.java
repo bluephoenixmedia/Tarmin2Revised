@@ -33,18 +33,21 @@ public class CombatManager {
     private final AnimationManager animationManager;
     private final GameEventManager eventManager;
     private final SoundManager soundManager;
+    private final WorldManager worldManager;
 
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f; // Delay in seconds
 
 
-    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,  GameEventManager eventManager, SoundManager soundManager) {
+    public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
+                         GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager) {
         this.player = player;
         this.maze = maze;
         this.game = game;
         this.animationManager = animationManager;
         this.eventManager = eventManager;
         this.soundManager = soundManager;
+        this.worldManager = worldManager;
     }
 
     public void startCombat(Monster monster) {
@@ -392,6 +395,11 @@ public class CombatManager {
             endCombat();
         } else if (currentState == CombatState.DEFEAT) {
             Gdx.app.log("CombatManager", "Player has been defeated!");
+
+            if (worldManager != null) {
+                worldManager.disableSaving();
+            }
+
             game.setScreen(new GameOverScreen(game));
         }
     }
