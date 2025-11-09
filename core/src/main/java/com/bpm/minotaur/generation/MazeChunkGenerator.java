@@ -94,15 +94,50 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     // --- All methods below were moved from GameScreen.java ---
 
+    /**
+     * Finds a safe, passable spawn point for the player.
+     * It first checks (1, 1) and, if that's a wall ('#'), scans for the
+     * first available non-wall tile.
+     * This method *always* sets the playerSpawnPoint field for the current layout.
+     * @param layout The newly generated text layout.
+     */
     private void findPlayerStart(String[] layout) {
-        for (int y = 0; y < layout.length; y++) {
-            for (int x = 0; x < layout[0].length(); x++) {
-                if (layout[layout.length - 1 - y].charAt(x) == 'P') {
+        int height = layout.length;
+        int width = layout[0].length();
+
+        // 1. Reset to default spawn point first.
+        // This prevents using stale coordinates from a previous level.
+        playerSpawnPoint.set(1, 1);
+
+        // 2. Check if the default (1, 1) is passable (not a wall).
+        // We check the layout array directly.
+        // Game-world (x=1, y=1) corresponds to layout[height - 1 - 1].charAt(1)
+        char defaultTileChar = layout[height - 2].charAt(1);
+
+        if (defaultTileChar != '#') {
+            // Default (1, 1) is passable. We are good to go.
+            Gdx.app.log("ChunkGenerator", "Set player start to default (1, 1).");
+            return;
+        }
+
+        // 3. If (1, 1) is a wall, scan for the *first* non-wall tile
+        //    we can find, starting from grid (0,0).
+        Gdx.app.log("ChunkGenerator", "Default spawn (1, 1) is a wall. Scanning for safe spot...");
+        for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y; // This converts grid y to layout y
+            for (int x = 0; x < width; x++) {
+                char c = layout[layoutY].charAt(x);
+                if (c != '#') { // Find the first non-wall tile
                     playerSpawnPoint.set(x, y);
+                    Gdx.app.log("ChunkGenerator", "Found fallback safe spawn at (" + x + ", " + y + ")");
                     return;
                 }
             }
         }
+
+        // 4. As an absolute last resort (e.g., a completely solid map),
+        //    it will just use (1, 1), but this should never happen.
+        Gdx.app.error("ChunkGenerator", "CRITICAL: No non-wall tiles found in maze. Player will be stuck at (1, 1).");
     }
 
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout) {

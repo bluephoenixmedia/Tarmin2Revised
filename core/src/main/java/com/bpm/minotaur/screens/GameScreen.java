@@ -100,15 +100,35 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     private void descendToNextLevel() {
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
+            // Save the current chunk (e.g., L1_0_0) before we change levels
             worldManager.saveCurrentChunk(maze);
         }
+
+        // Increment the level counter in GameScreen
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
 
+        if (worldManager != null) {
+            // --- [THE FIX] ---
 
-        // For now, it just re-generates the current chunk at a new level.
-        // This logic will need further refinement based on how levels and chunks interact.
-        generateLevel(currentLevel); // Re-generate/reload based on the new level number
+            // 1. Tell WorldManager the new level. This ensures any *new*
+            //    save/load/generation calls use the new level number.
+            worldManager.setCurrentLevel(currentLevel);
+
+            // 2. CRITICAL: Clear the 2D chunk cache. This forces
+            //    loadChunk(0,0) to fail its cache check and proceed to
+            //    file-checking and generation for the new level.
+            worldManager.clearLoadedChunks();
+
+            // --- [END FIX] ---
+        }
+
+        // This call will now work.
+        // generateLevel() -> getInitialMaze() -> loadChunk(0,0)
+        // -> Cache is empty (miss)
+        // -> File check looks for "chunk_L2_0_0.json" (miss)
+        // -> Triggers new chunk generation using currentLevel=2
+        generateLevel(currentLevel);
     }
 
     /**
@@ -230,35 +250,77 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         font.setColor(Color.WHITE);
         font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
 
-        // Debug text rendering remains the same
+        // --- [NEW] REORGANIZED DEBUG TEXT ---
         if (debugManager.isDebugOverlayVisible()) {
-            font.draw(game.batch, "DEBUG MODE - (F1 to toggle)", 10, game.viewport.getWorldHeight() - 30);
-            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2 to toggle)", 10, game.viewport.getWorldHeight() - 50); // Adjusted position
+            float leftColX = 10;
+            float rightColX = 350; // X position for the second column
+            float yPos = game.viewport.getWorldHeight() - 30; // Shared starting Y
+            float lineGap = 20;
+
+            // --- LEFT COLUMN (SYSTEM & CONTROLS) ---
+            font.setColor(Color.WHITE);
+            font.draw(game.batch, "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
+            font.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
+            font.draw(game.batch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
+
+            yPos -= lineGap; // Add a spacer
             font.setColor(Color.YELLOW);
-            // (Key mappings and Player Info debug text remain unchanged)
+            font.draw(game.batch, "--- CONTROLS ---", leftColX, yPos); yPos -= lineGap;
+            font.setColor(Color.WHITE);
+
             String[] keyMappings = {
-                "--- CONTROLS ---",
-                "UP   : Move Forward", "DOWN : Move Backward", "LEFT : Turn Left", "RIGHT: Turn Right",
-                "", "O    : Open/Interact", "P    : Pickup/Drop Item", "U    : Use Item",
-                "D    : Descend Ladder", "R    : Rest", "", "S    : Swap Hands",
-                "E    : Swap with Pack", "T    : Rotate Pack", "", "A    : Attack (Combat)", "M    : Castle Map"
+                "UP/DOWN : Move",
+                "LEFT/RIGHT: Turn",
+                "O : Interact",
+                "P : Pickup/Drop",
+                "U : Use Item",
+                "D : Descend Ladder",
+                "R : Rest",
+                "S : Swap Hands",
+                "E : Swap with Pack",
+                "T : Rotate Pack",
+                "A : Attack (Combat)",
+                "M : Castle Map"
             };
-            float yPos = game.viewport.getWorldHeight() - 80;
+
             for (String mapping : keyMappings) {
-                font.draw(game.batch, mapping, 10, yPos);
-                yPos -= 20;
+                font.draw(game.batch, mapping, leftColX, yPos);
+                yPos -= lineGap;
             }
 
-            if (player != null) { // Add null check for player
+            // --- RIGHT COLUMN (PLAYER & WORLD INFO) ---
+            float rightColY = game.viewport.getWorldHeight() - 30; // Reset Y for this column
+
+            if (player != null) {
+                font.setColor(Color.YELLOW);
+                font.draw(game.batch, "--- PLAYER ---", rightColX, rightColY); rightColY -= lineGap;
+
+                font.setColor(Color.WHITE);
+                int playerGridX = (int)player.getPosition().x;
+                int playerGridY = (int)player.getPosition().y;
+                font.draw(game.batch, "Pos (Grid): (" + playerGridX + ", " + playerGridY + ")", rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Facing: " + player.getFacing().name(), rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Defense: " + player.getArmorDefense(), rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "War Str: " + player.getWarStrength(), rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Spirit Str: " + player.getSpiritualStrength(), rightColX, rightColY); rightColY -= lineGap;
+
+                rightColY -= lineGap; // Spacer
+
+                // --- Equipped Item ---
+                font.setColor(Color.YELLOW);
+                font.draw(game.batch, "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
+                font.setColor(Color.WHITE);
+
                 String equippedWeapon = "NOTHING";
                 String damage = "0";
                 String range = "0";
-                String isRanged = "N/A"; // Changed default
-                String weaponColor = "NONE"; // Changed default
+                String isRanged = "N/A";
+                String weaponColor = "NONE";
                 String weaponType = "NULL";
                 Item rightHandItem = player.getInventory().getRightHand();
+
                 if (rightHandItem != null) {
-                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN"; // Changed default
+                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
                     weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
                     weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
@@ -272,19 +334,30 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                         isRanged = "N/A";
                     }
                 }
-                float infoX = 250;
-                float infoY = game.viewport.getWorldHeight() - 100;
-                font.draw(game.batch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength(), infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength(), infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
-                font.draw(game.batch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
+
+                font.draw(game.batch, "Name: " + equippedWeapon, rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Type: " + weaponType, rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Damage: " + damage, rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Ranged: " + isRanged, rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Range: " + range, rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Color: " + weaponColor, rightColX, rightColY); rightColY -= lineGap;
+            }
+
+            // --- World Info ---
+            if (gameMode == GameMode.ADVANCED && worldManager != null) {
+                rightColY -= lineGap; // Spacer
+                font.setColor(Color.YELLOW);
+                font.draw(game.batch, "--- WORLD (ADVANCED) ---", rightColX, rightColY); rightColY -= lineGap;
+                font.setColor(Color.WHITE);
+
+                GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+                Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
+
+                font.draw(game.batch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightColY); rightColY -= lineGap;
+                font.draw(game.batch, "Biome: " + biome.name(), rightColX, rightColY); rightColY -= lineGap;
             }
         }
+        // --- [END] REORGANIZED DEBUG TEXT ---
 
         game.batch.end();
     }
