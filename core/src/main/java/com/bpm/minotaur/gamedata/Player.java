@@ -104,11 +104,39 @@ public class Player {
 
 
     public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
+
+        int playerGridX = (int) position.x;
+        int playerGridY = (int) position.y;
+        GridPoint2 playerTile2 = new GridPoint2(playerGridX, playerGridY);
+
+        Item itemAtFeet = maze.getItems().get(playerTile2);
+
+        if (itemAtFeet != null) {
+            // Found an item at our feet. Try to pick it up.
+
+            Item itemInHand = inventory.getRightHand();
+            if (itemInHand != null) { // Swap with item in front
+                inventory.setRightHand(maze.getItems().remove(playerTile2));
+                itemInHand.getPosition().set(playerGridX + 0.5f, playerGridY + 0.5f);
+                maze.getItems().put(playerTile2, itemInHand);
+                eventManager.addEvent(new GameEvent("Swapped items", 2f));
+                Gdx.app.log("Player", "Swapped with item in front.");
+            } else { // Pick up item from front
+                inventory.setRightHand(maze.getItems().remove(playerTile2));
+                eventManager.addEvent(new GameEvent("Picked up " + inventory.getRightHand().getDisplayName(), 2f));
+                Gdx.app.log("Player", "Picked up item from front.");
+                return;
+            }
+        }
+
+
         // Determine the target tile in front of the player
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
         Item itemInFront = maze.getItems().get(targetTile);
+
+
 
         // --- PICKUP/SWAP LOGIC (targets tile in front) ---
         if (itemInFront != null) {
