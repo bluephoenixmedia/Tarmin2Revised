@@ -35,8 +35,11 @@ public class SoundManager {
 
         // Sounds for monster attacks
         loadSound("monster_attack", "sounds/monster_attack.wav");
+        loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
         loadSound("monster_roar", "sounds/monster_roar.wav");
         loadSound("player_level_up", "sounds/level_up.mp3");
+        loadSound("attack", "sounds/attack.mp3");
+
     }
 
     private void loadSound(String name, String path) {
@@ -74,7 +77,8 @@ public class SoundManager {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("monster_attack");
         } else {
-            playRetroSound(73, 0.2f, 0.7f); // Lower D note for monster
+           // playRetroSound(73, 0.2f, 0.7f); // Lower D note for monster
+            playSound("attack");
         }
     }
 
@@ -82,7 +86,9 @@ public class SoundManager {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("pickup_item");
         } else {
-            playRetroArpeggio(new int[]{1047, 1319}, 0.05f); // High C6-E6 arpeggio
+            //playRetroArpeggio(new int[]{1047, 1319}, 0.05f); // High C6-E6 arpeggio
+            playSound("pickup_item");
+
         }
     }
 
@@ -96,19 +102,84 @@ public class SoundManager {
     }
 
     public void playDoorOpenSound() {
-        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+
+        playSound("door_open");
+
+/*        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("door_open");
         } else {
-            playRetroSlide(100, 300, 0.25f); // Sliding sound for door
+            // A short, sharp click
+            playRetroClick(0.03f, 0.5f);
+
+            // A downward-sweeping "swoosh"
+            playRetroSwoosh(800, 300, 0.15f, 0.6f);
         }
+  */
     }
 
     public void playCombatStartSound() {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("monster_roar");
         } else {
-            playRetroGrowl(0.5f);
+            //playRetroGrowl(0.5f);
+            playSound("tarmin_roar");
         }
+    }
+
+    /**
+     * Generates a short burst of white noise for a "click" effect.
+     * @param duration The duration in seconds.
+     * @param volume The volume (0.0 to 1.0).
+     */
+    private void playRetroClick(float duration, float volume) {
+        int numSamples = (int) (duration * SAMPLE_RATE);
+        short[] samples = new short[numSamples];
+        Random random = new Random();
+
+        // Apply a simple fade-out (linear)
+        for (int i = 0; i < numSamples; i++) {
+            float amplitude = (1.0f - (float) i / numSamples) * volume;
+            samples[i] = (short) ((random.nextFloat() * 2.0f - 1.0f) * Short.MAX_VALUE * amplitude);
+        }
+
+        retroAudioDevice.writeSamples(samples, 0, numSamples);
+    }
+
+    /**
+     * Generates a sine wave that sweeps from a start to an end frequency.
+     * @param startFreq The starting frequency (e.g., 800 Hz).
+     * @param endFreq The ending frequency (e.g., 300 Hz).
+     * @param duration The duration in seconds.
+     * @param volume The volume (0.0 to 1.0).
+     */
+    private void playRetroSwoosh(int startFreq, int endFreq, float duration, float volume) {
+        int numSamples = (int) (duration * SAMPLE_RATE);
+        short[] samples = new short[numSamples];
+        double angle = 0.0;
+
+        // Calculate how much to change the frequency per sample
+        double freqStep = (double) (endFreq - startFreq) / numSamples;
+        double currentFreq = startFreq;
+
+        for (int i = 0; i < numSamples; i++) {
+            // Apply a fade-in and fade-out to prevent popping
+            float amplitude = volume;
+            float fadeIn = (float) i / (numSamples / 10.0f); // 10% fade-in
+            float fadeOut = (float) (numSamples - i) / (numSamples / 10.0f); // 10% fade-out
+
+            if (fadeIn < 1.0f) amplitude *= fadeIn;
+            if (fadeOut < 1.0f) amplitude *= fadeOut;
+
+            samples[i] = (short) (Math.sin(angle) * Short.MAX_VALUE * amplitude);
+
+            // Update angle based on the *current* frequency
+            angle += 2 * Math.PI * currentFreq / SAMPLE_RATE;
+
+            // Update the frequency for the next sample
+            currentFreq += freqStep;
+        }
+
+        retroAudioDevice.writeSamples(samples, 0, numSamples);
     }
 
     private void playSound(String name) {
