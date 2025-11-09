@@ -22,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
@@ -30,6 +31,8 @@ import java.util.List; // <-- IMPORT ADDED FOR LIST
 
 public class Hud implements Disposable {
 
+    private final Tarmin2 game;
+    private final DebugManager debugManager;
     public Stage stage;
     private final Viewport viewport;
     private final Player player;
@@ -82,12 +85,17 @@ public class Hud implements Disposable {
     private final Table mainContainer;
     private final WorldManager worldManager;
 
+    private final GameMode gameMode;
+
     // --- NEW: Color for modified item glow in UI ---
     private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
     // --- END NEW ---
 
 
-    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager) {
+    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
+        this.game = game;
+        this.debugManager = debugManager;
+        this.gameMode = gameMode;
         this.player = player;
         this.maze = maze;
         this.combatManager = combatManager;
@@ -394,7 +402,7 @@ public class Hud implements Disposable {
 
             FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
             FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 12;
+            parameter.size = 10;
             parameter.color = Color.WHITE;
             parameter.minFilter = Texture.TextureFilter.Nearest;
             parameter.magFilter = Texture.TextureFilter.Nearest;
@@ -422,20 +430,117 @@ public class Hud implements Disposable {
             drawTableName(levelTable, "levelTable");
             drawTableName(messageTable, "messageTable");
 
-            // Draw "CONTROLS" text block
-            float yPos = this.viewport.getWorldHeight() - 80;
+
+
+            BitmapFont defaultFont = new BitmapFont();
+            defaultFont.setColor(Color.WHITE); // Reset main font color
+
+            //BEGIN DEBUG MIGRATION
+            float leftColX = 10;
+            float rightColX = 350; // X position for the second column
+            float yPos = game.viewport.getWorldHeight() - 30; // Shared starting Y
+            float lineGap = 20;
+
+
+            defaultFont.draw(game.batch, "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.batch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
+
+            yPos -= lineGap; // Add a spacer
+            defaultFont.setColor(Color.YELLOW);
+            defaultFont.draw(game.batch, "--- CONTROLS ---", leftColX, yPos); yPos -= lineGap;
+            defaultFont.setColor(Color.WHITE);
+
             String[] keyMappings = {
-                "--- CONTROLS ---",
-                "UP   : Move Forward", "DOWN : Move Backward", "LEFT : Turn Left", "RIGHT: Turn Right",
-                "", "O    : Open/Interact", "P    : Pickup/Drop Item", "U    : Use Item",
-                "D    : Descend Ladder", "R    : Rest", "", "S    : Swap Hands",
-                "E    : Swap with Pack", "T    : Rotate Pack", "", "A    : Attack (Combat)", "M    : Castle Map"
+                "UP/DOWN : Move",
+                "LEFT/RIGHT: Turn",
+                "O : Interact",
+                "P : Pickup/Drop",
+                "U : Use Item",
+                "D : Descend Ladder",
+                "R : Rest",
+                "S : Swap Hands",
+                "E : Swap with Pack",
+                "T : Rotate Pack",
+                "A : Attack (Combat)",
+                "M : Castle Map"
             };
+
             for (String mapping : keyMappings) {
-                font.draw(this.spriteBatch, mapping, 10, yPos);
-                yPos -= 20;
+                defaultFont.draw(game.batch, mapping, leftColX, yPos);
+                yPos -= lineGap;
             }
-            font.setColor(Color.WHITE); // Reset main font color
+
+            // --- RIGHT COLUMN (PLAYER & WORLD INFO) ---
+            float rightColY = game.viewport.getWorldHeight() - 30; // Reset Y for this column
+
+            if (player != null) {
+                defaultFont.setColor(Color.YELLOW);
+                rightColX = rightColX - 100;
+                defaultFont.draw(game.batch, "--- PLAYER ---", rightColX, rightColY); rightColY -= lineGap;
+
+                int playerGridX = (int)player.getPosition().x;
+                int playerGridY = (int)player.getPosition().y;
+                defaultFont.draw(game.batch, "Pos (Grid): (" + playerGridX + ", " + playerGridY + ")", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Facing: " + player.getFacing().name(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Defense: " + player.getArmorDefense(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "War Str: " + player.getWarStrength(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Spirit Str: " + player.getSpiritualStrength(), rightColX, rightColY); rightColY -= lineGap;
+
+                rightColY -= lineGap; // Spacer
+
+                // --- Equipped Item ---
+                defaultFont.setColor(Color.YELLOW);
+                defaultFont.draw(game.batch, "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.setColor(Color.WHITE);
+
+                String equippedWeapon = "NOTHING";
+                String damage = "0";
+                String range = "0";
+                String isRanged = "N/A";
+                String weaponColor = "NONE";
+                String weaponType = "NULL";
+                Item rightHandItem = player.getInventory().getRightHand();
+
+                if (rightHandItem != null) {
+                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
+                    weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
+                    weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+
+                    if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getWeaponStats().damage);
+                        range = String.valueOf(rightHandItem.getWeaponStats().range);
+                        isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
+                    } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getSpiritualWeaponStats() != null) {
+                        damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                        range = "N/A";
+                        isRanged = "N/A";
+                    }
+                }
+
+                defaultFont.draw(game.batch, "Name: " + equippedWeapon, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Type: " + weaponType, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Damage: " + damage, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Ranged: " + isRanged, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Range: " + range, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Color: " + weaponColor, rightColX, rightColY); rightColY -= lineGap;
+            }
+
+            // --- World Info ---
+            if (gameMode == GameMode.ADVANCED && worldManager != null) {
+                rightColY -= lineGap; // Spacer
+                defaultFont.setColor(Color.YELLOW);
+                defaultFont.draw(game.batch, "--- WORLD (ADVANCED) ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.setColor(Color.WHITE);
+
+                GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+                Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
+
+                defaultFont.draw(game.batch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.batch, "Biome: " + biome.name(), rightColX, rightColY); rightColY -= lineGap;
+            }
+
+            //END DEBUG MIGRATION
 
             // Draw "PLAYER INFO" text block
             if (player != null) {
@@ -466,16 +571,16 @@ public class Hud implements Disposable {
                 float infoX = 450;
                 float infoY = this.viewport.getWorldHeight() - 100;
                 // --- MODIFIED: Use Effective Max Stats ---
-                debugFont.draw(spriteBatch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength() + " / " + player.getEffectiveMaxSpiritualStrength(), infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength() + " / " + player.getEffectiveMaxWarStrength(), infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength() + " / " + player.getEffectiveMaxSpiritualStrength(), infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength() + " / " + player.getEffectiveMaxWarStrength(), infoX, infoY); infoY -= 20;
                 // --- END MODIFIED ---
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
-                debugFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
+                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
             }
 
             // --- 4. NEW: World Debug Text ---
@@ -487,31 +592,31 @@ public class Hud implements Disposable {
                 float worldDebugX = 1300; // X position for this block
                 float worldDebugY = this.viewport.getWorldHeight() - 100; // Y position
 
-                debugFont.setColor(Color.CYAN); // Different color for this block
-                debugFont.draw(spriteBatch, "WORLD DEBUG", worldDebugX, worldDebugY); worldDebugY -= 20;
-                debugFont.draw(spriteBatch, "Chunk: " + (chunkId != null ? chunkId.toString() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
-                debugFont.draw(spriteBatch, "Biome: " + (biome != null ? biome.name() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
+                defaultFont.setColor(Color.CYAN); // Different color for this block
+                defaultFont.draw(spriteBatch, "WORLD DEBUG", worldDebugX, worldDebugY); worldDebugY -= 20;
+                defaultFont.draw(spriteBatch, "Chunk: " + (chunkId != null ? chunkId.toString() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
+                defaultFont.draw(spriteBatch, "Biome: " + (biome != null ? biome.name() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
 
-                debugFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY);
-                debugFont.setColor(Color.YELLOW); // Reset to default debug color
+                defaultFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY);
+                defaultFont.setColor(Color.YELLOW); // Reset to default debug color
             }
 
             // --- 5. NEW: ITEM MODIFIER DEBUG (as requested) ---
             if (player != null) {
-                float itemDebugX = 800; // New column for this info
+                float itemDebugX = 950; // New column for this info
                 float itemDebugY = this.viewport.getWorldHeight() - 100;
-                debugFont.setColor(Color.LIME);
-                debugFont.draw(spriteBatch, "ITEM MODIFIER DEBUG", itemDebugX, itemDebugY); itemDebugY -= 20;
+                defaultFont.setColor(Color.LIME);
+                defaultFont.draw(spriteBatch, "ITEM MODIFIER DEBUG", itemDebugX, itemDebugY); itemDebugY -= 20;
 
                 // Helper to draw item mods
-                itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Right Hand", player.getInventory().getRightHand(), itemDebugX, itemDebugY);
-                itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Left Hand", player.getInventory().getLeftHand(), itemDebugX, itemDebugY);
+                itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Right Hand", player.getInventory().getRightHand(), itemDebugX, itemDebugY);
+                itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Left Hand", player.getInventory().getLeftHand(), itemDebugX, itemDebugY);
 
                 Item[] backpack = player.getInventory().getBackpack();
                 for (int i = 0; i < backpack.length; i++) {
-                    itemDebugY = drawItemModsDebug(spriteBatch, debugFont, "Backpack " + i, backpack[i], itemDebugX, itemDebugY);
+                    itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Backpack " + i, backpack[i], itemDebugX, itemDebugY);
                 }
-                debugFont.setColor(Color.YELLOW); // Reset
+                defaultFont.setColor(Color.YELLOW); // Reset
             }
 
 
@@ -520,6 +625,7 @@ public class Hud implements Disposable {
 
             // Dispose the font (matches existing code's logic)
             debugFont.dispose();
+            defaultFont.dispose();
             generator.dispose();
         }
 
