@@ -335,20 +335,23 @@ public class Player {
         cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);  // Changed second component
     }
 
-    public void rest() {
+    public void rest(GameEventManager eventManager) {
         if (food > 0) {
             food--;
 
             int warStrengthGained = 5;
-            int spiritualStrengthGained = 2;
+            int spiritualStrengthGained = 5;
 
             this.warStrength = Math.min(this.getEffectiveMaxWarStrength(), this.warStrength + warStrengthGained);
             this.spiritualStrength = Math.min(this.getEffectiveMaxSpiritualStrength(), this.spiritualStrength + spiritualStrengthGained);
 
             Gdx.app.log("Player", "Player rests. Food remaining: " + food);
             Gdx.app.log("Player", "WS restored to " + warStrength + ", SS restored to " + spiritualStrength);
+            eventManager.addEvent(new GameEvent(("WS restored to " + warStrength + ", SS restored to " + spiritualStrength), 2f));
+
         } else {
             Gdx.app.log("Player", "Cannot rest. No food remaining.");
+            eventManager.addEvent(new GameEvent("You have no food to rest.", 2f));
         }
     }
 
