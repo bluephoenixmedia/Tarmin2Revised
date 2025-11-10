@@ -58,6 +58,7 @@ public class Hud implements Disposable {
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
     private Label heldItemLabel; // --- NEW ---
+    private Label rightHandStatsLabel; // <-- ADD THIS LINE
 
     private final Actor[] backpackSlots = new Actor[6];
     private final Actor leftHandSlot;
@@ -84,6 +85,13 @@ public class Hud implements Disposable {
     private final Table messageTable;
     private final Table mainContainer;
     private final WorldManager worldManager;
+
+    private String equippedWeapon = "NOTHING";
+    private String damage = "0";
+    private String range = "0";
+    private String isRanged = "N/A";
+    private String weaponColor = "NONE";
+    private String weaponType = "NULL";
 
     private final GameMode gameMode;
 
@@ -237,6 +245,11 @@ public class Hud implements Disposable {
         rightTable.row();
         rightTable.add(lvlExpTable).left().padTop(10);
 
+        rightHandStatsLabel = new Label("", labelStyle);
+        rightTable.row();
+        rightTable.add(rightHandStatsLabel).left().padTop(10).padRight(10);
+
+
 
         // --- Assemble Main Content Table ---
         mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
@@ -311,8 +324,25 @@ public class Hud implements Disposable {
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
 
+        Item rightHandItem = player.getInventory().getRightHand();
+
+
+
         // --- NEW: Update Held Item Label ---
         Item itemInHand = player.getInventory().getRightHand();
+        if (rightHandItem != null) {
+            equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
+            weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
+            weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+        }
+
+        //String weaponDisplay = player.getInventory().getRightHand().getDisplayName();
+        String mods = returnModsString(itemInHand);
+
+
+        rightHandStatsLabel.setText(weaponColor + " " + itemInHand.getType().toString() + mods);
+
+
         if (itemInHand != null) {
             heldItemLabel.setText(itemInHand.getDisplayName());
         } else {
@@ -494,12 +524,7 @@ public class Hud implements Disposable {
                 defaultFont.draw(game.batch, "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
-                String equippedWeapon = "NOTHING";
-                String damage = "0";
-                String range = "0";
-                String isRanged = "N/A";
-                String weaponColor = "NONE";
-                String weaponType = "NULL";
+
                 Item rightHandItem = player.getInventory().getRightHand();
 
                 if (rightHandItem != null) {
@@ -629,6 +654,31 @@ public class Hud implements Disposable {
             generator.dispose();
         }
 
+    }
+
+    private String returnModsString(Item item) {
+        String modText = "";
+      //  Integer modValue = 0;
+        if (item != null && item.isModified()) {
+
+            String test = "";
+            // Draw all its modifiers
+            for (ItemModifier mod : item.getModifiers()) {
+               // Gdx.app.log("type ", mod.type.name());
+               // Gdx.app.log("name ", mod.displayName);
+               // Gdx.app.log("value ", Integer.toString(mod.value));
+
+
+                if (mod.type.name().equals("BONUS_DAMAGE")) {
+                    modText+= "+" + mod.value;
+                } else {
+                    modText+= " " + mod.displayName + " ";
+                }
+
+
+            }
+        }
+        return modText; // Return the new y-position
     }
 
     // --- NEW: Helper method for drawing item modifier debug text ---
