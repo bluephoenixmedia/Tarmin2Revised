@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 
 /**
  * Generates and populates a "forest" chunk.
@@ -264,14 +265,14 @@ public class ForestChunkGenerator implements IChunkGenerator {
     }
 
     @Override
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode) {
-        Gdx.app.log("ForestChunkGenerator", "Generating new FOREST chunk at " + chunkId);
+    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme) {        Gdx.app.log("ForestChunkGenerator", "Generating new FOREST chunk at " + chunkId);
 
         // --- 1. Create Layout (3x2 grid) ---
         createMazeFromArrayTiles(3, 2);
 
         // --- 2. Create Maze Object (populates walls and scenery) ---
         Maze maze = createMazeFromText(level, this.finalLayout);
+        maze.setTheme(theme); // <-- [NEW] SET THE THEME
 
         // --- 3. Populate Maze ---
         // Force Tier 2+ spawning by ensuring level is at least 4

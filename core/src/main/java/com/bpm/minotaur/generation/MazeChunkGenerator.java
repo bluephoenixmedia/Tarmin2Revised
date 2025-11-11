@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
+
 /**
  * Generates and populates a single "chunk" (a Maze object) for the world.
  * This class encapsulates all logic moved from GameScreen, including
@@ -59,8 +61,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * @return A fully populated Maze object.
      */
     @Override
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode) {
-        // --- 1. Create Layout ---
+    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme) {        // --- 1. Create Layout ---
         // For ADVANCED mode, we use a 3x2 grid (double the size)
         // For CLASSIC mode, we stick with the original 2x2
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
@@ -69,6 +70,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         // --- 2. Create Maze Object ---
         Maze maze = createMazeFromText(level, this.finalLayout);
+        maze.setTheme(theme); // <-- [NEW] SET THE THEME
 
         // --- 3. Populate Maze ---
         spawnEntities(maze, difficulty, level, this.finalLayout);
