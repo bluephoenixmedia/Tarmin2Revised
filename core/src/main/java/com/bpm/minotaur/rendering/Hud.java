@@ -339,8 +339,10 @@ public class Hud implements Disposable {
         //String weaponDisplay = player.getInventory().getRightHand().getDisplayName();
         String mods = returnModsString(itemInHand);
 
+        if (itemInHand != null && itemInHand.getType() != null) {
+            rightHandStatsLabel.setText(weaponColor + " " + itemInHand.getType().toString() + mods);
+        }
 
-        rightHandStatsLabel.setText(weaponColor + " " + itemInHand.getType().toString() + mods);
 
 
         if (itemInHand != null) {

@@ -174,6 +174,9 @@ public class CombatManager {
                         ));
 
                         monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
+                        showDamageText(weapon.getWeaponStats().damage + attackModifier,
+                            new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+
                         Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
                     } else {
@@ -200,6 +203,10 @@ public class CombatManager {
                     ));
 
                     monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
+                    showDamageText(weapon.getWeaponStats().damage + attackModifier,
+                        new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+
+
                     eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
                 }
 
@@ -221,6 +228,9 @@ public class CombatManager {
                 ));
 
                 monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage + attackModifier);
+                showDamageText(weapon.getSpiritualWeaponStats().damage + attackModifier,
+                    new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+
                 Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritualWeaponStats().damage + " damage");
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
 
@@ -379,6 +389,16 @@ public class CombatManager {
                 }
             }
         }
+    }
+
+
+    private void showDamageText(int damage, GridPoint2 position) {
+        animationManager.addAnimation(new Animation(
+            Animation.AnimationType.DAMAGE_TEXT,
+            position,
+            String.valueOf(damage),
+            1.0f  // 1 second duration
+        ));
     }
 
     public void update(float delta) {
