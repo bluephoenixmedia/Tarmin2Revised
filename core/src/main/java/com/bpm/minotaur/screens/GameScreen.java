@@ -247,6 +247,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
         game.batch.begin();
 
+        animationManager.renderDamageText(game.batch, game.viewport);
+
+
         font.setColor(Color.WHITE);
         font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
         game.batch.end();
