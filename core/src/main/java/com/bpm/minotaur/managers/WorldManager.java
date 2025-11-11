@@ -17,6 +17,7 @@ import com.bpm.minotaur.generation.MazeChunkGenerator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 
 /**
  * Manages the game world, including loading, saving, and generating
@@ -32,6 +33,10 @@ public class WorldManager {
     private GridPoint2 currentPlayerChunkId;
     private final Json json;
     private static final String SAVE_DIRECTORY = "saves/world/";
+
+
+    private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
+    private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
     // --- NEW: Biome and Generator Management ---
     private final BiomeManager biomeManager;
@@ -60,7 +65,9 @@ public class WorldManager {
         // This is the core of the strategy pattern
         this.generators.put(Biome.MAZE, mazeGen);
         this.generators.put(Biome.FOREST, forestGen);
-        this.generators.put(Biome.PLAINS, forestGen); // For now, Plains will just be Forests
+        this.generators.put(Biome.PLAINS, forestGen);
+        this.currentLevelTheme = getThemeForLevel(initialLevel);
+        // For now, Plains will just be Forests
         // ... (map Biome.DESERT to desertGen, etc.) ...
         // --- END NEW ---
     }
@@ -103,8 +110,7 @@ public class WorldManager {
         if (gameMode == GameMode.CLASSIC) {
             Gdx.app.log("WorldManager", "CLASSIC mode: Generating new chunk.");
             // In classic mode, we only ever use the Maze generator
-            return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode);
-        }
+            return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME);        }
 
         // --- 2. ADVANCED Mode: Check cache first ---
         if (loadedChunks.containsKey(chunkId)) {
@@ -147,10 +153,22 @@ public class WorldManager {
             Gdx.app.error("WorldManager", "No generator found for Biome: " + biome.name() + ". Defaulting to FOREST.");
             generator = generators.get(Biome.FOREST); // Use Forest as a safe default
         }
+        RetroTheme.Theme themeToGenerate;
+        switch (biome) {
+            case MAZE:
+                themeToGenerate = this.currentLevelTheme; // Use the persistent theme for this Z-level
+                break;
+            case FOREST:
+            case PLAINS:
+                themeToGenerate = RetroTheme.FOREST_THEME; // Forests always use the forest theme
+                break;
+            default:
+                themeToGenerate = this.currentLevelTheme; // Default to level theme
+                break;
+        }
 
         Gdx.app.log("WorldManager", "No save file for " + chunkId + ". Generating new chunk with " + generator.getClass().getSimpleName());
-        Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode);
-
+        Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode, themeToGenerate);
         // --- 7. ADVANCED Mode: Save and cache the new chunk ---
         loadedChunks.put(chunkId, newMaze); // Add to cache
         saveChunk(newMaze, chunkId); // Save to file
@@ -175,10 +193,33 @@ public class WorldManager {
      */
     public void setCurrentLevel(int level) {
         this.currentLevel = level;
+        // --- [NEW] ---
+        // Get the persistent theme for this new level
+        this.currentLevelTheme = getThemeForLevel(level);
+
+        // --- [END NEW] ---
         Gdx.app.log("WorldManager", "Set current level to: " + level);
     }
     // --- [END NEW METHOD] ---
 
+
+    /**
+     * [NEW] Gets the persistent theme for a given level.
+     * If one does not exist, it generates and stores a new random theme.
+     * @param level The Z-level to check.
+     * @return The persistent RetroTheme.Theme for that level.
+     */
+    public RetroTheme.Theme getThemeForLevel(int level) {
+        if (levelThemes.containsKey(level)) {
+            return levelThemes.get(level);
+        } else {
+            RetroTheme.Theme newTheme = RetroTheme.getRandomTheme();
+            levelThemes.put(level, newTheme);
+            // [MODIFIED] This log now uses the theme name!
+            Gdx.app.log("WorldManager", "Generated new theme '" + newTheme.name + "' for level " + level);
+            return newTheme;
+        }
+    }
 
     public void saveCurrentChunk(Maze maze) {
 

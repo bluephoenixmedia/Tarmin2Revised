@@ -106,7 +106,11 @@ public class FirstPersonRenderer {
         Color fogColor = applyTorchLighting(currentFloorColor, WorldConstants.TORCH_FADE_END, new Color());
         boolean fogEnabled = false;
 
+        setTheme(maze.getTheme());
+
         // Set theme based on biome
+
+        /*
         if (gameMode == GameMode.ADVANCED && (biome == Biome.FOREST || biome == Biome.PLAINS)) {
             setTheme(RetroTheme.FOREST_THEME);
         } else {
@@ -116,7 +120,9 @@ public class FirstPersonRenderer {
             if (gameMode == GameMode.ADVANCED && currentLevel == 1) {
                 this.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
             }
-        }
+        }*/
+
+
 
         // Set fog parameters
         if (gameMode == GameMode.ADVANCED && biome.hasFogOfWar()) {

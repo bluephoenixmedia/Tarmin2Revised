@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 
 public class Maze {
     public static final int MAZE_WIDTH = 20;
@@ -21,6 +22,7 @@ public class Maze {
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
 
+    private RetroTheme.Theme theme;
 
 
 
@@ -121,6 +123,19 @@ public class Maze {
         projectiles.add(projectile);
     }
 
+
+    public void setTheme(RetroTheme.Theme theme) {
+        this.theme = theme;
+    }
+
+    /**
+     * [NEW] Gets the visual and gameplay theme for this maze chunk.
+     * @return The Theme object. Returns STANDARD_THEME if no theme is set.
+     */
+    public RetroTheme.Theme getTheme() {
+        // Return a safe default if the theme is null to prevent render crashes
+        return (this.theme != null) ? this.theme : RetroTheme.STANDARD_THEME;
+    }
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();

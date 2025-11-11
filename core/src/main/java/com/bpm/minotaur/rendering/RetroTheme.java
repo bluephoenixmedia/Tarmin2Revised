@@ -2,6 +2,8 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.graphics.Color;
 
+import java.util.Random;
+
 /**
  * A central class to define and store color palettes for the
  * Retro rendering mode (when ShapeRenderer is used).
@@ -10,8 +12,12 @@ import com.badlogic.gdx.graphics.Color;
  */
 public class RetroTheme {
 
+
+    private static final Random random = new Random();
+
     // A class to hold all colors for a single theme
     public static class Theme {
+        public final String name; // <-- [NEW]
         public final Color floor;
         public final Color ceiling;
         public final Color wall;
@@ -19,7 +25,8 @@ public class RetroTheme {
         public final Color door;
         public final Color doorDark;
 
-        public Theme(Color floor, Color ceiling, Color wall, Color wallDark, Color door, Color doorDark) {
+        public Theme(String name, Color floor, Color ceiling, Color wall, Color wallDark, Color door, Color doorDark) {
+            this.name = name; // <-- [NEW]
             this.floor = floor;
             this.ceiling = ceiling;
             this.wall = wall;
@@ -84,6 +91,7 @@ public class RetroTheme {
     // --- STANDARD THEME ---
     // Unchanged. Follows the Floor (dark), WallDark (medium), Wall (light) logic.
     public static final Theme STANDARD_THEME = new Theme(
+        "Standard",
         new Color(0.2f, 0.4f, 0.2f, 1),    // Floor
         new Color(0.3f, 0.5f, 0.3f, 1),    // Ceiling
         new Color(0.5f, 0.8f, 0.5f, 1),    // Wall (Bright)
@@ -98,6 +106,7 @@ public class RetroTheme {
     // Logic: Floor = DARK, WallDark = MEDIUM (main color), Wall = LIGHT
 
     public static final Theme ADVANCED_COLOR_THEME_RED = new Theme(
+        "Red",
         INTV_RED_DARK,     // Floor
         INTV_RED_LIGHT,    // Ceiling
         INTV_RED_LIGHT,    // Wall (Bright)
@@ -107,6 +116,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_BLUE = new Theme(
+        "Blue",
         INTV_BLUE_DARK,    // Floor
         INTV_BLUE_LIGHT,   // Ceiling
         INTV_BLUE_LIGHT,   // Wall (Bright)
@@ -116,6 +126,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_GREEN = new Theme(
+        "Green",
         INTV_DARK_GREEN,   // Floor
         INTV_GREEN_LIGHT,  // Ceiling
         INTV_GREEN_LIGHT,  // Wall (Bright)
@@ -125,6 +136,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_YELLOW = new Theme(
+        "Yellow",
         INTV_YELLOW_DARK,  // Floor
         INTV_YELLOW_LIGHT, // Ceiling
         INTV_YELLOW_LIGHT, // Wall (Bright)
@@ -134,6 +146,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_INDIGO = new Theme(
+        "Indigo",
         INTV_PURPLE_DARK,  // Floor
         INTV_PURPLE_LIGHT, // Ceiling
         INTV_PURPLE_LIGHT, // Wall (Bright)
@@ -143,6 +156,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_CYAN = new Theme(
+        "Cyan",
         INTV_CYAN_DARK,    // Floor
         INTV_CYAN_LIGHT,   // Ceiling
         INTV_CYAN_LIGHT,   // Wall (Bright)
@@ -152,6 +166,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_TAN = new Theme(
+        "Tan",
         INTV_TAN_DARK,     // Floor
         INTV_TAN_LIGHT,    // Ceiling
         INTV_TAN_LIGHT,    // Wall (Bright)
@@ -161,6 +176,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_OLIVE = new Theme(
+        "Olive",
         INTV_OLIVE_DARK,   // Floor
         INTV_OLIVE_LIGHT,  // Ceiling
         INTV_OLIVE_LIGHT,  // Wall (Bright)
@@ -170,6 +186,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_ORANGE = new Theme(
+        "Orange",
         INTV_ORANGE_DARK,  // Floor
         INTV_ORANGE_LIGHT, // Ceiling
         INTV_ORANGE_LIGHT, // Wall (Bright)
@@ -179,6 +196,7 @@ public class RetroTheme {
     );
 
     public static final Theme ADVANCED_COLOR_THEME_GREY = new Theme(
+        "Grey",
         INTV_GREY_DARK,    // Floor
         INTV_GREY_LIGHT,   // Ceiling
         INTV_GREY_LIGHT,   // Wall (Bright)
@@ -188,6 +206,7 @@ public class RetroTheme {
     );
 
     public static final Theme FOREST_THEME = new Theme(
+        "Forest",
         INTV_BROWN_DARK,                   // Floor (Brown)
         new Color(0.3f, 0.5f, 0.3f, 1),    // Ceiling (Green)
         new Color(0.5f, 0.8f, 0.5f, 1),    // Wall (Bright Green)
@@ -195,4 +214,25 @@ public class RetroTheme {
         new Color(0.1f, 0.2f, 0.7f, 1),    // Door (Blue)
         new Color(0.1f, 0.15f, 0.6f, 1)     // Door Dark (Dark Blue)
     );
+
+    private static final Theme[] ADVANCED_THEMES = new Theme[] {
+        ADVANCED_COLOR_THEME_RED,
+        ADVANCED_COLOR_THEME_BLUE,
+        ADVANCED_COLOR_THEME_GREEN,
+        ADVANCED_COLOR_THEME_YELLOW,
+        ADVANCED_COLOR_THEME_INDIGO,
+        ADVANCED_COLOR_THEME_CYAN,
+        ADVANCED_COLOR_THEME_TAN,
+        ADVANCED_COLOR_THEME_OLIVE,
+        ADVANCED_COLOR_THEME_ORANGE,
+        ADVANCED_COLOR_THEME_GREY
+    };
+
+    /**
+     * [NEW] Gets a random theme for a new dungeon level.
+     * @return A randomly selected Theme object from the ADVANCED_THEMES list.
+     */
+    public static Theme getRandomTheme() {
+        return ADVANCED_THEMES[random.nextInt(ADVANCED_THEMES.length)];
+    }
 }

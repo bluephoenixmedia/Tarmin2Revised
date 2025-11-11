@@ -428,6 +428,8 @@ public class Hud implements Disposable {
         stage.draw();
 
         if (isDebug) {
+
+
             // --- 1. PREPARE DEBUG FONT (moved to top) ---
             spriteBatch.setProjectionMatrix(stage.getCamera().combined);
             shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
@@ -619,12 +621,19 @@ public class Hud implements Disposable {
                 float worldDebugX = 1300; // X position for this block
                 float worldDebugY = this.viewport.getWorldHeight() - 100; // Y position
 
-                defaultFont.setColor(Color.CYAN); // Different color for this block
+                String themeName = "";
+
+                if (maze != null) {
+                    RetroTheme.Theme theme = maze.getTheme(); // Use the safe getter
+                    themeName = (theme != null) ? theme.name : "Unknown"; // Get the name
+                    defaultFont.draw(spriteBatch, "Theme: " + themeName, worldDebugX, worldDebugY -= 20);
+                }
+
+                defaultFont.setColor(Color.WHITE); // Different color for this block
                 defaultFont.draw(spriteBatch, "WORLD DEBUG", worldDebugX, worldDebugY); worldDebugY -= 20;
                 defaultFont.draw(spriteBatch, "Chunk: " + (chunkId != null ? chunkId.toString() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
                 defaultFont.draw(spriteBatch, "Biome: " + (biome != null ? biome.name() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
-
-                defaultFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY);
+                defaultFont.draw(spriteBatch, "Theme: " + themeName, worldDebugX, worldDebugY -= 20);                defaultFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY -= 20);
                 defaultFont.setColor(Color.YELLOW); // Reset to default debug color
             }
 

@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
-
+import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 /**
  * Interface defining the "contract" for all chunk generators.
  * Each biome (Maze, Forest, etc.) will have its own generator
@@ -19,9 +19,11 @@ public interface IChunkGenerator {
      * @param level      The dungeon level.
      * @param difficulty The game difficulty.
      * @param gameMode   The current game mode (CLASSIC or ADVANCED).
+     * @param theme      [NEW] The visual/gameplay theme to apply to this chunk.
      * @return A fully populated Maze object for this biome.
      */
-    Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode);
+    // [MODIFIED] Added theme parameter
+    Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme);
 
     /**
      * Gets the default player starting position for this generator.
