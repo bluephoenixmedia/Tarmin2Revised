@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
-// import com.badlogic.gdx.graphics.GL20; // Unused import
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
@@ -16,7 +15,6 @@ import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.MusicManager;
-import com.bpm.minotaur.managers.SettingsManager;
 
 
 /**

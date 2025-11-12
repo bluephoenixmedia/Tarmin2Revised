@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
+import com.bpm.minotaur.rendering.RetroTheme;
 /**
  * Interface defining the "contract" for all chunk generators.
  * Each biome (Maze, Forest, etc.) will have its own generator

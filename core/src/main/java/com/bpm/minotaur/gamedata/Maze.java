@@ -1,11 +1,12 @@
 package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.rendering.RetroTheme;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 
 public class Maze {
     public static final int MAZE_WIDTH = 20;
