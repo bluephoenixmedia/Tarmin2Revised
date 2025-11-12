@@ -14,22 +14,10 @@ import java.util.Random;
 
 public class Player {
 
-    private int warStrength;
-    private int spiritualStrength;
-    private int food;
-    private int arrows;
+    // --- All stat fields removed ---
 
-    // --- New Experience and Leveling Fields ---
-    private int level;
-    private int experience;
-    private int experienceToNextLevel;
-    private static final int BASE_XP_REQUIRED = 100;
-    private static final double LOG_BASE = 1.2;
-
-    private int treasureScore = 0;
-
-    private int maxWarStrength;
-    private int maxSpiritualStrength;
+    // --- New PlayerStats field ---
+    private final PlayerStats stats;
 
     private final Vector2 position;
     private Direction facing;
@@ -38,7 +26,6 @@ public class Player {
 
     private final Inventory inventory = new Inventory();
 
-    private final float vulnerabilityMultiplier; // Add this line
     private SoundManager soundManager;
     private DebugManager debugManager;
 
@@ -63,23 +50,12 @@ public class Player {
         this.soundManager = new SoundManager(null);
         updateVectors();
 
-        // Set stats based on difficulty
-        this.warStrength = difficulty.startWarStrength;
-        this.spiritualStrength = difficulty.startSpiritualStrength;
-        this.food = difficulty.startFood;
-        this.arrows = difficulty.startArrows;
-        this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
-
-        this.maxWarStrength = difficulty.startWarStrength;
-        this.maxSpiritualStrength = difficulty.startSpiritualStrength;
-
+        // --- All stat initialization is replaced by creating the PlayerStats object ---
+        this.stats = new PlayerStats(difficulty);
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN));
 
-        // --- Initialize Leveling Stats ---
-        this.level = 1;
-        this.experience = 0;
-        this.experienceToNextLevel = calculateXpForLevel(2);
+        // --- Leveling stat init removed, it's in PlayerStats constructor ---
     }
 
     /**
@@ -141,9 +117,10 @@ public class Player {
             soundManager.playPickupItemSound();
             // Handle Treasure pickup
             if (itemInFront.getCategory() == Item.ItemCategory.TREASURE) {
-                treasureScore += itemInFront.getValue();
+                // --- MODIFIED: Use stats object ---
+                stats.incrementTreasureScore(itemInFront.getValue());
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "! Your treasure score is now " + treasureScore, 2f));
+                eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "! Your treasure score is now " + stats.getTreasureScore(), 2f));
                 Gdx.app.log("Player", "Picked up " + itemInFront.getDisplayName() + " with value " + itemInFront.getValue());
                 return;
             }
@@ -151,7 +128,8 @@ public class Player {
             // Handle Quiver pickup
             if (itemInFront.getType() == Item.ItemType.QUIVER) {
                 int arrowsFound = new Random().nextInt(4) + 6; // 6 to 9 arrows, as per the manual
-                addArrows(arrowsFound);
+                // --- MODIFIED: Use stats object ---
+                stats.addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found a quiver with " + arrowsFound + " arrows.", 2f));
                 return;
@@ -160,7 +138,8 @@ public class Player {
             // Handle Flour Sack pickup
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
                 int foodFound = new Random().nextInt(4) + 6; // 6 to 9 food, as per the manual
-                addFood(foodFound);
+                // --- MODIFIED: Use stats object ---
+                stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found a flour sack with " + foodFound + " food.", 2f));
                 return;
@@ -224,9 +203,11 @@ public class Player {
         }
     }
 
-    private int getMaxWarStrength() {
-        return maxWarStrength;
-    }
+    // --- MODIFIED: This method now delegates to stats, but it's private and only used in useConsumable... ---
+    // --- We can remove it and just call stats.getMaxWarStrength() directly in useConsumable ---
+    // private int getMaxWarStrength() {
+    //     return stats.getMaxWarStrength();
+    // }
 
     private void equipRing(Item ring, GameEventManager eventManager) {
         if (ring.getCategory() != Item.ItemCategory.RING) return;
@@ -295,29 +276,32 @@ public class Player {
         switch (item.getType()) {
             case SMALL_POTION:
                 // Refresh war & spiritual strength to maximum
-                // --- MODIFIED: Use effective max stats ---
-                this.warStrength = this.getEffectiveMaxWarStrength();
-                this.spiritualStrength = this.getEffectiveMaxSpiritualStrength();
+                // --- MODIFIED: Use stats object and Player.setWarStrength ---
+                this.setWarStrength(this.getEffectiveMaxWarStrength());
+                stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
                 // --- END MODIFIED ---
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("You feel refreshed.", 2f));
                 break;
             case LARGE_POTION:
                 // Raise war strength score by 10
-                this.maxWarStrength+=10;
-                this.warStrength = this.getEffectiveMaxWarStrength(); // Heal to new max
+                // --- MODIFIED: Use stats object ---
+                stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
+                this.setWarStrength(this.getEffectiveMaxWarStrength()); // Heal to new max
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
                 break;
             case WAR_BOOK:
-                this.maxWarStrength += 10;
-                this.warStrength = this.getEffectiveMaxWarStrength();
+                // --- MODIFIED: Use stats object ---
+                stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
+                this.setWarStrength(this.getEffectiveMaxWarStrength());
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your knowledge of war grows.", 2f));
                 break;
             case SPIRITUAL_BOOK:
-                this.maxSpiritualStrength += 10;
-                this.spiritualStrength = this.getEffectiveMaxSpiritualStrength();
+                // --- MODIFIED: Use stats object ---
+                stats.setMaxSpiritualStrength(stats.getMaxSpiritualStrength() + 10);
+                stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your spiritual knowledge grows.", 2f));
                 break;
@@ -334,18 +318,19 @@ public class Player {
     }
 
     public void rest(GameEventManager eventManager) {
-        if (food > 0) {
-            food--;
+        // --- MODIFIED: Use stats object ---
+        if (stats.getFood() > 0) {
+            stats.setFood(stats.getFood() - 1);
 
             int warStrengthGained = 5;
             int spiritualStrengthGained = 5;
 
-            this.warStrength = Math.min(this.getEffectiveMaxWarStrength(), this.warStrength + warStrengthGained);
-            this.spiritualStrength = Math.min(this.getEffectiveMaxSpiritualStrength(), this.spiritualStrength + spiritualStrengthGained);
+            this.setWarStrength(Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
+            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(), stats.getSpiritualStrength() + spiritualStrengthGained));
 
-            Gdx.app.log("Player", "Player rests. Food remaining: " + food);
-            Gdx.app.log("Player", "WS restored to " + warStrength + ", SS restored to " + spiritualStrength);
-            eventManager.addEvent(new GameEvent(("WS restored to " + warStrength + ", SS restored to " + spiritualStrength), 2f));
+            Gdx.app.log("Player", "Player rests. Food remaining: " + stats.getFood());
+            Gdx.app.log("Player", "WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength());
+            eventManager.addEvent(new GameEvent(("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()), 2f));
 
         } else {
             Gdx.app.log("Player", "Cannot rest. No food remaining.");
@@ -363,17 +348,19 @@ public class Player {
         int resistance = getResistance(type); // Gets elemental/effect resistance
 
         // Apply vulnerability multiplier to the incoming damage amount first
-        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // --- MODIFIED: Use stats object ---
+        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
 
         // Then, subtract armor defense and elemental resistance
         finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
 
-        this.warStrength -= finalDamage;
+        // --- MODIFIED: Use stats object ---
+        stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
-        if (this.warStrength < 0) {
-            this.warStrength = 0;
+        if (stats.getWarStrength() < 0) {
+            stats.setWarStrength(0);
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " damage. WS is now " + this.warStrength);
+        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " damage. WS is now " + stats.getWarStrength());
     }
 
     public void takeSpiritualDamage(int amount, DamageType type) {
@@ -381,17 +368,19 @@ public class Player {
         int resistance = getResistance(type); // Gets elemental/effect resistance
 
         // Apply vulnerability multiplier to the incoming damage amount first
-        int finalDamage = (int)(amount * vulnerabilityMultiplier);
+        // --- MODIFIED: Use stats object ---
+        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
 
         // Then, subtract ring defense and elemental resistance
         finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
 
-        this.spiritualStrength -= finalDamage;
+        // --- MODIFIED: Use stats object ---
+        stats.setSpiritualStrength(stats.getSpiritualStrength() - finalDamage);
 
-        if (this.spiritualStrength < 0) {
-            this.spiritualStrength = 0;
+        if (stats.getSpiritualStrength() < 0) {
+            stats.setSpiritualStrength(0);
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " spiritual damage. SS is now " + this.spiritualStrength);
+        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " spiritual damage. SS is now " + stats.getSpiritualStrength());
     }
 
     public int getArmorDefense() {
@@ -411,13 +400,15 @@ public class Player {
     }
 
     public int getEffectiveMaxWarStrength() {
-        return maxWarStrength + getEquippedModifierSum(ModifierType.BONUS_WAR_STRENGTH);
+        // --- MODIFIED: Use stats object ---
+        return stats.getMaxWarStrength() + getEquippedModifierSum(ModifierType.BONUS_WAR_STRENGTH);
     }
     // --- END MODIFIED ---
 
     // --- NEW METHOD ---
     public int getEffectiveMaxSpiritualStrength() {
-        return maxSpiritualStrength + getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
+        // --- MODIFIED: Use stats object ---
+        return stats.getMaxSpiritualStrength() + getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
     }
 
     public Item getWornRing() {
@@ -425,10 +416,14 @@ public class Player {
     }
 
     public void setWarStrength(int amount) {
-        this.warStrength = Math.min(amount, this.getEffectiveMaxWarStrength());
+        // --- MODIFIED: Use stats object ---
+        stats.setWarStrength(Math.min(amount, this.getEffectiveMaxWarStrength()));
     }
 
-    public void setMaxWarStrength(int amount) { this.maxWarStrength = amount; }
+    public void setMaxWarStrength(int amount) {
+        // --- MODIFIED: Use stats object ---
+        stats.setMaxWarStrength(amount);
+    }
 
 
     private int getRingDefense() {
@@ -715,17 +710,20 @@ public class Player {
         int outcome = new Random().nextInt(4); // 4 possible outcomes
         switch (outcome) {
             case 1: // Swap stats
-                int temp = warStrength;
-                setWarStrength(getSpiritualStrength());
-                spiritualStrength = temp;
+                // --- MODIFIED: Use stats object ---
+                int temp = stats.getWarStrength();
+                setWarStrength(stats.getSpiritualStrength());
+                stats.setSpiritualStrength(temp);
                 Gdx.app.log("Player", "Gate swapped stats!");
                 break;
             case 2: // Reduce War Strength
-                setWarStrength((int)(getWarStrength() * 0.75f)); // Reduce by 25%
+                // --- MODIFIED: Use stats object ---
+                setWarStrength((int)(stats.getWarStrength() * 0.75f)); // Reduce by 25%
                 Gdx.app.log("Player", "Gate reduced War Strength!");
                 break;
             case 3: // Reduce Spiritual Strength
-                spiritualStrength = (int)(spiritualStrength * 0.75f); // Reduce by 25%
+                // --- MODIFIED: Use stats object ---
+                stats.setSpiritualStrength((int)(stats.getSpiritualStrength() * 0.75f)); // Reduce by 25%
                 Gdx.app.log("Player", "Gate reduced Spiritual Strength!");
                 break;
             default: // No change
@@ -787,20 +785,23 @@ public class Player {
         int outcome = new Random().nextInt(4); // 4 possible outcomes
         switch (outcome) {
             case 1: // Swap stats
-                int temp = warStrength;
-                setWarStrength(getSpiritualStrength()); // Use setter to respect max
-                spiritualStrength = Math.min(temp, maxSpiritualStrength); // Respect max
-                Gdx.app.log("Player", "Gate swapped stats! WS=" + warStrength + ", SS=" + spiritualStrength);
+                // --- MODIFIED: Use stats object ---
+                int temp = stats.getWarStrength();
+                setWarStrength(stats.getSpiritualStrength()); // Use setter to respect max
+                stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength())); // Respect max
+                Gdx.app.log("Player", "Gate swapped stats! WS=" + stats.getWarStrength() + ", SS=" + stats.getSpiritualStrength());
                 eventManager.addEvent(new GameEvent("Your strengths feel reversed!", 2f));
                 break;
             case 2: // Reduce War Strength
-                setWarStrength((int)(getWarStrength() * 0.75f)); // Reduce by 25%
-                Gdx.app.log("Player", "Gate reduced War Strength to " + warStrength);
+                // --- MODIFIED: Use stats object ---
+                setWarStrength((int)(stats.getWarStrength() * 0.75f)); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced War Strength to " + stats.getWarStrength());
                 eventManager.addEvent(new GameEvent("You feel weaker!", 2f));
                 break;
             case 3: // Reduce Spiritual Strength
-                spiritualStrength = Math.min((int)(spiritualStrength * 0.75f), maxSpiritualStrength); // Reduce by 25%
-                Gdx.app.log("Player", "Gate reduced Spiritual Strength to " + spiritualStrength);
+                // --- MODIFIED: Use stats object ---
+                stats.setSpiritualStrength(Math.min((int)(stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength())); // Reduce by 25%
+                Gdx.app.log("Player", "Gate reduced Spiritual Strength to " + stats.getSpiritualStrength());
                 eventManager.addEvent(new GameEvent("Your spirit feels drained!", 2f));
                 break;
             default: // No change
@@ -843,68 +844,41 @@ public class Player {
         }
     }
 
-    public void addArrows(int amount) {
-        this.arrows += amount;
-        if (this.arrows > 99) {
-            this.arrows = 99; // Cap at 99 as per the manual
-        }
-    }
-
-    public void addFood(int amount) {
-        this.food += amount;
-        if (this.food > 99) {
-            this.food = 99; // Cap at 99 as per the manual
-        }
-    }
-
-    public void decrementArrow() {
-        if (this.arrows > 0) {
-            this.arrows--;
-        }
-    }
+    // --- METHODS MOVED TO PlayerStats ---
+    // public void addArrows(int amount) { ... }
+    // public void addFood(int amount) { ... }
+    // public void decrementArrow() { ... }
 
     // --- Experience and Leveling Logic ---
 
-    private int calculateXpForLevel(int targetLevel) {
-        if (targetLevel <= 1) return 0;
-        // Formula: base * (log_base ^ (level -1))
-        return (int) (BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
-    }
+    // --- METHOD MOVED TO PlayerStats ---
+    // private int calculateXpForLevel(int targetLevel) { ... }
 
     public void addExperience(int amount, GameEventManager eventManager) {
         if (amount <= 0) return;
-        this.experience += amount;
-        Gdx.app.log("Player", "Gained " + amount + " XP. Total: " + this.experience + "/" + this.experienceToNextLevel);
+
+        // --- MODIFIED: Delegate to PlayerStats ---
+        boolean leveledUp = stats.addExperience(amount);
+        // --- END MODIFIED ---
+
+        Gdx.app.log("Player", "Gained " + amount + " XP. Total: " + stats.getExperience() + "/" + stats.getExperienceToNextLevel());
         eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
-        while (this.experience >= this.experienceToNextLevel) {
-            levelUp(eventManager);
+        // --- MODIFIED: Check boolean returned from stats.addExperience ---
+        if (leveledUp) {
+            levelUp(eventManager); // Call private helper to handle effects
         }
     }
 
+    // --- MODIFIED: This method now only handles the *effects* of leveling up ---
     private void levelUp(GameEventManager eventManager) {
         soundManager.playPlayerLevelUpSound();
-        this.experience -= this.experienceToNextLevel; // Carry over remaining XP
-        this.level++;
-        this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
+        // Stat increases and healing are already handled inside PlayerStats.levelUp()
+        // We just log and create the event.
 
-        // Increase stats
-        int wsIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
-        int ssIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
-        Gdx.app.log("Player", "war strength increase by " + wsIncrease + "!");
-
-        Gdx.app.log("Player", "spiritual strength increase by " + ssIncrease + "!");
-
-        this.maxWarStrength += wsIncrease;
-        this.maxSpiritualStrength += ssIncrease;
-
-        // Fully heal player on level up
-        this.warStrength = this.maxWarStrength;
-        this.spiritualStrength = this.maxSpiritualStrength;
-
-        Gdx.app.log("Player", "Leveled up to level " + this.level + "!");
-        eventManager.addEvent(new GameEvent("You reached level " + this.level + "!", 3f));
+        Gdx.app.log("Player", "Leveled up to level " + stats.getLevel() + "!");
+        eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
     }
 
     /**
@@ -912,20 +886,35 @@ public class Player {
      * @return The bonus damage to add to attacks.
      */
     public int getAttackModifier() {
-        return this.level; // Simple: +1 damage per level.
+        // --- MODIFIED: Delegate to PlayerStats ---
+        return stats.getAttackModifier();
     }
 
-    public int getLevel() { return level; }
-    public int getExperience() { return experience; }
-    public int getExperienceToNextLevel() { return experienceToNextLevel; }
-    public int getTreasureScore() { return treasureScore; }
+    // --- MODIFIED: All getters now delegate to the stats object ---
+
+    public int getLevel() { return stats.getLevel(); }
+    public int getExperience() { return stats.getExperience(); }
+    public int getExperienceToNextLevel() { return stats.getExperienceToNextLevel(); }
+    public int getTreasureScore() { return stats.getTreasureScore(); }
     public Vector2 getPosition() { return position; }
     public Direction getFacing() { return facing; }
     public Vector2 getDirectionVector() { return directionVector; }
     public Vector2 getCameraPlane() { return cameraPlane; }
-    public int getWarStrength() { return warStrength; }
-    public int getSpiritualStrength() { return spiritualStrength; }
-    public int getFood() { return food; }
-    public int getArrows() { return arrows; }
+    public int getWarStrength() { return stats.getWarStrength(); }
+    public int getSpiritualStrength() { return stats.getSpiritualStrength(); }
+    public int getFood() { return stats.getFood(); }
+    public int getArrows() { return stats.getArrows(); }
     public Inventory getInventory() { return inventory; }
+
+    public void addArrows(int amount) {
+        stats.addArrows(amount);
+    }
+
+    public void addFood(int amount) {
+        stats.addFood(amount);
+    }
+
+    public void decrementArrow() {
+        stats.decrementArrow();
+    }
 }
