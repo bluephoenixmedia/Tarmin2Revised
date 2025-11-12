@@ -4,11 +4,10 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Player;
 import com.bpm.minotaur.gamedata.Projectile;
-import com.bpm.minotaur.gamedata.Maze;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,9 +1,8 @@
 package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.graphics.Texture; // <-- IMPORT ADDED FOR COMPATIBILITY
 
 /**
  * A non-monster, non-item renderable object in the world, like a tree or rock.

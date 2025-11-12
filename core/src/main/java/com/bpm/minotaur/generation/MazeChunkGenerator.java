@@ -4,13 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.managers.SpawnManager;
+import com.bpm.minotaur.rendering.RetroTheme;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-
-import com.bpm.minotaur.rendering.RetroTheme; // <-- [NEW] ADD THIS IMPORT
 
 /**
  * Generates and populates a single "chunk" (a Maze object) for the world.

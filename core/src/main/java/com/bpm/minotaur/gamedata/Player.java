@@ -6,13 +6,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
+import com.bpm.minotaur.managers.WorldManager;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import com.bpm.minotaur.managers.WorldManager;
 
 public class Player {
 

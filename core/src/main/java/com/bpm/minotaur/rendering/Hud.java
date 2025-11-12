@@ -27,7 +27,7 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 
-import java.util.List; // <-- IMPORT ADDED FOR LIST
+import java.util.List;
 
 public class Hud implements Disposable {
 

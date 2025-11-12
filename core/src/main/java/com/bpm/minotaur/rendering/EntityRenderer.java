@@ -4,15 +4,14 @@ package com.bpm.minotaur.rendering;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.generation.Biome; // <-- ADD IMPORT
+import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.WorldConstants;
 import com.bpm.minotaur.managers.DebugManager;
-import com.bpm.minotaur.managers.WorldManager; // <-- ADD IMPORT
+import com.bpm.minotaur.managers.WorldManager;
 
 import java.util.ArrayList;
 import java.util.List;

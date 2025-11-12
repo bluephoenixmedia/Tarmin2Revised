@@ -4,9 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class Item implements Renderable {
 
