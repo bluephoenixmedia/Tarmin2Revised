@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;

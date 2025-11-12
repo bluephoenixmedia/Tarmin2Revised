@@ -7,7 +7,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Item;
 import com.bpm.minotaur.gamedata.ItemSpriteData;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;

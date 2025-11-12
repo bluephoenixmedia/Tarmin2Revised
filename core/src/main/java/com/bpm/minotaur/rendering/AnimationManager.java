@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.Projectile;
 
 import java.util.ArrayList;

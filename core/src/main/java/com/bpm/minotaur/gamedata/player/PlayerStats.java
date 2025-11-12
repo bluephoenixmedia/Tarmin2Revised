@@ -1,4 +1,6 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.player;
+
+import com.bpm.minotaur.gamedata.Difficulty;
 
 import java.util.Random;
 

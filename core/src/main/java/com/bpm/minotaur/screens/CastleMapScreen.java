@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Player;
+import com.bpm.minotaur.gamedata.player.Player;
 
 public class CastleMapScreen extends BaseScreen {
 
