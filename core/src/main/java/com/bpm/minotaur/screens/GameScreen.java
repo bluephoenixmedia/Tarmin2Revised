@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
