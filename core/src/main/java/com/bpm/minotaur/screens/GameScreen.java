@@ -70,7 +70,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // Music based on initial level
         switch (level) {
             case 1:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
                 break;
             // Add more cases for other levels and tracks
             default:
