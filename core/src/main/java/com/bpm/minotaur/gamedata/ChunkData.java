@@ -1,8 +1,12 @@
 package com.bpm.minotaur.gamedata;
 
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Door.DoorState;
 import com.bpm.minotaur.gamedata.Gate.GateState;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +79,7 @@ public class ChunkData {
      * This method performs the "ChunkData -> Maze" conversion.
      * @return A new, fully populated Maze object.
      */
-    public Maze buildMaze() {
+    public Maze buildMaze(MonsterDataManager dataManager, AssetManager assetManager) {
         Maze maze = new Maze(this.level, this.wallData);
 
         for (ItemData data : items) {
@@ -89,7 +93,7 @@ public class ChunkData {
         }
 
         for (MonsterData data : monsters) {
-            Monster monster = new Monster(data.type, data.x, data.y, data.color);
+            Monster monster = new Monster(data.type, data.x, data.y, data.color, dataManager, assetManager);
             // CRITICAL: Restore the monster's saved health
             monster.setWarStrength(data.warStrength);
             monster.setSpiritualStrength(data.spiritualStrength);

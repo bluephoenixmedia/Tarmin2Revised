@@ -4,8 +4,8 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.ItemSpriteData;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
 

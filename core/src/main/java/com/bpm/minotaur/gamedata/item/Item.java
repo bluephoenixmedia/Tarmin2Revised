@@ -1,9 +1,11 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.item;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.gamedata.ModifierType;
+import com.bpm.minotaur.gamedata.Renderable;
 
 import java.util.ArrayList;
 import java.util.List;

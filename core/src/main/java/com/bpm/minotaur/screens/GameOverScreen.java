@@ -208,17 +208,17 @@ public class GameOverScreen extends BaseScreen {
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
 
-        game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-        game.batch.begin();
+        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+        game.getBatch().begin();
 
         if (backgroundTexture != null) {
             // Set color to white to draw the texture without any tint
-            game.batch.setColor(Color.WHITE);
+            game.getBatch().setColor(Color.WHITE);
 
             // Draw the texture to fill the entire viewport
-            game.batch.draw(backgroundTexture,
+            game.getBatch().draw(backgroundTexture,
                 0, 0, // Draw at the bottom-left corner
-                game.viewport.getWorldWidth(), game.viewport.getWorldHeight() // Scale to fit the screen
+                game.getViewport().getWorldWidth(), game.getViewport().getWorldHeight() // Scale to fit the screen
             );
         }
 
@@ -231,18 +231,18 @@ public class GameOverScreen extends BaseScreen {
             float spriteHeight = reaperTexture.getHeight() * scale;
 
             // Calculate position to center it horizontally and place it above the text
-            float x = (game.viewport.getWorldWidth() / 2) - (spriteWidth / 2) - 200;
-            float y = (game.viewport.getWorldHeight() / 2) - 500; // Position above "GAME OVER"
+            float x = (game.getViewport().getWorldWidth() / 2) - (spriteWidth / 2) - 200;
+            float y = (game.getViewport().getWorldHeight() / 2) - 500; // Position above "GAME OVER"
 
-            game.batch.draw(reaperTexture, x, y, spriteWidth, spriteHeight);
+            game.getBatch().draw(reaperTexture, x, y, spriteWidth, spriteHeight);
         }
         // --- End Sprite ---
 
         // Draw text
-        font.draw(game.batch, "GAME OVER", game.viewport.getWorldWidth() / 2 - 150, game.viewport.getWorldHeight() / 2 + 50);
-        font.draw(game.batch, "Press any key to return to the Main Menu", game.viewport.getWorldWidth() / 2 - 450, game.viewport.getWorldHeight() / 2 - 50);
+        font.draw(game.getBatch(), "GAME OVER", game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 + 50);
+        font.draw(game.getBatch(), "Press any key to return to the Main Menu", game.getViewport().getWorldWidth() / 2 - 450, game.getViewport().getWorldHeight() / 2 - 50);
 
-        game.batch.end();
+        game.getBatch().end();
     }
 
     @Override

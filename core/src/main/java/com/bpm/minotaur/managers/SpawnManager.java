@@ -1,9 +1,12 @@
 // Path: core/src/main/java/com/bpm/minotaur/managers/SpawnManager.java
 package com.bpm.minotaur.managers;
 
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
-
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +20,8 @@ public class SpawnManager {
     private final int level;
     private final Random random = new Random();
     private final List<GridPoint2> validSpawnPoints = new ArrayList<>();
+    private final MonsterDataManager dataManager;
+    private final AssetManager assetManager;
 
 
     public static boolean DEBUG_FORCE_MODIFIERS = true; // Toggle to force spawn
@@ -26,10 +31,12 @@ public class SpawnManager {
     private static final float SECOND_MODIFIER_CHANCE = 0.25f; // 25% chance for a second modifier
     private static final float THIRD_MODIFIER_CHANCE = 0.10f; // 10% chance for a third
 
-    public SpawnManager(Maze maze, Difficulty difficulty, int level, String[] layout) {
+    public SpawnManager(MonsterDataManager dataManager, AssetManager assetManager, Maze maze, Difficulty difficulty, int level, String[] layout) {
         this.maze = maze;
         this.difficulty = difficulty;
         this.level = level;
+        this.dataManager = dataManager;
+        this.assetManager = assetManager;
         findValidSpawnPoints(layout);
     }
 
@@ -73,7 +80,7 @@ public class SpawnManager {
             Monster.MonsterType type = availableMonsters.get(random.nextInt(availableMonsters.size()));
             MonsterColor color = getRandomMonsterColor(type);
 
-            Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y, color);
+            Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y, color, dataManager, assetManager);
             monster.scaleStats(level);
             maze.addMonster(monster);
         }

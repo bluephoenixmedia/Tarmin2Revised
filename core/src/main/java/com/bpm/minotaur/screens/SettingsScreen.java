@@ -42,7 +42,7 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
-        stage = new Stage(game.viewport);
+        stage = new Stage(game.getViewport());
 
         // We need a Skin for standard UI widgets like buttons
         // Using a basic one here. You can customize this.

@@ -1,6 +1,8 @@
 // Path: core/src/main/java/com/bpm/minotaur/gamedata/SpawnData.java
 package com.bpm.minotaur.gamedata;
 
+import com.bpm.minotaur.gamedata.item.Item;
+
 import java.util.Arrays;
 import java.util.List;
 

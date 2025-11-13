@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.assets.AssetManager;
 
 public class Monster implements Renderable {
 
@@ -45,175 +46,32 @@ public class Monster implements Renderable {
     private MonsterFamily family;
 
 
-    public Monster(MonsterType type, int x, int y, MonsterColor monsterColor) {
+    /**
+     * The NEW, simplified constructor.
+     * It requires the data/asset managers to build the monster.
+     */
+    public Monster(MonsterType type, int x, int y, MonsterColor monsterColor,
+                   MonsterDataManager dataManager, AssetManager assetManager)
+    {
         this.type = type;
-        this.position = new Vector2(x + 0.5f, y + 0.5f); // Center of the tile
-        this.scale = new Vector2(1.0f, 1.0f); // Default scale
+        this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.monsterColor = monsterColor;
 
-        switch (type) {
-            // --- BAD MONSTERS (Spiritual Attacks) ---
-            case GIANT_ANT:
-              //  this.color = Color.PURPLE;
-                this.warStrength = 5;
-                this.spiritualStrength = 15;
-                this.baseExperience = 10;
-                this.armor = 1;
-                this.spriteData = MonsterSpriteData.GIANT_ANT; // Correctly assigned
-                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_ant.png")); // Example path
-                this.scale.set(1.2f, 0.8f); // Make it wider than it is tall
-                this.family = MonsterFamily.BEAST; // ADD THIS
+        // --- Get the template for this monster type ---
+        MonsterTemplate template = dataManager.getTemplate(type);
 
-                break;
-            case DWARF:
-             //   this.color = Color.TAN;
-                this.warStrength = 10;
-                this.spiritualStrength = 10;
-                this.baseExperience = 15;
-                this.family = MonsterFamily.HUMANOID; // ADD THIS
-                this.armor = 1;
-                this.spriteData = MonsterSpriteData.DWARF; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/dwarf.png"));
-                this.scale.set(0.8f, 0.9f); // Short and stout
+        // --- Copy all data from the template ---
+        this.warStrength = template.warStrength;
+        this.spiritualStrength = template.spiritualStrength;
+        this.armor = template.armor;
+        this.baseExperience = template.baseExperience;
+        this.family = template.family;
+        this.spriteData = template.spriteData; // Copied directly from template
+        this.scale = new Vector2(template.scale.x, template.scale.y);
 
-                break;
-            case GIANT_SCORPION:
-            //    this.color = Color.BLUE;
-                this.warStrength = 8;
-                this.spiritualStrength = 20;
-                this.baseExperience = 20;
-                this.armor = 3;
-                this.spriteData = MonsterSpriteData.GIANT_SCORPION; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_scorpion.png"));
-                this.scale.set(1.1f, 0.9f);
-                this.family = MonsterFamily.BEAST; // ADD THIS
-
-                break;
-            case GIANT_SNAKE:
-             //   this.color = Color.ORANGE;
-                this.warStrength = 12;
-                this.spiritualStrength = 12;
-                this.baseExperience = 35;
-                this.family = MonsterFamily.BEAST; // ADD THIS
-                this.armor = 2;
-                this.spriteData = MonsterSpriteData.GIANT_SNAKE; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/giant_snake.png"));
-                this.scale.set(1.5f, 0.6f); // Very wide and short
-
-                break;
-
-            // --- NASTY MONSTERS (War Attacks) ---
-            case GHOUL:
-             //   this.color = Color.PINK;
-                this.warStrength = 20;
-                this.spiritualStrength = 5;
-                this.baseExperience = 20;
-                this.family = MonsterFamily.UNDEAD; // ADD THIS
-                this.armor = 3;
-                this.spriteData = MonsterSpriteData.GHOUL; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/ghoul.png"));
-                this.scale.set(0.8f, 1.1f); // Tall and thin
-
-                break;
-            case SKELETON:
-             //   this.color = Color.WHITE;
-                this.warStrength = 15;
-                this.spiritualStrength = 0;
-                this.baseExperience = 18;
-                this.family = MonsterFamily.UNDEAD; // ADD THIS
-                this.armor = 3;
-                this.spriteData = MonsterSpriteData.SKELETON; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/skeleton.png"));
-                this.scale.set(0.8f, 1.1f); // Tall and thin
-
-                break;
-            case CLOAKED_SKELETON:
-            //    this.color = Color.GRAY;
-                this.warStrength = 18;
-                this.spiritualStrength = 5;
-                this.baseExperience = 22;
-                this.family = MonsterFamily.UNDEAD; // ADD THIS
-                this.armor = 4;
-                this.spriteData = MonsterSpriteData.CLOAKED_SKELETON; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/hooded_skeleton.png"));
-                this.scale.set(0.8f, 1.1f); // Tall and thin
-
-                break;
-
-            // --- HORRIBLE MONSTERS (War & Spiritual Attacks) ---
-            case ALLIGATOR:
-            //    this.color = Color.PURPLE;
-                this.warStrength = 30;
-                this.spiritualStrength = 15;
-                this.baseExperience = 35;
-                this.family = MonsterFamily.BEAST; // ADD THIS
-                this.armor = 6;
-                this.spriteData = MonsterSpriteData.ALLIGATOR; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/alligator.png"));
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-            case DRAGON:
-             //   this.color = Color.ORANGE;
-                this.warStrength = 40;
-                this.spiritualStrength = 30;
-                this.baseExperience = 50;
-                this.family = MonsterFamily.MYTHICAL; // ADD THIS
-                this.armor = 8;
-                this.spriteData = MonsterSpriteData.DRAGON; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/dragon.png"));
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-            case WRAITH:
-             //   this.color = Color.WHITE;
-                this.warStrength = 25;
-                this.spiritualStrength = 35;
-                this.baseExperience = 40;
-                this.family = MonsterFamily.UNDEAD; // ADD THIS
-                this.armor = 5;
-                this.spriteData = MonsterSpriteData.WRAITH; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/wraith.png"));
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-            case GIANT:
-            //    this.color = Color.YELLOW;
-                this.warStrength = 35;
-                this.baseExperience = 45;
-                this.family = MonsterFamily.HUMANOID; // ADD THIS
-                this.spiritualStrength = 10;
-                this.armor = 7;
-                this.spriteData = MonsterSpriteData.GIANT; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/giant.png"));
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-            case MINOTAUR:
-             //   this.color = Color.PURPLE;
-                this.warStrength = 50;
-                this.spiritualStrength = 25;
-                this.baseExperience = 100;
-                this.family = MonsterFamily.MYTHICAL; // ADD THIS
-                this.armor = 10;
-                this.spriteData = MonsterSpriteData.MINOTAUR; // Add this line
-                this.texture = new Texture(Gdx.files.internal("images/monsters/minotaur.png"));
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-
-            default:
-            //    this.color = Color.RED;
-                this.warStrength = 10;
-                this.spiritualStrength = 10;
-                this.baseExperience = 5;
-                this.family = MonsterFamily.NONE; // ADD THIS
-                this.armor = 2;
-                this.spriteData = null; // Add this line
-                this.scale.set(1.0f, 1.0f); // Tall and thin
-
-                break;
-        }
+        // --- Get the PRE-LOADED texture from the AssetManager ---
+        // This avoids "new Texture(...)" and saves memory!
+        this.texture = assetManager.get(template.texturePath, Texture.class);
     }
 
     public void takeDamage(int amount) {

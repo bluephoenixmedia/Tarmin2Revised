@@ -1,6 +1,7 @@
 package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.rendering.RetroTheme;
 
 import java.util.ArrayList;

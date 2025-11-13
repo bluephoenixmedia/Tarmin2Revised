@@ -63,7 +63,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.level = level;       // Store initial level
         this.currentLevel = level; // Set current level
         // --- NEW: Initialize WorldManager ---
-        this.worldManager = new WorldManager(gameMode, difficulty, level);
+        this.worldManager = new WorldManager(gameMode, difficulty, level,
+            game.getMonsterDataManager(),
+            game.getAssetManager());
 
         // Music based on initial level
         switch (level) {
@@ -155,7 +157,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // Initialize systems that depend on the player and maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager);
-        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
 
@@ -213,23 +215,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // --- WORLD RENDERING ---
         ScreenUtils.clear(0, 0, 0, 1);
-        shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
 
         // Ensure player and maze are not null before rendering
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, game.viewport, worldManager, currentLevel, gameMode);
+            firstPersonRenderer.render(shapeRenderer, player, maze, game.getViewport(), worldManager, currentLevel, gameMode);
 
             // --- [FIX] Pass WorldManager to EntityRenderer for Fog of War check ---
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                entityRenderer.render(shapeRenderer, player, maze, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+                entityRenderer.render(shapeRenderer, player, maze, game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
-            animationManager.render(shapeRenderer, player, game.viewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+            animationManager.render(shapeRenderer, player, game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
 
             if (debugManager.isDebugOverlayVisible()) {
-                debugRenderer.render(shapeRenderer, player, maze, game.viewport);
+                debugRenderer.render(shapeRenderer, player, maze, game.getViewport());
                 if (needsAsciiRender) {
                     firstPersonRenderer.renderAsciiViewToConsole(player, maze);
                     needsAsciiRender = false;
@@ -243,15 +245,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         // --- SCREEN-LEVEL TEXT RENDERING ---
-        game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-        game.batch.begin();
+        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+        game.getBatch().begin();
 
-        animationManager.renderDamageText(game.batch, game.viewport);
+        animationManager.renderDamageText(game.getBatch(), game.getViewport());
 
 
         font.setColor(Color.WHITE);
-        font.draw(game.batch, "Level: " + currentLevel, 10, game.viewport.getWorldHeight() - 10);
-        game.batch.end();
+        font.draw(game.getBatch(), "Level: " + currentLevel, 10, game.getViewport().getWorldHeight() - 10);
+        game.getBatch().end();
         // --- [NEW] REORGANIZED DEBUG TEXT ---
 
     }
@@ -338,7 +340,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // Re-initialize systems that depend on the maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager);
-        hud = new Hud(game.batch, player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode); // Recreate HUD
+        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode); // Recreate HUD
 
         Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
         DebugRenderer.printMazeToConsole(maze); // For debugging
@@ -390,7 +392,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public void resize(int width, int height) {
-        game.viewport.update(width, height, true);
+        game.getViewport().update(width, height, true);
         if (hud != null) { // Update HUD viewport too
             hud.resize(width, height);
         }

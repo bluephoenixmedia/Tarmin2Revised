@@ -1,4 +1,4 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.item;
 
 /**
  * Enumeration for the different types of items in the game,

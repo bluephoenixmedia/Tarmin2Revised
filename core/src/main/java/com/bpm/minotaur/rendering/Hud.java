@@ -24,6 +24,9 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
+import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
@@ -473,17 +476,17 @@ public class Hud implements Disposable {
             //BEGIN DEBUG MIGRATION
             float leftColX = 10;
             float rightColX = 350; // X position for the second column
-            float yPos = game.viewport.getWorldHeight() - 30; // Shared starting Y
+            float yPos = game.getViewport().getWorldHeight() - 30; // Shared starting Y
             float lineGap = 20;
 
 
-            defaultFont.draw(game.batch, "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(game.batch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(game.batch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.getBatch(), "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.getBatch(), "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.getBatch(), "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
 
             yPos -= lineGap; // Add a spacer
             defaultFont.setColor(Color.YELLOW);
-            defaultFont.draw(game.batch, "--- CONTROLS ---", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(game.getBatch(), "--- CONTROLS ---", leftColX, yPos); yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
 
             String[] keyMappings = {
@@ -502,31 +505,31 @@ public class Hud implements Disposable {
             };
 
             for (String mapping : keyMappings) {
-                defaultFont.draw(game.batch, mapping, leftColX, yPos);
+                defaultFont.draw(game.getBatch(), mapping, leftColX, yPos);
                 yPos -= lineGap;
             }
 
             // --- RIGHT COLUMN (PLAYER & WORLD INFO) ---
-            float rightColY = game.viewport.getWorldHeight() - 30; // Reset Y for this column
+            float rightColY = game.getViewport().getWorldHeight() - 30; // Reset Y for this column
 
             if (player != null) {
                 defaultFont.setColor(Color.YELLOW);
                 rightColX = rightColX - 100;
-                defaultFont.draw(game.batch, "--- PLAYER ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "--- PLAYER ---", rightColX, rightColY); rightColY -= lineGap;
 
                 int playerGridX = (int)player.getPosition().x;
                 int playerGridY = (int)player.getPosition().y;
-                defaultFont.draw(game.batch, "Pos (Grid): (" + playerGridX + ", " + playerGridY + ")", rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Facing: " + player.getFacing().name(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Defense: " + player.getArmorDefense(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "War Str: " + player.getWarStrength(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Spirit Str: " + player.getSpiritualStrength(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Pos (Grid): (" + playerGridX + ", " + playerGridY + ")", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Facing: " + player.getFacing().name(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Defense: " + player.getArmorDefense(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "War Str: " + player.getWarStrength(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Spirit Str: " + player.getSpiritualStrength(), rightColX, rightColY); rightColY -= lineGap;
 
                 rightColY -= lineGap; // Spacer
 
                 // --- Equipped Item ---
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(game.batch, "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
 
@@ -548,26 +551,26 @@ public class Hud implements Disposable {
                     }
                 }
 
-                defaultFont.draw(game.batch, "Name: " + equippedWeapon, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Type: " + weaponType, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Damage: " + damage, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Ranged: " + isRanged, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Range: " + range, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Color: " + weaponColor, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Name: " + equippedWeapon, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Type: " + weaponType, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Damage: " + damage, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Ranged: " + isRanged, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Range: " + range, rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Color: " + weaponColor, rightColX, rightColY); rightColY -= lineGap;
             }
 
             // --- World Info ---
             if (gameMode == GameMode.ADVANCED && worldManager != null) {
                 rightColY -= lineGap; // Spacer
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(game.batch, "--- WORLD (ADVANCED) ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "--- WORLD (ADVANCED) ---", rightColX, rightColY); rightColY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
                 GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
                 Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
 
-                defaultFont.draw(game.batch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.batch, "Biome: " + biome.name(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(game.getBatch(), "Biome: " + biome.name(), rightColX, rightColY); rightColY -= lineGap;
             }
 
             //END DEBUG MIGRATION

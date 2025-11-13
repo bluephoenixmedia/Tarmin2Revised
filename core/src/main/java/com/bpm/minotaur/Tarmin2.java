@@ -1,21 +1,31 @@
 package com.bpm.minotaur;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.assets.AssetManager; // Import this
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.gamedata.MonsterDataManager; // Import this
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SettingsManager;
+// Import your new loading screen and main menu
+import com.bpm.minotaur.screens.LoadingScreen;
 import com.bpm.minotaur.screens.MainMenuScreen;
 
 /**
- * The main game class. Manages the core rendering objects (SpriteBatch, Viewport)
+ * The main game class. Manages shared resources (SpriteBatch, Viewport, Managers)
  * and controls which screen is currently active.
  */
 public class Tarmin2 extends Game {
-    public SpriteBatch batch;
-    public Viewport viewport;
+
+    // --- Shared Resources (now private) ---
+    private SpriteBatch batch;
+    private Viewport viewport;
+
+    // --- Asset and Data Managers ---
+    private AssetManager assetManager;
+    private MonsterDataManager monsterDataManager;
 
     // Constants for a consistent virtual resolution.
     private static final float VIRTUAL_WIDTH = 1920f;
@@ -24,21 +34,48 @@ public class Tarmin2 extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        // An OrthographicCamera is used for 2D rendering.
         OrthographicCamera camera = new OrthographicCamera();
-        // A FitViewport maintains the aspect ratio by adding black bars if needed.
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
 
+        // --- 1. Create Managers ---
+        assetManager = new AssetManager();
+        monsterDataManager = new MonsterDataManager();
+
+        // --- 2. Load Monster Definitions (Synchronous) ---
+        // This is fast and needs to happen before queueing assets
+        monsterDataManager.load();
+
+        // --- 3. Queue All Assets for Loading (Asynchronous) ---
+
+        // Queue music
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
-        // Add more tracks here
-        MusicManager.getInstance().finishLoading(); // Wait for them to load
 
-        // --- ADD THIS LINE ---
-        // Load all saved settings so they're ready for other screens
+        // Queue monster textures (using the data we just loaded!)
+        monsterDataManager.queueAssets(assetManager);
+
+        // ... queue other assets here (fonts, UI skins, sound effects, etc.) ...
+        // Example: assetManager.load("ui/uiskin.json", Skin.class);
+        // Example: assetManager.load("fonts/myfont.fnt", BitmapFont.class);
+
+        // --- 4. Load Settings (Synchronous) ---
+        // Settings are small and usually needed right away
         SettingsManager.getInstance().load();
 
-        // Set the initial screen to the main menu.
+        // --- 5. Set the Initial Screen to the LoadingScreen ---
+        // We pass "this" (the Game object) so the screen can access
+        // managers and tell us when to switch screens.
+        this.setScreen(new LoadingScreen(this));
+    }
+
+    /**
+     * This is called by the LoadingScreen when all assets are finished.
+     */
+    public void proceedToMainMenu() {
+        // Now that assets are loaded, we can finish setting up managers
+        MusicManager.getInstance().finishLoading(); // Assign loaded music
+
+        // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
     }
 
@@ -52,13 +89,14 @@ public class Tarmin2 extends Game {
     public void dispose() {
         // Dispose of shared resources when the game closes.
         batch.dispose();
+        assetManager.dispose(); // Dispose the asset manager
+
         // Also dispose the current screen's resources.
         if (getScreen() != null) {
             getScreen().dispose();
         }
 
         MusicManager.getInstance().dispose();
-
     }
 
     @Override
@@ -68,5 +106,22 @@ public class Tarmin2 extends Game {
         // Ensure the SpriteBatch uses the updated viewport projection.
         batch.setProjectionMatrix(viewport.getCamera().combined);
     }
-}
 
+    // --- Public Getters for Screens to Use ---
+
+    public SpriteBatch getBatch() {
+        return batch;
+    }
+
+    public Viewport getViewport() {
+        return viewport;
+    }
+
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    public MonsterDataManager getMonsterDataManager() {
+        return monsterDataManager;
+    }
+}

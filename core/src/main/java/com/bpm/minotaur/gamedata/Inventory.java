@@ -1,5 +1,7 @@
 package com.bpm.minotaur.gamedata;
 
+import com.bpm.minotaur.gamedata.item.Item;
+
 public class Inventory {
     private final Item[] backpack = new Item[6];
     private Item rightHand = null;

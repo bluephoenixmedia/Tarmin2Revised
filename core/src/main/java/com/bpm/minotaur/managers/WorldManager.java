@@ -1,6 +1,7 @@
 package com.bpm.minotaur.managers;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
@@ -31,6 +32,9 @@ public class WorldManager {
     private final Json json;
     private static final String SAVE_DIRECTORY = "saves/world/";
 
+    private final MonsterDataManager dataManager;
+    private final AssetManager assetManager;
+
 
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
@@ -42,7 +46,7 @@ public class WorldManager {
 
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
 
-    public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel) {
+    public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel, MonsterDataManager dataManager, AssetManager assetManager) {
         this.gameMode = gameMode;
         this.difficulty = difficulty;
         this.currentLevel = initialLevel;
@@ -52,6 +56,8 @@ public class WorldManager {
         this.savingEnabled = true; // <-- NEW: Make sure saving is on by default
         // --- NEW: Initialize Biome Brain and Generators ---
         this.biomeManager = new BiomeManager();
+        this.dataManager = dataManager;
+        this.assetManager = assetManager;
 
         // Instantiate all our generators
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
@@ -107,7 +113,8 @@ public class WorldManager {
         if (gameMode == GameMode.CLASSIC) {
             Gdx.app.log("WorldManager", "CLASSIC mode: Generating new chunk.");
             // In classic mode, we only ever use the Maze generator
-            return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME);        }
+            return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME,
+                this.dataManager, this.assetManager);        }
 
         // --- 2. ADVANCED Mode: Check cache first ---
         if (loadedChunks.containsKey(chunkId)) {
@@ -132,7 +139,7 @@ public class WorldManager {
             Gdx.app.log("WorldManager", "Loading chunk from file: " + file.path());
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
-                Maze maze = data.buildMaze();
+                Maze maze = data.buildMaze(this.dataManager, this.assetManager);
                 loadedChunks.put(chunkId, maze); // Add to cache
                 // Don't set currentPlayerChunkId here
                 return maze;
@@ -165,7 +172,8 @@ public class WorldManager {
         }
 
         Gdx.app.log("WorldManager", "No save file for " + chunkId + ". Generating new chunk with " + generator.getClass().getSimpleName());
-        Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode, themeToGenerate);
+        Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode, themeToGenerate,
+            this.dataManager, this.assetManager);
         // --- 7. ADVANCED Mode: Save and cache the new chunk ---
         loadedChunks.put(chunkId, newMaze); // Add to cache
         saveChunk(newMaze, chunkId); // Save to file
