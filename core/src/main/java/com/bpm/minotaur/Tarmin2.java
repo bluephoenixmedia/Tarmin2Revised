@@ -50,6 +50,7 @@ public class Tarmin2 extends Game {
         // Queue music
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
+        MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
 
         // Queue monster textures (using the data we just loaded!)
         monsterDataManager.queueAssets(assetManager);
