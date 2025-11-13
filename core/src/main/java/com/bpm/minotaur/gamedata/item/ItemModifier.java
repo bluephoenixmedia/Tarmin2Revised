@@ -1,4 +1,6 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.item;
+
+import com.bpm.minotaur.gamedata.ModifierType;
 
 /**
  * A simple data container representing a single modifier applied to an item.

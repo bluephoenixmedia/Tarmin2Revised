@@ -1,5 +1,7 @@
 package com.bpm.minotaur.gamedata;
 
+import com.bpm.minotaur.gamedata.item.Item;
+
 import java.util.Arrays;
 import java.util.List;
 

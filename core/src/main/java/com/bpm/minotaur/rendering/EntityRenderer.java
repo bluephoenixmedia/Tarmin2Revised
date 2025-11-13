@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.WorldConstants;

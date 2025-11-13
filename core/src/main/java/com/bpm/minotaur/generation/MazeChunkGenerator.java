@@ -1,8 +1,11 @@
 package com.bpm.minotaur.generation;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 
@@ -60,7 +63,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * @return A fully populated Maze object.
      */
     @Override
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme) {        // --- 1. Create Layout ---
+    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
+                              MonsterDataManager dataManager, AssetManager assetManager) {
         // For ADVANCED mode, we use a 3x2 grid (double the size)
         // For CLASSIC mode, we stick with the original 2x2
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
@@ -72,7 +76,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         maze.setTheme(theme); // <-- [NEW] SET THE THEME
 
         // --- 3. Populate Maze ---
-        spawnEntities(maze, difficulty, level, this.finalLayout);
+        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, assetManager);
         spawnLadder(maze, this.finalLayout);
 
         // --- 4. Place Gates ---
@@ -141,8 +145,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
         Gdx.app.error("ChunkGenerator", "CRITICAL: No non-wall tiles found in maze. Player will be stuck at (1, 1).");
     }
 
-    private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout) {
-        SpawnManager spawnManager = new SpawnManager(maze, difficulty, level, layout);
+    private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
+                               MonsterDataManager dataManager, AssetManager assetManager) {
+        SpawnManager spawnManager = new SpawnManager(dataManager, assetManager, maze, difficulty, level, layout);
         spawnManager.spawnEntities();
     }
 

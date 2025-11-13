@@ -1,9 +1,11 @@
 package com.bpm.minotaur.generation;
 
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.MonsterDataManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 /**
  * Interface defining the "contract" for all chunk generators.
@@ -23,8 +25,8 @@ public interface IChunkGenerator {
      * @return A fully populated Maze object for this biome.
      */
     // [MODIFIED] Added theme parameter
-    Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme);
-
+    Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
+                       MonsterDataManager dataManager, AssetManager assetManager);
     /**
      * Gets the default player starting position for this generator.
      * This is typically only used by the MAZE generator for the

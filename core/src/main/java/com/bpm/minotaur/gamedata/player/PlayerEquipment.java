@@ -1,7 +1,7 @@
 package com.bpm.minotaur.gamedata.player;
 
-import com.bpm.minotaur.gamedata.Item;
-import com.bpm.minotaur.gamedata.ItemModifier;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.ModifierType;
 
 public class PlayerEquipment {

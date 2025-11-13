@@ -60,12 +60,12 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         // (Font loading remains the same)
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = (int)(game.viewport.getWorldHeight() * 0.07f);
+        parameter.size = (int)(game.getViewport().getWorldHeight() * 0.07f);
         parameter.color = INTV_WHITE;
         parameter.minFilter = Texture.TextureFilter.Nearest;
         parameter.magFilter = Texture.TextureFilter.Nearest;
         titleFont = generator.generateFont(parameter);
-        parameter.size = (int)(game.viewport.getWorldHeight() * 0.05f);
+        parameter.size = (int)(game.getViewport().getWorldHeight() * 0.05f);
         regularFont = generator.generateFont(parameter);
         generator.dispose();
 
@@ -90,26 +90,26 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             inputCooldown -= delta;
         }
         textBlink = animationTimer % 1.6f < 0.8f;
-        float targetWidth = game.viewport.getWorldWidth();
-        float targetHeight = game.viewport.getWorldHeight();
+        float targetWidth = game.getViewport().getWorldWidth();
+        float targetHeight = game.getViewport().getWorldHeight();
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             ScreenUtils.clear(Color.BLACK);
-            game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-            game.batch.begin();
-            game.batch.draw(modernBackground, 0, 0, targetWidth, targetHeight);
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
+            game.getBatch().draw(modernBackground, 0, 0, targetWidth, targetHeight);
             regularFont.setColor(INTV_WHITE);
             String modeText = "Mode: " + selectedGameMode.name() + " (Press M to change)";
             layout.setText(regularFont, modeText);
             float modeX = (targetWidth - layout.width) / 2f;
-            regularFont.draw(game.batch, modeText, modeX, targetHeight * 0.25f);
+            regularFont.draw(game.getBatch(), modeText, modeX, targetHeight * 0.25f);
             if (textBlink) {
                 drawCenteredText(regularFont, "PRESS ANY KEY TO START", targetHeight * 0.15f);
             }
-            game.batch.end();
+            game.getBatch().end();
         } else {
             ScreenUtils.clear(OLIVE_GREEN);
-            shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             // (Banner drawing logic remains the same)
             float rectWidth = targetWidth / 16f;
@@ -130,8 +130,8 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             }
             shapeRenderer.end();
 
-            game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-            game.batch.begin();
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
             // (Title text drawing remains the same)
             titleFont.setColor(INTV_WHITE);
             drawCenteredText(titleFont, "THE LEGEND OF GALOR", targetHeight * 0.75f);
@@ -142,21 +142,21 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             String modeText = "Mode: " + selectedGameMode.name() + " (Press M)";
             layout.setText(regularFont, modeText);
             float modeX = (targetWidth - layout.width) / 2f;
-            regularFont.draw(game.batch, modeText, modeX, targetHeight * 0.45f);
+            regularFont.draw(game.getBatch(), modeText, modeX, targetHeight * 0.45f);
             if (textBlink) {
                 drawCenteredText(regularFont, "PRESS ANY KEY TO START", targetHeight * 0.35f);
             }
             drawCenteredText(regularFont, "*TM OF TSR HOBBIES", targetHeight * 0.20f);
             drawCenteredText(regularFont, "TSR", targetHeight * 0.13f);
-            game.batch.end();
+            game.getBatch().end();
         }
     }
 
     private void drawCenteredText(BitmapFont font, String text, float y) {
-        float targetWidth = game.viewport.getWorldWidth();
+        float targetWidth = game.getViewport().getWorldWidth();
         layout.setText(font, text);
         float x = (targetWidth - layout.width) / 2f;
-        font.draw(game.batch, text, x, y);
+        font.draw(game.getBatch(), text, x, y);
     }
 
     private void startGame() {
@@ -208,7 +208,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     }
 
     // --- Unused InputProcessor methods ---
-    @Override public void resize(int width, int height) { game.viewport.update(width, height, true); }
+    @Override public void resize(int width, int height) { game.getViewport().update(width, height, true); }
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }

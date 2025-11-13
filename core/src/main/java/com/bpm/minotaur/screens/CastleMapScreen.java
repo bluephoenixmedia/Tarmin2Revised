@@ -49,15 +49,15 @@ public class CastleMapScreen extends BaseScreen {
         animationTimer += delta;
         ScreenUtils.clear(Color.BLACK);
 
-        shapeRenderer.setProjectionMatrix(game.viewport.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         // Draw the maze levels
         for (int i = 1; i <= 12; i++) {
             shapeRenderer.setColor(Color.BLUE);
             shapeRenderer.rect(
-                (game.viewport.getWorldWidth() / 2) - (150 + i * 10),
-                (game.viewport.getWorldHeight() / 2) - (i * 20),
+                (game.getViewport().getWorldWidth() / 2) - (150 + i * 10),
+                (game.getViewport().getWorldHeight() / 2) - (i * 20),
                 300 + i * 20,
                 10
             );
@@ -67,8 +67,8 @@ public class CastleMapScreen extends BaseScreen {
         if (animationTimer % 0.5f < 0.25f) {
             shapeRenderer.setColor(Color.WHITE);
             shapeRenderer.circle(
-                (game.viewport.getWorldWidth() / 2) - 150 + (player.getPosition().x * 10),
-                (game.viewport.getWorldHeight() / 2) - (maze.getLevel() * 20),
+                (game.getViewport().getWorldWidth() / 2) - 150 + (player.getPosition().x * 10),
+                (game.getViewport().getWorldHeight() / 2) - (maze.getLevel() * 20),
                 5
             );
         }
@@ -76,8 +76,8 @@ public class CastleMapScreen extends BaseScreen {
         // Draw the Tarmin Treasure
         shapeRenderer.setColor(Color.YELLOW);
         shapeRenderer.rect(
-            (game.viewport.getWorldWidth() / 2) - 10,
-            (game.viewport.getWorldHeight() / 2) - (12 * 20) - 10,
+            (game.getViewport().getWorldWidth() / 2) - 10,
+            (game.getViewport().getWorldHeight() / 2) - (12 * 20) - 10,
             20,
             20
         );
@@ -85,16 +85,16 @@ public class CastleMapScreen extends BaseScreen {
 
         shapeRenderer.end();
 
-        game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
-        game.batch.begin();
+        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+        game.getBatch().begin();
 
         font.getData().setScale(2);
         font.setColor(Color.WHITE);
-        font.draw(game.batch, "Castle Map", (game.viewport.getWorldWidth() / 2) - 50, game.viewport.getWorldHeight() - 50);
-        font.draw(game.batch, "Treasure: " + player.getTreasureScore(), game.viewport.getWorldWidth() - 200, game.viewport.getWorldHeight() - 50);
+        font.draw(game.getBatch(), "Castle Map", (game.getViewport().getWorldWidth() / 2) - 50, game.getViewport().getWorldHeight() - 50);
+        font.draw(game.getBatch(), "Treasure: " + player.getTreasureScore(), game.getViewport().getWorldWidth() - 200, game.getViewport().getWorldHeight() - 50);
 
 
-        game.batch.end();
+        game.getBatch().end();
     }
 
     @Override
