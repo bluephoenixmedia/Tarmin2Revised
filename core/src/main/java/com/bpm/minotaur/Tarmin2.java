@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager; // Import this
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SettingsManager;
@@ -26,6 +27,7 @@ public class Tarmin2 extends Game {
     // --- Asset and Data Managers ---
     private AssetManager assetManager;
     private MonsterDataManager monsterDataManager;
+    private ItemDataManager itemDataManager; // <-- ADD THIS
 
     // Constants for a consistent virtual resolution.
     private static final float VIRTUAL_WIDTH = 1920f;
@@ -40,10 +42,12 @@ public class Tarmin2 extends Game {
         // --- 1. Create Managers ---
         assetManager = new AssetManager();
         monsterDataManager = new MonsterDataManager();
+        itemDataManager = new ItemDataManager(); // <-- ADD THIS
 
         // --- 2. Load Monster Definitions (Synchronous) ---
         // This is fast and needs to happen before queueing assets
         monsterDataManager.load();
+        itemDataManager.load(); // <-- ADD THIS
 
         // --- 3. Queue All Assets for Loading (Asynchronous) ---
 
@@ -54,6 +58,7 @@ public class Tarmin2 extends Game {
 
         // Queue monster textures (using the data we just loaded!)
         monsterDataManager.queueAssets(assetManager);
+        itemDataManager.queueAssets(assetManager); // <-- ADD THIS
 
         // ... queue other assets here (fonts, UI skins, sound effects, etc.) ...
         // Example: assetManager.load("ui/uiskin.json", Skin.class);
@@ -125,4 +130,10 @@ public class Tarmin2 extends Game {
     public MonsterDataManager getMonsterDataManager() {
         return monsterDataManager;
     }
+
+    public ItemDataManager getItemDataManager() {
+        return itemDataManager;
+    }
+
+
 }

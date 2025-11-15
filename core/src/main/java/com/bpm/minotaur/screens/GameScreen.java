@@ -65,6 +65,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // --- NEW: Initialize WorldManager ---
         this.worldManager = new WorldManager(gameMode, difficulty, level,
             game.getMonsterDataManager(),
+            game.getItemDataManager(), // <-- ADD THIS
             game.getAssetManager());
 
         // Music based on initial level
@@ -147,7 +148,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (player == null) {
             // Get start position from WorldManager/ChunkGenerator
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
-            player = new Player(startPos.x, startPos.y, difficulty);
+
+            player = new Player(startPos.x, startPos.y, difficulty,
+                game.getItemDataManager(), game.getAssetManager());
+
             player.setMaze(this.maze); // <-- [FIX] Player needs initial maze reference
         } else {
             // Player already exists, reset position to the start of the newly loaded/generated maze

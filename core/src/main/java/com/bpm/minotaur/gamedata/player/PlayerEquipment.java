@@ -53,11 +53,11 @@ public class PlayerEquipment {
         int totalDefense = 0;
 
         // Base defense from armor stats
-        if (wornHelmet != null && wornHelmet.getArmorStats() != null) totalDefense += wornHelmet.getArmorStats().defense;
-        if (wornShield != null && wornShield.getArmorStats() != null) totalDefense += wornShield.getArmorStats().defense;
-        if (wornGauntlets != null && wornGauntlets.getArmorStats() != null) totalDefense += wornGauntlets.getArmorStats().defense;
-        if (wornHauberk != null && wornHauberk.getArmorStats() != null) totalDefense += wornHauberk.getArmorStats().defense;
-        if (wornBreastplate != null && wornBreastplate.getArmorStats() != null) totalDefense += wornBreastplate.getArmorStats().defense;
+        if (wornHelmet != null) totalDefense += wornHelmet.getArmorDefense();
+        if (wornShield != null) totalDefense += wornShield.getArmorDefense();
+        if (wornGauntlets != null) totalDefense += wornGauntlets.getArmorDefense();
+        if (wornHauberk != null) totalDefense += wornHauberk.getArmorDefense();
+        if (wornBreastplate != null) totalDefense += wornBreastplate.getArmorDefense();
 
         // Add bonus defense from all equipped items (including rings)
         totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
@@ -74,8 +74,8 @@ public class PlayerEquipment {
         int totalDefense = 0;
 
         // Base defense from ring stats
-        if (wornRing != null && wornRing.getRingStats() != null) {
-            totalDefense += wornRing.getRingStats().defense;
+        if (wornRing != null) {
+            totalDefense += wornRing.getArmorDefense();
         }
 
         // Add bonus defense from all equipped items (including armor)

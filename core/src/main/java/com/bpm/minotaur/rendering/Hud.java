@@ -25,6 +25,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemCategory;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.monster.Monster;
@@ -541,12 +542,12 @@ public class Hud implements Disposable {
                     weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
                     weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
-                    if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
-                        damage = String.valueOf(rightHandItem.getWeaponStats().damage);
-                        range = String.valueOf(rightHandItem.getWeaponStats().range);
-                        isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
-                    } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getSpiritualWeaponStats() != null) {
-                        damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                    if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
+                        damage = String.valueOf(rightHandItem.getWarDamage());
+                        range = String.valueOf(rightHandItem.getRange());
+                        isRanged = String.valueOf(rightHandItem.isRanged());
+                    } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+                        damage = String.valueOf(rightHandItem.getSpiritDamage());
                         range = "N/A";
                         isRanged = "N/A";
                     }
@@ -592,12 +593,12 @@ public class Hud implements Disposable {
                     weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
                     weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
 
-                    if (rightHandItem.getCategory() == Item.ItemCategory.WAR_WEAPON && rightHandItem.getWeaponStats() != null) {
-                        damage = String.valueOf(rightHandItem.getWeaponStats().damage);
-                        range = String.valueOf(rightHandItem.getWeaponStats().range);
-                        isRanged = String.valueOf(rightHandItem.getWeaponStats().isRanged);
-                    } else if (rightHandItem.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && rightHandItem.getSpiritualWeaponStats() != null) {
-                        damage = String.valueOf(rightHandItem.getSpiritualWeaponStats().damage);
+                    if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
+                        damage = String.valueOf(rightHandItem.getWarDamage());
+                        range = String.valueOf(rightHandItem.getRange());
+                        isRanged = String.valueOf(rightHandItem.isRanged());
+                    } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+                        damage = String.valueOf(rightHandItem.getSpiritDamage());
                         range = "N/A";
                         isRanged = "N/A";
                     }

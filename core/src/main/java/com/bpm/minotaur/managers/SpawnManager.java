@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterColor;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import com.bpm.minotaur.gamedata.item.ItemCategory; // <-- ADD THIS
 import java.util.stream.Stream;
 
 public class SpawnManager {
@@ -25,6 +27,7 @@ public class SpawnManager {
     private final Random random = new Random();
     private final List<GridPoint2> validSpawnPoints = new ArrayList<>();
     private final MonsterDataManager dataManager;
+    private final ItemDataManager itemDataManager; // <-- ADD THIS
     private final AssetManager assetManager;
 
 
@@ -35,11 +38,12 @@ public class SpawnManager {
     private static final float SECOND_MODIFIER_CHANCE = 0.25f; // 25% chance for a second modifier
     private static final float THIRD_MODIFIER_CHANCE = 0.10f; // 10% chance for a third
 
-    public SpawnManager(MonsterDataManager dataManager, AssetManager assetManager, Maze maze, Difficulty difficulty, int level, String[] layout) {
+    public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager, Maze maze, Difficulty difficulty, int level, String[] layout) {
         this.maze = maze;
         this.difficulty = difficulty;
         this.level = level;
         this.dataManager = dataManager;
+        this.itemDataManager = itemDataManager; // <-- ADD THIS
         this.assetManager = assetManager;
         findValidSpawnPoints(layout);
     }
@@ -119,7 +123,9 @@ public class SpawnManager {
         Item.ItemType type = availableItems.get(random.nextInt(availableItems.size()));
         ItemColor color = getRandomItemColor(type);
 
-        Item item = new Item(type, spawnPoint.x, spawnPoint.y, color);
+        Item item = new Item(type, spawnPoint.x, spawnPoint.y, color, itemDataManager, assetManager);
+
+
         attemptToModifyItem(item, color); // NEW CALL
         maze.addItem(item);
     }
@@ -142,17 +148,22 @@ public class SpawnManager {
         // Determine container color based on level
         ItemColor containerColor = getContainerColorForLevel();
 
-        Item container = new Item(type, spawnPoint.x, spawnPoint.y, containerColor);
+        Item container = new Item(type, spawnPoint.x, spawnPoint.y, containerColor, itemDataManager, assetManager);
+
         attemptToModifyItem(container, containerColor); // NEW CALL
 
         // Add a random treasure to the container
         //TODO make containers able to have any item or weapon type
         SpawnData.TreasureSpawnInfo treasureInfo = SpawnData.TREASURES.get(random.nextInt(SpawnData.TREASURES.size()));
 
-        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW); // Use a default color for treasure
-        treasure.setValue(treasureInfo.baseValue() + (level * treasureInfo.levelModifier()));
+        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW, itemDataManager, assetManager);
+
+
+        // Use a default color for treasure
+       // treasure.setValue(treasureInfo.baseValue() + (level * treasureInfo.levelModifier()));
         attemptToModifyItem(treasure, ItemColor.YELLOW); // NEW CALL (Treasures can be modified too!)
-        container.addItem(treasure);
+
+        container.getContents().add(treasure);
 
         maze.addItem(container);
 
@@ -165,7 +176,8 @@ public class SpawnManager {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
         if (spawnPoint == null) return; // No space for the key
 
-        Item key = new Item(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor);
+        Item key = new Item(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, itemDataManager, assetManager);
+
         attemptToModifyItem(key, containerColor); // NEW CALL (Keys can be magical... maybe "Skeleton Key"?)
         maze.addItem(key);
     }
@@ -204,7 +216,8 @@ public class SpawnManager {
      * @param item The item to modify.
      */
     private void addRandomModifier(Item item) {
-        Item.ItemCategory category = item.getCategory();
+
+        ItemCategory category = item.getCategory();
 
         Stream<LootTable.ModInfo> modStream = LootTable.MODIFIER_POOL.stream()
             .filter(mod -> mod.category == category); // Matches category (e.g., ARMOR, WAR_WEAPON)
@@ -347,7 +360,8 @@ public class SpawnManager {
 
     private ItemColor getRandomItemColor(Item.ItemType type) {
         List<ItemColor> possibleColors = new ArrayList<>();
-        Item.ItemCategory category = new Item(type, 0, 0, ItemColor.TAN).getCategory(); // A bit hacky, but works
+
+        ItemCategory category = new Item(type, 0, 0, ItemColor.TAN, itemDataManager, assetManager).getCategory();
 
         boolean tier1 = level < 8;
         boolean tier2 = level >= 5 && level < 15;
@@ -416,9 +430,9 @@ public class SpawnManager {
 
         if (possibleColors.isEmpty()) {
             // Fallback if no tiers match (e.g. level 0)
-            if (category == Item.ItemCategory.WAR_WEAPON || category == Item.ItemCategory.ARMOR) {
+            if (category == ItemCategory.WAR_WEAPON || category == ItemCategory.ARMOR) {
                 possibleColors.add(ItemColor.TAN);
-            } else if (category == Item.ItemCategory.SPIRITUAL_WEAPON || category == Item.ItemCategory.RING) {
+            } else if (category == ItemCategory.SPIRITUAL_WEAPON || category == ItemCategory.RING) {
                 possibleColors.add(ItemColor.BLUE);
             } else {
                 possibleColors.add(ItemColor.TAN);
