@@ -284,8 +284,8 @@ public class EntityRenderer {
                 float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
 
                 int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-                spriteHeight = (int)(baseSpriteHeight * item.scale.y);
-                spriteWidth = (int)(baseSpriteHeight * item.scale.x);
+                spriteHeight = (int)(baseSpriteHeight * item.getScale().y);
+                spriteWidth = (int)(baseSpriteHeight * item.getScale().x);
                 drawY = floorY;
 
                 // Original boost logic for adjacent items
@@ -492,8 +492,8 @@ public class EntityRenderer {
             float floorY = (camera.viewportHeight / 2) - (wallLineHeightAtSameDist / 2f);
 
             int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
-            spriteHeight = (int)(baseSpriteHeight * item.scale.y);
-            spriteWidth = (int)((baseSpriteHeight / 2) * item.scale.x);
+            spriteHeight = (int)(baseSpriteHeight * item.getScale().y);
+            spriteWidth = (int)((baseSpriteHeight / 2) * item.getScale().x);
             drawY = floorY;
 
             // Original boost logic for adjacent items

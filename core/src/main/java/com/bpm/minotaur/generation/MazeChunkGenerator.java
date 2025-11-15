@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -65,7 +66,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
      */
     @Override
     public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
-                              MonsterDataManager dataManager, AssetManager assetManager) {
+                              MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
+
         // For ADVANCED mode, we use a 3x2 grid (double the size)
         // For CLASSIC mode, we stick with the original 2x2
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
@@ -73,11 +75,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
         createMazeFromArrayTiles(mapRows, mapCols);
 
         // --- 2. Create Maze Object ---
-        Maze maze = createMazeFromText(level, this.finalLayout);
+        Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme); // <-- [NEW] SET THE THEME
 
         // --- 3. Populate Maze ---
-        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, assetManager);
+        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager);
+
         spawnLadder(maze, this.finalLayout);
 
         // --- 4. Place Gates ---
@@ -147,8 +150,14 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
-                               MonsterDataManager dataManager, AssetManager assetManager) {
-        SpawnManager spawnManager = new SpawnManager(dataManager, assetManager, maze, difficulty, level, layout);
+                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
+
+
+        SpawnManager spawnManager = new SpawnManager(dataManager,
+            itemDataManager, // <-- ADD THIS
+            assetManager,
+            maze, difficulty, level, layout);
+
         spawnManager.spawnEntities();
     }
 
@@ -356,7 +365,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         return currentTile;
     }
 
-    private Maze createMazeFromText(int level, String[] layout) {
+    private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager, AssetManager assetManager) {
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
@@ -368,8 +377,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 char c = layout[layoutY].charAt(x);
                 if (c == 'D') { maze.addGameObject(new Door(), x, y); }
                 // Gates are now added by spawnGate() methods, so 'G' is ignored here.
-                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.LARGE_POTION, x, y, ItemColor.BLUE)); }
-                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.SMALL_POTION, x, y, ItemColor.RED)); }
+                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.LARGE_POTION, x, y, ItemColor.BLUE, itemDataManager, assetManager)); }
+                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.SMALL_POTION, x, y, ItemColor.RED, itemDataManager, assetManager)); }
             }
         }
 

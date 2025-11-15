@@ -1,14 +1,17 @@
 package com.bpm.minotaur.gamedata.player;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
 import com.bpm.minotaur.managers.WorldManager;
+import com.bpm.minotaur.gamedata.item.ItemCategory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,19 +36,27 @@ public class Player {
 
     // --- Managers and World ---
     private final SoundManager soundManager;
+    private final ItemDataManager itemDataManager; // <-- ADD THIS
+    private final AssetManager assetManager;
 
 
-    public Player(float startX, float startY, Difficulty difficulty) {
+    public Player(float startX, float startY, Difficulty difficulty,
+                  ItemDataManager itemDataManager, AssetManager assetManager) {
+
+
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
         this.directionVector = new Vector2();
         this.cameraPlane = new Vector2();
         this.soundManager = new SoundManager(null);
+        this.itemDataManager = itemDataManager; // <-- ADD THIS
+        this.assetManager = assetManager;
         updateVectors();
 
         this.stats = new PlayerStats(difficulty);
 
-        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN));
+        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN,
+            itemDataManager, assetManager));
     }
 
 
@@ -99,12 +110,12 @@ public class Player {
         if (itemInFront != null) {
             soundManager.playPickupItemSound();
             // Handle Treasure pickup
-            if (itemInFront.getCategory() == Item.ItemCategory.TREASURE) {
+            if (itemInFront.getCategory() == ItemCategory.TREASURE) {
                 // --- MODIFIED: Use stats object ---
-                stats.incrementTreasureScore(itemInFront.getValue());
+                stats.incrementTreasureScore(itemInFront.getBaseValue());
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "! Your treasure score is now " + stats.getTreasureScore(), 2f));
-                Gdx.app.log("Player", "Picked up " + itemInFront.getDisplayName() + " with value " + itemInFront.getValue());
+                Gdx.app.log("Player", "Picked up " + itemInFront.getDisplayName() + " with value " + itemInFront.getBaseValue());
                 return;
             }
 
@@ -189,7 +200,7 @@ public class Player {
     // private int getMaxWarStrength() { ... } // (This was already removed)
 
     private void equipRing(Item ring, GameEventManager eventManager) {
-        if (ring.getCategory() != Item.ItemCategory.RING) return;
+        if (ring.getCategory() != ItemCategory.RING) return;
 
         eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName(), 2f));
 
@@ -205,7 +216,7 @@ public class Player {
         // --- MODIFIED: Use equipment object getters and setters ---
         switch (armor.getType()) {
             case HELMET:
-                if (equipment.getWornHelmet() == null || armor.getArmorStats().defense > equipment.getWornHelmet().getArmorStats().defense) {
+                if (equipment.getWornHelmet() == null || armor.getArmorDefense() > equipment.getWornHelmet().getArmorDefense()) {
                     equipment.setWornHelmet(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
@@ -215,7 +226,7 @@ public class Player {
                 break;
             case SMALL_SHIELD: // Fall-through
             case LARGE_SHIELD:
-                if (equipment.getWornShield() == null || armor.getArmorStats().defense > equipment.getWornShield().getArmorStats().defense) {
+                if (equipment.getWornShield() == null || armor.getArmorDefense() > equipment.getWornShield().getArmorDefense()) {
                     equipment.setWornShield(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
@@ -224,7 +235,7 @@ public class Player {
                 }
                 break;
             case GAUNTLETS:
-                if (equipment.getWornGauntlets() == null || armor.getArmorStats().defense > equipment.getWornGauntlets().getArmorStats().defense) {
+                if (equipment.getWornGauntlets() == null || armor.getArmorDefense() > equipment.getWornGauntlets().getArmorDefense()) {
                     equipment.setWornGauntlets(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
@@ -233,7 +244,7 @@ public class Player {
                 }
                 break;
             case HAUBERK:
-                if (equipment.getWornHauberk() == null || armor.getArmorStats().defense > equipment.getWornHauberk().getArmorStats().defense) {
+                if (equipment.getWornHauberk() == null || armor.getArmorDefense() > equipment.getWornHauberk().getArmorDefense()) {
                     equipment.setWornHauberk(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
@@ -242,7 +253,7 @@ public class Player {
                 }
                 break;
             case BREASTPLATE:
-                if (equipment.getWornBreastplate() == null || armor.getArmorStats().defense > equipment.getWornBreastplate().getArmorStats().defense) {
+                if (equipment.getWornBreastplate() == null || armor.getArmorDefense() > equipment.getWornBreastplate().getArmorDefense()) {
                     equipment.setWornBreastplate(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
@@ -563,7 +574,7 @@ public class Player {
 
         // --- Container Interaction Logic ---
         Item itemInFront = maze.getItems().get(targetTile);
-        if (itemInFront != null && itemInFront.getCategory() == Item.ItemCategory.CONTAINER) {
+        if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             // --- MODIFIED: Use getDisplayName ---
             String containerName = itemInFront.getDisplayName();
 

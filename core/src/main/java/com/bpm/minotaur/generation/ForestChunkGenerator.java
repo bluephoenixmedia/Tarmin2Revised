@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -268,7 +269,11 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
     @Override
     public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
-                              MonsterDataManager dataManager, AssetManager assetManager) {
+                              MonsterDataManager dataManager,
+                              ItemDataManager itemDataManager, // <-- ADD THIS
+                              AssetManager assetManager) {
+
+
         Gdx.app.log("ForestChunkGenerator", "Generating new FOREST chunk at " + chunkId);
 
         // --- 1. Create Layout (3x2 grid) ---
@@ -283,7 +288,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
         int effectiveSpawnLevel = Math.max(level, 4);
         Gdx.app.log("ForestChunkGenerator", "Real level: " + level + ", Effective Spawn Level: " + effectiveSpawnLevel);
 
-        SpawnManager spawnManager = new SpawnManager(dataManager, assetManager,
+        SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager,
             maze, difficulty, effectiveSpawnLevel, this.finalLayout);
         // --- 4. Place Gates ---
         // (Spawns gates only in ADVANCED mode, which is implied by this biome)

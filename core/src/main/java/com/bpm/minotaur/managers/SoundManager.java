@@ -6,6 +6,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.item.ItemCategory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class SoundManager {
             if (weapon != null) {
                 if (weapon.getType() == Item.ItemType.BOW) {
                     playSound("player_bow_attack");
-                } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
+                } else if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
                     playSound("player_spiritual_attack");
                 } else {
                     playSound("player_attack");
@@ -65,7 +66,7 @@ public class SoundManager {
                 playSound("player_attack");
             }
         } else {
-            if (weapon != null && weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON) {
+            if (weapon != null && weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
                 playRetroArpeggio(new int[]{523, 659, 784}, 0.04f); // C5-E5-G5 arpeggio
             } else {
                 playRetroSound(110, 0.15f, 0.8f); // Low A note for melee/bow

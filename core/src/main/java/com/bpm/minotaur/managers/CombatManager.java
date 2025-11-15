@@ -13,6 +13,7 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
+import com.bpm.minotaur.gamedata.item.ItemCategory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -157,11 +158,11 @@ public class CombatManager {
                 }
             }
 
-            if (weapon.getCategory() == Item.ItemCategory.WAR_WEAPON && weapon.getWeaponStats() != null) {
+            if (weapon.getCategory() == ItemCategory.WAR_WEAPON && weapon.isWeapon()) {
                 Gdx.app.log("CombatManager", "Weapon is war weapon and stats are not null");
 
                 // Ranged weapon check
-                if (weapon.getWeaponStats().isRanged) {
+                if (weapon.isRanged()) {
                     Gdx.app.log("CombatManager", "Weapon is ranged");
 
                     if (player.getArrows() > 0) {
@@ -178,11 +179,11 @@ public class CombatManager {
                             ItemSpriteData.DART
                         ));
 
-                        monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
-                        showDamageText(weapon.getWeaponStats().damage + attackModifier,
+                        monster.takeDamage(weapon.getWarDamage() + attackModifier);
+                        showDamageText(weapon.getWarDamage() + attackModifier,
                             new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
 
-                        Gdx.app.log("CombatManager", "monster takes " + weapon.getWeaponStats().damage + " damage");
+                        Gdx.app.log("CombatManager", "monster takes " + weapon.getWarDamage() + " damage");
                         eventManager.addEvent(new GameEvent("You fire an arrow!", 2f));
                     } else {
                         eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
@@ -207,19 +208,19 @@ public class CombatManager {
                         meleeSprite
                     ));
 
-                    monster.takeDamage(weapon.getWeaponStats().damage + attackModifier);
-                    showDamageText(weapon.getWeaponStats().damage + attackModifier,
+                    monster.takeDamage(weapon.getWarDamage() + attackModifier);
+                    showDamageText(weapon.getWarDamage() + attackModifier,
                         new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
 
 
                     eventManager.addEvent(new GameEvent("You attack with your " + weapon.getType() + "!", 2f));
                 }
 
-                if (weapon.vanishesOnUse()) {
+                if (weapon.isUsable()) {
                     player.getInventory().setRightHand(null);
                 }
 
-            } else if (weapon.getCategory() == Item.ItemCategory.SPIRITUAL_WEAPON && weapon.getSpiritualWeaponStats() != null) {
+            } else if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON && weapon.isWeapon()) {
                 Gdx.app.log("CombatManager", "Weapon is spiritual weapon and stats are not null");
 
                 // BOOK/SCROLL always uses LARGE_LIGHTNING sprite with weapon's color
@@ -232,14 +233,14 @@ public class CombatManager {
                     ItemSpriteData.LARGE_LIGHTNING
                 ));
 
-                monster.takeSpiritualDamage(weapon.getSpiritualWeaponStats().damage + attackModifier);
-                showDamageText(weapon.getSpiritualWeaponStats().damage + attackModifier,
+                monster.takeSpiritualDamage(weapon.getSpiritDamage() + attackModifier);
+                showDamageText(weapon.getSpiritDamage() + attackModifier,
                     new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
 
-                Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritualWeaponStats().damage + " damage");
+                Gdx.app.log("CombatManager", "monster takes " + weapon.getSpiritDamage() + " damage");
                 eventManager.addEvent(new GameEvent("You cast a spell!", 2f));
 
-                if (weapon.vanishesOnUse()) {
+                if (weapon.isUsable()) {
                     player.getInventory().setRightHand(null);
                 }
             } else {

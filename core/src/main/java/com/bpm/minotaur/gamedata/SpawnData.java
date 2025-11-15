@@ -91,6 +91,7 @@ public class SpawnData {
     public static final List<ItemSpawnInfo> TIER1_CONTAINERS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.MONEY_BELT, 1, 25),
         new ItemSpawnInfo(Item.ItemType.SMALL_BAG, 1, 25)
+
     );
 
     public static final List<ItemSpawnInfo> TIER2_CONTAINERS = Arrays.asList(
