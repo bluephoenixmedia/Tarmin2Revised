@@ -1,10 +1,11 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.monster;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.assets.AssetManager;
+import com.bpm.minotaur.gamedata.Renderable;
 
 public class Monster implements Renderable {
 

@@ -1,4 +1,4 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.monster;
 
 /**
  * Classifies monsters into broad "families" for the

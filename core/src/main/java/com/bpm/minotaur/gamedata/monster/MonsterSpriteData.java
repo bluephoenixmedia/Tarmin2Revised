@@ -1,4 +1,4 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.monster;
 
 /**
  * Monster sprite data extracted from the original Advanced D&D: Treasure of Tarmin assembly code.

@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.MonsterDataManager;
+import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 /**
  * Interface defining the "contract" for all chunk generators.

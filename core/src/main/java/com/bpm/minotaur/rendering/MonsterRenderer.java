@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.gamedata.Monster;
-import com.bpm.minotaur.gamedata.MonsterSpriteData;
+import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.monster.MonsterSpriteData;
 import com.bpm.minotaur.gamedata.player.Player;
 
 import java.util.ArrayList;

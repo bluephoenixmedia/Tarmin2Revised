@@ -1,4 +1,4 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.monster;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
