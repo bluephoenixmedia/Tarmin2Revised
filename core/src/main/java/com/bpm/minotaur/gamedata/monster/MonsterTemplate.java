@@ -1,5 +1,8 @@
 package com.bpm.minotaur.gamedata.monster;
 
+import com.badlogic.gdx.utils.Array;
+import com.bpm.minotaur.gamedata.DamageType;
+import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
 // Note: Fields are public for easy parsing by libGDX Json.
 // This class is just a data container.
 public class MonsterTemplate {
@@ -18,6 +21,12 @@ public class MonsterTemplate {
     public String texturePath;
     public String[] spriteData;
     public ScaleData scale;
+    public int warDamage; // <-- This was missing from the file but in CombatManager
+    public int spiritDamage; // <-- This was missing from the file but in CombatManager
+    public DamageType damageType = DamageType.PHYSICAL; // <-- This was missing, added default
+
+
+    public Array<EffectApplicationData> onHitEffects;
 
     // A no-argument constructor is required for the Json parser
     public MonsterTemplate() { }

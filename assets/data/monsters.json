@@ -35,7 +35,20 @@
     "scale": {
       "x": 1.2,
       "y": 0.8
-    }
+    },
+    "warDamage": 1,
+    "spiritDamage": 0,
+    "damageType": "PHYSICAL",
+
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 10,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.5
+      }
+    ]
   },
   "DWARF": {
     "warStrength": 10,

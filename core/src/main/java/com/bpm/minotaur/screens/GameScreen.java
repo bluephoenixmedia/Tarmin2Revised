@@ -11,6 +11,8 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
@@ -151,6 +153,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
+
+            player.getStatusManager().initialize(this.eventManager);
 
             player.setMaze(this.maze); // <-- [FIX] Player needs initial maze reference
         } else {
@@ -444,6 +448,39 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
 
+    /**
+     * Processes all active status effects on the player at the start of their turn.
+     * This is where effects like POISON, REGENERATION, etc. will be handled.
+     */
+    private void processPlayerStatusEffects() {
+        if (player == null) return; // Safety check
+
+        // --- Process POISON ---
+        // We check for the effect *before* calling updateTurn()
+        if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
+            ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
+            int damage = poison.getPotency();
+
+            // Use takeDamage with the POISON type, so resistances can apply
+           // player.takeDamage(damage, DamageType.POISON);
+            player.takeStatusEffectDamage(damage, DamageType.POISON);
+            // Send an event to the HUD
+            eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
+            Gdx.app.log("GameScreen", "Player took " + damage + " poison damage.");
+        }
+
+        // --- Process HUNGER/STARVATION (Example for later) ---
+        // if (player.getStatusManager().hasEffect(StatusEffectType.STARVING)) {
+        //     player.takeDamage(1, DamageType.PHYSICAL);
+        //     eventManager.addEvent(new GameEvent("You are starving!", 1f));
+        // }
+
+        // --- Process REGENERATION (Example for later) ---
+        // if (player.getStatusManager().hasEffect(StatusEffectType.HEALTHY)) {
+        //     player.getStats().modifyHealth(1); // Assuming a modifyHealth method exists
+        // }
+    }
+
     @Override
     public boolean keyDown(int keycode) {
         // Ensure player and maze exist before processing input
@@ -507,6 +544,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                                     worldManager.transitionPlayerToChunk(player, targetChunkId, targetPlayerPos);
                                     swapToChunk(targetChunk);
                                     combatManager.checkForAdjacentMonsters();
+                                    processPlayerStatusEffects();
+                                    player.getStatusManager().updateTurn(); // Turn passes
                                     return true; // Consume key
                                 } else if (targetChunk == null) {
                                     Gdx.app.log("GameScreen", "Seamless transition failed: Target chunk not loaded (or PCL hasn't run).");
@@ -530,6 +569,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                         player.moveBackward(maze, eventManager, gameMode);
                     }
                     combatManager.checkForAdjacentMonsters(); // Check for combat after moving
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     needsAsciiRender = false;
                     return true;
 
@@ -542,6 +583,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     } else {
                         player.turnRight();
                     }
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     needsAsciiRender = false;
                     return true;
 
@@ -549,13 +592,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 case Input.Keys.O:
                     // --- MODIFIED CALL: Pass gameMode ---
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     needsAsciiRender = true;
                     return true;
                 case Input.Keys.P:
                     player.interactWithItem(maze, eventManager, soundManager);
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     return true; // Added return true
                 case Input.Keys.U:
                     player.useItem(eventManager);
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     return true; // Added return true
                 case Input.Keys.D:
                     // 1. Check player's CURRENT tile (at-feet)
@@ -565,6 +614,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
                     if (maze.getLadders().containsKey(playerTile)) {
                         descendToNextLevel();
+                        processPlayerStatusEffects();
+                        player.getStatusManager().updateTurn(); // Turn passes
                         return true; // Found ladder at feet, descend
                     }
 
@@ -575,11 +626,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
                     if (maze.getLadders().containsKey(targetTile)) {
                         descendToNextLevel();
+                        processPlayerStatusEffects();
+                        player.getStatusManager().updateTurn(); // Turn passes
                         return true; // Found ladder in front, descend
                     }
                     return true; // Added return true
                 case Input.Keys.R:
                     player.rest(eventManager);
+                    processPlayerStatusEffects();
+                    player.getStatusManager().updateTurn(); // Turn passes
                     return true; // Added return true
             }
         }

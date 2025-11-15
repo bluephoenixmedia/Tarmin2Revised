@@ -4,11 +4,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
+import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterFamily;
+import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
@@ -60,6 +64,10 @@ public class CombatManager {
         if (currentState == CombatState.INACTIVE) {
             this.monster = monster;
 
+            if (this.monster != null && this.monster.getStatusManager() != null && this.eventManager != null) {
+                this.monster.getStatusManager().initialize(eventManager);
+            }
+
             // --- AUTO-TURN JUMP SCARE LOGIC ---
             int playerX = (int) player.getPosition().x;
             int playerY = (int) player.getPosition().y;
@@ -96,6 +104,31 @@ public class CombatManager {
         monsterAttackDelay = 0f; // ADD THIS LINE - Reset delay when combat ends
 
         Gdx.app.log("CombatManager", "Combat ended.");
+    }
+
+    /**
+     * Processes all active status effects on the player at the start of their turn.
+     * This is where effects like POISON, REGENERATION, etc. will be handled.
+     */
+    private void processPlayerStatusEffects() {
+        if (player == null) return; // Safety check
+
+        // --- Process POISON ---
+        // We check for the effect *before* calling updateTurn()
+        if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
+            ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
+            int damage = poison.getPotency();
+
+            // Use takeDamage with the POISON type, so resistances can apply
+            //player.takeDamage(damage, DamageType.POISON);
+            player.takeStatusEffectDamage(damage, DamageType.POISON);
+
+            // Send an event to the HUD
+            eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
+            Gdx.app.log("CombatManager", "Player took " + damage + " poison damage.");
+        }
+
+        // ... (Future effects go here) ...
     }
 
     public void playerAttack() {
@@ -253,6 +286,9 @@ public class CombatManager {
             return; // Don't switch turns if there's no weapon
         }
 
+        processPlayerStatusEffects(); // Process effects *before* ticking
+        player.getStatusManager().updateTurn();
+
         if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
             currentState = CombatState.VICTORY;
             Gdx.app.log("CombatManager","You have defeated" + monster.getMonsterType());
@@ -354,10 +390,31 @@ public class CombatManager {
                     break;
             }
 
+            MonsterTemplate template = game.getMonsterDataManager().getTemplate(monster.getType());
+
             if (isSpiritual) {
                 damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
                 Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (Spiritual) damage.");
                 player.takeSpiritualDamage(damage, damageType);
+
+                if (template.onHitEffects != null) {
+                    for (EffectApplicationData effectData : template.onHitEffects) {
+                        // Roll for chance
+                        if (random.nextFloat() < effectData.chance) {
+                            player.getStatusManager().addEffect(
+                                effectData.type,
+                                effectData.duration,
+                                effectData.potency,
+                                effectData.stackable
+                            );
+                            Gdx.app.log("CombatManager", "Applied effect " + effectData.type.name() + " to player.");
+                        }
+                    }
+                }
+
+                if (monster != null) { // Safety check
+                    monster.getStatusManager().updateTurn();
+                }
                 if (player.getSpiritualStrength() <= 0) {
                     currentState = CombatState.DEFEAT;
                 } else {
@@ -367,6 +424,25 @@ public class CombatManager {
                 damage = monster.getWarStrength() / 4 + random.nextInt(3);
                 Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (War) damage.");
                 player.takeDamage(damage, damageType);
+
+                if (template.onHitEffects != null) {
+                    for (EffectApplicationData effectData : template.onHitEffects) {
+                        // Roll for chance
+                        if (random.nextFloat() < effectData.chance) {
+                            player.getStatusManager().addEffect(
+                                effectData.type,
+                                effectData.duration,
+                                effectData.potency,
+                                effectData.stackable
+                            );
+                            Gdx.app.log("CombatManager", "Applied effect " + effectData.type.name() + " to player.");
+                        }
+                    }
+                }
+
+                if (monster != null) { // Safety check
+                    monster.getStatusManager().updateTurn();
+                }
                 if (player.getWarStrength() <= 0) {
                     currentState = CombatState.DEFEAT;
                 } else {
@@ -438,6 +514,11 @@ public class CombatManager {
      */
     public void passTurnToMonster() {
         if (currentState == CombatState.PLAYER_TURN) {
+
+            processPlayerStatusEffects(); // Process effects *before* ticking
+
+            player.getStatusManager().updateTurn();
+
             Gdx.app.log("CombatManager", "Player passed turn. Monster's turn.");
             currentState = CombatState.MONSTER_TURN;
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;

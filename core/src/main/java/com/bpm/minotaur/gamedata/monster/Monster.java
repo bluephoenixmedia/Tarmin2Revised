@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.assets.AssetManager;
 import com.bpm.minotaur.gamedata.Renderable;
+import com.bpm.minotaur.managers.StatusManager;
 
 public class Monster implements Renderable {
 
@@ -46,6 +47,7 @@ public class Monster implements Renderable {
     public Vector2 scale; // Add this Vector2 scale field
     private MonsterFamily family;
 
+    private final StatusManager statusManager;
 
     /**
      * The NEW, simplified constructor.
@@ -69,7 +71,7 @@ public class Monster implements Renderable {
         this.family = template.family;
         this.spriteData = template.spriteData; // Copied directly from template
         this.scale = new Vector2(template.scale.x, template.scale.y);
-
+        this.statusManager = new StatusManager();
         // --- Get the PRE-LOADED texture from the AssetManager ---
         // This avoids "new Texture(...)" and saves memory!
         this.texture = assetManager.get(template.texturePath, Texture.class);
@@ -145,6 +147,14 @@ public class Monster implements Renderable {
         return family;
     }
 
+
+    /**
+     * Provides direct access to the status effect manager.
+     * @return The StatusManager object.
+     */
+    public StatusManager getStatusManager() {
+        return statusManager;
+    }
 
 }
 
