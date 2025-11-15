@@ -5,7 +5,11 @@ public class GameEvent {
     // --- NEW: EventType Enum ---
     public enum EventType {
         MESSAGE,
-        CHUNK_TRANSITION
+        CHUNK_TRANSITION,
+        // --- NEW ---
+        EFFECT_APPLIED, // For when an effect is first added
+        EFFECT_CURED    // For when an effect is removed (by potion, spell, or expiry)
+        // --- END NEW ---
     }
 
     // --- Fields ---

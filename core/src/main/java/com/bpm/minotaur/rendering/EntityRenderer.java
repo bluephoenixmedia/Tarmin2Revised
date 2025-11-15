@@ -381,7 +381,7 @@ public class EntityRenderer {
             spriteData = ItemSpriteData.DART;
         }
 
-        Gdx.app.log("EntityRenderer", "Drawing projectile with sprite data");
+       // Gdx.app.log("EntityRenderer", "Drawing projectile with sprite data");
 
         int spritePixelHeight = spriteData.length;
         int spritePixelWidth = spriteData[0].length();

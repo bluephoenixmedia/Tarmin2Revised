@@ -8,6 +8,7 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.managers.StatusManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
 import com.bpm.minotaur.managers.WorldManager;
@@ -24,6 +25,8 @@ public class Player {
 
     // --- New PlayerEquipment field ---
     private final PlayerEquipment equipment = new PlayerEquipment();
+
+    private final StatusManager statusManager;
 
     // --- Position and Movement ---
     private final Vector2 position;
@@ -54,6 +57,8 @@ public class Player {
         updateVectors();
 
         this.stats = new PlayerStats(difficulty);
+
+        this.statusManager = new StatusManager();
 
         inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN,
             itemDataManager, assetManager));
@@ -806,6 +811,30 @@ public class Player {
     }
 
     /**
+     * Applies damage from a status effect (like POISON).
+     * This method bypasses all armor and protection (damageReduction)
+     * but STILL respects specific resistances (e.g., RESIST_POISON).
+     * @param amount The base amount of damage to take.
+     * @param type The type of damage (e.g., POISON, DISEASE).
+     */
+    public void takeStatusEffectDamage(int amount, DamageType type) {
+        // Get *only* specific resistance (e.g., RESIST_POISON)
+        int resistance = getResistance(type);
+
+        // Armor (damageReduction) is INTENTIONALLY skipped.
+
+        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
+        finalDamage = Math.max(0, finalDamage - resistance);
+
+        stats.setWarStrength(stats.getWarStrength() - finalDamage);
+
+        if (stats.getWarStrength() < 0) {
+            stats.setWarStrength(0);
+        }
+        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " status effect damage. WS is now " + stats.getWarStrength());
+    }
+
+    /**
      * Attack modifier based on player level.
      * @return The bonus damage to add to attacks.
      */
@@ -837,6 +866,14 @@ public class Player {
      */
     public PlayerEquipment getEquipment() {
         return equipment;
+    }
+
+    /**
+     * Provides direct access to the status effect manager.
+     * @return The StatusManager object.
+     */
+    public StatusManager getStatusManager() {
+        return statusManager;
     }
 
     public void setMaze(Maze newMaze) {
