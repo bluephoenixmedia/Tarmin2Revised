@@ -1,4 +1,4 @@
-package com.bpm.minotaur.gamedata;
+package com.bpm.minotaur.gamedata.monster;
 
 import com.badlogic.gdx.graphics.Color;
 

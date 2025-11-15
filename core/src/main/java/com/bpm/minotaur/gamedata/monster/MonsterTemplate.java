@@ -1,6 +1,4 @@
-package com.bpm.minotaur.gamedata;
-
-import com.badlogic.gdx.math.Vector2; // Or your own scale class
+package com.bpm.minotaur.gamedata.monster;
 
 // Note: Fields are public for easy parsing by libGDX Json.
 // This class is just a data container.

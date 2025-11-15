@@ -5,7 +5,7 @@ import com.badlogic.gdx.audio.AudioDevice;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.Monster;
+import com.bpm.minotaur.gamedata.monster.Monster;
 
 import java.util.HashMap;
 import java.util.Map;
