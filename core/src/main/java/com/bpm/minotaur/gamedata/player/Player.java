@@ -5,14 +5,8 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.item.ItemColor;
-import com.bpm.minotaur.gamedata.item.ItemDataManager;
-import com.bpm.minotaur.managers.StatusManager;
-import com.bpm.minotaur.managers.GameEventManager;
-import com.bpm.minotaur.managers.SoundManager;
-import com.bpm.minotaur.managers.WorldManager;
-import com.bpm.minotaur.gamedata.item.ItemCategory;
+import com.bpm.minotaur.gamedata.item.*;
+import com.bpm.minotaur.managers.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,14 +48,23 @@ public class Player {
         this.soundManager = new SoundManager(null);
         this.itemDataManager = itemDataManager; // <-- ADD THIS
         this.assetManager = assetManager;
+
+        Gdx.app.log("Player [DEBUG]", "Constructor: Creating starting items...");
         updateVectors();
 
         this.stats = new PlayerStats(difficulty);
 
         this.statusManager = new StatusManager();
 
-        inventory.setRightHand(new Item(Item.ItemType.BOW, 0, 0, ItemColor.TAN,
-            itemDataManager, assetManager));
+        inventory.setRightHand(
+            itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.GRAY, assetManager)
+        );
+        // Give the player a starting Bow
+        inventory.setLeftHand(
+            itemDataManager.createItem(Item.ItemType.BOW, 0, 0, ItemColor.GRAY, assetManager)
+        );
+
+        Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
     }
 
 
@@ -90,6 +93,10 @@ public class Player {
 
             Item itemInHand = inventory.getRightHand();
             inventory.setRightHand(maze.getItems().remove(playerTile2));
+            //Item rightHand = inventory.getRightHand();
+
+           // String[] spriteData = ItemSpriteData.getSpriteByType(itemInHand.getType().name());
+
             if (itemInHand != null) { // Swap with item in front
                 itemInHand.getPosition().set(playerGridX + 0.5f, playerGridY + 0.5f);
                 maze.getItems().put(playerTile2, itemInHand);
@@ -178,12 +185,20 @@ public class Player {
         }
     }
 
-    public void useItem(GameEventManager eventManager) {
+    public void useItem(GameEventManager eventManager, PotionManager potionManager) {
         // ... [ This method (useItem) has no changes ] ...
         Item itemInHand = inventory.getRightHand();
-        if (itemInHand == null) {
-            eventManager.addEvent(new GameEvent("Right hand is empty.", 2f));
+
+        if (itemInHand == null || !itemInHand.isUsable()) {
+            eventManager.addEvent(new GameEvent("You can't use that.", 2f));
             return;
+        }
+
+        if (itemInHand.isPotion()) {
+            // The PotionManager handles applying the effect and posting the message
+            potionManager.consumePotion(this, itemInHand);
+            inventory.setRightHand(null); // Consume the item
+            return; // Potion logic is done, exit the method.
         }
 
         switch (itemInHand.getCategory()) {
@@ -273,23 +288,7 @@ public class Player {
     private void useConsumable(Item item, GameEventManager eventManager) {
         // ... [ This method (useConsumable) has no changes ] ...
         switch (item.getType()) {
-            case SMALL_POTION:
-                // Refresh war & spiritual strength to maximum
-                // --- MODIFIED: Use stats object and Player.setWarStrength ---
-                this.setWarStrength(this.getEffectiveMaxWarStrength());
-                stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
-                // --- END MODIFIED ---
-                inventory.setRightHand(null);
-                eventManager.addEvent(new GameEvent("You feel refreshed.", 2f));
-                break;
-            case LARGE_POTION:
-                // Raise war strength score by 10
-                // --- MODIFIED: Use stats object ---
-                stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
-                this.setWarStrength(this.getEffectiveMaxWarStrength()); // Heal to new max
-                inventory.setRightHand(null);
-                eventManager.addEvent(new GameEvent("You feel stronger.", 2f));
-                break;
+
             case WAR_BOOK:
                 // --- MODIFIED: Use stats object ---
                 stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
@@ -879,5 +878,9 @@ public class Player {
     }
 
     public void setMaze(Maze newMaze) {
+    }
+
+    public PlayerStats getStats() {
+        return this.stats;
     }
 }

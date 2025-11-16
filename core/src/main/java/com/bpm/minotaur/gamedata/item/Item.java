@@ -50,8 +50,14 @@ public class Item implements Renderable {
         RING_PURPLE,
 
         // Useful
-        SMALL_POTION,
-        LARGE_POTION,
+      //  SMALL_POTION,
+      //  LARGE_POTION,
+        POTION_BLUE,
+        POTION_PINK,
+        POTION_GREEN,
+        POTION_GOLD,
+        POTION_SWIRLY,
+        POTION_BUBBLY,
         KEY,
         QUIVER,
         WAR_BOOK,
@@ -86,7 +92,8 @@ public class Item implements Renderable {
     private List<ItemModifier> modifiers = new ArrayList<>();
 
     // --- Base Properties (Copied from Template) ---
-    private final String friendlyName;
+    private String friendlyName;
+    private String description; // For storing dynamic potion descriptions
     private final String[] spriteData;
     private final Texture texture;
     private final int baseValue;
@@ -109,6 +116,9 @@ public class Item implements Renderable {
     private final int range;
     private final Vector2 scale; // <-- ADD THIS
     private List<Item> contents = new ArrayList<>();
+
+    private PotionEffectType trueEffect;
+    private boolean isIdentified = false;
 
 
     /**
@@ -152,7 +162,7 @@ public class Item implements Renderable {
         }
 
         // --- Get the PRE-LOADED texture from the AssetManager ---
-        if (template.texturePath != null && !template.texturePath.isEmpty()) {
+        if (template.texturePath != null && !template.texturePath.isEmpty() && !this.isPotion) {
             this.texture = assetManager.get(template.texturePath, Texture.class);
         } else {
             this.texture = null; // Or a default "unknown" texture
@@ -179,10 +189,18 @@ public class Item implements Renderable {
      * @return The formatted display name.
      */
     public String getDisplayName() {
+        // --- NEW POTION LOGIC ---
+        // If it's a potion, 'friendlyName' holds the dynamic name ("Blue Potion" or "Potion of Healing")
+        // We will set this field using setName() from PotionManager
+        if (isPotion) {
+            return this.friendlyName;
+        }
         if (!isModified()) {
             // Just return the base name
             return this.friendlyName;
         }
+
+
 
         StringBuilder nameBuilder = new StringBuilder();
         String prefix = null;
@@ -375,5 +393,31 @@ public class Item implements Renderable {
 
     public int getRange() {
         return this.range;
+    }
+
+    public PotionEffectType getTrueEffect() {
+        return trueEffect;
+    }
+
+    public void setTrueEffect(PotionEffectType trueEffect) {
+        this.trueEffect = trueEffect;
+    }
+
+    public boolean isIdentified() {
+        return isIdentified;
+    }
+
+    public void setIdentified(boolean identified) {
+        isIdentified = identified;
+    }
+
+    // Allows PotionManager to change "Blue Potion" to "Potion of Healing"
+    public void setName(String name) {
+        this.friendlyName = name;
+    }
+
+    // Allows PotionManager to update the description
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
