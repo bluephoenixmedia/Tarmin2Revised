@@ -366,6 +366,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager, AssetManager assetManager) {
+
+        Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText STARTING.");
+
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
@@ -375,10 +378,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
-                if (c == 'D') { maze.addGameObject(new Door(), x, y); }
+                if (c == 'D') {
+                    maze.addGameObject(new Door(), x, y);
+                }
                 // Gates are now added by spawnGate() methods, so 'G' is ignored here.
-                else if (c == 'S') { maze.addItem(new Item(Item.ItemType.LARGE_POTION, x, y, ItemColor.BLUE, itemDataManager, assetManager)); }
-                else if (c == 'H') { maze.addItem(new Item(Item.ItemType.SMALL_POTION, x, y, ItemColor.RED, itemDataManager, assetManager)); }
+                else if (c == 'S') {
+                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE, assetManager));
+                } else if (c == 'H') {
+                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED, assetManager));
+                }
             }
         }
 
@@ -399,6 +407,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 }
             }
         }
+        Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText FINISHED.");
         return maze;
     }
 

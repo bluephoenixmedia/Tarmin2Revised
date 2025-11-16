@@ -123,8 +123,7 @@ public class SpawnManager {
         Item.ItemType type = availableItems.get(random.nextInt(availableItems.size()));
         ItemColor color = getRandomItemColor(type);
 
-        Item item = new Item(type, spawnPoint.x, spawnPoint.y, color, itemDataManager, assetManager);
-
+        Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, color, assetManager);
 
         attemptToModifyItem(item, color); // NEW CALL
         maze.addItem(item);
@@ -148,7 +147,7 @@ public class SpawnManager {
         // Determine container color based on level
         ItemColor containerColor = getContainerColorForLevel();
 
-        Item container = new Item(type, spawnPoint.x, spawnPoint.y, containerColor, itemDataManager, assetManager);
+        Item container = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
 
         attemptToModifyItem(container, containerColor); // NEW CALL
 
@@ -156,8 +155,7 @@ public class SpawnManager {
         //TODO make containers able to have any item or weapon type
         SpawnData.TreasureSpawnInfo treasureInfo = SpawnData.TREASURES.get(random.nextInt(SpawnData.TREASURES.size()));
 
-        Item treasure = new Item(treasureInfo.type(), 0, 0, ItemColor.YELLOW, itemDataManager, assetManager);
-
+        Item treasure = itemDataManager.createItem(treasureInfo.type(), 0, 0, ItemColor.YELLOW, assetManager);
 
         // Use a default color for treasure
        // treasure.setValue(treasureInfo.baseValue() + (level * treasureInfo.levelModifier()));
@@ -176,7 +174,7 @@ public class SpawnManager {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
         if (spawnPoint == null) return; // No space for the key
 
-        Item key = new Item(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, itemDataManager, assetManager);
+        Item key = itemDataManager.createItem(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
 
         attemptToModifyItem(key, containerColor); // NEW CALL (Keys can be magical... maybe "Skeleton Key"?)
         maze.addItem(key);

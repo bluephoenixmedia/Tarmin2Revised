@@ -9,6 +9,7 @@ public class ItemTemplate {
     public String friendlyName;
     public String texturePath;
     public String[] spriteData;
+    public String description; // <-- ADD THIS LINE
 
     // Stats
     public int baseValue;
@@ -29,6 +30,7 @@ public class ItemTemplate {
     public boolean isRing;
     public int range;
     public ScaleData scale; // <-- ADD THIS FIELD
+    public boolean isPotionAppearance = false; // <-- ADD THIS LINE
 
     // A no-argument constructor is required for the Json parser
     public ItemTemplate() { }

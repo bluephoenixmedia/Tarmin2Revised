@@ -13,10 +13,13 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.item.ItemType;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
+
+import java.util.List;
 
 // No longer needed: import java.util.ArrayList;
 // No longer needed: import java.util.Collections;
@@ -54,7 +57,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private int currentLevel; // Current level number
     private CombatManager combatManager;
     private MonsterAiManager monsterAiManager; // <-- NEW: AI Manager
-
+    private PotionManager potionManager;
     // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
     // (Moved to ChunkGenerator.java)
 
@@ -102,6 +105,13 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
+
+        // --- ADD THIS LINE ---
+        if (potionManager != null && gameMode == GameMode.ADVANCED) {
+            potionManager.saveState();
+        }
+        // --- END ADD ---
+
         MusicManager.getInstance().stop();
     }
 
@@ -145,25 +155,67 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
      */
     private void generateLevel(int levelNumber) {
         // --- ALL MAZE GENERATION LOGIC REMOVED ---
-
+        Gdx.app.log("GameScreen [DEBUG]", "generateLevel START. Player is " + (player == null ? "NULL" : "NOT NULL"));
         // --- NEW: Get initial maze from WorldManager ---
         // The WorldManager handles whether to load or generate based on GameMode and chunkId (implicit for now)
-        this.maze = worldManager.getInitialMaze(); // Or potentially worldManager.loadChunkForLevel(levelNumber)? Needs more design.
-
         if (player == null) {
-            // Get start position from WorldManager/ChunkGenerator
-            GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
 
+            // --- [ NEW ORDERING TO FIX BUG ] ---
+
+            // 1. Create EventManager (already done in show())
+
+            // 2. Create PotionManager (it only needs eventManager)
+            if (this.potionManager == null) {
+                // 1. Create the PotionManager
+                Gdx.app.log("GameScreen [DEBUG]", "Creating NEW PotionManager...");
+                this.potionManager = new PotionManager(this.eventManager);
+
+                // 2. Give ItemDataManager the PotionManager
+                Gdx.app.log("GameScreen [DEBUG]", "Setting PotionManager in ItemDataManager...");
+                game.getItemDataManager().setPotionManager(this.potionManager);
+
+                // 3. CHECK FOR NEW GAME vs LOAD GAME
+                if (potionManager.hasSaveState()) {
+                    // A save file exists, this is a LOADED GAME
+                    Gdx.app.log("GameScreen [DEBUG]", "Potion save file found. Loading state...");
+                    potionManager.loadState();
+                } else {
+                    // No save file, this is a NEW GAME
+                    Gdx.app.log("GameScreen [DEBUG]", "No potion save file. Initializing NEW potion map...");
+                    List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager().getAllPotionAppearanceTypes();
+                    this.potionManager.initializeNewGame(potionTypes);
+                }
+            }
+
+            // 5. NOW create the Player. Its constructor will call
+            // itemDataManager.createItem(), which now has a valid PotionManager.
+            Gdx.app.log("GameScreen [DEBUG]", "Creating NEW Player...");
+            GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
-
             player.getStatusManager().initialize(this.eventManager);
 
-            player.setMaze(this.maze); // <-- [FIX] Player needs initial maze reference
+            // 6. NOW generate/load the maze. This will also call
+            // itemDataManager.createItem() with a valid PotionManager.
+            Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
+
+            this.maze = worldManager.getInitialMaze();
+
+            Gdx.app.log("GameScreen [DEBUG]", "Setting maze reference on player.");
+            // 7. Set player's maze reference
+            player.setMaze(this.maze);
+
+            // --- [ END NEW ORDERING ] ---
+
         } else {
-            // Player already exists, reset position to the start of the newly loaded/generated maze
+            // Player already exists (e.g., descending stairs)
+            Gdx.app.log("GameScreen [DEBUG]", "Player exists. Calling getInitialMaze() for new level...");
+            // 1. Load/Generate the new maze. PotionManager already exists.
+            this.maze = worldManager.getInitialMaze();
+
+            // 2. Reset position and set maze
             resetPlayerPosition();
-            player.setMaze(this.maze); // <-- [FIX] Player needs new maze reference
+            player.setMaze(this.maze);
         }
 
         // Initialize systems that depend on the player and maze
@@ -619,8 +671,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     playerTurnTakesAction(); // <-- MODIFIED
                     return true; // Added return true
                 case Input.Keys.U:
-                    player.useItem(eventManager);
-                    playerTurnTakesAction(); // <-- MODIFIED
+                    player.useItem(eventManager, this.potionManager); // Pass the potionManager                    playerTurnTakesAction(); // <-- MODIFIED
                     return true; // Added return true
                 case Input.Keys.D:
                     // 1. Check player's CURRENT tile (at-feet)

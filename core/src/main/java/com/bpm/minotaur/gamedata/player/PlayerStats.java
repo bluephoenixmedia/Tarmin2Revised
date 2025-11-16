@@ -189,4 +189,28 @@ public class PlayerStats {
     public float getVulnerabilityMultiplier() {
         return vulnerabilityMultiplier;
     }
+
+    /**
+     * Heals the player's War Strength (health).
+     * Cannot heal beyond maximum.
+     * @param amount The amount to heal.
+     */
+    public void heal(int amount) {
+        if (amount <= 0) return;
+        this.warStrength += amount;
+        if (this.warStrength > this.maxWarStrength) {
+            this.warStrength = this.maxWarStrength;
+        }
+    }
+
+    /**
+     * Permanently increases the player's base (max) War Strength.
+     * Also heals the player for the same amount.
+     * @param amount The amount to increase max strength by.
+     */
+    public void modifyBaseWarStrength(int amount) {
+        if (amount <= 0) return;
+        this.maxWarStrength += amount;
+        heal(amount); // Also heal the player by the amount gained
+    }
 }

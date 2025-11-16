@@ -28,6 +28,28 @@ public class Inventory {
         leftHand = temp;
     }
 
+    /**
+     * Gets a new list containing all items in the inventory (hands and pack).
+     * This is used for "identify" logic that needs to scan everything.
+     * @return A new List<Item> of all non-null items.
+     */
+    public java.util.List<Item> getAllItems() {
+        java.util.List<Item> allItems = new java.util.ArrayList<>();
+
+        if (rightHand != null) {
+            allItems.add(rightHand);
+        }
+        if (leftHand != null) {
+            allItems.add(leftHand);
+        }
+        for (Item item : backpack) {
+            if (item != null) {
+                allItems.add(item);
+            }
+        }
+        return allItems;
+    }
+
     public void rotatePack() {
         if (backpack.length < 6) return; // Ensure the backpack is the correct size
 

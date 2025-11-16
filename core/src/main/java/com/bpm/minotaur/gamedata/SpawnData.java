@@ -47,9 +47,9 @@ public class SpawnData {
     // Items are also tiered to provide better loot in deeper levels.
 
     public static final List<ItemSpawnInfo> TIER1_ITEMS = Arrays.asList(
-        new ItemSpawnInfo(Item.ItemType.SMALL_POTION, 1, 50),
-        new ItemSpawnInfo(Item.ItemType.LARGE_POTION, 1, 50),
         new ItemSpawnInfo(Item.ItemType.KEY, 1, 99),
+        new ItemSpawnInfo(Item.ItemType.POTION_PINK, 1, 50), // Was SMALL_POTION
+        new ItemSpawnInfo(Item.ItemType.POTION_BLUE, 1, 50), // Was LARGE_POTION
         new ItemSpawnInfo(Item.ItemType.QUIVER, 1, 99),
         new ItemSpawnInfo(Item.ItemType.SCROLL, 2, 50),
         new ItemSpawnInfo(Item.ItemType.BOW, 1, 50),
