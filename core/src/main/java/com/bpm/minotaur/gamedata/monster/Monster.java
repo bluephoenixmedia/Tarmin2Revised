@@ -47,6 +47,8 @@ public class Monster implements Renderable {
     public Vector2 scale; // Add this Vector2 scale field
     private MonsterFamily family;
 
+    private int intelligence;
+
     private final StatusManager statusManager;
 
     /**
@@ -75,6 +77,8 @@ public class Monster implements Renderable {
         // --- Get the PRE-LOADED texture from the AssetManager ---
         // This avoids "new Texture(...)" and saves memory!
         this.texture = assetManager.get(template.texturePath, Texture.class);
+
+        this.intelligence = template.intelligence; // Copy intelligence from template
     }
 
     public void takeDamage(int amount) {
@@ -147,6 +151,10 @@ public class Monster implements Renderable {
         return family;
     }
 
+
+    public int getIntelligence() {
+        return intelligence;
+    }
 
     /**
      * Provides direct access to the status effect manager.

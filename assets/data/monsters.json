@@ -39,6 +39,7 @@
     "warDamage": 1,
     "spiritDamage": 0,
     "damageType": "PHYSICAL",
+    "intelligence": 0,
 
     "onHitEffects": [
       {
@@ -55,6 +56,7 @@
     "spiritualStrength": 10,
     "armor": 1,
     "baseExperience": 15,
+    "intelligence": 3,
     "family": "HUMANOID",
     "texturePath": "images/monsters/dwarf.png",
     "spriteData": [
@@ -95,6 +97,7 @@
     "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_scorpion.png",
+    "intelligence": 0,
     "spriteData": [
       "........................",
       "........................",
@@ -132,6 +135,7 @@
     "armor": 2,
     "baseExperience": 35,
     "family": "BEAST",
+    "intelligence": 1,
     "texturePath": "images/monsters/giant_snake.png",
     "spriteData": [
       "........................",
@@ -169,6 +173,8 @@
     "spiritualStrength": 5,
     "armor": 3,
     "baseExperience": 20,
+    "intelligence": 5,
+
     "family": "UNDEAD",
     "texturePath": "images/monsters/ghoul.png",
     "spriteData": [
@@ -207,6 +213,7 @@
     "spiritualStrength": 0,
     "armor": 3,
     "baseExperience": 18,
+    "intelligence": 3,
     "family": "UNDEAD",
     "texturePath": "images/monsters/skeleton.png",
     "spriteData": [
@@ -245,6 +252,7 @@
     "spiritualStrength": 5,
     "armor": 4,
     "baseExperience": 22,
+    "intelligence": 5,
     "family": "UNDEAD",
     "texturePath": "images/monsters/hooded_skeleton.png",
     "spriteData": [
@@ -283,6 +291,7 @@
     "spiritualStrength": 15,
     "armor": 6,
     "baseExperience": 35,
+    "intelligence": 3,
     "family": "BEAST",
     "texturePath": "images/monsters/alligator.png",
     "spriteData": [
@@ -321,6 +330,7 @@
     "spiritualStrength": 30,
     "armor": 8,
     "baseExperience": 50,
+    "intelligence": 10,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/dragon.png",
     "spriteData": [
@@ -358,6 +368,7 @@
     "warStrength": 25,
     "spiritualStrength": 35,
     "armor": 5,
+    "intelligence": 6,
     "baseExperience": 40,
     "family": "UNDEAD",
     "texturePath": "images/monsters/wraith.png",
@@ -397,6 +408,8 @@
     "spiritualStrength": 10,
     "armor": 7,
     "baseExperience": 45,
+    "intelligence": 6,
+
     "family": "HUMANOID",
     "texturePath": "images/monsters/giant.png",
     "spriteData": [
@@ -435,6 +448,8 @@
     "spiritualStrength": 25,
     "armor": 10,
     "baseExperience": 100,
+    "intelligence": 20,
+
     "family": "MYTHICAL",
     "texturePath": "images/monsters/minotaur.png",
     "spriteData": [
