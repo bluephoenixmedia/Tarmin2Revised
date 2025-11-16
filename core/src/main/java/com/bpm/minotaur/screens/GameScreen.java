@@ -53,6 +53,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private Maze maze; // This is now the "active" maze/chunk
     private int currentLevel; // Current level number
     private CombatManager combatManager;
+    private MonsterAiManager monsterAiManager; // <-- NEW: AI Manager
 
     // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
     // (Moved to ChunkGenerator.java)
@@ -69,6 +70,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             game.getMonsterDataManager(),
             game.getItemDataManager(), // <-- ADD THIS
             game.getAssetManager());
+
+        this.monsterAiManager = new MonsterAiManager(); // <-- NEW: Instantiate AI Manager
 
         // Music based on initial level
         switch (level) {
@@ -354,6 +357,25 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         DebugRenderer.printMazeToConsole(maze); // For debugging
     }
 
+    /**
+     * [NEW] Helper method to consolidate all logic that happens when a player's turn passes
+     * outside of combat (e.g., status effects, monster movement).
+     */
+    private void playerTurnTakesAction() {
+        processPlayerStatusEffects();
+        player.getStatusManager().updateTurn(); // Turn passes
+
+        // --- [ THE FIX ] ---
+        // We now pass 'true' to allow monster movement.
+        // We also check that combat is inactive.
+        if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+            monsterAiManager.updateMonsterLogic(maze, player, true);
+        }
+
+        combatManager.checkForAdjacentMonsters();
+        // --- [ END FIX ] ---
+    }
+
 
     /**
      * NEW: Handles the "hot-swap" of the maze when moving between chunks.
@@ -544,8 +566,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                                     worldManager.transitionPlayerToChunk(player, targetChunkId, targetPlayerPos);
                                     swapToChunk(targetChunk);
                                     combatManager.checkForAdjacentMonsters();
-                                    processPlayerStatusEffects();
-                                    player.getStatusManager().updateTurn(); // Turn passes
+                                    playerTurnTakesAction(); // <-- MODIFIED
                                     return true; // Consume key
                                 } else if (targetChunk == null) {
                                     Gdx.app.log("GameScreen", "Seamless transition failed: Target chunk not loaded (or PCL hasn't run).");
@@ -569,8 +590,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                         player.moveBackward(maze, eventManager, gameMode);
                     }
                     combatManager.checkForAdjacentMonsters(); // Check for combat after moving
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED
                     needsAsciiRender = false;
                     return true;
 
@@ -583,8 +603,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     } else {
                         player.turnRight();
                     }
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED
                     needsAsciiRender = false;
                     return true;
 
@@ -592,19 +611,16 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 case Input.Keys.O:
                     // --- MODIFIED CALL: Pass gameMode ---
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED Turn passes
                     needsAsciiRender = true;
                     return true;
                 case Input.Keys.P:
                     player.interactWithItem(maze, eventManager, soundManager);
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED
                     return true; // Added return true
                 case Input.Keys.U:
                     player.useItem(eventManager);
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED
                     return true; // Added return true
                 case Input.Keys.D:
                     // 1. Check player's CURRENT tile (at-feet)
@@ -614,8 +630,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
                     if (maze.getLadders().containsKey(playerTile)) {
                         descendToNextLevel();
-                        processPlayerStatusEffects();
-                        player.getStatusManager().updateTurn(); // Turn passes
+                        playerTurnTakesAction(); // <-- MODIFIED
                         return true; // Found ladder at feet, descend
                     }
 
@@ -626,15 +641,13 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
                     if (maze.getLadders().containsKey(targetTile)) {
                         descendToNextLevel();
-                        processPlayerStatusEffects();
-                        player.getStatusManager().updateTurn(); // Turn passes
+                        playerTurnTakesAction(); // <-- MODIFIED
                         return true; // Found ladder in front, descend
                     }
                     return true; // Added return true
                 case Input.Keys.R:
                     player.rest(eventManager);
-                    processPlayerStatusEffects();
-                    player.getStatusManager().updateTurn(); // Turn passes
+                    playerTurnTakesAction(); // <-- MODIFIED
                     return true; // Added return true
             }
         }

@@ -25,6 +25,7 @@ public class MonsterTemplate {
     public int spiritDamage; // <-- This was missing from the file but in CombatManager
     public DamageType damageType = DamageType.PHYSICAL; // <-- This was missing, added default
 
+    public int intelligence; // This will be loaded from JSON, defaulting to 0
 
     public Array<EffectApplicationData> onHitEffects;
 

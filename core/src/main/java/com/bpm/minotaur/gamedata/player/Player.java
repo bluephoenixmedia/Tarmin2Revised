@@ -499,6 +499,8 @@ public class Player {
                 return;
             }
         }
+
+
         Object doorObject = maze.getGameObjectAt(nextX, nextY);
 
         if (doorObject instanceof Door) {
