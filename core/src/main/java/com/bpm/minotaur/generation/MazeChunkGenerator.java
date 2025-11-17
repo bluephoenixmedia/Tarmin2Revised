@@ -8,6 +8,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableData; // <-- ADDED IMPORT
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 
@@ -64,9 +65,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * @param difficulty The game difficulty.
      * @return A fully populated Maze object.
      */
-    @Override
+
     public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
-                              MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
+                              MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+                              SpawnTableData spawnTableData) { // <-- Parameter is here
 
         // For ADVANCED mode, we use a 3x2 grid (double the size)
         // For CLASSIC mode, we stick with the original 2x2
@@ -79,7 +81,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
         maze.setTheme(theme); // <-- [NEW] SET THE THEME
 
         // --- 3. Populate Maze ---
-        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager);
+        // --- [MODIFIED] ---
+        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager, spawnTableData); // <-- Passed here
+        // --- [END MODIFIED] ---
 
         spawnLadder(maze, this.finalLayout);
 
@@ -149,14 +153,19 @@ public class MazeChunkGenerator implements IChunkGenerator {
         Gdx.app.error("ChunkGenerator", "CRITICAL: No non-wall tiles found in maze. Player will be stuck at (1, 1).");
     }
 
+    // --- [MODIFIED] ---
+    // This is the key fix for Error 2. The SpawnTableData parameter was missing.
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
-                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
+                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+                               SpawnTableData spawnTableData) { // <-- THIS PARAMETER WAS MISSING
 
 
         SpawnManager spawnManager = new SpawnManager(dataManager,
-            itemDataManager, // <-- ADD THIS
+            itemDataManager,
             assetManager,
-            maze, difficulty, level, layout);
+            maze, difficulty, level, layout,
+            spawnTableData); // <-- Now this variable is a known symbol
+        // --- [END MODIFIED] ---
 
         spawnManager.spawnEntities();
     }

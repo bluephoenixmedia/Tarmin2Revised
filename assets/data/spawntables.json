@@ -1,0 +1,74 @@
+{
+  "levelBudgets": [
+    { "level": 1, "monsterBudget": 3, "itemBudget": 5, "containerBudget": 1 },
+    { "level": 2, "monsterBudget": 3, "itemBudget": 5, "containerBudget": 1 },
+    { "level": 3, "monsterBudget": 4, "itemBudget": 4, "containerBudget": 1 },
+    { "level": 4, "monsterBudget": 4, "itemBudget": 4, "containerBudget": 1 },
+    { "level": 5, "monsterBudget": 4, "itemBudget": 4, "containerBudget": 1 },
+    { "level": 6, "monsterBudget": 5, "itemBudget": 3, "containerBudget": 2 },
+    { "level": 7, "monsterBudget": 5, "itemBudget": 3, "containerBudget": 2 },
+    { "level": 8, "monsterBudget": 5, "itemBudget": 3, "containerBudget": 2 },
+    { "level": 9, "monsterBudget": 6, "itemBudget": 2, "containerBudget": 2 },
+    { "level": 10, "monsterBudget": 6, "itemBudget": 2, "containerBudget": 2 },
+    { "level": 11, "monsterBudget": 6, "itemBudget": 2, "containerBudget": 2 },
+    { "level": 12, "monsterBudget": 7, "itemBudget": 1, "containerBudget": 3 },
+    { "level": 13, "monsterBudget": 7, "itemBudget": 1, "containerBudget": 3 },
+    { "level": 14, "monsterBudget": 7, "itemBudget": 1, "containerBudget": 3 },
+    { "level": 15, "monsterBudget": 8, "itemBudget": 0, "containerBudget": 3 }
+  ],
+  "defaultBudget": { "monsterBudget": 8, "itemBudget": 0, "containerBudget": 4 },
+
+  "monsterSpawnTable": [
+    { "type": "GIANT_ANT", "minLevel": 1, "maxLevel": 3, "weight": 10 },
+    { "type": "DWARF", "minLevel": 1, "maxLevel": 5, "weight": 8 },
+    { "type": "GIANT_SCORPION", "minLevel": 2, "maxLevel": 6, "weight": 8 },
+    { "type": "SKELETON", "minLevel": 3, "maxLevel": 8, "weight": 7 },
+    { "type": "GHOUL", "minLevel": 4, "maxLevel": 10, "weight": 6 },
+    { "type": "CLOAKED_SKELETON", "minLevel": 5, "maxLevel": 12, "weight": 6 },
+    { "type": "GIANT_SNAKE", "minLevel": 6, "maxLevel": 12, "weight": 5 },
+    { "type": "WRAITH", "minLevel": 8, "maxLevel": 15, "weight": 4 },
+    { "type": "ALLIGATOR", "minLevel": 9, "maxLevel": 99, "weight": 4 },
+    { "type": "GIANT", "minLevel": 10, "maxLevel": 99, "weight": 3 },
+    { "type": "DRAGON", "minLevel": 12, "maxLevel": 99, "weight": 2 }
+  ],
+
+  "itemSpawnTable": [
+    { "type": "POTION_BLUE", "minLevel": 1, "maxLevel": 99, "weight": 5 },
+    { "type": "POTION_PINK", "minLevel": 1, "maxLevel": 99, "weight": 5 },
+    { "type": "KNIFE", "minLevel": 1, "maxLevel": 5, "weight": 10 },
+    { "type": "DART", "minLevel": 1, "maxLevel": 5, "weight": 10 },
+    { "type": "BOW", "minLevel": 2, "maxLevel": 8, "weight": 8 },
+    { "type": "SPEAR", "minLevel": 3, "maxLevel": 10, "weight": 7 },
+    { "type": "SCROLL", "minLevel": 3, "maxLevel": 12, "weight": 6 },
+    { "type": "SMALL_RING", "minLevel": 4, "maxLevel": 12, "weight": 5 },
+    { "type": "SMALL_SHIELD", "minLevel": 4, "maxLevel": 12, "weight": 6 },
+    { "type": "HELMET", "minLevel": 5, "maxLevel": 15, "weight": 5 },
+    { "type": "AXE", "minLevel": 5, "maxLevel": 15, "weight": 7 },
+    { "type": "CROSSBOW", "minLevel": 6, "maxLevel": 18, "weight": 6 },
+    { "type": "GAUNTLETS", "minLevel": 7, "maxLevel": 18, "weight": 5 },
+    { "type": "BOOK", "minLevel": 8, "maxLevel": 99, "weight": 4 },
+    { "type": "LARGE_SHIELD", "minLevel": 9, "maxLevel": 99, "weight": 4 },
+    { "type": "HAUBERK", "minLevel": 10, "maxLevel": 99, "weight": 3 },
+    { "type": "LARGE_RING", "minLevel": 12, "maxLevel": 99, "weight": 3 },
+    { "type": "BREASTPLATE", "minLevel": 14, "maxLevel": 99, "weight": 2 }
+  ],
+
+  "containerSpawnTable": [
+    { "type": "SMALL_BAG", "minLevel": 1, "maxLevel": 4, "weight": 10, "keyColor": "CONTAINER_TAN" },
+    { "type": "BOX", "minLevel": 2, "maxLevel": 8, "weight": 8, "keyColor": "CONTAINER_TAN" },
+    { "type": "MEDIUM_PACK", "minLevel": 5, "maxLevel": 12, "weight": 6, "keyColor": "CONTAINER_ORANGE" },
+    { "type": "LARGE_BAG", "minLevel": 8, "maxLevel": 15, "weight": 4, "keyColor": "CONTAINER_ORANGE" },
+    { "type": "REGULAR_CHEST", "minLevel": 10, "maxLevel": 99, "weight": 2, "keyColor": "CONTAINER_BLUE" }
+  ],
+
+  "containerLoot": {
+    "default": [
+      { "type": "COINS", "minLevel": 1, "maxLevel": 99, "weight": 20 },
+      { "type": "CHALICE", "minLevel": 3, "maxLevel": 99, "weight": 10 },
+      { "type": "LAMP", "minLevel": 1, "maxLevel": 99, "weight": 8 },
+      { "type": "NECKLACE", "minLevel": 5, "maxLevel": 99, "weight": 6 },
+      { "type": "INGOT", "minLevel": 8, "maxLevel": 99, "weight": 4 },
+      { "type": "CROWN", "minLevel": 12, "maxLevel": 99, "weight": 2 }
+    ]
+  }
+}

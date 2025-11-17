@@ -7,6 +7,7 @@ import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableData; // <-- ADD THIS IMPORT
 import com.bpm.minotaur.rendering.RetroTheme;
 /**
  * Interface defining the "contract" for all chunk generators.
@@ -25,11 +26,13 @@ public interface IChunkGenerator {
      * @param theme      [NEW] The visual/gameplay theme to apply to this chunk.
      * @return A fully populated Maze object for this biome.
      */
-    // [MODIFIED] Added theme parameter
+    // [MODIFIED] Added theme and spawnTableData parameters
     Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
                        MonsterDataManager dataManager,
-                       ItemDataManager itemDataManager, // <-- ADD THIS
-                       AssetManager assetManager);
+                       ItemDataManager itemDataManager,
+                       AssetManager assetManager,
+                       SpawnTableData spawnTableData); // <-- ADD THIS PARAMETER
+
     /**
      * Gets the default player starting position for this generator.
      * This is typically only used by the MAZE generator for the

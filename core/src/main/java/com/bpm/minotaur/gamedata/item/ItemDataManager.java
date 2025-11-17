@@ -13,6 +13,7 @@ import com.bpm.minotaur.managers.PotionManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ItemDataManager {
 
@@ -20,6 +21,7 @@ public class ItemDataManager {
 
 
     private PotionManager potionManager;
+    private final Random random = new Random(); // <-- ADD THIS FIELD
 
     public ItemDataManager() {
         this.itemTemplates = new ObjectMap<>();
@@ -126,6 +128,51 @@ public class ItemDataManager {
             }
         }
         return potionTypes;
+    }
+
+    // --- NEW METHOD ---
+    /**
+     * Selects a valid ItemVariant (color/tier) for a given item type at a specific level.
+     * @param type The item type (e.g., BOW).
+     * @param level The current dungeon level.
+     * @return A valid ItemVariant, or null if none are found.
+     */
+    public ItemVariant getRandomVariantForItem(ItemType type, int level) {
+        ItemTemplate template = getTemplate(type);
+        if (template.variants == null || template.variants.isEmpty()) {
+            Gdx.app.error("ItemDataManager", "No 'variants' defined for item type: " + type.name());
+            return null;
+        }
+
+        // 1. Filter variants by level
+        List<ItemVariant> validVariants = new ArrayList<>();
+        int totalWeight = 0;
+        for (ItemVariant variant : template.variants) {
+            if (level >= variant.minLevel && level <= variant.maxLevel) {
+                validVariants.add(variant);
+                totalWeight += variant.weight;
+            }
+        }
+
+        // 2. Handle no valid variants
+        if (validVariants.isEmpty()) {
+            Gdx.app.error("ItemDataManager", "No valid variants found for " + type.name() + " at level " + level);
+            return null;
+        }
+
+        // 3. Perform weighted random selection
+        int randomWeight = random.nextInt(totalWeight);
+        int currentWeight = 0;
+
+        for (ItemVariant variant : validVariants) {
+            currentWeight += variant.weight;
+            if (randomWeight < currentWeight) {
+                return variant;
+            }
+        }
+
+        // Fallback (shouldn't happen, but good practice)
+        return validVariants.get(0);
     }
 
 }

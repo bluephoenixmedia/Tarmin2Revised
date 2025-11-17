@@ -72,7 +72,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.worldManager = new WorldManager(gameMode, difficulty, level,
             game.getMonsterDataManager(),
             game.getItemDataManager(), // <-- ADD THIS
-            game.getAssetManager());
+            game.getAssetManager(),
+            game.getSpawnTableData());
 
         this.monsterAiManager = new MonsterAiManager(); // <-- NEW: Instantiate AI Manager
 

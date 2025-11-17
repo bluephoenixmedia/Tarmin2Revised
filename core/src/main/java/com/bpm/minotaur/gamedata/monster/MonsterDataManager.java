@@ -9,11 +9,15 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 public class MonsterDataManager {
 
     // Use libGDX's ObjectMap for better performance than HashMap
     private final ObjectMap<Monster.MonsterType, MonsterTemplate> monsterTemplates;
-
+    private final Random random = new Random(); // <-- ADD THIS FIELD
     public MonsterDataManager() {
         this.monsterTemplates = new ObjectMap<>();
     }
@@ -62,5 +66,49 @@ public class MonsterDataManager {
                 assetManager.load(template.texturePath, Texture.class);
             }
         }
+    }
+
+    /**
+     * Selects a valid MonsterVariant (color/tier) for a given monster type at a specific level.
+     * @param type The monster type (e.g., GIANT_ANT).
+     * @param level The current dungeon level.
+     * @return A valid MonsterVariant, or null if none are found.
+     */
+    public MonsterVariant getRandomVariantForMonster(Monster.MonsterType type, int level) {
+        MonsterTemplate template = getTemplate(type);
+        if (template.variants == null || template.variants.isEmpty()) {
+            Gdx.app.error("MonsterDataManager", "No 'variants' defined for monster type: " + type.name());
+            return null;
+        }
+
+        // 1. Filter variants by level
+        List<MonsterVariant> validVariants = new ArrayList<>();
+        int totalWeight = 0;
+        for (MonsterVariant variant : template.variants) {
+            if (level >= variant.minLevel && level <= variant.maxLevel) {
+                validVariants.add(variant);
+                totalWeight += variant.weight;
+            }
+        }
+
+        // 2. Handle no valid variants
+        if (validVariants.isEmpty()) {
+            Gdx.app.error("MonsterDataManager", "No valid variants found for " + type.name() + " at level " + level);
+            return null;
+        }
+
+        // 3. Perform weighted random selection
+        int randomWeight = random.nextInt(totalWeight);
+        int currentWeight = 0;
+
+        for (MonsterVariant variant : validVariants) {
+            currentWeight += variant.weight;
+            if (randomWeight < currentWeight) {
+                return variant;
+            }
+        }
+
+        // Fallback (shouldn't happen, but good practice)
+        return validVariants.get(0);
     }
 }

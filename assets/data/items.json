@@ -42,12 +42,19 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-
     "isRing": false,
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "CROSSBOW": {
     "friendlyName": "Crossbow",
@@ -96,7 +103,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "KNIFE": {
     "friendlyName": "Knife",
@@ -145,7 +160,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "AXE": {
     "friendlyName": "Axe",
@@ -181,7 +204,6 @@
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": false,
     "isArmor": false,
@@ -195,7 +217,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "DART": {
     "friendlyName": "Dart",
@@ -231,7 +261,6 @@
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -245,7 +274,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SPEAR": {
     "friendlyName": "Spear",
@@ -281,7 +318,6 @@
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": false,
     "isArmor": false,
@@ -295,7 +331,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "PROJECTILE": {
     "friendlyName": "Projectile",
@@ -330,7 +374,6 @@
     "warDamage": 0,
     "spiritDamage": 0,
     "range": 1,
-
     "armorDefense": 0,
     "isWeapon": false,
     "isRanged": false,
@@ -345,7 +388,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SCROLL": {
     "friendlyName": "Scroll",
@@ -381,7 +427,6 @@
     "spiritDamage": 3,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -395,7 +440,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "BOOK": {
     "friendlyName": "Book",
@@ -430,7 +483,6 @@
     "warDamage": 0,
     "spiritDamage": 5,
     "range": 1,
-
     "armorDefense": 0,
     "isWeapon": true,
     "isRanged": true,
@@ -445,7 +497,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SMALL_FIREBALL": {
     "friendlyName": "Small Fireball",
@@ -481,7 +541,6 @@
     "spiritDamage": 4,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -495,7 +554,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "LARGE_FIREBALL": {
     "friendlyName": "Large Fireball",
@@ -530,8 +597,6 @@
     "warDamage": 0,
     "spiritDamage": 8,
     "range": 1,
-
-    "armorDefense": 0,
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -545,7 +610,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SMALL_LIGHTNING": {
     "friendlyName": "Small Lightning",
@@ -581,7 +654,6 @@
     "spiritDamage": 6,
     "armorDefense": 0,
     "range": 1,
-
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -595,7 +667,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "LARGE_LIGHTNING": {
     "friendlyName": "Large Lightning",
@@ -630,8 +710,6 @@
     "warDamage": 0,
     "spiritDamage": 12,
     "range": 1,
-
-    "armorDefense": 0,
     "isWeapon": true,
     "isRanged": true,
     "isArmor": false,
@@ -645,7 +723,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SMALL_SHIELD": {
     "friendlyName": "Small Shield",
@@ -693,7 +779,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "LARGE_SHIELD": {
     "friendlyName": "Large Shield",
@@ -741,7 +835,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "GAUNTLETS": {
     "friendlyName": "Gauntlets",
@@ -789,7 +891,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "HAUBERK": {
     "friendlyName": "Hauberk",
@@ -837,7 +947,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "HELMET": {
     "friendlyName": "Helmet",
@@ -885,7 +1003,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "BREASTPLATE": {
     "friendlyName": "Breastplate",
@@ -933,7 +1059,15 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SMALL_RING": {
     "friendlyName": "Small Ring",
@@ -977,7 +1111,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "LARGE_RING": {
     "friendlyName": "Large Ring",
@@ -1021,7 +1163,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "RING_BLUE": {
     "friendlyName": "Ring",
@@ -1065,7 +1215,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "RING_PINK": {
     "friendlyName": "Ring",
@@ -1109,7 +1267,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "RING_GREEN": {
     "friendlyName": "Ring",
@@ -1153,7 +1319,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "RING_PURPLE": {
     "friendlyName": "Ring",
@@ -1197,7 +1371,15 @@
     "isKey": false,
     "isUsable": false,
     "isContainer": false,
-    "isRing": true
+    "isRing": true,
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
+      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
+      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_BLUE": {
     "friendlyName": "Blue Potion",
@@ -1244,7 +1426,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_PINK": {
     "friendlyName": "Pink Potion",
@@ -1291,7 +1476,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_GREEN": {
     "friendlyName": "Green Potion",
@@ -1338,7 +1526,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_GOLD": {
     "friendlyName": "Gold Potion",
@@ -1385,7 +1576,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_SWIRLY": {
     "friendlyName": "Swirly Potion",
@@ -1432,7 +1626,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "POTION_BUBBLY": {
     "friendlyName": "Bubbly Potion",
@@ -1479,7 +1676,10 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": { "x": 1.0, "y": 1.0 },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "KEY": {
     "friendlyName": "Key",
@@ -1527,7 +1727,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "QUIVER": {
     "friendlyName": "Quiver",
@@ -1575,7 +1778,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "WAR_BOOK": {
     "friendlyName": "War Book",
@@ -1610,7 +1816,6 @@
     "warDamage": 0,
     "spiritDamage": 0,
     "range": 1,
-
     "armorDefense": 0,
     "isWeapon": false,
     "isRanged": false,
@@ -1625,7 +1830,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SPIRITUAL_BOOK": {
     "friendlyName": "Spiritual Book",
@@ -1658,7 +1866,6 @@
     ],
     "baseValue": 50,
     "range": 1,
-
     "warDamage": 0,
     "spiritDamage": 0,
     "armorDefense": 0,
@@ -1675,7 +1882,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SPECIAL_BOOK": {
     "friendlyName": "Special Book",
@@ -1723,7 +1933,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "FLOUR_SACK": {
     "friendlyName": "Flour Sack",
@@ -1771,7 +1984,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "MONEY_BELT": {
     "friendlyName": "Money Belt",
@@ -2107,7 +2323,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "COINS": {
     "friendlyName": "Coins",
@@ -2155,7 +2374,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "CHALICE": {
     "friendlyName": "Chalice",
@@ -2203,7 +2425,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "LAMP": {
     "friendlyName": "Lamp",
@@ -2251,7 +2476,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "INGOT": {
     "friendlyName": "Ingot",
@@ -2299,7 +2527,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "NECKLACE": {
     "friendlyName": "Necklace",
@@ -2347,7 +2578,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "CROWN": {
     "friendlyName": "Crown",
@@ -2395,7 +2629,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "TARMIN_TREASURE": {
     "friendlyName": "Tarmin's Treasure",
@@ -2443,7 +2680,10 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "UNKNOWN": {
     "friendlyName": "Unknown",
@@ -2491,6 +2731,9 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   }
 }

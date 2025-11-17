@@ -3,6 +3,9 @@ package com.bpm.minotaur.gamedata.monster;
 import com.badlogic.gdx.utils.Array;
 import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
+
+import java.util.List;
+
 // Note: Fields are public for easy parsing by libGDX Json.
 // This class is just a data container.
 public class MonsterTemplate {
@@ -28,6 +31,8 @@ public class MonsterTemplate {
     public int intelligence; // This will be loaded from JSON, defaulting to 0
 
     public Array<EffectApplicationData> onHitEffects;
+
+    public List<MonsterVariant> variants; // <-- ADD THIS LINE
 
     // A no-argument constructor is required for the Json parser
     public MonsterTemplate() { }

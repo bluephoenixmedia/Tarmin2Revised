@@ -40,7 +40,6 @@
     "spiritDamage": 0,
     "damageType": "PHYSICAL",
     "intelligence": 0,
-
     "onHitEffects": [
       {
         "type": "POISONED",
@@ -49,6 +48,11 @@
         "stackable": false,
         "chance": 0.5
       }
+    ],
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
     ]
   },
   "DWARF": {
@@ -88,7 +92,12 @@
     "scale": {
       "x": 0.8,
       "y": 0.9
-    }
+    },
+    "variants": [
+      { "color": "YELLOW", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "TAN", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "GIANT_SCORPION": {
     "warStrength": 8,
@@ -127,7 +136,12 @@
     "scale": {
       "x": 1.1,
       "y": 0.9
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "GIANT_SNAKE": {
     "warStrength": 12,
@@ -166,7 +180,12 @@
     "scale": {
       "x": 1.5,
       "y": 0.6
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "GHOUL": {
     "warStrength": 20,
@@ -174,7 +193,6 @@
     "armor": 3,
     "baseExperience": 20,
     "intelligence": 5,
-
     "family": "UNDEAD",
     "texturePath": "images/monsters/ghoul.png",
     "spriteData": [
@@ -206,7 +224,12 @@
     "scale": {
       "x": 0.8,
       "y": 1.1
-    }
+    },
+    "variants": [
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SKELETON": {
     "warStrength": 15,
@@ -245,7 +268,12 @@
     "scale": {
       "x": 0.8,
       "y": 1.1
-    }
+    },
+    "variants": [
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "CLOAKED_SKELETON": {
     "warStrength": 18,
@@ -284,7 +312,12 @@
     "scale": {
       "x": 0.8,
       "y": 1.1
-    }
+    },
+    "variants": [
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "ALLIGATOR": {
     "warStrength": 30,
@@ -323,7 +356,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "DRAGON": {
     "warStrength": 40,
@@ -362,7 +400,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "WRAITH": {
     "warStrength": 25,
@@ -401,7 +444,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "GIANT": {
     "warStrength": 35,
@@ -409,7 +457,6 @@
     "armor": 7,
     "baseExperience": 45,
     "intelligence": 6,
-
     "family": "HUMANOID",
     "texturePath": "images/monsters/giant.png",
     "spriteData": [
@@ -441,7 +488,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "YELLOW", "minLevel": 1, "maxLevel": 4, "weight": 1 },
+      { "color": "TAN", "minLevel": 3, "maxLevel": 9, "weight": 1 },
+      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "MINOTAUR": {
     "warStrength": 50,
@@ -449,7 +501,6 @@
     "armor": 10,
     "baseExperience": 100,
     "intelligence": 20,
-
     "family": "MYTHICAL",
     "texturePath": "images/monsters/minotaur.png",
     "spriteData": [
@@ -481,7 +532,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "SPIDER": {
     "warStrength": 10,
@@ -494,7 +550,12 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   },
   "ORC": {
     "warStrength": 10,
@@ -507,6 +568,11 @@
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "variants": [
+      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
+      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+    ]
   }
 }
