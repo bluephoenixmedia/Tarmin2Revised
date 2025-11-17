@@ -1,13 +1,22 @@
 package com.bpm.minotaur;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager; // Import this
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager; // Import this
+import com.bpm.minotaur.gamedata.spawntables.LevelBudget;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SettingsManager;
 // Import your new loading screen and main menu
@@ -28,6 +37,7 @@ public class Tarmin2 extends Game {
     private AssetManager assetManager;
     private MonsterDataManager monsterDataManager;
     private ItemDataManager itemDataManager; // <-- ADD THIS
+    private SpawnTableData spawnTableData; // <-- ADD THIS
 
     // Constants for a consistent virtual resolution.
     private static final float VIRTUAL_WIDTH = 1920f;
@@ -48,6 +58,40 @@ public class Tarmin2 extends Game {
         // This is fast and needs to happen before queueing assets
         monsterDataManager.load();
         itemDataManager.load(); // <-- ADD THIS
+
+        Gdx.app.log("Tarmin2", "Loading SpawnTableData...");
+        Json json = new Json();
+        json.setIgnoreUnknownFields(true);
+
+        FileHandle spawnTableFile = Gdx.files.internal("data/spawntables.json");
+        spawnTableData = json.fromJson(SpawnTableData.class, spawnTableFile);
+
+// CRITICAL FIX: Manually convert containerLoot JsonValues to SpawnTableEntry objects
+        if (spawnTableData.containerLoot != null) {
+            for (ObjectMap.Entry<String, Array<SpawnTableEntry>> entry : spawnTableData.containerLoot) {
+                Array<SpawnTableEntry> fixedArray = new Array<>();
+
+                if (entry.value != null) {
+                    for (int i = 0; i < entry.value.size; i++) {
+                        Object obj = entry.value.get(i);
+
+                        if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
+                            // Convert JsonValue to SpawnTableEntry
+                            com.badlogic.gdx.utils.JsonValue jv = (com.badlogic.gdx.utils.JsonValue) obj;
+                            SpawnTableEntry ste = json.readValue(SpawnTableEntry.class, jv);
+                            fixedArray.add(ste);
+                        } else if (obj instanceof SpawnTableEntry) {
+                            // Already correct type
+                            fixedArray.add((SpawnTableEntry) obj);
+                        }
+                    }
+                }
+
+                entry.value = fixedArray;
+            }
+        }
+
+        Gdx.app.log("Tarmin2", "SpawnTableData loaded.");
 
         // --- 3. Queue All Assets for Loading (Asynchronous) ---
 
@@ -133,6 +177,10 @@ public class Tarmin2 extends Game {
 
     public ItemDataManager getItemDataManager() {
         return itemDataManager;
+    }
+
+    public SpawnTableData getSpawnTableData() {
+        return spawnTableData;
     }
 
 

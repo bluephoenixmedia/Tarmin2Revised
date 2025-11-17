@@ -9,6 +9,7 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableData; // <-- This import should already be here
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
@@ -37,6 +38,7 @@ public class WorldManager {
     private final MonsterDataManager dataManager;
     private final ItemDataManager itemDataManager; // <-- ADD THIS
     private final AssetManager assetManager;
+    private final SpawnTableData spawnTableData; // <-- This field should already be here
 
 
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
@@ -52,7 +54,8 @@ public class WorldManager {
     public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel,
                         MonsterDataManager dataManager,
                         ItemDataManager itemDataManager, // <-- ADD THIS
-                        AssetManager assetManager) {
+                        AssetManager assetManager,
+                        SpawnTableData spawnTableData) { // <-- This param should already be here
         this.gameMode = gameMode;
         this.difficulty = difficulty;
         this.currentLevel = initialLevel;
@@ -65,6 +68,7 @@ public class WorldManager {
         this.dataManager = dataManager;
         this.itemDataManager = itemDataManager; // <-- ADD THIS
         this.assetManager = assetManager;
+        this.spawnTableData = spawnTableData; // <-- This line should already be here
 
         // Instantiate all our generators
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
@@ -121,12 +125,11 @@ public class WorldManager {
             Gdx.app.log("WorldManager", "CLASSIC mode: Generating new chunk.");
             // In classic mode, we only ever use the Maze generator
 
-
+            // --- [MODIFIED] ---
+            // This is the first fix. Added this.spawnTableData
             return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME,
-                this.dataManager, this.itemDataManager, this.assetManager);
-
-
-
+                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
+            // --- [END MODIFIED] ---
         }
 
         // --- 2. ADVANCED Mode: Check cache first ---
@@ -147,9 +150,9 @@ public class WorldManager {
         }
 
         // --- 5. ADVANCED Mode: Check local file system ---
-            String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
-            FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);        if (file.exists()) {
-            Gdx.app.log("WorldManager", "Loading chunk from file: " + file.path());
+        String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
+        FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);        if (file.exists()) {
+           // Gdx.app.log("WorldManager", "Loading chunk from file: "D" + file.path());
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
 
@@ -188,8 +191,11 @@ public class WorldManager {
 
         Gdx.app.log("WorldManager", "No save file for " + chunkId + ". Generating new chunk with " + generator.getClass().getSimpleName());
 
+        // --- [MODIFIED] ---
+        // This is the second fix. Added this.spawnTableData
         Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode, themeToGenerate,
-            this.dataManager, this.itemDataManager, this.assetManager);
+            this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
+        // --- [END MODIFIED] ---
 
 
         // --- 7. ADVANCED Mode: Save and cache the new chunk ---

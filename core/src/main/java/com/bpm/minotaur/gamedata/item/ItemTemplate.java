@@ -2,6 +2,8 @@ package com.bpm.minotaur.gamedata.item;
 
 import com.badlogic.gdx.graphics.Color;
 
+import java.util.List;
+
 // Note: Fields are public for easy parsing by libGDX Json.
 // This class is just a data container.
 public class ItemTemplate {
@@ -31,6 +33,7 @@ public class ItemTemplate {
     public int range;
     public ScaleData scale; // <-- ADD THIS FIELD
     public boolean isPotionAppearance = false; // <-- ADD THIS LINE
+    public List<ItemVariant> variants; // <-- ADD THIS LINE
 
     // A no-argument constructor is required for the Json parser
     public ItemTemplate() { }
