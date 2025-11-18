@@ -188,30 +188,30 @@ public class Maze {
     public boolean isPassable(int x, int y) {
         // Check bounds
         if (x < 0 || x >= wallData[0].length || y < 0 || y >= wallData.length) {
-            Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Out of Bounds)");
+           // Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Out of Bounds)");
             return false; // Out of bounds is not passable
         }
 
         // Check for wall
         // --- THIS IS THE FIX: Removed call to isImpassable() ---
         if (wallData[y][x] == 1) {
-            Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Wall value: " + wallData[y][x] + ")");
+           // Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Wall value: " + wallData[y][x] + ")");
             return false;
         }
 
         // Check for closed doors or gates
         Object obj = getGameObjectAt(x, y);
         if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
-            Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Closed Door)");
+           // Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Closed Door)");
             return false;
         }
         if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN) {
-            Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Closed Gate)");
+           // Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> FAIL (Closed Gate)");
             return false;
         }
 
         // All checks passed, tile is passable
-        Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> SUCCESS");
+        //Gdx.app.log("Maze_isPassable", "CHECK (" + x + "," + y + ") -> SUCCESS");
         return true;
     }
 

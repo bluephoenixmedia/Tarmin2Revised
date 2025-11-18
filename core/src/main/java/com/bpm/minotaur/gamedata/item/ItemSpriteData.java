@@ -14,6 +14,7 @@ public class ItemSpriteData {
      * Bow - Starting weapon, uses arrows
      * Colors: Tan(wood/leather), Orange(rusty iron), Blue(steel), Gray(silver), Yellow(gold), White(platinum)
      */
+
     public static final String[] BOW = {
         //123456789012345678901234
         "........................",
@@ -1356,6 +1357,9 @@ public class ItemSpriteData {
             case "SMALL_POTION": return SMALL_POTION;
             case "LARGE_POTION": return LARGE_POTION;
             case "SPECIAL_BOOK": return SPECIAL_BOOK;
+            case "POTION_BLUE": return LARGE_POTION;
+            case "POTION_PINK": return LARGE_POTION;
+            case "POTION_GREEN": return LARGE_POTION;
 
             // Consumables
             case "QUIVER": return QUIVER;

@@ -15,13 +15,14 @@ import java.util.List;
 public class AnimationManager {
 
     private final List<Animation> animations = new ArrayList<>();
-    private final EntityRenderer entityRenderer = new EntityRenderer();
+    private final EntityRenderer entityRenderer;
     private final BitmapFont damageFont;
 
-    public AnimationManager() {
+    public AnimationManager(EntityRenderer entityRenderer) {
         damageFont = new BitmapFont();
         damageFont.setColor(Color.WHITE);
         damageFont.getData().setScale(4.0f); // Make it slightly larger and easier to see
+        this.entityRenderer = entityRenderer;
     }
 
     public void addAnimation(Animation animation) {
