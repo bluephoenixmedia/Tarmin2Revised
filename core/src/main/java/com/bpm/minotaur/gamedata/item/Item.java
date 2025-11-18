@@ -81,9 +81,10 @@ public class Item implements Renderable {
         NECKLACE,
         CROWN,
         TARMIN_TREASURE,
-        LADDER,
 
-        REGULAR_CHEST, LAMP, UNKNOWN
+
+        REGULAR_CHEST, LAMP, UNKNOWN,
+        LADDER
     }
 
     // --- Core Item Properties (Dynamic) ---

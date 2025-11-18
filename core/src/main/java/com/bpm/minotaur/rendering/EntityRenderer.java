@@ -10,7 +10,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
-import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
@@ -34,7 +33,7 @@ public class EntityRenderer {
     public EntityRenderer(ItemDataManager itemDataManager) {
 
         this.spriteBatch = new SpriteBatch();
-        this.itemDataManager = new ItemDataManager();
+        this.itemDataManager = itemDataManager;
     }
 
     private static final int AT_FEET_SPRITE_HEIGHT = 200;
@@ -557,7 +556,7 @@ public class EntityRenderer {
             spriteWidth = (int) (spriteHeight * 0.5f);
         }
 
-        String[] spriteData = ItemSpriteData.getSpriteByType("LADDER");
+        String[] spriteData = itemDataManager.getTemplate(Item.ItemType.LADDER).spriteData;
 
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, ladder, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
