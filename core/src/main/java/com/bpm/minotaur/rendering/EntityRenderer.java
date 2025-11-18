@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -30,11 +31,15 @@ public class EntityRenderer {
     private static final Color GLOW_COLOR_MODERN = new Color(1.0f, 0.9f, 0.2f, 0.4f); // Translucent Gold
     private static final Color GLOW_COLOR_RETRO = Color.GOLD;
 
-    public EntityRenderer() {
+    public EntityRenderer(ItemDataManager itemDataManager) {
+
         this.spriteBatch = new SpriteBatch();
+        this.itemDataManager = new ItemDataManager();
     }
 
     private static final int AT_FEET_SPRITE_HEIGHT = 200;
+
+    private final ItemDataManager itemDataManager;
 
 
 
@@ -378,7 +383,7 @@ public class EntityRenderer {
 
         if (spriteData == null) {
             Gdx.app.log("EntityRenderer", "Sprite data is null, using DART as fallback");
-            spriteData = ItemSpriteData.DART;
+            spriteData = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
         }
 
        // Gdx.app.log("EntityRenderer", "Drawing projectile with sprite data");
@@ -553,6 +558,7 @@ public class EntityRenderer {
         }
 
         String[] spriteData = ItemSpriteData.getSpriteByType("LADDER");
+
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, ladder, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         }

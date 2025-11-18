@@ -8,8 +8,8 @@ import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
-import com.bpm.minotaur.gamedata.item.ItemSpriteData;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterFamily;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
@@ -47,10 +47,11 @@ public class CombatManager {
 
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f; // Delay in seconds
+    private final ItemDataManager itemDataManager;
 
 
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
-                         GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager) {
+                         GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager, ItemDataManager itemDataManager) {
         this.player = player;
         this.maze = maze;
         this.game = game;
@@ -58,6 +59,7 @@ public class CombatManager {
         this.eventManager = eventManager;
         this.soundManager = soundManager;
         this.worldManager = worldManager;
+        this.itemDataManager = itemDataManager;
     }
 
     public void startCombat(Monster monster) {
@@ -209,7 +211,7 @@ public class CombatManager {
                             monster.getPosition(),
                             weapon.getColor(),  // CHANGED: Use weapon's color instead of WHITE
                             0.5f,
-                            ItemSpriteData.DART
+                            itemDataManager.getTemplate(Item.ItemType.DART).spriteData
                         ));
 
                         monster.takeDamage(weapon.getWarDamage() + attackModifier);
@@ -229,7 +231,8 @@ public class CombatManager {
                     // Melee weapons use their own sprite data
                     String[] meleeSprite = weapon.getSpriteData();
                     if (meleeSprite == null) {
-                        meleeSprite = ItemSpriteData.DART; // Fallback
+                        meleeSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
+
                     }
 
                     animationManager.addAnimation(new Animation(
@@ -263,7 +266,7 @@ public class CombatManager {
                     monster.getPosition(),
                     weapon.getColor(),  // Already correct - uses weapon's color
                     0.5f,
-                    ItemSpriteData.LARGE_LIGHTNING
+                    itemDataManager.getTemplate(Item.ItemType.LARGE_LIGHTNING).spriteData
                 ));
 
                 monster.takeSpiritualDamage(weapon.getSpiritDamage() + attackModifier);
@@ -326,7 +329,7 @@ public class CombatManager {
                 player.getPosition(),
                 monster.getColor(),
                 0.5f,
-                ItemSpriteData.DART
+                itemDataManager.getTemplate(Item.ItemType.DART).spriteData
             ));
             soundManager.playMonsterAttackSound(monster);
             int damage;

@@ -93,9 +93,7 @@ public class Player {
 
             Item itemInHand = inventory.getRightHand();
             inventory.setRightHand(maze.getItems().remove(playerTile2));
-            //Item rightHand = inventory.getRightHand();
 
-           // String[] spriteData = ItemSpriteData.getSpriteByType(itemInHand.getType().name());
 
             if (itemInHand != null) { // Swap with item in front
                 itemInHand.getPosition().set(playerGridX + 0.5f, playerGridY + 0.5f);

@@ -13,6 +13,7 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemType;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
@@ -43,7 +44,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
-    private final EntityRenderer entityRenderer = new EntityRenderer();
+    private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager());
     private final Difficulty difficulty;
 
     private Hud hud;
@@ -58,6 +59,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private CombatManager combatManager;
     private MonsterAiManager monsterAiManager; // <-- NEW: AI Manager
     private PotionManager potionManager;
+
     // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
     // (Moved to ChunkGenerator.java)
 
@@ -93,7 +95,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-        animationManager = new AnimationManager();
+        animationManager = new AnimationManager(entityRenderer);
         eventManager = new GameEventManager();
         soundManager = new SoundManager(debugManager);
 
@@ -220,7 +222,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         // Initialize systems that depend on the player and maze
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager());
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
@@ -403,7 +405,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         player.setMaze(newMaze); // Update player's maze reference
 
         // Re-initialize systems that depend on the maze
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager());
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode); // Recreate HUD
 
         Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());

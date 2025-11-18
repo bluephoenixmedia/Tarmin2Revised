@@ -24,10 +24,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.item.ItemCategory;
-import com.bpm.minotaur.gamedata.item.ItemModifier;
-import com.bpm.minotaur.gamedata.item.ItemSpriteData;
+import com.bpm.minotaur.gamedata.item.*;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
@@ -769,11 +766,13 @@ public class Hud implements Disposable {
             if (item != null) {
                 // Get the stage (screen) coordinates of the slot Actor
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
-                String[] spriteData = ItemSpriteData.getSpriteByType(item.getType().name());
-                if (spriteData != null) {
-                    // --- MODIFIED: Pass 'item' ---
-                    drawItemSprite(shapeRenderer, item, spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
+
+                // --- REFACTOR ---
+                ItemTemplate template = item.getTemplate();
+                if (template != null && template.spriteData != null) {
+                    drawItemSprite(shapeRenderer, item, template.spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
                 }
+                // --- END REFACTOR ---
             }
         }
 
@@ -781,22 +780,26 @@ public class Hud implements Disposable {
         Item leftHand = player.getInventory().getLeftHand();
         if (leftHand != null) {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            String[] spriteData = ItemSpriteData.getSpriteByType(leftHand.getType().name());
-            if (spriteData != null) {
-                // --- MODIFIED: Pass 'leftHand' item ---
-                drawItemSprite(shapeRenderer, leftHand, spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
+
+            // --- REFACTOR ---
+            ItemTemplate template = leftHand.getTemplate();
+            if (template != null && template.spriteData != null) {
+                drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
             }
+            // --- END REFACTOR ---
         }
 
         // Draw right hand item
         Item rightHand = player.getInventory().getRightHand();
         if (rightHand != null) {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            String[] spriteData = ItemSpriteData.getSpriteByType(rightHand.getType().name());
-            if (spriteData != null) {
-                // --- MODIFIED: Pass 'rightHand' item ---
-                drawItemSprite(shapeRenderer, rightHand, spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
+
+            // --- REFACTOR ---
+            ItemTemplate template = rightHand.getTemplate();
+            if (template != null && template.spriteData != null) {
+                drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
             }
+            // --- END REFACTOR ---
         }
 
         shapeRenderer.end();

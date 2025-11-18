@@ -50,8 +50,8 @@ public class Item implements Renderable {
         RING_PURPLE,
 
         // Useful
-      //  SMALL_POTION,
-      //  LARGE_POTION,
+        //  SMALL_POTION,
+        //  LARGE_POTION,
         POTION_BLUE,
         POTION_PINK,
         POTION_GREEN,
@@ -81,6 +81,7 @@ public class Item implements Renderable {
         NECKLACE,
         CROWN,
         TARMIN_TREASURE,
+        LADDER,
 
         REGULAR_CHEST, LAMP, UNKNOWN
     }
@@ -120,14 +121,17 @@ public class Item implements Renderable {
     private PotionEffectType trueEffect;
     private boolean isIdentified = false;
 
+    private ItemTemplate template;
+
+    private final ItemDataManager dataManager;
+
 
     /**
      * The new data-driven constructor.
      * Creates an item by pulling its base data from the ItemDataManager.
      */
     public Item(ItemType type, int x, int y, ItemColor color,
-                ItemDataManager dataManager, AssetManager assetManager)
-    {
+                ItemDataManager dataManager, AssetManager assetManager) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.itemColor = color; // Use the passed-in (spawned) color
@@ -153,6 +157,8 @@ public class Item implements Renderable {
         this.isContainer = template.isContainer;
         this.isRing = template.isRing;
         this.range = template.range;
+        this.dataManager = dataManager;
+
 
         if (template.scale != null) {
             this.scale = new Vector2(template.scale.x, template.scale.y);
@@ -171,21 +177,39 @@ public class Item implements Renderable {
         if (this.isContainer) {
             this.isLocked = true;
         }
+
+        if (this.dataManager != null) {
+            this.template = this.dataManager.getTemplate(this.type);
+        } else {
+            Gdx.app.error("Item", "Item created with a NULL ItemDataManager: " + this.type);
+        }
     }
 
 
     // --- Public Getters for Stats and Flags ---
 
-    public ItemType getType() { return type; }
-    public String getTypeName() { return type.name(); }
-    public String getFriendlyName() { return friendlyName; }
-    public int getBaseValue() { return baseValue; }
+    public ItemType getType() {
+        return type;
+    }
+
+    public String getTypeName() {
+        return type.name();
+    }
+
+    public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    public int getBaseValue() {
+        return baseValue;
+    }
 
     // --- Dynamic Display Name (Handles Modifiers) ---
 
     /**
      * Gets the full display name, including prefixes/suffixes from modifiers.
      * e.g., "Fiery Dagger +1 of Brawn"
+     *
      * @return The formatted display name.
      */
     public String getDisplayName() {
@@ -199,7 +223,6 @@ public class Item implements Renderable {
             // Just return the base name
             return this.friendlyName;
         }
-
 
 
         StringBuilder nameBuilder = new StringBuilder();
@@ -237,16 +260,45 @@ public class Item implements Renderable {
 
     // --- Type Flag Getters ---
 
-    public boolean isWeapon() { return this.isWeapon; }
-    public boolean isRanged() { return this.isRanged; }
-    public boolean isArmor() { return this.isArmor; }
-    public boolean isPotion() { return this.isPotion; }
-    public boolean isFood() { return this.isFood; }
-    public boolean isTreasure() { return this.isTreasure; }
-    public boolean isKey() { return this.isKey; }
-    public boolean isUsable() { return this.isUsable; }
-    public boolean isContainer() { return this.isContainer; }
-    public boolean isRing() { return this.isRing; }
+    public boolean isWeapon() {
+        return this.isWeapon;
+    }
+
+    public boolean isRanged() {
+        return this.isRanged;
+    }
+
+    public boolean isArmor() {
+        return this.isArmor;
+    }
+
+    public boolean isPotion() {
+        return this.isPotion;
+    }
+
+    public boolean isFood() {
+        return this.isFood;
+    }
+
+    public boolean isTreasure() {
+        return this.isTreasure;
+    }
+
+    public boolean isKey() {
+        return this.isKey;
+    }
+
+    public boolean isUsable() {
+        return this.isUsable;
+    }
+
+    public boolean isContainer() {
+        return this.isContainer;
+    }
+
+    public boolean isRing() {
+        return this.isRing;
+    }
 
 
     // --- Combat Stats (with modifier logic) ---
@@ -420,4 +472,19 @@ public class Item implements Renderable {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    /**
+     * Gets the data-driven template for this item.
+     * The template contains all base data from items.json.
+     * @return The ItemTemplate for this item's type.
+     */
+    public ItemTemplate getTemplate() {
+        // This check is for safety, but the template should always be set in the constructor.
+        if (this.template == null && this.dataManager != null) {
+            Gdx.app.log("Item", "Had to perform late lookup of template for " + this.type);
+            this.template = this.dataManager.getTemplate(this.type);
+        }
+        return this.template;
+    }
+
 }
