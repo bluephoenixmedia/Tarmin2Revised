@@ -339,21 +339,21 @@ public class Player {
         updateVectors();
     }
 
-    public void takeDamage(int amount, DamageType type) {
-        // --- MODIFIED: Get damageReduction from equipment object ---
-        int damageReduction = equipment.getArmorDefense();
-        // --- END MODIFIED ---
-        int resistance = getResistance(type); // Gets elemental/effect resistance
+    /**
+     * Applies damage to the player, considering armor mitigation.
+     * @return The actual damage subtracted from health.
+     */
+    public int takeDamage(int amount, DamageType type) {
+        // Apply Armor reduction for Physical damage
+        if (type == DamageType.PHYSICAL) {
+            int defense = getArmorDefense();
+            amount = Math.max(0, amount - defense);
+        }
 
-        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
-        finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
-
+        int finalDamage = Math.max(0, (int)(amount * stats.getVulnerabilityMultiplier()));
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
-        if (stats.getWarStrength() < 0) {
-            stats.setWarStrength(0);
-        }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " damage. WS is now " + stats.getWarStrength());
+        return finalDamage; // <-- NEW: Return the actual damage taken
     }
 
     public void takeSpiritualDamage(int amount, DamageType type) {
@@ -647,6 +647,10 @@ public class Player {
             }
         }
         return null;
+    }
+
+    public int getDexterity() {
+        return stats.getDexterity();
     }
 
     private boolean hasKey() {

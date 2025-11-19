@@ -27,6 +27,9 @@ public class MonsterTemplate {
     public int warDamage; // <-- This was missing from the file but in CombatManager
     public int spiritDamage; // <-- This was missing from the file but in CombatManager
     public DamageType damageType = DamageType.PHYSICAL; // <-- This was missing, added default
+    public int dexterity; // For Hit Chance calculation
+    public boolean hasRangedAttack; // Can this monster shoot back?
+    public int attackRange; // How far can they shoot?
 
     public int intelligence; // This will be loaded from JSON, defaulting to 0
 

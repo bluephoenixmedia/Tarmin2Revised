@@ -10,6 +10,7 @@ public class PlayerStats {
     private int spiritualStrength;
     private int food;
     private int arrows;
+    private int dexterity; // <--- NEW: RPG Attribute for Accuracy/Evasion
 
     // --- Experience and Leveling Fields ---
     private int level;
@@ -35,6 +36,8 @@ public class PlayerStats {
 
         this.maxWarStrength = difficulty.startWarStrength;
         this.maxSpiritualStrength = difficulty.startSpiritualStrength;
+
+        this.dexterity = 10; // <--- NEW: Default starting dexterity
 
         // --- Initialize Leveling Stats ---
         this.level = 1;
@@ -212,5 +215,12 @@ public class PlayerStats {
         if (amount <= 0) return;
         this.maxWarStrength += amount;
         heal(amount); // Also heal the player by the amount gained
+    }
+    public int getDexterity() {
+        return dexterity;
+    }
+
+    public void setDexterity(int dexterity) {
+        this.dexterity = dexterity;
     }
 }

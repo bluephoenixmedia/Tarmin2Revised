@@ -2,6 +2,7 @@ package com.bpm.minotaur.managers;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
@@ -34,6 +35,26 @@ public class CombatManager {
         DEFEAT
     }
 
+    public static class HitResult {
+        public enum HitType {
+            NOTHING,        // Reached max range without hitting anything
+            WALL,           // Hit a wall, closed door, or closed gate
+            MONSTER,        // Hit a monster
+            PLAYER,         // Hit the player
+            OUT_OF_BOUNDS   // Went off the map
+        }
+
+        public final GridPoint2 collisionPoint;
+        public final HitType type;
+        public final Monster hitMonster; // Null if not a monster hit
+
+        public HitResult(GridPoint2 collisionPoint, HitType type, Monster hitMonster) {
+            this.collisionPoint = collisionPoint;
+            this.type = type;
+            this.hitMonster = hitMonster;
+        }
+    }
+
     private CombatState currentState = CombatState.INACTIVE;
     private final Player player;
     private Monster monster;
@@ -47,6 +68,8 @@ public class CombatManager {
 
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f; // Delay in seconds
+
+    private static final float PROJECTILE_SPEED = 15.0f;
     private final ItemDataManager itemDataManager;
 
 
@@ -60,6 +83,83 @@ public class CombatManager {
         this.soundManager = soundManager;
         this.worldManager = worldManager;
         this.itemDataManager = itemDataManager;
+    }
+
+    /**
+     * Casts a "logical" projectile through the maze to determine what it hits.
+     *
+     * @param origin The starting tile coordinates (center of tile).
+     * @param direction The direction to fire.
+     * @param maxRange The maximum number of tiles the projectile can travel.
+     * @param sourceIsPlayer True if the player fired this (prevents self-hits), False if monster fired.
+     * @return A HitResult object describing the impact.
+     */
+    public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer) {
+        int startX = (int) origin.x;
+        int startY = (int) origin.y;
+
+        int currentX = startX;
+        int currentY = startY;
+
+        int dx = (int) direction.getVector().x;
+        int dy = (int) direction.getVector().y;
+
+        // We verify 'maxRange' steps
+        for (int i = 0; i < maxRange; i++) {
+
+            // 1. Check if the projectile can LEAVE the current tile (Wall/Edge Check)
+            // This mirrors the player's movement logic. If there is a wall in the direction
+            // we are traveling, we hit the wall *face* on this tile.
+            if (maze.isWallBlocking(currentX, currentY, direction)) {
+                return new HitResult(new GridPoint2(currentX, currentY), HitResult.HitType.WALL, null);
+            }
+
+            // Move to the next tile
+            currentX += dx;
+            currentY += dy;
+
+            GridPoint2 currentPos = new GridPoint2(currentX, currentY);
+
+            // 2. Check Bounds
+            if (currentX < 0 || currentX >= maze.getWidth() || currentY < 0 || currentY >= maze.getHeight()) {
+                // Return the *previous* valid tile as the impact point for visuals
+                return new HitResult(new GridPoint2(currentX - dx, currentY - dy), HitResult.HitType.OUT_OF_BOUNDS, null);
+            }
+
+            // 3. Check for Solid Objects (Closed Doors, Gates) in the NEW tile
+            Object obj = maze.getGameObjectAt(currentX, currentY);
+            if (obj instanceof Door) {
+                if (((Door) obj).getState() != Door.DoorState.OPEN) {
+                    return new HitResult(currentPos, HitResult.HitType.WALL, null);
+                }
+            } else if (obj instanceof Gate) {
+                if (((Gate) obj).getState() != Gate.GateState.OPEN) {
+                    return new HitResult(currentPos, HitResult.HitType.WALL, null);
+                }
+            }
+
+            // 4. Check for Entity Collision
+
+            // Check Player (If source was NOT player)
+            if (!sourceIsPlayer) {
+                int pX = (int) player.getPosition().x;
+                int pY = (int) player.getPosition().y;
+                if (currentX == pX && currentY == pY) {
+                    return new HitResult(currentPos, HitResult.HitType.PLAYER, null);
+                }
+            }
+
+            // Check Monsters (If map contains monster at this location)
+            if (maze.getMonsters().containsKey(currentPos)) {
+                Monster m = maze.getMonsters().get(currentPos);
+                // If the source is a monster, we *could* implement friendly fire here.
+                // For now, we treat hitting another monster as a block (hit).
+                return new HitResult(currentPos, HitResult.HitType.MONSTER, m);
+            }
+        }
+
+        // 5. Reached Max Range without hitting anything
+        return new HitResult(new GridPoint2(currentX, currentY), HitResult.HitType.NOTHING, null);
     }
 
     public void startCombat(Monster monster) {
@@ -131,6 +231,109 @@ public class CombatManager {
         }
 
         // ... (Future effects go here) ...
+    }
+
+    /**
+     * Attempts to fire a ranged weapon in the direction the player is facing.
+     * @return true if an attack was performed (arrow used), false otherwise.
+     */
+    public boolean performRangedAttack() {
+        Item weapon = player.getInventory().getRightHand();
+
+        if (weapon == null || !weapon.isRanged()) {
+            eventManager.addEvent(new GameEvent("You need a ranged weapon equipped!", 1.0f));
+            return false;
+        }
+
+        if (player.getArrows() <= 0) {
+            eventManager.addEvent(new GameEvent("You have no arrows!", 1.0f));
+            return false;
+        }
+
+        player.decrementArrow();
+
+        int range = weapon.getRange();
+        if (range <= 0) range = 8;
+
+        HitResult result = raycastProjectile(player.getPosition(), player.getFacing(), range, true);
+
+        // --- NEW: Dynamic Speed Calculation ---
+        Vector2 animTarget = new Vector2(result.collisionPoint.x + 0.5f, result.collisionPoint.y + 0.5f);
+        float distance = player.getPosition().dst(animTarget);
+        float animDuration = distance / PROJECTILE_SPEED;
+        // --------------------------------------
+
+        String[] projectileSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
+        if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+            projectileSprite = itemDataManager.getTemplate(Item.ItemType.LARGE_LIGHTNING).spriteData;
+        }
+
+        animationManager.addAnimation(new Animation(
+            Animation.AnimationType.PROJECTILE_PLAYER,
+            player.getPosition(),
+            animTarget,
+            weapon.getColor(),
+            animDuration, // Use calculated duration
+            projectileSprite
+        ));
+
+        if (result.type == HitResult.HitType.MONSTER && result.hitMonster != null) {
+            Monster target = result.hitMonster;
+
+            int baseChance = 60;
+            int playerDex = player.getDexterity();
+            int weaponTier = weapon.getTemplate().accuracyModifier;
+            int targetDex = target.getDexterity();
+
+            float dist = Math.abs(player.getPosition().x - target.getPosition().x) + Math.abs(player.getPosition().y - target.getPosition().y);
+
+            int hitChance = baseChance
+                + (playerDex * 2)
+                + (weaponTier * 5)
+                - (int)(targetDex * 1.5)
+                - (int)(dist * 5);
+
+            if (hitChance < 5) hitChance = 5;
+            if (hitChance > 95) hitChance = 95;
+
+            int roll = random.nextInt(100);
+
+            if (roll < hitChance) {
+                // HIT
+                int damage = weapon.getWarDamage() + player.getAttackModifier();
+
+                if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+                    damage = weapon.getSpiritDamage() + player.getAttackModifier();
+                    target.takeSpiritualDamage(damage);
+                } else {
+                    target.takeDamage(damage);
+                }
+
+                showDamageText(damage, result.collisionPoint);
+                eventManager.addEvent(new GameEvent("Ranged Hit! (" + damage + " dmg)", 1.0f));
+                Gdx.app.log("Combat", "Ranged Hit on " + target.getMonsterType() + ". Roll: " + roll + " < Chance: " + hitChance);
+
+                if (target.getWarStrength() <= 0 || target.getSpiritualStrength() <= 0) {
+                    eventManager.addEvent(new GameEvent(target.getMonsterType() + " defeated!", 2.0f));
+                    maze.getMonsters().remove(result.collisionPoint);
+                    player.addExperience(target.getBaseExperience(), eventManager);
+
+                    if (this.monster == target) {
+                        endCombat();
+                    }
+                }
+
+            } else {
+                // MISS
+                showDamageText(0, result.collisionPoint);
+                eventManager.addEvent(new GameEvent("You missed!", 1.0f));
+                Gdx.app.log("Combat", "Ranged Miss on " + target.getMonsterType() + ". Roll: " + roll + " >= Chance: " + hitChance);
+            }
+        } else {
+            eventManager.addEvent(new GameEvent("The shot hit nothing.", 0.5f));
+        }
+
+        return true;
     }
 
     public void playerAttack() {
@@ -322,23 +525,28 @@ public class CombatManager {
     public void monsterAttack() {
         if (currentState == CombatManager.CombatState.MONSTER_TURN && monsterAttackDelay <= 0f) {
             Gdx.app.log("CombatManager", "Monster attacks player");
-            // Monster always uses DART sprite
+
+            // --- NEW: Dynamic Speed Calculation for Monster ---
+            float dist = monster.getPosition().dst(player.getPosition());
+            float animDuration = dist / PROJECTILE_SPEED;
+            // -------------------------------------------------
+
             animationManager.addAnimation(new Animation(
                 Animation.AnimationType.PROJECTILE_MONSTER,
                 monster.getPosition(),
                 player.getPosition(),
                 monster.getColor(),
-                0.5f,
+                animDuration, // Use calculated duration
                 itemDataManager.getTemplate(Item.ItemType.DART).spriteData
             ));
+
             soundManager.playMonsterAttackSound(monster);
             int damage;
             boolean isSpiritual = false;
-            DamageType damageType = DamageType.PHYSICAL; // Default damage type
+            DamageType damageType = DamageType.PHYSICAL;
 
             // Determine attack type based on monster category
             switch (monster.getType()) {
-                // Bad Monsters use Spiritual attacks
                 case GIANT_ANT:
                 case GIANT_SCORPION:
                 case GIANT_SNAKE:
@@ -347,10 +555,8 @@ public class CombatManager {
                     break;
                 case DWARF:
                     isSpiritual = true;
-                    damageType = DamageType.SPIRITUAL; // Dwarf is a "Bad Monster"
+                    damageType = DamageType.SPIRITUAL;
                     break;
-
-                // Nasty Monsters use War attacks
                 case GHOUL:
                     isSpiritual = false;
                     damageType = DamageType.DISEASE;
@@ -363,30 +569,26 @@ public class CombatManager {
                     isSpiritual = false;
                     damageType = DamageType.DARK;
                     break;
-
-                // Horrible Monsters can use either War or Spiritual attacks
                 case ALLIGATOR:
                     isSpiritual = random.nextBoolean();
-                    damageType = DamageType.PHYSICAL; // Alligator is pure physical
+                    damageType = DamageType.PHYSICAL;
                     break;
                 case DRAGON:
                     isSpiritual = random.nextBoolean();
                     damageType = isSpiritual ? DamageType.FIRE : DamageType.PHYSICAL;
                     break;
                 case WRAITH:
-                    isSpiritual = true; // Wraiths are always spiritual
+                    isSpiritual = true;
                     damageType = DamageType.DARK;
                     break;
                 case GIANT:
                     isSpiritual = random.nextBoolean();
-                    damageType = DamageType.PHYSICAL; // Giant is pure physical
+                    damageType = DamageType.PHYSICAL;
                     break;
                 case MINOTAUR:
                     isSpiritual = random.nextBoolean();
                     damageType = isSpiritual ? DamageType.SORCERY : DamageType.PHYSICAL;
                     break;
-
-                // Default to war attacks for any other monster type
                 default:
                     isSpiritual = false;
                     damageType = DamageType.PHYSICAL;
@@ -402,7 +604,6 @@ public class CombatManager {
 
                 if (template.onHitEffects != null) {
                     for (EffectApplicationData effectData : template.onHitEffects) {
-                        // Roll for chance
                         if (random.nextFloat() < effectData.chance) {
                             player.getStatusManager().addEffect(
                                 effectData.type,
@@ -415,7 +616,7 @@ public class CombatManager {
                     }
                 }
 
-                if (monster != null) { // Safety check
+                if (monster != null) {
                     monster.getStatusManager().updateTurn();
                 }
                 if (player.getSpiritualStrength() <= 0) {
@@ -430,7 +631,6 @@ public class CombatManager {
 
                 if (template.onHitEffects != null) {
                     for (EffectApplicationData effectData : template.onHitEffects) {
-                        // Roll for chance
                         if (random.nextFloat() < effectData.chance) {
                             player.getStatusManager().addEffect(
                                 effectData.type,
@@ -443,7 +643,7 @@ public class CombatManager {
                     }
                 }
 
-                if (monster != null) { // Safety check
+                if (monster != null) {
                     monster.getStatusManager().updateTurn();
                 }
                 if (player.getWarStrength() <= 0) {
@@ -453,6 +653,81 @@ public class CombatManager {
                 }
             }
         }
+    }
+
+    /**
+     * Called by MonsterAiManager when a monster decides to shoot the player.
+     * @param attacker The monster firing the shot.
+     * @return True if the attack was fired.
+     */
+    public boolean performMonsterRangedAttack(Monster attacker) {
+        // 1. Check Range
+        int range = attacker.getAttackRange();
+        if (range <= 0) range = 8;
+
+        // 2. Determine Direction
+        Vector2 diff = player.getPosition().cpy().sub(attacker.getPosition());
+        Direction fireDir = null;
+
+        // Check alignment (Cardinal only)
+        if (Math.abs(diff.x) < 0.5f) { // Aligned vertically
+            fireDir = (diff.y > 0) ? Direction.NORTH : Direction.SOUTH;
+        } else if (Math.abs(diff.y) < 0.5f) { // Aligned horizontally
+            fireDir = (diff.x > 0) ? Direction.EAST : Direction.WEST;
+        }
+
+        if (fireDir == null) {
+            return false; // Not aligned cardinally, cannot fire
+        }
+
+        // 3. Fire Raycast
+        HitResult finalResult = raycastProjectile(attacker.getPosition(), fireDir, range, false);
+
+        // 4. Visuals
+        float dist = attacker.getPosition().dst(player.getPosition());
+        float animDuration = dist / PROJECTILE_SPEED;
+
+        animationManager.addAnimation(new Animation(
+            Animation.AnimationType.PROJECTILE_MONSTER,
+            attacker.getPosition(),
+            player.getPosition(),
+            attacker.getColor(),
+            animDuration,
+            itemDataManager.getTemplate(Item.ItemType.DART).spriteData
+        ));
+
+        soundManager.playMonsterAttackSound(attacker);
+
+        // 5. Handle Hit
+        if (finalResult.type == HitResult.HitType.PLAYER) {
+            // Calculate Hit Chance
+            int baseChance = 60;
+            int monsterDex = attacker.getDexterity();
+            int playerDex = player.getDexterity();
+
+            int hitChance = baseChance + (monsterDex * 2) - (int)(playerDex * 1.5);
+            if (hitChance < 10) hitChance = 10;
+            if (hitChance > 95) hitChance = 95;
+
+            if (random.nextInt(100) < hitChance) {
+                // Hit
+                int damage = attacker.getWarStrength() / 3; // Simplified monster ranged damage
+                if (damage < 1) damage = 1;
+
+                // --- UPDATED: Use returned actual damage for UI feedback ---
+                int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
+
+                if (actualDamage > 0) {
+                    eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
+                } else {
+                    eventManager.addEvent(new GameEvent("Your armor deflects the " + attacker.getMonsterType() + "'s shot!", 1.5f));
+                }
+            } else {
+                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.0f));
+            }
+        }
+
+        return true;
     }
 
     public void checkForAdjacentMonsters() {

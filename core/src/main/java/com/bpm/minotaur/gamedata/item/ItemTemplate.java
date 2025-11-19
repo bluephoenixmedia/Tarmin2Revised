@@ -19,6 +19,8 @@ public class ItemTemplate {
     public int spiritDamage;
     public int armorDefense;
 
+    public int accuracyModifier; // Represents Weapon "Tier" for Hit Chance
+
     // Booleans for type
     public boolean isWeapon;
     public boolean isRanged;
