@@ -4,7 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Disposable;
@@ -60,6 +65,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private MonsterAiManager monsterAiManager; // <-- NEW: AI Manager
     private PotionManager potionManager;
 
+    private FrameBuffer fbo;
+    private ShaderProgram crtShader;
+    private boolean useCrtFilter = true; // Toggle state
+    private final SpriteBatch postProcessBatch = new SpriteBatch(); // Dedicated batch for the final draw
+    private float time = 0f;
+
     // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
     // (Moved to ChunkGenerator.java)
 
@@ -98,6 +109,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         animationManager = new AnimationManager(entityRenderer);
         eventManager = new GameEventManager();
         soundManager = new SoundManager(debugManager);
+        fbo = new FrameBuffer(Pixmap.Format.RGB888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+
+        // Initialize Shader
+        ShaderProgram.pedantic = false; // Don't crash if uniforms are missing
+        crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
+        if (!crtShader.isCompiled()) {
+            Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
+            useCrtFilter = false; // Disable if failed
+        }
 
         // --- MODIFIED: Maze Generation is now handled by WorldManager ---
         generateLevel(currentLevel); // Generate/Load the starting chunk/level
@@ -258,6 +278,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public void render(float delta) {
+        time += delta;
         // --- UPDATE LOGIC ---
         combatManager.update(delta);
         animationManager.update(delta);
@@ -278,6 +299,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             checkForProactiveChunkLoading();
         }
         // --- END NEW ---
+
+        if (useCrtFilter) {
+            fbo.begin();
+        }
 
         // --- WORLD RENDERING ---
         ScreenUtils.clear(0, 0, 0, 1);
@@ -308,6 +333,29 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // --- HUD RENDERING ---
         if (hud != null) { // Add null check
             hud.render();
+        }
+
+
+
+        if (useCrtFilter) {
+            fbo.end();
+
+            // --- DRAW FBO TO SCREEN WITH SHADER ---
+            ScreenUtils.clear(0, 0, 0, 1); // Clear the actual screen (black bars)
+
+            postProcessBatch.begin();
+            postProcessBatch.setShader(crtShader);
+
+            // Pass uniforms to shader
+            crtShader.setUniformf("u_time", time);
+
+            // Draw the FBO texture
+            // Note: TextureRegion is needed because FBOs are often flipped vertically in LibGDX
+            Texture fboTexture = fbo.getColorBufferTexture();
+            // Draw flipped vertically
+            postProcessBatch.draw(fboTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+
+            postProcessBatch.end();
         }
 
         // --- SCREEN-LEVEL TEXT RENDERING ---
@@ -474,9 +522,14 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     @Override
     public void resize(int width, int height) {
         game.getViewport().update(width, height, true);
-        if (hud != null) { // Update HUD viewport too
+        if (hud != null) {
             hud.resize(width, height);
         }
+
+        // --- NEW: Resize FBO ---
+        if (fbo != null) fbo.dispose();
+        fbo = new FrameBuffer(Pixmap.Format.RGB888, width, height, true);
+        postProcessBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
     /**
@@ -673,6 +726,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     game.setScreen(new CastleMapScreen(game, player, maze, this));
                 }
                 return true;
+
+            case Input.Keys.F6:
+                useCrtFilter = !useCrtFilter;
+                eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
+                return true;
         }
 
         return false;
@@ -706,6 +764,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (soundManager != null) {
             soundManager.dispose();
         }
+
+        if (fbo != null) fbo.dispose();
+        if (crtShader != null) crtShader.dispose();
+        postProcessBatch.dispose();
         // Dispose animationManager? Depends if it holds textures directly
     }
 }
