@@ -2,6 +2,7 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -43,7 +44,7 @@ public class Hud implements Disposable {
     private final CombatManager combatManager;
     private final GameEventManager eventManager;
     private final BitmapFont font;
-    private BitmapFont debugFont;
+    private BitmapFont debugFont; // Default font for debug overlay
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
     private final ShapeRenderer shapeRenderer;
@@ -60,8 +61,8 @@ public class Hud implements Disposable {
     private final Label messageLabel;
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
-    private Label heldItemLabel; // --- NEW ---
-    private Label rightHandStatsLabel; // <-- ADD THIS LINE
+    private Label heldItemLabel;
+    private Label rightHandStatsLabel;
 
     private final Actor[] backpackSlots = new Actor[6];
     private final Actor leftHandSlot;
@@ -98,9 +99,7 @@ public class Hud implements Disposable {
 
     private final GameMode gameMode;
 
-    // --- NEW: Color for modified item glow in UI ---
     private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
-    // --- END NEW ---
 
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
@@ -147,10 +146,10 @@ public class Hud implements Disposable {
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
         Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
         Label.LabelStyle messageLabelStyle = new Label.LabelStyle(font, Color.BLACK);
-        // --- NEW: Style for held item ---
+
         Label.LabelStyle heldItemStyle = new Label.LabelStyle(font, Color.WHITE);
-        heldItemStyle.font.getData().setScale(0.8f); // Make it slightly smaller
-        // --- END NEW ---
+        heldItemStyle.font.getData().setScale(0.8f);
+
 
         // --- Layout Setup (Tables) ---
         mainContentTable = new Table();
@@ -158,13 +157,13 @@ public class Hud implements Disposable {
         // --- Left Table (Backpack) ---
         leftTable = new Table();
 
-        float slotSize = 60f; // Tweak this to change the size of all inventory slots
+        float slotSize = 60f;
         for(int i = 0; i < 6; i++) { backpackSlots[i] = new Actor(); }
 
         leftTable.add(backpackSlots[0]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[1]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[2]).width(slotSize).height(slotSize);
-        leftTable.row(); // Move to the next row
+        leftTable.row();
         leftTable.add(backpackSlots[3]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[4]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[5]).width(slotSize).height(slotSize);
@@ -269,11 +268,11 @@ public class Hud implements Disposable {
         handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
         handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
 
-        // --- NEW: Add row for held item label ---
+
         handsAndCompassTable.row();
         heldItemLabel = new Label("Empty", heldItemStyle);
         handsAndCompassTable.add(heldItemLabel).colspan(3).padTop(10).center();
-        // --- END NEW ---
+
 
 
         // --- Dungeon Level Table ---
@@ -314,10 +313,10 @@ public class Hud implements Disposable {
     }
 
     public void update(float dt) {
-        // --- MODIFIED: Update stat labels to show Current / Max ---
+
         warStrengthValueLabel.setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
         spiritualStrengthValueLabel.setText(String.format("%d / %d", player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength()));
-        // --- END MODIFIED ---
+
 
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -330,8 +329,7 @@ public class Hud implements Disposable {
         Item rightHandItem = player.getInventory().getRightHand();
 
 
-
-        // --- NEW: Update Held Item Label ---
+        // Update Held Item Label
         Item itemInHand = player.getInventory().getRightHand();
         if (rightHandItem != null) {
             equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
@@ -339,21 +337,17 @@ public class Hud implements Disposable {
             weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
         }
 
-        //String weaponDisplay = player.getInventory().getRightHand().getDisplayName();
         String mods = returnModsString(itemInHand);
 
         if (itemInHand != null && itemInHand.getType() != null) {
             rightHandStatsLabel.setText(weaponColor + " " + itemInHand.getType().toString() + mods);
         }
 
-
-
         if (itemInHand != null) {
             heldItemLabel.setText(itemInHand.getDisplayName());
         } else {
             heldItemLabel.setText("Empty");
         }
-        // --- END NEW ---
 
         // Show combat information only if combat is active
         if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
@@ -379,20 +373,20 @@ public class Hud implements Disposable {
             combatStatusLabel.setVisible(false);
         }
 
-        // --- MODIFICATION HERE ---
+
         // Get only the message events
         List<GameEvent> messageEvents = eventManager.getMessageEvents();
 
         // Display the oldest game event message, or an empty string if there are no events
         if (!messageEvents.isEmpty()) {
             messageLabel.setText(messageEvents.get(0).message);
-            // --- END MODIFICATION ---
-            messageLabel.setVisible(true); // <-- Show text
-            messageTable.setBackground(messageBackgroundDrawable); // <-- Show background
+
+            messageLabel.setVisible(true);
+            messageTable.setBackground(messageBackgroundDrawable);
         } else {
             messageLabel.setText("");
-            messageLabel.setVisible(false); // <-- Hide text
-            messageTable.setBackground((Drawable)null); // <-- Hide background
+            messageLabel.setVisible(false);
+            messageTable.setBackground((Drawable)null);
         }
     }
 
@@ -408,7 +402,7 @@ public class Hud implements Disposable {
         // Draw the 2D inventory items
         drawInventory();
 
-        // --- ADDED: Toggle debug lines based on global DebugManager state ---
+        // Toggle debug lines based on global DebugManager state
         boolean isDebug = DebugManager.getInstance().isDebugOverlayVisible();
 
         // Apply the debug status to all tables
@@ -425,302 +419,205 @@ public class Hud implements Disposable {
         handsAndCompassTable.setDebug(isDebug);
         levelTable.setDebug(isDebug);
         messageTable.setDebug(isDebug);
-        // --- END ADDED BLOCK ---
+
 
         // This renders all actors (labels, etc.) *and* the debug lines (if enabled)
         stage.draw();
 
         if (isDebug) {
 
-
-            // --- 1. PREPARE DEBUG FONT (moved to top) ---
+            // --- 1. PREPARE DEBUG FONT (Default) ---
             spriteBatch.setProjectionMatrix(stage.getCamera().combined);
             shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
 
-            FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
-            FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-            parameter.size = 10;
-            parameter.color = Color.WHITE;
-            parameter.minFilter = Texture.TextureFilter.Nearest;
-            parameter.magFilter = Texture.TextureFilter.Nearest;
-            debugFont = generator.generateFont(parameter);
+            // Lazy-load the default font if needed
+            if (debugFont == null) {
+                debugFont = new BitmapFont(); // Uses default LibGDX Arial font
+                debugFont.getData().setScale(1.0f); // Make it smaller and cleaner
+                debugFont.setColor(Color.WHITE);
+            }
 
-            // --- 2. Draw the new minimap (uses ShapeRenderer AND SpriteBatch) ---
-            drawWorldMinimap(1300, this.viewport.getWorldHeight() - 240, debugFont, spriteBatch);
+            // --- 2. Draw Backgrounds for Debug Text ---
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0f, 0f, 0f, 0.6f); // Darker semi-transparent black
 
-            // --- 3. Draw all debug text (with SpriteBatch) ---
-            spriteBatch.begin(); // Begin batch for text drawing
-            debugFont.setColor(Color.YELLOW);
+            // Left Column Background (Controls)
+            shapeRenderer.rect(10, 400, 340, 650);
 
-            // Draw table names
-            drawTableName(mainContainer, "mainContainer");
-            drawTableName(mainContentTable, "mainContentTable");
-            drawTableName(leftTable, "leftTable");
-            drawTableName(rightTable, "rightTable");
-            drawTableName(warTable, "warTable");
-            drawTableName(spiritualTable, "spiritualTable");
-            drawTableName(foodTable, "foodTable");
-            drawTableName(arrowsTable, "arrowsTable");
-            drawTableName(treasureTable, "treasureTable");
-            drawTableName(lvlExpTable, "lvlExpTable");
-            drawTableName(handsAndCompassTable, "handsAndCompassTable");
-            drawTableName(levelTable, "levelTable");
-            drawTableName(messageTable, "messageTable");
+            // Middle Column Background (Player Info)
+            shapeRenderer.rect(360, 400, 340, 650);
 
+            // Right Column Background (World/Items/Minimap)
+            // Spanning width to include minimap area
+            shapeRenderer.rect(1280, 400, 300, 650);
+            shapeRenderer.end();
 
+            // --- 3. Draw all debug text ---
+            spriteBatch.begin();
 
-            BitmapFont defaultFont = new BitmapFont();
-            defaultFont.setColor(Color.WHITE); // Reset main font color
+            BitmapFont defaultFont = debugFont;
 
-            //BEGIN DEBUG MIGRATION
-            float leftColX = 10;
-            float rightColX = 350; // X position for the second column
-            float yPos = game.getViewport().getWorldHeight() - 30; // Shared starting Y
-            float lineGap = 20;
+            // --- COLUMN 1: CONTROLS & SYSTEM ---
+            float leftColX = 20;
+            float yPos = 1030;
+            float lineGap = 25;
 
-
-            defaultFont.draw(game.getBatch(), "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(game.getBatch(), "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(game.getBatch(), "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
-
-            yPos -= lineGap; // Add a spacer
             defaultFont.setColor(Color.YELLOW);
-            defaultFont.draw(game.getBatch(), "--- CONTROLS ---", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "SYSTEM & CONTROLS", leftColX, yPos); yPos -= lineGap;
+            defaultFont.setColor(Color.WHITE);
+            defaultFont.draw(spriteBatch, "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
+
+            yPos -= 10;
+            defaultFont.setColor(Color.CYAN);
+            defaultFont.draw(spriteBatch, "KEYBINDS", leftColX, yPos); yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
 
             String[] keyMappings = {
                 "UP/DOWN : Move",
                 "LEFT/RIGHT: Turn",
-                "O : Interact",
-                "P : Pickup/Drop",
+                "O : Interact (Door/Gate)",
+                "P : Pickup Item",
                 "U : Use Item",
                 "D : Descend Ladder",
                 "R : Rest",
                 "S : Swap Hands",
                 "E : Swap with Pack",
                 "T : Rotate Pack",
-                "A : Attack (Combat)",
+                "A/SPACE : Attack / Fire",
                 "M : Castle Map"
             };
 
             for (String mapping : keyMappings) {
-                defaultFont.draw(game.getBatch(), mapping, leftColX, yPos);
+                defaultFont.draw(spriteBatch, mapping, leftColX, yPos);
                 yPos -= lineGap;
             }
 
-            // --- RIGHT COLUMN (PLAYER & WORLD INFO) ---
-            float rightColY = game.getViewport().getWorldHeight() - 30; // Reset Y for this column
+            // --- COLUMN 2: PLAYER & EQUIPMENT ---
+            float midColX = 370;
+            float midY = 1030;
 
             if (player != null) {
                 defaultFont.setColor(Color.YELLOW);
-                rightColX = rightColX - 100;
-                defaultFont.draw(game.getBatch(), "--- PLAYER ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(spriteBatch, "PLAYER STATS", midColX, midY); midY -= lineGap;
+                defaultFont.setColor(Color.WHITE);
 
                 int playerGridX = (int)player.getPosition().x;
                 int playerGridY = (int)player.getPosition().y;
-                defaultFont.draw(game.getBatch(), "Pos (Grid): (" + playerGridX + ", " + playerGridY + ")", rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Facing: " + player.getFacing().name(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Defense: " + player.getArmorDefense(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "War Str: " + player.getWarStrength(), rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Spirit Str: " + player.getSpiritualStrength(), rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(spriteBatch, "Grid Pos: (" + playerGridX + ", " + playerGridY + ")", midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "Facing: " + player.getFacing().name(), midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "Defense: " + player.getArmorDefense(), midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "War Str: " + player.getWarStrength() + "/" + player.getEffectiveMaxWarStrength(), midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "Spirit: " + player.getSpiritualStrength() + "/" + player.getEffectiveMaxSpiritualStrength(), midColX, midY); midY -= lineGap;
 
-                rightColY -= lineGap; // Spacer
+                midY -= 20;
 
                 // --- Equipped Item ---
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(game.getBatch(), "--- EQUIPPED ITEM ---", rightColX, rightColY); rightColY -= lineGap;
+                defaultFont.draw(spriteBatch, "RIGHT HAND ITEM", midColX, midY); midY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
-
-                Item rightHandItem = player.getInventory().getRightHand();
-
-                if (rightHandItem != null) {
-                    equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
-                    weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
-                    weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
-
-                    if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
-                        damage = String.valueOf(rightHandItem.getWarDamage());
-                        range = String.valueOf(rightHandItem.getRange());
-                        isRanged = String.valueOf(rightHandItem.isRanged());
-                    } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                        damage = String.valueOf(rightHandItem.getSpiritDamage());
-                        range = "N/A";
-                        isRanged = "N/A";
-                    }
-                }
-
-                defaultFont.draw(game.getBatch(), "Name: " + equippedWeapon, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Type: " + weaponType, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Damage: " + damage, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Ranged: " + isRanged, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Range: " + range, rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Color: " + weaponColor, rightColX, rightColY); rightColY -= lineGap;
-            }
-
-            // --- World Info ---
-            if (gameMode == GameMode.ADVANCED && worldManager != null) {
-                rightColY -= lineGap; // Spacer
-                defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(game.getBatch(), "--- WORLD (ADVANCED) ---", rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.setColor(Color.WHITE);
-
-                GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
-                Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
-
-                defaultFont.draw(game.getBatch(), "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightColY); rightColY -= lineGap;
-                defaultFont.draw(game.getBatch(), "Biome: " + biome.name(), rightColX, rightColY); rightColY -= lineGap;
-            }
-
-            //END DEBUG MIGRATION
-
-            // Draw "PLAYER INFO" text block
-            if (player != null) {
-                String equippedWeapon = "NOTHING";
-                String damage = "0";
-                String range = "0";
-                String isRanged = "N/A";
-                String weaponColor = "NONE";
-                String weaponType = "NULL";
                 Item rightHandItem = player.getInventory().getRightHand();
                 if (rightHandItem != null) {
-                    // --- MODIFIED: Use getDisplayName ---
-                    equippedWeapon = rightHandItem.getDisplayName();
-                    // --- END MODIFIED ---
-                    weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
-                    weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
+                    defaultFont.draw(spriteBatch, "Name: " + rightHandItem.getDisplayName(), midColX, midY); midY -= lineGap;
+                    defaultFont.draw(spriteBatch, "Category: " + rightHandItem.getCategory(), midColX, midY); midY -= lineGap;
 
                     if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
-                        damage = String.valueOf(rightHandItem.getWarDamage());
-                        range = String.valueOf(rightHandItem.getRange());
-                        isRanged = String.valueOf(rightHandItem.isRanged());
+                        defaultFont.draw(spriteBatch, "Damage (War): " + rightHandItem.getWarDamage(), midColX, midY); midY -= lineGap;
+                        defaultFont.draw(spriteBatch, "Range: " + rightHandItem.getRange(), midColX, midY); midY -= lineGap;
                     } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                        damage = String.valueOf(rightHandItem.getSpiritDamage());
-                        range = "N/A";
-                        isRanged = "N/A";
+                        defaultFont.draw(spriteBatch, "Damage (Spirit): " + rightHandItem.getSpiritDamage(), midColX, midY); midY -= lineGap;
                     }
+                    defaultFont.draw(spriteBatch, "Is Ranged: " + rightHandItem.isRanged(), midColX, midY); midY -= lineGap;
+                } else {
+                    defaultFont.draw(spriteBatch, "Empty", midColX, midY); midY -= lineGap;
                 }
-                float infoX = 450;
-                float infoY = this.viewport.getWorldHeight() - 100;
-                // --- MODIFIED: Use Effective Max Stats ---
-                defaultFont.draw(spriteBatch, "PLAYER INFO: DEFENSE = " + player.getArmorDefense(), infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: SPIRITUAL STRENGTH = " + player.getSpiritualStrength() + " / " + player.getEffectiveMaxSpiritualStrength(), infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: WAR STRENGTH = " + player.getWarStrength() + " / " + player.getEffectiveMaxWarStrength(), infoX, infoY); infoY -= 20;
-                // --- END MODIFIED ---
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON = " + equippedWeapon, infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON DAMAGE = " + damage, infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON ISRANGED = " + isRanged, infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON RANGE = " + range, infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON COLOR = " + weaponColor, infoX, infoY); infoY -= 20;
-                defaultFont.draw(spriteBatch, "PLAYER INFO: EQUIPPED WEAPON TYPE = " + weaponType, infoX, infoY);
             }
 
-            // --- 4. NEW: World Debug Text ---
+            // --- COLUMN 3: WORLD & ITEM MODS ---
+            float rightColX = 1300;
+            float rightY = 800; // Below minimap
+
+            // World Info
             if (worldManager != null) {
                 GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+                Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
+                String themeName = (maze != null && maze.getTheme() != null) ? maze.getTheme().name : "Unknown";
                 int chunkCount = worldManager.getLoadedChunkIds().size();
-                Biome biome = worldManager.getBiomeManager().getBiome(chunkId); // Get current biome
 
-                float worldDebugX = 1300; // X position for this block
-                float worldDebugY = this.viewport.getWorldHeight() - 100; // Y position
-
-                String themeName = "";
-
-                if (maze != null) {
-                    RetroTheme.Theme theme = maze.getTheme(); // Use the safe getter
-                    themeName = (theme != null) ? theme.name : "Unknown"; // Get the name
-                    defaultFont.draw(spriteBatch, "Theme: " + themeName, worldDebugX, worldDebugY -= 20);
-                }
-
-                defaultFont.setColor(Color.WHITE); // Different color for this block
-                defaultFont.draw(spriteBatch, "WORLD DEBUG", worldDebugX, worldDebugY); worldDebugY -= 20;
-                defaultFont.draw(spriteBatch, "Chunk: " + (chunkId != null ? chunkId.toString() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
-                defaultFont.draw(spriteBatch, "Biome: " + (biome != null ? biome.name() : "N/A"), worldDebugX, worldDebugY); worldDebugY -= 20;
-                defaultFont.draw(spriteBatch, "Theme: " + themeName, worldDebugX, worldDebugY -= 20);                defaultFont.draw(spriteBatch, "Loaded: " + chunkCount, worldDebugX, worldDebugY -= 20);
-                defaultFont.setColor(Color.YELLOW); // Reset to default debug color
+                defaultFont.setColor(Color.YELLOW);
+                defaultFont.draw(spriteBatch, "WORLD DEBUG", rightColX, rightY); rightY -= lineGap;
+                defaultFont.setColor(Color.WHITE);
+                defaultFont.draw(spriteBatch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Biome: " + biome.name(), rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Theme: " + themeName, rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Loaded Chunks: " + chunkCount, rightColX, rightY); rightY -= lineGap;
             }
 
-            // --- 5. NEW: ITEM MODIFIER DEBUG (as requested) ---
+            rightY -= 20;
+
+            // Item Modifiers
             if (player != null) {
-                float itemDebugX = 950; // New column for this info
-                float itemDebugY = this.viewport.getWorldHeight() - 100;
                 defaultFont.setColor(Color.LIME);
-                defaultFont.draw(spriteBatch, "ITEM MODIFIER DEBUG", itemDebugX, itemDebugY); itemDebugY -= 20;
+                defaultFont.draw(spriteBatch, "ITEM MODIFIERS", rightColX, rightY); rightY -= lineGap;
 
-                // Helper to draw item mods
-                itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Right Hand", player.getInventory().getRightHand(), itemDebugX, itemDebugY);
-                itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Left Hand", player.getInventory().getLeftHand(), itemDebugX, itemDebugY);
+                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Right Hand", player.getInventory().getRightHand(), rightColX, rightY);
+                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Left Hand", player.getInventory().getLeftHand(), rightColX, rightY);
 
-                Item[] backpack = player.getInventory().getBackpack();
-                for (int i = 0; i < backpack.length; i++) {
-                    itemDebugY = drawItemModsDebug(spriteBatch, defaultFont, "Backpack " + i, backpack[i], itemDebugX, itemDebugY);
+                // Only show first 3 backpack slots to save space
+                for (int i = 0; i < 3; i++) {
+                    rightY = drawItemModsDebug(spriteBatch, defaultFont, "Pack " + i, player.getInventory().getBackpack()[i], rightColX, rightY);
                 }
-                defaultFont.setColor(Color.YELLOW); // Reset
             }
-
-
 
             spriteBatch.end(); // End batch for text drawing
 
-            // Dispose the font (matches existing code's logic)
-            debugFont.dispose();
-            defaultFont.dispose();
-            generator.dispose();
+            // --- 4. Draw the new minimap (Moved to end to be on top) ---
+            // Positioned in the top right area
+            drawWorldMinimap(1450, 900, debugFont, spriteBatch);
+
+            // Note: We do NOT dispose the debugFont here anymore,
+            // as we want to reuse the same instance.
         }
 
     }
 
     private String returnModsString(Item item) {
         String modText = "";
-      //  Integer modValue = 0;
         if (item != null && item.isModified()) {
-
-            String test = "";
-            // Draw all its modifiers
             for (ItemModifier mod : item.getModifiers()) {
-               // Gdx.app.log("type ", mod.type.name());
-               // Gdx.app.log("name ", mod.displayName);
-               // Gdx.app.log("value ", Integer.toString(mod.value));
-
-
                 if (mod.type.name().equals("BONUS_DAMAGE")) {
                     modText+= "+" + mod.value;
                 } else {
                     modText+= " " + mod.displayName + " ";
                 }
-
-
             }
         }
-        return modText; // Return the new y-position
+        return modText;
     }
 
-    // --- NEW: Helper method for drawing item modifier debug text ---
+
     private float drawItemModsDebug(SpriteBatch batch, BitmapFont font, String slotName, Item item, float x, float y) {
         if (item != null && item.isModified()) {
-            // Draw the item name first
+            font.setColor(Color.WHITE);
             font.draw(batch, slotName + ": " + item.getDisplayName(), x, y);
-            y -= 15;
+            y -= 20;
 
-            // Draw all its modifiers
+            font.setColor(Color.LIGHT_GRAY);
             for (ItemModifier mod : item.getModifiers()) {
-                String modText = "  - " + mod.type.name() + " (" + mod.value + ") [" + mod.displayName + "]";
+                String modText = "  - " + mod.type.name() + " (" + mod.value + ")";
                 font.draw(batch, modText, x, y);
-                y -= 15;
+                y -= 20;
             }
-        } else if (item != null) {
-            // Optional: Show unmodified items
-            // font.draw(batch, slotName + ": " + item.getDisplayName() + " (Unmodified)", x, y);
-            // y -= 15;
         }
-        return y; // Return the new y-position
+        return y;
     }
 
 
     /**
      * Gets a single-character representation for a biome.
-     * @param biome The biome.
-     * @return A string letter for the biome.
      */
     private String getBiomeLetter(Biome biome) {
         if (biome == null) return "?";
@@ -729,7 +626,7 @@ public class Hud implements Disposable {
             case FOREST: return "F";
             case PLAINS: return "P";
             case DESERT: return "D";
-            case MOUNTAINS: return "A"; // 'A' for 'Alpine'/'Mountain'
+            case MOUNTAINS: return "A";
             case LAKELANDS: return "L";
             case OCEAN: return "O";
             default: return "?";
@@ -737,22 +634,7 @@ public class Hud implements Disposable {
     }
 
     /**
-     * Helper method to draw a table's variable name at its top-left corner.
-     * Must be called between spriteBatch.begin() and spriteBatch.end().
-     * @param table The table actor.
-     * @param name The string name to draw.
-     */
-    private void drawTableName(Table table, String name) {
-        if (table == null) return;
-        // Get the top-left corner of the table in stage coordinates
-        Vector2 pos = table.localToStageCoordinates(new Vector2(0, table.getHeight()));
-        // Draw the text. The 'y' coordinate is the top of the text.
-        debugFont.draw(spriteBatch, name, pos.x, pos.y);
-    }
-
-    /**
      * Draws the player's inventory (backpack and hands) using ShapeRenderer.
-     * It gets the position of the placeholder Actors from the Stage.
      */
     private void drawInventory() {
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
@@ -764,15 +646,11 @@ public class Hud implements Disposable {
             Item item = backpack[i];
             Actor slot = backpackSlots[i];
             if (item != null) {
-                // Get the stage (screen) coordinates of the slot Actor
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
-
-                // --- REFACTOR ---
                 ItemTemplate template = item.getTemplate();
                 if (template != null && template.spriteData != null) {
                     drawItemSprite(shapeRenderer, item, template.spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
                 }
-                // --- END REFACTOR ---
             }
         }
 
@@ -780,63 +658,39 @@ public class Hud implements Disposable {
         Item leftHand = player.getInventory().getLeftHand();
         if (leftHand != null) {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
-
-            // --- REFACTOR ---
             ItemTemplate template = leftHand.getTemplate();
             if (template != null && template.spriteData != null) {
                 drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
             }
-            // --- END REFACTOR ---
         }
 
         // Draw right hand item
         Item rightHand = player.getInventory().getRightHand();
         if (rightHand != null) {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
-
-            // --- REFACTOR ---
             ItemTemplate template = rightHand.getTemplate();
             if (template != null && template.spriteData != null) {
                 drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
             }
-            // --- END REFACTOR ---
         }
 
         shapeRenderer.end();
     }
 
-    /**
-     * Draws a 24x24 sprite (defined by string data) into a given rectangle.
-     * @param shapeRenderer The ShapeRenderer to use (must be active).
-     * @param item The Item object (for checking modifiers).  // --- NEW ---
-     * @param spriteData The string array defining the sprite pixels.
-     * @param x The bottom-left x coordinate of the target rectangle.
-     * @param y The bottom-left y coordinate of the target rectangle.
-     * @param width The width of the target rectangle.
-     * @param height The height of the target rectangle.
-     * @param color The color to draw the sprite.
-     */
-    // --- MODIFIED: Signature changed to accept 'Item' ---
     private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y, float width, float height, Color color) {
 
-        // --- NEW: Glow effect ---
         if (item.isModified()) {
             shapeRenderer.setColor(GLOW_COLOR_UI);
-            // Draw a simple glowing box behind the item
             shapeRenderer.rect(x - 2, y - 2, width + 4, height + 4);
         }
-        // --- END NEW ---
 
         shapeRenderer.setColor(color);
-        // Calculate the size of a single "pixel" in the sprite based on the target area
         float pixelWidth = width / 24.0f;
         float pixelHeight = height / 24.0f;
 
         for (int row = 0; row < 24; row++) {
             for (int col = 0; col < 24; col++) {
                 if (spriteData[row].charAt(col) == '#') {
-                    // Y-coordinate is flipped because sprite data is top-to-bottom,
-                    // but ShapeRenderer draws bottom-to-top.
                     shapeRenderer.rect(x + col * pixelWidth, y + (23 - row) * pixelHeight, pixelWidth, pixelHeight);
                 }
             }
@@ -845,10 +699,6 @@ public class Hud implements Disposable {
 
     /**
      * Draws the new world minimap in the debug (F1) view.
-     * @param centerX The screen X coordinate to center the map on.
-     * @param centerY The screen Y coordinate to center the map on.
-     * @param debugFont The font to use for drawing biome letters.
-     * @param spriteBatch The SpriteBatch to use for drawing text.
      */
     private void drawWorldMinimap(float centerX, float centerY, BitmapFont debugFont, SpriteBatch spriteBatch) {
         if (worldManager == null) return;
@@ -907,20 +757,17 @@ public class Hud implements Disposable {
     }
 
     public void resize(int width, int height) {
-        // Update the viewport when the window is resized
         stage.getViewport().update(width, height, true);
     }
 
-
-
     @Override
     public void dispose() {
-        // Dispose of all disposable resources
         stage.dispose();
         font.dispose();
         directionFont.dispose();
         hudBackground.dispose();
         shapeRenderer.dispose();
         messageBackgroundTexture.dispose();
+        if (debugFont != null) debugFont.dispose(); // Clean up debug font
     }
 }

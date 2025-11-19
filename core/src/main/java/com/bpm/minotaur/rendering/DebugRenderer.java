@@ -1,6 +1,8 @@
 package com.bpm.minotaur.rendering;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20; // Import for blending if needed explicitly, though ShapeRenderer handles alpha.
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
@@ -22,7 +24,6 @@ public class DebugRenderer {
     private static final int DOOR_WEST  = 0b00000010;
 
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport) {
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         int mazeHeight = maze.getHeight();
         int mazeWidth = maze.getWidth();
@@ -34,6 +35,20 @@ public class DebugRenderer {
 
         float mazeStartX = viewport.getWorldWidth() - totalMazeWidth - 20;
         float mazeStartY = viewport.getWorldHeight() - totalMazeHeight - 20;
+
+        // --- NEW: Draw Background Rectangle ---
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.5f); // 50% transparent black
+        // Add a small padding (e.g., 5 pixels) around the maze
+        float padding = 5f;
+        shapeRenderer.rect(mazeStartX - padding, mazeStartY - padding, totalMazeWidth + padding * 2, totalMazeHeight + padding * 2);
+        shapeRenderer.end();
+        // --- END NEW ---
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         for (int y = 0; y < mazeHeight; y++) {
             for (int x = 0; x < mazeWidth; x++) {
@@ -87,9 +102,14 @@ public class DebugRenderer {
             }
         }
 
-
-
         shapeRenderer.end();
+
+        // The filled shapes (Ladders/Gates) need their own begin/end block
+        // or can be part of the previous filled block if ordered correctly,
+        // but kept separate here to preserve layering over lines if desired,
+        // though usually lines over fill is better.
+        // However, existing code had filled ladders at the end.
+
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (Ladder ladder : maze.getLadders().values()) {
