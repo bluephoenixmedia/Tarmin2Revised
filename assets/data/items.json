@@ -2,6 +2,7 @@
   "BOW": {
     "friendlyName": "Bow",
     "texturePath": "images/items/bow.png",
+    "accuracyModifier": 2,
     "spriteData": [
       "........................",
       "........................",

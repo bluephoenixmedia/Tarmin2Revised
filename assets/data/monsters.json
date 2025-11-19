@@ -40,6 +40,9 @@
     "spiritDamage": 0,
     "damageType": "PHYSICAL",
     "intelligence": 0,
+    "dexterity": 12,
+    "hasRangedAttack": true,
+    "attackRange": 6,
     "onHitEffects": [
       {
         "type": "POISONED",

@@ -418,17 +418,13 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
      */
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
-        player.getStatusManager().updateTurn(); // Turn passes
+        player.getStatusManager().updateTurn();
 
-        // --- [ THE FIX ] ---
-        // We now pass 'true' to allow monster movement.
-        // We also check that combat is inactive.
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            monsterAiManager.updateMonsterLogic(maze, player, true);
+            // --- UPDATED LINE: Pass combatManager ---
+            monsterAiManager.updateMonsterLogic(maze, player, true, combatManager);
         }
-
         combatManager.checkForAdjacentMonsters();
-        // --- [ END FIX ] ---
     }
 
 
@@ -560,160 +556,117 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public boolean keyDown(int keycode) {
-        // Ensure player and maze exist before processing input
         if (player == null || maze == null) return false;
 
-        // --- Actions available during player's turn in combat AND out of combat ---
+        // 1. Universal Actions (Inventory, etc.)
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             switch (keycode) {
                 case Input.Keys.S:
                     player.getInventory().swapHands();
-                    // If in combat, this counts as a turn
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-                        combatManager.passTurnToMonster();
-                    }
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
                     return true;
                 case Input.Keys.E:
                     player.getInventory().swapWithPack();
-                    // If in combat, this counts as a turn
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-                        combatManager.passTurnToMonster();
-                    }
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
                     return true;
                 case Input.Keys.T:
                     player.getInventory().rotatePack();
-                    // If in combat, this counts as a turn
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-                        combatManager.passTurnToMonster();
-                    }
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
                     return true;
             }
         }
 
-        // --- Actions available ONLY during combat ---
+        // 2. Combat-Only Actions
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-            if (keycode == Input.Keys.A) {
+            if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 combatManager.playerAttack();
                 return true;
             }
         }
 
-        // --- Actions available ONLY when NOT in combat ---
+        // 3. Out-of-Combat Actions
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+
+            // --- NEW: Ranged Attack (A/Space) ---
+            // Does NOT open doors. Only attacks if ranged weapon is equipped.
+            if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
+                if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
+                    boolean attacked = combatManager.performRangedAttack();
+                    if (attacked) {
+                        playerTurnTakesAction(); // Monster gets a turn if we shot
+                    }
+                    return true;
+                }
+                // If no ranged weapon, do nothing (Interactions are on 'O')
+            }
+
+            // --- Standard Movement ---
             switch (keycode) {
                 case Input.Keys.UP:
+                    player.moveForward(maze, eventManager, gameMode);
+                    combatManager.checkForAdjacentMonsters();
+                    playerTurnTakesAction();
+                    needsAsciiRender = false;
+                    return true;
                 case Input.Keys.DOWN:
-                    // --- [FIXED] SEAMLESS TRANSITION LOGIC (Forward/Back) ---
-                    // --- [FIXED] SEAMLESS TRANSITION LOGIC (Forward/Back) ---
-                    if (gameMode == GameMode.ADVANCED) {
-                        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-                        if (biome.isSeamless()) {
-                            Direction moveDir = (keycode == Input.Keys.UP) ? player.getFacing() : player.getFacing().getOpposite();
-                            GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
-
-                            if (isMoveSeamlessTransition(playerPos, moveDir)) {
-                                GridPoint2 targetChunkId = worldManager.getAdjacentChunkId(moveDir);
-                                GridPoint2 targetPlayerPos = getSeamlessTargetPlayerPos(playerPos, moveDir);
-
-                                Maze targetChunk = worldManager.getChunk(targetChunkId);
-                                if (targetChunk != null && targetChunk.isPassable(targetPlayerPos.x, targetPlayerPos.y)) {
-                                    Gdx.app.log("GameScreen", "Seamless transition triggered to " + targetChunkId);
-                                    worldManager.transitionPlayerToChunk(player, targetChunkId, targetPlayerPos);
-                                    swapToChunk(targetChunk);
-                                    combatManager.checkForAdjacentMonsters();
-                                    playerTurnTakesAction(); // <-- MODIFIED
-                                    return true; // Consume key
-                                } else if (targetChunk == null) {
-                                    Gdx.app.log("GameScreen", "Seamless transition failed: Target chunk not loaded (or PCL hasn't run).");
-                                    return true; // Block move
-                                } else {
-                                    Gdx.app.log("GameScreen", "Seamless transition blocked by impassable tile at target.");
-                                    // --- [THE FIX] ---
-                                    // We MUST return true here to block the move and prevent
-                                    // the player from walking out of bounds.
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    // --- END TRANSITION LOGIC ---
-
-                    // Standard movement
-                    if (keycode == Input.Keys.UP) {
-                        player.moveForward(maze, eventManager, gameMode);
-                    } else {
-                        player.moveBackward(maze, eventManager, gameMode);
-                    }
-                    combatManager.checkForAdjacentMonsters(); // Check for combat after moving
-                    playerTurnTakesAction(); // <-- MODIFIED
+                    player.moveBackward(maze, eventManager, gameMode);
+                    combatManager.checkForAdjacentMonsters();
+                    playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-
                 case Input.Keys.LEFT:
+                    player.turnLeft();
+                    playerTurnTakesAction();
+                    needsAsciiRender = false;
+                    return true;
                 case Input.Keys.RIGHT:
-                    // --- [FIXED] Removed faulty strafe-transition logic ---
-                    // Standard turning
-                    if (keycode == Input.Keys.LEFT) {
-                        player.turnLeft();
-                    } else {
-                        player.turnRight();
-                    }
-                    playerTurnTakesAction(); // <-- MODIFIED
+                    player.turnRight();
+                    playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
 
-                // ... (rest of keyDown method) ...
+                // --- Interactions ---
                 case Input.Keys.O:
-                    // --- MODIFIED CALL: Pass gameMode ---
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
-                    playerTurnTakesAction(); // <-- MODIFIED Turn passes
+                    playerTurnTakesAction();
                     needsAsciiRender = true;
                     return true;
                 case Input.Keys.P:
                     player.interactWithItem(maze, eventManager, soundManager);
-                    playerTurnTakesAction(); // <-- MODIFIED
-                    return true; // Added return true
+                    playerTurnTakesAction();
+                    return true;
                 case Input.Keys.U:
-                    player.useItem(eventManager, this.potionManager); // Pass the potionManager                    playerTurnTakesAction(); // <-- MODIFIED
-                    return true; // Added return true
+                    player.useItem(eventManager, this.potionManager);
+                    playerTurnTakesAction();
+                    return true;
                 case Input.Keys.D:
-                    // 1. Check player's CURRENT tile (at-feet)
-                    int playerX = (int) player.getPosition().x;
-                    int playerY = (int) player.getPosition().y;
-                    GridPoint2 playerTile = new GridPoint2(playerX, playerY);
+                    // Descend logic
+                    GridPoint2 atFeet = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+                    GridPoint2 inFront = new GridPoint2(
+                        (int)(player.getPosition().x + player.getFacing().getVector().x),
+                        (int)(player.getPosition().y + player.getFacing().getVector().y)
+                    );
 
-                    if (maze.getLadders().containsKey(playerTile)) {
+                    if (maze.getLadders().containsKey(atFeet) || maze.getLadders().containsKey(inFront)) {
                         descendToNextLevel();
-                        playerTurnTakesAction(); // <-- MODIFIED
-                        return true; // Found ladder at feet, descend
+                        playerTurnTakesAction();
+                        return true;
                     }
-
-                    // 2. If no ladder at feet, check tile IN FRONT
-                    int targetX = (int) (player.getPosition().x + player.getFacing().getVector().x);
-                    int targetY = (int) (player.getPosition().y + player.getFacing().getVector().y);
-                    GridPoint2 targetTile = new GridPoint2(targetX, targetY);
-
-                    if (maze.getLadders().containsKey(targetTile)) {
-                        descendToNextLevel();
-                        playerTurnTakesAction(); // <-- MODIFIED
-                        return true; // Found ladder in front, descend
-                    }
-                    return true; // Added return true
+                    return true;
                 case Input.Keys.R:
                     player.rest(eventManager);
-                    playerTurnTakesAction(); // <-- MODIFIED
-                    return true; // Added return true
+                    playerTurnTakesAction();
+                    return true;
             }
         }
 
-        // --- Global actions ---
+        // 4. Global Debug/Menu
         switch (keycode) {
             case Input.Keys.F1: debugManager.toggleOverlay(); return true;
             case Input.Keys.F2: debugManager.toggleRenderMode(); return true;
             case Input.Keys.F3:
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
-                String status = SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF";
-                eventManager.addEvent(new GameEvent("Debug Force Modifiers: " + status, 2f));
+                eventManager.addEvent(new GameEvent("Debug Force Modifiers: " + (SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF"), 2f));
                 return true;
             case Input.Keys.M:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -722,7 +675,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 return true;
         }
 
-        return false; // Return false if key wasn't handled
+        return false;
     }
 
     // --- cleanUpOrphanedDoors() REMOVED ---

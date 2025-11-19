@@ -49,6 +49,10 @@ public class Monster implements Renderable {
 
     private int intelligence;
 
+    private int dexterity;
+    private boolean hasRangedAttack;
+    private int attackRange;
+
     private final StatusManager statusManager;
 
     /**
@@ -79,6 +83,10 @@ public class Monster implements Renderable {
         this.texture = assetManager.get(template.texturePath, Texture.class);
 
         this.intelligence = template.intelligence; // Copy intelligence from template
+
+        this.dexterity = template.dexterity;
+        this.hasRangedAttack = template.hasRangedAttack;
+        this.attackRange = template.attackRange;
     }
 
     public void takeDamage(int amount) {
@@ -162,6 +170,18 @@ public class Monster implements Renderable {
      */
     public StatusManager getStatusManager() {
         return statusManager;
+    }
+
+    public int getDexterity() {
+        return dexterity;
+    }
+
+    public boolean hasRangedAttack() {
+        return hasRangedAttack;
+    }
+
+    public int getAttackRange() {
+        return attackRange;
     }
 
 }
