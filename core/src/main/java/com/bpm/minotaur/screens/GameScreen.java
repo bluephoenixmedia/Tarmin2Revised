@@ -28,18 +28,13 @@ import com.bpm.minotaur.rendering.*;
 
 import java.util.List;
 
-// No longer needed: import java.util.ArrayList;
-// No longer needed: import java.util.Collections;
-// No longer needed: import java.util.List;
-// No longer needed: import java.util.Random;
-
 public class GameScreen extends BaseScreen implements InputProcessor, Disposable {
 
     // --- Core Dependencies ---
     private final DebugManager debugManager = DebugManager.getInstance();
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
     private final BitmapFont font = new BitmapFont();
-    private final GameMode gameMode; // <-- 3. CHANGE THIS (from isAdvancedMode boolean)
+    private final GameMode gameMode;
 
     private boolean needsAsciiRender = false;
 
@@ -63,7 +58,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private Maze maze; // This is now the "active" maze/chunk
     private int currentLevel; // Current level number
     private CombatManager combatManager;
-    private MonsterAiManager monsterAiManager; // <-- NEW: AI Manager
+    private MonsterAiManager monsterAiManager;
     private PotionManager potionManager;
 
     private FrameBuffer fbo;
@@ -77,33 +72,34 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final Vector2 originalPlane = new Vector2();
     private final java.util.Random rng = new java.util.Random();
 
-    // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
-    // (Moved to ChunkGenerator.java)
-
     // --- Constructor Updated ---
-    public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) { // <-- Added gameMode
+    public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
         this.difficulty = difficulty;
-        this.gameMode = gameMode; // <-- Store gameMode
-        this.level = level;       // Store initial level
-        this.currentLevel = level; // Set current level
-        // --- NEW: Initialize WorldManager ---
+        this.gameMode = gameMode;
+        this.level = level;
+        this.currentLevel = level;
+
+        // [MOVED] Initialize SoundManager HERE so we can pass it to WorldManager
+        this.soundManager = new SoundManager(debugManager);
+
+        // --- Initialize WorldManager ---
+        // [UPDATED] Now passing soundManager as the last parameter
         this.worldManager = new WorldManager(gameMode, difficulty, level,
             game.getMonsterDataManager(),
-            game.getItemDataManager(), // <-- ADD THIS
+            game.getItemDataManager(),
             game.getAssetManager(),
-            game.getSpawnTableData());
+            game.getSpawnTableData(),
+            this.soundManager); // <-- Passed here
 
-        this.monsterAiManager = new MonsterAiManager(); // <-- NEW: Instantiate AI Manager
+        this.monsterAiManager = new MonsterAiManager();
 
         // Music based on initial level
         switch (level) {
             case 1:
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
                 break;
-            // Add more cases for other levels and tracks
             default:
-                //   MusicManager.getInstance().stop(); // Or play a default track
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
                 break;
         }
@@ -114,18 +110,20 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         Gdx.input.setInputProcessor(this);
         animationManager = new AnimationManager(entityRenderer);
         eventManager = new GameEventManager();
-        soundManager = new SoundManager(debugManager);
+
+        // [REMOVED] soundManager initialization was moved to the constructor above
+        // soundManager = new SoundManager(debugManager);
+
         fbo = new FrameBuffer(Pixmap.Format.RGB888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         // Initialize Shader
-        ShaderProgram.pedantic = false; // Don't crash if uniforms are missing
+        ShaderProgram.pedantic = false;
         crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
         if (!crtShader.isCompiled()) {
             Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
-            useCrtFilter = false; // Disable if failed
+            useCrtFilter = false;
         }
 
-        // --- MODIFIED: Maze Generation is now handled by WorldManager ---
         generateLevel(currentLevel); // Generate/Load the starting chunk/level
     }
 
@@ -135,45 +133,30 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             worldManager.saveCurrentChunk(maze);
         }
 
-        // --- ADD THIS LINE ---
         if (potionManager != null && gameMode == GameMode.ADVANCED) {
             potionManager.saveState();
         }
-        // --- END ADD ---
 
         MusicManager.getInstance().stop();
     }
 
     private void descendToNextLevel() {
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
-            // Save the current chunk (e.g., L1_0_0) before we change levels
             worldManager.saveCurrentChunk(maze);
         }
 
-        // Increment the level counter in GameScreen
+        if (soundManager != null) {
+            soundManager.stopWeatherEffects();
+        }
+
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
 
         if (worldManager != null) {
-            // --- [THE FIX] ---
-
-            // 1. Tell WorldManager the new level. This ensures any *new*
-            //    save/load/generation calls use the new level number.
             worldManager.setCurrentLevel(currentLevel);
-
-            // 2. CRITICAL: Clear the 2D chunk cache. This forces
-            //    loadChunk(0,0) to fail its cache check and proceed to
-            //    file-checking and generation for the new level.
             worldManager.clearLoadedChunks();
-
-            // --- [END FIX] ---
         }
 
-        // This call will now work.
-        // generateLevel() -> getInitialMaze() -> loadChunk(0,0)
-        // -> Cache is empty (miss)
-        // -> File check looks for "chunk_L2_0_0.json" (miss)
-        // -> Triggers new chunk generation using currentLevel=2
         generateLevel(currentLevel);
     }
 
@@ -183,66 +166,45 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
      * @param levelNumber The level to load/generate.
      */
     private void generateLevel(int levelNumber) {
-        // --- ALL MAZE GENERATION LOGIC REMOVED ---
         Gdx.app.log("GameScreen [DEBUG]", "generateLevel START. Player is " + (player == null ? "NULL" : "NOT NULL"));
-        // --- NEW: Get initial maze from WorldManager ---
-        // The WorldManager handles whether to load or generate based on GameMode and chunkId (implicit for now)
+
         if (player == null) {
-
-            // --- [ NEW ORDERING TO FIX BUG ] ---
-
-            // 1. Create EventManager (already done in show())
-
-            // 2. Create PotionManager (it only needs eventManager)
+            // 1. Create PotionManager
             if (this.potionManager == null) {
-                // 1. Create the PotionManager
                 Gdx.app.log("GameScreen [DEBUG]", "Creating NEW PotionManager...");
                 this.potionManager = new PotionManager(this.eventManager);
 
-                // 2. Give ItemDataManager the PotionManager
                 Gdx.app.log("GameScreen [DEBUG]", "Setting PotionManager in ItemDataManager...");
                 game.getItemDataManager().setPotionManager(this.potionManager);
 
-                // 3. CHECK FOR NEW GAME vs LOAD GAME
                 if (potionManager.hasSaveState()) {
-                    // A save file exists, this is a LOADED GAME
                     Gdx.app.log("GameScreen [DEBUG]", "Potion save file found. Loading state...");
                     potionManager.loadState();
                 } else {
-                    // No save file, this is a NEW GAME
                     Gdx.app.log("GameScreen [DEBUG]", "No potion save file. Initializing NEW potion map...");
                     List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager().getAllPotionAppearanceTypes();
                     this.potionManager.initializeNewGame(potionTypes);
                 }
             }
 
-            // 5. NOW create the Player. Its constructor will call
-            // itemDataManager.createItem(), which now has a valid PotionManager.
+            // 2. Create Player
             Gdx.app.log("GameScreen [DEBUG]", "Creating NEW Player...");
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
 
-            // 6. NOW generate/load the maze. This will also call
-            // itemDataManager.createItem() with a valid PotionManager.
+            // 3. Load Maze
             Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
-
             this.maze = worldManager.getInitialMaze();
 
             Gdx.app.log("GameScreen [DEBUG]", "Setting maze reference on player.");
-            // 7. Set player's maze reference
             player.setMaze(this.maze);
-
-            // --- [ END NEW ORDERING ] ---
 
         } else {
             // Player already exists (e.g., descending stairs)
             Gdx.app.log("GameScreen [DEBUG]", "Player exists. Calling getInitialMaze() for new level...");
-            // 1. Load/Generate the new maze. PotionManager already exists.
             this.maze = worldManager.getInitialMaze();
-
-            // 2. Reset position and set maze
             resetPlayerPosition();
             player.setMaze(this.maze);
         }
@@ -253,34 +215,21 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
 
-
         // Set the visual theme based on level and game mode
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
             firstPersonRenderer.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
         } else {
-            // Add more rules here for other levels/modes if you want
-            // e.g., if (isAdvancedMode && levelNumber == 2) { ... }
-
-            // Default to standard theme for all other cases
             firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
         }
 
-        DebugRenderer.printMazeToConsole(maze); // For debugging
+        DebugRenderer.printMazeToConsole(maze);
     }
 
-    // --- createPlayerAtStart() REMOVED (Logic moved to generateLevel) ---
-
     private void resetPlayerPosition() {
-        // Get start position from WorldManager (which gets it from ChunkGenerator)
         GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
         player.getPosition().set(startPos.x + 0.5f, startPos.y + 0.5f);
         Gdx.app.log("GameScreen", "Reset player position to: " + startPos);
     }
-
-    // --- ALL MAZE/CHUNK GENERATION METHODS REMOVED ---
-    // (spawnGate, spawnLadder, createMazeFromArrayTiles, mergeTileRow,
-    // getCorridorTemplate, isWall, rotateTile, createMazeFromText,
-    // cleanUpOrphanedDoors)
 
     @Override
     public void render(float delta) {
@@ -298,9 +247,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null) {
             worldManager.update(delta);
 
-            // [NEW] SYNC TRAUMA WITH WEATHER
+            // SYNC TRAUMA WITH WEATHER
             if (worldManager.getWeatherManager() != null) {
-                // Smoothly move trauma towards the target weather intensity
                 float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
                 this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
             }
@@ -317,25 +265,18 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
 
-        // --- [NEW] APPLY CAMERA SHAKE (THE FEAR EFFECT) ---
+        // APPLY CAMERA SHAKE
         boolean isShaking = (player != null && trauma > 0.01f);
 
         if (isShaking) {
-            // 1. Save original state
             originalDir.set(player.getDirectionVector());
             originalPlane.set(player.getCameraPlane());
 
-            // 2. Calculate jitter (Perlin noise is better, but random works for retro chaos)
-            // "Shake" means rotating the view slightly left/right
-            float shakePower = trauma * 0.1f; // Max rotation in radians
+            float shakePower = trauma * 0.1f;
             float angle = (rng.nextFloat() - 0.5f) * shakePower;
 
-            // Rotate the vectors
             player.getDirectionVector().rotateRad(angle);
             player.getCameraPlane().rotateRad(angle);
-
-            // Optional: Vertical shake (pitch) could be simulated by offsetting the horizon Y in Renderer,
-            // but rotating X/Y is enough for disorientation.
         }
 
         // --- RENDER WORLD ---
@@ -359,7 +300,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // --- [NEW] RESTORE CAMERA STATE ---
+        // RESTORE CAMERA STATE
         if (isShaking) {
             player.getDirectionVector().set(originalDir);
             player.getCameraPlane().set(originalPlane);
@@ -381,7 +322,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             postProcessBatch.end();
         }
 
-        // ... (Rest of render method: Text, Fonts, etc.) ...
         game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
         game.getBatch().begin();
         animationManager.renderDamageText(game.getBatch(), game.getViewport());
@@ -390,149 +330,109 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         game.getBatch().end();
     }
 
-    /**
-     * [NEW] Checks player proximity to borders and requests adjacent chunks to be loaded.
-     */
     private void checkForProactiveChunkLoading() {
-        if (player == null || worldManager == null || maze == null) { // <-- [FIX] Added maze null check
+        if (player == null || worldManager == null || maze == null) {
             return;
         }
 
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
 
-        // Only run this for seamless biomes
         if (!biome.isSeamless()) {
             return;
         }
 
         int triggerDistance;
         if (biome.hasFogOfWar()) {
-            // Trigger load when player is 1 tile *before* the border becomes visible
             triggerDistance = biome.getFogDistance() + 1;
         } else {
-            triggerDistance = 5; // Default trigger distance for seamless biomes without fog
+            triggerDistance = 5;
         }
 
-        // Ensure trigger distance is at least 2 tiles away
         triggerDistance = Math.max(2, triggerDistance);
 
         GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
         GridPoint2 currentChunkId = worldManager.getCurrentPlayerChunkId();
 
-        // --- [FIX] Use maze.getHeight() and maze.getWidth() ---
         int height = maze.getHeight();
         int width = maze.getWidth();
 
-        // Check North
         if (playerPos.y >= height - 1 - triggerDistance) {
             worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
         }
-        // Check South
         if (playerPos.y <= triggerDistance) {
             worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
         }
-        // Check East
         if (playerPos.x >= width - 1 - triggerDistance) {
             worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
         }
-        // Check West
         if (playerPos.x <= triggerDistance) {
             worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
         }
     }
 
-    /**
-     * NEW: Checks for and processes system events from the event manager.
-     */
     private void handleSystemEvents() {
         GameEvent event;
 
-        // Check for chunk transitions only in ADVANCED mode
         if (gameMode == GameMode.ADVANCED) {
             while ((event = eventManager.findAndConsume(GameEvent.EventType.CHUNK_TRANSITION)) != null) {
                 if (event.payload instanceof Gate) {
                     Gate transitionGate = (Gate) event.payload;
-                    // Ensure it's a valid transition gate before proceeding
-                    Gdx.app.log("GameScreen", "CHUNK_TRANSITION event received. Performing transition."); // <-- New log
-                    performChunkTransition(transitionGate); // <-- This is the logic we want!
+                    Gdx.app.log("GameScreen", "CHUNK_TRANSITION event received. Performing transition.");
+                    performChunkTransition(transitionGate);
                 }
             }
         }
-
-        // ... (Check for other future system events here) ...
     }
 
-    /**
-     * [NEW] Refactored logic to hot-swap the active maze.
-     * @param newMaze The newly loaded maze to make active.
-     */
     private void swapToChunk(Maze newMaze) {
-        this.maze = newMaze; // Hot-swap the maze object
-        player.setMaze(newMaze); // Update player's maze reference
+        this.maze = newMaze;
+        player.setMaze(newMaze);
 
-        // Re-initialize systems that depend on the maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager());
-        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode); // Recreate HUD
+        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
 
         Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
-        DebugRenderer.printMazeToConsole(maze); // For debugging
+        DebugRenderer.printMazeToConsole(maze);
     }
 
-    /**
-     * [NEW] Helper method to consolidate all logic that happens when a player's turn passes
-     * outside of combat (e.g., status effects, monster movement).
-     */
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
 
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            // --- UPDATED LINE: Pass combatManager ---
             monsterAiManager.updateMonsterLogic(maze, player, true, combatManager);
         }
         combatManager.checkForAdjacentMonsters();
     }
 
 
-    /**
-     * NEW: Handles the "hot-swap" of the maze when moving between chunks.
-     * @param transitionGate The gate the player is transitioning through.
-     */
     private void performChunkTransition(Gate transitionGate) {
-        if (player == null) return; // Cannot transition without a player
+        if (player == null) return;
 
         Gdx.app.log("GameScreen", "Performing chunk transition via gate at ("
             + (int)transitionGate.getPosition().x + "," + (int)transitionGate.getPosition().y + ") to chunk "
             + transitionGate.getTargetChunkId());
 
-        // 1. Save the state of the current chunk (STUBBED)
-        if (maze != null) { // Only save if there's a maze to save
+        if (maze != null) {
             worldManager.saveCurrentChunk(this.maze);
         }
 
-        // 2. Load the new chunk
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
 
         if (newMaze == null) {
-            // This means the target biome was impassable (e.g., Ocean)
             Gdx.app.error("GameScreen", "Failed to load target chunk (impassable?): " + transitionGate.getTargetChunkId());
             eventManager.addEvent(new GameEvent("A strange force blocks your path.", 2f));
-            // IMPORTANT: Close the gate the player just tried to open
-            transitionGate.close(); // <-- We need to add this method!
-            return; // Abort the transition
+            transitionGate.close();
+            return;
         }
 
-        // 3. Teleport the player
         player.getPosition().set(
             transitionGate.getTargetPlayerPos().x + 0.5f,
             transitionGate.getTargetPlayerPos().y + 0.5f
         );
         Gdx.app.log("GameScreen", "Player teleported to: " + transitionGate.getTargetPlayerPos());
 
-        // 4. Update WorldManager's internal state *before* swapping
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
-
-        // 5. Hot-swap maze and re-initialize systems
         swapToChunk(newMaze);
     }
 
@@ -544,19 +444,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             hud.resize(width, height);
         }
 
-        // --- NEW: Resize FBO ---
         if (fbo != null) fbo.dispose();
         fbo = new FrameBuffer(Pixmap.Format.RGB888, width, height, true);
         postProcessBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
-    /**
-     * [NEW] Helper to check if a player's move would cross a chunk border.
-     * [FIXED] Now checks against dynamic maze height/width.
-     * @param playerPos The player's current grid position.
-     * @param moveDir The direction of movement (e.g., player.getFacing()).
-     * @return True if the move would exit the current chunk, false otherwise.
-     */
     private boolean isMoveSeamlessTransition(GridPoint2 playerPos, Direction moveDir) {
         if (maze == null) return false;
 
@@ -571,15 +463,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         return false;
     }
 
-    /**
-     * [NEW] Calculates the player's new position in the adjacent chunk.
-     * [FIXED] Now uses dynamic maze height/width.
-     * @param playerPos The player's current position (before crossing).
-     * @param moveDir The direction of crossing.
-     * @return The new GridPoint2 for the player in the new chunk.
-     */
     private GridPoint2 getSeamlessTargetPlayerPos(GridPoint2 playerPos, Direction moveDir) {
-        if (maze == null) return playerPos; // Safety check
+        if (maze == null) return playerPos;
 
         int height = maze.getHeight();
         int width = maze.getWidth();
@@ -588,48 +473,27 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (moveDir == Direction.SOUTH) return new GridPoint2(playerPos.x, height - 1);
         if (moveDir == Direction.EAST)  return new GridPoint2(0, playerPos.y);
         if (moveDir == Direction.WEST)  return new GridPoint2(width - 1, playerPos.y);
-        return playerPos; // Should not happen
+        return playerPos;
     }
 
 
-    /**
-     * Processes all active status effects on the player at the start of their turn.
-     * This is where effects like POISON, REGENERATION, etc. will be handled.
-     */
     private void processPlayerStatusEffects() {
-        if (player == null) return; // Safety check
+        if (player == null) return;
 
-        // --- Process POISON ---
-        // We check for the effect *before* calling updateTurn()
         if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
             ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
             int damage = poison.getPotency();
 
-            // Use takeDamage with the POISON type, so resistances can apply
-           // player.takeDamage(damage, DamageType.POISON);
             player.takeStatusEffectDamage(damage, DamageType.POISON);
-            // Send an event to the HUD
             eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
             Gdx.app.log("GameScreen", "Player took " + damage + " poison damage.");
         }
-
-        // --- Process HUNGER/STARVATION (Example for later) ---
-        // if (player.getStatusManager().hasEffect(StatusEffectType.STARVING)) {
-        //     player.takeDamage(1, DamageType.PHYSICAL);
-        //     eventManager.addEvent(new GameEvent("You are starving!", 1f));
-        // }
-
-        // --- Process REGENERATION (Example for later) ---
-        // if (player.getStatusManager().hasEffect(StatusEffectType.HEALTHY)) {
-        //     player.getStats().modifyHealth(1); // Assuming a modifyHealth method exists
-        // }
     }
 
     @Override
     public boolean keyDown(int keycode) {
         if (player == null || maze == null) return false;
 
-        // 1. Universal Actions (Inventory, etc.)
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             switch (keycode) {
                 case Input.Keys.S:
@@ -647,7 +511,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // 2. Combat-Only Actions
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 combatManager.playerAttack();
@@ -655,10 +518,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // 3. Out-of-Combat Actions
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
 
-            // --- Ranged Attack (A/Space) ---
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
@@ -669,7 +530,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 }
             }
 
-            // --- Standard Movement ---
             switch (keycode) {
                 case Input.Keys.UP:
                     player.moveForward(maze, eventManager, gameMode);
@@ -694,7 +554,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     needsAsciiRender = false;
                     return true;
 
-                // --- Interactions ---
                 case Input.Keys.O:
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
                     playerTurnTakesAction();
@@ -709,7 +568,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     playerTurnTakesAction();
                     return true;
                 case Input.Keys.D:
-                    // Descend logic
                     GridPoint2 atFeet = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
                     GridPoint2 inFront = new GridPoint2(
                         (int)(player.getPosition().x + player.getFacing().getVector().x),
@@ -729,7 +587,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // 4. Global Debug/Menu
         switch (keycode) {
             case Input.Keys.F1: debugManager.toggleOverlay(); return true;
             case Input.Keys.F2: debugManager.toggleRenderMode(); return true;
@@ -748,7 +605,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
                 return true;
 
-            // --- NEW: Weather Debug ---
             case Input.Keys.F7:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
@@ -767,9 +623,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         return false;
     }
 
-    // --- cleanUpOrphanedDoors() REMOVED ---
-
-    // --- Unused InputProcessor methods ---
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
@@ -786,12 +639,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (hud != null) {
             hud.dispose();
         }
-        // Dispose renderers if they own disposable resources
-        // firstPersonRenderer.dispose(); // If needed
         if (entityRenderer != null) {
             entityRenderer.dispose();
         }
-        // debugRenderer.dispose(); // If needed
         if (soundManager != null) {
             soundManager.dispose();
         }
@@ -799,6 +649,5 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (fbo != null) fbo.dispose();
         if (crtShader != null) crtShader.dispose();
         postProcessBatch.dispose();
-        // Dispose animationManager? Depends if it holds textures directly
     }
 }

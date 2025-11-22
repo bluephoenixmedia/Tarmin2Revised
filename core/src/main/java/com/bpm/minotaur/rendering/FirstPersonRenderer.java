@@ -66,6 +66,11 @@ public class FirstPersonRenderer {
 
     private WeatherRenderer weatherRenderer;
 
+    private final Texture retroSkyboxNorthStorm;
+    private final Texture retroSkyboxEastStorm;
+    private final Texture retroSkyboxSouthStorm;
+    private final Texture retroSkyboxWestStorm;
+
     public FirstPersonRenderer() {
         spriteBatch = new SpriteBatch();
         wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
@@ -79,6 +84,11 @@ public class FirstPersonRenderer {
         retroSkyboxEast = new Texture(Gdx.files.internal("images/retro_skybox_east.jpg"));
         retroSkyboxSouth = new Texture(Gdx.files.internal("images/retro_skybox_south.jpg"));
         retroSkyboxWest = new Texture(Gdx.files.internal("images/retro_skybox_west.jpg"));
+        retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/retro_skybox_castle_storm.jpg"));
+        // If these files are PNGs, please change the extension here:
+        retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/retro_skybox_east_storm.jpg"));
+        retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/retro_skybox_south_storm.jpg"));
+        retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/retro_skybox_west_storm.jpg"));
         setTheme(RetroTheme.STANDARD_THEME);
     }
 
@@ -138,15 +148,14 @@ public class FirstPersonRenderer {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
             if (currentLevel == 1) {
-                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity);
-            }
+                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);            }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);
         } else {
             // Retro Mode
             if (currentLevel == 1) {
                 spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
                 spriteBatch.begin();
-                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity);
+                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
                 spriteBatch.end();
             } else {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -228,13 +237,29 @@ public class FirstPersonRenderer {
      * Renders only the skybox ceiling based on player direction.
      * [UPDATED] Accepts lightIntensity.
      */
-    private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity) {
+    private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity, WorldManager worldManager) {
         Texture skyboxTexture;
+
+        // --- NEW: Determine if we are in a storm ---
+        boolean isStormy = false;
+        if (worldManager.getWeatherManager() != null) {
+            isStormy = worldManager.getWeatherManager().isStormy();
+        }
+
+        // Select texture based on direction AND weather
         switch (player.getFacing()) {
-            case EAST:  skyboxTexture = retroSkyboxEast;  break;
-            case WEST:  skyboxTexture = retroSkyboxWest;  break;
-            case SOUTH: skyboxTexture = retroSkyboxSouth; break;
-            default:    skyboxTexture = retroSkyboxNorth; break; // NORTH
+            case EAST:
+                skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
+                break;
+            case WEST:
+                skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
+                break;
+            case SOUTH:
+                skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
+                break;
+            default: // NORTH
+                skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
+                break;
         }
 
         // Apply global light intensity (dimming for storms)
