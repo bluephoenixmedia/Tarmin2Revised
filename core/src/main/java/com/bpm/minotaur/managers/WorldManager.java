@@ -3,6 +3,7 @@ package com.bpm.minotaur.managers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
@@ -41,6 +42,8 @@ public class WorldManager {
     // [NEW] Reference to SoundManager
     private final SoundManager soundManager;
 
+    private ShaderProgram bloodShader;
+
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
@@ -75,6 +78,18 @@ public class WorldManager {
         // [NOTE] WeatherManager receives 'this' (WorldManager), so it can access getSoundManager()
         this.weatherManager = new WeatherManager(this);
 
+        ShaderProgram.pedantic = false;
+        bloodShader = new ShaderProgram(
+            Gdx.files.internal("shaders/blood.vert"),
+            Gdx.files.internal("shaders/blood.frag")
+        );
+
+        if (!bloodShader.isCompiled()) {
+            Gdx.app.error("WorldManager", "Blood Shader Compilation Failed:\n" + bloodShader.getLog());
+        } else {
+            Gdx.app.log("WorldManager", "Blood Shader Compiled Successfully");
+        }
+
         // Instantiate generators
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
@@ -92,6 +107,10 @@ public class WorldManager {
 
     public Maze getInitialMaze() {
         return loadChunk(new GridPoint2(0, 0));
+    }
+
+    public ShaderProgram getBloodShader() {
+        return bloodShader;
     }
 
     public void disableSaving() {

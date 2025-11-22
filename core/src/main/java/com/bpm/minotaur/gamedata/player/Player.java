@@ -57,7 +57,7 @@ public class Player {
         this.statusManager = new StatusManager();
 
         inventory.setRightHand(
-            itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.GRAY, assetManager)
+            itemDataManager.createItem(Item.ItemType.AXE, 0, 0, ItemColor.PURPLE, assetManager)
         );
         // Give the player a starting Bow
         inventory.setLeftHand(
@@ -440,15 +440,7 @@ public class Player {
         // --- END MODIFIED ---
     }
 
-    /**
-     * A generic helper to sum up the value of a specific modifier from ALL equipped items.
-     * @param typeToFind The ModifierType to search for.
-     * @return The sum of all values for that modifier.
-     */
-    // --- METHOD REMOVED ---
-    // (This entire method was moved to PlayerEquipment.java)
-    // private int getEquippedModifierSum(ModifierType typeToFind) { ... }
-    // --- END REMOVED ---
+
 
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
