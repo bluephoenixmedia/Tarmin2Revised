@@ -19,6 +19,8 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.gamedata.item.ItemCategory;
+import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.weather.WeatherType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -257,11 +259,9 @@ public class CombatManager {
 
         HitResult result = raycastProjectile(player.getPosition(), player.getFacing(), range, true);
 
-        // --- NEW: Dynamic Speed Calculation ---
         Vector2 animTarget = new Vector2(result.collisionPoint.x + 0.5f, result.collisionPoint.y + 0.5f);
         float distance = player.getPosition().dst(animTarget);
         float animDuration = distance / PROJECTILE_SPEED;
-        // --------------------------------------
 
         String[] projectileSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
         if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
@@ -273,7 +273,7 @@ public class CombatManager {
             player.getPosition(),
             animTarget,
             weapon.getColor(),
-            animDuration, // Use calculated duration
+            animDuration,
             projectileSprite
         ));
 
@@ -292,6 +292,26 @@ public class CombatManager {
                 + (weaponTier * 5)
                 - (int)(targetDex * 1.5)
                 - (int)(dist * 5);
+
+            // --- NEW: Weather Penalties ---
+            if (worldManager != null && worldManager.getWeatherManager() != null) {
+                WeatherManager wm = worldManager.getWeatherManager();
+                WeatherType wType = wm.getCurrentWeather();
+
+                // Only applies outdoors (Level 1) in this implementation, or globally if weather is global
+                // Checking if weather is visually active (intensity > 0 basically)
+                if (wType == WeatherType.RAIN || wType == WeatherType.SNOW) {
+                    hitChance -= 10;
+                    Gdx.app.log("Combat", "Weather Penalty: -10% (Rain/Snow)");
+                } else if (wType == WeatherType.STORM || wType == WeatherType.BLIZZARD) {
+                    hitChance -= 25;
+                    Gdx.app.log("Combat", "Weather Penalty: -25% (Storm/Blizzard)");
+                } else if (wType == WeatherType.TORNADO) {
+                    hitChance -= 50;
+                    Gdx.app.log("Combat", "Weather Penalty: -50% (Tornado)");
+                }
+            }
+            // --- END NEW ---
 
             if (hitChance < 5) hitChance = 5;
             if (hitChance > 95) hitChance = 95;

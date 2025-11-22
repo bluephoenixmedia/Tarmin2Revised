@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.Tarmin2;
@@ -70,6 +71,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private boolean useCrtFilter = true; // Toggle state
     private final SpriteBatch postProcessBatch = new SpriteBatch(); // Dedicated batch for the final draw
     private float time = 0f;
+
+    private float trauma = 0f; // Current shake intensity
+    private final Vector2 originalDir = new Vector2();
+    private final Vector2 originalPlane = new Vector2();
+    private final java.util.Random rng = new java.util.Random();
 
     // --- ALL TILE AND CORRIDOR DEFINITIONS HAVE BEEN REMOVED ---
     // (Moved to ChunkGenerator.java)
@@ -279,40 +285,63 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     @Override
     public void render(float delta) {
         time += delta;
+
         // --- UPDATE LOGIC ---
         combatManager.update(delta);
         animationManager.update(delta);
-        if (maze != null) { // Add null check for safety during transitions
-            maze.update(delta);
-        }
-        if (hud != null) { // Add null check
-            hud.update(delta);
-        }
-        eventManager.update(delta); // Processes message timers
-
-        // --- NEW: Check for System Events (like CHUNK_TRANSITION) ---
+        if (maze != null) maze.update(delta);
+        if (hud != null) hud.update(delta);
+        eventManager.update(delta);
         handleSystemEvents();
-        // --- END NEW ---
 
-        // --- [NEW] PROACTIVE CHUNK LOADING ---
+        // Update World & Weather
+        if (worldManager != null) {
+            worldManager.update(delta);
+
+            // [NEW] SYNC TRAUMA WITH WEATHER
+            if (worldManager.getWeatherManager() != null) {
+                // Smoothly move trauma towards the target weather intensity
+                float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
+                this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
+            }
+        }
+
         if (gameMode == GameMode.ADVANCED) {
             checkForProactiveChunkLoading();
         }
-        // --- END NEW ---
 
         if (useCrtFilter) {
             fbo.begin();
         }
 
-        // --- WORLD RENDERING ---
         ScreenUtils.clear(0, 0, 0, 1);
         shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
 
-        // Ensure player and maze are not null before rendering
+        // --- [NEW] APPLY CAMERA SHAKE (THE FEAR EFFECT) ---
+        boolean isShaking = (player != null && trauma > 0.01f);
+
+        if (isShaking) {
+            // 1. Save original state
+            originalDir.set(player.getDirectionVector());
+            originalPlane.set(player.getCameraPlane());
+
+            // 2. Calculate jitter (Perlin noise is better, but random works for retro chaos)
+            // "Shake" means rotating the view slightly left/right
+            float shakePower = trauma * 0.1f; // Max rotation in radians
+            float angle = (rng.nextFloat() - 0.5f) * shakePower;
+
+            // Rotate the vectors
+            player.getDirectionVector().rotateRad(angle);
+            player.getCameraPlane().rotateRad(angle);
+
+            // Optional: Vertical shake (pitch) could be simulated by offsetting the horizon Y in Renderer,
+            // but rotating X/Y is enough for disorientation.
+        }
+
+        // --- RENDER WORLD ---
         if (player != null && maze != null) {
             firstPersonRenderer.render(shapeRenderer, player, maze, game.getViewport(), worldManager, currentLevel, gameMode);
 
-            // --- [FIX] Pass WorldManager to EntityRenderer for Fog of War check ---
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 entityRenderer.render(shapeRenderer, player, maze, game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
@@ -330,46 +359,35 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
+        // --- [NEW] RESTORE CAMERA STATE ---
+        if (isShaking) {
+            player.getDirectionVector().set(originalDir);
+            player.getCameraPlane().set(originalPlane);
+        }
+
         // --- HUD RENDERING ---
-        if (hud != null) { // Add null check
+        if (hud != null) {
             hud.render();
         }
 
-
-
         if (useCrtFilter) {
             fbo.end();
-
-            // --- DRAW FBO TO SCREEN WITH SHADER ---
-            ScreenUtils.clear(0, 0, 0, 1); // Clear the actual screen (black bars)
-
+            ScreenUtils.clear(0, 0, 0, 1);
             postProcessBatch.begin();
             postProcessBatch.setShader(crtShader);
-
-            // Pass uniforms to shader
             crtShader.setUniformf("u_time", time);
-
-            // Draw the FBO texture
-            // Note: TextureRegion is needed because FBOs are often flipped vertically in LibGDX
             Texture fboTexture = fbo.getColorBufferTexture();
-            // Draw flipped vertically
             postProcessBatch.draw(fboTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
-
             postProcessBatch.end();
         }
 
-        // --- SCREEN-LEVEL TEXT RENDERING ---
+        // ... (Rest of render method: Text, Fonts, etc.) ...
         game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
         game.getBatch().begin();
-
         animationManager.renderDamageText(game.getBatch(), game.getViewport());
-
-
         font.setColor(Color.WHITE);
         font.draw(game.getBatch(), "Level: " + currentLevel, 10, game.getViewport().getWorldHeight() - 10);
         game.getBatch().end();
-        // --- [NEW] REORGANIZED DEBUG TEXT ---
-
     }
 
     /**
@@ -640,17 +658,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // 3. Out-of-Combat Actions
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
 
-            // --- NEW: Ranged Attack (A/Space) ---
-            // Does NOT open doors. Only attacks if ranged weapon is equipped.
+            // --- Ranged Attack (A/Space) ---
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
                     if (attacked) {
-                        playerTurnTakesAction(); // Monster gets a turn if we shot
+                        playerTurnTakesAction();
                     }
                     return true;
                 }
-                // If no ranged weapon, do nothing (Interactions are on 'O')
             }
 
             // --- Standard Movement ---
@@ -730,6 +746,21 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             case Input.Keys.F6:
                 useCrtFilter = !useCrtFilter;
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
+                return true;
+
+            // --- NEW: Weather Debug ---
+            case Input.Keys.F7:
+                if (worldManager.getWeatherManager() != null) {
+                    worldManager.getWeatherManager().debugCycleWeather();
+                    eventManager.addEvent(new GameEvent("Debug Weather: " + worldManager.getWeatherManager().getCurrentWeather(), 2f));
+                }
+                return true;
+
+            case Input.Keys.F8:
+                if (worldManager.getWeatherManager() != null) {
+                    worldManager.getWeatherManager().debugCycleIntensity();
+                    eventManager.addEvent(new GameEvent("Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
+                }
                 return true;
         }
 
