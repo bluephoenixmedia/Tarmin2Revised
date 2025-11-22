@@ -26,6 +26,8 @@ public class Maze {
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
 
+    private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
+
     private RetroTheme.Theme theme;
 
 
@@ -50,6 +52,21 @@ public class Maze {
     public int getWidth() {
         if (wallData == null || wallData.length == 0) return 0;
         return wallData[0].length;
+    }
+
+    public void addBlood(int x, int y, float amount) {
+        GridPoint2 pos = new GridPoint2(x, y);
+        float current = bloodMap.getOrDefault(pos, 0f);
+        // Cap blood intensity at 1.0
+        bloodMap.put(pos, Math.min(1.0f, current + amount));
+    }
+
+    public float getBloodIntensity(int x, int y) {
+        return bloodMap.getOrDefault(new GridPoint2(x, y), 0f);
+    }
+
+    public Map<GridPoint2, Float> getBloodMap() {
+        return bloodMap;
     }
 
     public int getHeight() {
