@@ -15,6 +15,7 @@ import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
 import com.bpm.minotaur.rendering.RetroTheme;
+import com.bpm.minotaur.weather.WeatherManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,8 @@ public class WorldManager {
     private final MonsterDataManager dataManager;
     private final ItemDataManager itemDataManager; // <-- ADD THIS
     private final AssetManager assetManager;
+
+    private final WeatherManager weatherManager;
     private final SpawnTableData spawnTableData; // <-- This field should already be here
 
 
@@ -69,7 +72,7 @@ public class WorldManager {
         this.itemDataManager = itemDataManager; // <-- ADD THIS
         this.assetManager = assetManager;
         this.spawnTableData = spawnTableData; // <-- This line should already be here
-
+        this.weatherManager = new WeatherManager(this);
         // Instantiate all our generators
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
@@ -273,6 +276,17 @@ public class WorldManager {
             Gdx.app.log("WorldManager", "Saved chunk state to " + file.path());
         } catch (Exception e) {
             Gdx.app.error("WorldManager", "Failed to save chunk: " + chunkId, e);
+        }
+    }
+
+    public WeatherManager getWeatherManager() {
+        return weatherManager;
+    }
+
+    public void update(float delta) {
+        // Only update weather if we are on ground level (Level 1)
+        if (currentLevel == 1) {
+            weatherManager.update(delta);
         }
     }
 
