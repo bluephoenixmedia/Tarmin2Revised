@@ -69,6 +69,8 @@ public class GameOverScreen extends BaseScreen {
         // Note: The debugManager is null here, which may cause an issue in your SoundManager constructor.
         // For this task, we will proceed, but you may need to address that.
         this.soundManager = new SoundManager(debugManager);
+        this.soundManager.stopAllSounds();
+
         this.soundManager.playPlayerDeathSound();
 
         try {

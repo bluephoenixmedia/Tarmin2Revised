@@ -40,7 +40,7 @@ public class CombatManager {
     public static class HitResult {
         public enum HitType {
             NOTHING,        // Reached max range without hitting anything
-            WALL,           // Hit a wall, closed door, or closed gate
+            WALL,           // Hit a wall, closed door, closed gate, or SCENERY
             MONSTER,        // Hit a monster
             PLAYER,         // Hit the player
             OUT_OF_BOUNDS   // Went off the map
@@ -139,6 +139,15 @@ public class CombatManager {
                     return new HitResult(currentPos, HitResult.HitType.WALL, null);
                 }
             }
+
+            // --- NEW: Check for Impassable Scenery ---
+            if (maze.getScenery() != null && maze.getScenery().containsKey(currentPos)) {
+                Scenery s = maze.getScenery().get(currentPos);
+                if (s.isImpassable()) {
+                    return new HitResult(currentPos, HitResult.HitType.WALL, null);
+                }
+            }
+            // -----------------------------------------
 
             // 4. Check for Entity Collision
 
@@ -700,8 +709,14 @@ public class CombatManager {
             return false; // Not aligned cardinally, cannot fire
         }
 
-        // 3. Fire Raycast
+        // 3. Fire Raycast to Check Path
         HitResult finalResult = raycastProjectile(attacker.getPosition(), fireDir, range, false);
+
+        // [FIX] Check Line of Sight / Obstructions
+        // If we hit a WALL, OUT_OF_BOUNDS, or another MONSTER, we cannot shoot the player.
+        if (finalResult.type != HitResult.HitType.PLAYER) {
+            return false; // Abort attack, allowing AI to move instead
+        }
 
         // 4. Visuals
         float dist = attacker.getPosition().dst(player.getPosition());
@@ -710,7 +725,7 @@ public class CombatManager {
         animationManager.addAnimation(new Animation(
             Animation.AnimationType.PROJECTILE_MONSTER,
             attacker.getPosition(),
-            player.getPosition(),
+            player.getPosition(), // Visual target (is player)
             attacker.getColor(),
             animDuration,
             itemDataManager.getTemplate(Item.ItemType.DART).spriteData
@@ -718,33 +733,30 @@ public class CombatManager {
 
         soundManager.playMonsterAttackSound(attacker);
 
-        // 5. Handle Hit
-        if (finalResult.type == HitResult.HitType.PLAYER) {
-            // Calculate Hit Chance
-            int baseChance = 60;
-            int monsterDex = attacker.getDexterity();
-            int playerDex = player.getDexterity();
+        // 5. Handle Hit (We know it's PLAYER from check above)
+        // Calculate Hit Chance
+        int baseChance = 60;
+        int monsterDex = attacker.getDexterity();
+        int playerDex = player.getDexterity();
 
-            int hitChance = baseChance + (monsterDex * 2) - (int)(playerDex * 1.5);
-            if (hitChance < 10) hitChance = 10;
-            if (hitChance > 95) hitChance = 95;
+        int hitChance = baseChance + (monsterDex * 2) - (int)(playerDex * 1.5);
+        if (hitChance < 10) hitChance = 10;
+        if (hitChance > 95) hitChance = 95;
 
-            if (random.nextInt(100) < hitChance) {
-                // Hit
-                int damage = attacker.getWarStrength() / 3; // Simplified monster ranged damage
-                if (damage < 1) damage = 1;
+        if (random.nextInt(100) < hitChance) {
+            // Hit
+            int damage = attacker.getWarStrength() / 3; // Simplified monster ranged damage
+            if (damage < 1) damage = 1;
 
-                // --- UPDATED: Use returned actual damage for UI feedback ---
-                int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
+            int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
 
-                if (actualDamage > 0) {
-                    eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
-                } else {
-                    eventManager.addEvent(new GameEvent("Your armor deflects the " + attacker.getMonsterType() + "'s shot!", 1.5f));
-                }
+            if (actualDamage > 0) {
+                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
             } else {
-                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.0f));
+                eventManager.addEvent(new GameEvent("Your armor deflects the " + attacker.getMonsterType() + "'s shot!", 1.5f));
             }
+        } else {
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.0f));
         }
 
         return true;
