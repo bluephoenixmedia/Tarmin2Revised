@@ -693,6 +693,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     eventManager.addEvent(new GameEvent("Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
                 }
                 return true;
+
+            case Input.Keys.F9:
+                Gdx.app.log("GameScreen", "Dumping Exploration Memory to Console...");
+                DebugRenderer.printExplorationToConsole(maze);
+                eventManager.addEvent(new GameEvent("Exploration Dumped to Console", 2f));
+                return true;
         }
 
         return false;
