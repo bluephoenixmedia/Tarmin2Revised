@@ -6,34 +6,37 @@ import com.bpm.minotaur.gamedata.ModifierType;
 
 public class PlayerEquipment {
 
-    // Equipment slots
-    private Item wornHelmet = null;
-    private Item wornShield = null;
-    private Item wornGauntlets = null;
-    private Item wornHauberk = null;
-    private Item wornBreastplate = null;
-    private Item wornRing = null;
+    // Expanded Equipment slots
+    private Item wornHelmet = null;      // Head
+    private Item wornEyes = null;        // Eyes (New)
+    private Item wornNeck = null;        // Amulet (New)
+    private Item wornBack = null;        // Cloak/Back (New)
+    private Item wornChest = null;       // Chest (Hauberk/Breastplate)
+    private Item wornArms = null;        // Arms (New)
+    private Item wornGauntlets = null;   // Hands
+    private Item wornLegs = null;        // Legs (New)
+    private Item wornBoots = null;       // Feet (New)
+    private Item wornRing = null;        // Ring
 
-    /**
-     * Constructor for PlayerEquipment.
-     * All slots are initialized to null by default.
-     */
+    // Note: Left/Right hand are usually managed in Inventory, but we can track armor stats here if shields are involved.
+    // For now, hands remain in Inventory logic, but shields are accessed here for defense calc.
+    // We will assume 'wornShield' is maintained for backward compatibility or linked to Inventory.leftHand.
+    // For the purpose of this refactor, let's keep specific armor slots here.
+
+    private Item wornShield = null; // Kept for legacy compatibility / explicit shield slot logic
+
     public PlayerEquipment() {
-        // All fields are already null
     }
 
-    /**
-     * A generic helper to sum up the value of a specific modifier from ALL equipped items.
-     * (Moved from Player.java)
-     * @param typeToFind The ModifierType to search for.
-     * @return The sum of all values for that modifier.
-     */
     public int getEquippedModifierSum(ModifierType typeToFind) {
         int total = 0;
-        Item[] equippedItems = { wornHelmet, wornShield, wornGauntlets, wornHauberk, wornBreastplate, wornRing };
+        Item[] equippedItems = {
+            wornHelmet, wornEyes, wornNeck, wornBack, wornChest,
+            wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornShield
+        };
 
         for (Item item : equippedItems) {
-            if (item != null && item.getModifiers() != null) { // Added null check for getModifiers
+            if (item != null && item.getModifiers() != null) {
                 for (ItemModifier mod : item.getModifiers()) {
                     if (mod.type == typeToFind) {
                         total += mod.value;
@@ -44,93 +47,71 @@ public class PlayerEquipment {
         return total;
     }
 
-    /**
-     * Calculates total armor defense from all equipped armor.
-     * (Moved from Player.java)
-     * @return The total defense value.
-     */
     public int getArmorDefense() {
         int totalDefense = 0;
 
-        // Base defense from armor stats
         if (wornHelmet != null) totalDefense += wornHelmet.getArmorDefense();
-        if (wornShield != null) totalDefense += wornShield.getArmorDefense();
+        if (wornChest != null) totalDefense += wornChest.getArmorDefense(); // New unified Chest
         if (wornGauntlets != null) totalDefense += wornGauntlets.getArmorDefense();
-        if (wornHauberk != null) totalDefense += wornHauberk.getArmorDefense();
-        if (wornBreastplate != null) totalDefense += wornBreastplate.getArmorDefense();
+        if (wornBoots != null) totalDefense += wornBoots.getArmorDefense();
+        if (wornLegs != null) totalDefense += wornLegs.getArmorDefense();
+        if (wornArms != null) totalDefense += wornArms.getArmorDefense();
+        if (wornShield != null) totalDefense += wornShield.getArmorDefense();
 
-        // Add bonus defense from all equipped items (including rings)
+        // Add bonus defense from all equipped items
         totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
 
         return totalDefense;
     }
 
-    /**
-     * Calculates total spiritual defense from the equipped ring.
-     * (Moved from Player.java)
-     * @return The total spiritual defense value.
-     */
     public int getRingDefense() {
         int totalDefense = 0;
-
-        // Base defense from ring stats
         if (wornRing != null) {
             totalDefense += wornRing.getArmorDefense();
         }
-
-        // Add bonus defense from all equipped items (including armor)
         totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
-
         return totalDefense;
     }
 
-    // --- Getters and Setters for all equipment slots ---
+    // --- Getters and Setters ---
 
-    public Item getWornHelmet() {
-        return wornHelmet;
-    }
+    public Item getWornHelmet() { return wornHelmet; }
+    public void setWornHelmet(Item item) { this.wornHelmet = item; }
 
-    public void setWornHelmet(Item wornHelmet) {
-        this.wornHelmet = wornHelmet;
-    }
+    public Item getWornEyes() { return wornEyes; }
+    public void setWornEyes(Item item) { this.wornEyes = item; }
 
-    public Item getWornShield() {
-        return wornShield;
-    }
+    public Item getWornNeck() { return wornNeck; }
+    public void setWornNeck(Item item) { this.wornNeck = item; }
 
-    public void setWornShield(Item wornShield) {
-        this.wornShield = wornShield;
-    }
+    public Item getWornBack() { return wornBack; }
+    public void setWornBack(Item item) { this.wornBack = item; }
 
-    public Item getWornGauntlets() {
-        return wornGauntlets;
-    }
+    // Consolidated Chest Slot (Handles Hauberk or Breastplate)
+    public Item getWornChest() { return wornChest; }
+    public void setWornChest(Item item) { this.wornChest = item; }
 
-    public void setWornGauntlets(Item wornGauntlets) {
-        this.wornGauntlets = wornGauntlets;
-    }
+    // Legacy getters for Hauberk/Breastplate redirect to Chest
+    public Item getWornHauberk() { return wornChest; }
+    public void setWornHauberk(Item item) { this.wornChest = item; }
+    public Item getWornBreastplate() { return wornChest; }
+    public void setWornBreastplate(Item item) { this.wornChest = item; }
 
-    public Item getWornHauberk() {
-        return wornHauberk;
-    }
+    public Item getWornArms() { return wornArms; }
+    public void setWornArms(Item item) { this.wornArms = item; }
 
-    public void setWornHauberk(Item wornHauberk) {
-        this.wornHauberk = wornHauberk;
-    }
+    public Item getWornGauntlets() { return wornGauntlets; }
+    public void setWornGauntlets(Item item) { this.wornGauntlets = item; }
 
-    public Item getWornBreastplate() {
-        return wornBreastplate;
-    }
+    public Item getWornLegs() { return wornLegs; }
+    public void setWornLegs(Item item) { this.wornLegs = item; }
 
-    public void setWornBreastplate(Item wornBreastplate) {
-        this.wornBreastplate = wornBreastplate;
-    }
+    public Item getWornBoots() { return wornBoots; }
+    public void setWornBoots(Item item) { this.wornBoots = item; }
 
-    public Item getWornRing() {
-        return wornRing;
-    }
+    public Item getWornRing() { return wornRing; }
+    public void setWornRing(Item item) { this.wornRing = item; }
 
-    public void setWornRing(Item wornRing) {
-        this.wornRing = wornRing;
-    }
+    public Item getWornShield() { return wornShield; }
+    public void setWornShield(Item item) { this.wornShield = item; }
 }

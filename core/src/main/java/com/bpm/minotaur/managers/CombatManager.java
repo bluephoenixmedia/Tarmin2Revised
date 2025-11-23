@@ -629,7 +629,7 @@ public class CombatManager {
 
             // --- SPAWN CORPSE (Only Debris, No Blood Shader) ---
             // OVERKILL LOGIC
-            if (lastDamageDealt > 3) {
+            if (lastDamageDealt > 6) {
                 Vector3 center = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
                 // Updated to use new signature (no color arg)
                 maze.getGoreManager().spawnGibExplosion(center);

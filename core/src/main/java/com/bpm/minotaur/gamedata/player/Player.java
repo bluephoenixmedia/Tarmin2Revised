@@ -17,7 +17,7 @@ public class Player {
     // --- Stats ---
     private final PlayerStats stats;
 
-    // --- New PlayerEquipment field ---
+    // --- Equipment ---
     private final PlayerEquipment equipment = new PlayerEquipment();
 
     private final StatusManager statusManager;
@@ -31,160 +31,127 @@ public class Player {
     // --- Inventory ---
     private final Inventory inventory = new Inventory();
 
-    // --- Managers and World ---
+    // --- Managers ---
     private final SoundManager soundManager;
-    private final ItemDataManager itemDataManager; // <-- ADD THIS
+    private final ItemDataManager itemDataManager;
     private final AssetManager assetManager;
 
 
     public Player(float startX, float startY, Difficulty difficulty,
                   ItemDataManager itemDataManager, AssetManager assetManager) {
 
-
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
         this.directionVector = new Vector2();
         this.cameraPlane = new Vector2();
         this.soundManager = new SoundManager(null);
-        this.itemDataManager = itemDataManager; // <-- ADD THIS
+        this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Creating starting items...");
         updateVectors();
 
         this.stats = new PlayerStats(difficulty);
-
         this.statusManager = new StatusManager();
 
         inventory.setRightHand(
             itemDataManager.createItem(Item.ItemType.AXE, 0, 0, ItemColor.PURPLE, assetManager)
         );
-        // Give the player a starting Bow
         inventory.setLeftHand(
             itemDataManager.createItem(Item.ItemType.BOW, 0, 0, ItemColor.GRAY, assetManager)
+        );
+        equipment.setWornBack(
+            itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager)
         );
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
     }
 
-
-
-    /**
-     * Sets the player's position based on a GridPoint2,
-     * automatically adding 0.5f to center them.
-     * @param newPos The new grid position.
-     */
     public void setPosition(GridPoint2 newPos) {
         this.position.set(newPos.x + 0.5f, newPos.y + 0.5f);
     }
 
-
+    public boolean pickupItem(Item item) {
+        return inventory.pickup(item);
+    }
 
     public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
-        // ... [ This method (interactWithItem) has no changes ] ...
         int playerGridX = (int) position.x;
         int playerGridY = (int) position.y;
         GridPoint2 playerTile2 = new GridPoint2(playerGridX, playerGridY);
 
+        // 1. Check item at feet first
         Item itemAtFeet = maze.getItems().get(playerTile2);
 
         if (itemAtFeet != null) {
-            // Found an item at our feet. Try to pick it up.
-
-            Item itemInHand = inventory.getRightHand();
-            inventory.setRightHand(maze.getItems().remove(playerTile2));
-
-
-            if (itemInHand != null) { // Swap with item in front
-                itemInHand.getPosition().set(playerGridX + 0.5f, playerGridY + 0.5f);
-                maze.getItems().put(playerTile2, itemInHand);
-                eventManager.addEvent(new GameEvent("Swapped items", 2f));
-                Gdx.app.log("Player", "Swapped with item in front.");
-            } else { // Pick up item from front
-                eventManager.addEvent(new GameEvent("Picked up " + inventory.getRightHand().getDisplayName(), 2f));
-                Gdx.app.log("Player", "Picked up item from front.");
-                return;
+            if (pickupItem(itemAtFeet)) {
+                maze.getItems().remove(playerTile2);
+                soundManager.playPickupItemSound();
+                eventManager.addEvent(new GameEvent("Picked up " + itemAtFeet.getDisplayName(), 2f));
+            } else {
+                eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
             }
+            return;
         }
 
-
-        // Determine the target tile in front of the player
+        // 2. Check item in front
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
         Item itemInFront = maze.getItems().get(targetTile);
 
-
-
-        // --- PICKUP/SWAP LOGIC (targets tile in front) ---
         if (itemInFront != null) {
-            soundManager.playPickupItemSound();
-            // Handle Treasure pickup
+
             if (itemInFront.getCategory() == ItemCategory.TREASURE) {
-                // --- MODIFIED: Use stats object ---
+                soundManager.playPickupItemSound();
                 stats.incrementTreasureScore(itemInFront.getBaseValue());
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "! Your treasure score is now " + stats.getTreasureScore(), 2f));
-                Gdx.app.log("Player", "Picked up " + itemInFront.getDisplayName() + " with value " + itemInFront.getBaseValue());
+                eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "!", 2f));
                 return;
             }
-
-            // Handle Quiver pickup
             if (itemInFront.getType() == Item.ItemType.QUIVER) {
-                int arrowsFound = new Random().nextInt(4) + 6; // 6 to 9 arrows, as per the manual
-                // --- MODIFIED: Use stats object ---
+                soundManager.playPickupItemSound();
+                int arrowsFound = new Random().nextInt(4) + 6;
                 stats.addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found a quiver with " + arrowsFound + " arrows.", 2f));
+                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " arrows.", 2f));
                 return;
             }
-
-            // Handle Flour Sack pickup
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
-                int foodFound = new Random().nextInt(4) + 6; // 6 to 9 food, as per the manual
-                // --- MODIFIED: Use stats object ---
+                soundManager.playPickupItemSound();
+                int foodFound = new Random().nextInt(4) + 6;
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found a flour sack with " + foodFound + " food.", 2f));
+                eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
                 return;
             }
 
-            Item itemInHand = inventory.getRightHand();
-            inventory.setRightHand(maze.getItems().remove(targetTile));
-            if (itemInHand != null) { // Swap with item in front
-                itemInHand.getPosition().set(targetX + 0.5f, targetY + 0.5f);
-                maze.getItems().put(targetTile, itemInHand);
-                eventManager.addEvent(new GameEvent("Swapped items", 2f));
-                Gdx.app.log("Player", "Swapped with item in front.");
-            } else { // Pick up item from front
-                eventManager.addEvent(new GameEvent("Picked up " + inventory.getRightHand().getDisplayName(), 2f));
-                Gdx.app.log("Player", "Picked up item from front.");
+            if (pickupItem(itemInFront)) {
+                maze.getItems().remove(targetTile);
+                soundManager.playPickupItemSound();
+                eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
+            } else {
+                eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
             }
         }
-        // --- DROP LOGIC (targets player's current tile) ---
         else if (inventory.getRightHand() != null) {
             GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
-            // Check if there's already an item at the player's feet
-            if (maze.getItems().containsKey(playerTile)) {
-                eventManager.addEvent(new GameEvent("Cannot drop, item at your feet.", 2f));
-                Gdx.app.log("Player", "Drop failed, tile occupied.");
-            } else {
+            if (!maze.getItems().containsKey(playerTile)) {
                 Item itemInHand = inventory.getRightHand();
                 itemInHand.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
                 maze.addItem(itemInHand);
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getDisplayName(), 2f));
-                Gdx.app.log("Player", "Dropped item at feet.");
+            } else {
+                eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
             }
         }
-        // --- NO ACTION ---
         else {
             eventManager.addEvent(new GameEvent("Nothing to interact with.", 2f));
         }
     }
 
     public void useItem(GameEventManager eventManager, PotionManager potionManager) {
-        // ... [ This method (useItem) has no changes ] ...
         Item itemInHand = inventory.getRightHand();
 
         if (itemInHand == null || !itemInHand.isUsable()) {
@@ -193,10 +160,9 @@ public class Player {
         }
 
         if (itemInHand.isPotion()) {
-            // The PotionManager handles applying the effect and posting the message
             potionManager.consumePotion(this, itemInHand);
-            inventory.setRightHand(null); // Consume the item
-            return; // Potion logic is done, exit the method.
+            inventory.setRightHand(null);
+            return;
         }
 
         switch (itemInHand.getCategory()) {
@@ -215,87 +181,101 @@ public class Player {
         }
     }
 
-    // private int getMaxWarStrength() { ... } // (This was already removed)
-
     private void equipRing(Item ring, GameEventManager eventManager) {
         if (ring.getCategory() != ItemCategory.RING) return;
 
         eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName(), 2f));
-
-        // Swap the ring in hand with the worn ring
-        // --- MODIFIED: Use equipment object ---
         Item previouslyWornRing = this.equipment.getWornRing();
         this.equipment.setWornRing(ring);
-        // --- END MODIFIED ---
         inventory.setRightHand(previouslyWornRing);
     }
 
     private void equipArmor(Item armor, GameEventManager eventManager) {
-        // --- MODIFIED: Use equipment object getters and setters ---
         switch (armor.getType()) {
             case HELMET:
                 if (equipment.getWornHelmet() == null || armor.getArmorDefense() > equipment.getWornHelmet().getArmorDefense()) {
                     equipment.setWornHelmet(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("This helmet is not better.", 2f));
-                }
+                } else eventManager.addEvent(new GameEvent("This helmet is not better.", 2f));
                 break;
-            case SMALL_SHIELD: // Fall-through
+            case SMALL_SHIELD:
             case LARGE_SHIELD:
                 if (equipment.getWornShield() == null || armor.getArmorDefense() > equipment.getWornShield().getArmorDefense()) {
                     equipment.setWornShield(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
-                }
+                } else eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
                 break;
             case GAUNTLETS:
                 if (equipment.getWornGauntlets() == null || armor.getArmorDefense() > equipment.getWornGauntlets().getArmorDefense()) {
                     equipment.setWornGauntlets(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("These Gauntlets are not better.", 2f));
-                }
+                } else eventManager.addEvent(new GameEvent("These Gauntlets are not better.", 2f));
                 break;
             case HAUBERK:
-                if (equipment.getWornHauberk() == null || armor.getArmorDefense() > equipment.getWornHauberk().getArmorDefense()) {
-                    equipment.setWornHauberk(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("This Hauberk is not better.", 2f));
-                }
-                break;
             case BREASTPLATE:
-                if (equipment.getWornBreastplate() == null || armor.getArmorDefense() > equipment.getWornBreastplate().getArmorDefense()) {
-                    equipment.setWornBreastplate(armor);
+                if (equipment.getWornChest() == null || armor.getArmorDefense() > equipment.getWornChest().getArmorDefense()) {
+                    equipment.setWornChest(armor);
                     inventory.setRightHand(null);
                     eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else {
-                    eventManager.addEvent(new GameEvent("This Breastplate is not better.", 2f));
-                }
+                } else eventManager.addEvent(new GameEvent("This Chest armor is not better.", 2f));
+                break;
+            case BOOTS:
+                if (equipment.getWornBoots() == null || armor.getArmorDefense() > equipment.getWornBoots().getArmorDefense()) {
+                    equipment.setWornBoots(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("These Boots are not better.", 2f));
+                break;
+            case LEGS:
+                if (equipment.getWornLegs() == null || armor.getArmorDefense() > equipment.getWornLegs().getArmorDefense()) {
+                    equipment.setWornLegs(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("These Leggings are not better.", 2f));
+                break;
+            case ARMS:
+                if (equipment.getWornArms() == null || armor.getArmorDefense() > equipment.getWornArms().getArmorDefense()) {
+                    equipment.setWornArms(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("These Arm guards are not better.", 2f));
+                break;
+            case EYES:
+                if (equipment.getWornEyes() == null || armor.getArmorDefense() > equipment.getWornEyes().getArmorDefense()) {
+                    equipment.setWornEyes(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("This Eye gear is not better.", 2f));
+                break;
+            case CLOAK:
+                if (equipment.getWornBack() == null || armor.getArmorDefense() > equipment.getWornBack().getArmorDefense()) {
+                    equipment.setWornBack(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("This Cloak is not better.", 2f));
+                break;
+            case AMULET:
+                if (equipment.getWornNeck() == null || armor.getArmorDefense() > equipment.getWornNeck().getArmorDefense()) {
+                    equipment.setWornNeck(armor);
+                    inventory.setRightHand(null);
+                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
+                } else eventManager.addEvent(new GameEvent("This Amulet is not better.", 2f));
                 break;
         }
-        // --- END MODIFIED ---
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
-        // ... [ This method (useConsumable) has no changes ] ...
         switch (item.getType()) {
-
             case WAR_BOOK:
-                // --- MODIFIED: Use stats object ---
                 stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
                 this.setWarStrength(this.getEffectiveMaxWarStrength());
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your knowledge of war grows.", 2f));
                 break;
             case SPIRITUAL_BOOK:
-                // --- MODIFIED: Use stats object ---
                 stats.setMaxSpiritualStrength(stats.getMaxSpiritualStrength() + 10);
                 stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
                 inventory.setRightHand(null);
@@ -314,7 +294,6 @@ public class Player {
     }
 
     public void rest(GameEventManager eventManager) {
-        // ... [ This method (rest) has no changes ] ...
         if (stats.getFood() > 0) {
             stats.setFood(stats.getFood() - 1);
 
@@ -324,12 +303,9 @@ public class Player {
             this.setWarStrength(Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
             stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(), stats.getSpiritualStrength() + spiritualStrengthGained));
 
-            Gdx.app.log("Player", "Player rests. Food remaining: " + stats.getFood());
-            Gdx.app.log("Player", "WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength());
             eventManager.addEvent(new GameEvent(("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()), 2f));
 
         } else {
-            Gdx.app.log("Player", "Cannot rest. No food remaining.");
             eventManager.addEvent(new GameEvent("You have no food to rest.", 2f));
         }
     }
@@ -339,12 +315,7 @@ public class Player {
         updateVectors();
     }
 
-    /**
-     * Applies damage to the player, considering armor mitigation.
-     * @return The actual damage subtracted from health.
-     */
     public int takeDamage(int amount, DamageType type) {
-        // Apply Armor reduction for Physical damage
         if (type == DamageType.PHYSICAL) {
             int defense = getArmorDefense();
             amount = Math.max(0, amount - defense);
@@ -353,14 +324,12 @@ public class Player {
         int finalDamage = Math.max(0, (int)(amount * stats.getVulnerabilityMultiplier()));
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
-        return finalDamage; // <-- NEW: Return the actual damage taken
+        return finalDamage;
     }
 
     public void takeSpiritualDamage(int amount, DamageType type) {
-        // --- MODIFIED: Get damageReduction from equipment object ---
         int damageReduction = equipment.getRingDefense();
-        // --- END MODIFIED ---
-        int resistance = getResistance(type); // Gets elemental/effect resistance
+        int resistance = getResistance(type);
 
         int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
         finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
@@ -370,31 +339,22 @@ public class Player {
         if (stats.getSpiritualStrength() < 0) {
             stats.setSpiritualStrength(0);
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " spiritual damage. SS is now " + stats.getSpiritualStrength());
     }
 
     public int getArmorDefense() {
-        // --- MODIFIED: Delegate to equipment object ---
         return equipment.getArmorDefense();
-        // --- END MODIFIED ---
     }
 
     public int getEffectiveMaxWarStrength() {
-        // --- MODIFIED: Delegate to equipment object ---
         return stats.getMaxWarStrength() + equipment.getEquippedModifierSum(ModifierType.BONUS_WAR_STRENGTH);
-        // --- END MODIFIED ---
     }
 
     public int getEffectiveMaxSpiritualStrength() {
-        // --- MODIFIED: Delegate to equipment object ---
         return stats.getMaxSpiritualStrength() + equipment.getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
-        // --- END MODIFIED ---
     }
 
     public Item getWornRing() {
-        // --- MODIFIED: Delegate to equipment object ---
         return equipment.getWornRing();
-        // --- END MODIFIED ---
     }
 
     public void setWarStrength(int amount) {
@@ -407,16 +367,9 @@ public class Player {
 
 
     private int getRingDefense() {
-        // --- MODIFIED: Delegate to equipment object ---
         return equipment.getRingDefense();
-        // --- END MODIFIED ---
     }
 
-    /**
-     * Gets the total resistance value for a specific DamageType from all equipped gear.
-     * @param type The DamageType to check for.
-     * @return The total resistance value.
-     */
     private int getResistance(DamageType type) {
         if (type == DamageType.PHYSICAL || type == DamageType.SPIRITUAL) {
             return 0;
@@ -432,16 +385,11 @@ public class Player {
             case DARK: modTypeToFind = ModifierType.RESIST_DARK; break;
             case LIGHT: modTypeToFind = ModifierType.RESIST_LIGHT; break;
             case SORCERY: modTypeToFind = ModifierType.RESIST_SORCERY; break;
-            default: return 0; // No resistance for this type
+            default: return 0;
         }
 
-        // --- MODIFIED: Delegate to equipment object ---
         return equipment.getEquippedModifierSum(modTypeToFind);
-        // --- END MODIFIED ---
     }
-
-
-
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
         move(facing, maze, eventManager, gameMode);
@@ -452,180 +400,130 @@ public class Player {
     }
 
     private void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) {
-        // ... [ This method (move) has no changes ] ...
-        Gdx.app.log("PlayerMovement", "Attempting to move " + direction + " from (" + (int)position.x + "," + (int)position.y + ")");
-
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
-        // --- NEW CHUNK TRANSITION CHECK ---
         int nextX = currentX + (int)direction.getVector().x;
         int nextY = currentY + (int)direction.getVector().y;
-        GridPoint2 nextTile = new GridPoint2(nextX, nextY); // <-- NEW
+        GridPoint2 nextTile = new GridPoint2(nextX, nextY);
 
-        Object nextObject = maze.getGameObjectAt(nextX, nextY); // This checks gates and doors
+        Object nextObject = maze.getGameObjectAt(nextX, nextY);
 
         if (nextObject instanceof Gate gate && gameMode == GameMode.ADVANCED) {
             if (gate.isChunkTransitionGate() && gate.getState() == Gate.GateState.OPEN) {
-                Gdx.app.log("PlayerMovement", "Stepped onto open transition gate. Firing event.");
-                // Fire the event. GameScreen will handle the "teleport".
                 eventManager.addEvent(new GameEvent(GameEvent.EventType.CHUNK_TRANSITION, gate));
-                return; // Stop. Do not move normally.
-            }
-        }
-
-        // First, check if the immediate path is blocked. This handles walls and closed doors.
-        if (maze.isWallBlocking(currentX, currentY, direction)) {
-            Gdx.app.log("PlayerMovement", "Movement blocked by a wall or closed door.");
-            return;
-        }
-
-        // --- NEW: Check for impassable scenery ---
-        if (maze.getScenery().containsKey(nextTile)) {
-            Scenery s = maze.getScenery().get(nextTile);
-            if (s.isImpassable()) {
-                Gdx.app.log("PlayerMovement", "Movement blocked by impassable scenery: " + s.getType());
                 return;
             }
         }
 
+        if (maze.isWallBlocking(currentX, currentY, direction)) {
+            return;
+        }
+
+        if (maze.getScenery().containsKey(nextTile)) {
+            Scenery s = maze.getScenery().get(nextTile);
+            if (s.isImpassable()) {
+                return;
+            }
+        }
 
         Object doorObject = maze.getGameObjectAt(nextX, nextY);
 
         if (doorObject instanceof Door) {
-            Gdx.app.log("Player", "Move - nextObject = door");
-
-            // Since isWallBlocking was false, the door must be open.
-            // We move an extra tile to "skip" over the door's space.
             int finalX = nextX + (int)direction.getVector().x;
             int finalY = nextY + (int)direction.getVector().y;
 
-            // As a safety measure, check that the space beyond the door is also clear.
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
-                Gdx.app.log("PlayerMovement", "Passed through open door to (" + finalX + "," + finalY + ")");
-            } else {
-                // This case would be rare, like a door leading directly into a wall.
-                Gdx.app.log("PlayerMovement", "Movement blocked by a wall immediately after the door.");
             }
         } else {
-            // Standard movement for non-door, non-gate tiles.
             position.set(nextX + 0.5f, nextY + 0.5f);
-            Gdx.app.log("PlayerMovement", "Moved to (" + nextX + "," + nextY + ")");
         }
     }
 
     public void turnLeft() {
         facing = facing.getLeft();
         updateVectors();
-        Gdx.app.log("PlayerMovement", "Player turned left, now facing " + facing);
     }
 
     public void turnRight() {
         facing = facing.getRight();
         updateVectors();
-        Gdx.app.log("PlayerMovement", "Player turned right, now facing " + facing);
     }
 
     public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode, WorldManager worldManager) {
-        // ... [ This method (interact) has no changes ] ...
         int targetX = (int) (position.x + facing.getVector().x);
-        Gdx.app.log("Player", "Interact method: targetX = " + targetX);
-
         int targetY = (int) (position.y + facing.getVector().y);
-        Gdx.app.log("Player", "Interact method: targetY = " + targetY);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
-        Gdx.app.log("Interaction", "Player interacting with tile (" + targetX + ", " + targetY + ") in mode " + gameMode);
 
-        // --- Gate Interaction Logic ---
-        Gate gateObj = maze.getGates().get(targetTile); // Check gates map
+        Gate gateObj = maze.getGates().get(targetTile);
 
         if (gateObj != null) {
-
             if (gameMode == GameMode.ADVANCED && gateObj.isChunkTransitionGate()) {
-                // In ADVANCED mode, just open the gate.
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
                     gateObj.startOpening(worldManager);
                     eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
-                    if (soundManager != null) soundManager.playDoorOpenSound(); // Re-use door sound for now
+                    if (soundManager != null) soundManager.playDoorOpenSound();
                 }
             } else {
-                // In CLASSIC mode, OR if it's not a transition gate, use old logic
-                Gdx.app.log("Interaction", "Classic Gate detected. Performing stat jumble/teleport.");
-                useGate(maze, eventManager, gateObj); // Pass the specific gate
+                useGate(maze, eventManager, gateObj);
             }
-            return; // Interaction handled
+            return;
         }
 
-        // --- Door Interaction Logic ---
         Object obj = maze.getGameObjectAt(targetX, targetY);
         if (obj instanceof Door door) {
             if (door.getState() == Door.DoorState.CLOSED) {
                 door.startOpening();
                 eventManager.addEvent(new GameEvent("You opened the door.", 2f));
-                if (soundManager != null) soundManager.playDoorOpenSound(); // Added null check
+                if (soundManager != null) soundManager.playDoorOpenSound();
             }
-            return; // Interaction handled
+            return;
         }
 
-        // --- Container Interaction Logic ---
         Item itemInFront = maze.getItems().get(targetTile);
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
-            // --- MODIFIED: Use getDisplayName ---
             String containerName = itemInFront.getDisplayName();
 
             if (itemInFront.isLocked()) {
-                Item key = findKey(); // Use helper to find key
-                if (key != null && itemInFront.unlocks(key)) { // Check if key unlocks this container
+                Item key = findKey();
+                if (key != null && itemInFront.unlocks(key)) {
                     itemInFront.unlock();
-                    consumeKey(key); // Consume the specific key used
+                    consumeKey(key);
                     eventManager.addEvent(new GameEvent("You unlocked the " + containerName + "!", 2f));
                 } else {
                     eventManager.addEvent(new GameEvent("The " + containerName + " is locked.", 2f));
-                    return; // Locked and no/wrong key
+                    return;
                 }
             }
 
-            // Container is unlocked (or was just unlocked)
             List<Item> contents = new ArrayList<>(itemInFront.getContents());
-            maze.getItems().remove(targetTile); // Remove the container itself
+            maze.getItems().remove(targetTile);
 
             if (contents.isEmpty()) {
                 eventManager.addEvent(new GameEvent("The " + containerName + " is empty.", 2f));
             } else {
                 eventManager.addEvent(new GameEvent("You open the " + containerName + ".", 2f));
                 for (Item contentItem : contents) {
-                    // Try to place on the container's tile, fallback to player tile if occupied
                     GridPoint2 dropTile = targetTile;
                     if (maze.getItems().containsKey(dropTile)) {
                         dropTile = new GridPoint2((int)position.x, (int)position.y);
                     }
-                    // Avoid overwriting if player tile is also occupied
                     if (!maze.getItems().containsKey(dropTile)) {
                         contentItem.getPosition().set(dropTile.x + 0.5f, dropTile.y + 0.5f);
                         maze.addItem(contentItem);
-                        Gdx.app.log("Interaction", "Dropped " + contentItem.getDisplayName() + " at " + dropTile);
                     } else {
                         eventManager.addEvent(new GameEvent("No space to drop " + contentItem.getDisplayName() + ".", 2f));
-                        Gdx.app.log("Interaction", "Failed to drop " + contentItem.getDisplayName() + ", tile " + dropTile + " occupied.");
-                        // Item remains 'in limbo' - ideally add back to inventory or handle differently
                     }
                 }
             }
-            // --- END MODIFIED ---
-            return; // Interaction handled
+            return;
         }
 
-        // --- No Interaction ---
         eventManager.addEvent(new GameEvent("Nothing to interact with here.", 2f));
     }
 
-    /**
-     * Finds the first available key in the player's inventory (hands first, then backpack).
-     * @return The found Item (key), or null if no key is held.
-     */
     private Item findKey() {
-        // ... [ This method (findKey) has no changes ] ...
         Inventory inv = getInventory();
         if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
             return inv.getRightHand();
@@ -638,6 +536,11 @@ public class Player {
                 return item;
             }
         }
+        for (Item item : inv.getMainInventory()) {
+            if (item.getType() == Item.ItemType.KEY) {
+                return item;
+            }
+        }
         return null;
     }
 
@@ -645,31 +548,7 @@ public class Player {
         return stats.getDexterity();
     }
 
-    private boolean hasKey() {
-        // ... [ This method (hasKey) has no changes ] ...
-        Inventory inv = getInventory();
-        if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
-            return true;
-        }
-        if (inv.getLeftHand() != null && inv.getLeftHand().getType() == Item.ItemType.KEY) {
-            return true;
-        }
-        for (Item item : inv.getBackpack()) {
-            if (item != null && item.getType() == Item.ItemType.KEY) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-
-    /**
-     * Consumes a specific key item from the player's inventory.
-     * @param keyToRemove The specific key item to remove.
-     */
     private void consumeKey(Item keyToRemove) {
-        // ... [ This method (consumeKey) has no changes ] ...
         Inventory inv = getInventory();
         if (inv.getRightHand() == keyToRemove) {
             inv.setRightHand(null);
@@ -685,54 +564,36 @@ public class Player {
                 return;
             }
         }
+        inv.getMainInventory().remove(keyToRemove);
     }
 
-    /**
-     * Handles the original gate logic (stat jumble, teleport within chunk).
-     * Called in CLASSIC mode or for non-transition gates in ADVANCED mode.
-     * @param maze The current maze.
-     * @param eventManager For displaying messages.
-     * @param gate The specific gate being used.
-     */
     private void useGate(Maze maze, GameEventManager eventManager, Gate gate) {
-        // ... [ This method (useGate - the new one) has no changes ] ...
-        Gdx.app.log("Player", "Player used a non-transition gate at (" + (int)gate.getPosition().x + "," + (int)gate.getPosition().y + ")");
         eventManager.addEvent(new GameEvent("You touch the strange mural...", 2f));
 
-        // Stat Jumbling Logic
-        int outcome = new Random().nextInt(4); // 4 possible outcomes
+        int outcome = new Random().nextInt(4);
         switch (outcome) {
-            case 1: // Swap stats
-                // --- MODIFIED: Use stats object ---
+            case 1:
                 int temp = stats.getWarStrength();
-                setWarStrength(stats.getSpiritualStrength()); // Use setter to respect max
-                stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength())); // Respect max
-                Gdx.app.log("Player", "Gate swapped stats! WS=" + stats.getWarStrength() + ", SS=" + stats.getSpiritualStrength());
+                setWarStrength(stats.getSpiritualStrength());
+                stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength()));
                 eventManager.addEvent(new GameEvent("Your strengths feel reversed!", 2f));
                 break;
-            case 2: // Reduce War Strength
-                // --- MODIFIED: Use stats object ---
-                setWarStrength((int)(stats.getWarStrength() * 0.75f)); // Reduce by 25%
-                Gdx.app.log("Player", "Gate reduced War Strength to " + stats.getWarStrength());
+            case 2:
+                setWarStrength((int)(stats.getWarStrength() * 0.75f));
                 eventManager.addEvent(new GameEvent("You feel weaker!", 2f));
                 break;
-            case 3: // Reduce Spiritual Strength
-                // --- MODIFIED: Use stats object ---
-                stats.setSpiritualStrength(Math.min((int)(stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength())); // Reduce by 25%
-                Gdx.app.log("Player", "Gate reduced Spiritual Strength to " + stats.getSpiritualStrength());
+            case 3:
+                stats.setSpiritualStrength(Math.min((int)(stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
                 eventManager.addEvent(new GameEvent("Your spirit feels drained!", 2f));
                 break;
-            default: // No change
-                Gdx.app.log("Player", "Gate had no effect on stats.");
+            default:
                 eventManager.addEvent(new GameEvent("Nothing seems to happen.", 2f));
                 break;
         }
 
-        // Teleport Logic (within the current chunk)
         List<GridPoint2> emptyTiles = new ArrayList<>();
         for (int y = 0; y < maze.getHeight(); y++) {
             for (int x = 0; x < maze.getWidth(); x++) {
-                // Check for floor tile, no object, no item, no monster
                 if (maze.getWallDataAt(x, y) == 0
                     && maze.getGameObjectAt(x, y) == null
                     && !maze.getItems().containsKey(new GridPoint2(x, y))
@@ -747,17 +608,14 @@ public class Player {
             GridPoint2 currentPos = new GridPoint2((int)position.x, (int)position.y);
             GridPoint2 newPos;
             int attempts = 0;
-            // Try to find a *different* empty tile
             do {
                 newPos = emptyTiles.get(new Random().nextInt(emptyTiles.size()));
                 attempts++;
-            } while (newPos.equals(currentPos) && attempts < 10 && emptyTiles.size() > 1); // Avoid infinite loop if only one empty tile
+            } while (newPos.equals(currentPos) && attempts < 10 && emptyTiles.size() > 1);
 
             position.set(newPos.x + 0.5f, newPos.y + 0.5f);
-            Gdx.app.log("Player", "Teleported within chunk to (" + newPos.x + ", " + newPos.y + ")");
             eventManager.addEvent(new GameEvent("Space warps around you!", 2f));
         } else {
-            Gdx.app.log("Player", "Teleport failed - no valid empty tiles found.");
             eventManager.addEvent(new GameEvent("The mural shimmers weakly.", 2f));
         }
     }
@@ -775,48 +633,25 @@ public class Player {
         stats.decrementArrow();
     }
 
-    // --- Experience and Leveling Logic ---
-
     public void addExperience(int amount, GameEventManager eventManager) {
-        // ... [ This method (addExperience) has no changes ] ...
         if (amount <= 0) return;
 
-        // --- MODIFIED: Delegate to PlayerStats ---
         boolean leveledUp = stats.addExperience(amount);
-        // --- END MODIFIED ---
 
-        Gdx.app.log("Player", "Gained " + amount + " XP. Total: " + stats.getExperience() + "/" + stats.getExperienceToNextLevel());
         eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
-        // --- MODIFIED: Check boolean returned from stats.addExperience ---
         if (leveledUp) {
-            levelUp(eventManager); // Call private helper to handle effects
+            levelUp(eventManager);
         }
     }
 
     private void levelUp(GameEventManager eventManager) {
-        // ... [ This method (levelUp) has no changes ] ...
         soundManager.playPlayerLevelUpSound();
-
-        // Stat increases and healing are already handled inside PlayerStats.levelUp()
-        // We just log and create the event.
-
-        Gdx.app.log("Player", "Leveled up to level " + stats.getLevel() + "!");
         eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
     }
 
-    /**
-     * Applies damage from a status effect (like POISON).
-     * This method bypasses all armor and protection (damageReduction)
-     * but STILL respects specific resistances (e.g., RESIST_POISON).
-     * @param amount The base amount of damage to take.
-     * @param type The type of damage (e.g., POISON, DISEASE).
-     */
     public void takeStatusEffectDamage(int amount, DamageType type) {
-        // Get *only* specific resistance (e.g., RESIST_POISON)
         int resistance = getResistance(type);
-
-        // Armor (damageReduction) is INTENTIONALLY skipped.
 
         int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
         finalDamage = Math.max(0, finalDamage - resistance);
@@ -826,19 +661,11 @@ public class Player {
         if (stats.getWarStrength() < 0) {
             stats.setWarStrength(0);
         }
-        Gdx.app.log("Player", "Player takes " + finalDamage + " " + type.name() + " status effect damage. WS is now " + stats.getWarStrength());
     }
 
-    /**
-     * Attack modifier based on player level.
-     * @return The bonus damage to add to attacks.
-     */
     public int getAttackModifier() {
         return stats.getAttackModifier();
     }
-
-    // --- Getters ---
-    // (Most of these just delegate to the stats or equipment objects)
 
     public int getLevel() { return stats.getLevel(); }
     public int getExperience() { return stats.getExperience(); }
@@ -854,19 +681,10 @@ public class Player {
     public int getArrows() { return stats.getArrows(); }
     public Inventory getInventory() { return inventory; }
 
-    // --- NEW GETTER ---
-    /**
-     * Provides direct access to the equipment object, e.g. for rendering.
-     * @return The PlayerEquipment object.
-     */
     public PlayerEquipment getEquipment() {
         return equipment;
     }
 
-    /**
-     * Provides direct access to the status effect manager.
-     * @return The StatusManager object.
-     */
     public StatusManager getStatusManager() {
         return statusManager;
     }
@@ -876,5 +694,54 @@ public class Player {
 
     public PlayerStats getStats() {
         return this.stats;
+    }
+
+    /**
+     * Drops an item. Tries Feet -> Front -> Adjacent tiles.
+     * @return true if successfully dropped, false if no space.
+     */
+    public boolean dropItem(Maze maze, Item item) {
+        if (item == null) return false;
+
+        GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
+
+        // 1. Try Feet
+        if (!maze.getItems().containsKey(playerTile)) {
+            item.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
+            maze.addItem(item);
+            return true;
+        }
+
+        // 2. Try Front
+        int targetX = (int) (position.x + facing.getVector().x);
+        int targetY = (int) (position.y + facing.getVector().y);
+        GridPoint2 frontTile = new GridPoint2(targetX, targetY);
+
+        // Ensure we don't drop through a wall
+        if (!maze.isWallBlocking((int)position.x, (int)position.y, facing) && !maze.getItems().containsKey(frontTile)) {
+            item.getPosition().set(frontTile.x + 0.5f, frontTile.y + 0.5f);
+            maze.addItem(item);
+            return true;
+        }
+
+        // 3. Try Other Directions (Back, Left, Right)
+        for (Direction d : Direction.values()) {
+            if (d == facing) continue;
+
+            if (!maze.isWallBlocking((int)position.x, (int)position.y, d)) {
+                int nx = (int)(position.x + d.getVector().x);
+                int ny = (int)(position.y + d.getVector().y);
+                GridPoint2 neighborTile = new GridPoint2(nx, ny);
+
+                if (!maze.getItems().containsKey(neighborTile)) {
+                    item.getPosition().set(neighborTile.x + 0.5f, neighborTile.y + 0.5f);
+                    maze.addItem(item);
+                    return true;
+                }
+            }
+        }
+
+        // No space found
+        return false;
     }
 }

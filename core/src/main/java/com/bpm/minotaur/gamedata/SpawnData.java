@@ -24,7 +24,7 @@ public class SpawnData {
     public static final List<MonsterSpawnInfo> BAD_MONSTERS = Arrays.asList(
         new MonsterSpawnInfo(Monster.MonsterType.GIANT_ANT, 1, 10),
         new MonsterSpawnInfo(Monster.MonsterType.DWARF, 1, 10),
-        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SCORPION, 10, 10),
+        new MonsterSpawnInfo(Monster.MonsterType.GIANT_SCORPION, 1, 10),
         new MonsterSpawnInfo(Monster.MonsterType.GIANT_SNAKE, 2, 10)
     );
 
@@ -62,12 +62,12 @@ public class SpawnData {
 
     public static final List<ItemSpawnInfo> TIER2_ITEMS = Arrays.asList(
         new ItemSpawnInfo(Item.ItemType.BOOK, 4, 99),
-        new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 4, 99),
-        new ItemSpawnInfo(Item.ItemType.LARGE_SHIELD, 5, 99),
-        new ItemSpawnInfo(Item.ItemType.HELMET, 5, 10),
-        new ItemSpawnInfo(Item.ItemType.BREASTPLATE, 5, 99),
-        new ItemSpawnInfo(Item.ItemType.GAUNTLETS, 4, 99),
-        new ItemSpawnInfo(Item.ItemType.HAUBERK, 6, 99),
+        new ItemSpawnInfo(Item.ItemType.SMALL_SHIELD, 1, 99),
+        new ItemSpawnInfo(Item.ItemType.LARGE_SHIELD, 3, 99),
+        new ItemSpawnInfo(Item.ItemType.HELMET, 1, 10),
+        new ItemSpawnInfo(Item.ItemType.BREASTPLATE, 1, 99),
+        new ItemSpawnInfo(Item.ItemType.GAUNTLETS, 1, 99),
+        new ItemSpawnInfo(Item.ItemType.HAUBERK, 1, 99),
         new ItemSpawnInfo(Item.ItemType.DART, 3, 99),
         new ItemSpawnInfo(Item.ItemType.SPEAR, 4, 99),
         new ItemSpawnInfo(Item.ItemType.LARGE_RING, 5, 99),

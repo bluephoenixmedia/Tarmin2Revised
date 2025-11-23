@@ -1,25 +1,46 @@
 package com.bpm.minotaur.gamedata;
 
 import com.bpm.minotaur.gamedata.item.Item;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Inventory {
-    private final Item[] backpack = new Item[6];
+    // "Quick Slots" - The 6 items visible on the HUD
+    private final Item[] quickSlots = new Item[6];
+
+    // "Main Inventory" - The expanded storage (Backpack Screen)
+    // For now, let's cap it at 30 to match the UI grid
+    private final List<Item> mainInventory = new ArrayList<>();
+    private final int MAX_BACKPACK_SIZE = 30;
+
     private Item rightHand = null;
     private Item leftHand = null;
-    //private Item activeProjectile = null;
 
+    /**
+     * Tries to add an item to the Main Inventory (Backpack) first.
+     * If full, tries Quick Slots.
+     * If both full, returns false.
+     */
     public boolean pickup(Item item) {
-        if (rightHand == null) {
-            rightHand = item;
+        // 1. Try Main Inventory (Backpack)
+        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
+            mainInventory.add(item);
             return true;
         }
-        for (int i = 0; i < backpack.length; i++) {
-            if (backpack[i] == null) {
-                backpack[i] = item;
+
+        // 2. Try Quick Slots (HUD)
+        for (int i = 0; i < quickSlots.length; i++) {
+            if (quickSlots[i] == null) {
+                quickSlots[i] = item;
                 return true;
             }
         }
-        return false; // Inventory is full
+
+        // 3. Hand logic is tricky (auto-equip?)
+        // Usually games don't auto-equip to hands unless hands are empty and it's a weapon.
+        // For now, let's stick to storage.
+
+        return false; // Inventory Full
     }
 
     public void swapHands() {
@@ -28,75 +49,63 @@ public class Inventory {
         leftHand = temp;
     }
 
-    /**
-     * Gets a new list containing all items in the inventory (hands and pack).
-     * This is used for "identify" logic that needs to scan everything.
-     * @return A new List<Item> of all non-null items.
-     */
     public java.util.List<Item> getAllItems() {
         java.util.List<Item> allItems = new java.util.ArrayList<>();
 
-        if (rightHand != null) {
-            allItems.add(rightHand);
+        if (rightHand != null) allItems.add(rightHand);
+        if (leftHand != null) allItems.add(leftHand);
+
+        for (Item item : quickSlots) {
+            if (item != null) allItems.add(item);
         }
-        if (leftHand != null) {
-            allItems.add(leftHand);
-        }
-        for (Item item : backpack) {
-            if (item != null) {
-                allItems.add(item);
-            }
-        }
+
+        allItems.addAll(mainInventory);
         return allItems;
     }
 
     public void rotatePack() {
-        if (backpack.length < 6) return; // Ensure the backpack is the correct size
+        // Rotates only the Quick Slots
+        if (quickSlots.length < 6) return;
 
-        // Store the current items to avoid overwriting during the swap
-        Item pos0 = backpack[0];
-        Item pos1 = backpack[1];
-        Item pos2 = backpack[2];
-        Item pos3 = backpack[3];
-        Item pos4 = backpack[4];
-        Item pos5 = backpack[5];
+        Item pos0 = quickSlots[0];
+        Item pos1 = quickSlots[1];
+        Item pos2 = quickSlots[2];
+        Item pos3 = quickSlots[3];
+        Item pos4 = quickSlots[4];
+        Item pos5 = quickSlots[5];
 
-        // Perform the clockwise rotation
-        backpack[0] = pos3; // Item from bottom-left moves to top-left
-        backpack[1] = pos0; // Item from top-left moves to top-middle
-        backpack[2] = pos1; // Item from top-middle moves to top-right
-        backpack[3] = pos4; // Item from bottom-middle moves to bottom-left
-        backpack[4] = pos5; // Item from bottom-right moves to bottom-middle
-        backpack[5] = pos2; // Item from top-right moves to bottom-right
+        quickSlots[0] = pos3;
+        quickSlots[1] = pos0;
+        quickSlots[2] = pos1;
+        quickSlots[3] = pos4;
+        quickSlots[4] = pos5;
+        quickSlots[5] = pos2;
     }
 
     public void swapWithPack() {
-        // As per the manual, swap with the 3 o'clock pack position.
-        // We'll designate backpack[2] as this slot.
+        // Swaps Right Hand with Quick Slot 2 (Top Right)
         Item temp = rightHand;
-        rightHand = backpack[2];
-        backpack[2] = temp;
+        rightHand = quickSlots[2];
+        quickSlots[2] = temp;
     }
 
-    public Item getRightHand() {
-        return rightHand;
-    }
+    // --- Getters & Setters ---
 
-    public void setRightHand(Item item) {
-        this.rightHand = item;
-    }
+    public Item getRightHand() { return rightHand; }
+    public void setRightHand(Item item) { this.rightHand = item; }
 
-    public Item getLeftHand() {
-        return leftHand;
+    public Item getLeftHand() { return leftHand; }
+    public void setLeftHand(Item item) { this.leftHand = item; }
+
+    public Item[] getQuickSlots() {
+        return quickSlots;
     }
 
     public Item[] getBackpack() {
-        return backpack;
+        return quickSlots;
     }
 
-    public void setLeftHand(Item item) {
-        this.leftHand = item;
+    public List<Item> getMainInventory() {
+        return mainInventory;
     }
-
-
 }

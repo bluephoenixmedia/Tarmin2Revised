@@ -72,6 +72,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final Vector2 originalPlane = new Vector2();
     private final java.util.Random rng = new java.util.Random();
 
+    // --- Fix for Reset Bug ---
+    private boolean hasLoadedLevel = false;
+
     // --- Constructor Updated ---
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
@@ -108,23 +111,35 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-        animationManager = new AnimationManager(entityRenderer);
-        eventManager = new GameEventManager();
 
-        // [REMOVED] soundManager initialization was moved to the constructor above
-        // soundManager = new SoundManager(debugManager);
-
-        fbo = new FrameBuffer(Pixmap.Format.RGB888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
-
-        // Initialize Shader
-        ShaderProgram.pedantic = false;
-        crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
-        if (!crtShader.isCompiled()) {
-            Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
-            useCrtFilter = false;
+        // Only initialize these if they don't exist (preserving state on return from Inventory)
+        if (animationManager == null) {
+            animationManager = new AnimationManager(entityRenderer);
+        }
+        if (eventManager == null) {
+            eventManager = new GameEventManager();
         }
 
-        generateLevel(currentLevel); // Generate/Load the starting chunk/level
+        if (fbo == null) {
+            fbo = new FrameBuffer(Pixmap.Format.RGB888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+        }
+
+        // Initialize Shader
+        if (crtShader == null) {
+            ShaderProgram.pedantic = false;
+            crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
+            if (!crtShader.isCompiled()) {
+                Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
+                useCrtFilter = false;
+            }
+        }
+
+        // Fix: Only generate the level if we haven't done so yet for this screen instance.
+        // This prevents resetting player position when returning from InventoryScreen.
+        if (!hasLoadedLevel) {
+            generateLevel(currentLevel);
+            hasLoadedLevel = true;
+        }
     }
 
     @Override
@@ -137,6 +152,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             potionManager.saveState();
         }
 
+        // NOTE: This stops music every time you open inventory.
+        // If you want music to persist in inventory, comment this out or add logic.
         MusicManager.getInstance().stop();
     }
 
@@ -597,6 +614,14 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             case Input.Keys.M:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                     game.setScreen(new CastleMapScreen(game, player, maze, this));
+                }
+                return true;
+            case Input.Keys.I:
+                // Allow opening inventory only if not in active combat animation?
+                // For now, allow it if INACTIVE or PLAYER_TURN
+                if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                    combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                    game.setScreen(new InventoryScreen(game, this, player, maze));
                 }
                 return true;
 
