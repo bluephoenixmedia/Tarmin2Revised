@@ -15,6 +15,8 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport; // Ensure this is imported
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
@@ -67,6 +69,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final SpriteBatch postProcessBatch = new SpriteBatch(); // Dedicated batch for the final draw
     private float time = 0f;
 
+    // --- VIEWPORT FIX: Dedicated internal viewport for FBO rendering ---
+    private final Viewport fboViewport;
+    private static final int VIRTUAL_WIDTH = 1920;
+    private static final int VIRTUAL_HEIGHT = 1080;
+
     private float trauma = 0f; // Current shake intensity
     private final Vector2 originalDir = new Vector2();
     private final Vector2 originalPlane = new Vector2();
@@ -82,6 +89,12 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.gameMode = gameMode;
         this.level = level;
         this.currentLevel = level;
+
+        // Initialize FBO Viewport (Locked to 1920x1080)
+        this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        // We can update it once here to ensure camera is centered relative to 0,0 if needed,
+        // though applying it in render is the key.
+        this.fboViewport.update(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
 
         // [MOVED] Initialize SoundManager HERE so we can pass it to WorldManager
         this.soundManager = new SoundManager(debugManager);
@@ -120,8 +133,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             eventManager = new GameEventManager();
         }
 
+        // --- FBO FIX: Initialize ONCE with static resolution ---
         if (fbo == null) {
-            fbo = new FrameBuffer(Pixmap.Format.RGB888, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+            fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
         }
 
         // Initialize Shader
@@ -275,12 +289,20 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             checkForProactiveChunkLoading();
         }
 
+        // --- RENDER PASS 1: WORLD -> FBO (Fixed 1920x1080) ---
         if (useCrtFilter) {
             fbo.begin();
+            // Apply the Internal/Virtual Viewport (1920x1080)
+            fboViewport.apply();
+            // shapeRenderer usually needs to know the projection matrix:
+            shapeRenderer.setProjectionMatrix(fboViewport.getCamera().combined);
         }
 
+        // Clear Screen (Black) - inside FBO if active, or screen if not
         ScreenUtils.clear(0, 0, 0, 1);
-        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+
+        // Ensure renderers use the correct projection (FBO viewport)
+        Viewport currentViewport = useCrtFilter ? fboViewport : game.getViewport();
 
         // APPLY CAMERA SHAKE
         boolean isShaking = (player != null && trauma > 0.01f);
@@ -298,18 +320,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         // --- RENDER WORLD ---
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, game.getViewport(), worldManager, currentLevel, gameMode);
+            // Note: We pass the 'currentViewport' (FBO viewport) to renderers so they calculate FOV/rays correctly for 1920px width
+            firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel, gameMode);
 
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                entityRenderer.render(shapeRenderer, player, maze, game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+                entityRenderer.render(shapeRenderer, player, maze, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
-            animationManager.render(shapeRenderer, player, game.getViewport(), firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+            animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
 
             if (debugManager.isDebugOverlayVisible()) {
-                debugRenderer.render(shapeRenderer, player, maze, game.getViewport());
+                debugRenderer.render(shapeRenderer, player, maze, currentViewport);
                 if (needsAsciiRender) {
                     firstPersonRenderer.renderAsciiViewToConsole(player, maze);
                     needsAsciiRender = false;
@@ -323,28 +346,46 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             player.getCameraPlane().set(originalPlane);
         }
 
-        // --- HUD RENDERING ---
+        // --- HUD RENDERING (Also into FBO) ---
         if (hud != null) {
+            // Hud manages its own Stage/Viewport internally.
+            // We assume Hud uses a 1920x1080 FitViewport as defined in its constructor.
             hud.render();
         }
 
+        // Render damage text (animation manager uses sprite batch)
+        game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
+        game.getBatch().begin();
+        animationManager.renderDamageText(game.getBatch(), currentViewport);
+        font.setColor(Color.WHITE);
+        font.draw(game.getBatch(), "Level: " + currentLevel, 10, currentViewport.getWorldHeight() - 10);
+        game.getBatch().end();
+
+        // --- RENDER PASS 2: FBO -> SCREEN (Window Resolution) ---
         if (useCrtFilter) {
             fbo.end();
+
+            // Switch to the actual Physical Window Viewport
+            game.getViewport().apply();
             ScreenUtils.clear(0, 0, 0, 1);
+
+            postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
             postProcessBatch.begin();
             postProcessBatch.setShader(crtShader);
             crtShader.setUniformf("u_time", time);
+
             Texture fboTexture = fbo.getColorBufferTexture();
-            postProcessBatch.draw(fboTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0, 0, 1, 1);
+
+            // Draw the 1920x1080 FBO texture into the Virtual World space of the FitViewport.
+            // FitViewport handles the scaling to the physical window (black bars).
+            // NOTE: LibGDX FrameBuffers are often flipped on Y. If upside down, flip V coordinate.
+            // standard draw(tex, x, y, w, h, u, v, u2, v2). Default u=0, v=0 is usually top-left for FBO?
+            // Actually, in standard LibGDX 2D, 0,0 is bottom-left. FBO texture usually comes out with 0,0 at bottom-left IF standard.
+            // However, previous code used 0,0,1,1. Let's stick to standard draw first.
+            postProcessBatch.draw(fboTexture, 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
+
             postProcessBatch.end();
         }
-
-        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
-        game.getBatch().begin();
-        animationManager.renderDamageText(game.getBatch(), game.getViewport());
-        font.setColor(Color.WHITE);
-        font.draw(game.getBatch(), "Level: " + currentLevel, 10, game.getViewport().getWorldHeight() - 10);
-        game.getBatch().end();
     }
 
     private void checkForProactiveChunkLoading() {
@@ -456,14 +497,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public void resize(int width, int height) {
+        // Update the physical window viewport (handles black bars)
         game.getViewport().update(width, height, true);
+
+        // Update postProcessBatch projection to match the new window viewport
+        postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
+
+        // --- FBO RESIZE FIX ---
+        // Do NOT dispose/recreate FBO. We want to keep internal resolution fixed.
+        // Do NOT resize fboViewport. It stays 1920x1080.
+
         if (hud != null) {
-            hud.resize(width, height);
+            // Force HUD to resize to Virtual Resolution, NOT Window Resolution.
+            // This ensures HUD elements stay in the correct place on the FBO.
+            hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         }
 
-        if (fbo != null) fbo.dispose();
-        fbo = new FrameBuffer(Pixmap.Format.RGB888, width, height, true);
-        postProcessBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+        // FBO recreation removed.
     }
 
     private boolean isMoveSeamlessTransition(GridPoint2 playerPos, Direction moveDir) {
