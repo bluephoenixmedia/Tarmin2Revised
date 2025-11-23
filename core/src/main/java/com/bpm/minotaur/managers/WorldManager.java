@@ -3,7 +3,7 @@ package com.bpm.minotaur.managers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+// Removed: import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
@@ -39,10 +39,9 @@ public class WorldManager {
     private final WeatherManager weatherManager;
     private final SpawnTableData spawnTableData;
 
-    // [NEW] Reference to SoundManager
     private final SoundManager soundManager;
 
-    private ShaderProgram bloodShader;
+    // Removed: private ShaderProgram bloodShader;
 
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
@@ -51,13 +50,12 @@ public class WorldManager {
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
 
-    // [UPDATED CONSTRUCTOR] Added SoundManager parameter
     public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel,
                         MonsterDataManager dataManager,
                         ItemDataManager itemDataManager,
                         AssetManager assetManager,
                         SpawnTableData spawnTableData,
-                        SoundManager soundManager) { // <-- Added Here
+                        SoundManager soundManager) {
         this.gameMode = gameMode;
         this.difficulty = difficulty;
         this.currentLevel = initialLevel;
@@ -71,26 +69,12 @@ public class WorldManager {
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
         this.spawnTableData = spawnTableData;
-
-        // [NEW] Assign SoundManager
         this.soundManager = soundManager;
 
-        // [NOTE] WeatherManager receives 'this' (WorldManager), so it can access getSoundManager()
         this.weatherManager = new WeatherManager(this);
 
-        ShaderProgram.pedantic = false;
-        bloodShader = new ShaderProgram(
-            Gdx.files.internal("shaders/blood.vert"),
-            Gdx.files.internal("shaders/blood.frag")
-        );
+        // Removed ShaderProgram compilation block
 
-        if (!bloodShader.isCompiled()) {
-            Gdx.app.error("WorldManager", "Blood Shader Compilation Failed:\n" + bloodShader.getLog());
-        } else {
-            Gdx.app.log("WorldManager", "Blood Shader Compiled Successfully");
-        }
-
-        // Instantiate generators
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
 
@@ -100,7 +84,6 @@ public class WorldManager {
         this.currentLevelTheme = getThemeForLevel(initialLevel);
     }
 
-    // [NEW] Getter for SoundManager
     public SoundManager getSoundManager() {
         return soundManager;
     }
@@ -109,9 +92,7 @@ public class WorldManager {
         return loadChunk(new GridPoint2(0, 0));
     }
 
-    public ShaderProgram getBloodShader() {
-        return bloodShader;
-    }
+    // Removed: getBloodShader() method
 
     public void disableSaving() {
         this.savingEnabled = false;

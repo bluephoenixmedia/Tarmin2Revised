@@ -3,6 +3,7 @@ package com.bpm.minotaur.managers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
@@ -265,7 +266,6 @@ public class CombatManager {
                     target.takeDamage(damage);
                 }
 
-                // [MODIFIED] Reduced Blood to 3% per hit
                 maze.addBlood((int)target.getPosition().x, (int)target.getPosition().y, 0.03f);
 
                 showDamageText(damage, result.collisionPoint);
@@ -321,7 +321,6 @@ public class CombatManager {
 
                         monster.takeDamage(weapon.getWarDamage() + attackModifier);
 
-                        // [MODIFIED] Reduced Blood to 3%
                         maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
 
                         showDamageText(weapon.getWarDamage() + attackModifier,
@@ -349,8 +348,6 @@ public class CombatManager {
                     ));
 
                     monster.takeDamage(weapon.getWarDamage() + attackModifier);
-
-                    // [MODIFIED] Reduced Blood to 5%
                     maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.05f);
 
                     showDamageText(weapon.getWarDamage() + attackModifier,
@@ -375,8 +372,6 @@ public class CombatManager {
                 ));
 
                 monster.takeSpiritualDamage(weapon.getSpiritDamage() + attackModifier);
-
-                // [MODIFIED] Reduced Blood to 3%
                 maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
 
                 showDamageText(weapon.getSpiritDamage() + attackModifier,
@@ -411,8 +406,6 @@ public class CombatManager {
             int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
             eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
             player.addExperience(totalExp, eventManager);
-
-            // [MODIFIED] Reduced Victory Blood to 10%
             maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.10f);
 
         } else {
@@ -441,7 +434,6 @@ public class CombatManager {
             DamageType damageType = DamageType.PHYSICAL;
 
             switch (monster.getType()) {
-                // ... [Switch cases unchanged] ...
                 case GIANT_ANT:
                 case GIANT_SCORPION:
                 case GIANT_SNAKE:
@@ -496,8 +488,6 @@ public class CombatManager {
                 damage = monster.getSpiritualStrength() / 4 + random.nextInt(3);
                 Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (Spiritual) damage.");
                 player.takeSpiritualDamage(damage, damageType);
-
-                // [MODIFIED] Reduced Blood to 3%
                 if (damage > 0) maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
 
                 if (template.onHitEffects != null) {
@@ -526,8 +516,6 @@ public class CombatManager {
                 damage = monster.getWarStrength() / 4 + random.nextInt(3);
                 Gdx.app.log("CombatManager", "Monster deals " + damage + " " + damageType.name() + " (War) damage.");
                 player.takeDamage(damage, damageType);
-
-                // [MODIFIED] Reduced Blood to 3%
                 if (damage > 0) maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
 
                 if (template.onHitEffects != null) {
@@ -557,8 +545,6 @@ public class CombatManager {
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {
-        // ... [Attack Logic unchanged] ...
-        // Reusing existing logic...
         int range = attacker.getAttackRange();
         if (range <= 0) range = 8;
         Vector2 diff = player.getPosition().cpy().sub(attacker.getPosition());
@@ -583,8 +569,6 @@ public class CombatManager {
             int damage = attacker.getWarStrength() / 3;
             if (damage < 1) damage = 1;
             int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
-
-            // [MODIFIED] Reduced Blood to 3%
             if (actualDamage > 0) maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
 
             if (actualDamage > 0) eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
@@ -623,6 +607,11 @@ public class CombatManager {
         if (currentState == CombatState.VICTORY) {
             Gdx.app.log("CombatManager", "Player is victorious!");
             GridPoint2 monsterPos = new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y);
+
+            // --- SPAWN CORPSE (Only Debris, No Blood Shader) ---
+            spawnCorpseEffects(monster);
+            // ---------------------------------------------------
+
             maze.getMonsters().remove(monsterPos);
             endCombat();
         } else if (currentState == CombatState.DEFEAT) {
@@ -641,6 +630,53 @@ public class CombatManager {
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
         }
     }
+
+    // --- MODIFIED: Fixed velocity to be less violent, removed BloodSpray ---
+    private void spawnCorpseEffects(Monster monster) {
+        String[] originalSprite = monster.getSpriteData();
+        if (originalSprite == null || originalSprite.length == 0) return;
+
+        Vector2 mPos2 = monster.getPosition();
+        Vector3 centerPos = new Vector3(mPos2.x, 0.5f, mPos2.y);
+
+        // Removed: maze.getBloodSprays().add(...)
+
+        // Split Sprite into 4 Quadrants
+        for (int q = 0; q < 4; q++) {
+            String[] quadData = new String[12];
+
+            int startX = (q % 2 == 0) ? 0 : 12;
+            int startY = (q < 2) ? 0 : 12;
+
+            for (int r = 0; r < 12; r++) {
+                int sourceRowIndex = startY + r;
+                if (sourceRowIndex < originalSprite.length) {
+                    String row = originalSprite[sourceRowIndex];
+                    if (row.length() >= startX + 12) {
+                        quadData[r] = row.substring(startX, startX + 12);
+                    } else {
+                        quadData[r] = "            ";
+                    }
+                } else {
+                    quadData[r] = "            ";
+                }
+            }
+
+            // --- FIXED VELOCITY: Gentle "Crumble" ---
+            // X/Z: Very small drift (0.2 - 0.5)
+            float velX = (q % 2 == 0 ? -1f : 1f) * (0.2f + (float)Math.random() * 0.3f);
+            float velZ = (q < 2 ? 1f : -1f) * (0.2f + (float)Math.random() * 0.3f);
+
+            // Y: Tiny hop (0.8 - 1.3)
+            float velY = 0.8f + (float)Math.random() * 0.5f;
+
+            Vector3 velocity = new Vector3(velX, velY, velZ);
+            Vector3 partPos = new Vector3(centerPos).add(velX * 0.1f, 0, velZ * 0.1f);
+
+            maze.getCorpses().add(new CorpsePart(partPos, velocity, quadData, monster.getColor()));
+        }
+    }
+    // ----------------------------------------------------------------------
 
     public CombatState getCurrentState() { return currentState; }
     public Monster getMonster() { return monster; }
