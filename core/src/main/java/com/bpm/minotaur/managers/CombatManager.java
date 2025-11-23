@@ -75,6 +75,8 @@ public class CombatManager {
     private static final float PROJECTILE_SPEED = 15.0f;
     private final ItemDataManager itemDataManager;
 
+    private int lastDamageDealt = 0;
+
 
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
                          GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager, ItemDataManager itemDataManager) {
@@ -263,10 +265,17 @@ public class CombatManager {
                     damage = weapon.getSpiritDamage() + player.getAttackModifier();
                     target.takeSpiritualDamage(damage);
                 } else {
+                    lastDamageDealt = damage;
                     target.takeDamage(damage);
                 }
 
-                maze.addBlood((int)target.getPosition().x, (int)target.getPosition().y, 0.03f);
+                Vector3 hitPos = new Vector3(target.getPosition().x, 0.5f, target.getPosition().y); // z becomes y input
+                Vector3 dir = new Vector3(
+                    player.getDirectionVector().x,
+                    0.2f,
+                    player.getDirectionVector().y // z becomes y input
+                ).nor();
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 2, target.getColor());
 
                 showDamageText(damage, result.collisionPoint);
                 eventManager.addEvent(new GameEvent("Ranged Hit! (" + damage + " dmg)", 1.0f));
@@ -318,7 +327,7 @@ public class CombatManager {
                             0.5f,
                             itemDataManager.getTemplate(Item.ItemType.DART).spriteData
                         ));
-
+                        lastDamageDealt = weapon.getWarDamage() + attackModifier; // STORE IT
                         monster.takeDamage(weapon.getWarDamage() + attackModifier);
 
                         maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
@@ -348,8 +357,15 @@ public class CombatManager {
                     ));
 
                     monster.takeDamage(weapon.getWarDamage() + attackModifier);
-                    maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.05f);
 
+                    Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y); // z becomes y input
+                    Vector3 dir = new Vector3(
+                        player.getDirectionVector().x,
+                        0.2f,
+                        player.getDirectionVector().y // z becomes y input
+                    ).nor();
+
+                    maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4, monster.getColor());
                     showDamageText(weapon.getWarDamage() + attackModifier,
                         new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
 
@@ -609,8 +625,18 @@ public class CombatManager {
             GridPoint2 monsterPos = new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y);
 
             // --- SPAWN CORPSE (Only Debris, No Blood Shader) ---
-            spawnCorpseEffects(monster);
-            // ---------------------------------------------------
+// OVERKILL LOGIC
+// If the last hit was > 20% of monster max HP + remaining HP (simulated), or just if damage was high
+// Simple heuristic: If damage > 15, it's a gib kill.
+            if (lastDamageDealt > 3) {
+                Vector3 center = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
+                maze.getGoreManager().spawnGibExplosion(center, monster.getColor());
+                // Also spawn HUGE blood spray
+                maze.getGoreManager().spawnBloodSpray(center, new Vector3(0, 1, 0), 8, monster.getColor());
+                eventManager.addEvent(new GameEvent("OBLITERATED!", 1.5f));
+            } else {
+                spawnCorpseEffects(monster); // Standard death
+            }            // ---------------------------------------------------
 
             maze.getMonsters().remove(monsterPos);
             endCombat();

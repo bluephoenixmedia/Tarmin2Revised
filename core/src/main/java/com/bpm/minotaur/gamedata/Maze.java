@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.gamedata.gore.GoreManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -30,6 +31,8 @@ public class Maze {
 
     // --- Debris Only ---
     private final List<CorpsePart> corpses = new ArrayList<>();
+
+    private final GoreManager goreManager; // New Manager
     // Removed: List<BloodSpray> bloodSprays
     // -------------------
 
@@ -38,6 +41,7 @@ public class Maze {
     public Maze(int level, int[][] wallData) {
         this.level = level;
         this.wallData = wallData;
+        this.goreManager = new GoreManager(); // Initialize
     }
 
     public List<CorpsePart> getCorpses() {
@@ -239,6 +243,9 @@ public class Maze {
             part.update(delta);
         }
 
+        goreManager.update(delta, this); // PASS 'this'
         // Removed: Update Blood Sprays
     }
+    public GoreManager getGoreManager() { return goreManager; } // Getter
+
 }
