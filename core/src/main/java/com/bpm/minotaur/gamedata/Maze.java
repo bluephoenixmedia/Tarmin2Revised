@@ -14,11 +14,17 @@ import java.util.List;
 import java.util.Map;
 
 public class Maze {
-    public static final int MAZE_WIDTH = 20;
-    public static final int MAZE_HEIGHT = 20;
+
+    public static final byte VISIBILITY_UNSEEN = 0;
+    public static final byte VISIBILITY_SEEN = 1;
 
     private final int level;
     private final int[][] wallData;
+    private final int width;
+    private final int height;
+
+    private byte[][] explorationState;
+
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
     private final Map<GridPoint2, Monster> monsters = new HashMap<>();
@@ -42,6 +48,9 @@ public class Maze {
         this.level = level;
         this.wallData = wallData;
         this.goreManager = new GoreManager(); // Initialize
+        this.height = wallData.length;
+        this.width = (height > 0) ? wallData[0].length : 0;
+        this.explorationState = new byte[height][width];
     }
 
     public List<CorpsePart> getCorpses() {
@@ -63,6 +72,29 @@ public class Maze {
     public int getWidth() {
         if (wallData == null || wallData.length == 0) return 0;
         return wallData[0].length;
+    }
+
+    public void markVisited(int x, int y) {
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            explorationState[y][x] = VISIBILITY_SEEN;
+        }
+    }
+
+    public boolean isVisited(int x, int y) {
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            return explorationState[y][x] == VISIBILITY_SEEN;
+        }
+        return false;
+    }
+
+    public byte[][] getExplorationState() {
+        return explorationState;
+    }
+
+    public void setExplorationState(byte[][] state) {
+        if (state != null && state.length == height && state[0].length == width) {
+            this.explorationState = state;
+        }
     }
 
     public void addBlood(int x, int y, float amount) {
@@ -94,6 +126,8 @@ public class Maze {
         }
         return wallData[y][x];
     }
+
+
 
     public Object getGameObjectAt(int x, int y) {
         GridPoint2 pos = new GridPoint2(x, y);

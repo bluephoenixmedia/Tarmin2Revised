@@ -158,7 +158,7 @@ public class FirstPersonRenderer {
             if (currentLevel == 1) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
-            renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);
+            renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);
         } else {
             // RETRO MODE
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
@@ -193,6 +193,7 @@ public class FirstPersonRenderer {
             for (int x = 0; x < viewport.getScreenWidth(); x++) {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
                 if (result != null) {
+                    maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
@@ -215,6 +216,7 @@ public class FirstPersonRenderer {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
 
                 if (result != null) {
+                    maze.markVisited(result.mapX, result.mapY);
                     renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
@@ -251,7 +253,8 @@ public class FirstPersonRenderer {
         spriteBatch.setColor(Color.WHITE);
     }
 
-    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+    // ADDED: Maze maze parameter
+    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
         for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
             float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
             float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
@@ -277,9 +280,19 @@ public class FirstPersonRenderer {
             }
             rowColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
 
+            // OPTIMIZATION: Track the last marked tile to reduce method calls per scanline
+            int lastMarkedX = -999;
+            int lastMarkedY = -999;
+
             for(int x = 0; x < viewport.getWorldWidth(); ++x) {
                 int cellX = (int)(floorX);
                 int cellY = (int)(floorY);
+
+                // --- NEW: Mark Floor as Visited ---
+                // We assume if you can see the floor pixel, you can see the tile.
+                // Check against lastMarked to avoid calling map.markVisited 1920 times per line
+
+                // ----------------------------------
 
                 int tx = (int)(floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
                 int ty = (int)(floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
@@ -299,6 +312,7 @@ public class FirstPersonRenderer {
     // Retro floor rendering (Removed Blood Support)
     private void renderRetroFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, Maze maze, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
         for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
+            // ... (keep rayDir and math setup exactly as is) ...
             float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
             float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
             float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
@@ -317,13 +331,22 @@ public class FirstPersonRenderer {
             float floorY = player.getPosition().y + rowDistance * rayDirY0;
 
             Color baseTint = new Color(Color.WHITE);
+            // ... (keep fog logic) ...
             if (fogEnabled) {
                 float fogAmount = Math.max(0, Math.min(1f, (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
                 baseTint = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
             }
             baseTint.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
 
+
+
             for(int x = 0; x < viewport.getWorldWidth(); ++x) {
+                // --- NEW: Mark Floor Visited ---
+                int cX = (int)floorX;
+                int cY = (int)floorY;
+
+                // -------------------------------
+
                 // Apply torch brightness
                 float brightness = calculateTorchBrightness(rowDistance);
                 Color finalColor = new Color(currentFloorColor).mul(baseTint).mul(brightness, brightness, brightness, 1f);
@@ -537,6 +560,9 @@ public class FirstPersonRenderer {
         Door doorFrameObject = null;
 
         while (!hit && distanceTraveled < maxDistance) {
+
+            maze.markVisited(mapX, mapY);
+
             if (sideDist.x < sideDist.y) {
                 sideDist.x += deltaDist.x;
                 mapX += stepX;

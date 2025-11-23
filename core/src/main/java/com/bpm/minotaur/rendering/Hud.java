@@ -402,6 +402,8 @@ public class Hud implements Disposable {
         // Draw the 2D inventory items
         drawInventory();
 
+        drawAutomap();
+
         // Toggle debug lines based on global DebugManager state
         boolean isDebug = DebugManager.getInstance().isDebugOverlayVisible();
 
@@ -758,6 +760,120 @@ public class Hud implements Disposable {
 
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+    }
+
+    private void drawAutomap() {
+        if (maze == null) return;
+
+        // Configuration
+        float maxMapSize = 300f; // Maximum dimension (width or height)
+        float mapRightMargin = 20f;
+        float mapTopMargin = 20f;
+
+        int mazeW = maze.getWidth();
+        int mazeH = maze.getHeight();
+
+        // Prevent division by zero
+        if (mazeW == 0 || mazeH == 0) return;
+
+        // Calculate cell size to fit within the maxMapSize box
+        float cellSize = maxMapSize / Math.max(mazeW, mazeH);
+
+        // Calculate the ACTUAL size of the map on screen
+        float actualMapWidth = mazeW * cellSize;
+        float actualMapHeight = mazeH * cellSize;
+
+        // Position: Top Right (Anchored)
+        float startX = 1920 - actualMapWidth - mapRightMargin;
+        float startY = 1080 - actualMapHeight - mapTopMargin;
+
+        // --- 1. Draw Background (Fitted) ---
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.5f); // Semi-transparent black
+
+        // Draw rect with small padding (5px) around the ACTUAL size
+        shapeRenderer.rect(startX - 5, startY - 5, actualMapWidth + 10, actualMapHeight + 10);
+
+        // --- 2. Draw Visited Tiles (Walls/Floor) ---
+        shapeRenderer.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        // Wall bitmasks
+        int WALL_NORTH = 0b01000000;
+        int WALL_EAST  = 0b00000100;
+        int WALL_SOUTH = 0b00010000;
+        int WALL_WEST  = 0b00000001;
+        int DOOR_NORTH = 0b10000000;
+        int DOOR_EAST  = 0b00001000;
+        int DOOR_SOUTH = 0b00100000;
+        int DOOR_WEST  = 0b00000010;
+
+        for (int y = 0; y < mazeH; y++) {
+            for (int x = 0; x < mazeW; x++) {
+                // VISIBILITY CHECK
+                if (!maze.isVisited(x, y)) {
+                    continue;
+                }
+
+                int mask = maze.getWallDataAt(x, y);
+                float cx = startX + (x * cellSize);
+                float cy = startY + (y * cellSize);
+
+                // Draw Walls (White)
+                shapeRenderer.setColor(Color.WHITE);
+                if ((mask & WALL_NORTH) != 0) shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
+                if ((mask & WALL_EAST)  != 0) shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
+                if ((mask & WALL_SOUTH) != 0) shapeRenderer.line(cx, cy, cx + cellSize, cy);
+                if ((mask & WALL_WEST)  != 0) shapeRenderer.line(cx, cy, cx, cy + cellSize);
+
+                // Draw Doors (Gold/Yellow)
+                shapeRenderer.setColor(Color.GOLD);
+                if ((mask & DOOR_NORTH) != 0) shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
+                if ((mask & DOOR_EAST)  != 0) shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
+                if ((mask & DOOR_SOUTH) != 0) shapeRenderer.line(cx, cy, cx + cellSize, cy);
+                if ((mask & DOOR_WEST)  != 0) shapeRenderer.line(cx, cy, cx, cy + cellSize);
+            }
+        }
+        shapeRenderer.end();
+
+        // --- 3. Draw Objects (Gates, Ladders, Player) ---
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        for (int y = 0; y < mazeH; y++) {
+            for (int x = 0; x < mazeW; x++) {
+                if (!maze.isVisited(x, y)) continue;
+
+                Object obj = maze.getGameObjectAt(x, y);
+                float cx = startX + (x * cellSize);
+                float cy = startY + (y * cellSize);
+
+                if (obj instanceof Gate) {
+                    shapeRenderer.setColor(Color.CYAN);
+                    shapeRenderer.rect(cx + cellSize * 0.25f, cy + cellSize * 0.25f, cellSize * 0.5f, cellSize * 0.5f);
+                } else if (maze.getLadders().containsKey(new GridPoint2(x, y))) {
+                    shapeRenderer.setColor(Color.BROWN);
+                    shapeRenderer.rect(cx + cellSize * 0.3f, cy + cellSize * 0.3f, cellSize * 0.4f, cellSize * 0.4f);
+                }
+            }
+        }
+
+        // Player (Green Arrow/Dot)
+        if (player != null) {
+            float px = startX + (player.getPosition().x * cellSize);
+            float py = startY + (player.getPosition().y * cellSize);
+
+            shapeRenderer.setColor(Color.LIME);
+            shapeRenderer.circle(px, py, cellSize * 0.3f, 8);
+
+            // Direction Indicator
+            Vector2 dir = player.getDirectionVector();
+            shapeRenderer.setColor(Color.LIME);
+            shapeRenderer.rectLine(px, py, px + (dir.x * cellSize * 0.6f), py + (dir.y * cellSize * 0.6f), 2f);
+        }
+
+        shapeRenderer.end();
     }
 
     @Override

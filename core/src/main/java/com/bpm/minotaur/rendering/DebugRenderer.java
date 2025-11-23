@@ -189,4 +189,53 @@ public class DebugRenderer {
 
         System.out.println("[MazeDebug] --- End of Maze Layout ---");
     }
+
+    /**
+     * Prints the player's 'memory' of the maze to the console.
+     * Unseen tiles are drawn as black blocks or dots.
+     * Seen tiles are drawn with their actual wall/object characters.
+     */
+    public static void printExplorationToConsole(Maze maze) {
+        System.out.println("[ExplorationDebug] --- Exploration State ---");
+        int height = maze.getHeight();
+        int width = maze.getWidth();
+        byte[][] memory = maze.getExplorationState();
+        int[][] wallData = maze.getWallData();
+
+        for (int y = height - 1; y >= 0; y--) {
+            StringBuilder rowBuilder = new StringBuilder();
+            rowBuilder.append(String.format("%2d | ", y)); // Row number
+
+            for (int x = 0; x < width; x++) {
+                // CHECK VISIBILITY
+                if (!maze.isVisited(x, y)) {
+                    // Draw Fog of War
+                    rowBuilder.append("░░ ");
+                } else {
+                    // Draw Revealed Tile
+                    GridPoint2 pos = new GridPoint2(x, y);
+                    Object obj = maze.getGameObjectAt(x, y);
+
+                    if (obj instanceof com.bpm.minotaur.gamedata.Door) {
+                        rowBuilder.append("[] "); // Door
+                    } else if (maze.getGates().containsKey(pos)) {
+                        rowBuilder.append("<> "); // Gate
+                    } else {
+                        // Check Walls
+                        boolean hasWest = (wallData[y][x] & 0b00000001) != 0;
+                        boolean hasSouth = (wallData[y][x] & 0b00010000) != 0;
+
+                        // Simple ASCII representation
+                        if (hasWest && hasSouth) rowBuilder.append("L. ");
+                        else if (hasWest) rowBuilder.append("|. ");
+                        else if (hasSouth) rowBuilder.append("_. ");
+                        else rowBuilder.append(".. "); // Open Floor
+                    }
+                }
+            }
+            System.out.println(rowBuilder.toString());
+        }
+        System.out.println("[ExplorationDebug] ---------------------------");
+    }
+
 }
