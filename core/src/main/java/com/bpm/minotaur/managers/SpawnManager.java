@@ -16,7 +16,7 @@ import com.bpm.minotaur.gamedata.spawntables.LevelBudget;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
-import com.badlogic.gdx.utils.Array; // <-- ADD THIS IMPORT
+import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,11 +26,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import com.bpm.minotaur.gamedata.item.ItemCategory;
-import java.util.stream.Stream;
 
 public class SpawnManager {
     private final Maze maze;
-    private final Difficulty difficulty; // Still kept for potential future use
+    private final Difficulty difficulty;
     private final int level;
     private final Random random = new Random();
     private final List<GridPoint2> validSpawnPoints = new ArrayList<>();
@@ -39,15 +38,16 @@ public class SpawnManager {
     private final AssetManager assetManager;
     private final SpawnTableData spawnTableData;
 
-    // --- NEW: Data-Driven Fields ---
+    // --- Data-Driven Fields ---
     private final LevelBudget budget;
     private final WeightedRandomList<SpawnTableEntry> monsterPool;
     private final WeightedRandomList<SpawnTableEntry> itemPool;
     private final WeightedRandomList<SpawnTableEntry> containerPool;
     private final WeightedRandomList<SpawnTableEntry> containerLootPool;
+    private final WeightedRandomList<SpawnTableEntry> debrisPool; // <-- NEW
     private final Map<Integer, LevelBudget> budgetMap = new HashMap<>();
 
-    public static boolean DEBUG_FORCE_MODIFIERS = true; // Toggle to force spawn
+    public static boolean DEBUG_FORCE_MODIFIERS = true;
 
     private static final float BASE_MODIFIER_CHANCE = 0.15f;
     private static final float COLOR_MULTIPLIER_BONUS = 0.1f;
@@ -56,7 +56,7 @@ public class SpawnManager {
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
                         Maze maze, Difficulty difficulty, int level, String[] layout,
-                        SpawnTableData spawnTableData) { // <-- Added spawnTableData
+                        SpawnTableData spawnTableData) {
         this.maze = maze;
         this.difficulty = difficulty;
         this.level = level;
@@ -67,18 +67,14 @@ public class SpawnManager {
 
         findValidSpawnPoints(layout);
 
-        // --- NEW: Build data-driven lists ---
-        // 1. Build budget map for fast lookup
+        // 1. Build budget map
         for (LevelBudget b : spawnTableData.levelBudgets) {
             budgetMap.put(b.level, b);
         }
-        // 2. Get the budget for this level
+        // 2. Get the budget
         this.budget = budgetMap.getOrDefault(level, spawnTableData.defaultBudget);
 
-        // --- [MODIFIED] ---
-        // 3. Build level-specific weighted spawn pools
-        // Swapped stream() for a standard for-loop to iterate over the LibGDX Array
-        // This avoids the ClassCastException
+        // 3. Build pools
         this.monsterPool = new WeightedRandomList<>();
         for (SpawnTableEntry entry : spawnTableData.monsterSpawnTable) {
             if (level >= entry.minLevel && level <= entry.maxLevel) {
@@ -100,35 +96,36 @@ public class SpawnManager {
             }
         }
 
-        // 4. Build container loot pool (we'll just use "default" for now)
-        // 4. Build container loot pool (we'll just use "default" for now)
+        // --- NEW: DEBRIS POOL ---
+        this.debrisPool = new WeightedRandomList<>();
+        if (spawnTableData.debrisSpawnTable != null) {
+            for (SpawnTableEntry entry : spawnTableData.debrisSpawnTable) {
+                if (level >= entry.minLevel && level <= entry.maxLevel) {
+                    debrisPool.add(entry);
+                }
+            }
+        }
+        // ------------------------
+
         this.containerLootPool = new WeightedRandomList<>();
         Array<SpawnTableEntry> loot = spawnTableData.containerLoot.get("default");
         if (loot != null) {
-            // CRITICAL FIX: Handle JsonValue objects in the array
             for (int i = 0; i < loot.size; i++) {
                 Object obj = loot.get(i);
                 SpawnTableEntry entry;
-
                 if (obj instanceof com.badlogic.gdx.utils.JsonValue) {
-                    // Convert JsonValue to SpawnTableEntry
                     com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
                     entry = json.readValue(SpawnTableEntry.class, (com.badlogic.gdx.utils.JsonValue) obj);
                 } else if (obj instanceof SpawnTableEntry) {
                     entry = (SpawnTableEntry) obj;
                 } else {
-                    Gdx.app.error("SpawnManager", "Unknown type in containerLoot: " + obj.getClass().getName());
                     continue;
                 }
-
                 if (level >= entry.minLevel && level <= entry.maxLevel) {
                     containerLootPool.add(entry);
                 }
             }
-        } else {
-            Gdx.app.error("SpawnManager", "No 'default' loot table found in spawntables.json!");
         }
-        // --- [END MODIFIED] ---
     }
 
     private void findValidSpawnPoints(String[] layout) {
@@ -143,43 +140,68 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Use the new data-driven budgets
         spawnMonsters(budget.monsterBudget);
         spawnItems(budget.itemBudget);
-        spawnContainers(budget.containerBudget); // <-- NEW CALL
+        spawnContainers(budget.containerBudget);
+        spawnDebris(budget.debrisBudget); // <-- NEW CALL
+    }
+
+    // --- NEW METHOD ---
+    private void spawnDebris(int budget) {
+        if (debrisPool.isEmpty() || validSpawnPoints.isEmpty()) return;
+
+        for (int i = 0; i < budget; i++) {
+            // Pick a random floor tile (reuse tiles allowed)
+            GridPoint2 spawnPoint = validSpawnPoints.get(random.nextInt(validSpawnPoints.size()));
+
+            SpawnTableEntry entry = debrisPool.getRandomEntry();
+            if (entry == null) continue;
+
+            Item.ItemType type;
+            try {
+                type = Item.ItemType.valueOf(entry.type);
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+
+            ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
+            if (variant == null) continue;
+
+            Item debris = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
+
+            // SCATTER LOGIC: Random offset within tile
+            float offsetX = 0.2f + random.nextFloat() * 0.6f;
+            float offsetY = 0.2f + random.nextFloat() * 0.6f;
+
+            // Ensure Item.java has setPosition(float, float) or use this:
+            if (debris.getPosition() != null) {
+                debris.getPosition().set(spawnPoint.x + offsetX, spawnPoint.y + offsetY);
+            }
+
+            maze.addItem(debris);
+        }
     }
 
     private void spawnMonsters(int budget) {
-        if (monsterPool.isEmpty()) {
-            Gdx.app.log("SpawnManager", "No valid monsters to spawn for level " + level);
-            return;
-        }
+        if (monsterPool.isEmpty()) return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
             if (spawnPoint == null) break;
 
-            // 1. Get a type from the weighted pool (e.g., "GIANT_ANT")
             SpawnTableEntry entry = monsterPool.getRandomEntry();
             if (entry == null) continue;
 
-            // 2. Convert string to enum
             Monster.MonsterType type;
             try {
                 type = Monster.MonsterType.valueOf(entry.type);
             } catch (IllegalArgumentException e) {
-                Gdx.app.error("SpawnManager", "Invalid monster type in spawntables.json: " + entry.type);
                 continue;
             }
 
-            // 3. Get a random *variant* (color) for this type
             MonsterVariant variant = dataManager.getRandomVariantForMonster(type, level);
-            if (variant == null) {
-                Gdx.app.error("SpawnManager", "Failed to get variant for " + type.name() + " at level " + level);
-                continue;
-            }
+            if (variant == null) continue;
 
-            // 4. Create the monster
             Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y, variant.color, dataManager, assetManager);
             monster.scaleStats(level);
             maze.addMonster(monster);
@@ -187,85 +209,59 @@ public class SpawnManager {
     }
 
     private void spawnItems(int budget) {
-        if (itemPool.isEmpty()) {
-            Gdx.app.log("SpawnManager", "No valid items to spawn for level " + level);
-            return;
-        }
+        if (itemPool.isEmpty()) return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
             if (spawnPoint == null) break;
-
             spawnRegularItem(spawnPoint);
         }
     }
 
     private void spawnRegularItem(GridPoint2 spawnPoint) {
-        // 1. Get an item type from the weighted pool (e.g., "BOW")
         SpawnTableEntry entry = itemPool.getRandomEntry();
         if (entry == null) return;
 
-        // 2. Convert string to enum
         Item.ItemType type;
         try {
             type = Item.ItemType.valueOf(entry.type);
         } catch (IllegalArgumentException e) {
-            Gdx.app.error("SpawnManager", "Invalid item type in spawntables.json: " + entry.type);
             return;
         }
 
-        // 3. Get a random *variant* (color) for this type
         ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null) {
-            Gdx.app.error("SpawnManager", "Failed to get variant for " + type.name() + " at level " + level);
-            return;
-        }
+        if (variant == null) return;
 
-        // 4. Create the item
         Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
         attemptToModifyItem(item, variant.color);
         maze.addItem(item);
     }
 
     private void spawnContainers(int budget) {
-        if (containerPool.isEmpty()) {
-            Gdx.app.log("SpawnManager", "No valid containers to spawn for level " + level);
-            return;
-        }
+        if (containerPool.isEmpty()) return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
             if (spawnPoint == null) break;
 
-            // 1. Get a container type from the weighted pool
             SpawnTableEntry entry = containerPool.getRandomEntry();
             if (entry == null) continue;
 
-            // 2. Convert string to enum
             Item.ItemType type;
             try {
                 type = Item.ItemType.valueOf(entry.type);
             } catch (IllegalArgumentException e) {
-                Gdx.app.error("SpawnManager", "Invalid container type in spawntables.json: " + entry.type);
                 continue;
             }
 
-            // 3. Get color *directly from the spawn table entry*
             ItemColor containerColor = entry.keyColor;
-            if (containerColor == null) {
-                containerColor = ItemColor.CONTAINER_TAN; // Fallback
-            }
+            if (containerColor == null) containerColor = ItemColor.CONTAINER_TAN;
 
-            // 4. Create the container
             Item container = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
             attemptToModifyItem(container, containerColor);
-
-            // 5. Add loot
             addLootToContainer(container);
-
             maze.addItem(container);
 
-            // 6. Spawn a key
             if (container.isLocked()) {
                 spawnKey(containerColor);
             }
@@ -273,41 +269,29 @@ public class SpawnManager {
     }
 
     private void addLootToContainer(Item container) {
-        if (containerLootPool.isEmpty()) {
-            Gdx.app.log("SpawnManager", "Container loot pool is empty for level " + level);
-            return;
-        }
+        if (containerLootPool.isEmpty()) return;
 
-        // 1. Get a loot type from the weighted pool
         SpawnTableEntry entry = containerLootPool.getRandomEntry();
         if (entry == null) return;
 
-        // 2. Convert string to enum
         Item.ItemType type;
         try {
             type = Item.ItemType.valueOf(entry.type);
         } catch (IllegalArgumentException e) {
-            Gdx.app.error("SpawnManager", "Invalid loot type in spawntables.json: " + entry.type);
             return;
         }
 
-        // 3. Get a random *variant* (color) for this loot
         ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null) {
-            Gdx.app.error("SpawnManager", "Failed to get variant for loot " + type.name() + " at level " + level);
-            return;
-        }
+        if (variant == null) return;
 
-        // 4. Create the loot item
         Item loot = itemDataManager.createItem(type, 0, 0, variant.color, assetManager);
-        attemptToModifyItem(loot, variant.color); // Treasures can be modified!
-
+        attemptToModifyItem(loot, variant.color);
         container.getContents().add(loot);
     }
 
     private void spawnKey(ItemColor containerColor) {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
-        if (spawnPoint == null) return; // No space for the key
+        if (spawnPoint == null) return;
 
         Item key = itemDataManager.createItem(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
         attemptToModifyItem(key, containerColor);
@@ -316,36 +300,23 @@ public class SpawnManager {
 
     private void attemptToModifyItem(Item item, ItemColor color) {
         float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS);
-
-        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance) {
-            return;
-        }
+        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance) return;
 
         addRandomModifier(item);
-        if (random.nextFloat() < SECOND_MODIFIER_CHANCE) {
-            addRandomModifier(item);
-        }
-        if (random.nextFloat() < THIRD_MODIFIER_CHANCE) {
-            addRandomModifier(item);
-        }
+        if (random.nextFloat() < SECOND_MODIFIER_CHANCE) addRandomModifier(item);
+        if (random.nextFloat() < THIRD_MODIFIER_CHANCE) addRandomModifier(item);
     }
 
     private void addRandomModifier(Item item) {
         ItemCategory category = item.getCategory();
-
-        // [MODIFIED] Simplified the stream logic
         List<LootTable.ModInfo> validMods = LootTable.MODIFIER_POOL.stream()
             .filter(mod -> mod.category == category)
             .filter(mod -> DEBUG_FORCE_MODIFIERS || (level >= mod.minLevel && level <= mod.maxLevel))
             .collect(Collectors.toList());
-        // [END MODIFIED]
 
-        if (validMods.isEmpty()) {
-            return;
-        }
+        if (validMods.isEmpty()) return;
 
         LootTable.ModInfo modInfo = validMods.get(random.nextInt(validMods.size()));
-
         int value = 0;
         if (modInfo.maxBonus > modInfo.minBonus) {
             value = random.nextInt(modInfo.maxBonus - modInfo.minBonus + 1) + modInfo.minBonus;
@@ -354,17 +325,13 @@ public class SpawnManager {
         }
 
         String displayName = modInfo.displayName;
-        if (displayName.contains("+")) {
-            displayName = "+" + value;
-        }
+        if (displayName.contains("+")) displayName = "+" + value;
 
         item.addModifier(new ItemModifier(modInfo.type, value, displayName));
     }
 
     private GridPoint2 getEmptySpawnPoint() {
-        if (validSpawnPoints.isEmpty()) {
-            return null;
-        }
+        if (validSpawnPoints.isEmpty()) return null;
         return validSpawnPoints.remove(0);
     }
 }

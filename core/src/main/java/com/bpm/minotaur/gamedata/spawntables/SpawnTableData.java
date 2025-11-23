@@ -14,6 +14,7 @@ public class SpawnTableData {
     public Array<SpawnTableEntry> monsterSpawnTable;
     public Array<SpawnTableEntry> itemSpawnTable;
     public Array<SpawnTableEntry> containerSpawnTable;
+    public Array<SpawnTableEntry> debrisSpawnTable; // <-- ADDED
     public ObjectMap<String, Array<SpawnTableEntry>> containerLoot;
 
 }

@@ -8,6 +8,7 @@ public class LevelBudget {
     public int monsterBudget;
     public int itemBudget;
     public int containerBudget;
+    public int debrisBudget; // <-- ADDED
 
     public LevelBudget() {}
 }
