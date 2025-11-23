@@ -5,12 +5,17 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.bpm.minotaur.gamedata.Direction; // Needed for Direction
+import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.Maze;
 import java.util.HashMap;
 import java.util.Map;
 
 public class GoreManager {
+
+    // --- Configuration ---
+    // Global Red Color for all blood effects
+    public static final Color UNIFIED_BLOOD_COLOR = new Color(0.7f, 0.05f, 0.05f, 1.0f);
+
     // --- Particles ---
     private final Array<BloodParticle> activeParticles = new Array<>(false, 500);
     private final Pool<BloodParticle> particlePool = new Pool<>() {
@@ -50,7 +55,11 @@ public class GoreManager {
 
     public GoreManager() {}
 
-    public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity, Color baseColor) {
+    /**
+     * Spawns blood particles using the global UNIFIED_BLOOD_COLOR.
+     * Includes variation logic for clots vs arterial spray.
+     */
+    public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
         int count = intensity * 12;
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -60,15 +69,23 @@ public class GoreManager {
             float speed = MathUtils.random(3.0f, 9.0f);
             Vector3 vel = new Vector3(direction).scl(0.6f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
-            Color finalColor = new Color(baseColor);
-            if (baseColor.r > baseColor.g && baseColor.r > baseColor.b) {
-                float typeRoll = MathUtils.random();
-                if (typeRoll < 0.3f) { finalColor.r *= 0.6f; finalColor.g *= 0.4f; finalColor.b *= 0.4f; }
-                else if (typeRoll < 0.6f) { finalColor.r = Math.min(1.0f, finalColor.r * 1.3f); finalColor.g *= 0.8f; finalColor.b *= 0.8f; }
-            } else {
-                float shade = MathUtils.random(0.7f, 1.1f);
-                finalColor.mul(shade, shade, shade, 1.0f);
+            // --- Color Variation Logic ---
+            Color finalColor = new Color(UNIFIED_BLOOD_COLOR);
+            float typeRoll = MathUtils.random();
+
+            if (typeRoll < 0.3f) {
+                // Darker "Clot" (30% chance)
+                finalColor.r *= 0.6f;
+                finalColor.g *= 0.6f;
+                finalColor.b *= 0.6f;
+            } else if (typeRoll < 0.6f) {
+                // Brighter "Arterial" Spray (30% chance)
+                finalColor.r = Math.min(1.0f, finalColor.r * 1.3f);
+                finalColor.g *= 0.9f; // Keep it red
+                finalColor.b *= 0.9f;
             }
+            // Remaining 40% is the base UNIFIED_BLOOD_COLOR
+
             float size = MathUtils.random(0.03f, 0.07f);
             float life = MathUtils.random(1.0f, 3.0f);
             p.init(origin, vel, finalColor, life, size);
@@ -76,14 +93,21 @@ public class GoreManager {
         }
     }
 
-    public void spawnGibExplosion(Vector3 origin, Color monsterColor) {
+    /**
+     * Spawns gibs using the global UNIFIED_BLOOD_COLOR.
+     */
+    public void spawnGibExplosion(Vector3 origin) {
         int meatCount = MathUtils.random(3, 6);
         int boneCount = MathUtils.random(2, 4);
-        for(int i=0; i<meatCount; i++) spawnGib(origin, GibType.MEAT_CHUNK, monsterColor);
-        for(int i=0; i<boneCount; i++) spawnGib(origin, GibType.BONE_SHARD, monsterColor);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.RIB_CAGE, monsterColor);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.INTESTINE, monsterColor);
-        if(MathUtils.randomBoolean(0.3f)) spawnGib(origin, GibType.EYEBALL, monsterColor);
+
+        // Use unified color for meat chunks
+        for(int i=0; i<meatCount; i++) spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+
+        // Bones, ribs, intestines, etc usually have their own default tint or use the unified color if we choose
+        for(int i=0; i<boneCount; i++) spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
+        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
+        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
+        if(MathUtils.randomBoolean(0.3f)) spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
     }
 
     private void spawnGib(Vector3 origin, GibType type, Color color) {
@@ -131,28 +155,12 @@ public class GoreManager {
             // 1. Check X-Axis Crossing (East/West Walls)
             if (currGridX != prevGridX) {
                 Direction dir = (currGridX > prevGridX) ? Direction.EAST : Direction.WEST;
-                // Check if the wall between prev and curr is blocking
                 if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
                     hitWall = true;
                     side = 0;
-                    // If moving East (leaving prevX), we hit the East face of prevX.
-                    // If moving West (leaving prevX), we hit the West face of prevX.
-                    // The renderer expects wallX to be relative to the wall face (0.0 to 1.0).
-                    hitX = (dir == Direction.EAST) ? prevGridX : prevGridX; // Effectively strictly on the grid line
-
-                    // IMPORTANT: We always render decals on the "Solid" side or the "Face" we hit.
-                    // Raycaster renders walls at specific integer bounds.
-                    // We simply map the blood Z position to the wall's horizontal coordinate.
-                    wallX = p.position.z - (int)p.position.z;
-
-                    // Correct Grid Coords for decal storage:
-                    // If we hit the East wall of X=5, we store it at X=5, side=East?
-                    // Or does renderer see it as West wall of X=6?
-                    // RaycastResult usually returns the map coord of the voxel HIT.
-                    // Since walls are "between" cells, we attach to the cell we were IN (prevGridX).
                     hitX = prevGridX;
                     hitY = prevGridY;
-                    // Side 0 usually implies Vertical wall.
+                    wallX = p.position.z - (int)p.position.z;
                 }
             }
 
