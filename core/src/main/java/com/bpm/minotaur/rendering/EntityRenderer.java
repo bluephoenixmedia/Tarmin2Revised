@@ -3,6 +3,9 @@ package com.bpm.minotaur.rendering;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
@@ -37,9 +40,21 @@ public class EntityRenderer {
 
     private final ItemDataManager itemDataManager;
 
+    // --- Tooltip Vars ---
+    private final BitmapFont font;
+    private final GlyphLayout layout = new GlyphLayout();
+    private Item hoveredItem = null;
+    private float hoveredScreenX = 0;
+    private float hoveredScreenY = 0;
+
     public EntityRenderer(ItemDataManager itemDataManager) {
         this.spriteBatch = new SpriteBatch();
         this.itemDataManager = itemDataManager;
+
+        // Create a default font for tooltips
+        this.font = new BitmapFont();
+        this.font.getData().setScale(1.2f);
+        this.font.setUseIntegerPositions(false);
     }
 
     private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
@@ -71,6 +86,9 @@ public class EntityRenderer {
                        float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
         if (depthBuffer == null) return;
 
+        // Reset tooltip for this frame
+        hoveredItem = null;
+
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
         boolean fogEnabled = biome.hasFogOfWar();
         float fogDistance = biome.getFogDistance();
@@ -86,6 +104,31 @@ public class EntityRenderer {
             player.getPosition().dst2(b.getPosition()),
             player.getPosition().dst2(a.getPosition())
         ));
+
+        // Determine the "active" item tile (Feet or Front)
+        int playerX = (int) player.getPosition().x;
+        int playerY = (int) player.getPosition().y;
+        int frontX = (int) (player.getPosition().x + player.getFacing().getVector().x);
+        int frontY = (int) (player.getPosition().y + player.getFacing().getVector().y);
+
+        // Pre-pass: Identify which item (if any) is the interaction target
+        // Priority: Feet > Front
+        Item itemAtFeet = null;
+        Item itemInFront = null;
+
+        for (Renderable r : entities) {
+            if (r instanceof Item) {
+                Item it = (Item) r;
+                int ix = (int) it.getPosition().x;
+                int iy = (int) it.getPosition().y;
+                if (ix == playerX && iy == playerY) itemAtFeet = it;
+                else if (ix == frontX && iy == frontY) itemInFront = it;
+            }
+        }
+
+        if (itemAtFeet != null) hoveredItem = itemAtFeet;
+        else if (itemInFront != null) hoveredItem = itemInFront;
+
 
         boolean isShapeRendererActive = false;
         boolean isSpriteBatchActive = false;
@@ -138,70 +181,95 @@ public class EntityRenderer {
             isSpriteBatchActive = false;
         }
 
-        // Draw Corpses (Debris)
         renderCorpses(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
-
-        // Removed: renderBlood call
         this.renderGore(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
 
-        // Re-close
         if (spriteBatch.isDrawing()) spriteBatch.end();
+
+        // --- Draw Tooltip Overlay ---
+        if (hoveredItem != null) {
+            renderTooltip(spriteBatch, shapeRenderer, viewport);
+        }
     }
 
+    private void renderTooltip(SpriteBatch batch, ShapeRenderer shape, Viewport viewport) {
+        // 1. Prepare Text
+        StringBuilder sb = new StringBuilder();
+        sb.append(hoveredItem.getDisplayName()).append("\n");
+
+        // Add stats
+        if (hoveredItem.isWeapon()) {
+            if (hoveredItem.getWarDamage() > 0) sb.append("War: ").append(hoveredItem.getWarDamage()).append(" ");
+            if (hoveredItem.getSpiritDamage() > 0) sb.append("Spirit: ").append(hoveredItem.getSpiritDamage()).append(" ");
+        } else if (hoveredItem.isArmor()) {
+            sb.append("Def: ").append(hoveredItem.getArmorDefense());
+        } else if (hoveredItem.isPotion() || hoveredItem.isFood()) {
+            sb.append("Consumable");
+        }
+
+        layout.setText(font, sb.toString());
+
+        float width = layout.width + 20;
+        float height = layout.height + 20;
+
+        // 2. Calculate Position (Right of sprite, clamped to screen)
+        float x = hoveredScreenX + 40;
+        float y = hoveredScreenY + 20;
+
+        // Clamp to screen
+        if (x + width > viewport.getWorldWidth()) x = hoveredScreenX - width - 40;
+        if (y - height < 0) y = height + 10;
+        if (y > viewport.getWorldHeight()) y = viewport.getWorldHeight() - 10;
+
+        // 3. Draw Background Box
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shape.setProjectionMatrix(viewport.getCamera().combined);
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        shape.setColor(0, 0, 0, 0.7f);
+        shape.rect(x, y - height, width, height);
+
+        // Border
+        shape.setColor(Color.WHITE);
+        shape.rect(x, y - height, width, 2); // Bottom
+        shape.rect(x, y, width, 2); // Top
+        shape.rect(x, y - height, 2, height); // Left
+        shape.rect(x + width - 2, y - height, 2, height); // Right
+        shape.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // 4. Draw Text
+        batch.setProjectionMatrix(viewport.getCamera().combined);
+        batch.begin();
+        font.setColor(Color.YELLOW);
+        font.draw(batch, sb.toString(), x + 10, y - 10);
+        batch.end();
+    }
+
+    // ... [GORE RENDER METHODS UNCHANGED] ...
     public void renderGore(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
         shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.setTransformMatrix(new Matrix4()); // Identity
+        shapeRenderer.setTransformMatrix(new Matrix4());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
         renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
-
         renderGibs(shapeRenderer, maze, camera, player, depthBuffer);
-
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
-
         for (BloodParticle p : maze.getGoreManager().getActiveParticles()) {
-            // 1. Raycast Projection (Same as CorpsePart)
             float dx = p.position.x - player.getPosition().x;
-            float dy = p.position.z - player.getPosition().y; // Assuming Z is Y in 2D grid logic, or checking Vector3 usage.
-            // WAIT: BloodParticle uses Vector3(x, y, z) or (x, y, z)?
-            // In LibGDX Vector3, Y is usually up. In your Maze, GridPoint2 is X/Y.
-            // Let's assume Maze X = World X, Maze Y = World Z (Depth), World Y = Height.
-
-            // Correction based on CorpsePart usage:
-            // CorpsePart uses: pos.x, pos.y (height?), pos.z (depth?).
-            // Let's verify CorpsePart: "position.add(velX, 0, velZ)" -> X and Z are ground plane?
-            // In EntityRenderer corpse render: dx = part.position.x - player.x; dy = part.position.z - player.y;
-
-            // So for BloodParticle:
-            // position.x = Map X
-            // position.y = Height (0 is floor)
-            // position.z = Map Y
-
-            dx = p.position.x - player.getPosition().x;
-            dy = p.position.z - player.getPosition().y;
-
+            float dy = p.position.z - player.getPosition().y;
             float planeX = player.getCameraPlane().x;
             float planeY = player.getCameraPlane().y;
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
-
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
             float transformX = invDet * (-dirY * dx + dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-
-            // Check if in front of camera
             if (transformY > 0.1f) {
                 int screenX = (int) (halfWidth * (1 + transformX / transformY));
-
-                // Check Depth Buffer
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (p.position.y - 0.5f) * spriteScale;
-                    // -0.5f adjusts because camera is likely at y=0.5 (eye level)
-
                     float particleSize = spriteScale * p.size;
-
                     shapeRenderer.setColor(p.color);
                     shapeRenderer.rect(screenX - particleSize/2, screenY - particleSize/2, particleSize, particleSize);
                 }
@@ -213,50 +281,36 @@ public class EntityRenderer {
     private void renderGibs(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
-
         for (Gib gib : maze.getGoreManager().getActiveGibs()) {
-            // 1. Projection
             float dx = gib.position.x - player.getPosition().x;
             float dy = gib.position.z - player.getPosition().y;
-
             float planeX = player.getCameraPlane().x;
             float planeY = player.getCameraPlane().y;
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
-
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
             float transformX = invDet * (-dirY * dx + dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-
             if (transformY > 0.1f) {
                 int screenX = (int) (halfWidth * (1 + transformX / transformY));
-
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (gib.position.y - 0.5f) * spriteScale;
-
-                    // 2. Render ASCII Grid
                     Matrix4 originalMatrix = shapeRenderer.getTransformMatrix().cpy();
                     transformMatrix.set(originalMatrix);
                     transformMatrix.translate(screenX, screenY, 0);
                     transformMatrix.rotate(0, 0, 1, gib.rotation);
                     shapeRenderer.setTransformMatrix(transformMatrix);
-
-                    // Scale based on sprite size
-                    // Default gibs are small (4x4 roughly)
-                    float partPixelSize = spriteScale / 30.0f; // Smaller than standard pixels
+                    float partPixelSize = spriteScale / 30.0f;
                     int rows = gib.spriteData.length;
                     int cols = gib.spriteData[0].length();
-
                     float startOffsetX = -(cols * partPixelSize) / 2.0f;
                     float startOffsetY = -(rows * partPixelSize) / 2.0f;
-
                     for (int r = 0; r < rows; r++) {
                         String row = gib.spriteData[r];
                         for (int c = 0; c < cols; c++) {
                             if (c < row.length() && row.charAt(c) == '#') {
                                 shapeRenderer.setColor(gib.color);
-                                // Draw relative to center
                                 shapeRenderer.rect(startOffsetX + c * partPixelSize, startOffsetY + (rows - 1 - r) * partPixelSize, partPixelSize, partPixelSize);
                             }
                         }
@@ -270,33 +324,23 @@ public class EntityRenderer {
     private void renderDecals(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
-
         for (SurfaceDecal d : maze.getGoreManager().getActiveDecals()) {
-            // Standard Projection Math
             float dx = d.position.x - player.getPosition().x;
             float dy = d.position.z - player.getPosition().y;
-
             float planeX = player.getCameraPlane().x;
             float planeY = player.getCameraPlane().y;
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
-
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
             float transformX = invDet * (-dirY * dx + dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-
             if (transformY > 0.1f) {
                 int screenX = (int) (halfWidth * (1 + transformX / transformY));
-
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (d.position.y - 0.5f) * spriteScale;
-
-                    // PUDDLE LOGIC:
-                    // We render it wider (X) and flatter (Y) to simulate perspective of a floor circle.
-                    float width = spriteScale * d.size * 2.0f; // Wide
-                    float height = spriteScale * d.size * 0.5f; // Flat
-
+                    float width = spriteScale * d.size * 2.0f;
+                    float height = spriteScale * d.size * 0.5f;
                     shapeRenderer.setColor(d.color);
                     shapeRenderer.rect(screenX - width/2, screenY - height/2, width, height);
                 }
@@ -304,18 +348,15 @@ public class EntityRenderer {
         }
     }
 
+    // ... [MONSTER AND PROJECTILE RENDERERS UNCHANGED] ...
     public void renderSingleMonster(ShapeRenderer shapeRenderer, Player player, Monster monster, Viewport viewport,
                                     float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze, WorldManager worldManager) {
         if (depthBuffer == null || monster == null) return;
-
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
         if (biome.hasFogOfWar()) {
             float distanceToMonster = player.getPosition().dst(monster.getPosition());
-            if (distanceToMonster > biome.getFogDistance()) {
-                return;
-            }
+            if (distanceToMonster > biome.getFogDistance()) return;
         }
-
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && monster.getTexture() != null) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
@@ -338,44 +379,32 @@ public class EntityRenderer {
 
     public void renderCorpses(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
         shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.setTransformMatrix(new Matrix4()); // Reset to Identity for Screen Space
+        shapeRenderer.setTransformMatrix(new Matrix4());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
-
         for (CorpsePart part : maze.getCorpses()) {
-            // 1. Raycast Projection Math
             float dx = part.position.x - player.getPosition().x;
             float dy = part.position.z - player.getPosition().y;
-
             float planeX = player.getCameraPlane().x;
             float planeY = player.getCameraPlane().y;
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
-
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
             float transformX = invDet * (-dirY * dx + dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-
             if (transformY > 0.1f) {
                 int screenX = (int) (halfWidth * (1 + transformX / transformY));
-
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
-                    // 2. Calculate Scale & Position
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (part.position.y - 0.5f) * spriteScale;
-
-                    // 3. Draw with Rotation
                     Matrix4 originalMatrix = shapeRenderer.getTransformMatrix().cpy();
                     transformMatrix.set(originalMatrix);
                     transformMatrix.translate(screenX, screenY, 0);
                     transformMatrix.rotate(0, 0, 1, part.rotation);
                     shapeRenderer.setTransformMatrix(transformMatrix);
-
                     float partPixelSize = spriteScale / 24.0f;
                     float startOffset = -(6 * partPixelSize);
-
                     for (int r = 0; r < 12; r++) {
                         String row = part.spriteQuadrant[r];
                         for (int c = 0; c < 12; c++) {
@@ -392,9 +421,7 @@ public class EntityRenderer {
         shapeRenderer.end();
     }
 
-    // Removed: renderBlood method
-
-    // --- Existing Helper Methods ---
+    // --- MODIFIED HELPER METHODS ---
 
     private void drawMonsterTexture(SpriteBatch spriteBatch, Player player, Monster monster, Viewport viewport,
                                     float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
@@ -486,6 +513,12 @@ public class EntityRenderer {
                 }
             }
 
+            // --- CAPTURE COORDINATES IF HOVERED ---
+            if (item == hoveredItem) {
+                hoveredScreenX = screenX + spriteWidth / 2f;
+                hoveredScreenY = drawY + spriteHeight;
+            }
+
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
@@ -544,34 +577,28 @@ public class EntityRenderer {
         }
     }
 
+    // ... [DRAW PROJECTILE UNCHANGED] ...
     private void drawProjectile(ShapeRenderer shapeRenderer, Projectile projectile, int screenX, float transformY,
                                 Camera camera, Viewport viewport, float[] depthBuffer) {
         float floorOffset = 0.5f;
         int spriteScreenY = (int) (camera.viewportHeight / 2 * (1 + floorOffset / transformY));
-
         int spriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 4;
         int spriteWidth = spriteHeight;
-
         String[] spriteData = projectile.getSpriteData();
         if (spriteData == null) {
             spriteData = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
         }
-
         int spritePixelHeight = spriteData.length;
         int spritePixelWidth = spriteData[0].length();
-
         float pixelWidth = (float) spriteWidth / spritePixelWidth;
         float pixelHeight = (float) spriteHeight / spritePixelHeight;
-
         float totalWidth = spritePixelWidth * pixelWidth;
         float totalHeight = spritePixelHeight * pixelHeight;
         float drawStartX = screenX - totalWidth / 2;
         float drawStartY = spriteScreenY - totalHeight / 2;
-
         for (int px = 0; px < spritePixelWidth; px++) {
             float currentX = drawStartX + px * pixelWidth;
             int screenStripe = (int) currentX;
-
             if (screenStripe >= 0 && screenStripe < viewport.getScreenWidth() && transformY < depthBuffer[screenStripe]) {
                 for (int py = 0; py < spritePixelHeight; py++) {
                     if (spriteData[py].charAt(px) == '#') {
@@ -587,12 +614,9 @@ public class EntityRenderer {
     private void drawMonsterSprite(ShapeRenderer shapeRenderer, Monster monster, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer) {
         int spriteScreenY = (int)(camera.viewportHeight / 2);
         int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-
         int spriteHeight = (int) (baseSpriteHeight * monster.scale.y);
         int spriteWidth = (int) (baseSpriteHeight * monster.scale.x);
-
         float drawY = spriteScreenY - spriteHeight / 2.0f;
-
         if (monster.getSpriteData() != null) {
             drawAsciiSprite(shapeRenderer, monster, monster.getSpriteData(), screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         } else {
@@ -611,7 +635,6 @@ public class EntityRenderer {
         int baseSpriteHeight = (int) (camera.viewportHeight / transformY);
         int spriteHeight = (int) (baseSpriteHeight * scenery.getScale().y);
         int spriteWidth = (int) (baseSpriteHeight * scenery.getScale().x);
-
         float drawY;
         if (scenery.getType() == Scenery.SceneryType.BUSH) {
             float floorY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2f);
@@ -619,7 +642,6 @@ public class EntityRenderer {
         } else {
             drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
         }
-
         String[] spriteData = scenery.getSpriteData();
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, scenery, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
@@ -653,6 +675,12 @@ public class EntityRenderer {
             }
         }
 
+        // --- CAPTURE COORDINATES IF HOVERED ---
+        if (item == hoveredItem) {
+            hoveredScreenX = screenX + spriteWidth / 2f;
+            hoveredScreenY = drawY + spriteHeight;
+        }
+
         if (item.getSpriteData() != null  && item.getSpriteData().length > 0)  {
             drawAsciiSprite(shapeRenderer, item, item.getSpriteData(), screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         } else {
@@ -675,7 +703,6 @@ public class EntityRenderer {
         float drawY;
         int spriteHeight;
         int spriteWidth;
-
         if (atFeet) {
             drawY = camera.viewportHeight / 8;
             spriteHeight = AT_FEET_SPRITE_HEIGHT;
@@ -686,9 +713,7 @@ public class EntityRenderer {
             drawY = floorY;
             spriteWidth = (int) (spriteHeight * 0.5f);
         }
-
         String[] spriteData = itemDataManager.getTemplate(Item.ItemType.LADDER).spriteData;
-
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, ladder, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         }
@@ -697,7 +722,6 @@ public class EntityRenderer {
     private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX, float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight, float drawY) {
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
-
         boolean isModifiedItem = (entity instanceof Item && ((Item) entity).isModified());
         if (isModifiedItem) {
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
@@ -720,7 +744,6 @@ public class EntityRenderer {
                 }
             }
         }
-
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth() && transformY < depthBuffer[stripe]) {
                 int texX = (int)(((double)(stripe - (screenX - spriteWidth/2)) / spriteWidth) * 24.0);
@@ -741,5 +764,6 @@ public class EntityRenderer {
 
     public void dispose() {
         spriteBatch.dispose();
+        font.dispose();
     }
 }

@@ -30,8 +30,8 @@ public class WeatherManager {
     private boolean isThunderPending;
 
     // Constants
-    private static final float MIN_WEATHER_DURATION = 30f;
-    private static final float MAX_WEATHER_DURATION = 120f;
+    private static final float MIN_WEATHER_DURATION = 300f;
+    private static final float MAX_WEATHER_DURATION = 6000f;
     private static final float FOG_LERP_SPEED = 0.5f;
 
     public WeatherManager(WorldManager worldManager) {
@@ -42,7 +42,7 @@ public class WeatherManager {
         this.currentIntensity = WeatherIntensity.HEAVY;
         // ------------------------------------------------
 
-        this.weatherTimer = 10f;
+        this.weatherTimer = 300f;
 
         // Init defaults (These will be overwritten immediately by updateAtmosphereTargets, but good to have)
         this.targetFogDistance = 60f;
