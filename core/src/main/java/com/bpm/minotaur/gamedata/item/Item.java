@@ -83,7 +83,50 @@ public class Item implements Renderable {
         TARMIN_TREASURE,
 
         REGULAR_CHEST, LAMP, UNKNOWN,
-        LADDER
+        LADDER,
+
+        // --- NEW: Debris & Resources ---
+        // User Requested
+        STICK,
+        LEAVES,
+        SMALL_ROCK,
+        LARGE_BOULDER,
+        BROKEN_COLUMN,
+        BROKEN_WALL,
+        VINES,
+        PUDDLE_WATER,
+        STRANGE_METAL,
+        BONES,
+        ANCIENT_FOSSIL,
+        RUSTY_WEAPON,
+        RUSTY_ARMOR,
+        DIRTY_CLOTH,
+        METAL_SCRAP,
+        BROKEN_GLASS,
+        DEAD_PLANT_MATTER,
+        MUD,
+
+        // Architect Additions
+        CHARRED_WOOD,
+        CERAMIC_SHARD,
+        ROTTEN_ROPE,
+        FUNGAL_SPORE,
+        BAT_GUANO,
+        LOOSE_BRICK,
+        TWISTED_ROOT,
+        SLIME_RESIDUE,
+        RAT_SKULL,
+        RUSTED_CHAIN,
+        MOSS_CLUMP,
+        FLINT_SHARD,
+        HOLLOW_LOG,
+        SPIDER_SILK,
+        BAT_WING,
+        PARCHMENT_SCRAP,
+        BROKEN_HILT,
+        BENT_NAIL,
+        STAGNANT_POOL,
+        GLOWING_LICHEN
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -286,6 +329,11 @@ public class Item implements Renderable {
     public List<Item> getContents() {
         if (this.contents == null) this.contents = new ArrayList<>();
         return this.contents;
+    }
+
+    // Add this method to Item.java so SpawnManager can scatter debris
+    public void setPosition(float x, float y) {
+        this.position.set(x, y);
     }
 
     public void setContents(List<Item> contents) { this.contents = contents; }

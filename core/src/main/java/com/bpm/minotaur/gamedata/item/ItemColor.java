@@ -10,6 +10,7 @@ public enum ItemColor {
     GRAY("Gray", "Medium", Color.GRAY, 1.3f),
     YELLOW("Yellow", "High", Color.YELLOW, 1.5f),
     WHITE("White", "Super", Color.WHITE, 2.0f),
+    GREEN("Green", "Regular", Color.GREEN, 1.0f), // <--- Added Green
 
     // Spiritual Weapons & Rings Colors
     BLUE("Blue", "Regular", Color.BLUE, 1.0f),
