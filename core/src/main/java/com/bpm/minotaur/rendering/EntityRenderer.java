@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.gore.BloodParticle;
+import com.bpm.minotaur.gamedata.gore.Gib;
+import com.bpm.minotaur.gamedata.gore.SurfaceDecal;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
@@ -139,9 +142,166 @@ public class EntityRenderer {
         renderCorpses(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
 
         // Removed: renderBlood call
+        this.renderGore(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
 
         // Re-close
         if (spriteBatch.isDrawing()) spriteBatch.end();
+    }
+
+    public void renderGore(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.setTransformMatrix(new Matrix4()); // Identity
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
+
+        renderGibs(shapeRenderer, maze, camera, player, depthBuffer);
+
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+
+        for (BloodParticle p : maze.getGoreManager().getActiveParticles()) {
+            // 1. Raycast Projection (Same as CorpsePart)
+            float dx = p.position.x - player.getPosition().x;
+            float dy = p.position.z - player.getPosition().y; // Assuming Z is Y in 2D grid logic, or checking Vector3 usage.
+            // WAIT: BloodParticle uses Vector3(x, y, z) or (x, y, z)?
+            // In LibGDX Vector3, Y is usually up. In your Maze, GridPoint2 is X/Y.
+            // Let's assume Maze X = World X, Maze Y = World Z (Depth), World Y = Height.
+
+            // Correction based on CorpsePart usage:
+            // CorpsePart uses: pos.x, pos.y (height?), pos.z (depth?).
+            // Let's verify CorpsePart: "position.add(velX, 0, velZ)" -> X and Z are ground plane?
+            // In EntityRenderer corpse render: dx = part.position.x - player.x; dy = part.position.z - player.y;
+
+            // So for BloodParticle:
+            // position.x = Map X
+            // position.y = Height (0 is floor)
+            // position.z = Map Y
+
+            dx = p.position.x - player.getPosition().x;
+            dy = p.position.z - player.getPosition().y;
+
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+
+            // Check if in front of camera
+            if (transformY > 0.1f) {
+                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+
+                // Check Depth Buffer
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                    float screenY = halfHeight + (p.position.y - 0.5f) * spriteScale;
+                    // -0.5f adjusts because camera is likely at y=0.5 (eye level)
+
+                    float particleSize = spriteScale * p.size;
+
+                    shapeRenderer.setColor(p.color);
+                    shapeRenderer.rect(screenX - particleSize/2, screenY - particleSize/2, particleSize, particleSize);
+                }
+            }
+        }
+        shapeRenderer.end();
+    }
+
+    private void renderGibs(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+
+        for (Gib gib : maze.getGoreManager().getActiveGibs()) {
+            // 1. Projection
+            float dx = gib.position.x - player.getPosition().x;
+            float dy = gib.position.z - player.getPosition().y;
+
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+
+            if (transformY > 0.1f) {
+                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                    float screenY = halfHeight + (gib.position.y - 0.5f) * spriteScale;
+
+                    // 2. Render ASCII Grid
+                    Matrix4 originalMatrix = shapeRenderer.getTransformMatrix().cpy();
+                    transformMatrix.set(originalMatrix);
+                    transformMatrix.translate(screenX, screenY, 0);
+                    transformMatrix.rotate(0, 0, 1, gib.rotation);
+                    shapeRenderer.setTransformMatrix(transformMatrix);
+
+                    // Scale based on sprite size
+                    // Default gibs are small (4x4 roughly)
+                    float partPixelSize = spriteScale / 30.0f; // Smaller than standard pixels
+                    int rows = gib.spriteData.length;
+                    int cols = gib.spriteData[0].length();
+
+                    float startOffsetX = -(cols * partPixelSize) / 2.0f;
+                    float startOffsetY = -(rows * partPixelSize) / 2.0f;
+
+                    for (int r = 0; r < rows; r++) {
+                        String row = gib.spriteData[r];
+                        for (int c = 0; c < cols; c++) {
+                            if (c < row.length() && row.charAt(c) == '#') {
+                                shapeRenderer.setColor(gib.color);
+                                // Draw relative to center
+                                shapeRenderer.rect(startOffsetX + c * partPixelSize, startOffsetY + (rows - 1 - r) * partPixelSize, partPixelSize, partPixelSize);
+                            }
+                        }
+                    }
+                    shapeRenderer.setTransformMatrix(originalMatrix);
+                }
+            }
+        }
+    }
+
+    private void renderDecals(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+
+        for (SurfaceDecal d : maze.getGoreManager().getActiveDecals()) {
+            // Standard Projection Math
+            float dx = d.position.x - player.getPosition().x;
+            float dy = d.position.z - player.getPosition().y;
+
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+
+            if (transformY > 0.1f) {
+                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                    float screenY = halfHeight + (d.position.y - 0.5f) * spriteScale;
+
+                    // PUDDLE LOGIC:
+                    // We render it wider (X) and flatter (Y) to simulate perspective of a floor circle.
+                    float width = spriteScale * d.size * 2.0f; // Wide
+                    float height = spriteScale * d.size * 0.5f; // Flat
+
+                    shapeRenderer.setColor(d.color);
+                    shapeRenderer.rect(screenX - width/2, screenY - height/2, width, height);
+                }
+            }
+        }
     }
 
     public void renderSingleMonster(ShapeRenderer shapeRenderer, Player player, Monster monster, Viewport viewport,

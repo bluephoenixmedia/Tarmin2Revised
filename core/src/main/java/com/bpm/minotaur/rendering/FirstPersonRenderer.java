@@ -7,8 +7,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.gore.WallDecal;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.WorldConstants;
@@ -191,8 +193,7 @@ public class FirstPersonRenderer {
             for (int x = 0; x < viewport.getScreenWidth(); x++) {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
                 if (result != null) {
-                    renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);
-                    depthBuffer[x] = result.distance;
+                    renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
                     if (fogEnabled) {
@@ -214,8 +215,7 @@ public class FirstPersonRenderer {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
 
                 if (result != null) {
-                    renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);
-                    depthBuffer[x] = result.distance;
+                    renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
                     if (fogEnabled) {
@@ -359,7 +359,7 @@ public class FirstPersonRenderer {
         spriteBatch.setColor(Color.WHITE);
     }
 
-    private void renderRetroWallSlice(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+    private void renderRetroWallSlice(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -433,6 +433,46 @@ public class FirstPersonRenderer {
             Color finalColor = new Color(renderColor).mul(colorModifier);
             spriteBatch.setColor(applyTorchLighting(finalColor, result.distance, fogLerpColor));
             spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
+        }
+
+        // ============================================================
+        // NEW: WALL SPLATTER LOGIC (GORE SYSTEM)
+        // ============================================================
+        if (result.wallType == WallType.WALL || result.wallType == WallType.DOOR) {
+            // Access the gore manager from the maze
+            Array<WallDecal> decals = maze.getGoreManager().getWallDecals(result.mapX, result.mapY, result.side);
+
+            if (decals != null) {
+                float centerY = viewport.getWorldHeight() / 2f;
+
+                for (WallDecal decal : decals) {
+                    // 1. Calculate horizontal distance from this pixel strip to the center of the blood splat
+                    float distX = Math.abs(decal.wallX - result.wallX);
+
+                    // 2. Check if this pixel strip is inside the blood splat radius
+                    if (distX < decal.radius) {
+                        // 3. Circle Math: Calculate the vertical height of the splat at this specific X slice
+                        // Pythagorean theorem: dy = sqrt(r^2 - dx^2)
+                        float halfSplatHeight = (float) Math.sqrt(decal.radius * decal.radius - distX * distX);
+
+                        float splatTopWorldY = decal.height + halfSplatHeight;
+                        float splatBottomWorldY = decal.height - halfSplatHeight;
+
+                        // 4. Convert World Height (0.0 - 1.0) to Screen Coordinates
+                        // Subtract 0.5f because camera eye level is at 0.5
+                        float screenYTop = centerY + (splatTopWorldY - 0.5f) * lineHeight;
+                        float screenYBottom = centerY + (splatBottomWorldY - 0.5f) * lineHeight;
+                        float splatHeight = screenYTop - screenYBottom;
+
+                        // 5. Draw the blood slice
+                        // We apply torch lighting to the blood color so it fades in the dark
+                        spriteBatch.setColor(applyTorchLighting(decal.color, result.distance, fogLerpColor));
+                        spriteBatch.draw(blankTexture, screenX, screenYBottom, 1, splatHeight);
+                    }
+                }
+                // Reset batch color to white for next draw call
+                spriteBatch.setColor(Color.WHITE);
+            }
         }
     }
 
