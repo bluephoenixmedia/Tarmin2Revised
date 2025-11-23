@@ -275,7 +275,9 @@ public class CombatManager {
                     0.2f,
                     player.getDirectionVector().y // z becomes y input
                 ).nor();
-                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 2, target.getColor());
+
+                // Updated to use new signature (no color arg)
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 2);
 
                 showDamageText(damage, result.collisionPoint);
                 eventManager.addEvent(new GameEvent("Ranged Hit! (" + damage + " dmg)", 1.0f));
@@ -365,7 +367,8 @@ public class CombatManager {
                         player.getDirectionVector().y // z becomes y input
                     ).nor();
 
-                    maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4, monster.getColor());
+                    // Updated to use new signature (no color arg)
+                    maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
                     showDamageText(weapon.getWarDamage() + attackModifier,
                         new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
 
@@ -625,18 +628,17 @@ public class CombatManager {
             GridPoint2 monsterPos = new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y);
 
             // --- SPAWN CORPSE (Only Debris, No Blood Shader) ---
-// OVERKILL LOGIC
-// If the last hit was > 20% of monster max HP + remaining HP (simulated), or just if damage was high
-// Simple heuristic: If damage > 15, it's a gib kill.
+            // OVERKILL LOGIC
             if (lastDamageDealt > 3) {
                 Vector3 center = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
-                maze.getGoreManager().spawnGibExplosion(center, monster.getColor());
-                // Also spawn HUGE blood spray
-                maze.getGoreManager().spawnBloodSpray(center, new Vector3(0, 1, 0), 8, monster.getColor());
+                // Updated to use new signature (no color arg)
+                maze.getGoreManager().spawnGibExplosion(center);
+                maze.getGoreManager().spawnBloodSpray(center, new Vector3(0, 1, 0), 8);
                 eventManager.addEvent(new GameEvent("OBLITERATED!", 1.5f));
             } else {
                 spawnCorpseEffects(monster); // Standard death
-            }            // ---------------------------------------------------
+            }
+            // ---------------------------------------------------
 
             maze.getMonsters().remove(monsterPos);
             endCombat();
