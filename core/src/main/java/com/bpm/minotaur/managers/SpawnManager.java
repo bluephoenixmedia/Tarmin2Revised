@@ -131,7 +131,11 @@ public class SpawnManager {
     private void findValidSpawnPoints(String[] layout) {
         for (int y = 0; y < maze.getHeight(); y++) {
             for (int x = 0; x < maze.getWidth(); x++) {
-                if (layout[maze.getHeight() - 1 - y].charAt(x) == '.') {
+
+                boolean isFloor = layout[maze.getHeight() - 1 - y].charAt(x) == '.';
+                boolean isSafeHomeTile = maze.isHomeTile(x, y);
+
+                if (isFloor && !isSafeHomeTile) {
                     validSpawnPoints.add(new GridPoint2(x, y));
                 }
             }

@@ -22,10 +22,13 @@ public class SoundManager {
     private static final int SAMPLE_RATE = 44100;
 
     // --- Sound Layer Tracking ---
-    // We track IDs for looping sounds so we can stop them specifically.
     private long currentRainId = -1;
     private long currentWindId = -1;
     private WeatherType lastWeatherType = null;
+
+    // --- NEW: Dampening State ---
+    private boolean isDampened = false;
+    private float currentBaseVol = 0.5f;
 
     public SoundManager(DebugManager debugManager) {
         this.debugManager = debugManager;
@@ -34,28 +37,20 @@ public class SoundManager {
     }
 
     private void loadModernSounds() {
-        // --- SFX Layer (Real-time) ---
         loadSound("player_attack", "sounds/player_attack.wav");
         loadSound("player_bow_attack", "sounds/player_bow_attack.wav");
         loadSound("player_spiritual_attack", "sounds/player_spiritual_attack.wav");
         loadSound("pickup_item", "sounds/pickup_item.wav");
         loadSound("door_open", "sounds/door_open.wav");
-
-        // Death Sound (The "Tarmin Laugh" / Enter FX)
         loadSound("player_death", "sounds/music/tarmin_enter_fx.ogg");
-
         loadSound("monster_attack", "sounds/monster_attack.wav");
         loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
         loadSound("monster_roar", "sounds/monster_roar.wav");
         loadSound("player_level_up", "sounds/level_up.mp3");
         loadSound("attack", "sounds/attack.mp3");
         loadSound("tarmin_laugh", "sounds/tarmin_laugh.ogg");
-
-        // --- Weather Layer (Ambient Loops) ---
         loadSound("rain_loop", "sounds/rain.ogg");
         loadSound("wind_loop", "sounds/wind.ogg");
-
-        // --- Weather SFX (Randomized One-Shots) ---
         loadSound("thunder_1", "sounds/thunder_1.ogg");
         loadSound("thunder_2", "sounds/thunder_2.ogg");
         loadSound("thunder_3", "sounds/thunder_3.ogg");
@@ -68,35 +63,18 @@ public class SoundManager {
         FileHandle file = Gdx.files.internal(path);
         if (file.exists()) {
             modernSounds.put(name, Gdx.audio.newSound(file));
-        } else {
-            // Gdx.app.log("SoundManager", "Sound file not found: " + path);
         }
     }
 
-    // ========================================================================
-    // --- CONTROL METHODS (Refactored for Layering & Hard Stops) ---
-    // ========================================================================
-
-    /**
-     * HARD STOP: Stops ALL sound effects and loops managed by this class.
-     * Does NOT stop Music (managed by MusicManager).
-     * Use this for Player Death or Game Over.
-     */
     public void stopAllSounds() {
-        // Stop every sound object we have loaded
         for (Sound sound : modernSounds.values()) {
             sound.stop();
         }
-        // Reset our loop trackers
         currentRainId = -1;
         currentWindId = -1;
         lastWeatherType = null;
     }
 
-    /**
-     * LAYER STOP: Stops only the Weather Ambience layer.
-     * Use this when descending deeper into the dungeon (Underground).
-     */
     public void stopWeatherEffects() {
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
             modernSounds.get("rain_loop").stop(currentRainId);
@@ -106,49 +84,51 @@ public class SoundManager {
             modernSounds.get("wind_loop").stop(currentWindId);
             currentWindId = -1;
         }
-        lastWeatherType = null; // Reset so weather restarts correctly if we surface later
+        lastWeatherType = null;
     }
 
-    /**
-     * Plays the death sound with HIGH PRIORITY.
-     * Automatically silences all other SFX and Weather first.
-     */
     public void playPlayerDeathSound() {
-        // 1. Clear the audio stage
         stopAllSounds();
-
-        // 2. Stop Music (Good practice to ensure this is silent too)
         MusicManager.getInstance().stop();
-
-        // 3. Play the specific death file
-        // (Mapped to tarmin_enter_fx.ogg based on your loadSound calls)
         playSound("player_death");
         playSound("tarmin_laugh");
     }
 
-    // ========================================================================
-    // --- GAMEPLAY AUDIO METHODS ---
-    // ========================================================================
+    // --- NEW: Volume Dampening for Interiors ---
+    public void setDampened(boolean dampened) {
+        if (this.isDampened == dampened) return;
+        this.isDampened = dampened;
+
+        // Update currently playing loops immediately
+        float modifier = isDampened ? 0.25f : 1.0f;
+        float targetVol = currentBaseVol * modifier;
+
+        if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
+            modernSounds.get("rain_loop").setVolume(currentRainId, targetVol);
+        }
+        if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
+            float windVol = (lastWeatherType == WeatherType.STORM) ? targetVol * 0.8f : targetVol;
+            modernSounds.get("wind_loop").setVolume(currentWindId, windVol);
+        }
+    }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
-        // If we are just updating intensity for the same weather, we might need to adjust volume,
-        // but for now we only fully reset loops on type change to avoid skipping.
         if (type == lastWeatherType) return;
         lastWeatherType = type;
 
-        // Stop specific loops directly to prepare for new ones
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) modernSounds.get("rain_loop").stop(currentRainId);
         if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) modernSounds.get("wind_loop").stop(currentWindId);
 
-        // Reset IDs
         currentRainId = -1;
         currentWindId = -1;
 
-        float vol = 0.5f;
-        if (intensity == WeatherIntensity.HEAVY) vol = 0.8f;
-        if (intensity == WeatherIntensity.EXTREME) vol = 1.0f;
+        currentBaseVol = 0.5f;
+        if (intensity == WeatherIntensity.HEAVY) currentBaseVol = 0.8f;
+        if (intensity == WeatherIntensity.EXTREME) currentBaseVol = 1.0f;
 
-        // Start new loops
+        float modifier = isDampened ? 0.25f : 1.0f;
+        float vol = currentBaseVol * modifier;
+
         switch (type) {
             case RAIN:
             case STORM:
@@ -167,23 +147,29 @@ public class SoundManager {
                 break;
             case TORNADO:
                 if (modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(1.0f, 0.6f, 0.0f);
+                    currentWindId = modernSounds.get("wind_loop").loop(1.0f * modifier, 0.6f, 0.0f);
                 }
                 break;
             default:
-                // CLEAR / FOG = No ambient loops
                 break;
         }
     }
 
     public void playThunder() {
         int variant = MathUtils.random(1, 3);
-        playSound("thunder_" + variant);
+        // Thunder is loud, but still slightly dampened if indoors
+        float vol = isDampened ? 0.5f : 1.0f;
+        if (modernSounds.containsKey("thunder_" + variant)) {
+            modernSounds.get("thunder_" + variant).play(vol);
+        }
     }
 
     public void playLightningCrash() {
         int variant = MathUtils.random(1, 3);
-        playSound("lightning_crash_" + variant);
+        float vol = isDampened ? 0.5f : 1.0f;
+        if (modernSounds.containsKey("lightning_crash_" + variant)) {
+            modernSounds.get("lightning_crash_" + variant).play(vol);
+        }
     }
 
     public void playPlayerAttackSound(Item weapon) {
@@ -236,8 +222,6 @@ public class SoundManager {
         }
     }
 
-    // --- Internal Helpers ---
-
     private void playSound(String name) {
         if (modernSounds.containsKey(name)) {
             modernSounds.get(name).play();
@@ -261,7 +245,7 @@ public class SoundManager {
     }
 
     public void dispose() {
-        stopAllSounds(); // Ensure everything stops on dispose
+        stopAllSounds();
         for (Sound sound : modernSounds.values()) {
             sound.dispose();
         }

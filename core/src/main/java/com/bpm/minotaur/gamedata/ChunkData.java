@@ -28,6 +28,8 @@ public class ChunkData {
     // --- NEW: Persist Exploration Data ---
     public byte[][] explorationState;
 
+    public List<GridPoint2> homeTiles = new ArrayList<>();
+
     public List<ItemData> items = new ArrayList<>();
     public List<MonsterData> monsters = new ArrayList<>();
     public List<DoorData> doors = new ArrayList<>();
@@ -44,6 +46,8 @@ public class ChunkData {
 
         // --- NEW: Copy exploration state ---
         this.explorationState = maze.getExplorationState();
+
+        this.homeTiles.addAll(maze.getHomeTiles());
 
         for (Map.Entry<GridPoint2, Item> entry : maze.getItems().entrySet()) {
             this.items.add(new ItemData(entry.getValue()));
@@ -75,6 +79,10 @@ public class ChunkData {
         // Handle legacy saves that might not have this field yet
         if (this.explorationState != null) {
             maze.setExplorationState(this.explorationState);
+        }
+
+        if (this.homeTiles != null) {
+            maze.setHomeTiles(this.homeTiles);
         }
 
         for (ItemData data : items) {

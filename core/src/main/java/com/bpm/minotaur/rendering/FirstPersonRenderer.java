@@ -132,6 +132,11 @@ public class FirstPersonRenderer {
         boolean fogEnabled = false;
         float lightIntensity = 1.0f;
 
+        // --- NEW: Check if player is inside the "Home" ---
+        // Being inside the home behaves like being "Underground" (Level > 1)
+        boolean isInsideHome = maze.isHomeTile((int)player.getPosition().x, (int)player.getPosition().y);
+        boolean isIndoors = (currentLevel > 1) || isInsideHome;
+
         if (worldManager.getWeatherManager() != null && currentLevel == 1) {
             com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
             fogEnabled = true;
@@ -155,7 +160,7 @@ public class FirstPersonRenderer {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.setShader(null);
             spriteBatch.begin();
-            if (currentLevel == 1) {
+            if (!isIndoors) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);
@@ -166,7 +171,7 @@ public class FirstPersonRenderer {
             spriteBatch.begin();
 
             // A. Ceiling/Skybox
-            if (currentLevel == 1) {
+            if (!isIndoors || currentLevel > 1) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             } else {
                 Color ceilColor = applyTorchLighting(currentCeilingColor, WorldConstants.TORCH_FADE_END, new Color());
@@ -231,7 +236,8 @@ public class FirstPersonRenderer {
         }
 
         // --- RENDER PRECIPITATION (Foreground) ---
-        if (this.weatherRenderer != null && currentLevel == 1) {
+        // ONLY render if NOT indoors
+        if (!isIndoors && this.weatherRenderer != null && currentLevel == 1) {
             this.weatherRenderer.renderPrecipitation(shapeRenderer, viewport);
         }
     }
