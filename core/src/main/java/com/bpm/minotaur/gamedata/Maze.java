@@ -7,11 +7,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.rendering.RetroTheme;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Maze {
 
@@ -24,6 +20,8 @@ public class Maze {
     private final int height;
 
     private byte[][] explorationState;
+
+    private final Set<GridPoint2> homeTiles = new HashSet<>();
 
     private final Map<GridPoint2, Object> gameObjects = new HashMap<>();
     private final Map<GridPoint2, Item> items = new HashMap<>();
@@ -55,6 +53,27 @@ public class Maze {
 
     public List<CorpsePart> getCorpses() {
         return corpses;
+    }
+
+    public void addHomeTile(GridPoint2 pos) {
+        homeTiles.add(pos);
+    }
+
+    public boolean isHomeTile(int x, int y) {
+        return homeTiles.contains(new GridPoint2(x, y));
+    }
+
+    public boolean isHomeTile(GridPoint2 pos) {
+        return homeTiles.contains(pos);
+    }
+
+    public Set<GridPoint2> getHomeTiles() {
+        return homeTiles;
+    }
+
+    public void setHomeTiles(List<GridPoint2> tiles) {
+        this.homeTiles.clear();
+        this.homeTiles.addAll(tiles);
     }
     // Removed: getBloodSprays()
 

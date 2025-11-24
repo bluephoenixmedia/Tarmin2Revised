@@ -3,7 +3,6 @@ package com.bpm.minotaur.managers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
-// Removed: import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
@@ -41,14 +40,15 @@ public class WorldManager {
 
     private final SoundManager soundManager;
 
-    // Removed: private ShaderProgram bloodShader;
-
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
     private final BiomeManager biomeManager;
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
+
+    // Keep reference to player to check location for Audio dampening
+    private Player playerReference;
 
     public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel,
                         MonsterDataManager dataManager,
@@ -73,8 +73,6 @@ public class WorldManager {
 
         this.weatherManager = new WeatherManager(this);
 
-        // Removed ShaderProgram compilation block
-
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
 
@@ -84,6 +82,10 @@ public class WorldManager {
         this.currentLevelTheme = getThemeForLevel(initialLevel);
     }
 
+    public void setPlayerReference(Player player) {
+        this.playerReference = player;
+    }
+
     public SoundManager getSoundManager() {
         return soundManager;
     }
@@ -91,8 +93,6 @@ public class WorldManager {
     public Maze getInitialMaze() {
         return loadChunk(new GridPoint2(0, 0));
     }
-
-    // Removed: getBloodShader() method
 
     public void disableSaving() {
         this.savingEnabled = false;
@@ -211,6 +211,17 @@ public class WorldManager {
     public void update(float delta) {
         if (currentLevel == 1) {
             weatherManager.update(delta);
+
+            // --- NEW: Audio Dampening Check ---
+            if (playerReference != null) {
+                Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
+                if (currentMaze != null) {
+                    boolean insideHome = currentMaze.isHomeTile((int)playerReference.getPosition().x, (int)playerReference.getPosition().y);
+                    soundManager.setDampened(insideHome);
+                }
+            }
+        } else {
+            soundManager.stopWeatherEffects();
         }
     }
 
