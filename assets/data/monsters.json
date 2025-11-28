@@ -48,14 +48,14 @@
         "type": "POISONED",
         "duration": 10,
         "potency": 1,
-        "stackable": false,
+        "stackable": true,
         "chance": 0.5
       }
     ],
     "variants": [
       { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      { "color": "PINK", "minLevel": 2, "maxLevel": 9, "weight": 2 },
+      { "color": "PURPLE", "minLevel": 5, "maxLevel": 99, "weight": 5 }
     ]
   },
   "DWARF": {
@@ -98,8 +98,8 @@
     },
     "variants": [
       { "color": "YELLOW", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "TAN", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      { "color": "TAN", "minLevel": 2, "maxLevel": 9, "weight": 2 },
+      { "color": "ORANGE", "minLevel": 5, "maxLevel": 99, "weight": 5 }
     ]
   },
   "GIANT_SCORPION": {
@@ -142,8 +142,8 @@
     },
     "variants": [
       { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      { "color": "PINK", "minLevel": 2, "maxLevel": 9, "weight": 5 },
+      { "color": "PURPLE", "minLevel": 3, "maxLevel": 99, "weight": 10 }
     ]
   },
   "GIANT_SNAKE": {

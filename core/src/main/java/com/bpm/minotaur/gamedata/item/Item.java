@@ -206,8 +206,13 @@ public class Item implements Renderable {
             this.texture = null;
         }
 
+        // --- BUG FIX: Only lock rigid containers ---
         if (this.isContainer) {
-            this.isLocked = true;
+            if (type == ItemType.BOX || type == ItemType.REGULAR_CHEST) {
+                this.isLocked = true;
+            } else {
+                this.isLocked = false;
+            }
         }
 
         if (this.dataManager != null) {
