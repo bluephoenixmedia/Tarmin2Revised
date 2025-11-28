@@ -322,7 +322,7 @@ public class CombatManager {
             currentState = CombatState.VICTORY;
             Gdx.app.log("CombatManager","You have defeated" + monster.getMonsterType());
             eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
-
+            UnlockManager.getInstance().recordKill(monster.getMonsterType());
             int baseExp = monster.getBaseExperience();
             float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
             float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);

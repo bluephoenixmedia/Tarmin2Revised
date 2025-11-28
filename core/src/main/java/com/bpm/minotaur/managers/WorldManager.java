@@ -171,6 +171,9 @@ public class WorldManager {
 
     public void setCurrentLevel(int level) {
         this.currentLevel = level;
+        // --- NEW: Update Deepest Level Tracking ---
+        UnlockManager.getInstance().updateDeepestLevel(level);
+
         this.currentLevelTheme = getThemeForLevel(level);
         Gdx.app.log("WorldManager", "Set current level to: " + level);
     }

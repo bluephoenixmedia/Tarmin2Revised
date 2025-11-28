@@ -435,9 +435,11 @@ public class Player {
 
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
+                UnlockManager.getInstance().incrementStat("steps", 1);
             }
         } else {
             position.set(nextX + 0.5f, nextY + 0.5f);
+            UnlockManager.getInstance().incrementStat("steps", 1);
         }
     }
 
@@ -481,6 +483,7 @@ public class Player {
             // Check state AFTER toggle to determine event/sound
             if (door.getState() == Door.DoorState.OPENING) {
                 eventManager.addEvent(new GameEvent("You open the door.", 1f));
+                UnlockManager.getInstance().incrementStat("doors", 1);
                 if (soundManager != null) soundManager.playDoorOpenSound();
             } else if (door.getState() == Door.DoorState.CLOSING) {
                 eventManager.addEvent(new GameEvent("You close the door.", 1f));
