@@ -3,6 +3,7 @@ eclipse.project.name = appName + '-core'
 
 dependencies {
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion" // <--- ADD THIS LINE
   api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
   api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   if(enableGraalNative == 'true') {
