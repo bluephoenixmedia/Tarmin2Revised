@@ -1,6 +1,6 @@
 {
   "levelBudgets": [
-    { "level": 1, "monsterBudget": 5, "itemBudget": 8, "containerBudget": 5, "debrisBudget": 10 },
+    { "level": 1, "monsterBudget": 10, "itemBudget": 8, "containerBudget": 5, "debrisBudget": 30 },
     { "level": 2, "monsterBudget": 3, "itemBudget": 5, "containerBudget": 2, "debrisBudget": 12 },
     { "level": 3, "monsterBudget": 4, "itemBudget": 4, "containerBudget": 2, "debrisBudget": 12 },
     { "level": 4, "monsterBudget": 4, "itemBudget": 4, "containerBudget": 2, "debrisBudget": 15 },
@@ -21,8 +21,8 @@
   "monsterSpawnTable": [
     { "type": "GIANT_ANT", "minLevel": 1, "maxLevel": 3, "weight": 10 },
     { "type": "DWARF", "minLevel": 1, "maxLevel": 5, "weight": 8 },
-    { "type": "GIANT_SCORPION", "minLevel": 2, "maxLevel": 6, "weight": 8 },
-    { "type": "SKELETON", "minLevel": 3, "maxLevel": 8, "weight": 7 },
+    { "type": "GIANT_SCORPION", "minLevel": 1, "maxLevel": 6, "weight": 8 },
+    { "type": "SKELETON", "minLevel": 1, "maxLevel": 8, "weight": 7 },
     { "type": "GHOUL", "minLevel": 4, "maxLevel": 10, "weight": 6 },
     { "type": "CLOAKED_SKELETON", "minLevel": 5, "maxLevel": 12, "weight": 6 },
     { "type": "GIANT_SNAKE", "minLevel": 6, "maxLevel": 12, "weight": 5 },

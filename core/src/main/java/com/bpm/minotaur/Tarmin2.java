@@ -6,6 +6,7 @@ import com.badlogic.gdx.assets.AssetManager; // Import this
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
@@ -45,6 +46,7 @@ public class Tarmin2 extends Game {
 
     @Override
     public void create() {
+        Bullet.init(); // <--- ADD INITIALIZATION HERE
         batch = new SpriteBatch();
         OrthographicCamera camera = new OrthographicCamera();
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);

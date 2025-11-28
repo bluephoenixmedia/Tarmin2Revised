@@ -35,6 +35,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     // --- Core Dependencies ---
     private final DebugManager debugManager = DebugManager.getInstance();
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
+    private StochasticManager stochasticManager;
     private final BitmapFont font = new BitmapFont();
     private final GameMode gameMode;
 
@@ -89,6 +90,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.gameMode = gameMode;
         this.level = level;
         this.currentLevel = level;
+        this.stochasticManager = new StochasticManager();
 
         // Initialize FBO Viewport (Locked to 1920x1080)
         this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
@@ -241,7 +243,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         // Initialize systems that depend on the player and maze
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager());
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
@@ -283,6 +285,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
                 this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
             }
+        }
+
+        if (stochasticManager != null) {
+            stochasticManager.update(delta);
         }
 
         if (gameMode == GameMode.ADVANCED) {
@@ -346,11 +352,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             player.getCameraPlane().set(originalPlane);
         }
 
+        if (stochasticManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_RESOLUTION) {
+            stochasticManager.render();
+        }
+
         // --- HUD RENDERING (Also into FBO) ---
         if (hud != null) {
             // Hud manages its own Stage/Viewport internally.
             // We assume Hud uses a 1920x1080 FitViewport as defined in its constructor.
             hud.render();
+        }
+
+        if (stochasticManager != null) {
+            CombatManager.CombatState state = combatManager.getCurrentState();
+            if (state == CombatManager.CombatState.PHYSICS_RESOLUTION ||
+                state == CombatManager.CombatState.PHYSICS_DELAY) {
+                stochasticManager.render();
+            }
         }
 
         // Render damage text (animation manager uses sprite batch)
@@ -446,7 +464,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.maze = newMaze;
         player.setMaze(newMaze);
 
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager());
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
 
         Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
