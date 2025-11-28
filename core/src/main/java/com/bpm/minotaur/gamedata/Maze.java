@@ -146,6 +146,23 @@ public class Maze {
         return wallData[y][x];
     }
 
+    /**
+     * Toggles the state of the door at x,y.
+     * If Closed -> Opens.
+     * If Open -> Closes.
+     */
+    public void toggleDoorAt(int x, int y) {
+        Object obj = getGameObjectAt(x, y);
+        if (obj instanceof Door) {
+            Door door = (Door) obj;
+            if (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING) {
+                door.startOpening();
+            } else if (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING) {
+                door.startClosing();
+            }
+        }
+    }
+
 
 
     public Object getGameObjectAt(int x, int y) {

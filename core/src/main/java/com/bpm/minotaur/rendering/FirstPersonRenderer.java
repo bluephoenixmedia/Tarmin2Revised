@@ -155,11 +155,16 @@ public class FirstPersonRenderer {
             depthBuffer = new float[(int)viewport.getScreenWidth()];
         }
 
+
+
         // 1. RENDER FLOOR & CEILING (Background)
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.setShader(null);
             spriteBatch.begin();
+
+            // FIX: Only render Skybox if NOT indoors.
+            // Previous logic: (!isIndoors || currentLevel > 1) caused Dungeons to have Skyboxes.
             if (!isIndoors) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
@@ -167,13 +172,15 @@ public class FirstPersonRenderer {
         } else {
             // RETRO MODE
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
-            spriteBatch.setShader(null); // Ensure no shader is active
+            spriteBatch.setShader(null);
             spriteBatch.begin();
 
             // A. Ceiling/Skybox
-            if (!isIndoors || currentLevel > 1) {
+            // FIX: Only render Skybox if NOT indoors.
+            if (!isIndoors) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             } else {
+                // Render Flat Ceiling for Indoors (Home OR Dungeon)
                 Color ceilColor = applyTorchLighting(currentCeilingColor, WorldConstants.TORCH_FADE_END, new Color());
                 spriteBatch.setColor(ceilColor);
                 spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
