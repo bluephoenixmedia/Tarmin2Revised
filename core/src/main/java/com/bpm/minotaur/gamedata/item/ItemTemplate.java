@@ -44,4 +44,6 @@ public class ItemTemplate {
         public float x;
         public float y;
     }
+
+    public String unlockId; // If null, item is always available.
 }

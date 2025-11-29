@@ -79,7 +79,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
         int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
 
-        createMazeFromArrayTiles(mapRows, mapCols, chunkId);
+        createMazeFromArrayTiles(mapRows, mapCols, chunkId, level);
 
         Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme);
@@ -224,7 +224,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         return rotateTile(allTiles.get(id), rotation);
     }
 
-    private void createMazeFromArrayTiles(int mapRows, int mapCols, GridPoint2 chunkId) {
+    private void createMazeFromArrayTiles(int mapRows, int mapCols, GridPoint2 chunkId, int level) {
         final int CONNECTOR_INDEX = 5;
         this.currentChunkHomeTiles.clear();
 
@@ -233,7 +233,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         int homeX = -1;
         int homeY = -1;
-        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0);
+        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0 && level ==1);
 
         if (isStartChunk) {
             // Center the Home Tile if grid is 3x3

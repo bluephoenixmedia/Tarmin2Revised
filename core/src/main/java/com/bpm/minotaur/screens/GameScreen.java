@@ -220,16 +220,22 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 }
             }
 
-            // 2. Create Player
+            // --- REORDERING FIX ---
+            // We must generate the initial maze FIRST. This triggers the chunk generator,
+            // which calculates the 'home tile' center and updates the start pos.
+            // If we fetch startPos before this, we get the default (1,1).
+
+            // 2. Load Maze (Moved UP)
+            Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
+            this.maze = worldManager.getInitialMaze();
+
+            // 3. Create Player (Moved DOWN)
             Gdx.app.log("GameScreen [DEBUG]", "Creating NEW Player...");
+            // Now this call will return the *updated* spawn point from the generator
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
-
-            // 3. Load Maze
-            Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
-            this.maze = worldManager.getInitialMaze();
 
             Gdx.app.log("GameScreen [DEBUG]", "Setting maze reference on player.");
             player.setMaze(this.maze);
@@ -245,6 +251,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         // Initialize systems that depend on the player and maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+
+        // --- FIX: Force HUD to Virtual Resolution immediately ---
+        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
         Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
 
@@ -466,6 +475,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+
+        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
         Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
         DebugRenderer.printMazeToConsole(maze);
