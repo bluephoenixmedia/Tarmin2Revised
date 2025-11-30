@@ -676,8 +676,13 @@ public class Player {
         }
     }
 
+    /**
+     * UPDATED: Returns attack modifier including LEVEL BONUS and EQUIPMENT BONUSES.
+     * Use this for all combat calculations.
+     */
     public int getAttackModifier() {
-        return stats.getAttackModifier();
+        // Level Bonus + All "BONUS_DAMAGE" on equipped items
+        return stats.getAttackModifier() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
     }
 
     public int getLevel() { return stats.getLevel(); }

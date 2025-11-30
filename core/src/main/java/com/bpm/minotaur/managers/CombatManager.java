@@ -231,6 +231,9 @@ public class CombatManager {
             int potentialDamage;
             int attackModifier = player.getAttackModifier();
 
+            // LOGGING THE TOTAL ATTACK MODIFIER
+            Gdx.app.log("CombatManager", "Total Player Attack Modifier (Level + Gear): " + attackModifier);
+
             if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
                 potentialDamage = weapon.getSpiritDamage() + attackModifier;
             } else {

@@ -10,19 +10,26 @@ import com.bpm.minotaur.managers.StatusManager;
 
 public class Monster implements Renderable {
 
-
-
     public enum MonsterType {
         // Bad Monsters
         GIANT_ANT,
         DWARF,
         GIANT_SCORPION,
         GIANT_SNAKE,
+        KOBOLD,
+        GOBLIN,
+        TROGLODYTE,
+        HOBGOBLIN,
 
         // Nasty Monsters
         GHOUL,
         SKELETON,
         CLOAKED_SKELETON,
+        ZOMBIE,
+        MUMMY,
+        HARPY,
+        GARGOYLE,
+        WERERAT,
 
         // Horrible Monsters
         ALLIGATOR,
@@ -30,21 +37,42 @@ public class Monster implements Renderable {
         WRAITH,
         GIANT,
         MINOTAUR,
-        SPIDER, // Existing monster
-        ORC     // Existing monster
+        GHAST,
+        BEHOLDER,
+        GELATINOUS_CUBE,
+        RUST_MONSTER,
+        LICH,
+        MIMIC,
+        MIND_FLAYER,
+        OWLBEAR,
+        DISPLACER_BEAST,
+        UMBER_HULK,
+        SPIDER,
+        ORC,
+        WEREWOLF,
+        TROLL,
+        OGRE,
+        BASILISK,
+        MEDUSA,
+        WYVERN,
+        CHIMERA,
+        HYDRA,
+        VAMPIRE,
+        IRON_GOLEM,
+        PURPLE_WORM
     }
 
     private final MonsterType type;
     private final Vector2 position;
-    private final MonsterColor monsterColor; // Changed from Color to MonsterColor
+    private final MonsterColor monsterColor;
     private int warStrength;
     private int spiritualStrength;
     private int armor;
-    private int baseExperience; // New field for base XP
+    private int baseExperience;
 
-    private final String[] spriteData; // Add this line
-    private Texture texture = null; // Add this line to store the monster's texture
-    public Vector2 scale; // Add this Vector2 scale field
+    private final String[] spriteData;
+    private Texture texture = null;
+    public Vector2 scale;
     private MonsterFamily family;
 
     private int intelligence;
@@ -55,10 +83,6 @@ public class Monster implements Renderable {
 
     private final StatusManager statusManager;
 
-    /**
-     * The NEW, simplified constructor.
-     * It requires the data/asset managers to build the monster.
-     */
     public Monster(MonsterType type, int x, int y, MonsterColor monsterColor,
                    MonsterDataManager dataManager, AssetManager assetManager)
     {
@@ -66,24 +90,19 @@ public class Monster implements Renderable {
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.monsterColor = monsterColor;
 
-        // --- Get the template for this monster type ---
         MonsterTemplate template = dataManager.getTemplate(type);
 
-        // --- Copy all data from the template ---
         this.warStrength = template.warStrength;
         this.spiritualStrength = template.spiritualStrength;
         this.armor = template.armor;
         this.baseExperience = template.baseExperience;
         this.family = template.family;
-        this.spriteData = template.spriteData; // Copied directly from template
+        this.spriteData = template.spriteData;
         this.scale = new Vector2(template.scale.x, template.scale.y);
         this.statusManager = new StatusManager();
-        // --- Get the PRE-LOADED texture from the AssetManager ---
-        // This avoids "new Texture(...)" and saves memory!
         this.texture = assetManager.get(template.texturePath, Texture.class);
 
-        this.intelligence = template.intelligence; // Copy intelligence from template
-
+        this.intelligence = template.intelligence;
         this.dexterity = template.dexterity;
         this.hasRangedAttack = template.hasRangedAttack;
         this.attackRange = template.attackRange;
@@ -91,98 +110,48 @@ public class Monster implements Renderable {
 
     public void takeDamage(int amount) {
         int damageReduction = this.armor;
-        Gdx.app.log("MONSTER", "damagereduction =  " + damageReduction);
-
         int finalDamage = Math.max(0, amount - damageReduction);
-        Gdx.app.log("MONSTER", "finalDamage =  " + finalDamage);
-
-
         this.warStrength -= finalDamage;
-
         if (this.warStrength < 0) {
             this.warStrength = 0;
         }
-        Gdx.app.log("Monster", this.getType() + " takes " + finalDamage + " damage. WS is now " + this.warStrength);
     }
 
     public void takeSpiritualDamage(int amount) {
         this.spiritualStrength -= amount;
-
         if (this.spiritualStrength < 0) {
             this.spiritualStrength = 0;
         }
-        Gdx.app.log("Monster", this.getType() + " takes " + amount + " spiritual damage. SS is now " + this.spiritualStrength);
-    }
-    public String[] getSpriteData() {
-        return spriteData;
-    }
-    public Texture getTexture() {
-        return texture;
     }
 
-    public Vector2 getScale() {
-        return scale;
-    }
+    public String[] getSpriteData() { return spriteData; }
+    public Texture getTexture() { return texture; }
+    public Vector2 getScale() { return scale; }
 
     public void scaleStats(int level) {
-        int levelBonus = level / 2;
-        this.warStrength += levelBonus;
-        this.spiritualStrength += levelBonus;
-        this.armor += levelBonus / 2;
+        if (level <= 1) return;
+        float multiplier = 1.0f + ((level - 1) * 0.15f);
+        float armorMultiplier = 1.0f + ((level - 1) * 0.05f);
+        this.warStrength = (int) (this.warStrength * multiplier);
+        this.spiritualStrength = (int) (this.spiritualStrength * multiplier);
+        this.armor = (int) (this.armor * armorMultiplier);
+        this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.10f)));
     }
+
     public MonsterType getType() { return type; }
     public String getMonsterType() { return type.name(); }
     @Override public Vector2 getPosition() { return position; }
-   // @Override public Color getColor() { return color; }
     public int getWarStrength() { return warStrength; }
     public int getSpiritualStrength() { return spiritualStrength; }
-    public int getBaseExperience() { return baseExperience;
-    }
-
-    public void setWarStrength(int warStrength) {
-        this.warStrength = warStrength;
-    }
-
-    public void setSpiritualStrength(int spiritualStrength) {
-        this.spiritualStrength = spiritualStrength;
-    }
-    @Override
-    public Color getColor() {
-        return monsterColor.getColor();
-    }
-
-    public MonsterColor getMonsterColor() {
-        return monsterColor;
-    }
-
-    public MonsterFamily getFamily() {
-        return family;
-    }
-
-
-    public int getIntelligence() {
-        return intelligence;
-    }
-
-    /**
-     * Provides direct access to the status effect manager.
-     * @return The StatusManager object.
-     */
-    public StatusManager getStatusManager() {
-        return statusManager;
-    }
-
-    public int getDexterity() {
-        return dexterity;
-    }
-
-    public boolean hasRangedAttack() {
-        return hasRangedAttack;
-    }
-
-    public int getAttackRange() {
-        return attackRange;
-    }
-
+    public int getBaseExperience() { return baseExperience; }
+    public void setWarStrength(int warStrength) { this.warStrength = warStrength; }
+    public void setSpiritualStrength(int spiritualStrength) { this.spiritualStrength = spiritualStrength; }
+    @Override public Color getColor() { return monsterColor.getColor(); }
+    public MonsterColor getMonsterColor() { return monsterColor; }
+    public MonsterFamily getFamily() { return family; }
+    public int getIntelligence() { return intelligence; }
+    public StatusManager getStatusManager() { return statusManager; }
+    public int getDexterity() { return dexterity; }
+    public boolean hasRangedAttack() { return hasRangedAttack; }
+    public int getAttackRange() { return attackRange; }
 }
-

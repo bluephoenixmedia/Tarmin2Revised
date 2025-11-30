@@ -104,10 +104,23 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "Saving has been enabled.");
     }
 
+    /**
+     * Calculates difficulty based on Depth + Horizontal Distance.
+     * Moving 2 chunks away is roughly equivalent to descending 1 floor.
+     */
+    private int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
+        int horizontalDistance = Math.abs(chunkId.x) + Math.abs(chunkId.y);
+        int distancePenalty = (int) (horizontalDistance * 0.5f);
+        return depth + distancePenalty;
+    }
+
     public Maze loadChunk(GridPoint2 chunkId) {
+        // --- Calculate Dynamic Difficulty ---
+        int effectiveLevel = calculateEffectiveDifficulty(chunkId, currentLevel);
+
         if (gameMode == GameMode.CLASSIC) {
             Gdx.app.log("WorldManager", "CLASSIC mode: Generating new chunk.");
-            return generators.get(Biome.MAZE).generateChunk(chunkId, currentLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME,
+            return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME,
                 this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
         }
 
@@ -153,11 +166,15 @@ public class WorldManager {
                 break;
         }
 
-        Maze newMaze = generator.generateChunk(chunkId, currentLevel, difficulty, gameMode, themeToGenerate,
+        // Pass effectiveLevel instead of currentLevel
+        Maze newMaze = generator.generateChunk(chunkId, effectiveLevel, difficulty, gameMode, themeToGenerate,
             this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
 
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
+
+        Gdx.app.log("WorldManager", "Generated Chunk " + chunkId + " with Effective Difficulty: " + effectiveLevel);
+
         return newMaze;
     }
 
