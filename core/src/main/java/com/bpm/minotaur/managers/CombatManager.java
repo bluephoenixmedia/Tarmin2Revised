@@ -333,6 +333,7 @@ public class CombatManager {
             eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
             player.addExperience(totalExp, eventManager);
             maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.10f);
+            spawnCorpseEffects(monster);
 
         } else {
             currentState = CombatState.MONSTER_TURN;

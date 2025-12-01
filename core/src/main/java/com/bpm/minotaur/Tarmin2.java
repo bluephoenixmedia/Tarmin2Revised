@@ -2,25 +2,24 @@ package com.bpm.minotaur;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.assets.AssetManager; // Import this
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.physics.bullet.Bullet;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
-import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
-import com.bpm.minotaur.gamedata.monster.MonsterDataManager; // Import this
-import com.bpm.minotaur.gamedata.spawntables.LevelBudget;
+import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SettingsManager;
-// Import your new loading screen and main menu
 import com.bpm.minotaur.screens.LoadingScreen;
 import com.bpm.minotaur.screens.MainMenuScreen;
 
@@ -32,13 +31,14 @@ public class Tarmin2 extends Game {
 
     // --- Shared Resources (now private) ---
     private SpriteBatch batch;
+    private ModelBatch modelBatch;
     private Viewport viewport;
 
     // --- Asset and Data Managers ---
     private AssetManager assetManager;
     private MonsterDataManager monsterDataManager;
-    private ItemDataManager itemDataManager; // <-- ADD THIS
-    private SpawnTableData spawnTableData; // <-- ADD THIS
+    private ItemDataManager itemDataManager;
+    private SpawnTableData spawnTableData;
 
     // Constants for a consistent virtual resolution.
     private static final float VIRTUAL_WIDTH = 1920f;
@@ -46,20 +46,24 @@ public class Tarmin2 extends Game {
 
     @Override
     public void create() {
-        Bullet.init(); // <--- ADD INITIALIZATION HERE
+        Bullet.init();
         batch = new SpriteBatch();
+
+        // --- NEW: Initialize the ModelBatch ---
+        modelBatch = new ModelBatch();
+
         OrthographicCamera camera = new OrthographicCamera();
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
 
         // --- 1. Create Managers ---
         assetManager = new AssetManager();
         monsterDataManager = new MonsterDataManager();
-        itemDataManager = new ItemDataManager(); // <-- ADD THIS
+        itemDataManager = new ItemDataManager();
 
         // --- 2. Load Monster Definitions (Synchronous) ---
         // This is fast and needs to happen before queueing assets
         monsterDataManager.load();
-        itemDataManager.load(); // <-- ADD THIS
+        itemDataManager.load();
 
         Gdx.app.log("Tarmin2", "Loading SpawnTableData...");
         Json json = new Json();
@@ -68,7 +72,7 @@ public class Tarmin2 extends Game {
         FileHandle spawnTableFile = Gdx.files.internal("data/spawntables.json");
         spawnTableData = json.fromJson(SpawnTableData.class, spawnTableFile);
 
-// CRITICAL FIX: Manually convert containerLoot JsonValues to SpawnTableEntry objects
+        // CRITICAL FIX: Manually convert containerLoot JsonValues to SpawnTableEntry objects
         if (spawnTableData.containerLoot != null) {
             for (ObjectMap.Entry<String, Array<SpawnTableEntry>> entry : spawnTableData.containerLoot) {
                 Array<SpawnTableEntry> fixedArray = new Array<>();
@@ -88,7 +92,6 @@ public class Tarmin2 extends Game {
                         }
                     }
                 }
-
                 entry.value = fixedArray;
             }
         }
@@ -102,21 +105,14 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
 
-        // Queue monster textures (using the data we just loaded!)
+        // Queue monster textures and 3D models (via DataManagers)
         monsterDataManager.queueAssets(assetManager);
-        itemDataManager.queueAssets(assetManager); // <-- ADD THIS
-
-        // ... queue other assets here (fonts, UI skins, sound effects, etc.) ...
-        // Example: assetManager.load("ui/uiskin.json", Skin.class);
-        // Example: assetManager.load("fonts/myfont.fnt", BitmapFont.class);
+        itemDataManager.queueAssets(assetManager);
 
         // --- 4. Load Settings (Synchronous) ---
-        // Settings are small and usually needed right away
         SettingsManager.getInstance().load();
 
         // --- 5. Set the Initial Screen to the LoadingScreen ---
-        // We pass "this" (the Game object) so the screen can access
-        // managers and tell us when to switch screens.
         this.setScreen(new LoadingScreen(this));
     }
 
@@ -125,7 +121,7 @@ public class Tarmin2 extends Game {
      */
     public void proceedToMainMenu() {
         // Now that assets are loaded, we can finish setting up managers
-        MusicManager.getInstance().finishLoading(); // Assign loaded music
+        MusicManager.getInstance().finishLoading();
 
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
@@ -133,17 +129,19 @@ public class Tarmin2 extends Game {
 
     @Override
     public void render() {
-        // The Game class automatically calls the render method of the active screen.
         super.render();
     }
 
     @Override
     public void dispose() {
-        // Dispose of shared resources when the game closes.
         batch.dispose();
-        assetManager.dispose(); // Dispose the asset manager
 
-        // Also dispose the current screen's resources.
+        if (modelBatch != null) {
+            modelBatch.dispose();
+        }
+
+        assetManager.dispose();
+
         if (getScreen() != null) {
             getScreen().dispose();
         }
@@ -153,16 +151,18 @@ public class Tarmin2 extends Game {
 
     @Override
     public void resize(int width, int height) {
-        // Update the viewport when the window is resized.
         viewport.update(width, height, true);
-        // Ensure the SpriteBatch uses the updated viewport projection.
         batch.setProjectionMatrix(viewport.getCamera().combined);
     }
 
-    // --- Public Getters for Screens to Use ---
+    // --- Public Getters ---
 
     public SpriteBatch getBatch() {
         return batch;
+    }
+
+    public ModelBatch getModelBatch() {
+        return modelBatch;
     }
 
     public Viewport getViewport() {
@@ -184,6 +184,4 @@ public class Tarmin2 extends Game {
     public SpawnTableData getSpawnTableData() {
         return spawnTableData;
     }
-
-
 }

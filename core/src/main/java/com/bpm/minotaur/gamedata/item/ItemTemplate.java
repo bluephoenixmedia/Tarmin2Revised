@@ -1,17 +1,19 @@
 package com.bpm.minotaur.gamedata.item;
 
 import com.badlogic.gdx.graphics.Color;
-
 import java.util.List;
 
-// Note: Fields are public for easy parsing by libGDX Json.
-// This class is just a data container.
 public class ItemTemplate {
 
     public String friendlyName;
     public String texturePath;
     public String[] spriteData;
-    public String description; // <-- ADD THIS LINE
+    public String description;
+
+    // --- NEW: 3D Model Support ---
+    public String modelPath;       // Path to .g3db file (e.g., "models/Sack2.g3db")
+    public float modelScale = 1.0f; // Uniform scale (e.g., 0.01)
+    public float modelYOffset = 0.0f; // Height adjustment if needed
 
     // Stats
     public int baseValue;
@@ -19,7 +21,7 @@ public class ItemTemplate {
     public int spiritDamage;
     public int armorDefense;
 
-    public int accuracyModifier; // Represents Weapon "Tier" for Hit Chance
+    public int accuracyModifier;
 
     // Booleans for type
     public boolean isWeapon;
@@ -33,11 +35,10 @@ public class ItemTemplate {
     public boolean isContainer;
     public boolean isRing;
     public int range;
-    public ScaleData scale; // <-- ADD THIS FIELD
-    public boolean isPotionAppearance = false; // <-- ADD THIS LINE
-    public List<ItemVariant> variants; // <-- ADD THIS LINE
+    public ScaleData scale;
+    public boolean isPotionAppearance = false;
+    public List<ItemVariant> variants;
 
-    // A no-argument constructor is required for the Json parser
     public ItemTemplate() { }
 
     public static class ScaleData {
@@ -45,5 +46,5 @@ public class ItemTemplate {
         public float y;
     }
 
-    public String unlockId; // If null, item is always available.
+    public String unlockId;
 }

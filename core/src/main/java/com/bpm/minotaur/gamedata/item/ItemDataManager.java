@@ -69,8 +69,14 @@ public class ItemDataManager {
 
     public void queueAssets(AssetManager assetManager) {
         for (ItemTemplate template : itemTemplates.values()) {
+            // Load 2D Texture
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
                 assetManager.load(template.texturePath, Texture.class);
+            }
+
+            // --- NEW: Load 3D Model ---
+            if (template.modelPath != null && !template.modelPath.isEmpty()) {
+                assetManager.load(template.modelPath, com.badlogic.gdx.graphics.g3d.Model.class);
             }
         }
     }

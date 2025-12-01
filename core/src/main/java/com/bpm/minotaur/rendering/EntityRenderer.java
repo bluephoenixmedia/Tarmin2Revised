@@ -134,6 +134,17 @@ public class EntityRenderer {
         boolean isSpriteBatchActive = false;
 
         for (Renderable entity : entities) {
+
+            // --- NEW: Skip 2D Rendering for 3D Items ---
+            if (entity instanceof Item) {
+                Item item = (Item) entity;
+                // If the template has a model path, we assume GameScreen is rendering it in 3D.
+                // Therefore, we skip the 2D render here.
+                if (item.getTemplate() != null && item.getTemplate().modelPath != null) {
+                    continue;
+                }
+            }
+
             float distanceToEntity = player.getPosition().dst(entity.getPosition());
             if (fogEnabled && distanceToEntity > fogDistance) {
                 continue;

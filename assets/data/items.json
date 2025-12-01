@@ -2273,6 +2273,8 @@
   "SMALL_BAG": {
     "friendlyName": "Small Bag",
     "texturePath": "images/items/small_bag.png",
+    "modelPath": "models/Sack2.g3db",
+    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -2408,6 +2410,8 @@
   "REGULAR_CHEST": {
     "friendlyName": "Regular Chest",
     "texturePath": "images/items/pack.png",
+    "modelPath": "models/FancyChestClosed.g3db",
+    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
