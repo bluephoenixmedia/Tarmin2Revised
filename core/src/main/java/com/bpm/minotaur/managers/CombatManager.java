@@ -231,6 +231,9 @@ public class CombatManager {
             int potentialDamage;
             int attackModifier = player.getAttackModifier();
 
+            // LOGGING THE TOTAL ATTACK MODIFIER
+            Gdx.app.log("CombatManager", "Total Player Attack Modifier (Level + Gear): " + attackModifier);
+
             if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
                 potentialDamage = weapon.getSpiritDamage() + attackModifier;
             } else {
@@ -322,7 +325,7 @@ public class CombatManager {
             currentState = CombatState.VICTORY;
             Gdx.app.log("CombatManager","You have defeated" + monster.getMonsterType());
             eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
-
+            UnlockManager.getInstance().recordKill(monster.getMonsterType());
             int baseExp = monster.getBaseExperience();
             float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
             float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
@@ -330,6 +333,7 @@ public class CombatManager {
             eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
             player.addExperience(totalExp, eventManager);
             maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.10f);
+            spawnCorpseEffects(monster);
 
         } else {
             currentState = CombatState.MONSTER_TURN;

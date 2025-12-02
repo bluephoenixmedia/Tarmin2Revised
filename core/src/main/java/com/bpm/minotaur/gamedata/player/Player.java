@@ -435,9 +435,11 @@ public class Player {
 
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
+                UnlockManager.getInstance().incrementStat("steps", 1);
             }
         } else {
             position.set(nextX + 0.5f, nextY + 0.5f);
+            UnlockManager.getInstance().incrementStat("steps", 1);
         }
     }
 
@@ -456,8 +458,8 @@ public class Player {
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
 
+        // 1. Handle Gates (Keep existing logic)
         Gate gateObj = maze.getGates().get(targetTile);
-
         if (gateObj != null) {
             if (gameMode == GameMode.ADVANCED && gateObj.isChunkTransitionGate()) {
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
@@ -471,16 +473,27 @@ public class Player {
             return;
         }
 
+        // 2. Handle Doors (UPDATED: Toggle Logic)
         Object obj = maze.getGameObjectAt(targetX, targetY);
-        if (obj instanceof Door door) {
-            if (door.getState() == Door.DoorState.CLOSED) {
-                door.startOpening();
-                eventManager.addEvent(new GameEvent("You opened the door.", 2f));
+        if (obj instanceof Door) {
+            Door door = (Door) obj;
+            // Use the new toggle method from Milestone 1
+            maze.toggleDoorAt(targetX, targetY);
+
+            // Check state AFTER toggle to determine event/sound
+            if (door.getState() == Door.DoorState.OPENING) {
+                eventManager.addEvent(new GameEvent("You open the door.", 1f));
+                UnlockManager.getInstance().incrementStat("doors", 1);
+                if (soundManager != null) soundManager.playDoorOpenSound();
+            } else if (door.getState() == Door.DoorState.CLOSING) {
+                eventManager.addEvent(new GameEvent("You close the door.", 1f));
+                // Reuse open sound for now, or add specific close sound later
                 if (soundManager != null) soundManager.playDoorOpenSound();
             }
             return;
         }
 
+        // 3. Handle Containers (Keep existing logic)
         Item itemInFront = maze.getItems().get(targetTile);
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             String containerName = itemInFront.getDisplayName();
@@ -663,8 +676,13 @@ public class Player {
         }
     }
 
+    /**
+     * UPDATED: Returns attack modifier including LEVEL BONUS and EQUIPMENT BONUSES.
+     * Use this for all combat calculations.
+     */
     public int getAttackModifier() {
-        return stats.getAttackModifier();
+        // Level Bonus + All "BONUS_DAMAGE" on equipped items
+        return stats.getAttackModifier() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
     }
 
     public int getLevel() { return stats.getLevel(); }

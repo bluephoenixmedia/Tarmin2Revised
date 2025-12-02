@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.bpm.minotaur.gamedata.item.Item.ItemType; // We'll update Item.java soon
 import com.bpm.minotaur.managers.PotionManager;
+import com.bpm.minotaur.managers.UnlockManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,11 @@ public class ItemDataManager {
             }
         }
 
+        if (itemTemplates.containsKey(ItemType.BOW)) {
+            itemTemplates.get(ItemType.BOW).unlockId = "item_bow";
+            Gdx.app.log("ItemDataManager", "TESTING: Locked BOW with id 'item_bow'");
+        }
+
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
 
@@ -63,8 +69,14 @@ public class ItemDataManager {
 
     public void queueAssets(AssetManager assetManager) {
         for (ItemTemplate template : itemTemplates.values()) {
+            // Load 2D Texture
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
                 assetManager.load(template.texturePath, Texture.class);
+            }
+
+            // --- NEW: Load 3D Model ---
+            if (template.modelPath != null && !template.modelPath.isEmpty()) {
+                assetManager.load(template.modelPath, com.badlogic.gdx.graphics.g3d.Model.class);
             }
         }
     }
@@ -77,6 +89,15 @@ public class ItemDataManager {
 
         Gdx.app.log("ItemDataManager [DEBUG]", "createItem called for: " + type.name());
         ItemTemplate template = getTemplate(type);
+
+        if (template.unlockId != null && !UnlockManager.getInstance().isUnlocked(template.unlockId)) {
+            Gdx.app.log("ItemDataManager", "Item locked: " + type.name() + " (Requires: " + template.unlockId + "). Spawning fallback.");
+            // Recursively create a fallback item (AXE) which we assume is unlocked.
+            // Ensure we don't infinitely recurse if AXE is also locked (it shouldn't be).
+            if (type != ItemType.AXE) {
+                return createItem(ItemType.AXE, x, y, ItemColor.GRAY, assetManager);
+            }
+        }
 
         // Standard item creation
         Item item = new Item(type, x, y, color, this, assetManager);

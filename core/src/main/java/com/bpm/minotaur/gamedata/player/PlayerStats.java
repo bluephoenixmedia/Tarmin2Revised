@@ -10,14 +10,16 @@ public class PlayerStats {
     private int spiritualStrength;
     private int food;
     private int arrows;
-    private int dexterity; // <--- NEW: RPG Attribute for Accuracy/Evasion
+    private int dexterity;
 
     // --- Experience and Leveling Fields ---
     private int level;
     private int experience;
     private int experienceToNextLevel;
-    private static final int BASE_XP_REQUIRED = 100;
-    private static final double LOG_BASE = 1.2;
+
+    // --- UPDATED: XP CONSTANTS FOR SLOWER PROGRESSION ---
+    private static final int BASE_XP_REQUIRED = 150; // Increased from 100
+    private static final double LOG_BASE = 1.5;      // Increased from 1.2 for steeper curve
 
     private int treasureScore = 0;
 
@@ -37,7 +39,7 @@ public class PlayerStats {
         this.maxWarStrength = difficulty.startWarStrength;
         this.maxSpiritualStrength = difficulty.startSpiritualStrength;
 
-        this.dexterity = 10; // <--- NEW: Default starting dexterity
+        this.dexterity = 10;
 
         // --- Initialize Leveling Stats ---
         this.level = 1;
@@ -45,7 +47,7 @@ public class PlayerStats {
         this.experienceToNextLevel = calculateXpForLevel(2);
     }
 
-    // --- Stat-Only Logic Methods (Moved from Player) ---
+    // --- Stat-Only Logic Methods ---
 
     private int calculateXpForLevel(int targetLevel) {
         if (targetLevel <= 1) return 0;
@@ -75,9 +77,11 @@ public class PlayerStats {
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
-        // Increase stats
-        int wsIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
-        int ssIncrease = 2 + new Random().nextInt(2); // Increase by 2 or 3
+        // --- UPDATED: Reduced Stat Growth to emphasize Gear ---
+        // Was 2 + Random(2) (2-3)
+        // Now 1 + Random(2) (1-2)
+        int wsIncrease = 1 + new Random().nextInt(2);
+        int ssIncrease = 1 + new Random().nextInt(2);
 
         this.maxWarStrength += wsIncrease;
         this.maxSpiritualStrength += ssIncrease;
