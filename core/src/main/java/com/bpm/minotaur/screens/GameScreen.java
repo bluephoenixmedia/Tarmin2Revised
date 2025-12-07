@@ -321,9 +321,11 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
+            // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
             if (camera3d != null) {
-                camera3d.position.set(player.getPosition().x, 0.5f, player.getPosition().y);
-                camera3d.direction.set(player.getDirectionVector().x, 0, player.getDirectionVector().y);
+                // Negate Y here to convert to standard 3D forward (-Z)
+                camera3d.position.set(player.getPosition().x, 0.5f, -player.getPosition().y);
+                camera3d.direction.set(player.getDirectionVector().x, 0, -player.getDirectionVector().y);
                 camera3d.up.set(0, 1, 0);
                 camera3d.update();
 
@@ -349,7 +351,16 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                                     batchBegun = true;
                                 }
                                 inst.transform.idt();
-                                inst.transform.translate(item.getPosition().x, template.modelYOffset, item.getPosition().y);
+                                // Negate Y here as well for item position
+                                inst.transform.translate(
+                                    item.getPosition().x,
+                                    template.modelYOffset,
+                                    -item.getPosition().y
+                                );
+
+                                if (template.modelRotation != 0f) {
+                                    inst.transform.rotate(Vector3.Y, template.modelRotation);
+                                }
                                 inst.transform.scale(template.modelScale, template.modelScale, template.modelScale);
                                 modelBatch.render(inst, environment);
                             }
@@ -578,7 +589,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     if (ladder == null) ladder = maze.getLadders().get(inFront);
 
                     if (ladder != null) {
-                       // soundManager.playSound("level_up");
+                     //   soundManager.playSound("level_up");
                         if (ladder.getType() == Ladder.LadderType.DOWN) {
                             GridPoint2 ladderPos = new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y);
                             worldManager.descendLevel(ladderPos);

@@ -14,119 +14,29 @@ import java.util.List;
 public class Item implements Renderable {
 
     public enum ItemType {
-        // Weapons
-        BOW,
-        CROSSBOW,
-        KNIFE,
-        AXE,
-        DART,
-        SPEAR,
-        PROJECTILE,
-        SCROLL,
-        BOOK,
-        SMALL_FIREBALL,
-        LARGE_FIREBALL,
-        SMALL_LIGHTNING,
-        LARGE_LIGHTNING,
+        // ... (Keep all existing Enum values) ...
+        BOW, CROSSBOW, KNIFE, AXE, DART, SPEAR, PROJECTILE, SCROLL, BOOK,
+        SMALL_FIREBALL, LARGE_FIREBALL, SMALL_LIGHTNING, LARGE_LIGHTNING,
+        SMALL_SHIELD, LARGE_SHIELD, GAUNTLETS, HAUBERK, BREASTPLATE, HELMET,
+        BOOTS, LEGS, ARMS, EYES, CLOAK, AMULET,
+        SMALL_RING, LARGE_RING, RING_BLUE, RING_PINK, RING_GREEN, RING_PURPLE,
+        POTION_BLUE, POTION_PINK, POTION_GREEN, POTION_GOLD, POTION_SWIRLY, POTION_BUBBLY,
+        KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
+        MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
+        FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
+        REGULAR_CHEST, LAMP, UNKNOWN, LADDER,
 
-        // Armor & Equipment Slots (Expanded)
-        SMALL_SHIELD,
-        LARGE_SHIELD,
-        GAUNTLETS,     // Hands
-        HAUBERK,       // Chest
-        BREASTPLATE,   // Chest
-        HELMET,        // Head
-        BOOTS,         // Feet (NEW)
-        LEGS,          // Legs (NEW)
-        ARMS,          // Arms (NEW)
-        EYES,          // Eyes (NEW)
-        CLOAK,         // Back (NEW)
-        AMULET,        // Neck (NEW)
+        // Home Props
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT,
 
-        // Rings
-        SMALL_RING,
-        LARGE_RING,
-        RING_BLUE,
-        RING_PINK,
-        RING_GREEN,
-        RING_PURPLE,
-
-        // Useful
-        POTION_BLUE,
-        POTION_PINK,
-        POTION_GREEN,
-        POTION_GOLD,
-        POTION_SWIRLY,
-        POTION_BUBBLY,
-        KEY,
-        QUIVER,
-        WAR_BOOK,
-        SPIRITUAL_BOOK,
-        SPECIAL_BOOK,
-        FLOUR_SACK,
-
-        // Containers
-        MONEY_BELT,
-        SMALL_BAG,
-        BOX,
-        MEDIUM_PACK,
-        LARGE_PACK,
-        LARGE_BAG,
-
-        // Treasure
-        FOOD,
-        COINS,
-        CHALICE,
-        INGOT,
-        NECKLACE,
-        CROWN,
-        TARMIN_TREASURE,
-
-        REGULAR_CHEST, LAMP, UNKNOWN,
-        LADDER,
-
-        // --- NEW: Debris & Resources ---
-        // User Requested
-        STICK,
-        LEAVES,
-        SMALL_ROCK,
-        LARGE_BOULDER,
-        BROKEN_COLUMN,
-        BROKEN_WALL,
-        VINES,
-        PUDDLE_WATER,
-        STRANGE_METAL,
-        BONES,
-        ANCIENT_FOSSIL,
-        RUSTY_WEAPON,
-        RUSTY_ARMOR,
-        DIRTY_CLOTH,
-        METAL_SCRAP,
-        BROKEN_GLASS,
-        DEAD_PLANT_MATTER,
-        MUD,
-
-        // Architect Additions
-        CHARRED_WOOD,
-        CERAMIC_SHARD,
-        ROTTEN_ROPE,
-        FUNGAL_SPORE,
-        BAT_GUANO,
-        LOOSE_BRICK,
-        TWISTED_ROOT,
-        SLIME_RESIDUE,
-        RAT_SKULL,
-        RUSTED_CHAIN,
-        MOSS_CLUMP,
-        FLINT_SHARD,
-        HOLLOW_LOG,
-        SPIDER_SILK,
-        BAT_WING,
-        PARCHMENT_SCRAP,
-        BROKEN_HILT,
-        BENT_NAIL,
-        STAGNANT_POOL,
-        GLOWING_LICHEN
+        // Debris
+        STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
+        PUDDLE_WATER, STRANGE_METAL, BONES, ANCIENT_FOSSIL, RUSTY_WEAPON, RUSTY_ARMOR,
+        DIRTY_CLOTH, METAL_SCRAP, BROKEN_GLASS, DEAD_PLANT_MATTER, MUD,
+        CHARRED_WOOD, CERAMIC_SHARD, ROTTEN_ROPE, FUNGAL_SPORE, BAT_GUANO, LOOSE_BRICK,
+        TWISTED_ROOT, SLIME_RESIDUE, RAT_SKULL, RUSTED_CHAIN, MOSS_CLUMP, FLINT_SHARD,
+        HOLLOW_LOG, SPIDER_SILK, BAT_WING, PARCHMENT_SCRAP, BROKEN_HILT, BENT_NAIL,
+        STAGNANT_POOL, GLOWING_LICHEN
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -156,6 +66,8 @@ public class Item implements Renderable {
     private final boolean isUsable;
     private final boolean isContainer;
     private final boolean isRing;
+    private final boolean isImpassable; // New Field
+
     private boolean isLocked;
     private final int range;
     private final Vector2 scale;
@@ -192,6 +104,8 @@ public class Item implements Renderable {
         this.isContainer = template.isContainer;
         this.isRing = template.isRing;
         this.range = template.range;
+        this.isImpassable = template.isImpassable; // Assign from template
+
         this.dataManager = dataManager;
 
         if (template.scale != null) {
@@ -206,9 +120,8 @@ public class Item implements Renderable {
             this.texture = null;
         }
 
-        // --- BUG FIX: Only lock rigid containers ---
         if (this.isContainer) {
-            if (type == ItemType.BOX || type == ItemType.REGULAR_CHEST) {
+            if (type == ItemType.BOX || type == ItemType.REGULAR_CHEST || type == ItemType.HOME_CHEST) {
                 this.isLocked = true;
             } else {
                 this.isLocked = false;
@@ -222,24 +135,18 @@ public class Item implements Renderable {
         }
     }
 
+    // ... (Keep existing getters) ...
     public ItemType getType() { return type; }
     public String getTypeName() { return type.name(); }
     public String getFriendlyName() { return friendlyName; }
     public int getBaseValue() { return baseValue; }
-
     public String getDisplayName() {
-        if (isPotion) {
-            return this.friendlyName;
-        }
-        if (!isModified()) {
-            return this.friendlyName;
-        }
-
+        if (isPotion) return this.friendlyName;
+        if (!isModified()) return this.friendlyName;
         StringBuilder nameBuilder = new StringBuilder();
         String prefix = null;
         String suffix = null;
         String bonus = null;
-
         for (ItemModifier mod : modifiers) {
             if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_DEFENSE) {
                 bonus = mod.displayName;
@@ -249,12 +156,10 @@ public class Item implements Renderable {
                 prefix = mod.displayName;
             }
         }
-
         if (prefix != null) nameBuilder.append(prefix).append(" ");
         nameBuilder.append(this.friendlyName);
         if (bonus != null) nameBuilder.append(" ").append(bonus);
         if (suffix != null) nameBuilder.append(" ").append(suffix);
-
         return nameBuilder.toString();
     }
 
@@ -268,28 +173,21 @@ public class Item implements Renderable {
     public boolean isUsable() { return this.isUsable; }
     public boolean isContainer() { return this.isContainer; }
     public boolean isRing() { return this.isRing; }
+    public boolean isImpassable() { return this.isImpassable; } // New Getter
 
     public int getWarDamage() {
         int totalDamage = this.warDamage;
-        for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value;
-        }
+        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value; }
         return totalDamage;
     }
-
     public int getSpiritDamage() {
         int totalDamage = this.spiritDamage;
-        for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value;
-        }
+        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value; }
         return totalDamage;
     }
-
     public int getArmorDefense() {
         int totalDefense = this.armorDefense;
-        for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DEFENSE) totalDefense += mod.value;
-        }
+        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DEFENSE) totalDefense += mod.value; }
         return totalDefense;
     }
 
@@ -336,7 +234,6 @@ public class Item implements Renderable {
         return this.contents;
     }
 
-    // Add this method to Item.java so SpawnManager can scatter debris
     public void setPosition(float x, float y) {
         this.position.set(x, y);
     }

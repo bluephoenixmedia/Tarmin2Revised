@@ -11,5 +11,9 @@ public enum ItemType {
     RING,
     CONTAINER,
     TREASURE,
+    HOME_CHEST,
+    HOME_CRAFTING_BENCH,
+    HOME_SLEEPING_BAG,
+    HOME_FIRE_POT,
     USEFUL
 }

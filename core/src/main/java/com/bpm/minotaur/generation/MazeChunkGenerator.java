@@ -28,7 +28,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private List<GridPoint2> currentChunkHomeTiles = new ArrayList<>();
 
-    // --- Maze Content Tile Definitions ---
+    // ... (Keep tiles 1-16 unchanged) ...
     String[] tile1 = new String[]{ "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###", ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....", "#####.######" };
     String[] tile2 = new String[]{ "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "....D.D.....", "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "#####.######" };
     String[] tile3 = new String[]{ "#####.######", "#..........#", "###D###D####", "............", "#.#D#..###.#", "..#.#..#.#..", "#.#.#..#.#.#", "#.#.#..#.D.#", "#.#.#..#.#.#", "#.#.#..#.#.#", "#.#.####.#.#", "#.#......#.#" };
@@ -46,15 +46,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
     String[] tile15 = new String[]{ "#####.######", "#...D.D....#", "#...#.#....#", "#...#.#....#", "##D##.##D###", "....D.......", "#####D######", "#...#.#....#", "#...D.D....#", "#...#.#....#", "#...#.#....#", "#####.######" };
     String[] tile16 = new String[]{ "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#", "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#", "......#..#.#" };
 
-    // --- Home Tile ---
+    // --- Home Tile with 3D Props ---
     String[] homeTile = new String[]{
         "............",
         "............",
         "............",
         "...##D###...",
-        "...#....#...",
-        "...#....#...",
-        "...#....#...",
+        "...#...C#...",
+        "...#F..N#...",
+        "...#..B.#...",
         "...######...",
         "............",
         "............",
@@ -63,7 +63,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
     };
     private static final int HOME_TILE_ID = -1;
 
-    // --- Corridor Tile Templates ---
+    // ... (Keep Corridor templates) ...
     String[] corridorUL = new String[]{ "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
     String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
     String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
@@ -86,21 +86,18 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
         int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
 
-        // --- RE-GENERATION LOGIC START ---
         int attempts = 0;
-        int maxAttempts = 50; // Try 50 times to find a valid natural layout
+        int maxAttempts = 50;
 
         do {
             createMazeFromArrayTiles(mapRows, mapCols, chunkId, level);
             attempts++;
         } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
 
-        // Fallback: If we still have an invalid position after max attempts, force clear the tile
         if (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos)) {
             Gdx.app.log("MazeChunkGenerator", "Forcing clear tile at " + forcedUpLadderPos + " after " + attempts + " failed generation attempts.");
             forceClearTile(forcedUpLadderPos);
         }
-        // --- RE-GENERATION LOGIC END ---
 
         Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme);
@@ -120,7 +117,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         findPlayerStart(this.finalLayout);
 
-        // Hint player start if forced ladder exists
         if (forcedUpLadderPos != null) {
             playerSpawnPoint.set(forcedUpLadderPos.x, forcedUpLadderPos.y);
             forcedUpLadderPos = null;
@@ -134,15 +130,34 @@ public class MazeChunkGenerator implements IChunkGenerator {
         return playerSpawnPoint;
     }
 
+    // --- FIX: Smarter Player Start Logic ---
     private void findPlayerStart(String[] layout) {
+        // 1. Priority: Spawn in Home Tile if available
         if (!currentChunkHomeTiles.isEmpty()) {
+            // Search for the first valid empty floor tile inside the home zone.
+            for (GridPoint2 homeTile : currentChunkHomeTiles) {
+                // We need to convert Game Coordinates back to Layout Coordinates
+                int height = layout.length;
+                int layoutY = height - 1 - homeTile.y;
+
+                if (layoutY >= 0 && layoutY < height && homeTile.x >= 0 && homeTile.x < layout[0].length()) {
+                    char c = layout[layoutY].charAt(homeTile.x);
+                    if (c == '.') {
+                        playerSpawnPoint.set(homeTile.x, homeTile.y);
+                        Gdx.app.log("ChunkGenerator", "findPlayerStart: Set spawn to safe Home Tile: " + homeTile);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: Just use the center and hope for the best
             int midIndex = currentChunkHomeTiles.size() / 2;
             GridPoint2 homeSpawn = currentChunkHomeTiles.get(midIndex);
             playerSpawnPoint.set(homeSpawn.x, homeSpawn.y);
-            Gdx.app.log("ChunkGenerator", "findPlayerStart: Set spawn to Home Tile center: " + homeSpawn);
             return;
         }
 
+        // 2. Fallback: Standard Scan Logic
         int height = layout.length;
         int width = layout[0].length();
 
@@ -160,28 +175,22 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 char c = layout[layoutY].charAt(x);
                 if (c != '#') {
                     playerSpawnPoint.set(x, y);
-                    Gdx.app.log("ChunkGenerator", "Found fallback safe spawn at (" + x + ", " + y + ")");
                     return;
                 }
             }
         }
     }
 
+    // ... (Keep spawnEntities, spawnLadder, spawnClassicGate, spawnTransitionGates, getTileContent, etc.) ...
+
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
                                MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
                                SpawnTableData spawnTableData) {
-
-        SpawnManager spawnManager = new SpawnManager(dataManager,
-            itemDataManager,
-            assetManager,
-            maze, difficulty, level, layout,
-            spawnTableData);
-
+        SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty, level, layout, spawnTableData);
         spawnManager.spawnEntities();
     }
 
     private void spawnLadder(Maze maze, String[] layout) {
-        // A. Spawn the standard DOWN ladder randomly
         int x, y;
         do {
             x = random.nextInt(maze.getWidth());
@@ -195,7 +204,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
         );
         maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
 
-        // B. Spawn the forced UP ladder if requested
         if (forcedUpLadderPos != null) {
             maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP));
         }
@@ -203,11 +211,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private void spawnClassicGate(Maze maze, String[] layout) {
         if (layout == null || layout.length <= 2) return;
-
         List<GridPoint2> validGateLocations = new ArrayList<>();
         int height = layout.length;
         int width = layout[0].length();
-
         for (int x = 1; x < width - 1; x++) {
             if (layout[0].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, height - 1));
             if (layout[height - 1].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, 0));
@@ -216,32 +222,26 @@ public class MazeChunkGenerator implements IChunkGenerator {
             if (layout[y].charAt(0) == '#') validGateLocations.add(new GridPoint2(0, height - 1 - y));
             if (layout[y].charAt(width - 1) == '#') validGateLocations.add(new GridPoint2(width - 1, height - 1 - y));
         }
-
         if (validGateLocations.isEmpty()) return;
         GridPoint2 gatePos = validGateLocations.get(random.nextInt(validGateLocations.size()));
-
         maze.addGate(new Gate(gatePos.x, gatePos.y));
     }
 
     private void spawnTransitionGates(Maze maze, String[] layout, GridPoint2 chunkId) {
         int height = layout.length;
         int width = layout[0].length();
-
         GridPoint2 northPos = new GridPoint2(width / 2, height - 1);
         GridPoint2 southPos = new GridPoint2(width / 2, 0);
         GridPoint2 eastPos = new GridPoint2(width - 1, height / 2);
         GridPoint2 westPos = new GridPoint2(0, height / 2);
-
         GridPoint2 northTargetChunk = new GridPoint2(chunkId.x, chunkId.y + 1);
         GridPoint2 southTargetChunk = new GridPoint2(chunkId.x, chunkId.y - 1);
         GridPoint2 eastTargetChunk = new GridPoint2(chunkId.x + 1, chunkId.y);
         GridPoint2 westTargetChunk = new GridPoint2(chunkId.x - 1, chunkId.y);
-
         GridPoint2 northTargetPlayer = new GridPoint2(width / 2, 1);
         GridPoint2 southTargetPlayer = new GridPoint2(width / 2, height - 2);
         GridPoint2 eastTargetPlayer = new GridPoint2(1, height / 2);
         GridPoint2 westTargetPlayer = new GridPoint2(width - 2, height / 2);
-
         maze.addGate(new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer));
         maze.addGate(new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer));
         maze.addGate(new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer));
@@ -262,15 +262,13 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         int homeX = -1;
         int homeY = -1;
-        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0 && level ==1);
+        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0 && level == 1);
 
         if (isStartChunk) {
-            // Center the Home Tile if grid is 3x3
             if (mapRows >= 3 && mapCols >= 3) {
                 homeX = 1;
                 homeY = 1;
             } else {
-                // Fallback for Classic 2x2: Bottom-Left
                 homeX = 0;
                 homeY = mapRows - 1;
             }
@@ -279,40 +277,30 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         for (int mapY = 0; mapY < mapRows; mapY++) {
             for (int mapX = 0; mapX < mapCols; mapX++) {
-
                 if (isStartChunk && mapY == homeY && mapX == homeX) {
                     mapLayout[mapY][mapX] = new TileInfo(HOME_TILE_ID, 0);
                     continue;
                 }
-
                 List<Integer> tileIds = new ArrayList<>();
                 for (int i = 0; i < allTiles.size(); i++) tileIds.add(i);
                 Collections.shuffle(tileIds, random);
                 List<Integer> rotations = new ArrayList<>(List.of(0, 1, 2, 3));
                 Collections.shuffle(rotations, random);
-
                 boolean tilePlaced = false;
                 for (int tileId : tileIds) {
                     for (int rotation : rotations) {
                         String[] candidateTile = rotateTile(allTiles.get(tileId), rotation);
                         boolean fits = true;
-
                         if (mapX > 0) {
                             TileInfo leftNeighborInfo = mapLayout[mapY][mapX - 1];
                             String[] leftNeighborTile = getTileContent(allTiles, leftNeighborInfo.id, leftNeighborInfo.rotation);
-                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) {
-                                fits = false;
-                            }
+                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) fits = false;
                         }
-
                         if (fits && mapY > 0) {
                             TileInfo topNeighborInfo = mapLayout[mapY - 1][mapX];
                             String[] topNeighborTile = getTileContent(allTiles, topNeighborInfo.id, topNeighborInfo.rotation);
-                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) {
-                                fits = false;
-                            }
+                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) fits = false;
                         }
-
                         if (fits) {
                             mapLayout[mapY][mapX] = new TileInfo(tileId, rotation);
                             tilePlaced = true;
@@ -321,9 +309,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                     if (tilePlaced) break;
                 }
-                if (!tilePlaced) {
-                    mapLayout[mapY][mapX] = new TileInfo(0, 0);
-                }
+                if (!tilePlaced) mapLayout[mapY][mapX] = new TileInfo(0, 0);
             }
         }
 
@@ -340,8 +326,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
                     if (info.id == HOME_TILE_ID) {
                         for (int tx = 0; tx < 12; tx++) {
-                            boolean isHomeWalkable = (tileY >= 4 && tileY <= 6 && tx >= 4 && tx <= 7);
-                            if (isHomeWalkable) {
+                            // --- FIX: Home Zone Logic ---
+                            // Include ALL home tiles (including props) in the list so
+                            // the game knows this is the "Home Zone" (Sheltered from weather).
+                            boolean isHomeZone = (tileY >= 4 && tileY <= 7 && tx >= 4 && tx <= 7);
+
+                            if (isHomeZone) {
                                 int gameX = mapX * 12 + tx;
                                 int gameY = finalHeight - 1 - (mapY * tileHeight + tileY);
                                 currentChunkHomeTiles.add(new GridPoint2(gameX, gameY));
@@ -356,7 +346,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 this.finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
             }
         }
-
         cleanUpOrphanedDoors();
     }
 
@@ -375,7 +364,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
         boolean isBottom = (y == rows - 1);
         boolean isLeft = (x == 0);
         boolean isRight = (x == cols - 1);
-
         if (isTop && isLeft) return corridorUL;
         if (isTop && isRight) return corridorUR;
         if (isBottom && isLeft) return corridorLL;
@@ -384,7 +372,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
         if (isBottom) return corridorB;
         if (isLeft) return corridorL;
         if (isRight) return corridorR;
-
         return new String[]{"xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx"};
     }
 
@@ -413,27 +400,23 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager, AssetManager assetManager) {
         Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText STARTING.");
-
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
         Maze maze = new Maze(level, bitmaskedData);
-
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
-                if (c == 'D') {
-                    maze.addGameObject(new Door(), x, y);
-                }
-                else if (c == 'S') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE, assetManager));
-                } else if (c == 'H') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED, assetManager));
-                }
+                if (c == 'D') maze.addGameObject(new Door(), x, y);
+                else if (c == 'S') maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE, assetManager));
+                else if (c == 'H') maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED, assetManager));
+                else if (c == 'C') maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.BLUE, assetManager));
+                else if (c == 'N') maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.BLUE, assetManager));
+                else if (c == 'B') maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.BLUE, assetManager));
+                else if (c == 'F') maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.RED, assetManager));
             }
         }
-
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
@@ -457,21 +440,13 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private void cleanUpOrphanedDoors() {
         if (finalLayout == null) return;
-
         int height = finalLayout.length;
         if (height == 0) return;
         int width = finalLayout[0].length();
-
         char[][] layoutChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
-            layoutChars[y] = finalLayout[y].toCharArray();
-        }
-
+        for (int y = 0; y < height; y++) layoutChars[y] = finalLayout[y].toCharArray();
         char[][] originalChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
-            originalChars[y] = finalLayout[y].toCharArray();
-        }
-
+        for (int y = 0; y < height; y++) originalChars[y] = finalLayout[y].toCharArray();
         for (int y = 1; y < height - 1; y++) {
             for (int x = 1; x < width - 1; x++) {
                 if (originalChars[y][x] == 'D') {
@@ -481,48 +456,27 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     boolean hasWallRight = (originalChars[y][x + 1] == '#');
                     boolean isVerticallyEnclosed = hasWallTop && hasWallBottom;
                     boolean isHorizontallyEnclosed = hasWallLeft && hasWallRight;
-
-                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed) {
-                        Gdx.app.log("ChunkGenerator", "Removing orphaned door at (" + x + ", " + (height - 1 - y) + ")");
-                        layoutChars[y][x] = '.';
-                    }
+                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed) layoutChars[y][x] = '.';
                 }
             }
         }
-
-        for (int y = 0; y < height; y++) {
-            finalLayout[y] = new String(layoutChars[y]);
-        }
+        for (int y = 0; y < height; y++) finalLayout[y] = new String(layoutChars[y]);
     }
 
-    // --- Validation Helper Methods ---
-
-    /**
-     * Checks if the character at the given position is a safe spawn (floor).
-     * Returns false if it is a Wall ('#') or Door ('D').
-     */
     private boolean isValidSpawnPosition(GridPoint2 pos) {
         if (finalLayout == null || finalLayout.length == 0) return false;
         int height = finalLayout.length;
         int width = finalLayout[0].length();
-
         if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
-
-        // Map Game Y to Layout Y
         int layoutY = height - 1 - pos.y;
         char c = finalLayout[layoutY].charAt(pos.x);
-
         return c != '#' && c != 'D';
     }
 
-    /**
-     * Forces the tile at the given position to be a floor ('.').
-     */
     private void forceClearTile(GridPoint2 pos) {
         if (finalLayout == null) return;
         int height = finalLayout.length;
         int layoutY = height - 1 - pos.y;
-
         if (layoutY >= 0 && layoutY < height) {
             StringBuilder sb = new StringBuilder(finalLayout[layoutY]);
             if (pos.x >= 0 && pos.x < sb.length()) {

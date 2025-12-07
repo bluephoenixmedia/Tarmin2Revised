@@ -416,13 +416,33 @@ public class Player {
             }
         }
 
+        // --- MOVEMENT DEBUGGING ---
+        if (!maze.isPassable(nextX, nextY)) {
+            // Check specific reasons for blockage
+            if (maze.getWallDataAt(nextX, nextY) == 1) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
+            }
+            Item item = maze.getItems().get(nextTile);
+            if (item != null && item.isImpassable()) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at (" + nextX + "," + nextY + ")");
+            }
+            // Check for doors/gates
+            Object obj = maze.getGameObjectAt(nextX, nextY);
+            if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by CLOSED DOOR at (" + nextX + "," + nextY + ")");
+            }
+            return;
+        }
+
         if (maze.isWallBlocking(currentX, currentY, direction)) {
+            Gdx.app.log("Player [DEBUG]", "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
             return;
         }
 
         if (maze.getScenery().containsKey(nextTile)) {
             Scenery s = maze.getScenery().get(nextTile);
             if (s.isImpassable()) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by SCENERY at (" + nextX + "," + nextY + ")");
                 return;
             }
         }
@@ -436,6 +456,8 @@ public class Player {
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
                 UnlockManager.getInstance().incrementStat("steps", 1);
+            } else {
+                Gdx.app.log("Player [DEBUG]", "Move into door blocked by wall behind it.");
             }
         } else {
             position.set(nextX + 0.5f, nextY + 0.5f);

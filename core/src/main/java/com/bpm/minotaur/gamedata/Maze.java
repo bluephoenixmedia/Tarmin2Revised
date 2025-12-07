@@ -36,57 +36,35 @@ public class Maze {
     // --- Debris Only ---
     private final List<CorpsePart> corpses = new ArrayList<>();
 
-    private final GoreManager goreManager; // New Manager
-    // Removed: List<BloodSpray> bloodSprays
-    // -------------------
+    private final GoreManager goreManager;
 
     private RetroTheme.Theme theme;
 
     public Maze(int level, int[][] wallData) {
         this.level = level;
         this.wallData = wallData;
-        this.goreManager = new GoreManager(); // Initialize
+        this.goreManager = new GoreManager();
         this.height = wallData.length;
         this.width = (height > 0) ? wallData[0].length : 0;
         this.explorationState = new byte[height][width];
     }
 
-    public List<CorpsePart> getCorpses() {
-        return corpses;
-    }
+    public List<CorpsePart> getCorpses() { return corpses; }
 
-    public void addHomeTile(GridPoint2 pos) {
-        homeTiles.add(pos);
-    }
-
-    public boolean isHomeTile(int x, int y) {
-        return homeTiles.contains(new GridPoint2(x, y));
-    }
-
-    public boolean isHomeTile(GridPoint2 pos) {
-        return homeTiles.contains(pos);
-    }
-
-    public Set<GridPoint2> getHomeTiles() {
-        return homeTiles;
-    }
-
+    public void addHomeTile(GridPoint2 pos) { homeTiles.add(pos); }
+    public boolean isHomeTile(int x, int y) { return homeTiles.contains(new GridPoint2(x, y)); }
+    public boolean isHomeTile(GridPoint2 pos) { return homeTiles.contains(pos); }
+    public Set<GridPoint2> getHomeTiles() { return homeTiles; }
     public void setHomeTiles(List<GridPoint2> tiles) {
         this.homeTiles.clear();
         this.homeTiles.addAll(tiles);
     }
-    // Removed: getBloodSprays()
 
     public void addGate(Gate gate) {
         gates.put(new GridPoint2((int)gate.getPosition().x, (int)gate.getPosition().y), gate);
     }
-
-    public Map<GridPoint2, Gate> getGates() {
-        return gates;
-    }
-    public int getLevel() {
-        return level;
-    }
+    public Map<GridPoint2, Gate> getGates() { return gates; }
+    public int getLevel() { return level; }
 
     public int getWidth() {
         if (wallData == null || wallData.length == 0) return 0;
@@ -106,10 +84,7 @@ public class Maze {
         return false;
     }
 
-    public byte[][] getExplorationState() {
-        return explorationState;
-    }
-
+    public byte[][] getExplorationState() { return explorationState; }
     public void setExplorationState(byte[][] state) {
         if (state != null && state.length == height && state[0].length == width) {
             this.explorationState = state;
@@ -125,19 +100,14 @@ public class Maze {
     public float getBloodIntensity(int x, int y) {
         return bloodMap.getOrDefault(new GridPoint2(x, y), 0f);
     }
-
-    public Map<GridPoint2, Float> getBloodMap() {
-        return bloodMap;
-    }
+    public Map<GridPoint2, Float> getBloodMap() { return bloodMap; }
 
     public int getHeight() {
         if (wallData == null) return 0;
         return wallData.length;
     }
 
-    public int[][] getWallData() {
-        return wallData;
-    }
+    public int[][] getWallData() { return wallData; }
 
     public int getWallDataAt(int x, int y) {
         if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
@@ -146,11 +116,6 @@ public class Maze {
         return wallData[y][x];
     }
 
-    /**
-     * Toggles the state of the door at x,y.
-     * If Closed -> Opens.
-     * If Open -> Closes.
-     */
     public void toggleDoorAt(int x, int y) {
         Object obj = getGameObjectAt(x, y);
         if (obj instanceof Door) {
@@ -163,14 +128,10 @@ public class Maze {
         }
     }
 
-
-
     public Object getGameObjectAt(int x, int y) {
         GridPoint2 pos = new GridPoint2(x, y);
         Object obj = gameObjects.get(pos);
-        if (obj != null) {
-            return obj;
-        }
+        if (obj != null) return obj;
         return gates.get(pos);
     }
 
@@ -181,58 +142,35 @@ public class Maze {
         gameObjects.put(new GridPoint2(x, y), object);
     }
 
-    public Map<GridPoint2, Object> getGameObjects() {
-        return gameObjects;
-    }
-
-    public Map<GridPoint2, Item> getItems() {
-        return items;
-    }
+    public Map<GridPoint2, Object> getGameObjects() { return gameObjects; }
+    public Map<GridPoint2, Item> getItems() { return items; }
 
     public void addItem(Item item) {
         items.put(new GridPoint2((int)item.getPosition().x, (int)item.getPosition().y), item);
     }
 
-    public Map<GridPoint2, Monster> getMonsters() {
-        return monsters;
-    }
-
+    public Map<GridPoint2, Monster> getMonsters() { return monsters; }
     public void addMonster(Monster monster) {
         monsters.put(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y), monster);
     }
 
-    public Map<GridPoint2, Ladder> getLadders() {
-        return ladders;
-    }
-
+    public Map<GridPoint2, Ladder> getLadders() { return ladders; }
     public void addLadder(Ladder ladder) {
         ladders.put(new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y), ladder);
     }
 
-    public List<Projectile> getProjectiles() {
-        return projectiles;
-    }
+    public List<Projectile> getProjectiles() { return projectiles; }
+    public void addProjectile(Projectile projectile) { projectiles.add(projectile); }
 
-    public void addProjectile(Projectile projectile) {
-        projectiles.add(projectile);
-    }
-
-    public void setTheme(RetroTheme.Theme theme) {
-        this.theme = theme;
-    }
-
-    public RetroTheme.Theme getTheme() {
-        return (this.theme != null) ? this.theme : RetroTheme.STANDARD_THEME;
-    }
+    public void setTheme(RetroTheme.Theme theme) { this.theme = theme; }
+    public RetroTheme.Theme getTheme() { return (this.theme != null) ? this.theme : RetroTheme.STANDARD_THEME; }
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
         int doorMask = wallMask << 1;
         int currentCellData = getWallDataAt(x, y);
 
-        if ((currentCellData & wallMask) != 0) {
-            return true;
-        }
+        if ((currentCellData & wallMask) != 0) return true;
 
         if ((currentCellData & doorMask) != 0) {
             int nextX = x + (int)direction.getVector().x;
@@ -257,15 +195,17 @@ public class Maze {
             return false;
         }
 
-        if (wallData[y][x] == 1) {
-            return false;
-        }
+        // --- BUG FIX: Removed this check ---
+        // if (wallData[y][x] == 1) return false;
+        // -----------------------------------
 
         Object obj = getGameObjectAt(x, y);
-        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
-            return false;
-        }
-        if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN) {
+        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) return false;
+        if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN) return false;
+
+        // Check for impassable items (props)
+        Item item = items.get(new GridPoint2(x, y));
+        if (item != null && item.isImpassable()) {
             return false;
         }
 
@@ -282,10 +222,7 @@ public class Maze {
         }
     }
 
-    public Map<GridPoint2, Scenery> getScenery() {
-        return scenery;
-    }
-
+    public Map<GridPoint2, Scenery> getScenery() { return scenery; }
     public void addScenery(Scenery s) {
         if (s == null) return;
         GridPoint2 pos = new GridPoint2((int)s.getPosition().x, (int)s.getPosition().y);
@@ -294,28 +231,17 @@ public class Maze {
 
     public void update(float delta) {
         for (Object object : gameObjects.values()) {
-            if (object instanceof Door) {
-                ((Door) object).update(delta);
-            }
+            if (object instanceof Door) ((Door) object).update(delta);
         }
-
-        for (Gate gate : gates.values()) {
-            gate.update(delta);
-        }
+        for (Gate gate : gates.values()) gate.update(delta);
 
         projectiles.removeIf(projectile -> {
             projectile.update(delta);
             return !projectile.isAlive();
         });
 
-        // Update Corpses
-        for (CorpsePart part : corpses) {
-            part.update(delta);
-        }
-
-        goreManager.update(delta, this); // PASS 'this'
-        // Removed: Update Blood Sprays
+        for (CorpsePart part : corpses) part.update(delta);
+        goreManager.update(delta, this);
     }
-    public GoreManager getGoreManager() { return goreManager; } // Getter
-
+    public GoreManager getGoreManager() { return goreManager; }
 }
