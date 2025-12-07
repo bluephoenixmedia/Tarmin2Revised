@@ -47,6 +47,9 @@ public class WorldManager {
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
 
+    // --- NEW: Track where to place the return ladder ---
+    private GridPoint2 pendingUpLadderPos = null;
+
     // Keep reference to player to check location for Audio dampening
     private Player playerReference;
 
@@ -114,6 +117,51 @@ public class WorldManager {
         return depth + distancePenalty;
     }
 
+    // --- NEW: Descent Logic ---
+    public void descendLevel(GridPoint2 playerPos) {
+        // Save current level state before leaving
+        saveAllChunks();
+
+        this.currentLevel++;
+        this.currentLevelTheme = getThemeForLevel(currentLevel);
+
+        // We want an UP ladder at this specific position on the next floor
+        this.pendingUpLadderPos = new GridPoint2(playerPos.x, playerPos.y);
+
+        // Clear cache so we don't see old level chunks
+        loadedChunks.clear();
+        this.currentPlayerChunkId = new GridPoint2(0, 0);
+
+        // Update Deepest Level Tracking
+        UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
+
+        Gdx.app.log("WorldManager", "Descending to Level " + currentLevel + ". Pending UP Ladder at " + pendingUpLadderPos);
+    }
+
+    // --- NEW: Ascent Logic ---
+    public boolean ascendLevel() {
+        if (currentLevel <= 1) return false;
+
+        saveAllChunks();
+
+        this.currentLevel--;
+        this.currentLevelTheme = getThemeForLevel(currentLevel);
+        this.pendingUpLadderPos = null; // No forced generation needed, we load previous state
+
+        loadedChunks.clear();
+        this.currentPlayerChunkId = new GridPoint2(0, 0);
+
+        Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel);
+        return true;
+    }
+
+    private void saveAllChunks() {
+        if (!savingEnabled || gameMode == GameMode.CLASSIC) return;
+        for(Map.Entry<GridPoint2, Maze> entry : loadedChunks.entrySet()) {
+            saveChunk(entry.getValue(), entry.getKey());
+        }
+    }
+
     public Maze loadChunk(GridPoint2 chunkId) {
         // --- Calculate Dynamic Difficulty ---
         int effectiveLevel = calculateEffectiveDifficulty(chunkId, currentLevel);
@@ -152,6 +200,17 @@ public class WorldManager {
         if (generator == null) {
             generator = generators.get(Biome.FOREST);
         }
+
+        // --- NEW: Inject Forced Ladder Pos if applicable ---
+        if (generator instanceof MazeChunkGenerator && pendingUpLadderPos != null) {
+            // Only force it for the initial chunk (0,0) where player enters
+            if (chunkId.x == 0 && chunkId.y == 0) {
+                ((MazeChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
+            }
+        }
+        // ---------------------------------------------------
+
         RetroTheme.Theme themeToGenerate;
         switch (biome) {
             case MAZE:
@@ -186,11 +245,11 @@ public class WorldManager {
         this.currentPlayerChunkId = chunkId;
     }
 
+    public int getCurrentLevel() { return currentLevel; }
+
     public void setCurrentLevel(int level) {
         this.currentLevel = level;
-        // --- NEW: Update Deepest Level Tracking ---
         UnlockManager.getInstance().updateDeepestLevel(level);
-
         this.currentLevelTheme = getThemeForLevel(level);
         Gdx.app.log("WorldManager", "Set current level to: " + level);
     }
@@ -232,7 +291,7 @@ public class WorldManager {
         if (currentLevel == 1) {
             weatherManager.update(delta);
 
-            // --- NEW: Audio Dampening Check ---
+            // Audio Dampening Check
             if (playerReference != null) {
                 Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
                 if (currentMaze != null) {

@@ -7,25 +7,16 @@ import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
-import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
-import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.monster.Monster;
-import com.bpm.minotaur.gamedata.monster.MonsterFamily;
-import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.gamedata.item.ItemCategory;
-import com.bpm.minotaur.weather.WeatherManager;
-import com.bpm.minotaur.weather.WeatherType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public class CombatManager {
@@ -208,9 +199,8 @@ public class CombatManager {
         }
     }
 
-    public void playerAttack() {
-        if (currentState != CombatState.PLAYER_TURN) return;
-
+    // --- NEW: Helper to setup weapon and checks ---
+    private boolean prepareAttack() {
         Item weapon = player.getInventory().getRightHand();
 
         if (weapon != null) {
@@ -220,38 +210,68 @@ public class CombatManager {
             if (pendingIsRanged && player.getArrows() <= 0) {
                 eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
                 passTurnToMonster();
-                return;
+                return false;
             }
-
-            // TRIGGER PHYSICS STATE
-            currentState = CombatState.PHYSICS_RESOLUTION;
-            physicsTimer = 0f; // Reset timer
-
-            // --- NEW: Calculate Correct Die Type ---
-            int potentialDamage;
-            int attackModifier = player.getAttackModifier();
-
-            // LOGGING THE TOTAL ATTACK MODIFIER
-            Gdx.app.log("CombatManager", "Total Player Attack Modifier (Level + Gear): " + attackModifier);
-
-            if (weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                potentialDamage = weapon.getSpiritDamage() + attackModifier;
-            } else {
-                potentialDamage = weapon.getWarDamage() + attackModifier;
-            }
-
-            if (potentialDamage < 4) potentialDamage = 4;
-            float force = 10f + (player.getWarStrength() * 2f);
-
-            // Spawn the correct die type
-            stochasticManager.spawnDie(potentialDamage, force);
-
-            eventManager.addEvent(new GameEvent("Rolling for fate...", 1f));
-
+            return true;
         } else {
             eventManager.addEvent(new GameEvent("You have no weapon to attack with.", 2f));
             passTurnToMonster();
+            return false;
         }
+    }
+
+    // --- NEW: Helper to calculate die size/max damage ---
+    private int calculateDieSize() {
+        int attackModifier = player.getAttackModifier();
+        int potentialDamage;
+
+        if (pendingWeapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+            potentialDamage = pendingWeapon.getSpiritDamage() + attackModifier;
+        } else {
+            potentialDamage = pendingWeapon.getWarDamage() + attackModifier;
+        }
+
+        if (potentialDamage < 4) potentialDamage = 4;
+        return potentialDamage;
+    }
+
+    // --- NEW: Standard Attack (KEY A/SPACE) - No Animation ---
+    public void playerAttackInstant() {
+        if (currentState != CombatState.PLAYER_TURN) return;
+        if (!prepareAttack()) return;
+
+        // Simulate the roll immediately (1 to Max)
+        int dieSize = calculateDieSize();
+        int simulatedRoll = random.nextInt(dieSize) + 1;
+
+        // Log it so we know it worked
+        Gdx.app.log("CombatManager", "Instant Attack: Rolled " + simulatedRoll + " on D" + dieSize);
+
+        resolveAttack(simulatedRoll);
+    }
+
+    // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
+    public void playerAttackWithDice() {
+        if (currentState != CombatState.PLAYER_TURN) return;
+        if (!prepareAttack()) return;
+
+        // TRIGGER PHYSICS STATE
+        currentState = CombatState.PHYSICS_RESOLUTION;
+        physicsTimer = 0f;
+
+        // Calculate die size
+        int dieSize = calculateDieSize();
+        float force = 10f + (player.getWarStrength() * 2f);
+
+        // Spawn the correct die type
+        stochasticManager.spawnDie(dieSize, force);
+
+        eventManager.addEvent(new GameEvent("Rolling for fate...", 1f));
+    }
+
+    // Kept for backward compatibility if called elsewhere, maps to Instant
+    public void playerAttack() {
+        playerAttackInstant();
     }
 
     private void resolveAttack(int rollBonus) {
@@ -395,16 +415,13 @@ public class CombatManager {
         animationManager.addAnimation(new Animation(Animation.AnimationType.DAMAGE_TEXT, position, String.valueOf(damage), 1.0f));
     }
 
-    // --- MODIFIED: Update Loop for Physics Timing ---
     public void update(float delta) {
-
         // 1. ROLLING STATE
         if (currentState == CombatState.PHYSICS_RESOLUTION) {
             physicsTimer += delta;
             if (physicsTimer > MIN_ROLL_TIME && stochasticManager.areDiceSettled()) {
                 currentState = CombatState.PHYSICS_DELAY;
                 physicsTimer = 0f;
-                // Could trigger a sound here: "Die settled"
             }
             return;
         }
@@ -426,7 +443,6 @@ public class CombatManager {
         }
 
         if (currentState == CombatState.VICTORY) {
-            // Victory logic
             maze.getMonsters().remove(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
             endCombat();
         } else if (currentState == CombatState.DEFEAT) {
@@ -482,22 +498,16 @@ public class CombatManager {
         }
     }
 
-    // Existing method kept for compatibility with Input.Keys.A
     public boolean performRangedAttack() {
-        // Simple ranged logic pass-through for now, can be upgraded to physics later
         Item weapon = player.getInventory().getRightHand();
         if (weapon == null || !weapon.isRanged()) return false;
-
-        // Use existing physics trigger for consistency
-        playerAttack();
+        playerAttackInstant(); // Default to instant for standard inputs if used
         return true;
     }
 
     public CombatState getCurrentState() { return currentState; }
     public Monster getMonster() { return monster; }
     public void monsterAttack() {
-        // Re-implement basic monster attack logic to avoid compile errors
-        // (Copied from previous full file to ensure safety)
         if (monster == null) return;
 
         float dist = monster.getPosition().dst(player.getPosition());
@@ -513,7 +523,7 @@ public class CombatManager {
         ));
 
         soundManager.playMonsterAttackSound(monster);
-        int damage = monster.getWarStrength() / 4 + random.nextInt(3); // Simplified logic
+        int damage = monster.getWarStrength() / 4 + random.nextInt(3);
         player.takeDamage(damage, DamageType.PHYSICAL);
         maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
 

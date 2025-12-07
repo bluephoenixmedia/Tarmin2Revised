@@ -66,8 +66,8 @@ public class GameOverScreen extends BaseScreen {
         this.font.setColor(Color.RED);
         this.font.getData().setScale(3);
 
-        // Note: The debugManager is null here, which may cause an issue in your SoundManager constructor.
-        // For this task, we will proceed, but you may need to address that.
+        // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers ---
+        this.debugManager = DebugManager.getInstance();
         this.soundManager = new SoundManager(debugManager);
         this.soundManager.stopAllSounds();
 
@@ -83,8 +83,7 @@ public class GameOverScreen extends BaseScreen {
         // Create the reaper texture from our data, using a ghostly white color
         this.reaperTexture = createTextureFromData(REAPER_DATA, Color.MAGENTA);
 
-        clearWorldSaves();
-
+        // --- MOVED: clearWorldSaves() is now called in show() ---
     }
 
     /**
@@ -189,7 +188,9 @@ public class GameOverScreen extends BaseScreen {
 
     @Override
     public void show() {
-        // soundManager.playPlayerDeathSound(); // Already played in constructor
+        // --- FIX: Execute deletion HERE, after GameScreen has hidden and saved ---
+        clearWorldSaves();
+
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {

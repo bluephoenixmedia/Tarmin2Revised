@@ -20,6 +20,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -52,9 +53,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     private boolean needsAsciiRender = false;
 
-    // --- NEW: World/Game Mode ---
     private final WorldManager worldManager;
-    private final int level; // Initial dungeon level
+    private final int level;
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
@@ -62,10 +62,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager());
     private final Difficulty difficulty;
 
-    // --- NEW: 3D Rendering Components ---
+    // --- 3D Rendering Components ---
     private PerspectiveCamera camera3d;
     private Environment environment;
-    // Cache map to store a ModelInstance for every 3D Item
     private final Map<Item, ModelInstance> item3dCache = new HashMap<>();
 
     private Hud hud;
@@ -75,32 +74,29 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     // --- Game State ---
     private Player player;
-    private Maze maze; // This is now the "active" maze/chunk
-    private int currentLevel; // Current level number
+    private Maze maze;
+    private int currentLevel;
     private CombatManager combatManager;
     private MonsterAiManager monsterAiManager;
     private PotionManager potionManager;
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
-    private boolean useCrtFilter = true; // Toggle state
-    private final SpriteBatch postProcessBatch = new SpriteBatch(); // Dedicated batch for the final draw
+    private boolean useCrtFilter = true;
+    private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
 
-    // --- VIEWPORT FIX: Dedicated internal viewport for FBO rendering ---
     private final Viewport fboViewport;
     private static final int VIRTUAL_WIDTH = 1920;
     private static final int VIRTUAL_HEIGHT = 1080;
 
-    private float trauma = 0f; // Current shake intensity
+    private float trauma = 0f;
     private final Vector2 originalDir = new Vector2();
     private final Vector2 originalPlane = new Vector2();
     private final java.util.Random rng = new java.util.Random();
 
-    // --- Fix for Reset Bug ---
     private boolean hasLoadedLevel = false;
 
-    // --- Constructor Updated ---
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
         this.difficulty = difficulty;
@@ -109,14 +105,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.currentLevel = level;
         this.stochasticManager = new StochasticManager();
 
-        // Initialize FBO Viewport (Locked to 1920x1080)
         this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         this.fboViewport.update(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
-
-        // [MOVED] Initialize SoundManager HERE so we can pass it to WorldManager
         this.soundManager = new SoundManager(debugManager);
 
-        // --- Initialize WorldManager ---
         this.worldManager = new WorldManager(gameMode, difficulty, level,
             game.getMonsterDataManager(),
             game.getItemDataManager(),
@@ -126,7 +118,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         this.monsterAiManager = new MonsterAiManager();
 
-        // Music based on initial level
         switch (level) {
             case 1:
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
@@ -148,12 +139,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             eventManager = new GameEventManager();
         }
 
-        // --- FBO FIX: Initialize ONCE with static resolution ---
         if (fbo == null) {
             fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
         }
 
-        // Initialize Shader
         if (crtShader == null) {
             ShaderProgram.pedantic = false;
             crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
@@ -168,7 +157,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             hasLoadedLevel = true;
         }
 
-        // --- NEW: Initialize 3D Camera & Environment ---
         camera3d = new PerspectiveCamera(67, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         camera3d.near = 0.01f;
         camera3d.far = 100f;
@@ -176,9 +164,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
         environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
-
-        // Manual model loading and prop creation removed.
-        // 3D models are now loaded via ItemDataManager and instanced in render().
     }
 
     @Override
@@ -186,11 +171,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
-
         if (potionManager != null && gameMode == GameMode.ADVANCED) {
             potionManager.saveState();
         }
-
         MusicManager.getInstance().stop();
     }
 
@@ -198,19 +181,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
-
         if (soundManager != null) {
             soundManager.stopWeatherEffects();
         }
-
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
-
         if (worldManager != null) {
             worldManager.setCurrentLevel(currentLevel);
             worldManager.clearLoadedChunks();
         }
-
         generateLevel(currentLevel);
     }
 
@@ -219,36 +198,22 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         if (player == null) {
             if (this.potionManager == null) {
-                Gdx.app.log("GameScreen [DEBUG]", "Creating NEW PotionManager...");
                 this.potionManager = new PotionManager(this.eventManager);
-
-                Gdx.app.log("GameScreen [DEBUG]", "Setting PotionManager in ItemDataManager...");
                 game.getItemDataManager().setPotionManager(this.potionManager);
-
                 if (potionManager.hasSaveState()) {
-                    Gdx.app.log("GameScreen [DEBUG]", "Potion save file found. Loading state...");
                     potionManager.loadState();
                 } else {
-                    Gdx.app.log("GameScreen [DEBUG]", "No potion save file. Initializing NEW potion map...");
                     List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager().getAllPotionAppearanceTypes();
                     this.potionManager.initializeNewGame(potionTypes);
                 }
             }
-
-            Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
             this.maze = worldManager.getInitialMaze();
-
-            Gdx.app.log("GameScreen [DEBUG]", "Creating NEW Player...");
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
-
-            Gdx.app.log("GameScreen [DEBUG]", "Setting maze reference on player.");
             player.setMaze(this.maze);
-
         } else {
-            Gdx.app.log("GameScreen [DEBUG]", "Player exists. Calling getInitialMaze() for new level...");
             this.maze = worldManager.getInitialMaze();
             resetPlayerPosition();
             player.setMaze(this.maze);
@@ -258,31 +223,21 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
-        Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
-
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
             firstPersonRenderer.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
         } else {
             firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
         }
-
         DebugRenderer.printMazeToConsole(maze);
     }
 
     private void resetPlayerPosition() {
         GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
         player.getPosition().set(startPos.x + 0.5f, startPos.y + 0.5f);
-        Gdx.app.log("GameScreen", "Reset player position to: " + startPos);
     }
 
-    /**
-     * Checks if a 3D object at targetPos should be rendered.
-     * It checks distance (fog) and Line of Sight (walls).
-     */
     private boolean isVisible(Vector2 targetPos) {
         if (player == null || maze == null) return false;
-
-        // 1. Fog/Distance Check (Simple distance from player)
         float dstToPlayer = player.getPosition().dst(targetPos);
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
 
@@ -292,9 +247,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             if (dstToPlayer > 20) return false;
         }
 
-        // 2. Wall Occlusion Check
-        // We must calculate the ray start position EXACTLY as FirstPersonRenderer does.
-        // The Raycaster shifts the "camera" backwards to avoid wall clipping.
         Vector2 renderPosition;
         int playerX = (int) player.getPosition().x;
         int playerY = (int) player.getPosition().y;
@@ -306,26 +258,17 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             renderPosition = player.getPosition().cpy().sub(player.getDirectionVector());
         }
 
-        // hitDist: Distance from renderPosition to the first obstacle (wall OR the target itself)
         float hitDist = firstPersonRenderer.checkLineOfSight(player, maze, targetPos);
-
-        // trueDist: Actual distance from renderPosition to the target
         float trueDist = renderPosition.dst(targetPos);
-
-        // If the ray hit something significantly closer than the target, it's a wall.
-        // We use a buffer (0.8f) because floating point math + object volume.
         if (hitDist < trueDist - 0.8f) {
             return false;
         }
-
         return true;
     }
 
     @Override
     public void render(float delta) {
         time += delta;
-
-        // --- UPDATE LOGIC ---
         combatManager.update(delta);
         animationManager.update(delta);
         if (maze != null) maze.update(delta);
@@ -333,10 +276,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         eventManager.update(delta);
         handleSystemEvents();
 
-        // Update World & Weather
         if (worldManager != null) {
             worldManager.update(delta);
-
             if (worldManager.getWeatherManager() != null) {
                 float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
                 this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
@@ -351,7 +292,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             checkForProactiveChunkLoading();
         }
 
-        // --- RENDER PASS 1: WORLD -> FBO (Fixed 1920x1080) ---
         if (useCrtFilter) {
             fbo.begin();
             fboViewport.apply();
@@ -360,24 +300,18 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(Gdx.gl.GL_DEPTH_BUFFER_BIT);
-
         Viewport currentViewport = useCrtFilter ? fboViewport : game.getViewport();
 
-        // APPLY CAMERA SHAKE
         boolean isShaking = (player != null && trauma > 0.01f);
-
         if (isShaking) {
             originalDir.set(player.getDirectionVector());
             originalPlane.set(player.getCameraPlane());
-
             float shakePower = trauma * 0.1f;
             float angle = (rng.nextFloat() - 0.5f) * shakePower;
-
             player.getDirectionVector().rotateRad(angle);
             player.getCameraPlane().rotateRad(angle);
         }
 
-        // --- RENDER WORLD ---
         if (player != null && maze != null) {
             firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel, gameMode);
 
@@ -387,7 +321,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
-            // --- NEW: RENDER 3D MODELS WITH OCCLUSION CULLING ---
             if (camera3d != null) {
                 camera3d.position.set(player.getPosition().x, 0.5f, player.getPosition().y);
                 camera3d.direction.set(player.getDirectionVector().x, 0, player.getDirectionVector().y);
@@ -395,49 +328,34 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 camera3d.update();
 
                 ModelBatch modelBatch = ((Tarmin2)game).getModelBatch();
-                if (modelBatch != null) {
-                    modelBatch.begin(camera3d);
+                boolean batchBegun = false;
 
-                    // Render Data-Driven Items
-                    if (maze != null) {
-                        for (Item item : maze.getItems().values()) {
-                            ItemTemplate template = item.getTemplate();
-
-                            // Check if this item has a 3D model defined in JSON
-                            if (template != null && template.modelPath != null) {
-
-                                // Occlusion Culling
-                                if (!isVisible(item.getPosition())) {
-                                    continue;
+                if (modelBatch != null && maze != null) {
+                    for (Item item : maze.getItems().values()) {
+                        ItemTemplate template = item.getTemplate();
+                        if (template != null && template.modelPath != null) {
+                            if (!isVisible(item.getPosition())) continue;
+                            ModelInstance inst = item3dCache.get(item);
+                            if (inst == null) {
+                                Model model = game.getAssetManager().get(template.modelPath, Model.class);
+                                if (model != null) {
+                                    inst = new ModelInstance(model);
+                                    item3dCache.put(item, inst);
                                 }
-
-                                // Retrieve or Create Instance
-                                ModelInstance inst = item3dCache.get(item);
-                                if (inst == null) {
-                                    // Fetch the model from AssetManager using the path in the JSON
-                                    Model model = game.getAssetManager().get(template.modelPath, Model.class);
-                                    if (model != null) {
-                                        inst = new ModelInstance(model);
-                                        // Apply scale from JSON
-                                        inst.transform.scale(template.modelScale, template.modelScale, template.modelScale);
-                                        item3dCache.put(item, inst);
-                                    }
+                            }
+                            if (inst != null) {
+                                if (!batchBegun) {
+                                    modelBatch.begin(camera3d);
+                                    batchBegun = true;
                                 }
-
-                                if (inst != null) {
-                                    // Update Position
-                                    inst.transform.setTranslation(
-                                        item.getPosition().x,
-                                        template.modelYOffset, // Use Y offset from JSON
-                                        item.getPosition().y
-                                    );
-                                    modelBatch.render(inst, environment);
-                                }
+                                inst.transform.idt();
+                                inst.transform.translate(item.getPosition().x, template.modelYOffset, item.getPosition().y);
+                                inst.transform.scale(template.modelScale, template.modelScale, template.modelScale);
+                                modelBatch.render(inst, environment);
                             }
                         }
                     }
-
-                    modelBatch.end();
+                    if (batchBegun) modelBatch.end();
                 }
             }
 
@@ -457,20 +375,16 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             player.getCameraPlane().set(originalPlane);
         }
 
-        if (stochasticManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_RESOLUTION) {
-            stochasticManager.render();
-        }
-
-        if (hud != null) {
-            hud.render();
-        }
-
         if (stochasticManager != null) {
             CombatManager.CombatState state = combatManager.getCurrentState();
             if (state == CombatManager.CombatState.PHYSICS_RESOLUTION ||
                 state == CombatManager.CombatState.PHYSICS_DELAY) {
                 stochasticManager.render();
             }
+        }
+
+        if (hud != null) {
+            hud.render();
         }
 
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
@@ -495,48 +409,26 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
     private void checkForProactiveChunkLoading() {
-        if (player == null || worldManager == null || maze == null) {
-            return;
-        }
-
+        if (player == null || worldManager == null || maze == null) return;
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        if (!biome.isSeamless()) return;
 
-        if (!biome.isSeamless()) {
-            return;
-        }
-
-        int triggerDistance;
-        if (biome.hasFogOfWar()) {
-            triggerDistance = biome.getFogDistance() + 1;
-        } else {
-            triggerDistance = 5;
-        }
-
+        int triggerDistance = biome.hasFogOfWar() ? biome.getFogDistance() + 1 : 5;
         triggerDistance = Math.max(2, triggerDistance);
 
         GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
         GridPoint2 currentChunkId = worldManager.getCurrentPlayerChunkId();
-
         int height = maze.getHeight();
         int width = maze.getWidth();
 
-        if (playerPos.y >= height - 1 - triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
-        }
-        if (playerPos.y <= triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
-        }
-        if (playerPos.x >= width - 1 - triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
-        }
-        if (playerPos.x <= triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
-        }
+        if (playerPos.y >= height - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
+        if (playerPos.y <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
+        if (playerPos.x >= width - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
+        if (playerPos.x <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
     }
 
     private void handleSystemEvents() {
         GameEvent event;
-
         if (gameMode == GameMode.ADVANCED) {
             while ((event = eventManager.findAndConsume(GameEvent.EventType.CHUNK_TRANSITION)) != null) {
                 if (event.payload instanceof Gate) {
@@ -551,105 +443,49 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private void swapToChunk(Maze newMaze) {
         this.maze = newMaze;
         player.setMaze(newMaze);
-
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
-
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-
-        Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
         DebugRenderer.printMazeToConsole(maze);
     }
 
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
-
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             monsterAiManager.updateMonsterLogic(maze, player, true, combatManager);
         }
         combatManager.checkForAdjacentMonsters();
     }
 
-
     private void performChunkTransition(Gate transitionGate) {
         if (player == null) return;
-
-        Gdx.app.log("GameScreen", "Performing chunk transition via gate at ("
-            + (int)transitionGate.getPosition().x + "," + (int)transitionGate.getPosition().y + ") to chunk "
-            + transitionGate.getTargetChunkId());
-
-        if (maze != null) {
-            worldManager.saveCurrentChunk(this.maze);
-        }
-
+        if (maze != null) worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
-
         if (newMaze == null) {
-            Gdx.app.error("GameScreen", "Failed to load target chunk (impassable?): " + transitionGate.getTargetChunkId());
             eventManager.addEvent(new GameEvent("A strange force blocks your path.", 2f));
             transitionGate.close();
             return;
         }
-
-        player.getPosition().set(
-            transitionGate.getTargetPlayerPos().x + 0.5f,
-            transitionGate.getTargetPlayerPos().y + 0.5f
-        );
-        Gdx.app.log("GameScreen", "Player teleported to: " + transitionGate.getTargetPlayerPos());
-
+        player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f, transitionGate.getTargetPlayerPos().y + 0.5f);
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
         swapToChunk(newMaze);
     }
-
 
     @Override
     public void resize(int width, int height) {
         game.getViewport().update(width, height, true);
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
-        if (hud != null) {
-            hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-        }
+        if (hud != null) hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
     }
-
-    private boolean isMoveSeamlessTransition(GridPoint2 playerPos, Direction moveDir) {
-        if (maze == null) return false;
-
-        int height = maze.getHeight();
-        int width = maze.getWidth();
-
-        if (moveDir == Direction.NORTH && playerPos.y == height - 1) return true;
-        if (moveDir == Direction.SOUTH && playerPos.y == 0) return true;
-        if (moveDir == Direction.EAST && playerPos.x == width - 1) return true;
-        if (moveDir == Direction.WEST && playerPos.x == 0) return true;
-
-        return false;
-    }
-
-    private GridPoint2 getSeamlessTargetPlayerPos(GridPoint2 playerPos, Direction moveDir) {
-        if (maze == null) return playerPos;
-
-        int height = maze.getHeight();
-        int width = maze.getWidth();
-
-        if (moveDir == Direction.NORTH) return new GridPoint2(playerPos.x, 0);
-        if (moveDir == Direction.SOUTH) return new GridPoint2(playerPos.x, height - 1);
-        if (moveDir == Direction.EAST)  return new GridPoint2(0, playerPos.y);
-        if (moveDir == Direction.WEST)  return new GridPoint2(width - 1, playerPos.y);
-        return playerPos;
-    }
-
 
     private void processPlayerStatusEffects() {
         if (player == null) return;
-
         if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
             ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
             int damage = poison.getPotency();
-
             player.takeStatusEffectDamage(damage, DamageType.POISON);
             eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
-            Gdx.app.log("GameScreen", "Player took " + damage + " poison damage.");
         }
     }
 
@@ -675,20 +511,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            // --- NEW: A/SPACE = Instant Attack ---
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
-                combatManager.playerAttack();
+                combatManager.playerAttackInstant();
+                return true;
+            }
+            // --- NEW: NUM_7 = Dice Roll Attack ---
+            if (keycode == Input.Keys.NUM_7) {
+                combatManager.playerAttackWithDice();
                 return true;
             }
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
-                    if (attacked) {
-                        playerTurnTakesAction();
-                    }
+                    if (attacked) playerTurnTakesAction();
                     return true;
                 }
             }
@@ -716,7 +555,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-
                 case Input.Keys.O:
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
                     playerTurnTakesAction();
@@ -736,9 +574,39 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                         (int)(player.getPosition().x + player.getFacing().getVector().x),
                         (int)(player.getPosition().y + player.getFacing().getVector().y)
                     );
+                    Ladder ladder = maze.getLadders().get(atFeet);
+                    if (ladder == null) ladder = maze.getLadders().get(inFront);
 
-                    if (maze.getLadders().containsKey(atFeet) || maze.getLadders().containsKey(inFront)) {
-                        descendToNextLevel();
+                    if (ladder != null) {
+                       // soundManager.playSound("level_up");
+                        if (ladder.getType() == Ladder.LadderType.DOWN) {
+                            GridPoint2 ladderPos = new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y);
+                            worldManager.descendLevel(ladderPos);
+                            this.currentLevel = worldManager.getCurrentLevel();
+                            worldManager.clearLoadedChunks();
+                            generateLevel(this.currentLevel);
+                            hud.addMessage("Descended to Level " + currentLevel);
+                        } else {
+                            boolean success = worldManager.ascendLevel();
+                            if (success) {
+                                this.currentLevel = worldManager.getCurrentLevel();
+                                worldManager.clearLoadedChunks();
+                                generateLevel(this.currentLevel);
+                                Vector2 foundDownLadderPos = null;
+                                for (Ladder l : maze.getLadders().values()) {
+                                    if (l.getType() == Ladder.LadderType.DOWN) {
+                                        foundDownLadderPos = l.getPosition();
+                                        break;
+                                    }
+                                }
+                                if (foundDownLadderPos != null) {
+                                    player.setPosition(new GridPoint2((int)foundDownLadderPos.x, (int)foundDownLadderPos.y));
+                                }
+                                hud.addMessage("Ascended to Level " + currentLevel);
+                            } else {
+                                hud.addMessage("You cannot ascend any higher.");
+                            }
+                        }
                         playerTurnTakesAction();
                         return true;
                     }
@@ -768,26 +636,22 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     game.setScreen(new InventoryScreen(game, this, player, maze));
                 }
                 return true;
-
             case Input.Keys.F6:
                 useCrtFilter = !useCrtFilter;
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
                 return true;
-
             case Input.Keys.F7:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
                     eventManager.addEvent(new GameEvent("Debug Weather: " + worldManager.getWeatherManager().getCurrentWeather(), 2f));
                 }
                 return true;
-
             case Input.Keys.F8:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleIntensity();
                     eventManager.addEvent(new GameEvent("Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
                 }
                 return true;
-
             case Input.Keys.F9:
                 Gdx.app.log("GameScreen", "Dumping Exploration Memory to Console...");
                 DebugRenderer.printExplorationToConsole(maze);
@@ -811,16 +675,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     public void dispose() {
         shapeRenderer.dispose();
         font.dispose();
-        if (hud != null) {
-            hud.dispose();
-        }
-        if (entityRenderer != null) {
-            entityRenderer.dispose();
-        }
-        if (soundManager != null) {
-            soundManager.dispose();
-        }
-
+        if (hud != null) hud.dispose();
+        if (entityRenderer != null) entityRenderer.dispose();
+        if (soundManager != null) soundManager.dispose();
         if (fbo != null) fbo.dispose();
         if (crtShader != null) crtShader.dispose();
         postProcessBatch.dispose();

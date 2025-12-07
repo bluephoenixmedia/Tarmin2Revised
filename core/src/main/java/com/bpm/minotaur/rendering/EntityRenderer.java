@@ -726,7 +726,23 @@ public class EntityRenderer {
         }
         String[] spriteData = itemDataManager.getTemplate(Item.ItemType.LADDER).spriteData;
         if (spriteData != null) {
-            drawAsciiSprite(shapeRenderer, ladder, spriteData, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
+            // Pass the ladder type to the drawAsciiSprite or handle flipping here
+            // To keep drawAsciiSprite generic, we can just reverse the data array if it's UP
+            String[] dataToDraw = spriteData;
+
+            if (ladder.getType() == Ladder.LadderType.UP) {
+                // Flip Vertical: Reverse the array order
+                String[] flipped = new String[spriteData.length];
+                for(int i=0; i<spriteData.length; i++) {
+                    flipped[i] = spriteData[spriteData.length - 1 - i];
+                }
+                dataToDraw = flipped;
+
+                // Optional: Change color to Gold/Green to indicate "Good/Return"?
+                // Using existing color for now.
+            }
+
+            drawAsciiSprite(shapeRenderer, ladder, dataToDraw, screenX, transformY, camera, viewport, depthBuffer, spriteWidth, spriteHeight, drawY);
         }
     }
 

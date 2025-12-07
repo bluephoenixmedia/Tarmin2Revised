@@ -95,7 +95,7 @@ public class PlayerEquipment {
             log.append(" Mods(").append(modifierDefense).append(")");
         }
 
-        Gdx.app.log("Equipment", "Armor Calc: Total=" + totalDefense + " Breakdown:" + log.toString());
+       // Gdx.app.log("Equipment", "Armor Calc: Total=" + totalDefense + " Breakdown:" + log.toString());
 
         return totalDefense;
     }

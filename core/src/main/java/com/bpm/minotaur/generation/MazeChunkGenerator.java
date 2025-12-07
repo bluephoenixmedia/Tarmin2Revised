@@ -23,6 +23,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
     private String[] finalLayout;
     private GridPoint2 playerSpawnPoint = new GridPoint2(1, 1);
 
+    // --- Forced Ladder Position ---
+    private GridPoint2 forcedUpLadderPos = null;
+
     private List<GridPoint2> currentChunkHomeTiles = new ArrayList<>();
 
     // --- Maze Content Tile Definitions ---
@@ -72,6 +75,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
 
+    public void setForcedUpLadderPos(GridPoint2 pos) {
+        this.forcedUpLadderPos = pos;
+    }
+
     public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
                               SpawnTableData spawnTableData) {
@@ -79,7 +86,21 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
         int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
 
-        createMazeFromArrayTiles(mapRows, mapCols, chunkId, level);
+        // --- RE-GENERATION LOGIC START ---
+        int attempts = 0;
+        int maxAttempts = 50; // Try 50 times to find a valid natural layout
+
+        do {
+            createMazeFromArrayTiles(mapRows, mapCols, chunkId, level);
+            attempts++;
+        } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
+
+        // Fallback: If we still have an invalid position after max attempts, force clear the tile
+        if (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos)) {
+            Gdx.app.log("MazeChunkGenerator", "Forcing clear tile at " + forcedUpLadderPos + " after " + attempts + " failed generation attempts.");
+            forceClearTile(forcedUpLadderPos);
+        }
+        // --- RE-GENERATION LOGIC END ---
 
         Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme);
@@ -97,8 +118,13 @@ public class MazeChunkGenerator implements IChunkGenerator {
             spawnTransitionGates(maze, this.finalLayout, chunkId);
         }
 
-        // [CHANGED] Always call findPlayerStart, which now handles priority logic internally
         findPlayerStart(this.finalLayout);
+
+        // Hint player start if forced ladder exists
+        if (forcedUpLadderPos != null) {
+            playerSpawnPoint.set(forcedUpLadderPos.x, forcedUpLadderPos.y);
+            forcedUpLadderPos = null;
+        }
 
         return maze;
     }
@@ -109,7 +135,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private void findPlayerStart(String[] layout) {
-        // 1. Priority: Check if Home Tiles exist and spawn in the center
         if (!currentChunkHomeTiles.isEmpty()) {
             int midIndex = currentChunkHomeTiles.size() / 2;
             GridPoint2 homeSpawn = currentChunkHomeTiles.get(midIndex);
@@ -118,16 +143,13 @@ public class MazeChunkGenerator implements IChunkGenerator {
             return;
         }
 
-        // 2. Fallback: Standard Scan Logic
         int height = layout.length;
         int width = layout[0].length();
 
-        // Default reset
         playerSpawnPoint.set(1, 1);
 
         char defaultTileChar = layout[height - 2].charAt(1);
         if (defaultTileChar != '#') {
-            // (1,1) is valid
             return;
         }
 
@@ -159,6 +181,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private void spawnLadder(Maze maze, String[] layout) {
+        // A. Spawn the standard DOWN ladder randomly
         int x, y;
         do {
             x = random.nextInt(maze.getWidth());
@@ -167,9 +190,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
             layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
                 maze.getItems().containsKey(new GridPoint2(x, y)) ||
                 maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
-                (currentChunkHomeTiles.contains(new GridPoint2(x, y)))
+                (currentChunkHomeTiles.contains(new GridPoint2(x, y))) ||
+                (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y)
         );
-        maze.addLadder(new Ladder(x, y));
+        maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
+
+        // B. Spawn the forced UP ladder if requested
+        if (forcedUpLadderPos != null) {
+            maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP));
+        }
     }
 
     private void spawnClassicGate(Maze maze, String[] layout) {
@@ -463,6 +492,43 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         for (int y = 0; y < height; y++) {
             finalLayout[y] = new String(layoutChars[y]);
+        }
+    }
+
+    // --- Validation Helper Methods ---
+
+    /**
+     * Checks if the character at the given position is a safe spawn (floor).
+     * Returns false if it is a Wall ('#') or Door ('D').
+     */
+    private boolean isValidSpawnPosition(GridPoint2 pos) {
+        if (finalLayout == null || finalLayout.length == 0) return false;
+        int height = finalLayout.length;
+        int width = finalLayout[0].length();
+
+        if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) return false;
+
+        // Map Game Y to Layout Y
+        int layoutY = height - 1 - pos.y;
+        char c = finalLayout[layoutY].charAt(pos.x);
+
+        return c != '#' && c != 'D';
+    }
+
+    /**
+     * Forces the tile at the given position to be a floor ('.').
+     */
+    private void forceClearTile(GridPoint2 pos) {
+        if (finalLayout == null) return;
+        int height = finalLayout.length;
+        int layoutY = height - 1 - pos.y;
+
+        if (layoutY >= 0 && layoutY < height) {
+            StringBuilder sb = new StringBuilder(finalLayout[layoutY]);
+            if (pos.x >= 0 && pos.x < sb.length()) {
+                sb.setCharAt(pos.x, '.');
+                finalLayout[layoutY] = sb.toString();
+            }
         }
     }
 }
