@@ -6,6 +6,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -136,6 +137,12 @@ public class WorldManager {
         UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
 
         Gdx.app.log("WorldManager", "Descending to Level " + currentLevel + ". Pending UP Ladder at " + pendingUpLadderPos);
+
+        // --- BALANCE LOGGING ---
+        BalanceLogger.getInstance().log("NAVIGATION", "Descending to Depth " + currentLevel);
+        if (playerReference != null) {
+            BalanceLogger.getInstance().logPlayerState(playerReference);
+        }
     }
 
     // --- NEW: Ascent Logic ---
@@ -233,6 +240,16 @@ public class WorldManager {
         saveChunk(newMaze, chunkId);
 
         Gdx.app.log("WorldManager", "Generated Chunk " + chunkId + " with Effective Difficulty: " + effectiveLevel);
+
+        // --- BALANCE LOGGING ---
+        BalanceLogger.getInstance().log("CHUNK_GEN",
+            String.format("Generated Chunk %s (Biome: %s) | Eff. Difficulty: %d", chunkId.toString(), biome.name(), effectiveLevel));
+
+        // Log all items spawned in this chunk to analyze distribution
+        for (Item item : newMaze.getItems().values()) {
+            BalanceLogger.getInstance().logItemSpawn(item, effectiveLevel);
+        }
+        // -----------------------
 
         return newMaze;
     }

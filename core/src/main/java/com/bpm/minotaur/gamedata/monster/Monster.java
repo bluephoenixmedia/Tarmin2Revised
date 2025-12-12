@@ -108,13 +108,14 @@ public class Monster implements Renderable {
         this.attackRange = template.attackRange;
     }
 
-    public void takeDamage(int amount) {
+    public int takeDamage(int amount) {
         int damageReduction = this.armor;
         int finalDamage = Math.max(0, amount - damageReduction);
         this.warStrength -= finalDamage;
         if (this.warStrength < 0) {
             this.warStrength = 0;
         }
+        return finalDamage; // NEW: Return the actual value
     }
 
     public void takeSpiritualDamage(int amount) {
@@ -154,4 +155,6 @@ public class Monster implements Renderable {
     public int getDexterity() { return dexterity; }
     public boolean hasRangedAttack() { return hasRangedAttack; }
     public int getAttackRange() { return attackRange; }
+
+    public int getArmor() { return armor; }
 }

@@ -66,6 +66,8 @@
   "itemSpawnTable": [
     { "type": "POTION_BLUE", "minLevel": 1, "maxLevel": 99, "weight": 5 },
     { "type": "POTION_PINK", "minLevel": 1, "maxLevel": 99, "weight": 5 },
+    { "type": "FOOD", "minLevel": 1, "maxLevel": 99, "weight": 15 },
+    { "type": "FLOUR_SACK", "minLevel": 1, "maxLevel": 99, "weight": 10 },
     { "type": "KNIFE", "minLevel": 1, "maxLevel": 5, "weight": 10 },
     { "type": "DART", "minLevel": 1, "maxLevel": 5, "weight": 10 },
     { "type": "BOW", "minLevel": 1, "maxLevel": 8, "weight": 8 },
@@ -138,6 +140,7 @@
 
   "containerLoot": {
     "default": [
+      { "type": "FOOD", "minLevel": 1, "maxLevel": 99, "weight": 25 },
       { "type": "COINS", "minLevel": 1, "maxLevel": 99, "weight": 20 },
       { "type": "CHALICE", "minLevel": 3, "maxLevel": 99, "weight": 10 },
       { "type": "LAMP", "minLevel": 1, "maxLevel": 99, "weight": 8 },

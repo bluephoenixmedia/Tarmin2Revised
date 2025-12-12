@@ -18,6 +18,7 @@ import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
+import com.bpm.minotaur.managers.BalanceLogger;
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.screens.LoadingScreen;
@@ -46,6 +47,8 @@ public class Tarmin2 extends Game {
 
     @Override
     public void create() {
+        BalanceLogger.getInstance().log("SESSION", "Engine Start. Initializing systems...");
+
         Bullet.init();
         batch = new SpriteBatch();
 

@@ -80,6 +80,10 @@ public class CombatManager {
     private static final float MIN_ROLL_TIME = 0.1f;    // Almost instant allow-settle
     private static final float RESULT_VIEW_TIME = 0.3f; // Quick glance at result (600ms)
 
+    // --- LOGGING STATS ---
+    private int currentCombatTurns = 0;
+    private int damageTakenInCombat = 0;
+
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
                          GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager,
                          ItemDataManager itemDataManager, StochasticManager stochasticManager) {
@@ -149,6 +153,12 @@ public class CombatManager {
         if (currentState == CombatState.INACTIVE) {
             this.monster = monster;
 
+            // --- LOGGING INIT ---
+            this.currentCombatTurns = 0;
+            this.damageTakenInCombat = 0;
+            BalanceLogger.getInstance().logCombatStart(player, monster);
+            // --------------------
+
             if (this.monster != null && this.monster.getStatusManager() != null && this.eventManager != null) {
                 this.monster.getStatusManager().initialize(eventManager);
             }
@@ -195,6 +205,10 @@ public class CombatManager {
             int damage = poison.getPotency();
             player.takeStatusEffectDamage(damage, DamageType.POISON);
             eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
+
+            damageTakenInCombat += damage;
+            BalanceLogger.getInstance().log("COMBAT_EFFECT", "Player took " + damage + " poison dmg.");
+
             Gdx.app.log("CombatManager", "Player took " + damage + " poison damage.");
         }
     }
@@ -277,8 +291,12 @@ public class CombatManager {
     private void resolveAttack(int rollBonus) {
         if (pendingWeapon == null) return;
 
+        currentCombatTurns++;
+
         int attackModifier = player.getAttackModifier() + rollBonus;
         boolean attackSuccessful = false;
+        int damage = 0;
+        int actualDamage = 0;
 
         if (pendingWeapon.getCategory() == ItemCategory.WAR_WEAPON && pendingWeapon.isWeapon()) {
             if (pendingWeapon.isRanged()) {
@@ -286,14 +304,25 @@ public class CombatManager {
                 String[] projectileSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
                 animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER, player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, projectileSprite));
 
-                int damage = pendingWeapon.getWarDamage() + attackModifier;
-                monster.takeDamage(damage);
-                lastDamageDealt = damage;
+                damage = pendingWeapon.getWarDamage() + attackModifier;
+                actualDamage = monster.takeDamage(damage);
+
+                // --- NEW: Player Minimum Damage (Glancing Blow) ---
+                if (actualDamage < 1) {
+                    actualDamage = 1;
+                    monster.setWarStrength(monster.getWarStrength() - 1); // Force 1 HP loss
+                }
+                // --------------------------------------------------
+
+                lastDamageDealt = actualDamage;
                 attackSuccessful = true;
 
-                showDamageText(damage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
-                maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
-                eventManager.addEvent(new GameEvent("Ranged Hit! " + damage + " dmg", 2f));
+                if (actualDamage > 0) {
+                    maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
+                }
+
+                showDamageText(actualDamage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+                eventManager.addEvent(new GameEvent("Ranged Hit! " + actualDamage + " dmg", 2f));
 
             } else {
                 String[] meleeSprite = pendingWeapon.getSpriteData();
@@ -301,17 +330,28 @@ public class CombatManager {
 
                 animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER, player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, meleeSprite));
 
-                int damage = pendingWeapon.getWarDamage() + attackModifier;
-                monster.takeDamage(damage);
-                lastDamageDealt = damage;
+                damage = pendingWeapon.getWarDamage() + attackModifier;
+
+                actualDamage = monster.takeDamage(damage);
+
+                // --- NEW: Player Minimum Damage (Glancing Blow) ---
+                if (actualDamage < 1) {
+                    actualDamage = 1;
+                    monster.setWarStrength(monster.getWarStrength() - 1); // Force 1 HP loss
+                }
+                // --------------------------------------------------
+
+                lastDamageDealt = actualDamage;
                 attackSuccessful = true;
 
-                Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
-                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
-                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+                if (actualDamage > 0) {
+                    Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
+                    Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
+                    maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+                }
 
-                showDamageText(damage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
-                eventManager.addEvent(new GameEvent("Direct Hit! " + damage + " dmg", 2f));
+                showDamageText(actualDamage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+                eventManager.addEvent(new GameEvent("Direct Hit! " + actualDamage + " dmg", 2f));
             }
 
             if (pendingWeapon.isUsable()) {
@@ -321,13 +361,16 @@ public class CombatManager {
         } else if (pendingWeapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON && pendingWeapon.isWeapon()) {
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER, player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, itemDataManager.getTemplate(Item.ItemType.LARGE_LIGHTNING).spriteData));
 
-            int damage = pendingWeapon.getSpiritDamage() + attackModifier;
+            damage = pendingWeapon.getSpiritDamage() + attackModifier;
             monster.takeSpiritualDamage(damage);
+            actualDamage = damage;
             attackSuccessful = true;
 
-            showDamageText(damage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
-            maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
-            eventManager.addEvent(new GameEvent("Spell Cast! " + damage + " dmg", 2f));
+            showDamageText(actualDamage, new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
+            if (actualDamage > 0) {
+                maze.addBlood((int)monster.getPosition().x, (int)monster.getPosition().y, 0.03f);
+            }
+            eventManager.addEvent(new GameEvent("Spell Cast! " + actualDamage + " dmg", 2f));
 
             if (pendingWeapon.isUsable()) {
                 player.getInventory().setRightHand(null);
@@ -336,6 +379,9 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("You can't attack with this item.", 2f));
             return;
         }
+
+        BalanceLogger.getInstance().logCombatRound("PLAYER",
+            pendingWeapon.getFriendlyName(), rollBonus, actualDamage, monster.getWarStrength());
 
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
@@ -381,16 +427,24 @@ public class CombatManager {
         if (hitChance < 10) hitChance = 10;
         if (hitChance > 95) hitChance = 95;
 
+        int damage = 0;
         if (random.nextInt(100) < hitChance) {
-            int damage = attacker.getWarStrength() / 3;
+            damage = attacker.getWarStrength() / 3;
             if (damage < 1) damage = 1;
             int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
-            if (actualDamage > 0) maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
+
+            // Log damage taken
+            if (actualDamage > 0) {
+                maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
+                damageTakenInCombat += actualDamage;
+                BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged", -1, actualDamage, player.getWarStrength());
+            }
 
             if (actualDamage > 0) eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
             else eventManager.addEvent(new GameEvent("Your armor deflects the " + attacker.getMonsterType() + "'s shot!", 1.5f));
         } else {
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.0f));
+            BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged (Miss)", -1, 0, player.getWarStrength());
         }
         return true;
     }
@@ -442,10 +496,15 @@ public class CombatManager {
             else monsterAttack();
         }
 
+        // --- UPDATED: Log Victory/Defeat Transitions ---
         if (currentState == CombatState.VICTORY) {
+            // Log Victory
+            BalanceLogger.getInstance().logCombatEnd("VICTORY", currentCombatTurns, damageTakenInCombat);
             maze.getMonsters().remove(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y));
             endCombat();
         } else if (currentState == CombatState.DEFEAT) {
+            // Log Defeat
+            BalanceLogger.getInstance().logCombatEnd("DEFEAT", currentCombatTurns, damageTakenInCombat);
             game.setScreen(new GameOverScreen(game));
         }
     }
@@ -507,9 +566,22 @@ public class CombatManager {
 
     public CombatState getCurrentState() { return currentState; }
     public Monster getMonster() { return monster; }
+
     public void monsterAttack() {
         if (monster == null) return;
 
+        // Try ranged first
+        if (monster.hasRangedAttack()) {
+            float dist = monster.getPosition().dst(player.getPosition());
+            if (dist > 1.5f && dist <= monster.getAttackRange()) {
+                if (performMonsterRangedAttack(monster)) {
+                    currentState = CombatState.PLAYER_TURN;
+                    return;
+                }
+            }
+        }
+
+        // Standard Melee
         float dist = monster.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;
 
@@ -523,11 +595,21 @@ public class CombatManager {
         ));
 
         soundManager.playMonsterAttackSound(monster);
-        int damage = monster.getWarStrength() / 4 + random.nextInt(3);
-        player.takeDamage(damage, DamageType.PHYSICAL);
+
+        // --- BALANCED DAMAGE FORMULA ---
+        // Old: WS / 3 + 2. New: WS / 3 + 1.
+        // This is a slight nerf to ensure players don't get 2-shot early on.
+        int baseDmg = (monster.getWarStrength() / 3) + 1;
+        int damage = baseDmg + random.nextInt(3);
+        // -------------------------------
+
+        int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
         maze.addBlood((int)player.getPosition().x, (int)player.getPosition().y, 0.03f);
 
-        eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + damage, 1f));
+        damageTakenInCombat += actualDamage;
+        BalanceLogger.getInstance().logCombatRound("MONSTER", "Melee", -1, actualDamage, player.getWarStrength());
+
+        eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + actualDamage, 1f));
 
         if (player.getWarStrength() <= 0) {
             currentState = CombatState.DEFEAT;
