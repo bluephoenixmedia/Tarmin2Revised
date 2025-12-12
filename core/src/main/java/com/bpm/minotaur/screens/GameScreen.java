@@ -4,31 +4,43 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport; // Ensure this is imported
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.item.ItemType;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GameScreen extends BaseScreen implements InputProcessor, Disposable {
 
@@ -41,15 +53,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     private boolean needsAsciiRender = false;
 
-    // --- NEW: World/Game Mode ---
     private final WorldManager worldManager;
-    private final int level; // Initial dungeon level
+    private final int level;
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager());
     private final Difficulty difficulty;
+
+    // --- 3D Rendering Components ---
+    private PerspectiveCamera camera3d;
+    private Environment environment;
+    private final Map<Item, ModelInstance> item3dCache = new HashMap<>();
 
     private Hud hud;
     private AnimationManager animationManager;
@@ -58,32 +74,29 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     // --- Game State ---
     private Player player;
-    private Maze maze; // This is now the "active" maze/chunk
-    private int currentLevel; // Current level number
+    private Maze maze;
+    private int currentLevel;
     private CombatManager combatManager;
     private MonsterAiManager monsterAiManager;
     private PotionManager potionManager;
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
-    private boolean useCrtFilter = true; // Toggle state
-    private final SpriteBatch postProcessBatch = new SpriteBatch(); // Dedicated batch for the final draw
+    private boolean useCrtFilter = true;
+    private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
 
-    // --- VIEWPORT FIX: Dedicated internal viewport for FBO rendering ---
     private final Viewport fboViewport;
     private static final int VIRTUAL_WIDTH = 1920;
     private static final int VIRTUAL_HEIGHT = 1080;
 
-    private float trauma = 0f; // Current shake intensity
+    private float trauma = 0f;
     private final Vector2 originalDir = new Vector2();
     private final Vector2 originalPlane = new Vector2();
     private final java.util.Random rng = new java.util.Random();
 
-    // --- Fix for Reset Bug ---
     private boolean hasLoadedLevel = false;
 
-    // --- Constructor Updated ---
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
         this.difficulty = difficulty;
@@ -92,27 +105,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.currentLevel = level;
         this.stochasticManager = new StochasticManager();
 
-        // Initialize FBO Viewport (Locked to 1920x1080)
         this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-        // We can update it once here to ensure camera is centered relative to 0,0 if needed,
-        // though applying it in render is the key.
         this.fboViewport.update(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
-
-        // [MOVED] Initialize SoundManager HERE so we can pass it to WorldManager
         this.soundManager = new SoundManager(debugManager);
 
-        // --- Initialize WorldManager ---
-        // [UPDATED] Now passing soundManager as the last parameter
         this.worldManager = new WorldManager(gameMode, difficulty, level,
             game.getMonsterDataManager(),
             game.getItemDataManager(),
             game.getAssetManager(),
             game.getSpawnTableData(),
-            this.soundManager); // <-- Passed here
+            this.soundManager);
 
         this.monsterAiManager = new MonsterAiManager();
 
-        // Music based on initial level
         switch (level) {
             case 1:
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
@@ -127,7 +132,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     public void show() {
         Gdx.input.setInputProcessor(this);
 
-        // Only initialize these if they don't exist (preserving state on return from Inventory)
         if (animationManager == null) {
             animationManager = new AnimationManager(entityRenderer);
         }
@@ -135,12 +139,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             eventManager = new GameEventManager();
         }
 
-        // --- FBO FIX: Initialize ONCE with static resolution ---
         if (fbo == null) {
             fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
         }
 
-        // Initialize Shader
         if (crtShader == null) {
             ShaderProgram.pedantic = false;
             crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
@@ -150,12 +152,18 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // Fix: Only generate the level if we haven't done so yet for this screen instance.
-        // This prevents resetting player position when returning from InventoryScreen.
         if (!hasLoadedLevel) {
             generateLevel(currentLevel);
             hasLoadedLevel = true;
         }
+
+        camera3d = new PerspectiveCamera(67, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        camera3d.near = 0.01f;
+        camera3d.far = 100f;
+
+        environment = new Environment();
+        environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
+        environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
     }
 
     @Override
@@ -163,13 +171,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
-
         if (potionManager != null && gameMode == GameMode.ADVANCED) {
             potionManager.saveState();
         }
-
-        // NOTE: This stops music every time you open inventory.
-        // If you want music to persist in inventory, comment this out or add logic.
         MusicManager.getInstance().stop();
     }
 
@@ -177,98 +181,94 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
-
         if (soundManager != null) {
             soundManager.stopWeatherEffects();
         }
-
         currentLevel++;
         Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
-
         if (worldManager != null) {
             worldManager.setCurrentLevel(currentLevel);
             worldManager.clearLoadedChunks();
         }
-
         generateLevel(currentLevel);
     }
 
-    /**
-     * Initializes or re-initializes the game state for a specific level.
-     * In ADVANCED mode, this might involve loading a chunk; in CLASSIC, it generates a single maze.
-     * @param levelNumber The level to load/generate.
-     */
     private void generateLevel(int levelNumber) {
         Gdx.app.log("GameScreen [DEBUG]", "generateLevel START. Player is " + (player == null ? "NULL" : "NOT NULL"));
 
         if (player == null) {
-            // 1. Create PotionManager
             if (this.potionManager == null) {
-                Gdx.app.log("GameScreen [DEBUG]", "Creating NEW PotionManager...");
                 this.potionManager = new PotionManager(this.eventManager);
-
-                Gdx.app.log("GameScreen [DEBUG]", "Setting PotionManager in ItemDataManager...");
                 game.getItemDataManager().setPotionManager(this.potionManager);
-
                 if (potionManager.hasSaveState()) {
-                    Gdx.app.log("GameScreen [DEBUG]", "Potion save file found. Loading state...");
                     potionManager.loadState();
                 } else {
-                    Gdx.app.log("GameScreen [DEBUG]", "No potion save file. Initializing NEW potion map...");
                     List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager().getAllPotionAppearanceTypes();
                     this.potionManager.initializeNewGame(potionTypes);
                 }
             }
-
-            // 2. Create Player
-            Gdx.app.log("GameScreen [DEBUG]", "Creating NEW Player...");
+            this.maze = worldManager.getInitialMaze();
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                 game.getItemDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
-
-            // 3. Load Maze
-            Gdx.app.log("GameScreen [DEBUG]", "Calling getInitialMaze()...");
-            this.maze = worldManager.getInitialMaze();
-
-            Gdx.app.log("GameScreen [DEBUG]", "Setting maze reference on player.");
             player.setMaze(this.maze);
-
         } else {
-            // Player already exists (e.g., descending stairs)
-            Gdx.app.log("GameScreen [DEBUG]", "Player exists. Calling getInitialMaze() for new level...");
             this.maze = worldManager.getInitialMaze();
             resetPlayerPosition();
             player.setMaze(this.maze);
         }
 
-        // Initialize systems that depend on the player and maze
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
-        Gdx.app.log("GameScreen", "Level " + levelNumber + " loaded/generated.");
-
-        // Set the visual theme based on level and game mode
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
             firstPersonRenderer.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
         } else {
             firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
         }
-
         DebugRenderer.printMazeToConsole(maze);
     }
 
     private void resetPlayerPosition() {
         GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
         player.getPosition().set(startPos.x + 0.5f, startPos.y + 0.5f);
-        Gdx.app.log("GameScreen", "Reset player position to: " + startPos);
+    }
+
+    private boolean isVisible(Vector2 targetPos) {
+        if (player == null || maze == null) return false;
+        float dstToPlayer = player.getPosition().dst(targetPos);
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+
+        if (biome.hasFogOfWar()) {
+            if (dstToPlayer > biome.getFogDistance()) return false;
+        } else {
+            if (dstToPlayer > 20) return false;
+        }
+
+        Vector2 renderPosition;
+        int playerX = (int) player.getPosition().x;
+        int playerY = (int) player.getPosition().y;
+        boolean isBehindBlocked = maze.isWallBlocking(playerX, playerY, player.getFacing().getOpposite());
+
+        if (isBehindBlocked) {
+            renderPosition = player.getPosition().cpy();
+        } else {
+            renderPosition = player.getPosition().cpy().sub(player.getDirectionVector());
+        }
+
+        float hitDist = firstPersonRenderer.checkLineOfSight(player, maze, targetPos);
+        float trueDist = renderPosition.dst(targetPos);
+        if (hitDist < trueDist - 0.8f) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public void render(float delta) {
         time += delta;
-
-        // --- UPDATE LOGIC ---
         combatManager.update(delta);
         animationManager.update(delta);
         if (maze != null) maze.update(delta);
@@ -276,11 +276,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         eventManager.update(delta);
         handleSystemEvents();
 
-        // Update World & Weather
         if (worldManager != null) {
             worldManager.update(delta);
-
-            // SYNC TRAUMA WITH WEATHER
             if (worldManager.getWeatherManager() != null) {
                 float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
                 this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
@@ -295,44 +292,82 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             checkForProactiveChunkLoading();
         }
 
-        // --- RENDER PASS 1: WORLD -> FBO (Fixed 1920x1080) ---
         if (useCrtFilter) {
             fbo.begin();
-            // Apply the Internal/Virtual Viewport (1920x1080)
             fboViewport.apply();
-            // shapeRenderer usually needs to know the projection matrix:
             shapeRenderer.setProjectionMatrix(fboViewport.getCamera().combined);
         }
 
-        // Clear Screen (Black) - inside FBO if active, or screen if not
         ScreenUtils.clear(0, 0, 0, 1);
-
-        // Ensure renderers use the correct projection (FBO viewport)
+        Gdx.gl.glClear(Gdx.gl.GL_DEPTH_BUFFER_BIT);
         Viewport currentViewport = useCrtFilter ? fboViewport : game.getViewport();
 
-        // APPLY CAMERA SHAKE
         boolean isShaking = (player != null && trauma > 0.01f);
-
         if (isShaking) {
             originalDir.set(player.getDirectionVector());
             originalPlane.set(player.getCameraPlane());
-
             float shakePower = trauma * 0.1f;
             float angle = (rng.nextFloat() - 0.5f) * shakePower;
-
             player.getDirectionVector().rotateRad(angle);
             player.getCameraPlane().rotateRad(angle);
         }
 
-        // --- RENDER WORLD ---
         if (player != null && maze != null) {
-            // Note: We pass the 'currentViewport' (FBO viewport) to renderers so they calculate FOV/rays correctly for 1920px width
             firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel, gameMode);
 
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 entityRenderer.render(shapeRenderer, player, maze, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
                 entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+            }
+
+            // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
+            if (camera3d != null) {
+                // Negate Y here to convert to standard 3D forward (-Z)
+                camera3d.position.set(player.getPosition().x, 0.5f, -player.getPosition().y);
+                camera3d.direction.set(player.getDirectionVector().x, 0, -player.getDirectionVector().y);
+                camera3d.up.set(0, 1, 0);
+                camera3d.update();
+
+                ModelBatch modelBatch = ((Tarmin2)game).getModelBatch();
+                boolean batchBegun = false;
+
+                if (modelBatch != null && maze != null) {
+                    for (Item item : maze.getItems().values()) {
+                        ItemTemplate template = item.getTemplate();
+                        if (template != null && template.modelPath != null) {
+                            if (!isVisible(item.getPosition())) continue;
+                            ModelInstance inst = item3dCache.get(item);
+                            if (inst == null) {
+                                Model model = game.getAssetManager().get(template.modelPath, Model.class);
+                                if (model != null) {
+                                    inst = new ModelInstance(model);
+                                    item3dCache.put(item, inst);
+                                }
+                            }
+                            if (inst != null) {
+                                if (!batchBegun) {
+                                    modelBatch.begin(camera3d);
+                                    batchBegun = true;
+                                }
+                                inst.transform.idt();
+                                // Negate Y here as well for item position
+                                inst.transform.translate(
+                                    item.getPosition().x,
+                                    template.modelYOffset,
+                                    -item.getPosition().y
+                                );
+
+                                if (template.modelRotation != 0f) {
+                                    inst.transform.rotate(Vector3.Y, template.modelRotation);
+                                }
+                                inst.transform.scale(template.modelScale, template.modelScale, template.modelScale);
+                                modelBatch.render(inst, environment);
+                            }
+                        }
+                    }
+                    if (batchBegun) modelBatch.end();
+                }
             }
 
             animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
@@ -346,21 +381,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // RESTORE CAMERA STATE
         if (isShaking) {
             player.getDirectionVector().set(originalDir);
             player.getCameraPlane().set(originalPlane);
-        }
-
-        if (stochasticManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_RESOLUTION) {
-            stochasticManager.render();
-        }
-
-        // --- HUD RENDERING (Also into FBO) ---
-        if (hud != null) {
-            // Hud manages its own Stage/Viewport internally.
-            // We assume Hud uses a 1920x1080 FitViewport as defined in its constructor.
-            hud.render();
         }
 
         if (stochasticManager != null) {
@@ -371,7 +394,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        // Render damage text (animation manager uses sprite batch)
+        if (hud != null) {
+            hud.render();
+        }
+
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
         game.getBatch().begin();
         animationManager.renderDamageText(game.getBatch(), currentViewport);
@@ -379,76 +405,41 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         font.draw(game.getBatch(), "Level: " + currentLevel, 10, currentViewport.getWorldHeight() - 10);
         game.getBatch().end();
 
-        // --- RENDER PASS 2: FBO -> SCREEN (Window Resolution) ---
         if (useCrtFilter) {
             fbo.end();
-
-            // Switch to the actual Physical Window Viewport
             game.getViewport().apply();
             ScreenUtils.clear(0, 0, 0, 1);
-
             postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
             postProcessBatch.begin();
             postProcessBatch.setShader(crtShader);
             crtShader.setUniformf("u_time", time);
-
             Texture fboTexture = fbo.getColorBufferTexture();
-
-            // Draw the 1920x1080 FBO texture into the Virtual World space of the FitViewport.
-            // FitViewport handles the scaling to the physical window (black bars).
-            // NOTE: LibGDX FrameBuffers are often flipped on Y. If upside down, flip V coordinate.
-            // standard draw(tex, x, y, w, h, u, v, u2, v2). Default u=0, v=0 is usually top-left for FBO?
-            // Actually, in standard LibGDX 2D, 0,0 is bottom-left. FBO texture usually comes out with 0,0 at bottom-left IF standard.
-            // However, previous code used 0,0,1,1. Let's stick to standard draw first.
             postProcessBatch.draw(fboTexture, 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
-
             postProcessBatch.end();
         }
     }
 
     private void checkForProactiveChunkLoading() {
-        if (player == null || worldManager == null || maze == null) {
-            return;
-        }
-
+        if (player == null || worldManager == null || maze == null) return;
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        if (!biome.isSeamless()) return;
 
-        if (!biome.isSeamless()) {
-            return;
-        }
-
-        int triggerDistance;
-        if (biome.hasFogOfWar()) {
-            triggerDistance = biome.getFogDistance() + 1;
-        } else {
-            triggerDistance = 5;
-        }
-
+        int triggerDistance = biome.hasFogOfWar() ? biome.getFogDistance() + 1 : 5;
         triggerDistance = Math.max(2, triggerDistance);
 
         GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
         GridPoint2 currentChunkId = worldManager.getCurrentPlayerChunkId();
-
         int height = maze.getHeight();
         int width = maze.getWidth();
 
-        if (playerPos.y >= height - 1 - triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
-        }
-        if (playerPos.y <= triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
-        }
-        if (playerPos.x >= width - 1 - triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
-        }
-        if (playerPos.x <= triggerDistance) {
-            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
-        }
+        if (playerPos.y >= height - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
+        if (playerPos.y <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
+        if (playerPos.x >= width - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
+        if (playerPos.x <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
     }
 
     private void handleSystemEvents() {
         GameEvent event;
-
         if (gameMode == GameMode.ADVANCED) {
             while ((event = eventManager.findAndConsume(GameEvent.EventType.CHUNK_TRANSITION)) != null) {
                 if (event.payload instanceof Gate) {
@@ -463,115 +454,49 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private void swapToChunk(Maze newMaze) {
         this.maze = newMaze;
         player.setMaze(newMaze);
-
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
-
-        Gdx.app.log("GameScreen", "Swap complete. New maze loaded for chunk " + worldManager.getCurrentPlayerChunkId());
+        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         DebugRenderer.printMazeToConsole(maze);
     }
 
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
-
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             monsterAiManager.updateMonsterLogic(maze, player, true, combatManager);
         }
         combatManager.checkForAdjacentMonsters();
     }
 
-
     private void performChunkTransition(Gate transitionGate) {
         if (player == null) return;
-
-        Gdx.app.log("GameScreen", "Performing chunk transition via gate at ("
-            + (int)transitionGate.getPosition().x + "," + (int)transitionGate.getPosition().y + ") to chunk "
-            + transitionGate.getTargetChunkId());
-
-        if (maze != null) {
-            worldManager.saveCurrentChunk(this.maze);
-        }
-
+        if (maze != null) worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
-
         if (newMaze == null) {
-            Gdx.app.error("GameScreen", "Failed to load target chunk (impassable?): " + transitionGate.getTargetChunkId());
             eventManager.addEvent(new GameEvent("A strange force blocks your path.", 2f));
             transitionGate.close();
             return;
         }
-
-        player.getPosition().set(
-            transitionGate.getTargetPlayerPos().x + 0.5f,
-            transitionGate.getTargetPlayerPos().y + 0.5f
-        );
-        Gdx.app.log("GameScreen", "Player teleported to: " + transitionGate.getTargetPlayerPos());
-
+        player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f, transitionGate.getTargetPlayerPos().y + 0.5f);
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
         swapToChunk(newMaze);
     }
 
-
     @Override
     public void resize(int width, int height) {
-        // Update the physical window viewport (handles black bars)
         game.getViewport().update(width, height, true);
-
-        // Update postProcessBatch projection to match the new window viewport
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
-
-        // --- FBO RESIZE FIX ---
-        // Do NOT dispose/recreate FBO. We want to keep internal resolution fixed.
-        // Do NOT resize fboViewport. It stays 1920x1080.
-
-        if (hud != null) {
-            // Force HUD to resize to Virtual Resolution, NOT Window Resolution.
-            // This ensures HUD elements stay in the correct place on the FBO.
-            hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-        }
-
-        // FBO recreation removed.
+        if (hud != null) hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
     }
-
-    private boolean isMoveSeamlessTransition(GridPoint2 playerPos, Direction moveDir) {
-        if (maze == null) return false;
-
-        int height = maze.getHeight();
-        int width = maze.getWidth();
-
-        if (moveDir == Direction.NORTH && playerPos.y == height - 1) return true;
-        if (moveDir == Direction.SOUTH && playerPos.y == 0) return true;
-        if (moveDir == Direction.EAST && playerPos.x == width - 1) return true;
-        if (moveDir == Direction.WEST && playerPos.x == 0) return true;
-
-        return false;
-    }
-
-    private GridPoint2 getSeamlessTargetPlayerPos(GridPoint2 playerPos, Direction moveDir) {
-        if (maze == null) return playerPos;
-
-        int height = maze.getHeight();
-        int width = maze.getWidth();
-
-        if (moveDir == Direction.NORTH) return new GridPoint2(playerPos.x, 0);
-        if (moveDir == Direction.SOUTH) return new GridPoint2(playerPos.x, height - 1);
-        if (moveDir == Direction.EAST)  return new GridPoint2(0, playerPos.y);
-        if (moveDir == Direction.WEST)  return new GridPoint2(width - 1, playerPos.y);
-        return playerPos;
-    }
-
 
     private void processPlayerStatusEffects() {
         if (player == null) return;
-
         if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
             ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
             int damage = poison.getPotency();
-
             player.takeStatusEffectDamage(damage, DamageType.POISON);
             eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
-            Gdx.app.log("GameScreen", "Player took " + damage + " poison damage.");
         }
     }
 
@@ -597,20 +522,23 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            // --- NEW: A/SPACE = Instant Attack ---
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
-                combatManager.playerAttack();
+                combatManager.playerAttackInstant();
+                return true;
+            }
+            // --- NEW: NUM_7 = Dice Roll Attack ---
+            if (keycode == Input.Keys.NUM_7) {
+                combatManager.playerAttackWithDice();
                 return true;
             }
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
-                    if (attacked) {
-                        playerTurnTakesAction();
-                    }
+                    if (attacked) playerTurnTakesAction();
                     return true;
                 }
             }
@@ -638,7 +566,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-
                 case Input.Keys.O:
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
                     playerTurnTakesAction();
@@ -658,9 +585,39 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                         (int)(player.getPosition().x + player.getFacing().getVector().x),
                         (int)(player.getPosition().y + player.getFacing().getVector().y)
                     );
+                    Ladder ladder = maze.getLadders().get(atFeet);
+                    if (ladder == null) ladder = maze.getLadders().get(inFront);
 
-                    if (maze.getLadders().containsKey(atFeet) || maze.getLadders().containsKey(inFront)) {
-                        descendToNextLevel();
+                    if (ladder != null) {
+                     //   soundManager.playSound("level_up");
+                        if (ladder.getType() == Ladder.LadderType.DOWN) {
+                            GridPoint2 ladderPos = new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y);
+                            worldManager.descendLevel(ladderPos);
+                            this.currentLevel = worldManager.getCurrentLevel();
+                            worldManager.clearLoadedChunks();
+                            generateLevel(this.currentLevel);
+                            hud.addMessage("Descended to Level " + currentLevel);
+                        } else {
+                            boolean success = worldManager.ascendLevel();
+                            if (success) {
+                                this.currentLevel = worldManager.getCurrentLevel();
+                                worldManager.clearLoadedChunks();
+                                generateLevel(this.currentLevel);
+                                Vector2 foundDownLadderPos = null;
+                                for (Ladder l : maze.getLadders().values()) {
+                                    if (l.getType() == Ladder.LadderType.DOWN) {
+                                        foundDownLadderPos = l.getPosition();
+                                        break;
+                                    }
+                                }
+                                if (foundDownLadderPos != null) {
+                                    player.setPosition(new GridPoint2((int)foundDownLadderPos.x, (int)foundDownLadderPos.y));
+                                }
+                                hud.addMessage("Ascended to Level " + currentLevel);
+                            } else {
+                                hud.addMessage("You cannot ascend any higher.");
+                            }
+                        }
                         playerTurnTakesAction();
                         return true;
                     }
@@ -685,33 +642,27 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 }
                 return true;
             case Input.Keys.I:
-                // Allow opening inventory only if not in active combat animation?
-                // For now, allow it if INACTIVE or PLAYER_TURN
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
                     combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
                     game.setScreen(new InventoryScreen(game, this, player, maze));
                 }
                 return true;
-
             case Input.Keys.F6:
                 useCrtFilter = !useCrtFilter;
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
                 return true;
-
             case Input.Keys.F7:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
                     eventManager.addEvent(new GameEvent("Debug Weather: " + worldManager.getWeatherManager().getCurrentWeather(), 2f));
                 }
                 return true;
-
             case Input.Keys.F8:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleIntensity();
                     eventManager.addEvent(new GameEvent("Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
                 }
                 return true;
-
             case Input.Keys.F9:
                 Gdx.app.log("GameScreen", "Dumping Exploration Memory to Console...");
                 DebugRenderer.printExplorationToConsole(maze);
@@ -735,16 +686,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     public void dispose() {
         shapeRenderer.dispose();
         font.dispose();
-        if (hud != null) {
-            hud.dispose();
-        }
-        if (entityRenderer != null) {
-            entityRenderer.dispose();
-        }
-        if (soundManager != null) {
-            soundManager.dispose();
-        }
-
+        if (hud != null) hud.dispose();
+        if (entityRenderer != null) entityRenderer.dispose();
+        if (soundManager != null) soundManager.dispose();
         if (fbo != null) fbo.dispose();
         if (crtShader != null) crtShader.dispose();
         postProcessBatch.dispose();

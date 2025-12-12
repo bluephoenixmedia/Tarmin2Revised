@@ -55,11 +55,9 @@ public class Player {
         this.statusManager = new StatusManager();
 
         inventory.setRightHand(
-            itemDataManager.createItem(Item.ItemType.AXE, 0, 0, ItemColor.PURPLE, assetManager)
+            itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager)
         );
-        inventory.setLeftHand(
-            itemDataManager.createItem(Item.ItemType.BOW, 0, 0, ItemColor.GRAY, assetManager)
-        );
+
         equipment.setWornBack(
             itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager)
         );
@@ -88,6 +86,10 @@ public class Player {
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
                 eventManager.addEvent(new GameEvent("Picked up " + itemAtFeet.getDisplayName(), 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("PICKUP", itemAtFeet.getDisplayName(), itemAtFeet.getBaseValue());
+                // ---------------
             } else {
                 eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
             }
@@ -107,6 +109,10 @@ public class Player {
                 stats.incrementTreasureScore(itemInFront.getBaseValue());
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "!", 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("TREASURE", itemInFront.getDisplayName(), itemInFront.getBaseValue());
+                // ---------------
                 return;
             }
             if (itemInFront.getType() == Item.ItemType.QUIVER) {
@@ -115,6 +121,10 @@ public class Player {
                 stats.addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + arrowsFound + " arrows.", 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
+                // ---------------
                 return;
             }
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
@@ -123,6 +133,10 @@ public class Player {
                 stats.addFood(foodFound);
                 maze.getItems().remove(targetTile);
                 eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Food", foodFound);
+                // ---------------
                 return;
             }
 
@@ -130,6 +144,10 @@ public class Player {
                 maze.getItems().remove(targetTile);
                 soundManager.playPickupItemSound();
                 eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("PICKUP", itemInFront.getDisplayName(), itemInFront.getBaseValue());
+                // ---------------
             } else {
                 eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
             }
@@ -154,7 +172,26 @@ public class Player {
     public void useItem(GameEventManager eventManager, PotionManager potionManager) {
         Item itemInHand = inventory.getRightHand();
 
-        if (itemInHand == null || !itemInHand.isUsable()) {
+        if (itemInHand == null) {
+            eventManager.addEvent(new GameEvent("You have nothing in hand.", 2f));
+            return;
+        }
+
+        // --- NEW: Handle Food Eating ---
+        if (itemInHand.isFood()) {
+            // Basic food value
+            stats.addFood(5);
+            inventory.setRightHand(null); // Consume it
+            eventManager.addEvent(new GameEvent("You ate the " + itemInHand.getDisplayName() + ".", 2f));
+            soundManager.playPickupItemSound(); // Re-using pickup sound for eating for now
+
+            // Log the meal
+            BalanceLogger.getInstance().logEconomy("RES_GAIN", "Food (Item)", 5);
+            return;
+        }
+        // -------------------------------
+
+        if (!itemInHand.isUsable() && !itemInHand.isPotion() && !itemInHand.isArmor() && !itemInHand.isRing()) {
             eventManager.addEvent(new GameEvent("You can't use that.", 2f));
             return;
         }
@@ -162,6 +199,10 @@ public class Player {
         if (itemInHand.isPotion()) {
             potionManager.consumePotion(this, itemInHand);
             inventory.setRightHand(null);
+
+            // --- LOGGING ---
+            BalanceLogger.getInstance().logEconomy("RES_USED", "Potion", 1);
+            // ---------------
             return;
         }
 
@@ -190,81 +231,86 @@ public class Player {
         inventory.setRightHand(previouslyWornRing);
     }
 
+    // --- REPLACED: Flexible Equip Logic (Allows Swapping) ---
     private void equipArmor(Item armor, GameEventManager eventManager) {
+        Item previousItem = null;
+        String slotName = "";
+
         switch (armor.getType()) {
             case HELMET:
-                if (equipment.getWornHelmet() == null || armor.getArmorDefense() > equipment.getWornHelmet().getArmorDefense()) {
-                    equipment.setWornHelmet(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This helmet is not better.", 2f));
+                previousItem = equipment.getWornHelmet();
+                equipment.setWornHelmet(armor);
+                slotName = "Head";
                 break;
             case SMALL_SHIELD:
             case LARGE_SHIELD:
-                if (equipment.getWornShield() == null || armor.getArmorDefense() > equipment.getWornShield().getArmorDefense()) {
-                    equipment.setWornShield(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This shield is not better.", 2f));
+                previousItem = equipment.getWornShield();
+                equipment.setWornShield(armor);
+                slotName = "Off-hand";
                 break;
             case GAUNTLETS:
-                if (equipment.getWornGauntlets() == null || armor.getArmorDefense() > equipment.getWornGauntlets().getArmorDefense()) {
-                    equipment.setWornGauntlets(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("These Gauntlets are not better.", 2f));
+                previousItem = equipment.getWornGauntlets();
+                equipment.setWornGauntlets(armor);
+                slotName = "Hands";
                 break;
             case HAUBERK:
             case BREASTPLATE:
-                if (equipment.getWornChest() == null || armor.getArmorDefense() > equipment.getWornChest().getArmorDefense()) {
-                    equipment.setWornChest(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This Chest armor is not better.", 2f));
+                previousItem = equipment.getWornChest();
+                equipment.setWornChest(armor);
+                slotName = "Chest";
                 break;
             case BOOTS:
-                if (equipment.getWornBoots() == null || armor.getArmorDefense() > equipment.getWornBoots().getArmorDefense()) {
-                    equipment.setWornBoots(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("These Boots are not better.", 2f));
+                previousItem = equipment.getWornBoots();
+                equipment.setWornBoots(armor);
+                slotName = "Feet";
                 break;
             case LEGS:
-                if (equipment.getWornLegs() == null || armor.getArmorDefense() > equipment.getWornLegs().getArmorDefense()) {
-                    equipment.setWornLegs(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("These Leggings are not better.", 2f));
+                previousItem = equipment.getWornLegs();
+                equipment.setWornLegs(armor);
+                slotName = "Legs";
                 break;
             case ARMS:
-                if (equipment.getWornArms() == null || armor.getArmorDefense() > equipment.getWornArms().getArmorDefense()) {
-                    equipment.setWornArms(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("These Arm guards are not better.", 2f));
+                previousItem = equipment.getWornArms();
+                equipment.setWornArms(armor);
+                slotName = "Arms";
                 break;
             case EYES:
-                if (equipment.getWornEyes() == null || armor.getArmorDefense() > equipment.getWornEyes().getArmorDefense()) {
-                    equipment.setWornEyes(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This Eye gear is not better.", 2f));
+                previousItem = equipment.getWornEyes();
+                equipment.setWornEyes(armor);
+                slotName = "Eyes";
                 break;
             case CLOAK:
-                if (equipment.getWornBack() == null || armor.getArmorDefense() > equipment.getWornBack().getArmorDefense()) {
-                    equipment.setWornBack(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This Cloak is not better.", 2f));
+                previousItem = equipment.getWornBack();
+                equipment.setWornBack(armor);
+                slotName = "Back";
                 break;
             case AMULET:
-                if (equipment.getWornNeck() == null || armor.getArmorDefense() > equipment.getWornNeck().getArmorDefense()) {
-                    equipment.setWornNeck(armor);
-                    inventory.setRightHand(null);
-                    eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName(), 2f));
-                } else eventManager.addEvent(new GameEvent("This Amulet is not better.", 2f));
+                previousItem = equipment.getWornNeck();
+                equipment.setWornNeck(armor);
+                slotName = "Neck";
                 break;
+            default:
+                eventManager.addEvent(new GameEvent("Cannot equip this.", 2f));
+                return;
         }
+
+        // Put the new item in the slot, and put the old item (if any) in the hand
+        inventory.setRightHand(previousItem);
+
+        eventManager.addEvent(new GameEvent("Equipped " + armor.getDisplayName() + " to " + slotName, 2f));
+
+        // --- NEW: Recalculate Stats Immediately ---
+        // This ensures that if you equip "of Brawn", your Max HP updates.
+        // Optional: If you want "Brawn" to heal you for the difference, do this:
+        int oldMaxWar = stats.getMaxWarStrength(); // Base max
+        // Note: getEffectiveMax... calculates total with gear.
+
+        // Log the change
+        int newDefense = equipment.getArmorDefense();
+        int newMaxHP = getEffectiveMaxWarStrength();
+
+        BalanceLogger.getInstance().log("EQUIPMENT", "Changed " + slotName + ". AC: " + newDefense + " MaxHP: " + newMaxHP);
+        // ------------------------------------------
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
@@ -305,6 +351,10 @@ public class Player {
 
             eventManager.addEvent(new GameEvent(("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()), 2f));
 
+            // --- LOGGING ---
+            BalanceLogger.getInstance().logEconomy("RES_USED", "Food", 1);
+            // ---------------
+
         } else {
             eventManager.addEvent(new GameEvent("You have no food to rest.", 2f));
         }
@@ -320,6 +370,11 @@ public class Player {
             int defense = getArmorDefense();
             amount = Math.max(0, amount - defense);
         }
+
+        // --- CHIP DAMAGE FIX: Always take at least 1 damage ---
+        int minDamage = 1;
+        amount = Math.max(minDamage, amount);
+        // ----------------------------------------------------
 
         int finalDamage = Math.max(0, (int)(amount * stats.getVulnerabilityMultiplier()));
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
@@ -416,13 +471,33 @@ public class Player {
             }
         }
 
+        // --- MOVEMENT DEBUGGING ---
+        if (!maze.isPassable(nextX, nextY)) {
+            // Check specific reasons for blockage
+            if (maze.getWallDataAt(nextX, nextY) == 1) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
+            }
+            Item item = maze.getItems().get(nextTile);
+            if (item != null && item.isImpassable()) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at (" + nextX + "," + nextY + ")");
+            }
+            // Check for doors/gates
+            Object obj = maze.getGameObjectAt(nextX, nextY);
+            if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by CLOSED DOOR at (" + nextX + "," + nextY + ")");
+            }
+            return;
+        }
+
         if (maze.isWallBlocking(currentX, currentY, direction)) {
+            Gdx.app.log("Player [DEBUG]", "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
             return;
         }
 
         if (maze.getScenery().containsKey(nextTile)) {
             Scenery s = maze.getScenery().get(nextTile);
             if (s.isImpassable()) {
+                Gdx.app.log("Player [DEBUG]", "Move blocked by SCENERY at (" + nextX + "," + nextY + ")");
                 return;
             }
         }
@@ -435,9 +510,13 @@ public class Player {
 
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
+                UnlockManager.getInstance().incrementStat("steps", 1);
+            } else {
+                Gdx.app.log("Player [DEBUG]", "Move into door blocked by wall behind it.");
             }
         } else {
             position.set(nextX + 0.5f, nextY + 0.5f);
+            UnlockManager.getInstance().incrementStat("steps", 1);
         }
     }
 
@@ -456,8 +535,8 @@ public class Player {
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
 
+        // 1. Handle Gates (Keep existing logic)
         Gate gateObj = maze.getGates().get(targetTile);
-
         if (gateObj != null) {
             if (gameMode == GameMode.ADVANCED && gateObj.isChunkTransitionGate()) {
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
@@ -471,16 +550,27 @@ public class Player {
             return;
         }
 
+        // 2. Handle Doors (UPDATED: Toggle Logic)
         Object obj = maze.getGameObjectAt(targetX, targetY);
-        if (obj instanceof Door door) {
-            if (door.getState() == Door.DoorState.CLOSED) {
-                door.startOpening();
-                eventManager.addEvent(new GameEvent("You opened the door.", 2f));
+        if (obj instanceof Door) {
+            Door door = (Door) obj;
+            // Use the new toggle method from Milestone 1
+            maze.toggleDoorAt(targetX, targetY);
+
+            // Check state AFTER toggle to determine event/sound
+            if (door.getState() == Door.DoorState.OPENING) {
+                eventManager.addEvent(new GameEvent("You open the door.", 1f));
+                UnlockManager.getInstance().incrementStat("doors", 1);
+                if (soundManager != null) soundManager.playDoorOpenSound();
+            } else if (door.getState() == Door.DoorState.CLOSING) {
+                eventManager.addEvent(new GameEvent("You close the door.", 1f));
+                // Reuse open sound for now, or add specific close sound later
                 if (soundManager != null) soundManager.playDoorOpenSound();
             }
             return;
         }
 
+        // 3. Handle Containers (Keep existing logic)
         Item itemInFront = maze.getItems().get(targetTile);
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             String containerName = itemInFront.getDisplayName();
@@ -631,6 +721,9 @@ public class Player {
 
     public void decrementArrow() {
         stats.decrementArrow();
+        // --- LOGGING ---
+        BalanceLogger.getInstance().logEconomy("RES_USED", "Arrow", 1);
+        // ---------------
     }
 
     public void addExperience(int amount, GameEventManager eventManager) {
@@ -663,8 +756,13 @@ public class Player {
         }
     }
 
+    /**
+     * UPDATED: Returns attack modifier including LEVEL BONUS and EQUIPMENT BONUSES.
+     * Use this for all combat calculations.
+     */
     public int getAttackModifier() {
-        return stats.getAttackModifier();
+        // Level Bonus + All "BONUS_DAMAGE" on equipped items
+        return stats.getAttackModifier() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
     }
 
     public int getLevel() { return stats.getLevel(); }

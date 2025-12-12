@@ -247,6 +247,7 @@ public class InventoryScreen extends BaseScreen {
     }
 
     private void updateStatsLabel() {
+        // This triggers the new debug logging in PlayerEquipment
         int armor = player.getArmorDefense();
         int war = player.getWarStrength();
         int spirit = player.getSpiritualStrength();
@@ -260,12 +261,10 @@ public class InventoryScreen extends BaseScreen {
         );
     }
 
-    // --- FIXED: Drop Logic checks for success before removing ---
     private void dropItem(InventorySlot slot) {
         Item item = slot.getItem();
         if (item == null) return;
 
-        // Attempt drop logic in Player (checks feet, front, sides)
         boolean success = player.dropItem(maze, item);
 
         if (success) {
@@ -278,7 +277,6 @@ public class InventoryScreen extends BaseScreen {
             if (DebugManager.getInstance().isDebugOverlayVisible()) {
                 Gdx.app.log("Inventory", "Drop failed - No space around player.");
             }
-            // Feedback could be added here (e.g. flashing tooltip)
         }
     }
 
@@ -344,7 +342,11 @@ public class InventoryScreen extends BaseScreen {
         else if ("Legs".equals(slotName)) eq.setWornLegs(null);
         else if ("Feet".equals(slotName)) eq.setWornBoots(null);
         else if ("Ring".equals(slotName)) eq.setWornRing(null);
-        else if ("L.Hand".equals(slotName)) inv.setLeftHand(null);
+        else if ("L.Hand".equals(slotName)) {
+            inv.setLeftHand(null);
+            // --- FIX: Sync shield status ---
+            eq.setWornShield(null);
+        }
         else if ("R.Hand".equals(slotName)) inv.setRightHand(null);
     }
 
@@ -362,7 +364,15 @@ public class InventoryScreen extends BaseScreen {
         else if ("Legs".equals(slotName)) eq.setWornLegs(item);
         else if ("Feet".equals(slotName)) eq.setWornBoots(item);
         else if ("Ring".equals(slotName)) eq.setWornRing(item);
-        else if ("L.Hand".equals(slotName)) inv.setLeftHand(item);
+        else if ("L.Hand".equals(slotName)) {
+            inv.setLeftHand(item);
+            // --- FIX: If this item is a shield, also set it in PlayerEquipment so armor calcs work ---
+            if (item != null && (item.getType() == ItemType.SMALL_SHIELD || item.getType() == ItemType.LARGE_SHIELD)) {
+                eq.setWornShield(item);
+            } else {
+                eq.setWornShield(null);
+            }
+        }
         else if ("R.Hand".equals(slotName)) inv.setRightHand(item);
     }
 

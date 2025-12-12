@@ -402,10 +402,13 @@ public class Hud implements Disposable {
         // Draw the 2D inventory items
         drawInventory();
 
-        drawAutomap();
+        // --- FIX: Only draw standard automap if debug overlay is NOT visible ---
+        if (!debugManager.isDebugOverlayVisible()) {
+            drawAutomap();
+        }
 
         // Toggle debug lines based on global DebugManager state
-        boolean isDebug = DebugManager.getInstance().isDebugOverlayVisible();
+        boolean isDebug = debugManager.isDebugOverlayVisible();
 
         // Apply the debug status to all tables
         mainContainer.setDebug(isDebug);
@@ -452,7 +455,7 @@ public class Hud implements Disposable {
 
             // Right Column Background (World/Items/Minimap)
             // Spanning width to include minimap area
-            shapeRenderer.rect(1280, 400, 300, 650);
+            shapeRenderer.rect(1000, 400, 300, 650);
             shapeRenderer.end();
 
             // --- 3. Draw all debug text ---
@@ -539,7 +542,7 @@ public class Hud implements Disposable {
             }
 
             // --- COLUMN 3: WORLD & ITEM MODS ---
-            float rightColX = 1300;
+            float rightColX = 1000;
             float rightY = 800; // Below minimap
 
             // World Info
@@ -874,6 +877,13 @@ public class Hud implements Disposable {
         }
 
         shapeRenderer.end();
+    }
+
+    // --- NEW: Helper method to support GameScreen calls ---
+    public void addMessage(String message) {
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(message, 2f));
+        }
     }
 
     @Override

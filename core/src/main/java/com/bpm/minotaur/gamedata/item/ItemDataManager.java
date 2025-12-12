@@ -8,8 +8,10 @@ import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
-import com.bpm.minotaur.gamedata.item.Item.ItemType; // We'll update Item.java soon
+import com.bpm.minotaur.gamedata.item.Item.ItemType;
+import com.bpm.minotaur.gamedata.monster.LootModifierManager;
 import com.bpm.minotaur.managers.PotionManager;
+import com.bpm.minotaur.managers.UnlockManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,10 +23,13 @@ public class ItemDataManager {
 
 
     private PotionManager potionManager;
-    private final Random random = new Random(); // <-- ADD THIS FIELD
+    private final Random random = new Random();
+
+    private final LootModifierManager lootModifierManager; // New field
 
     public ItemDataManager() {
         this.itemTemplates = new ObjectMap<>();
+        this.lootModifierManager = new LootModifierManager(); // Initialize
     }
     /**
      * Sets the PotionManager. This must be called after PotionManager is
@@ -50,6 +55,11 @@ public class ItemDataManager {
             }
         }
 
+        if (itemTemplates.containsKey(ItemType.BOW)) {
+            itemTemplates.get(ItemType.BOW).unlockId = "item_bow";
+            Gdx.app.log("ItemDataManager", "TESTING: Locked BOW with id 'item_bow'");
+        }
+
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
 
@@ -63,8 +73,14 @@ public class ItemDataManager {
 
     public void queueAssets(AssetManager assetManager) {
         for (ItemTemplate template : itemTemplates.values()) {
+            // Load 2D Texture
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
                 assetManager.load(template.texturePath, Texture.class);
+            }
+
+            // Load 3D Model
+            if (template.modelPath != null && !template.modelPath.isEmpty()) {
+                assetManager.load(template.modelPath, com.badlogic.gdx.graphics.g3d.Model.class);
             }
         }
     }
@@ -77,6 +93,15 @@ public class ItemDataManager {
 
         Gdx.app.log("ItemDataManager [DEBUG]", "createItem called for: " + type.name());
         ItemTemplate template = getTemplate(type);
+
+        if (template.unlockId != null && !UnlockManager.getInstance().isUnlocked(template.unlockId)) {
+            Gdx.app.log("ItemDataManager", "Item locked: " + type.name() + " (Requires: " + template.unlockId + "). Spawning fallback.");
+            // Recursively create a fallback item (AXE) which we assume is unlocked.
+            // Ensure we don't infinitely recurse if AXE is also locked (it shouldn't be).
+            if (type != ItemType.AXE) {
+                return createItem(ItemType.AXE, x, y, ItemColor.GRAY, assetManager);
+            }
+        }
 
         // Standard item creation
         Item item = new Item(type, x, y, color, this, assetManager);
@@ -113,6 +138,17 @@ public class ItemDataManager {
                 Gdx.app.log("ItemDataManager [DEBUG]", "ERROR: Effect was NULL. This potion ("+type.name()+") will be a dud.");            }
         }
 
+        // --- NEW: Apply Modifiers based on Item Color/Rarity ---
+        // We assume 'color' roughly equates to difficulty/level tier here for simplicity,
+        // or you can pass the actual dungeon level to createItem if you have it.
+        // For now, we infer power from the ItemColor multiplier.
+
+        if (color != ItemColor.TAN && color != ItemColor.GRAY) {
+            // If it's a special color (Green, Blue, Purple, etc.), give it a modifier
+            int estimatedLevel = (int)(color.getMultiplier() * 5);
+            lootModifierManager.applyModifiers(item, estimatedLevel);
+        }
+
         return item;
     }
 
@@ -130,7 +166,6 @@ public class ItemDataManager {
         return potionTypes;
     }
 
-    // --- NEW METHOD ---
     /**
      * Selects a valid ItemVariant (color/tier) for a given item type at a specific level.
      * @param type The item type (e.g., BOW).
@@ -147,8 +182,18 @@ public class ItemDataManager {
         // 1. Filter variants by level
         List<ItemVariant> validVariants = new ArrayList<>();
         int totalWeight = 0;
+
         for (ItemVariant variant : template.variants) {
             if (level >= variant.minLevel && level <= variant.maxLevel) {
+
+                // --- FIXED: Balance Safety Clamp ---
+                // variant.color is already an ItemColor Enum. No need for valueOf().
+                if (variant.color != null && level < 5 && variant.color.getMultiplier() > 1.4f) {
+                    // Skip this OP variant
+                    continue;
+                }
+                // ---------------------------------
+
                 validVariants.add(variant);
                 totalWeight += variant.weight;
             }
@@ -156,6 +201,15 @@ public class ItemDataManager {
 
         // 2. Handle no valid variants
         if (validVariants.isEmpty()) {
+            // Try to find ANY variant that fits the level range, ignoring the safety clamp
+            for (ItemVariant variant : template.variants) {
+                if (level >= variant.minLevel && level <= variant.maxLevel) {
+                    return variant;
+                }
+            }
+            // If still nothing, return first available
+            if (!template.variants.isEmpty()) return template.variants.get(0);
+
             Gdx.app.error("ItemDataManager", "No valid variants found for " + type.name() + " at level " + level);
             return null;
         }
@@ -171,7 +225,6 @@ public class ItemDataManager {
             }
         }
 
-        // Fallback (shouldn't happen, but good practice)
         return validVariants.get(0);
     }
 

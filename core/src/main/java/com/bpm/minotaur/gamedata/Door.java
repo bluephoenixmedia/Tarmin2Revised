@@ -1,17 +1,16 @@
 package com.bpm.minotaur.gamedata;
 
 import com.badlogic.gdx.math.GridPoint2;
-
 import java.util.Map;
 
 public class Door {
-    public enum DoorState { CLOSED, OPENING, OPEN }
+    public enum DoorState { CLOSED, OPENING, OPEN, CLOSING } // Added CLOSING
 
     private DoorState state = DoorState.CLOSED;
     private float animationProgress = 0f; // 0.0 = closed, 1.0 = open
-    private static final float ANIMATION_SPEED = 2.0f; // Opens in 0.5 seconds
+    private static final float ANIMATION_SPEED = 2.0f; // Opens/Closes in 0.5 seconds
 
-    private Maze maze; // <-- ADD THIS
+    private Maze maze;
 
     public DoorState getState() {
         return state;
@@ -27,8 +26,14 @@ public class Door {
     }
 
     public void startOpening() {
-        if (state == DoorState.CLOSED) {
+        if (state == DoorState.CLOSED || state == DoorState.CLOSING) {
             state = DoorState.OPENING;
+        }
+    }
+
+    public void startClosing() {
+        if (state == DoorState.OPEN || state == DoorState.OPENING) {
+            state = DoorState.CLOSING;
         }
     }
 
@@ -38,6 +43,12 @@ public class Door {
             if (animationProgress >= 1.0f) {
                 animationProgress = 1.0f;
                 state = DoorState.OPEN;
+            }
+        } else if (state == DoorState.CLOSING) {
+            animationProgress -= delta * ANIMATION_SPEED;
+            if (animationProgress <= 0f) {
+                animationProgress = 0f;
+                state = DoorState.CLOSED;
             }
         }
     }
@@ -50,17 +61,14 @@ public class Door {
         this.animationProgress = animationProgress;
     }
 
-    // --- ADD THIS METHOD ---
     public void setMaze(Maze maze) {
         this.maze = maze;
     }
 
-    // --- ADD THIS METHOD ---
     public Maze getMaze() {
         return maze;
     }
 
-    // --- ADD THIS METHOD ---
     /**
      * Helper method for ChunkData to find its own grid position when saving.
      */
@@ -70,6 +78,6 @@ public class Door {
                 return entry.getKey();
             }
         }
-        return null; // Should not happen if door is in the map
+        return null;
     }
 }

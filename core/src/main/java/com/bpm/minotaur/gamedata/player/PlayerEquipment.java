@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.player;
 
+import com.badlogic.gdx.Gdx;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.ModifierType;
@@ -18,11 +19,6 @@ public class PlayerEquipment {
     private Item wornBoots = null;       // Feet (New)
     private Item wornRing = null;        // Ring
 
-    // Note: Left/Right hand are usually managed in Inventory, but we can track armor stats here if shields are involved.
-    // For now, hands remain in Inventory logic, but shields are accessed here for defense calc.
-    // We will assume 'wornShield' is maintained for backward compatibility or linked to Inventory.leftHand.
-    // For the purpose of this refactor, let's keep specific armor slots here.
-
     private Item wornShield = null; // Kept for legacy compatibility / explicit shield slot logic
 
     public PlayerEquipment() {
@@ -35,31 +31,71 @@ public class PlayerEquipment {
             wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornShield
         };
 
+        // Debug Log Builder
+        StringBuilder debugLog = new StringBuilder();
+        boolean debug = false; // Only log if we find something, to reduce spam, or toggle true for full spam
+
         for (Item item : equippedItems) {
             if (item != null && item.getModifiers() != null) {
                 for (ItemModifier mod : item.getModifiers()) {
                     if (mod.type == typeToFind) {
                         total += mod.value;
+                        debugLog.append(" [").append(item.getDisplayName()).append(": ").append(mod.value).append("]");
+                        debug = true;
                     }
                 }
             }
         }
+
+        // Only log if we found modifiers or if it's a critical stat check (optional)
+        if (debug) {
+            Gdx.app.log("Equipment", "Modifier Calc (" + typeToFind + "): Total=" + total + " Sources:" + debugLog.toString());
+        }
+
         return total;
     }
 
     public int getArmorDefense() {
         int totalDefense = 0;
+        StringBuilder log = new StringBuilder();
 
-        if (wornHelmet != null) totalDefense += wornHelmet.getArmorDefense();
-        if (wornChest != null) totalDefense += wornChest.getArmorDefense(); // New unified Chest
-        if (wornGauntlets != null) totalDefense += wornGauntlets.getArmorDefense();
-        if (wornBoots != null) totalDefense += wornBoots.getArmorDefense();
-        if (wornLegs != null) totalDefense += wornLegs.getArmorDefense();
-        if (wornArms != null) totalDefense += wornArms.getArmorDefense();
-        if (wornShield != null) totalDefense += wornShield.getArmorDefense();
+        if (wornHelmet != null) {
+            totalDefense += wornHelmet.getArmorDefense();
+            log.append(" Head(").append(wornHelmet.getArmorDefense()).append(")");
+        }
+        if (wornChest != null) {
+            totalDefense += wornChest.getArmorDefense();
+            log.append(" Chest(").append(wornChest.getArmorDefense()).append(")");
+        }
+        if (wornGauntlets != null) {
+            totalDefense += wornGauntlets.getArmorDefense();
+            log.append(" Hands(").append(wornGauntlets.getArmorDefense()).append(")");
+        }
+        if (wornBoots != null) {
+            totalDefense += wornBoots.getArmorDefense();
+            log.append(" Feet(").append(wornBoots.getArmorDefense()).append(")");
+        }
+        if (wornLegs != null) {
+            totalDefense += wornLegs.getArmorDefense();
+            log.append(" Legs(").append(wornLegs.getArmorDefense()).append(")");
+        }
+        if (wornArms != null) {
+            totalDefense += wornArms.getArmorDefense();
+            log.append(" Arms(").append(wornArms.getArmorDefense()).append(")");
+        }
+        if (wornShield != null) {
+            totalDefense += wornShield.getArmorDefense();
+            log.append(" Shield(").append(wornShield.getArmorDefense()).append(")");
+        }
 
         // Add bonus defense from all equipped items
-        totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+        int modifierDefense = getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+        if (modifierDefense > 0) {
+            totalDefense += modifierDefense;
+            log.append(" Mods(").append(modifierDefense).append(")");
+        }
+
+       // Gdx.app.log("Equipment", "Armor Calc: Total=" + totalDefense + " Breakdown:" + log.toString());
 
         return totalDefense;
     }
@@ -87,11 +123,10 @@ public class PlayerEquipment {
     public Item getWornBack() { return wornBack; }
     public void setWornBack(Item item) { this.wornBack = item; }
 
-    // Consolidated Chest Slot (Handles Hauberk or Breastplate)
     public Item getWornChest() { return wornChest; }
     public void setWornChest(Item item) { this.wornChest = item; }
 
-    // Legacy getters for Hauberk/Breastplate redirect to Chest
+    // Legacy getters
     public Item getWornHauberk() { return wornChest; }
     public void setWornHauberk(Item item) { this.wornChest = item; }
     public Item getWornBreastplate() { return wornChest; }

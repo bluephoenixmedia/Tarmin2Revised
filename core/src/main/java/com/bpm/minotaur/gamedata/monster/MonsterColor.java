@@ -15,7 +15,13 @@ public enum MonsterColor {
 
     // Horrible Monsters
     YELLOW("Yellow", Color.YELLOW, 1.0f, 1.4f),
-    TAN("Tan", new Color(0.82f, 0.71f, 0.55f, 1f), 1.2f, 1.5f);
+    TAN("Tan", new Color(0.82f, 0.71f, 0.55f, 1f), 1.2f, 1.5f),
+
+    // New Colors (Added for expanded monster list)
+    BROWN("Brown", Color.BROWN, 1.1f, 1.2f),
+    RED("Red", Color.RED, 1.3f, 1.4f),
+    GREEN("Green", Color.GREEN, 1.1f, 1.2f),
+    BLACK("Black", Color.BLACK, 1.6f, 1.8f);
 
     private final String name;
     private final Color color;
