@@ -101,8 +101,8 @@ public class Hud implements Disposable {
 
     private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
 
-
-    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager, WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
+    public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
+            WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
         this.game = game;
         this.debugManager = debugManager;
         this.gameMode = gameMode;
@@ -127,7 +127,6 @@ public class Hud implements Disposable {
         messageBackgroundTexture = new Texture(pixmap);
         pixmap.dispose();
 
-
         messageBackgroundDrawable = new TextureRegionDrawable(new TextureRegion(messageBackgroundTexture));
         // --- Font Loading ---
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
@@ -150,7 +149,6 @@ public class Hud implements Disposable {
         Label.LabelStyle heldItemStyle = new Label.LabelStyle(font, Color.WHITE);
         heldItemStyle.font.getData().setScale(0.8f);
 
-
         // --- Layout Setup (Tables) ---
         mainContentTable = new Table();
 
@@ -158,7 +156,9 @@ public class Hud implements Disposable {
         leftTable = new Table();
 
         float slotSize = 60f;
-        for(int i = 0; i < 6; i++) { backpackSlots[i] = new Actor(); }
+        for (int i = 0; i < 6; i++) {
+            backpackSlots[i] = new Actor();
+        }
 
         leftTable.add(backpackSlots[0]).width(slotSize).height(slotSize);
         leftTable.add(backpackSlots[1]).width(slotSize).height(slotSize);
@@ -172,7 +172,6 @@ public class Hud implements Disposable {
 
         // --- Right Table (Player Stats) ---
         rightTable = new Table();
-
 
         // War Strength
         warStrengthValueLabel = new Label("", labelStyle);
@@ -225,7 +224,6 @@ public class Hud implements Disposable {
         lvlExpTable.add(new Label("EXP:", labelStyle)).padRight(10);
         lvlExpTable.add(xpLabel);
 
-
         // --- Assemble Right Table ---
         rightTable.add(warTable).left().padTop(10).padBottom(20).padRight(10);
         rightTable.add(spiritualTable).right().expandX().padTop(10).padBottom(20).padRight(10);
@@ -251,8 +249,6 @@ public class Hud implements Disposable {
         rightTable.row();
         rightTable.add(rightHandStatsLabel).left().padTop(10).padRight(10);
 
-
-
         // --- Assemble Main Content Table ---
         mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
         mainContentTable.add(rightTable).expandX().right().spaceTop(10);
@@ -268,12 +264,9 @@ public class Hud implements Disposable {
         handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
         handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
 
-
         handsAndCompassTable.row();
         heldItemLabel = new Label("Empty", heldItemStyle);
         handsAndCompassTable.add(heldItemLabel).colspan(3).padTop(10).center();
-
-
 
         // --- Dungeon Level Table ---
         dungeonLevelLabel = new Label("", labelStyle);
@@ -309,25 +302,25 @@ public class Hud implements Disposable {
         stage.addActor(mainContainer);
 
         messageLabel.setVisible(false);
-        messageTable.setBackground((Drawable)null);
+        messageTable.setBackground((Drawable) null);
     }
 
     public void update(float dt) {
 
-        warStrengthValueLabel.setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
-        spiritualStrengthValueLabel.setText(String.format("%d / %d", player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength()));
-
+        warStrengthValueLabel
+                .setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
+        spiritualStrengthValueLabel.setText(
+                String.format("%d / %d", player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength()));
 
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
-        directionLabel.setText(player.getFacing().name().substring(0,1));
+        directionLabel.setText(player.getFacing().name().substring(0, 1));
         dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel());
         treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
 
         Item rightHandItem = player.getInventory().getRightHand();
-
 
         // Update Held Item Label
         Item itemInHand = player.getInventory().getRightHand();
@@ -350,14 +343,15 @@ public class Hud implements Disposable {
         }
 
         // Show combat information only if combat is active
-        if(combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
+        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
+                && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();
             monsterStrengthLabel.setText("WS:" + monster.getWarStrength() + " SS:" + monster.getSpiritualStrength());
             monsterStrengthLabel.setVisible(true);
             combatStatusLabel.setVisible(true);
 
             // Display different status messages based on whose turn it is
-            switch(combatManager.getCurrentState()){
+            switch (combatManager.getCurrentState()) {
                 case PLAYER_TURN:
                     eventManager.addEvent((new GameEvent("PLAYER TURN - PRESS A to Attack!", 1f)));
                     break;
@@ -373,11 +367,11 @@ public class Hud implements Disposable {
             combatStatusLabel.setVisible(false);
         }
 
-
         // Get only the message events
         List<GameEvent> messageEvents = eventManager.getMessageEvents();
 
-        // Display the oldest game event message, or an empty string if there are no events
+        // Display the oldest game event message, or an empty string if there are no
+        // events
         if (!messageEvents.isEmpty()) {
             messageLabel.setText(messageEvents.get(0).message);
 
@@ -386,7 +380,7 @@ public class Hud implements Disposable {
         } else {
             messageLabel.setText("");
             messageLabel.setVisible(false);
-            messageTable.setBackground((Drawable)null);
+            messageTable.setBackground((Drawable) null);
         }
     }
 
@@ -424,7 +418,6 @@ public class Hud implements Disposable {
         handsAndCompassTable.setDebug(isDebug);
         levelTable.setDebug(isDebug);
         messageTable.setDebug(isDebug);
-
 
         // This renders all actors (labels, etc.) *and* the debug lines (if enabled)
         stage.draw();
@@ -469,30 +462,37 @@ public class Hud implements Disposable {
             float lineGap = 25;
 
             defaultFont.setColor(Color.YELLOW);
-            defaultFont.draw(spriteBatch, "SYSTEM & CONTROLS", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "SYSTEM & CONTROLS", leftColX, yPos);
+            yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
-            defaultFont.draw(spriteBatch, "DEBUG MODE (F1)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(spriteBatch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos); yPos -= lineGap;
-            defaultFont.draw(spriteBatch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "DEBUG MODE (F1)", leftColX, yPos);
+            yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "RENDER MODE: " + debugManager.getRenderMode() + " (F2)", leftColX, yPos);
+            yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX,
+                    yPos);
+            yPos -= lineGap;
 
             yPos -= 10;
             defaultFont.setColor(Color.CYAN);
-            defaultFont.draw(spriteBatch, "KEYBINDS", leftColX, yPos); yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "KEYBINDS", leftColX, yPos);
+            yPos -= lineGap;
             defaultFont.setColor(Color.WHITE);
 
             String[] keyMappings = {
-                "UP/DOWN : Move",
-                "LEFT/RIGHT: Turn",
-                "O : Interact (Door/Gate)",
-                "P : Pickup Item",
-                "U : Use Item",
-                "D : Descend Ladder",
-                "R : Rest",
-                "S : Swap Hands",
-                "E : Swap with Pack",
-                "T : Rotate Pack",
-                "A/SPACE : Attack / Fire",
-                "M : Castle Map"
+                    "UP/DOWN : Move",
+                    "LEFT/RIGHT: Turn",
+                    "O : Interact / Craft / Butcher",
+                    "P : Pickup Item",
+                    "U : Use Item",
+                    "D : Climb Ladder",
+                    "R : Rest",
+                    "S : Swap Hands",
+                    "E : Swap with Pack",
+                    "T : Rotate Pack",
+                    "A/SPACE : Instant Attack",
+                    "NUM 7 : Dice Attack",
+                    "M : Castle Map"
             };
 
             for (String mapping : keyMappings) {
@@ -506,38 +506,57 @@ public class Hud implements Disposable {
 
             if (player != null) {
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(spriteBatch, "PLAYER STATS", midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "PLAYER STATS", midColX, midY);
+                midY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
-                int playerGridX = (int)player.getPosition().x;
-                int playerGridY = (int)player.getPosition().y;
-                defaultFont.draw(spriteBatch, "Grid Pos: (" + playerGridX + ", " + playerGridY + ")", midColX, midY); midY -= lineGap;
-                defaultFont.draw(spriteBatch, "Facing: " + player.getFacing().name(), midColX, midY); midY -= lineGap;
-                defaultFont.draw(spriteBatch, "Defense: " + player.getArmorDefense(), midColX, midY); midY -= lineGap;
-                defaultFont.draw(spriteBatch, "War Str: " + player.getWarStrength() + "/" + player.getEffectiveMaxWarStrength(), midColX, midY); midY -= lineGap;
-                defaultFont.draw(spriteBatch, "Spirit: " + player.getSpiritualStrength() + "/" + player.getEffectiveMaxSpiritualStrength(), midColX, midY); midY -= lineGap;
+                int playerGridX = (int) player.getPosition().x;
+                int playerGridY = (int) player.getPosition().y;
+                defaultFont.draw(spriteBatch, "Grid Pos: (" + playerGridX + ", " + playerGridY + ")", midColX, midY);
+                midY -= lineGap;
+                defaultFont.draw(spriteBatch, "Facing: " + player.getFacing().name(), midColX, midY);
+                midY -= lineGap;
+                defaultFont.draw(spriteBatch, "Defense: " + player.getArmorDefense(), midColX, midY);
+                midY -= lineGap;
+                defaultFont.draw(spriteBatch,
+                        "War Str: " + player.getWarStrength() + "/" + player.getEffectiveMaxWarStrength(), midColX,
+                        midY);
+                midY -= lineGap;
+                defaultFont.draw(spriteBatch,
+                        "Spirit: " + player.getSpiritualStrength() + "/" + player.getEffectiveMaxSpiritualStrength(),
+                        midColX, midY);
+                midY -= lineGap;
 
                 midY -= 20;
 
                 // --- Equipped Item ---
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(spriteBatch, "RIGHT HAND ITEM", midColX, midY); midY -= lineGap;
+                defaultFont.draw(spriteBatch, "RIGHT HAND ITEM", midColX, midY);
+                midY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
 
                 Item rightHandItem = player.getInventory().getRightHand();
                 if (rightHandItem != null) {
-                    defaultFont.draw(spriteBatch, "Name: " + rightHandItem.getDisplayName(), midColX, midY); midY -= lineGap;
-                    defaultFont.draw(spriteBatch, "Category: " + rightHandItem.getCategory(), midColX, midY); midY -= lineGap;
+                    defaultFont.draw(spriteBatch, "Name: " + rightHandItem.getDisplayName(), midColX, midY);
+                    midY -= lineGap;
+                    defaultFont.draw(spriteBatch, "Category: " + rightHandItem.getCategory(), midColX, midY);
+                    midY -= lineGap;
 
                     if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
-                        defaultFont.draw(spriteBatch, "Damage (War): " + rightHandItem.getWarDamage(), midColX, midY); midY -= lineGap;
-                        defaultFont.draw(spriteBatch, "Range: " + rightHandItem.getRange(), midColX, midY); midY -= lineGap;
+                        defaultFont.draw(spriteBatch, "Damage (War): " + rightHandItem.getWarDamage(), midColX, midY);
+                        midY -= lineGap;
+                        defaultFont.draw(spriteBatch, "Range: " + rightHandItem.getRange(), midColX, midY);
+                        midY -= lineGap;
                     } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                        defaultFont.draw(spriteBatch, "Damage (Spirit): " + rightHandItem.getSpiritDamage(), midColX, midY); midY -= lineGap;
+                        defaultFont.draw(spriteBatch, "Damage (Spirit): " + rightHandItem.getSpiritDamage(), midColX,
+                                midY);
+                        midY -= lineGap;
                     }
-                    defaultFont.draw(spriteBatch, "Is Ranged: " + rightHandItem.isRanged(), midColX, midY); midY -= lineGap;
+                    defaultFont.draw(spriteBatch, "Is Ranged: " + rightHandItem.isRanged(), midColX, midY);
+                    midY -= lineGap;
                 } else {
-                    defaultFont.draw(spriteBatch, "Empty", midColX, midY); midY -= lineGap;
+                    defaultFont.draw(spriteBatch, "Empty", midColX, midY);
+                    midY -= lineGap;
                 }
             }
 
@@ -553,12 +572,17 @@ public class Hud implements Disposable {
                 int chunkCount = worldManager.getLoadedChunkIds().size();
 
                 defaultFont.setColor(Color.YELLOW);
-                defaultFont.draw(spriteBatch, "WORLD DEBUG", rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "WORLD DEBUG", rightColX, rightY);
+                rightY -= lineGap;
                 defaultFont.setColor(Color.WHITE);
-                defaultFont.draw(spriteBatch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightY); rightY -= lineGap;
-                defaultFont.draw(spriteBatch, "Biome: " + biome.name(), rightColX, rightY); rightY -= lineGap;
-                defaultFont.draw(spriteBatch, "Theme: " + themeName, rightColX, rightY); rightY -= lineGap;
-                defaultFont.draw(spriteBatch, "Loaded Chunks: " + chunkCount, rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Chunk ID: (" + chunkId.x + ", " + chunkId.y + ")", rightColX, rightY);
+                rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Biome: " + biome.name(), rightColX, rightY);
+                rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Theme: " + themeName, rightColX, rightY);
+                rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Loaded Chunks: " + chunkCount, rightColX, rightY);
+                rightY -= lineGap;
             }
 
             rightY -= 20;
@@ -566,14 +590,20 @@ public class Hud implements Disposable {
             // Item Modifiers
             if (player != null) {
                 defaultFont.setColor(Color.LIME);
-                defaultFont.draw(spriteBatch, "ITEM MODIFIERS", rightColX, rightY); rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "ITEM MODIFIERS", rightColX, rightY);
+                rightY -= lineGap;
 
-                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Right Hand", player.getInventory().getRightHand(), rightColX, rightY);
-                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Left Hand", player.getInventory().getLeftHand(), rightColX, rightY);
+                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Right Hand", player.getInventory().getRightHand(),
+                        rightColX, rightY);
+                rightY = drawItemModsDebug(spriteBatch, defaultFont, "Left Hand", player.getInventory().getLeftHand(),
+                        rightColX, rightY);
 
                 // Only show first 3 backpack slots to save space
+                Item[] backpack = player.getInventory().getBackpack();
                 for (int i = 0; i < 3; i++) {
-                    rightY = drawItemModsDebug(spriteBatch, defaultFont, "Pack " + i, player.getInventory().getBackpack()[i], rightColX, rightY);
+                    Item item = (i < backpack.length) ? backpack[i] : null;
+                    rightY = drawItemModsDebug(spriteBatch, defaultFont, "Pack " + i,
+                            item, rightColX, rightY);
                 }
             }
 
@@ -594,15 +624,14 @@ public class Hud implements Disposable {
         if (item != null && item.isModified()) {
             for (ItemModifier mod : item.getModifiers()) {
                 if (mod.type.name().equals("BONUS_DAMAGE")) {
-                    modText+= "+" + mod.value;
+                    modText += "+" + mod.value;
                 } else {
-                    modText+= " " + mod.displayName + " ";
+                    modText += " " + mod.displayName + " ";
                 }
             }
         }
         return modText;
     }
-
 
     private float drawItemModsDebug(SpriteBatch batch, BitmapFont font, String slotName, Item item, float x, float y) {
         if (item != null && item.isModified()) {
@@ -620,21 +649,29 @@ public class Hud implements Disposable {
         return y;
     }
 
-
     /**
      * Gets a single-character representation for a biome.
      */
     private String getBiomeLetter(Biome biome) {
-        if (biome == null) return "?";
+        if (biome == null)
+            return "?";
         switch (biome) {
-            case MAZE: return "M";
-            case FOREST: return "F";
-            case PLAINS: return "P";
-            case DESERT: return "D";
-            case MOUNTAINS: return "A";
-            case LAKELANDS: return "L";
-            case OCEAN: return "O";
-            default: return "?";
+            case MAZE:
+                return "M";
+            case FOREST:
+                return "F";
+            case PLAINS:
+                return "P";
+            case DESERT:
+                return "D";
+            case MOUNTAINS:
+                return "A";
+            case LAKELANDS:
+                return "L";
+            case OCEAN:
+                return "O";
+            default:
+                return "?";
         }
     }
 
@@ -645,16 +682,17 @@ public class Hud implements Disposable {
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // Draw backpack items
-        Item[] backpack = player.getInventory().getBackpack();
-        for (int i = 0; i < backpack.length; i++) {
-            Item item = backpack[i];
-            Actor slot = backpackSlots[i];
+        // Draw quick slots items (HUD belt)
+        Item[] quickSlots = player.getInventory().getQuickSlots();
+        for (int i = 0; i < quickSlots.length; i++) {
+            Item item = quickSlots[i];
+            Actor slot = backpackSlots[i]; // These actors align with the HUD slots visually
             if (item != null) {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 ItemTemplate template = item.getTemplate();
                 if (template != null && template.spriteData != null) {
-                    drawItemSprite(shapeRenderer, item, template.spriteData, pos.x, pos.y, slot.getWidth(), slot.getHeight(), item.getColor());
+                    drawItemSprite(shapeRenderer, item, template.spriteData, pos.x, pos.y, slot.getWidth(),
+                            slot.getHeight(), item.getColor());
                 }
             }
         }
@@ -665,7 +703,8 @@ public class Hud implements Disposable {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
             ItemTemplate template = leftHand.getTemplate();
             if (template != null && template.spriteData != null) {
-                drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight(), leftHand.getColor());
+                drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x, pos.y, leftHandSlot.getWidth(),
+                        leftHandSlot.getHeight(), leftHand.getColor());
             }
         }
 
@@ -675,14 +714,16 @@ public class Hud implements Disposable {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
             ItemTemplate template = rightHand.getTemplate();
             if (template != null && template.spriteData != null) {
-                drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight(), rightHand.getColor());
+                drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x, pos.y, rightHandSlot.getWidth(),
+                        rightHandSlot.getHeight(), rightHand.getColor());
             }
         }
 
         shapeRenderer.end();
     }
 
-    private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y, float width, float height, Color color) {
+    private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y,
+            float width, float height, Color color) {
 
         if (item.isModified()) {
             shapeRenderer.setColor(GLOW_COLOR_UI);
@@ -706,16 +747,18 @@ public class Hud implements Disposable {
      * Draws the new world minimap in the debug (F1) view.
      */
     private void drawWorldMinimap(float centerX, float centerY, BitmapFont debugFont, SpriteBatch spriteBatch) {
-        if (worldManager == null) return;
+        if (worldManager == null)
+            return;
 
         java.util.Set<GridPoint2> loadedChunks = worldManager.getLoadedChunkIds();
         GridPoint2 currentChunk = worldManager.getCurrentPlayerChunkId();
         BiomeManager biomeManager = worldManager.getBiomeManager();
 
-        if (loadedChunks == null || currentChunk == null || biomeManager == null) return;
+        if (loadedChunks == null || currentChunk == null || biomeManager == null)
+            return;
 
         float chunkSize = 20; // Size of each chunk square
-        float gap = 4;        // Gap between chunks
+        float gap = 4; // Gap between chunks
 
         // --- 1. Draw Squares ---
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -766,7 +809,8 @@ public class Hud implements Disposable {
     }
 
     private void drawAutomap() {
-        if (maze == null) return;
+        if (maze == null)
+            return;
 
         // Configuration
         float maxMapSize = 300f; // Maximum dimension (width or height)
@@ -777,7 +821,8 @@ public class Hud implements Disposable {
         int mazeH = maze.getHeight();
 
         // Prevent division by zero
-        if (mazeW == 0 || mazeH == 0) return;
+        if (mazeW == 0 || mazeH == 0)
+            return;
 
         // Calculate cell size to fit within the maxMapSize box
         float cellSize = maxMapSize / Math.max(mazeW, mazeH);
@@ -805,13 +850,13 @@ public class Hud implements Disposable {
 
         // Wall bitmasks
         int WALL_NORTH = 0b01000000;
-        int WALL_EAST  = 0b00000100;
+        int WALL_EAST = 0b00000100;
         int WALL_SOUTH = 0b00010000;
-        int WALL_WEST  = 0b00000001;
+        int WALL_WEST = 0b00000001;
         int DOOR_NORTH = 0b10000000;
-        int DOOR_EAST  = 0b00001000;
+        int DOOR_EAST = 0b00001000;
         int DOOR_SOUTH = 0b00100000;
-        int DOOR_WEST  = 0b00000010;
+        int DOOR_WEST = 0b00000010;
 
         for (int y = 0; y < mazeH; y++) {
             for (int x = 0; x < mazeW; x++) {
@@ -826,17 +871,25 @@ public class Hud implements Disposable {
 
                 // Draw Walls (White)
                 shapeRenderer.setColor(Color.WHITE);
-                if ((mask & WALL_NORTH) != 0) shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
-                if ((mask & WALL_EAST)  != 0) shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
-                if ((mask & WALL_SOUTH) != 0) shapeRenderer.line(cx, cy, cx + cellSize, cy);
-                if ((mask & WALL_WEST)  != 0) shapeRenderer.line(cx, cy, cx, cy + cellSize);
+                if ((mask & WALL_NORTH) != 0)
+                    shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
+                if ((mask & WALL_EAST) != 0)
+                    shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
+                if ((mask & WALL_SOUTH) != 0)
+                    shapeRenderer.line(cx, cy, cx + cellSize, cy);
+                if ((mask & WALL_WEST) != 0)
+                    shapeRenderer.line(cx, cy, cx, cy + cellSize);
 
                 // Draw Doors (Gold/Yellow)
                 shapeRenderer.setColor(Color.GOLD);
-                if ((mask & DOOR_NORTH) != 0) shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
-                if ((mask & DOOR_EAST)  != 0) shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
-                if ((mask & DOOR_SOUTH) != 0) shapeRenderer.line(cx, cy, cx + cellSize, cy);
-                if ((mask & DOOR_WEST)  != 0) shapeRenderer.line(cx, cy, cx, cy + cellSize);
+                if ((mask & DOOR_NORTH) != 0)
+                    shapeRenderer.line(cx, cy + cellSize, cx + cellSize, cy + cellSize);
+                if ((mask & DOOR_EAST) != 0)
+                    shapeRenderer.line(cx + cellSize, cy, cx + cellSize, cy + cellSize);
+                if ((mask & DOOR_SOUTH) != 0)
+                    shapeRenderer.line(cx, cy, cx + cellSize, cy);
+                if ((mask & DOOR_WEST) != 0)
+                    shapeRenderer.line(cx, cy, cx, cy + cellSize);
             }
         }
         shapeRenderer.end();
@@ -846,7 +899,8 @@ public class Hud implements Disposable {
 
         for (int y = 0; y < mazeH; y++) {
             for (int x = 0; x < mazeW; x++) {
-                if (!maze.isVisited(x, y)) continue;
+                if (!maze.isVisited(x, y))
+                    continue;
 
                 Object obj = maze.getGameObjectAt(x, y);
                 float cx = startX + (x * cellSize);
@@ -894,6 +948,7 @@ public class Hud implements Disposable {
         hudBackground.dispose();
         shapeRenderer.dispose();
         messageBackgroundTexture.dispose();
-        if (debugFont != null) debugFont.dispose(); // Clean up debug font
+        if (debugFont != null)
+            debugFont.dispose(); // Clean up debug font
     }
 }

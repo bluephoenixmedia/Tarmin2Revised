@@ -52,6 +52,7 @@ configure(subprojects) {
 
   compileJava {
     options.incremental = true
+    options.compilerArgs << "-Xlint:all"
   }
 }
 

@@ -96,7 +96,8 @@ public class SoundManager {
 
     // --- NEW: Volume Dampening for Interiors ---
     public void setDampened(boolean dampened) {
-        if (this.isDampened == dampened) return;
+        if (this.isDampened == dampened)
+            return;
         this.isDampened = dampened;
 
         // Update currently playing loops immediately
@@ -113,18 +114,23 @@ public class SoundManager {
     }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
-        if (type == lastWeatherType) return;
+        if (type == lastWeatherType)
+            return;
         lastWeatherType = type;
 
-        if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) modernSounds.get("rain_loop").stop(currentRainId);
-        if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) modernSounds.get("wind_loop").stop(currentWindId);
+        if (currentRainId != -1 && modernSounds.containsKey("rain_loop"))
+            modernSounds.get("rain_loop").stop(currentRainId);
+        if (currentWindId != -1 && modernSounds.containsKey("wind_loop"))
+            modernSounds.get("wind_loop").stop(currentWindId);
 
         currentRainId = -1;
         currentWindId = -1;
 
         currentBaseVol = 0.5f;
-        if (intensity == WeatherIntensity.HEAVY) currentBaseVol = 0.8f;
-        if (intensity == WeatherIntensity.EXTREME) currentBaseVol = 1.0f;
+        if (intensity == WeatherIntensity.HEAVY)
+            currentBaseVol = 0.8f;
+        if (intensity == WeatherIntensity.EXTREME)
+            currentBaseVol = 1.0f;
 
         float modifier = isDampened ? 0.25f : 1.0f;
         float vol = currentBaseVol * modifier;
@@ -187,7 +193,7 @@ public class SoundManager {
             }
         } else {
             if (weapon != null && weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                playRetroArpeggio(new int[]{523, 659, 784}, 0.04f);
+                playRetroArpeggio(new int[] { 523, 659, 784 }, 0.04f);
             } else {
                 playRetroSound(110, 0.15f, 0.8f);
             }
@@ -233,7 +239,8 @@ public class SoundManager {
         short[] samples = new short[numSamples];
         int wavelength = SAMPLE_RATE / frequency;
         for (int i = 0; i < numSamples; i++) {
-            samples[i] = (short) ((i % wavelength < wavelength / 2) ? (short)(Short.MAX_VALUE * volume) : (short)(-Short.MAX_VALUE * volume));
+            samples[i] = (short) ((i % wavelength < wavelength / 2) ? (Short.MAX_VALUE * volume)
+                    : (-Short.MAX_VALUE * volume));
         }
         retroAudioDevice.writeSamples(samples, 0, numSamples);
     }

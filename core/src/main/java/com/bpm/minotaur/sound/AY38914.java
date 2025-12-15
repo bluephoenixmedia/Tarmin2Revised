@@ -1,9 +1,10 @@
-package com.bpm.minotaur.generation;
+package com.bpm.minotaur.sound;
 
 /**
  * AY-3-8914 Sound Chip Emulator
  *
- * This class emulates the General Instrument AY-3-8914 Programmable Sound Generator,
+ * This class emulates the General Instrument AY-3-8914 Programmable Sound
+ * Generator,
  * a popular sound chip used in many 8-bit computers and arcade machines.
  *
  * Features:
@@ -68,12 +69,13 @@ public class AY38914 {
 
     // Volume table (logarithmic approximation)
     private static final int[] VOLUME_TABLE = {
-        0, 836, 1212, 1773, 2619, 3875, 5397, 8823,
-        10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
+            0, 836, 1212, 1773, 2619, 3875, 5397, 8823,
+            10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
     };
 
     /**
      * Constructor
+     * 
      * @param sampleRate Audio sample rate (e.g., 44100)
      */
     public AY38914(int sampleRate) {
@@ -117,11 +119,13 @@ public class AY38914 {
 
     /**
      * Write to a register
+     * 
      * @param register Register address (0-15)
-     * @param value Value to write (0-255)
+     * @param value    Value to write (0-255)
      */
     public void writeRegister(int register, int value) {
-        if (register < 0 || register > 15) return;
+        if (register < 0 || register > 15)
+            return;
 
         registers[register] = value & 0xFF;
 
@@ -157,11 +161,13 @@ public class AY38914 {
 
     /**
      * Read from a register
+     * 
      * @param register Register address (0-15)
      * @return Register value
      */
     public int readRegister(int register) {
-        if (register < 0 || register > 15) return 0;
+        if (register < 0 || register > 15)
+            return 0;
         return registers[register];
     }
 
@@ -185,6 +191,7 @@ public class AY38914 {
 
     /**
      * Generate the next audio sample
+     * 
      * @return 16-bit signed stereo sample (left and right channels mixed)
      */
     public short generateSample() {
@@ -198,8 +205,10 @@ public class AY38914 {
             boolean noiseEnabled = (mixer & (1 << (channel + 3))) == 0;
 
             boolean output = true;
-            if (toneEnabled) output &= toneOutputs[channel];
-            if (noiseEnabled) output &= noiseOutput;
+            if (toneEnabled)
+                output &= toneOutputs[channel];
+            if (noiseEnabled)
+                output &= noiseOutput;
 
             if (output) {
                 int volume = registers[REG_VOLUME_A + channel];
@@ -295,6 +304,7 @@ public class AY38914 {
 
     /**
      * Set the master clock frequency
+     * 
      * @param frequency Clock frequency in Hz
      */
     public void setClockFrequency(int frequency) {
@@ -309,7 +319,8 @@ public class AY38914 {
         sb.append("AY-3-8914 Register Dump:\n");
         for (int i = 0; i < 16; i++) {
             sb.append(String.format("R%02X: %02X ", i, registers[i]));
-            if ((i + 1) % 4 == 0) sb.append("\n");
+            if ((i + 1) % 4 == 0)
+                sb.append("\n");
         }
         return sb.toString();
     }

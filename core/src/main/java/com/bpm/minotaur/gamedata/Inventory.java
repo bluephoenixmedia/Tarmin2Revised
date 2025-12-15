@@ -22,13 +22,7 @@ public class Inventory {
      * If both full, returns false.
      */
     public boolean pickup(Item item) {
-        // 1. Try Main Inventory (Backpack)
-        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
-            mainInventory.add(item);
-            return true;
-        }
-
-        // 2. Try Quick Slots (HUD)
+        // 1. Try Quick Slots (HUD) - Prioritize immediate access
         for (int i = 0; i < quickSlots.length; i++) {
             if (quickSlots[i] == null) {
                 quickSlots[i] = item;
@@ -36,9 +30,34 @@ public class Inventory {
             }
         }
 
-        // 3. Hand logic is tricky (auto-equip?)
-        // Usually games don't auto-equip to hands unless hands are empty and it's a weapon.
-        // For now, let's stick to storage.
+        // 2. Try Main Inventory (Backpack)
+        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
+            mainInventory.add(item);
+            return true;
+        }
+
+        return false; // Inventory Full
+    }
+
+    /**
+     * Tries to add an item to the Main Inventory (Backpack) FIRST, then Quick
+     * Slots.
+     * Use this for bulk loot like butchering results.
+     */
+    public boolean pickupToBackpack(Item item) {
+        // 1. Try Main Inventory (Backpack)
+        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
+            mainInventory.add(item);
+            return true;
+        }
+
+        // 2. Try Quick Slots
+        for (int i = 0; i < quickSlots.length; i++) {
+            if (quickSlots[i] == null) {
+                quickSlots[i] = item;
+                return true;
+            }
+        }
 
         return false; // Inventory Full
     }
@@ -52,11 +71,14 @@ public class Inventory {
     public java.util.List<Item> getAllItems() {
         java.util.List<Item> allItems = new java.util.ArrayList<>();
 
-        if (rightHand != null) allItems.add(rightHand);
-        if (leftHand != null) allItems.add(leftHand);
+        if (rightHand != null)
+            allItems.add(rightHand);
+        if (leftHand != null)
+            allItems.add(leftHand);
 
         for (Item item : quickSlots) {
-            if (item != null) allItems.add(item);
+            if (item != null)
+                allItems.add(item);
         }
 
         allItems.addAll(mainInventory);
@@ -65,7 +87,8 @@ public class Inventory {
 
     public void rotatePack() {
         // Rotates only the Quick Slots
-        if (quickSlots.length < 6) return;
+        if (quickSlots.length < 6)
+            return;
 
         Item pos0 = quickSlots[0];
         Item pos1 = quickSlots[1];
@@ -91,21 +114,49 @@ public class Inventory {
 
     // --- Getters & Setters ---
 
-    public Item getRightHand() { return rightHand; }
-    public void setRightHand(Item item) { this.rightHand = item; }
+    public Item getRightHand() {
+        return rightHand;
+    }
 
-    public Item getLeftHand() { return leftHand; }
-    public void setLeftHand(Item item) { this.leftHand = item; }
+    public void setRightHand(Item item) {
+        this.rightHand = item;
+    }
+
+    public Item getLeftHand() {
+        return leftHand;
+    }
+
+    public void setLeftHand(Item item) {
+        this.leftHand = item;
+    }
 
     public Item[] getQuickSlots() {
         return quickSlots;
     }
 
     public Item[] getBackpack() {
-        return quickSlots;
+        return mainInventory.toArray(new Item[0]);
     }
 
     public List<Item> getMainInventory() {
         return mainInventory;
+    }
+
+    public void removeItem(Item item) {
+        if (rightHand == item) {
+            rightHand = null;
+            return;
+        }
+        if (leftHand == item) {
+            leftHand = null;
+            return;
+        }
+        for (int i = 0; i < quickSlots.length; i++) {
+            if (quickSlots[i] == item) {
+                quickSlots[i] = null;
+                return;
+            }
+        }
+        mainInventory.remove(item);
     }
 }

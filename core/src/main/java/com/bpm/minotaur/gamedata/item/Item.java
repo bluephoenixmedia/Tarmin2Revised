@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.Renderable;
-import com.bpm.minotaur.gamedata.item.ItemCategory;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +25,15 @@ public class Item implements Renderable {
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
         REGULAR_CHEST, LAMP, UNKNOWN, LADDER,
 
+        // Randomized Items
+        SCROLL_A, SCROLL_B, SCROLL_C, SCROLL_D, SCROLL_E, SCROLL_F, SCROLL_G, SCROLL_H,
+        WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
+
         // Home Props
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT,
+
+        // Corpse & Resources
+        CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP,
 
         // Debris
         STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
@@ -47,7 +53,6 @@ public class Item implements Renderable {
 
     // --- Base Properties ---
     private String friendlyName;
-    private String description;
     private final String[] spriteData;
     private final Texture texture;
     private final int baseValue;
@@ -68,19 +73,30 @@ public class Item implements Renderable {
     private final boolean isRing;
     private final boolean isImpassable; // New Field
 
+    // --- NetHack-style Properties ---
+    private int erosion = 0; // 0 = none, 1 = rusty/burnt, 2 = very rusty/burnt, 3 = corroded/rotted
+    private int charges = 0; // For wands and tools
+
+    // --- Corpse Property ---
+    private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
+
     private boolean isLocked;
     private final int range;
     private final Vector2 scale;
     private List<Item> contents = new ArrayList<>();
 
-    private PotionEffectType trueEffect;
+    private PotionEffectType trueEffect; // For potions only
+    private ScrollEffectType scrollEffect;
+    private WandEffectType wandEffect;
+    private RingEffectType ringEffect;
+
     private boolean isIdentified = false;
 
     private ItemTemplate template;
     private final ItemDataManager dataManager;
 
     public Item(ItemType type, int x, int y, ItemColor color,
-                ItemDataManager dataManager, AssetManager assetManager) {
+            ItemDataManager dataManager, AssetManager assetManager) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.itemColor = color;
@@ -136,13 +152,27 @@ public class Item implements Renderable {
     }
 
     // ... (Keep existing getters) ...
-    public ItemType getType() { return type; }
-    public String getTypeName() { return type.name(); }
-    public String getFriendlyName() { return friendlyName; }
-    public int getBaseValue() { return baseValue; }
+    public ItemType getType() {
+        return type;
+    }
+
+    public String getTypeName() {
+        return type.name();
+    }
+
+    public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    public int getBaseValue() {
+        return baseValue;
+    }
+
     public String getDisplayName() {
-        if (isPotion) return this.friendlyName;
-        if (!isModified()) return this.friendlyName;
+        if (isPotion)
+            return this.friendlyName;
+        if (!isModified())
+            return this.friendlyName;
         StringBuilder nameBuilder = new StringBuilder();
         String prefix = null;
         String suffix = null;
@@ -156,59 +186,128 @@ public class Item implements Renderable {
                 prefix = mod.displayName;
             }
         }
-        if (prefix != null) nameBuilder.append(prefix).append(" ");
+        if (prefix != null)
+            nameBuilder.append(prefix).append(" ");
         nameBuilder.append(this.friendlyName);
-        if (bonus != null) nameBuilder.append(" ").append(bonus);
-        if (suffix != null) nameBuilder.append(" ").append(suffix);
+        if (bonus != null)
+            nameBuilder.append(" ").append(bonus);
+        if (suffix != null)
+            nameBuilder.append(" ").append(suffix);
         return nameBuilder.toString();
     }
 
-    public boolean isWeapon() { return this.isWeapon; }
-    public boolean isRanged() { return this.isRanged; }
-    public boolean isArmor() { return this.isArmor; }
-    public boolean isPotion() { return this.isPotion; }
-    public boolean isFood() { return this.isFood; }
-    public boolean isTreasure() { return this.isTreasure; }
-    public boolean isKey() { return this.isKey; }
-    public boolean isUsable() { return this.isUsable; }
-    public boolean isContainer() { return this.isContainer; }
-    public boolean isRing() { return this.isRing; }
-    public boolean isImpassable() { return this.isImpassable; } // New Getter
+    public boolean isWeapon() {
+        return this.isWeapon;
+    }
+
+    public boolean isRanged() {
+        return this.isRanged;
+    }
+
+    public boolean isArmor() {
+        return this.isArmor;
+    }
+
+    public boolean isPotion() {
+        return this.isPotion;
+    }
+
+    public boolean isFood() {
+        return this.isFood;
+    }
+
+    public boolean isTreasure() {
+        return this.isTreasure;
+    }
+
+    public boolean isKey() {
+        return this.isKey;
+    }
+
+    public boolean isUsable() {
+        return this.isUsable;
+    }
+
+    public boolean isContainer() {
+        return this.isContainer;
+    }
+
+    public boolean isRing() {
+        return this.isRing;
+    }
+
+    public boolean isImpassable() {
+        return this.isImpassable;
+    } // New Getter
 
     public int getWarDamage() {
         int totalDamage = this.warDamage;
-        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value; }
+        for (ItemModifier mod : modifiers) {
+            if (mod.type == ModifierType.BONUS_DAMAGE)
+                totalDamage += mod.value;
+        }
         return totalDamage;
     }
+
     public int getSpiritDamage() {
         int totalDamage = this.spiritDamage;
-        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DAMAGE) totalDamage += mod.value; }
+        for (ItemModifier mod : modifiers) {
+            if (mod.type == ModifierType.BONUS_DAMAGE)
+                totalDamage += mod.value;
+        }
         return totalDamage;
     }
+
     public int getArmorDefense() {
         int totalDefense = this.armorDefense;
-        for (ItemModifier mod : modifiers) { if (mod.type == ModifierType.BONUS_DEFENSE) totalDefense += mod.value; }
+        for (ItemModifier mod : modifiers) {
+            if (mod.type == ModifierType.BONUS_DEFENSE)
+                totalDefense += mod.value;
+        }
         return totalDefense;
     }
 
-    public boolean isModified() { return modifiers != null && !modifiers.isEmpty(); }
+    public boolean isModified() {
+        return modifiers != null && !modifiers.isEmpty();
+    }
+
     public void addModifier(ItemModifier modifier) {
-        if (this.modifiers == null) this.modifiers = new ArrayList<>();
+        if (this.modifiers == null)
+            this.modifiers = new ArrayList<>();
         this.modifiers.add(modifier);
     }
+
     public List<ItemModifier> getModifiers() {
-        if (this.modifiers == null) this.modifiers = new ArrayList<>();
+        if (this.modifiers == null)
+            this.modifiers = new ArrayList<>();
         return modifiers;
     }
 
     @Override
-    public Vector2 getPosition() { return position; }
+    public Vector2 getPosition() {
+        return position;
+    }
+
     @Override
-    public Color getColor() { return itemColor.getColor(); }
-    public ItemColor getItemColor() { return itemColor; }
-    public String[] getSpriteData() { return spriteData; }
-    public Texture getTexture() { return texture; }
-    public Vector2 getScale() { return this.scale; }
+    public Color getColor() {
+        return itemColor.getColor();
+    }
+
+    public ItemColor getItemColor() {
+        return itemColor;
+    }
+
+    public String[] getSpriteData() {
+        return spriteData;
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+
+    public Vector2 getScale() {
+        return this.scale;
+    }
 
     @Override
     public String toString() {
@@ -216,21 +315,36 @@ public class Item implements Renderable {
     }
 
     public ItemCategory getCategory() {
-        if (isWeapon) return (spiritDamage > 0) ? ItemCategory.SPIRITUAL_WEAPON : ItemCategory.WAR_WEAPON;
-        if (isArmor) return ItemCategory.ARMOR;
-        if (isRing) return ItemCategory.RING;
-        if (isTreasure || isFood) return ItemCategory.TREASURE;
-        if (isContainer) return ItemCategory.CONTAINER;
-        if (isUsable || isPotion || isKey) return ItemCategory.USEFUL;
+        if (isWeapon)
+            return (spiritDamage > 0) ? ItemCategory.SPIRITUAL_WEAPON : ItemCategory.WAR_WEAPON;
+        if (isArmor)
+            return ItemCategory.ARMOR;
+        if (isRing)
+            return ItemCategory.RING;
+        if (isTreasure || isFood)
+            return ItemCategory.TREASURE;
+        if (isContainer)
+            return ItemCategory.CONTAINER;
+        if (isUsable || isPotion || isKey)
+            return ItemCategory.USEFUL;
         return ItemCategory.MISC;
     }
 
-    public boolean isLocked() { return this.isLocked; }
-    public void unlock() { this.isLocked = false; }
-    public boolean unlocks(Item key) { return key != null && key.isKey(); }
+    public boolean isLocked() {
+        return this.isLocked;
+    }
+
+    public void unlock() {
+        this.isLocked = false;
+    }
+
+    public boolean unlocks(Item key) {
+        return key != null && key.isKey();
+    }
 
     public List<Item> getContents() {
-        if (this.contents == null) this.contents = new ArrayList<>();
+        if (this.contents == null)
+            this.contents = new ArrayList<>();
         return this.contents;
     }
 
@@ -238,18 +352,97 @@ public class Item implements Renderable {
         this.position.set(x, y);
     }
 
-    public void setContents(List<Item> contents) { this.contents = contents; }
-    public int getRange() { return this.range; }
-    public PotionEffectType getTrueEffect() { return trueEffect; }
-    public void setTrueEffect(PotionEffectType trueEffect) { this.trueEffect = trueEffect; }
-    public boolean isIdentified() { return isIdentified; }
-    public void setIdentified(boolean identified) { isIdentified = identified; }
-    public void setName(String name) { this.friendlyName = name; }
-    public void setDescription(String description) { this.description = description; }
+    public void setContents(List<Item> contents) {
+        this.contents = contents;
+    }
+
+    public int getRange() {
+        return this.range;
+    }
+
+    public PotionEffectType getTrueEffect() {
+        return trueEffect;
+    }
+
+    public void setTrueEffect(PotionEffectType trueEffect) {
+        this.trueEffect = trueEffect;
+    }
+
+    public ScrollEffectType getScrollEffect() {
+        return scrollEffect;
+    }
+
+    public void setScrollEffect(ScrollEffectType scrollEffect) {
+        this.scrollEffect = scrollEffect;
+    }
+
+    public WandEffectType getWandEffect() {
+        return wandEffect;
+    }
+
+    public void setWandEffect(WandEffectType wandEffect) {
+        this.wandEffect = wandEffect;
+    }
+
+    public RingEffectType getRingEffect() {
+        return ringEffect;
+    }
+
+    public void setRingEffect(RingEffectType ringEffect) {
+        this.ringEffect = ringEffect;
+    }
+
+    public boolean isIdentified() {
+        return isIdentified;
+    }
+
+    public void setIdentified(boolean identified) {
+        isIdentified = identified;
+    }
+
+    public void setName(String name) {
+        this.friendlyName = name;
+    }
+
+    public void setDescription(String description) {
+    }
+
     public ItemTemplate getTemplate() {
         if (this.template == null && this.dataManager != null) {
             this.template = this.dataManager.getTemplate(this.type);
         }
         return this.template;
+    }
+
+    public int getErosion() {
+        return erosion;
+    }
+
+    public void setErosion(int erosion) {
+        this.erosion = erosion;
+    }
+
+    public void incrementErosion() {
+        this.erosion++;
+    }
+
+    public int getCharges() {
+        return charges;
+    }
+
+    public void setCharges(int charges) {
+        this.charges = charges;
+    }
+
+    public void decrementCharges() {
+        this.charges--;
+    }
+
+    public void setCorpseSource(com.bpm.minotaur.gamedata.monster.Monster.MonsterType source) {
+        this.corpseSource = source;
+    }
+
+    public com.bpm.minotaur.gamedata.monster.Monster.MonsterType getCorpseSource() {
+        return this.corpseSource;
     }
 }

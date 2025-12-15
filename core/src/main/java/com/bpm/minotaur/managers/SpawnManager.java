@@ -47,7 +47,7 @@ public class SpawnManager {
     private final WeightedRandomList<SpawnTableEntry> debrisPool; // <-- NEW
     private final Map<Integer, LevelBudget> budgetMap = new HashMap<>();
 
-    public static boolean DEBUG_FORCE_MODIFIERS = true;
+    public static boolean DEBUG_FORCE_MODIFIERS = false;
 
     private static final float BASE_MODIFIER_CHANCE = 0.15f;
     private static final float COLOR_MULTIPLIER_BONUS = 0.1f;
@@ -55,8 +55,8 @@ public class SpawnManager {
     private static final float THIRD_MODIFIER_CHANCE = 0.10f;
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-                        Maze maze, Difficulty difficulty, int level, String[] layout,
-                        SpawnTableData spawnTableData) {
+            Maze maze, Difficulty difficulty, int level, String[] layout,
+            SpawnTableData spawnTableData) {
         this.maze = maze;
         this.difficulty = difficulty;
         this.level = level;
@@ -152,14 +152,16 @@ public class SpawnManager {
 
     // --- NEW METHOD ---
     private void spawnDebris(int budget) {
-        if (debrisPool.isEmpty() || validSpawnPoints.isEmpty()) return;
+        if (debrisPool.isEmpty() || validSpawnPoints.isEmpty())
+            return;
 
         for (int i = 0; i < budget; i++) {
             // Pick a random floor tile (reuse tiles allowed)
             GridPoint2 spawnPoint = validSpawnPoints.get(random.nextInt(validSpawnPoints.size()));
 
             SpawnTableEntry entry = debrisPool.getRandomEntry();
-            if (entry == null) continue;
+            if (entry == null)
+                continue;
 
             Item.ItemType type;
             try {
@@ -169,7 +171,8 @@ public class SpawnManager {
             }
 
             ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-            if (variant == null) continue;
+            if (variant == null)
+                continue;
 
             Item debris = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
 
@@ -187,14 +190,17 @@ public class SpawnManager {
     }
 
     private void spawnMonsters(int budget) {
-        if (monsterPool.isEmpty()) return;
+        if (monsterPool.isEmpty())
+            return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
-            if (spawnPoint == null) break;
+            if (spawnPoint == null)
+                break;
 
             SpawnTableEntry entry = monsterPool.getRandomEntry();
-            if (entry == null) continue;
+            if (entry == null)
+                continue;
 
             Monster.MonsterType type;
             try {
@@ -204,7 +210,8 @@ public class SpawnManager {
             }
 
             MonsterVariant variant = dataManager.getRandomVariantForMonster(type, level);
-            if (variant == null) continue;
+            if (variant == null)
+                continue;
 
             Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y, variant.color, dataManager, assetManager);
             monster.scaleStats(level);
@@ -213,18 +220,21 @@ public class SpawnManager {
     }
 
     private void spawnItems(int budget) {
-        if (itemPool.isEmpty()) return;
+        if (itemPool.isEmpty())
+            return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
-            if (spawnPoint == null) break;
+            if (spawnPoint == null)
+                break;
             spawnRegularItem(spawnPoint);
         }
     }
 
     private void spawnRegularItem(GridPoint2 spawnPoint) {
         SpawnTableEntry entry = itemPool.getRandomEntry();
-        if (entry == null) return;
+        if (entry == null)
+            return;
 
         Item.ItemType type;
         try {
@@ -234,7 +244,8 @@ public class SpawnManager {
         }
 
         ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null) return;
+        if (variant == null)
+            return;
 
         Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
         attemptToModifyItem(item, variant.color);
@@ -242,14 +253,17 @@ public class SpawnManager {
     }
 
     private void spawnContainers(int budget) {
-        if (containerPool.isEmpty()) return;
+        if (containerPool.isEmpty())
+            return;
 
         for (int i = 0; i < budget; i++) {
             GridPoint2 spawnPoint = getEmptySpawnPoint();
-            if (spawnPoint == null) break;
+            if (spawnPoint == null)
+                break;
 
             SpawnTableEntry entry = containerPool.getRandomEntry();
-            if (entry == null) continue;
+            if (entry == null)
+                continue;
 
             Item.ItemType type;
             try {
@@ -259,7 +273,8 @@ public class SpawnManager {
             }
 
             ItemColor containerColor = entry.keyColor;
-            if (containerColor == null) containerColor = ItemColor.CONTAINER_TAN;
+            if (containerColor == null)
+                containerColor = ItemColor.CONTAINER_TAN;
 
             Item container = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
             attemptToModifyItem(container, containerColor);
@@ -273,10 +288,12 @@ public class SpawnManager {
     }
 
     private void addLootToContainer(Item container) {
-        if (containerLootPool.isEmpty()) return;
+        if (containerLootPool.isEmpty())
+            return;
 
         SpawnTableEntry entry = containerLootPool.getRandomEntry();
-        if (entry == null) return;
+        if (entry == null)
+            return;
 
         Item.ItemType type;
         try {
@@ -286,7 +303,8 @@ public class SpawnManager {
         }
 
         ItemVariant variant = itemDataManager.getRandomVariantForItem(type, level);
-        if (variant == null) return;
+        if (variant == null)
+            return;
 
         Item loot = itemDataManager.createItem(type, 0, 0, variant.color, assetManager);
         attemptToModifyItem(loot, variant.color);
@@ -295,30 +313,36 @@ public class SpawnManager {
 
     private void spawnKey(ItemColor containerColor) {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
-        if (spawnPoint == null) return;
+        if (spawnPoint == null)
+            return;
 
-        Item key = itemDataManager.createItem(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
+        Item key = itemDataManager.createItem(Item.ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor,
+                assetManager);
         attemptToModifyItem(key, containerColor);
         maze.addItem(key);
     }
 
     private void attemptToModifyItem(Item item, ItemColor color) {
         float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS);
-        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance) return;
+        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance)
+            return;
 
         addRandomModifier(item);
-        if (random.nextFloat() < SECOND_MODIFIER_CHANCE) addRandomModifier(item);
-        if (random.nextFloat() < THIRD_MODIFIER_CHANCE) addRandomModifier(item);
+        if (random.nextFloat() < SECOND_MODIFIER_CHANCE)
+            addRandomModifier(item);
+        if (random.nextFloat() < THIRD_MODIFIER_CHANCE)
+            addRandomModifier(item);
     }
 
     private void addRandomModifier(Item item) {
         ItemCategory category = item.getCategory();
         List<LootTable.ModInfo> validMods = LootTable.MODIFIER_POOL.stream()
-            .filter(mod -> mod.category == category)
-            .filter(mod -> DEBUG_FORCE_MODIFIERS || (level >= mod.minLevel && level <= mod.maxLevel))
-            .collect(Collectors.toList());
+                .filter(mod -> mod.category == category)
+                .filter(mod -> DEBUG_FORCE_MODIFIERS || (level >= mod.minLevel && level <= mod.maxLevel))
+                .collect(Collectors.toList());
 
-        if (validMods.isEmpty()) return;
+        if (validMods.isEmpty())
+            return;
 
         LootTable.ModInfo modInfo = validMods.get(random.nextInt(validMods.size()));
         int value = 0;
@@ -329,13 +353,15 @@ public class SpawnManager {
         }
 
         String displayName = modInfo.displayName;
-        if (displayName.contains("+")) displayName = "+" + value;
+        if (displayName.contains("+"))
+            displayName = "+" + value;
 
         item.addModifier(new ItemModifier(modInfo.type, value, displayName));
     }
 
     private GridPoint2 getEmptySpawnPoint() {
-        if (validSpawnPoints.isEmpty()) return null;
+        if (validSpawnPoints.isEmpty())
+            return null;
         return validSpawnPoints.remove(0);
     }
 }

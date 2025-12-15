@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -21,7 +22,8 @@ import com.bpm.minotaur.weather.WeatherRenderer;
 /**
  * Renders the 3D first-person view of the maze using a raycasting algorithm.
  * This class is responsible for drawing the floor, ceiling, walls, and doors.
- * It also generates a depth buffer to allow other renderers (like EntityRenderer)
+ * It also generates a depth buffer to allow other renderers (like
+ * EntityRenderer)
  * to correctly occlude objects behind walls.
  */
 public class FirstPersonRenderer {
@@ -41,16 +43,18 @@ public class FirstPersonRenderer {
     private static final float FOG_FADE_RATIO = 0.5f;
 
     // --- Bitmasks ---
-    private static final int WALL_WEST   = 0b00000001;
-    private static final int WALL_EAST   = 0b00000100;
-    private static final int WALL_SOUTH  = 0b00010000;
-    private static final int WALL_NORTH  = 0b01000000;
-    private static final int DOOR_WEST   = 0b00000010;
-    private static final int DOOR_EAST   = 0b00001000;
-    private static final int DOOR_SOUTH  = 0b00100000;
-    private static final int DOOR_NORTH  = 0b10000000;
+    private static final int WALL_WEST = 0b00000001;
+    private static final int WALL_EAST = 0b00000100;
+    private static final int WALL_SOUTH = 0b00010000;
+    private static final int WALL_NORTH = 0b01000000;
+    private static final int DOOR_WEST = 0b00000010;
+    private static final int DOOR_EAST = 0b00001000;
+    private static final int DOOR_SOUTH = 0b00100000;
+    private static final int DOOR_NORTH = 0b10000000;
 
-    private enum WallType { WALL, DOOR, GATE }
+    private enum WallType {
+        WALL, DOOR, GATE
+    }
 
     private float[] depthBuffer;
     private final DebugManager debugManager = DebugManager.getInstance();
@@ -119,7 +123,8 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
-    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport, WorldManager worldManager, int currentLevel, GameMode gameMode) {
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
+            WorldManager worldManager, int currentLevel, GameMode gameMode) {
 
         if (this.weatherRenderer == null && worldManager.getWeatherManager() != null) {
             this.weatherRenderer = new WeatherRenderer(worldManager.getWeatherManager());
@@ -134,7 +139,7 @@ public class FirstPersonRenderer {
 
         // --- NEW: Check if player is inside the "Home" ---
         // Being inside the home behaves like being "Underground" (Level > 1)
-        boolean isInsideHome = maze.isHomeTile((int)player.getPosition().x, (int)player.getPosition().y);
+        boolean isInsideHome = maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
         boolean isIndoors = (currentLevel > 1) || isInsideHome;
 
         if (worldManager.getWeatherManager() != null && currentLevel == 1) {
@@ -152,10 +157,8 @@ public class FirstPersonRenderer {
         setTheme(maze.getTheme());
 
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
-            depthBuffer = new float[(int)viewport.getScreenWidth()];
+            depthBuffer = new float[viewport.getScreenWidth()];
         }
-
-
 
         // 1. RENDER FLOOR & CEILING (Background)
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
@@ -164,7 +167,8 @@ public class FirstPersonRenderer {
             spriteBatch.begin();
 
             // FIX: Only render Skybox if NOT indoors.
-            // Previous logic: (!isIndoors || currentLevel > 1) caused Dungeons to have Skyboxes.
+            // Previous logic: (!isIndoors || currentLevel > 1) caused Dungeons to have
+            // Skyboxes.
             if (!isIndoors) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
@@ -183,7 +187,8 @@ public class FirstPersonRenderer {
                 // Render Flat Ceiling for Indoors (Home OR Dungeon)
                 Color ceilColor = applyTorchLighting(currentCeilingColor, WorldConstants.TORCH_FADE_END, new Color());
                 spriteBatch.setColor(ceilColor);
-                spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+                spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(),
+                        viewport.getWorldHeight() / 2);
             }
 
             // B. Floor
@@ -206,7 +211,9 @@ public class FirstPersonRenderer {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
                 if (result != null) {
                     maze.markVisited(result.mapX, result.mapY);
-                    renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity);                    depthBuffer[x] = result.distance;
+                    renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
+                            lightIntensity);
+                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
                     if (fogEnabled) {
@@ -229,7 +236,20 @@ public class FirstPersonRenderer {
 
                 if (result != null) {
                     maze.markVisited(result.mapX, result.mapY);
-                    renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);                    depthBuffer[x] = result.distance;
+                    renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
+                            lightIntensity, maze);
+
+                    // Render Windows (Front to Back or Back to Front? Back to Front usually, but
+                    // here distinct)
+                    // Windows are transparent overlays.
+                    if (result.windowHits != null) {
+                        for (int i = result.windowHits.size() - 1; i >= 0; i--) {
+                            renderRetroWindow(spriteBatch, result.windowHits.get(i), x, viewport, fogEnabled,
+                                    fogDistance, fogColor, lightIntensity);
+                        }
+                    }
+
+                    depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
                     if (fogEnabled) {
@@ -243,42 +263,58 @@ public class FirstPersonRenderer {
         }
 
         // --- RENDER PRECIPITATION (Foreground) ---
-        // ONLY render if NOT indoors
-        if (!isIndoors && this.weatherRenderer != null && currentLevel == 1) {
-            this.weatherRenderer.renderPrecipitation(shapeRenderer, viewport);
+        // Only render if NOT indoors OR if we have Window Holes to see through
+
+        if (this.weatherRenderer != null && currentLevel == 1) {
+            if (!isIndoors) {
+                // Outdoors: Render normally
+                this.weatherRenderer.renderPrecipitation(shapeRenderer, viewport);
+            }
         }
     }
 
-    private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity, WorldManager worldManager) {
+    private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity,
+            WorldManager worldManager) {
         Texture skyboxTexture;
         boolean isStormy = false;
         if (worldManager.getWeatherManager() != null) {
             isStormy = worldManager.getWeatherManager().isStormy();
         }
         switch (player.getFacing()) {
-            case EAST: skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast; break;
-            case WEST: skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest; break;
-            case SOUTH: skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth; break;
-            default: skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth; break;
+            case EAST:
+                skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
+                break;
+            case WEST:
+                skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
+                break;
+            case SOUTH:
+                skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
+                break;
+            default:
+                skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
+                break;
         }
         spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
-        spriteBatch.draw(skyboxTexture, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(), (viewport.getWorldHeight() / 2)+ 160);
+        spriteBatch.draw(skyboxTexture, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(),
+                (viewport.getWorldHeight() / 2) + 160);
         spriteBatch.setColor(Color.WHITE);
     }
 
     // ADDED: Maze maze parameter
-    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
-        for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
+    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled,
+            float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
+        for (int y = (int) (viewport.getWorldHeight() / 2); y >= 0; y--) {
             float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
             float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
             float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
             float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
 
-            int p_down = (int)(viewport.getWorldHeight() / 2) - y;
+            int p_down = (int) (viewport.getWorldHeight() / 2) - y;
             float posZ = 0.5f * viewport.getWorldHeight();
             float rowDistance = (p_down == 0) ? Float.MAX_VALUE : posZ / p_down;
 
-            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE) continue;
+            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE)
+                continue;
 
             float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
             float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
@@ -288,7 +324,8 @@ public class FirstPersonRenderer {
 
             Color rowColor = new Color(Color.WHITE);
             if (fogEnabled) {
-                float fogAmount = Math.max(0, Math.min(1f, (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                float fogAmount = Math.max(0, Math.min(1f,
+                        (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
                 rowColor = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
             }
             rowColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
@@ -297,9 +334,9 @@ public class FirstPersonRenderer {
             int lastMarkedX = -999;
             int lastMarkedY = -999;
 
-            for(int x = 0; x < viewport.getWorldWidth(); ++x) {
-                int cellX = (int)(floorX);
-                int cellY = (int)(floorY);
+            for (int x = 0; x < viewport.getWorldWidth(); ++x) {
+                int cellX = (int) (floorX);
+                int cellY = (int) (floorY);
 
                 // --- NEW: Mark Floor as Visited ---
                 // We assume if you can see the floor pixel, you can see the tile.
@@ -307,8 +344,8 @@ public class FirstPersonRenderer {
 
                 // ----------------------------------
 
-                int tx = (int)(floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
-                int ty = (int)(floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
+                int tx = (int) (floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
+                int ty = (int) (floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
 
                 floorX += floorStepX;
                 floorY += floorStepY;
@@ -323,19 +360,21 @@ public class FirstPersonRenderer {
     }
 
     // Retro floor rendering (Removed Blood Support)
-    private void renderRetroFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, Maze maze, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
-        for (int y = (int)(viewport.getWorldHeight() / 2); y >= 0; y--) {
+    private void renderRetroFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, Maze maze,
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+        for (int y = (int) (viewport.getWorldHeight() / 2); y >= 0; y--) {
             // ... (keep rayDir and math setup exactly as is) ...
             float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
             float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
             float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
             float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
 
-            int p_down = (int)(viewport.getWorldHeight() / 2) - y;
+            int p_down = (int) (viewport.getWorldHeight() / 2) - y;
             float posZ = 0.5f * viewport.getWorldHeight();
             float rowDistance = (p_down == 0) ? Float.MAX_VALUE : posZ / p_down;
 
-            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE) continue;
+            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE)
+                continue;
 
             float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
             float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
@@ -346,23 +385,23 @@ public class FirstPersonRenderer {
             Color baseTint = new Color(Color.WHITE);
             // ... (keep fog logic) ...
             if (fogEnabled) {
-                float fogAmount = Math.max(0, Math.min(1f, (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                float fogAmount = Math.max(0, Math.min(1f,
+                        (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
                 baseTint = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
             }
             baseTint.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
 
-
-
-            for(int x = 0; x < viewport.getWorldWidth(); ++x) {
+            for (int x = 0; x < viewport.getWorldWidth(); ++x) {
                 // --- NEW: Mark Floor Visited ---
-                int cX = (int)floorX;
-                int cY = (int)floorY;
+                int cX = (int) floorX;
+                int cY = (int) floorY;
 
                 // -------------------------------
 
                 // Apply torch brightness
                 float brightness = calculateTorchBrightness(rowDistance);
-                Color finalColor = new Color(currentFloorColor).mul(baseTint).mul(brightness, brightness, brightness, 1f);
+                Color finalColor = new Color(currentFloorColor).mul(baseTint).mul(brightness, brightness, brightness,
+                        1f);
 
                 spriteBatch.setColor(finalColor);
                 spriteBatch.draw(blankTexture, x, y, 1, 1);
@@ -374,15 +413,18 @@ public class FirstPersonRenderer {
         spriteBatch.setColor(Color.WHITE);
     }
 
-    private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
-        int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
+    private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+        int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
+                : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
 
         Texture texture = (result.wallType == WallType.DOOR) ? doorTexture : wallTexture;
 
         if (fogEnabled) {
-            float fogAmount = Math.max(0, Math.min(1f, (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+            float fogAmount = Math.max(0, Math.min(1f,
+                    (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
             fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
             fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
             spriteBatch.setColor(fogLerpColor);
@@ -390,20 +432,24 @@ public class FirstPersonRenderer {
             spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
         }
 
-        int texX = (int)(result.wallX * texture.getWidth());
-        spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(), false, false);
+        int texX = (int) (result.wallX * texture.getWidth());
+        spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(), false,
+                false);
         spriteBatch.setColor(Color.WHITE);
     }
 
-    private void renderRetroWallSlice(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport, boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
-        int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE : (int) (viewport.getWorldHeight() / result.distance);
+    private void renderRetroWallSlice(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
+        int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
+                : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float height = drawEnd - drawStart;
 
         Color colorModifier = new Color(1, 1, 1, 1);
         if (fogEnabled) {
-            float fogAmount = Math.max(0, Math.min(1f, (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+            float fogAmount = Math.max(0, Math.min(1f,
+                    (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
             colorModifier.lerp(fogColor, fogAmount);
         }
         colorModifier.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
@@ -482,12 +528,14 @@ public class FirstPersonRenderer {
                 float centerY = viewport.getWorldHeight() / 2f;
 
                 for (WallDecal decal : decals) {
-                    // 1. Calculate horizontal distance from this pixel strip to the center of the blood splat
+                    // 1. Calculate horizontal distance from this pixel strip to the center of the
+                    // blood splat
                     float distX = Math.abs(decal.wallX - result.wallX);
 
                     // 2. Check if this pixel strip is inside the blood splat radius
                     if (distX < decal.radius) {
-                        // 3. Circle Math: Calculate the vertical height of the splat at this specific X slice
+                        // 3. Circle Math: Calculate the vertical height of the splat at this specific X
+                        // slice
                         // Pythagorean theorem: dy = sqrt(r^2 - dx^2)
                         float halfSplatHeight = (float) Math.sqrt(decal.radius * decal.radius - distX * distX);
 
@@ -512,6 +560,60 @@ public class FirstPersonRenderer {
         }
     }
 
+    private void renderRetroWindow(SpriteBatch spriteBatch, WindowHit hit, int screenX, Viewport viewport,
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+        int lineHeight = (hit.distance <= 0) ? Integer.MAX_VALUE
+                : (int) (viewport.getWorldHeight() / hit.distance);
+        float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float height = drawEnd - drawStart;
+
+        // Window Dimensions (50% size centered)
+        // Hole starts at 25% height and ends at 75% height
+        // Hole starts at 25% width and ends at 75% width
+        float holeYStart = drawStart + height * 0.25f;
+        float holeYEnd = drawStart + height * 0.75f;
+
+        float margin = 0.25f; // 25% margin on left/right for the hole
+        boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
+
+        // Track Stencil Hole (Removed)
+        // if (isHoleX) { ... }
+
+        Color colorModifier = new Color(1, 1, 1, 1);
+        if (fogEnabled) {
+            float fogAmount = Math.max(0, Math.min(1f,
+                    (hit.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (hit.distance * FOG_FADE_RATIO)));
+            colorModifier.lerp(fogColor, fogAmount);
+        }
+        colorModifier.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+
+        Color frameColor = (hit.side == 1) ? currentWallDarkColor : currentWallColor;
+        Color finalFrameColor = new Color(frameColor).mul(colorModifier);
+        finalFrameColor = applyTorchLighting(finalFrameColor, hit.distance, new Color());
+
+        spriteBatch.setColor(finalFrameColor);
+
+        // Draw Wall Segments (Frame)
+        // 1. If we are in the left or right margin, draw the full vertical strip
+        if (!isHoleX) {
+            spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
+        } else {
+            // 2. If we are in the center X column, only draw the Top and Bottom segments
+            // Top Segment
+            float topHeight = drawEnd - holeYEnd;
+            if (topHeight > 0) {
+                spriteBatch.draw(blankTexture, screenX, holeYEnd, 1, topHeight);
+            }
+            // Bottom Segment
+            float bottomHeight = holeYStart - drawStart;
+            if (bottomHeight > 0) {
+                spriteBatch.draw(blankTexture, screenX, drawStart, 1, bottomHeight);
+            }
+        }
+        spriteBatch.setColor(Color.WHITE);
+    }
+
     private RaycastResult castRay(Player player, Maze maze, int screenX, Viewport viewport, WorldManager worldManager) {
         Vector2 renderPosition;
         int playerX = (int) player.getPosition().x;
@@ -534,16 +636,16 @@ public class FirstPersonRenderer {
         }
 
         float cameraX = 1 - 2 * screenX / (float) viewport.getScreenWidth();
-        Vector2 rayDir = new Vector2(player.getDirectionVector()).add(new Vector2(player.getCameraPlane()).scl(cameraX));
+        Vector2 rayDir = new Vector2(player.getDirectionVector())
+                .add(new Vector2(player.getCameraPlane()).scl(cameraX));
 
         int mapX = (int) renderPosition.x;
         int mapY = (int) renderPosition.y;
 
         Vector2 sideDist = new Vector2();
         Vector2 deltaDist = new Vector2(
-            (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
-            (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y)
-        );
+                (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
+                (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y));
 
         int stepX, stepY;
         if (rayDir.x < 0) {
@@ -571,6 +673,7 @@ public class FirstPersonRenderer {
         int doorFrameMapX = -1, doorFrameMapY = -1;
         int doorFrameSide = -1;
         Door doorFrameObject = null;
+        java.util.List<WindowHit> windowHits = new java.util.ArrayList<>();
 
         while (!hit && distanceTraveled < maxDistance) {
 
@@ -632,8 +735,8 @@ public class FirstPersonRenderer {
                         hit = true;
                     }
                 } else if ((currentObj instanceof Door && currentObj != objectToIgnore) ||
-                    (prevObj instanceof Door && prevObj != objectToIgnore)) {
-                    Door door = (currentObj instanceof Door) ? (Door)currentObj : (Door)prevObj;
+                        (prevObj instanceof Door && prevObj != objectToIgnore)) {
+                    Door door = (currentObj instanceof Door) ? (Door) currentObj : (Door) prevObj;
 
                     if (door.getState() != Door.DoorState.OPEN) {
                         hit = true;
@@ -657,11 +760,41 @@ public class FirstPersonRenderer {
                     }
                 } else {
                     if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                        hit = true;
-                    }
-                    else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        // Check for Window
+                        Window window = null;
+                        Object o1 = maze.getGameObjectAt(mapX, mapY);
+                        if (o1 instanceof Window)
+                            window = (Window) o1;
+                        else {
+                            Object o2 = maze.getGameObjectAt(prevMapX, prevMapY);
+                            if (o2 instanceof Window)
+                                window = (Window) o2;
+                        }
+
+                        if (window != null) {
+                            // Calculate Window Hit Properties
+                            float perpDist;
+                            if (side == 0)
+                                perpDist = (sideDist.x - deltaDist.x);
+                            else
+                                perpDist = (sideDist.y - deltaDist.y);
+
+                            float wX;
+                            if (side == 0)
+                                wX = renderPosition.y + perpDist * rayDir.y;
+                            else
+                                wX = renderPosition.x + perpDist * rayDir.x;
+                            wX -= Math.floor(wX);
+
+                            windowHits.add(new WindowHit(perpDist, wX, side, window));
+                            // Continue Ray (Transparent)
+                        } else {
+                            hit = true;
+                        }
+                    } else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
                         Object obj = maze.getGameObjectAt(mapX, mapY);
-                        if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+                        if (obj == null)
+                            obj = maze.getGameObjectAt(prevMapX, prevMapY);
                         if (obj instanceof Door && obj != objectToIgnore) {
                             Door door = (Door) obj;
                             if (door.getState() != Door.DoorState.OPEN) {
@@ -696,11 +829,13 @@ public class FirstPersonRenderer {
             boolean hitsFrame = frameWallX < doorEdgeMargin || frameWallX > 1.0f - doorEdgeMargin;
 
             if (hitsFrame) {
-                return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, null, frameWallX, doorFrameMapX, doorFrameMapY);
+                return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, null,
+                        frameWallX, doorFrameMapX, doorFrameMapY, windowHits);
             }
         }
 
-        if (!hit) return null;
+        if (!hit)
+            return null;
 
         float perpWallDist;
         if (side == 0) {
@@ -740,7 +875,7 @@ public class FirstPersonRenderer {
                 }
             }
         }
-        return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX, mapX, mapY);
+        return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX, mapX, mapY, windowHits);
     }
 
     private boolean isOutOfBounds(int x, int y, Maze maze) {
@@ -750,31 +885,30 @@ public class FirstPersonRenderer {
     private boolean hasWallCollision(int currentData, int prevData, int side, int stepX, int stepY) {
         if (side == 0) {
             return (stepX > 0) ? (prevData & WALL_EAST) != 0 || (currentData & WALL_WEST) != 0
-                : (prevData & WALL_WEST) != 0 || (currentData & WALL_EAST) != 0;
+                    : (prevData & WALL_WEST) != 0 || (currentData & WALL_EAST) != 0;
         } else {
             return (stepY > 0) ? (prevData & WALL_NORTH) != 0 || (currentData & WALL_SOUTH) != 0
-                : (prevData & WALL_SOUTH) != 0 || (currentData & WALL_NORTH) != 0;
+                    : (prevData & WALL_SOUTH) != 0 || (currentData & WALL_NORTH) != 0;
         }
     }
 
     private boolean hasDoorCollision(int currentData, int prevData, int side, int stepX, int stepY) {
         if (side == 0) {
             return (stepX > 0) ? (prevData & DOOR_EAST) != 0 || (currentData & DOOR_WEST) != 0
-                : (prevData & DOOR_WEST) != 0 || (currentData & DOOR_EAST) != 0;
+                    : (prevData & DOOR_WEST) != 0 || (currentData & DOOR_EAST) != 0;
         } else {
             return (stepY > 0) ? (prevData & DOOR_NORTH) != 0 || (currentData & DOOR_SOUTH) != 0
-                : (prevData & DOOR_SOUTH) != 0 || (currentData & DOOR_NORTH) != 0;
+                    : (prevData & DOOR_SOUTH) != 0 || (currentData & DOOR_NORTH) != 0;
         }
     }
 
     private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
         float brightness = calculateTorchBrightness(distance);
         outputColor.set(
-            originalColor.r * brightness,
-            originalColor.g * brightness,
-            originalColor.b * brightness,
-            originalColor.a
-        );
+                originalColor.r * brightness,
+                originalColor.g * brightness,
+                originalColor.b * brightness,
+                originalColor.a);
         return outputColor;
     }
 
@@ -782,11 +916,14 @@ public class FirstPersonRenderer {
         if (distance <= WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) {
             return 1.0f;
         } else if (distance <= WorldConstants.TORCH_FADE_START) {
-            float fadeRatio = (distance - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS) / (WorldConstants.TORCH_FADE_START - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS);
+            float fadeRatio = (distance - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS)
+                    / (WorldConstants.TORCH_FADE_START - WorldConstants.TORCH_FULL_BRIGHTNESS_RADIUS);
             return 1.0f - (fadeRatio * (1.0f - 0.8f));
         } else if (distance <= WorldConstants.TORCH_FADE_END) {
-            float fadeRatio = (distance - WorldConstants.TORCH_FADE_START) / (WorldConstants.TORCH_FADE_END - WorldConstants.TORCH_FADE_START);
-            return Math.max(WorldConstants.TORCH_MIN_BRIGHTNESS, 0.8f - (fadeRatio * (0.8f - WorldConstants.TORCH_MIN_BRIGHTNESS)));
+            float fadeRatio = (distance - WorldConstants.TORCH_FADE_START)
+                    / (WorldConstants.TORCH_FADE_END - WorldConstants.TORCH_FADE_START);
+            return Math.max(WorldConstants.TORCH_MIN_BRIGHTNESS,
+                    0.8f - (fadeRatio * (0.8f - WorldConstants.TORCH_MIN_BRIGHTNESS)));
         } else {
             return WorldConstants.TORCH_MIN_BRIGHTNESS;
         }
@@ -820,9 +957,8 @@ public class FirstPersonRenderer {
         int mapY = (int) renderPosition.y;
 
         Vector2 deltaDist = new Vector2(
-            (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
-            (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y)
-        );
+                (rayDir.x == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.x),
+                (rayDir.y == 0) ? Float.MAX_VALUE : Math.abs(1 / rayDir.y));
 
         Vector2 sideDist = new Vector2();
         int stepX, stepY;
@@ -887,19 +1023,34 @@ public class FirstPersonRenderer {
                     }
                 } else {
                     boolean currentTileHasOpenDoor = (currentObj instanceof Door &&
-                        ((Door) currentObj).getState() == Door.DoorState.OPEN &&
-                        currentObj != doorToIgnore);
+                            ((Door) currentObj).getState() == Door.DoorState.OPEN &&
+                            currentObj != doorToIgnore);
                     boolean prevTileHasOpenDoor = (prevObj instanceof Door &&
-                        ((Door) prevObj).getState() == Door.DoorState.OPEN &&
-                        prevObj != doorToIgnore);
+                            ((Door) prevObj).getState() == Door.DoorState.OPEN &&
+                            prevObj != doorToIgnore);
 
                     if (hasWallCollision(wallData, prevWallData, side, stepX, stepY)) {
-                        hit = true;
-                        hitDistance = currentDistance;
-                    }
-                    else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
+                        // Check for Window
+                        Window window = null;
+                        Object o1 = maze.getGameObjectAt(mapX, mapY);
+                        if (o1 instanceof Window)
+                            window = (Window) o1;
+                        else {
+                            Object o2 = maze.getGameObjectAt(prevMapX, prevMapY);
+                            if (o2 instanceof Window)
+                                window = (Window) o2;
+                        }
+
+                        if (window != null) {
+                            // It's a window, line of sight continues!
+                        } else {
+                            hit = true;
+                            hitDistance = currentDistance;
+                        }
+                    } else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
                         Object obj = maze.getGameObjectAt(mapX, mapY);
-                        if (obj == null) obj = maze.getGameObjectAt(prevMapX, prevMapY);
+                        if (obj == null)
+                            obj = maze.getGameObjectAt(prevMapX, prevMapY);
 
                         if (obj instanceof Door && obj != doorToIgnore) {
                             Door door = (Door) obj;
@@ -930,8 +1081,10 @@ public class FirstPersonRenderer {
         final float wallX;
         final int mapX;
         final int mapY;
+        final java.util.List<WindowHit> windowHits;
 
-        RaycastResult(float distance, int side, WallType wallType, Door door, Gate gate, float wallX, int mapX, int mapY) {
+        RaycastResult(float distance, int side, WallType wallType, Door door, Gate gate, float wallX, int mapX,
+                int mapY, java.util.List<WindowHit> windowHits) {
             this.distance = distance;
             this.side = side;
             this.wallType = wallType;
@@ -940,6 +1093,21 @@ public class FirstPersonRenderer {
             this.wallX = wallX;
             this.mapX = mapX;
             this.mapY = mapY;
+            this.windowHits = windowHits;
+        }
+    }
+
+    private static class WindowHit {
+        final float distance;
+        final float wallX;
+        final int side;
+        final Window window;
+
+        WindowHit(float distance, float wallX, int side, Window window) {
+            this.distance = distance;
+            this.wallX = wallX;
+            this.side = side;
+            this.window = window;
         }
     }
 }

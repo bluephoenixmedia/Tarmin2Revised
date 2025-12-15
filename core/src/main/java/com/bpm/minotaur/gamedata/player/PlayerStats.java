@@ -19,7 +19,7 @@ public class PlayerStats {
 
     // --- UPDATED: XP CONSTANTS FOR SLOWER PROGRESSION ---
     private static final int BASE_XP_REQUIRED = 150; // Increased from 100
-    private static final double LOG_BASE = 1.5;      // Increased from 1.2 for steeper curve
+    private static final double LOG_BASE = 1.5; // Increased from 1.2 for steeper curve
 
     private int treasureScore = 0;
 
@@ -50,18 +50,21 @@ public class PlayerStats {
     // --- Stat-Only Logic Methods ---
 
     private int calculateXpForLevel(int targetLevel) {
-        if (targetLevel <= 1) return 0;
+        if (targetLevel <= 1)
+            return 0;
         // Formula: base * (log_base ^ (level -1))
         return (int) (BASE_XP_REQUIRED * Math.pow(LOG_BASE, targetLevel - 1));
     }
 
     /**
      * Adds experience and handles leveling up internally.
+     * 
      * @param amount The amount of experience to add.
      * @return true if the player leveled up, false otherwise.
      */
     public boolean addExperience(int amount) {
-        if (amount <= 0) return false;
+        if (amount <= 0)
+            return false;
         this.experience += amount;
 
         boolean leveledUp = false;
@@ -77,11 +80,11 @@ public class PlayerStats {
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
-        // --- UPDATED: Reduced Stat Growth to emphasize Gear ---
-        // Was 2 + Random(2) (2-3)
-        // Now 1 + Random(2) (1-2)
-        int wsIncrease = 1 + new Random().nextInt(2);
-        int ssIncrease = 1 + new Random().nextInt(2);
+        // --- UPDATED: Increased Stat Growth ---
+        // Was 1 + Random(2) (1-2)
+        // Now 3 + Random(3) (3-5)
+        int wsIncrease = 3 + new Random().nextInt(3);
+        int ssIncrease = 3 + new Random().nextInt(3);
 
         this.maxWarStrength += wsIncrease;
         this.maxSpiritualStrength += ssIncrease;
@@ -93,6 +96,7 @@ public class PlayerStats {
 
     /**
      * Attack modifier based on player level.
+     * 
      * @return The bonus damage to add to attacks.
      */
     public int getAttackModifier() {
@@ -200,10 +204,12 @@ public class PlayerStats {
     /**
      * Heals the player's War Strength (health).
      * Cannot heal beyond maximum.
+     * 
      * @param amount The amount to heal.
      */
     public void heal(int amount) {
-        if (amount <= 0) return;
+        if (amount <= 0)
+            return;
         this.warStrength += amount;
         if (this.warStrength > this.maxWarStrength) {
             this.warStrength = this.maxWarStrength;
@@ -213,13 +219,16 @@ public class PlayerStats {
     /**
      * Permanently increases the player's base (max) War Strength.
      * Also heals the player for the same amount.
+     * 
      * @param amount The amount to increase max strength by.
      */
     public void modifyBaseWarStrength(int amount) {
-        if (amount <= 0) return;
+        if (amount <= 0)
+            return;
         this.maxWarStrength += amount;
         heal(amount); // Also heal the player by the amount gained
     }
+
     public int getDexterity() {
         return dexterity;
     }

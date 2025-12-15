@@ -1,0 +1,52 @@
+{
+potionMapString: {
+	POTION_BUBBLY: GAIN_STRENGTH
+	POTION_SWIRLY: LEVITATION
+	POTION_PINK: BLINDNESS
+	POTION_GOLD: HEALING
+	POTION_GREEN: POISON
+	POTION_BLUE: CONFUSION
+}
+potionIdentifiedString: {
+	BLINDNESS: false
+	LEVITATION: false
+	POISON: false
+	CONFUSION: false
+	GAIN_STRENGTH: false
+	HEALING: false
+}
+scrollMapString: {
+	SCROLL_D: ENCHANT_ARMOR
+	SCROLL_A: ENCHANT_WEAPON
+	SCROLL_F: MAGIC_MAPPING
+	SCROLL_C: IDENTIFY
+	SCROLL_H: TELEPORT
+	SCROLL_E: CREATE_MONSTER
+}
+scrollIdentifiedString: {
+	ENCHANT_ARMOR: false
+	IDENTIFY: false
+	CREATE_MONSTER: false
+	ENCHANT_WEAPON: false
+	TELEPORT: false
+	MAGIC_MAPPING: false
+}
+wandMapString: {
+	WAND_F: DIGGING
+	WAND_C: FIRE
+	WAND_E: LIGHT
+	WAND_B: TELEPORTATION
+	WAND_D: COLD
+	WAND_A: MAGIC_MISSILE
+}
+wandIdentifiedString: {
+	MAGIC_MISSILE: false
+	FIRE: false
+	TELEPORTATION: false
+	DIGGING: false
+	LIGHT: false
+	COLD: false
+}
+ringMapString: null
+ringIdentifiedString: null
+}

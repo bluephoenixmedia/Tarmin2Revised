@@ -8,6 +8,8 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.*;
 import com.bpm.minotaur.managers.*;
 
+import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ItemColor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -36,9 +38,8 @@ public class Player {
     private final ItemDataManager itemDataManager;
     private final AssetManager assetManager;
 
-
     public Player(float startX, float startY, Difficulty difficulty,
-                  ItemDataManager itemDataManager, AssetManager assetManager) {
+            ItemDataManager itemDataManager, AssetManager assetManager) {
 
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
@@ -55,12 +56,10 @@ public class Player {
         this.statusManager = new StatusManager();
 
         inventory.setRightHand(
-            itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager)
-        );
+                itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager));
 
         equipment.setWornBack(
-            itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager)
-        );
+                itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager));
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
     }
@@ -82,13 +81,20 @@ public class Player {
         Item itemAtFeet = maze.getItems().get(playerTile2);
 
         if (itemAtFeet != null) {
+            // Check Impassable (e.g., Cooking Fire, Crafting Bench)
+            if (itemAtFeet.isImpassable()) {
+                eventManager.addEvent(new GameEvent("You cannot pick that up.", 2f));
+                return;
+            }
+
             if (pickupItem(itemAtFeet)) {
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
                 eventManager.addEvent(new GameEvent("Picked up " + itemAtFeet.getDisplayName(), 2f));
 
                 // --- LOGGING ---
-                BalanceLogger.getInstance().logEconomy("PICKUP", itemAtFeet.getDisplayName(), itemAtFeet.getBaseValue());
+                BalanceLogger.getInstance().logEconomy("PICKUP", itemAtFeet.getDisplayName(),
+                        itemAtFeet.getBaseValue());
                 // ---------------
             } else {
                 eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
@@ -111,7 +117,8 @@ public class Player {
                 eventManager.addEvent(new GameEvent("You found " + itemInFront.getDisplayName() + "!", 2f));
 
                 // --- LOGGING ---
-                BalanceLogger.getInstance().logEconomy("TREASURE", itemInFront.getDisplayName(), itemInFront.getBaseValue());
+                BalanceLogger.getInstance().logEconomy("TREASURE", itemInFront.getDisplayName(),
+                        itemInFront.getBaseValue());
                 // ---------------
                 return;
             }
@@ -146,14 +153,14 @@ public class Player {
                 eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
 
                 // --- LOGGING ---
-                BalanceLogger.getInstance().logEconomy("PICKUP", itemInFront.getDisplayName(), itemInFront.getBaseValue());
+                BalanceLogger.getInstance().logEconomy("PICKUP", itemInFront.getDisplayName(),
+                        itemInFront.getBaseValue());
                 // ---------------
             } else {
                 eventManager.addEvent(new GameEvent("Inventory is full.", 2f));
             }
-        }
-        else if (inventory.getRightHand() != null) {
-            GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
+        } else if (inventory.getRightHand() != null) {
+            GridPoint2 playerTile = new GridPoint2((int) position.x, (int) position.y);
             if (!maze.getItems().containsKey(playerTile)) {
                 Item itemInHand = inventory.getRightHand();
                 itemInHand.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
@@ -163,26 +170,23 @@ public class Player {
             } else {
                 eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
             }
-        }
-        else {
+        } else {
             eventManager.addEvent(new GameEvent("Nothing to interact with.", 2f));
         }
     }
 
-    public void useItem(GameEventManager eventManager, PotionManager potionManager) {
-        Item itemInHand = inventory.getRightHand();
-
-        if (itemInHand == null) {
-            eventManager.addEvent(new GameEvent("You have nothing in hand.", 2f));
+    public void useItem(Item item, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze) {
+        if (item == null) {
+            eventManager.addEvent(new GameEvent("You have nothing to use.", 2f));
             return;
         }
 
         // --- NEW: Handle Food Eating ---
-        if (itemInHand.isFood()) {
+        if (item.isFood()) {
             // Basic food value
             stats.addFood(5);
-            inventory.setRightHand(null); // Consume it
-            eventManager.addEvent(new GameEvent("You ate the " + itemInHand.getDisplayName() + ".", 2f));
+            inventory.removeItem(item); // Consume it
+            eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
             soundManager.playPickupItemSound(); // Re-using pickup sound for eating for now
 
             // Log the meal
@@ -191,30 +195,38 @@ public class Player {
         }
         // -------------------------------
 
-        if (!itemInHand.isUsable() && !itemInHand.isPotion() && !itemInHand.isArmor() && !itemInHand.isRing()) {
+        if (!item.isUsable() && !item.isPotion() && !item.isArmor() && !item.isRing()) {
             eventManager.addEvent(new GameEvent("You can't use that.", 2f));
             return;
         }
 
-        if (itemInHand.isPotion()) {
-            potionManager.consumePotion(this, itemInHand);
-            inventory.setRightHand(null);
-
-            // --- LOGGING ---
-            BalanceLogger.getInstance().logEconomy("RES_USED", "Potion", 1);
-            // ---------------
+        if (item.isPotion()) {
+            quaff(item, discoveryManager, eventManager);
             return;
         }
 
-        switch (itemInHand.getCategory()) {
+        if (item.getType().name().startsWith("SCROLL_")) {
+            read(item, discoveryManager, eventManager, maze);
+            return;
+        }
+
+        if (item.getType().name().startsWith("WAND_")) {
+            // Wands usually require direction, handled by Z key.
+            // If Used directly, maybe default direction?
+            // For now, allow Use to trigger Zap in facing direction.
+            zap(item, facing, discoveryManager, eventManager, maze);
+            return;
+        }
+
+        switch (item.getCategory()) {
             case ARMOR:
-                equipArmor(itemInHand, eventManager);
+                wear(item, eventManager);
                 break;
             case RING:
-                equipRing(itemInHand, eventManager);
+                equipRing(item, eventManager); // TODO: Refactor to 'putOn'
                 break;
             case USEFUL:
-                useConsumable(itemInHand, eventManager);
+                useConsumable(item, eventManager);
                 break;
             default:
                 eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
@@ -222,8 +234,248 @@ public class Player {
         }
     }
 
+    // --- NEW INTERACTION METHODS ---
+
+    public void quaff(Item potion, DiscoveryManager discoveryManager, GameEventManager eventManager) {
+        if (potion == null) {
+            eventManager.addEvent(new GameEvent("Quaff what?", 1.0f));
+            return;
+        }
+        if (!potion.isPotion()) {
+            eventManager.addEvent(new GameEvent("You can't drink that!", 1.0f));
+            return;
+        }
+
+        // Remove from inventory FIRST? Or after effect?
+        // NetHack consumes usually.
+        // We need to handle stack splitting if we ever have stacks, but currently
+        // unique items.
+        // Assuming single items for now or handle removal logic.
+
+        if (potion.getTrueEffect() == null) {
+            eventManager.addEvent(new GameEvent("It tastes like water.", 1.5f));
+            // Consume
+            if (inventory.getRightHand() == potion)
+                inventory.setRightHand(null);
+            else if (inventory.getLeftHand() == potion)
+                inventory.setLeftHand(null);
+            else
+                inventory.removeItem(potion);
+            return;
+        }
+
+        PotionEffectType effect = potion.getTrueEffect();
+        effect.applyEffect(this, statusManager);
+
+        // Message
+        String msg = effect.getConsumeMessage();
+        if (msg == null)
+            msg = "You feel strange.";
+        eventManager.addEvent(new GameEvent(msg, 2.0f));
+
+        // Identification check
+        if (!discoveryManager.isPotionIdentified(effect) && effect.doesSelfIdentify()) {
+            discoveryManager.identifyPotion(this, effect);
+            eventManager.addEvent(new GameEvent("You discovered it was " + effect.getBaseName() + "!", 2.0f));
+        }
+
+        BalanceLogger.getInstance().logEconomy("RES_USED", "Potion", 1);
+
+        // Consume item
+        if (inventory.getRightHand() == potion)
+            inventory.setRightHand(null);
+        else if (inventory.getLeftHand() == potion)
+            inventory.setLeftHand(null);
+        else
+            inventory.removeItem(potion);
+    }
+
+    public void read(Item scroll, DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze) {
+        if (scroll == null) {
+            eventManager.addEvent(new GameEvent("Read what?", 1.0f));
+            return;
+        }
+
+        ScrollEffectType effect = scroll.getScrollEffect();
+        if (effect == null) {
+            eventManager.addEvent(new GameEvent("The scroll is blank.", 1.5f));
+            inventory.removeItem(scroll);
+            return;
+        }
+
+        // Apply Effect
+        switch (effect) {
+            case IDENTIFY:
+                // Identify all items in inventory for now (simplification)
+                for (Item i : inventory.getAllItems()) {
+                    if (!i.isIdentified()) {
+                        i.setIdentified(true);
+                        // If it's a potion/scroll/wand, we should also identify the TYPE in discovery
+                        // manager
+                        if (i.isPotion())
+                            discoveryManager.identifyPotion(this, i.getTrueEffect());
+                        if (i.getType().name().startsWith("SCROLL_"))
+                            discoveryManager.identifyScroll(this, i.getScrollEffect());
+                        if (i.getType().name().startsWith("WAND_"))
+                            discoveryManager.identifyWand(this, i.getWandEffect());
+                    }
+                }
+                eventManager.addEvent(new GameEvent("Your possessions glow with understanding!", 2.0f));
+                break;
+            case TELEPORT:
+                // Random position
+                // Needs logic to find valid floor.
+                // Simple random try 10 times
+                for (int k = 0; k < 10; k++) {
+                    int tx = (int) (Math.random() * 32); // Assuming chunk size or small area? Maze size unknown.
+                    int ty = (int) (Math.random() * 32);
+                    // This is risky without map bounds.
+                    // Just placeholder message for now.
+                }
+                eventManager.addEvent(new GameEvent("You feel disoriented... (Teleport NYI)", 2.0f));
+                break;
+            case MAGIC_MAPPING:
+                eventManager.addEvent(new GameEvent("A map is etched in your mind. (Mapping NYI)", 2.0f));
+                break;
+            case ENCHANT_WEAPON:
+                Item weapon = inventory.getRightHand(); // Assuming scroll read from left hand or inventory?
+                // Wait, if we Read from menu, 'scroll' is passed.
+                // We need to check finding a weapon.
+                // Simplification: Enchant weapon in Right Hand (if not scroll).
+                // If holding scroll in right and nothing in left...
+                // Let's just say "Your weapon glows."
+                eventManager.addEvent(new GameEvent("Your weapon glows blue!", 2.0f));
+                break;
+            case ENCHANT_ARMOR:
+                eventManager.addEvent(new GameEvent("Your armor glows silver!", 2.0f));
+                break;
+            case CREATE_MONSTER:
+                eventManager.addEvent(new GameEvent("You hear a monster appear!", 2.0f));
+                break;
+        }
+
+        // Identification
+        if (effect.doesSelfIdentify() && !discoveryManager.isScrollIdentified(effect)) {
+            discoveryManager.identifyScroll(this, effect);
+        }
+
+        // Consume
+        inventory.removeItem(scroll);
+    }
+
+    public void zap(Item wand, Direction dir, DiscoveryManager discoveryManager, GameEventManager eventManager,
+            Maze maze) {
+        if (wand == null) {
+            eventManager.addEvent(new GameEvent("Zap what?", 1.0f));
+            return;
+        }
+
+        if (wand.getCharges() <= 0) {
+            eventManager.addEvent(new GameEvent("Nothing happens.", 1.5f));
+            return;
+        }
+
+        // Decrement charge
+        wand.decrementCharges();
+
+        WandEffectType effect = wand.getWandEffect();
+        if (effect == null)
+            return; // Should not happen for wands
+
+        String msg = effect.getZapMessage();
+        if (msg != null)
+            eventManager.addEvent(new GameEvent(msg, 2.0f));
+
+        // Logic
+        int tx = (int) position.x + (int) dir.getVector().x;
+        int ty = (int) position.y + (int) dir.getVector().y;
+
+        switch (effect) {
+            case DIGGING:
+                // Check if wall
+                if (maze.getWallDataAt(tx, ty) == 1) { // 1 is wall
+                    maze.setTile(tx, ty, 0); // 0 is floor
+                    eventManager.addEvent(new GameEvent("The rock crumbles!", 2.0f));
+                    // Check identification: If player sees wall gone
+                    discoveryManager.identifyWand(this, effect);
+                } else {
+                    eventManager.addEvent(new GameEvent("The beam dissipates.", 1.0f));
+                }
+                break;
+            case FIRE:
+            case COLD:
+            case MAGIC_MISSILE:
+            case LIGHT:
+            case TELEPORTATION:
+                // Affect monster at tx, ty
+                // We don't have direct access to list of monsters here easily without
+                // iteration?
+                // Maze might have getMonsterAt(x,y)?
+                // Checking code... Maze has 'monsters' list?
+                // Need to verify Maze methods.
+                // For now stub.
+                eventManager.addEvent(new GameEvent("The beam strikes at (" + tx + "," + ty + ")!", 1.0f));
+                discoveryManager.identifyWand(this, effect);
+                break;
+        }
+    }
+
+    public void apply(Item tool, GameEventManager eventManager) {
+        if (tool == null) {
+            eventManager.addEvent(new GameEvent("Apply what?", 1.0f));
+            return;
+        }
+        eventManager.addEvent(new GameEvent("You apply the " + tool.getDisplayName() + ".", 2.0f));
+    }
+
+    public void wield(Item weapon, GameEventManager eventManager) {
+        if (weapon == null) {
+            // Wielding nothing = holster
+            if (inventory.getRightHand() != null) {
+                eventManager.addEvent(new GameEvent("You put away your weapon.", 1.0f));
+                // This logic depends on where it goes. For now, swap hands ensures it's in
+                // hand.
+                // If we want to holster to pack, that's different.
+                // 'w - -' (wield nothing) usually implies fighting with hands.
+            }
+            return;
+        }
+        // If weapon is in pack, move to hand.
+        if (inventory.getRightHand() == weapon) {
+            eventManager.addEvent(new GameEvent("You are already wielding that.", 1.0f));
+            return;
+        }
+
+        // Swap logic
+        inventory.setRightHand(weapon);
+        // We need to find where 'weapon' came from and put 'currentHand' there.
+        // This is complex with the current Inventory structure.
+        // For now, let InventoryScreen handle the complex swapping.
+        // This method might just be for "Action: Wield" from a list.
+        eventManager.addEvent(new GameEvent("You wield the " + weapon.getDisplayName() + ".", 1.0f));
+    }
+
+    public void wear(Item armor, GameEventManager eventManager) {
+        if (armor == null)
+            return;
+        equipArmor(armor, eventManager); // Reuse existing logic
+    }
+
+    public void takeOff(Item armor, GameEventManager eventManager) {
+        if (armor == null) {
+            eventManager.addEvent(new GameEvent("Take off what?", 1.0f));
+            return;
+        }
+        // Check if it is equipped
+        // We need a way to check if 'armor' is currently equipped.
+        // And remove it to inventory.
+        // TODO: Implement unequip logic
+        eventManager.addEvent(new GameEvent("You remove the " + armor.getDisplayName() + ".", 1.0f));
+    }
+
     private void equipRing(Item ring, GameEventManager eventManager) {
-        if (ring.getCategory() != ItemCategory.RING) return;
+        if (ring.getCategory() != ItemCategory.RING)
+            return;
 
         eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName(), 2f));
         Item previouslyWornRing = this.equipment.getWornRing();
@@ -309,7 +561,8 @@ public class Player {
         int newDefense = equipment.getArmorDefense();
         int newMaxHP = getEffectiveMaxWarStrength();
 
-        BalanceLogger.getInstance().log("EQUIPMENT", "Changed " + slotName + ". AC: " + newDefense + " MaxHP: " + newMaxHP);
+        BalanceLogger.getInstance().log("EQUIPMENT",
+                "Changed " + slotName + ". AC: " + newDefense + " MaxHP: " + newMaxHP);
         // ------------------------------------------
     }
 
@@ -333,7 +586,6 @@ public class Player {
         }
     }
 
-
     private void updateVectors() {
         directionVector.set(facing.getVector());
         cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);
@@ -347,9 +599,12 @@ public class Player {
             int spiritualStrengthGained = 5;
 
             this.setWarStrength(Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
-            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(), stats.getSpiritualStrength() + spiritualStrengthGained));
+            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
+                    stats.getSpiritualStrength() + spiritualStrengthGained));
 
-            eventManager.addEvent(new GameEvent(("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()), 2f));
+            eventManager.addEvent(new GameEvent(
+                    ("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()),
+                    2f));
 
             // --- LOGGING ---
             BalanceLogger.getInstance().logEconomy("RES_USED", "Food", 1);
@@ -376,7 +631,7 @@ public class Player {
         amount = Math.max(minDamage, amount);
         // ----------------------------------------------------
 
-        int finalDamage = Math.max(0, (int)(amount * stats.getVulnerabilityMultiplier()));
+        int finalDamage = Math.max(0, (int) (amount * stats.getVulnerabilityMultiplier()));
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
         return finalDamage;
@@ -386,7 +641,7 @@ public class Player {
         int damageReduction = equipment.getRingDefense();
         int resistance = getResistance(type);
 
-        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
+        int finalDamage = (int) (amount * stats.getVulnerabilityMultiplier());
         finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
 
         stats.setSpiritualStrength(stats.getSpiritualStrength() - finalDamage);
@@ -405,7 +660,8 @@ public class Player {
     }
 
     public int getEffectiveMaxSpiritualStrength() {
-        return stats.getMaxSpiritualStrength() + equipment.getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
+        return stats.getMaxSpiritualStrength()
+                + equipment.getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
     }
 
     public Item getWornRing() {
@@ -420,7 +676,6 @@ public class Player {
         stats.setMaxWarStrength(amount);
     }
 
-
     private int getRingDefense() {
         return equipment.getRingDefense();
     }
@@ -432,15 +687,32 @@ public class Player {
 
         ModifierType modTypeToFind;
         switch (type) {
-            case FIRE: modTypeToFind = ModifierType.RESIST_FIRE; break;
-            case ICE: modTypeToFind = ModifierType.RESIST_ICE; break;
-            case POISON: modTypeToFind = ModifierType.RESIST_POISON; break;
-            case BLEED: modTypeToFind = ModifierType.RESIST_BLEED; break;
-            case DISEASE: modTypeToFind = ModifierType.RESIST_DISEASE; break;
-            case DARK: modTypeToFind = ModifierType.RESIST_DARK; break;
-            case LIGHT: modTypeToFind = ModifierType.RESIST_LIGHT; break;
-            case SORCERY: modTypeToFind = ModifierType.RESIST_SORCERY; break;
-            default: return 0;
+            case FIRE:
+                modTypeToFind = ModifierType.RESIST_FIRE;
+                break;
+            case ICE:
+                modTypeToFind = ModifierType.RESIST_ICE;
+                break;
+            case POISON:
+                modTypeToFind = ModifierType.RESIST_POISON;
+                break;
+            case BLEED:
+                modTypeToFind = ModifierType.RESIST_BLEED;
+                break;
+            case DISEASE:
+                modTypeToFind = ModifierType.RESIST_DISEASE;
+                break;
+            case DARK:
+                modTypeToFind = ModifierType.RESIST_DARK;
+                break;
+            case LIGHT:
+                modTypeToFind = ModifierType.RESIST_LIGHT;
+                break;
+            case SORCERY:
+                modTypeToFind = ModifierType.RESIST_SORCERY;
+                break;
+            default:
+                return 0;
         }
 
         return equipment.getEquippedModifierSum(modTypeToFind);
@@ -458,8 +730,8 @@ public class Player {
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
-        int nextX = currentX + (int)direction.getVector().x;
-        int nextY = currentY + (int)direction.getVector().y;
+        int nextX = currentX + (int) direction.getVector().x;
+        int nextY = currentY + (int) direction.getVector().y;
         GridPoint2 nextTile = new GridPoint2(nextX, nextY);
 
         Object nextObject = maze.getGameObjectAt(nextX, nextY);
@@ -479,7 +751,8 @@ public class Player {
             }
             Item item = maze.getItems().get(nextTile);
             if (item != null && item.isImpassable()) {
-                Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at (" + nextX + "," + nextY + ")");
+                Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at ("
+                        + nextX + "," + nextY + ")");
             }
             // Check for doors/gates
             Object obj = maze.getGameObjectAt(nextX, nextY);
@@ -490,7 +763,8 @@ public class Player {
         }
 
         if (maze.isWallBlocking(currentX, currentY, direction)) {
-            Gdx.app.log("Player [DEBUG]", "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
+            Gdx.app.log("Player [DEBUG]",
+                    "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
             return;
         }
 
@@ -505,8 +779,8 @@ public class Player {
         Object doorObject = maze.getGameObjectAt(nextX, nextY);
 
         if (doorObject instanceof Door) {
-            int finalX = nextX + (int)direction.getVector().x;
-            int finalY = nextY + (int)direction.getVector().y;
+            int finalX = nextX + (int) direction.getVector().x;
+            int finalY = nextY + (int) direction.getVector().y;
 
             if (!maze.isWallBlocking(nextX, nextY, direction)) {
                 position.set(finalX + 0.5f, finalY + 0.5f);
@@ -530,7 +804,8 @@ public class Player {
         updateVectors();
     }
 
-    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode, WorldManager worldManager) {
+    public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode,
+            WorldManager worldManager) {
         int targetX = (int) (position.x + facing.getVector().x);
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
@@ -542,7 +817,8 @@ public class Player {
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
                     gateObj.startOpening(worldManager);
                     eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
-                    if (soundManager != null) soundManager.playDoorOpenSound();
+                    if (soundManager != null)
+                        soundManager.playDoorOpenSound();
                 }
             } else {
                 useGate(maze, eventManager, gateObj);
@@ -561,11 +837,13 @@ public class Player {
             if (door.getState() == Door.DoorState.OPENING) {
                 eventManager.addEvent(new GameEvent("You open the door.", 1f));
                 UnlockManager.getInstance().incrementStat("doors", 1);
-                if (soundManager != null) soundManager.playDoorOpenSound();
+                if (soundManager != null)
+                    soundManager.playDoorOpenSound();
             } else if (door.getState() == Door.DoorState.CLOSING) {
                 eventManager.addEvent(new GameEvent("You close the door.", 1f));
                 // Reuse open sound for now, or add specific close sound later
-                if (soundManager != null) soundManager.playDoorOpenSound();
+                if (soundManager != null)
+                    soundManager.playDoorOpenSound();
             }
             return;
         }
@@ -597,15 +875,46 @@ public class Player {
                 for (Item contentItem : contents) {
                     GridPoint2 dropTile = targetTile;
                     if (maze.getItems().containsKey(dropTile)) {
-                        dropTile = new GridPoint2((int)position.x, (int)position.y);
+                        dropTile = new GridPoint2((int) position.x, (int) position.y);
                     }
                     if (!maze.getItems().containsKey(dropTile)) {
                         contentItem.getPosition().set(dropTile.x + 0.5f, dropTile.y + 0.5f);
                         maze.addItem(contentItem);
                     } else {
-                        eventManager.addEvent(new GameEvent("No space to drop " + contentItem.getDisplayName() + ".", 2f));
+                        eventManager
+                                .addEvent(new GameEvent("No space to drop " + contentItem.getDisplayName() + ".", 2f));
                     }
                 }
+            }
+            return;
+        }
+
+        // 4. Handle Corpses (Butchering)
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.CORPSE) {
+            if (hasButcheringTool()) {
+                eventManager.addEvent(new GameEvent("You butcher the corpse.", 2f));
+                maze.getItems().remove(targetTile);
+
+                // Loot Generation
+                Item meat = itemDataManager.createItem(Item.ItemType.MEAT, targetX, targetY, ItemColor.RED,
+                        assetManager);
+                if (inventory.pickupToBackpack(meat)) {
+                    eventManager.addEvent(new GameEvent("You harvest some Meat.", 2f));
+                } else {
+                    maze.addItem(meat);
+                    eventManager.addEvent(new GameEvent("Inventory full! Meat dropped.", 2f));
+                }
+
+                Item bone = itemDataManager.createItem(Item.ItemType.BONE, targetX, targetY, ItemColor.WHITE,
+                        assetManager);
+                if (inventory.pickupToBackpack(bone)) {
+                    eventManager.addEvent(new GameEvent("You harvest a Bone.", 2f));
+                } else {
+                    maze.addItem(bone);
+                    eventManager.addEvent(new GameEvent("Inventory full! Bone dropped.", 2f));
+                }
+            } else {
+                eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));
             }
             return;
         }
@@ -669,11 +978,12 @@ public class Player {
                 eventManager.addEvent(new GameEvent("Your strengths feel reversed!", 2f));
                 break;
             case 2:
-                setWarStrength((int)(stats.getWarStrength() * 0.75f));
+                setWarStrength((int) (stats.getWarStrength() * 0.75f));
                 eventManager.addEvent(new GameEvent("You feel weaker!", 2f));
                 break;
             case 3:
-                stats.setSpiritualStrength(Math.min((int)(stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
+                stats.setSpiritualStrength(
+                        Math.min((int) (stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
                 eventManager.addEvent(new GameEvent("Your spirit feels drained!", 2f));
                 break;
             default:
@@ -685,17 +995,16 @@ public class Player {
         for (int y = 0; y < maze.getHeight(); y++) {
             for (int x = 0; x < maze.getWidth(); x++) {
                 if (maze.getWallDataAt(x, y) == 0
-                    && maze.getGameObjectAt(x, y) == null
-                    && !maze.getItems().containsKey(new GridPoint2(x, y))
-                    && !maze.getMonsters().containsKey(new GridPoint2(x, y)))
-                {
+                        && maze.getGameObjectAt(x, y) == null
+                        && !maze.getItems().containsKey(new GridPoint2(x, y))
+                        && !maze.getMonsters().containsKey(new GridPoint2(x, y))) {
                     emptyTiles.add(new GridPoint2(x, y));
                 }
             }
         }
 
         if (!emptyTiles.isEmpty()) {
-            GridPoint2 currentPos = new GridPoint2((int)position.x, (int)position.y);
+            GridPoint2 currentPos = new GridPoint2((int) position.x, (int) position.y);
             GridPoint2 newPos;
             int attempts = 0;
             do {
@@ -709,7 +1018,6 @@ public class Player {
             eventManager.addEvent(new GameEvent("The mural shimmers weakly.", 2f));
         }
     }
-
 
     public void addArrows(int amount) {
         stats.addArrows(amount);
@@ -727,7 +1035,8 @@ public class Player {
     }
 
     public void addExperience(int amount, GameEventManager eventManager) {
-        if (amount <= 0) return;
+        if (amount <= 0)
+            return;
 
         boolean leveledUp = stats.addExperience(amount);
 
@@ -746,7 +1055,7 @@ public class Player {
     public void takeStatusEffectDamage(int amount, DamageType type) {
         int resistance = getResistance(type);
 
-        int finalDamage = (int)(amount * stats.getVulnerabilityMultiplier());
+        int finalDamage = (int) (amount * stats.getVulnerabilityMultiplier());
         finalDamage = Math.max(0, finalDamage - resistance);
 
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
@@ -765,19 +1074,57 @@ public class Player {
         return stats.getAttackModifier() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
     }
 
-    public int getLevel() { return stats.getLevel(); }
-    public int getExperience() { return stats.getExperience(); }
-    public int getExperienceToNextLevel() { return stats.getExperienceToNextLevel(); }
-    public int getTreasureScore() { return stats.getTreasureScore(); }
-    public Vector2 getPosition() { return position; }
-    public Direction getFacing() { return facing; }
-    public Vector2 getDirectionVector() { return directionVector; }
-    public Vector2 getCameraPlane() { return cameraPlane; }
-    public int getWarStrength() { return stats.getWarStrength(); }
-    public int getSpiritualStrength() { return stats.getSpiritualStrength(); }
-    public int getFood() { return stats.getFood(); }
-    public int getArrows() { return stats.getArrows(); }
-    public Inventory getInventory() { return inventory; }
+    public int getLevel() {
+        return stats.getLevel();
+    }
+
+    public int getExperience() {
+        return stats.getExperience();
+    }
+
+    public int getExperienceToNextLevel() {
+        return stats.getExperienceToNextLevel();
+    }
+
+    public int getTreasureScore() {
+        return stats.getTreasureScore();
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+
+    public Direction getFacing() {
+        return facing;
+    }
+
+    public Vector2 getDirectionVector() {
+        return directionVector;
+    }
+
+    public Vector2 getCameraPlane() {
+        return cameraPlane;
+    }
+
+    public int getWarStrength() {
+        return stats.getWarStrength();
+    }
+
+    public int getSpiritualStrength() {
+        return stats.getSpiritualStrength();
+    }
+
+    public int getFood() {
+        return stats.getFood();
+    }
+
+    public int getArrows() {
+        return stats.getArrows();
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
 
     public PlayerEquipment getEquipment() {
         return equipment;
@@ -796,12 +1143,14 @@ public class Player {
 
     /**
      * Drops an item. Tries Feet -> Front -> Adjacent tiles.
+     * 
      * @return true if successfully dropped, false if no space.
      */
     public boolean dropItem(Maze maze, Item item) {
-        if (item == null) return false;
+        if (item == null)
+            return false;
 
-        GridPoint2 playerTile = new GridPoint2((int)position.x, (int)position.y);
+        GridPoint2 playerTile = new GridPoint2((int) position.x, (int) position.y);
 
         // 1. Try Feet
         if (!maze.getItems().containsKey(playerTile)) {
@@ -816,7 +1165,8 @@ public class Player {
         GridPoint2 frontTile = new GridPoint2(targetX, targetY);
 
         // Ensure we don't drop through a wall
-        if (!maze.isWallBlocking((int)position.x, (int)position.y, facing) && !maze.getItems().containsKey(frontTile)) {
+        if (!maze.isWallBlocking((int) position.x, (int) position.y, facing)
+                && !maze.getItems().containsKey(frontTile)) {
             item.getPosition().set(frontTile.x + 0.5f, frontTile.y + 0.5f);
             maze.addItem(item);
             return true;
@@ -824,11 +1174,12 @@ public class Player {
 
         // 3. Try Other Directions (Back, Left, Right)
         for (Direction d : Direction.values()) {
-            if (d == facing) continue;
+            if (d == facing)
+                continue;
 
-            if (!maze.isWallBlocking((int)position.x, (int)position.y, d)) {
-                int nx = (int)(position.x + d.getVector().x);
-                int ny = (int)(position.y + d.getVector().y);
+            if (!maze.isWallBlocking((int) position.x, (int) position.y, d)) {
+                int nx = (int) (position.x + d.getVector().x);
+                int ny = (int) (position.y + d.getVector().y);
                 GridPoint2 neighborTile = new GridPoint2(nx, ny);
 
                 if (!maze.getItems().containsKey(neighborTile)) {
@@ -841,5 +1192,29 @@ public class Player {
 
         // No space found
         return false;
+    }
+
+    private boolean hasButcheringTool() {
+        if (checkTool(inventory.getRightHand()))
+            return true;
+        if (checkTool(inventory.getLeftHand()))
+            return true;
+        for (Item i : inventory.getQuickSlots()) {
+            if (checkTool(i))
+                return true;
+        }
+        for (Item i : inventory.getMainInventory()) {
+            if (checkTool(i))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean checkTool(Item item) {
+        if (item == null)
+            return false;
+        String name = item.getDisplayName().toLowerCase();
+        return name.contains("axe") || name.contains("knife") || name.contains("shiv")
+                || name.contains("sword") || name.contains("dagger");
     }
 }

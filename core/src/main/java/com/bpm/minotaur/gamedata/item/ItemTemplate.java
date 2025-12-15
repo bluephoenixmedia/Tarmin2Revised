@@ -30,6 +30,9 @@ public class ItemTemplate {
     public boolean isArmor;
     public boolean isPotion;
     public boolean isPotionAppearance;
+    public boolean isScrollAppearance; // New
+    public boolean isWandAppearance; // New
+    public boolean isRingAppearance; // New
     public boolean isFood;
     public boolean isTreasure;
     public boolean isKey;

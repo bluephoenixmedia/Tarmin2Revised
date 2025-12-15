@@ -1,56 +1,64 @@
 {
   "HOME_CHEST": {
-  "friendlyName": "Storage Chest",
-  "texturePath": "images/items/box.png",
-  "modelPath": "models/FancyChestClosed.g3db",
+    "friendlyName": "Storage Chest",
+    "texturePath": "images/items/box.png",
+    "modelPath": "models/FancyChestClosed.g3db",
     "isImpassable": true,
-  "modelScale": 0.005,
-  "modelRotation": -90.0,
-  "spriteData": [
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "......########..........",
-    ".......#.######.........",
-    "......###.######........",
-    "......##.###.#####......",
-    ".......####.............",
-    ".......###########......",
-    ".......##.#######.......",
-    "........####..##........",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................",
-    "........................"
-  ],
-  "baseValue": 0,
-  "warDamage": 0,
-  "spiritDamage": 0,
-  "armorDefense": 0,
-  "isWeapon": false,
-  "isRanged": false,
-  "isArmor": false,
-  "isPotion": false,
-  "isFood": false,
-  "isTreasure": false,
-  "isKey": false,
-  "isUsable": false,
-  "isContainer": true,
-  "isRing": false,
-  "scale": { "x": 1.0, "y": 1.0 },
-  "variants": [
-    { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
-  ]
-},
+    "modelScale": 0.005,
+    "modelRotation": -90.0,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "......########..........",
+      ".......#.######.........",
+      "......###.######........",
+      "......##.###.#####......",
+      ".......####.............",
+      ".......###########......",
+      ".......##.#######.......",
+      "........####..##........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 0,
+    "warDamage": 0,
+    "spiritDamage": 0,
+    "armorDefense": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": true,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
   "HOME_CRAFTING_BENCH": {
     "friendlyName": "Crafting Bench",
     "texturePath": "images/items/box.png",
@@ -98,9 +106,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "HOME_SLEEPING_BAG": {
@@ -150,9 +166,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "HOME_FIRE_POT": {
@@ -202,9 +226,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "RED", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "BOW": {
@@ -238,7 +270,7 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 2,
+    "warDamage": 5,
     "range": 10,
     "spiritDamage": 0,
     "armorDefense": 0,
@@ -252,17 +284,49 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 12 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 12
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
-
   "CROSSBOW": {
     "friendlyName": "Crossbow",
     "texturePath": "images/items/bow.png",
@@ -295,7 +359,7 @@
       "........................"
     ],
     "baseValue": 15,
-    "warDamage": 4,
+    "warDamage": 8,
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 10,
@@ -309,14 +373,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "KNIFE": {
@@ -349,7 +446,7 @@
       "........................"
     ],
     "baseValue": 8,
-    "warDamage": 2,
+    "warDamage": 4,
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
@@ -363,14 +460,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "AXE": {
@@ -403,7 +533,7 @@
       "........................"
     ],
     "baseValue": 12,
-    "warDamage": 3,
+    "warDamage": 6,
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
@@ -417,14 +547,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "DART": {
@@ -471,14 +634,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SPEAR": {
@@ -511,7 +707,7 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 2,
+    "warDamage": 5,
     "spiritDamage": 0,
     "armorDefense": 0,
     "range": 1,
@@ -525,14 +721,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "PROJECTILE": {
@@ -579,9 +808,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "SCROLL": {
@@ -628,14 +865,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "BOOK": {
@@ -682,14 +952,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SMALL_FIREBALL": {
@@ -736,14 +1039,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LARGE_FIREBALL": {
@@ -789,14 +1125,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SMALL_LIGHTNING": {
@@ -843,14 +1212,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LARGE_LIGHTNING": {
@@ -896,14 +1298,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "BOOTS": {
@@ -949,14 +1384,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SMALL_SHIELD": {
@@ -1002,14 +1470,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LEGS": {
@@ -1055,14 +1556,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LARGE_SHIELD": {
@@ -1108,14 +1642,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "GAUNTLETS": {
@@ -1161,14 +1728,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "HAUBERK": {
@@ -1214,14 +1814,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "CLOAK": {
@@ -1267,14 +1900,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "EYES": {
@@ -1320,14 +1986,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "ARMS": {
@@ -1373,14 +2072,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "HELMET": {
@@ -1426,14 +2158,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "BREASTPLATE": {
@@ -1479,14 +2244,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 5},
-      { "color": "GRAY", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "YELLOW", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "WHITE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SMALL_RING": {
@@ -1533,12 +2331,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LARGE_RING": {
@@ -1585,12 +2413,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_BLUE": {
@@ -1637,12 +2495,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_PINK": {
@@ -1689,12 +2577,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_GREEN": {
@@ -1741,12 +2659,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_PURPLE": {
@@ -1793,12 +2741,42 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_BLUE": {
@@ -1848,14 +2826,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_PINK": {
@@ -1905,14 +2916,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_GREEN": {
@@ -1962,14 +3006,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_GOLD": {
@@ -2019,14 +3096,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_SWIRLY": {
@@ -2076,9 +3186,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "POTION_BUBBLY": {
@@ -2128,9 +3246,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "KEY": {
@@ -2176,14 +3302,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "QUIVER": {
@@ -2229,14 +3388,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "WAR_BOOK": {
@@ -2283,14 +3475,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SPIRITUAL_BOOK": {
@@ -2337,14 +3562,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SPECIAL_BOOK": {
@@ -2390,14 +3648,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 3, "maxLevel": 7, "weight": 3 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 5 },
-      { "color": "PINK", "minLevel": 8, "maxLevel": 14, "weight": 8 },
-      { "color": "RED", "minLevel": 13, "maxLevel": 99, "weight": 13 },
-      { "color": "PURPLE", "minLevel": 21, "maxLevel": 99, "weight": 21 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "FLOUR_SACK": {
@@ -2443,9 +3734,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "MONEY_BELT": {
@@ -2491,7 +3790,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "SMALL_BAG": {
     "friendlyName": "Small Bag",
@@ -2538,7 +3840,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "BOX": {
     "friendlyName": "Box",
@@ -2583,7 +3888,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "MEDIUM_PACK": {
     "friendlyName": "Medium Pack",
@@ -2628,7 +3936,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "REGULAR_CHEST": {
     "friendlyName": "Regular Chest",
@@ -2675,7 +3986,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "LARGE_BAG": {
     "friendlyName": "Large Bag",
@@ -2720,7 +4034,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "FOOD": {
     "friendlyName": "Food",
@@ -2765,9 +4082,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "COINS": {
@@ -2815,9 +4140,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "CHALICE": {
@@ -2863,9 +4196,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "LAMP": {
@@ -2911,9 +4252,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "INGOT": {
@@ -2959,9 +4308,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "NECKLACE": {
@@ -3007,9 +4364,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "CROWN": {
@@ -3055,9 +4420,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "TARMIN_TREASURE": {
@@ -3103,9 +4476,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "UNKNOWN": {
@@ -3151,9 +4532,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "LADDER": {
@@ -3202,7 +4591,10 @@
     "isContainer": false,
     "isRing": false,
     "range": 0,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "isPotionAppearance": false,
     "variants": []
   },
@@ -3235,7 +4627,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "LEAVES": {
     "friendlyName": "Pile of Leaves",
@@ -3266,7 +4665,20 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }, { "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "SMALL_ROCK": {
     "friendlyName": "Small Rock",
@@ -3297,7 +4709,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "LARGE_BOULDER": {
     "friendlyName": "Large Boulder",
@@ -3328,7 +4747,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BROKEN_COLUMN": {
     "friendlyName": "Broken Column",
@@ -3359,7 +4785,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BROKEN_WALL": {
     "friendlyName": "Rubble",
@@ -3390,7 +4823,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "VINES": {
     "friendlyName": "Vines",
@@ -3421,7 +4861,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "PUDDLE_WATER": {
     "friendlyName": "Puddle",
@@ -3452,7 +4899,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "STRANGE_METAL": {
     "friendlyName": "Strange Metal",
@@ -3483,7 +4937,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "PURPLE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BONES": {
     "friendlyName": "Bones",
@@ -3514,7 +4975,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "ANCIENT_FOSSIL": {
     "friendlyName": "Fossil",
@@ -3545,7 +5013,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RUSTY_WEAPON": {
     "friendlyName": "Rusty Blade",
@@ -3576,7 +5051,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RUSTY_ARMOR": {
     "friendlyName": "Rusted Plate",
@@ -3607,7 +5089,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "DIRTY_CLOTH": {
     "friendlyName": "Dirty Rag",
@@ -3638,7 +5127,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "METAL_SCRAP": {
     "friendlyName": "Metal Scrap",
@@ -3669,7 +5165,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BROKEN_GLASS": {
     "friendlyName": "Broken Glass",
@@ -3700,7 +5203,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "DEAD_PLANT_MATTER": {
     "friendlyName": "Dead Plant",
@@ -3731,7 +5241,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "MUD": {
     "friendlyName": "Mud Pile",
@@ -3762,7 +5279,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "CHARRED_WOOD": {
     "friendlyName": "Charred Wood",
@@ -3793,7 +5317,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "CERAMIC_SHARD": {
     "friendlyName": "Ceramic Shard",
@@ -3824,7 +5355,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "ROTTEN_ROPE": {
     "friendlyName": "Rotten Rope",
@@ -3855,7 +5393,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "FUNGAL_SPORE": {
     "friendlyName": "Fungal Pod",
@@ -3886,7 +5431,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BAT_GUANO": {
     "friendlyName": "Guano",
@@ -3917,7 +5469,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "LOOSE_BRICK": {
     "friendlyName": "Loose Brick",
@@ -3948,7 +5507,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "TWISTED_ROOT": {
     "friendlyName": "Twisted Root",
@@ -3979,7 +5545,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "SLIME_RESIDUE": {
     "friendlyName": "Slime Residue",
@@ -4010,7 +5583,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RAT_SKULL": {
     "friendlyName": "Rat Skull",
@@ -4041,7 +5621,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RUSTED_CHAIN": {
     "friendlyName": "Rusted Chain",
@@ -4072,7 +5659,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "MOSS_CLUMP": {
     "friendlyName": "Moss Clump",
@@ -4103,7 +5697,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "FLINT_SHARD": {
     "friendlyName": "Flint",
@@ -4134,7 +5735,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "HOLLOW_LOG": {
     "friendlyName": "Hollow Log",
@@ -4165,7 +5773,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "SPIDER_SILK": {
     "friendlyName": "Spider Silk",
@@ -4196,7 +5811,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BAT_WING": {
     "friendlyName": "Bat Wing",
@@ -4227,7 +5849,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "PARCHMENT_SCRAP": {
     "friendlyName": "Parchment",
@@ -4258,7 +5887,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BROKEN_HILT": {
     "friendlyName": "Broken Hilt",
@@ -4289,7 +5925,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "BENT_NAIL": {
     "friendlyName": "Bent Nail",
@@ -4320,7 +5963,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "STAGNANT_POOL": {
     "friendlyName": "Stagnant Pool",
@@ -4351,7 +6001,14 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "GLOWING_LICHEN": {
     "friendlyName": "Glowing Lichen",
@@ -4382,6 +6039,238 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  COOKED_MEAT: {
+    "friendlyName": "Cooked Meat",
+    "description": "A piece of cooked meat. Smells delicious.",
+    "texturePath": "images/items/box.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........####..........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      "........########........",
+      "..........####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 10,
+    "warDamage": 0,
+    "spiritDamage": 0,
+    "armorDefense": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": true,
+    "isPotionAppearance": false,
+    "isFood": true,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": true,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "TOOTH": {
+    "friendlyName": "Tooth",
+    "description": "A sharp tooth.",
+    "texturePath": "images/items/box_.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "...........#............",
+      "..........###...........",
+      "..........###...........",
+      ".........#####..........",
+      ".........#####..........",
+      ".........#####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "CLAW": {
+    "friendlyName": "Claw",
+    "description": "A sharp claw.",
+    "texturePath": "images/items/box_.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "BLOOD_VIAL": {
+    "friendlyName": "Blood Vial",
+    "description": "A vial of blood.",
+    "texturePath": "images/items/potion_gold.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "EYES": {
+    "friendlyName": "Eye",
+    "description": "A small eye.",
+    "texturePath": "images/items/blue_ring.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........####...........",
+      ".......########.........",
+      "......##########........",
+      "......##########........",
+      "......##########........",
+      ".......########.........",
+      ".........####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "BONE": {
+    "friendlyName": "Bone",
+    "description": "A dry bone.",
+    "texturePath": "images/items/box_.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 1,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
   }
 }

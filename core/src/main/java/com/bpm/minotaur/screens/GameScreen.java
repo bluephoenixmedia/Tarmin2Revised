@@ -21,7 +21,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Disposable;
+
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -30,19 +30,18 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
-import com.bpm.minotaur.gamedata.item.ItemType;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
+import com.bpm.minotaur.managers.CraftingManager;
 import com.bpm.minotaur.rendering.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GameScreen extends BaseScreen implements InputProcessor, Disposable {
+public class GameScreen extends BaseScreen implements InputProcessor {
 
     // --- Core Dependencies ---
     private final DebugManager debugManager = DebugManager.getInstance();
@@ -54,7 +53,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private boolean needsAsciiRender = false;
 
     private final WorldManager worldManager;
-    private final int level;
 
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
@@ -78,7 +76,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private int currentLevel;
     private CombatManager combatManager;
     private MonsterAiManager monsterAiManager;
-    private PotionManager potionManager;
+    private DiscoveryManager discoveryManager;
+    private CraftingManager craftingManager;
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
@@ -101,7 +100,6 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         super(game);
         this.difficulty = difficulty;
         this.gameMode = gameMode;
-        this.level = level;
         this.currentLevel = level;
         this.stochasticManager = new StochasticManager();
 
@@ -110,13 +108,14 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         this.soundManager = new SoundManager(debugManager);
 
         this.worldManager = new WorldManager(gameMode, difficulty, level,
-            game.getMonsterDataManager(),
-            game.getItemDataManager(),
-            game.getAssetManager(),
-            game.getSpawnTableData(),
-            this.soundManager);
+                game.getMonsterDataManager(),
+                game.getItemDataManager(),
+                game.getAssetManager(),
+                game.getSpawnTableData(),
+                this.soundManager);
 
         this.monsterAiManager = new MonsterAiManager();
+        this.craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
 
         switch (level) {
             case 1:
@@ -129,6 +128,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
     @Override
+
     public void show() {
         Gdx.input.setInputProcessor(this);
 
@@ -145,7 +145,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
         if (crtShader == null) {
             ShaderProgram.pedantic = false;
-            crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"), Gdx.files.internal("shaders/crt.frag"));
+            crtShader = new ShaderProgram(Gdx.files.internal("shaders/crt.vert"),
+                    Gdx.files.internal("shaders/crt.frag"));
             if (!crtShader.isCompiled()) {
                 Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
                 useCrtFilter = false;
@@ -166,51 +167,41 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
     }
 
+    public GameEventManager getEventManager() {
+        return eventManager;
+    }
+
     @Override
     public void hide() {
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
             worldManager.saveCurrentChunk(maze);
         }
-        if (potionManager != null && gameMode == GameMode.ADVANCED) {
-            potionManager.saveState();
+        if (discoveryManager != null && gameMode == GameMode.ADVANCED) {
+            discoveryManager.saveState();
         }
         MusicManager.getInstance().stop();
-    }
-
-    private void descendToNextLevel() {
-        if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
-            worldManager.saveCurrentChunk(maze);
-        }
-        if (soundManager != null) {
-            soundManager.stopWeatherEffects();
-        }
-        currentLevel++;
-        Gdx.app.log("GameScreen", "Descending to level " + currentLevel);
-        if (worldManager != null) {
-            worldManager.setCurrentLevel(currentLevel);
-            worldManager.clearLoadedChunks();
-        }
-        generateLevel(currentLevel);
     }
 
     private void generateLevel(int levelNumber) {
         Gdx.app.log("GameScreen [DEBUG]", "generateLevel START. Player is " + (player == null ? "NULL" : "NOT NULL"));
 
         if (player == null) {
-            if (this.potionManager == null) {
-                this.potionManager = new PotionManager(this.eventManager);
-                game.getItemDataManager().setPotionManager(this.potionManager);
-                if (potionManager.hasSaveState()) {
-                    potionManager.loadState();
+            if (this.discoveryManager == null) {
+                this.discoveryManager = new DiscoveryManager(this.eventManager);
+                game.getItemDataManager().setDiscoveryManager(this.discoveryManager);
+
+                if (this.discoveryManager.hasSaveState()) {
+                    this.discoveryManager.loadState();
                 } else {
-                    List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager().getAllPotionAppearanceTypes();
-                    this.potionManager.initializeNewGame(potionTypes);
+                    List<com.bpm.minotaur.gamedata.item.Item.ItemType> potionTypes = game.getItemDataManager()
+                            .getAllPotionAppearanceTypes();
+                    this.discoveryManager.initializeNewGame(potionTypes);
                 }
             }
             this.maze = worldManager.getInitialMaze();
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
-                game.getItemDataManager(), game.getAssetManager());
+                    game.getItemDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
             player.setMaze(this.maze);
         } else {
@@ -219,8 +210,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             player.setMaze(this.maze);
         }
 
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
-        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
+                worldManager, game.getItemDataManager(), stochasticManager);
+        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
+                gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
@@ -237,14 +230,17 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
     private boolean isVisible(Vector2 targetPos) {
-        if (player == null || maze == null) return false;
+        if (player == null || maze == null)
+            return false;
         float dstToPlayer = player.getPosition().dst(targetPos);
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
 
         if (biome.hasFogOfWar()) {
-            if (dstToPlayer > biome.getFogDistance()) return false;
+            if (dstToPlayer > biome.getFogDistance())
+                return false;
         } else {
-            if (dstToPlayer > 20) return false;
+            if (dstToPlayer > 20)
+                return false;
         }
 
         Vector2 renderPosition;
@@ -271,8 +267,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         time += delta;
         combatManager.update(delta);
         animationManager.update(delta);
-        if (maze != null) maze.update(delta);
-        if (hud != null) hud.update(delta);
+        if (maze != null)
+            maze.update(delta);
+        if (hud != null)
+            hud.update(delta);
         eventManager.update(delta);
         handleSystemEvents();
 
@@ -313,12 +311,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         }
 
         if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel, gameMode);
+            firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
+                    gameMode);
 
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                entityRenderer.render(shapeRenderer, player, maze, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
+                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport,
+                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
 
             // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
@@ -329,14 +330,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 camera3d.up.set(0, 1, 0);
                 camera3d.update();
 
-                ModelBatch modelBatch = ((Tarmin2)game).getModelBatch();
+                ModelBatch modelBatch = ((Tarmin2) game).getModelBatch();
                 boolean batchBegun = false;
 
                 if (modelBatch != null && maze != null) {
                     for (Item item : maze.getItems().values()) {
                         ItemTemplate template = item.getTemplate();
                         if (template != null && template.modelPath != null) {
-                            if (!isVisible(item.getPosition())) continue;
+                            if (!isVisible(item.getPosition()))
+                                continue;
                             ModelInstance inst = item3dCache.get(item);
                             if (inst == null) {
                                 Model model = game.getAssetManager().get(template.modelPath, Model.class);
@@ -353,10 +355,9 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                                 inst.transform.idt();
                                 // Negate Y here as well for item position
                                 inst.transform.translate(
-                                    item.getPosition().x,
-                                    template.modelYOffset,
-                                    -item.getPosition().y
-                                );
+                                        item.getPosition().x,
+                                        template.modelYOffset,
+                                        -item.getPosition().y);
 
                                 if (template.modelRotation != 0f) {
                                     inst.transform.rotate(Vector3.Y, template.modelRotation);
@@ -366,11 +367,13 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                             }
                         }
                     }
-                    if (batchBegun) modelBatch.end();
+                    if (batchBegun)
+                        modelBatch.end();
                 }
             }
 
-            animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze);
+            animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(),
+                    firstPersonRenderer, maze);
 
             if (debugManager.isDebugOverlayVisible()) {
                 debugRenderer.render(shapeRenderer, player, maze, currentViewport);
@@ -389,7 +392,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         if (stochasticManager != null) {
             CombatManager.CombatState state = combatManager.getCurrentState();
             if (state == CombatManager.CombatState.PHYSICS_RESOLUTION ||
-                state == CombatManager.CombatState.PHYSICS_DELAY) {
+                    state == CombatManager.CombatState.PHYSICS_DELAY) {
                 stochasticManager.render();
             }
         }
@@ -413,29 +416,37 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             postProcessBatch.begin();
             postProcessBatch.setShader(crtShader);
             crtShader.setUniformf("u_time", time);
-            Texture fboTexture = fbo.getColorBufferTexture();
-            postProcessBatch.draw(fboTexture, 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
+            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
             postProcessBatch.end();
+        } else {
+            // --- CRT FIX: Reset view when CRT is off ---
+            game.getViewport().apply();
         }
     }
 
     private void checkForProactiveChunkLoading() {
-        if (player == null || worldManager == null || maze == null) return;
+        if (player == null || worldManager == null || maze == null)
+            return;
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-        if (!biome.isSeamless()) return;
+        if (!biome.isSeamless())
+            return;
 
         int triggerDistance = biome.hasFogOfWar() ? biome.getFogDistance() + 1 : 5;
         triggerDistance = Math.max(2, triggerDistance);
 
-        GridPoint2 playerPos = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+        GridPoint2 playerPos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
         GridPoint2 currentChunkId = worldManager.getCurrentPlayerChunkId();
         int height = maze.getHeight();
         int width = maze.getWidth();
 
-        if (playerPos.y >= height - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
-        if (playerPos.y <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
-        if (playerPos.x >= width - 1 - triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
-        if (playerPos.x <= triggerDistance) worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
+        if (playerPos.y >= height - 1 - triggerDistance)
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y + 1));
+        if (playerPos.y <= triggerDistance)
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x, currentChunkId.y - 1));
+        if (playerPos.x >= width - 1 - triggerDistance)
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x + 1, currentChunkId.y));
+        if (playerPos.x <= triggerDistance)
+            worldManager.requestLoadChunk(new GridPoint2(currentChunkId.x - 1, currentChunkId.y));
     }
 
     private void handleSystemEvents() {
@@ -454,8 +465,10 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     private void swapToChunk(Maze newMaze) {
         this.maze = newMaze;
         player.setMaze(newMaze);
-        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager, worldManager, game.getItemDataManager(), stochasticManager);
-        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager, gameMode);
+        combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
+                worldManager, game.getItemDataManager(), stochasticManager);
+        hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
+                gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -470,15 +483,18 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     }
 
     private void performChunkTransition(Gate transitionGate) {
-        if (player == null) return;
-        if (maze != null) worldManager.saveCurrentChunk(this.maze);
+        if (player == null)
+            return;
+        if (maze != null)
+            worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
         if (newMaze == null) {
             eventManager.addEvent(new GameEvent("A strange force blocks your path.", 2f));
             transitionGate.close();
             return;
         }
-        player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f, transitionGate.getTargetPlayerPos().y + 0.5f);
+        player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f,
+                transitionGate.getTargetPlayerPos().y + 0.5f);
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
         swapToChunk(newMaze);
     }
@@ -487,11 +503,13 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
     public void resize(int width, int height) {
         game.getViewport().update(width, height, true);
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
-        if (hud != null) hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        if (hud != null)
+            hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
     }
 
     private void processPlayerStatusEffects() {
-        if (player == null) return;
+        if (player == null)
+            return;
         if (player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
             ActiveStatusEffect poison = player.getStatusManager().getEffect(StatusEffectType.POISONED);
             int damage = poison.getPotency();
@@ -502,21 +520,26 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
 
     @Override
     public boolean keyDown(int keycode) {
-        if (player == null || maze == null) return false;
+        if (player == null || maze == null)
+            return false;
 
-        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
             switch (keycode) {
                 case Input.Keys.S:
                     player.getInventory().swapHands();
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
+                        combatManager.passTurnToMonster();
                     return true;
                 case Input.Keys.E:
                     player.getInventory().swapWithPack();
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
+                        combatManager.passTurnToMonster();
                     return true;
                 case Input.Keys.T:
                     player.getInventory().rotatePack();
-                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) combatManager.passTurnToMonster();
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
+                        combatManager.passTurnToMonster();
                     return true;
             }
         }
@@ -538,7 +561,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
-                    if (attacked) playerTurnTakesAction();
+                    if (attacked)
+                        playerTurnTakesAction();
                     return true;
                 }
             }
@@ -567,6 +591,29 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     needsAsciiRender = false;
                     return true;
                 case Input.Keys.O:
+                    // Check for Crafting Bench
+                    Vector2 v = player.getFacing().getVector();
+                    GridPoint2 target = new GridPoint2(
+                            (int) (player.getPosition().x + v.x),
+                            (int) (player.getPosition().y + v.y));
+
+                    Item itemInFront = maze.getItems().get(target);
+
+                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
+                        InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
+                                InventoryScreen.InventoryMode.CRAFT);
+                        invScreen.setCraftingManager(this.craftingManager);
+                        game.setScreen(invScreen);
+                        return true;
+                    }
+
+                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_FIRE_POT) {
+                        InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
+                                InventoryScreen.InventoryMode.COOK);
+                        game.setScreen(invScreen);
+                        return true;
+                    }
+
                     player.interact(maze, eventManager, soundManager, gameMode, worldManager);
                     playerTurnTakesAction();
                     needsAsciiRender = true;
@@ -576,22 +623,28 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                     playerTurnTakesAction();
                     return true;
                 case Input.Keys.U:
-                    player.useItem(eventManager, this.potionManager);
+                    player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
                     playerTurnTakesAction();
                     return true;
+                case Input.Keys.I:
+                    InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
+                            InventoryScreen.InventoryMode.NORMAL);
+                    game.setScreen(invScreen);
+                    return true;
                 case Input.Keys.D:
-                    GridPoint2 atFeet = new GridPoint2((int)player.getPosition().x, (int)player.getPosition().y);
+                    GridPoint2 atFeet = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
                     GridPoint2 inFront = new GridPoint2(
-                        (int)(player.getPosition().x + player.getFacing().getVector().x),
-                        (int)(player.getPosition().y + player.getFacing().getVector().y)
-                    );
+                            (int) (player.getPosition().x + player.getFacing().getVector().x),
+                            (int) (player.getPosition().y + player.getFacing().getVector().y));
                     Ladder ladder = maze.getLadders().get(atFeet);
-                    if (ladder == null) ladder = maze.getLadders().get(inFront);
+                    if (ladder == null)
+                        ladder = maze.getLadders().get(inFront);
 
                     if (ladder != null) {
-                     //   soundManager.playSound("level_up");
+                        // soundManager.playSound("level_up");
                         if (ladder.getType() == Ladder.LadderType.DOWN) {
-                            GridPoint2 ladderPos = new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y);
+                            GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
+                                    (int) ladder.getPosition().y);
                             worldManager.descendLevel(ladderPos);
                             this.currentLevel = worldManager.getCurrentLevel();
                             worldManager.clearLoadedChunks();
@@ -611,7 +664,8 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                                     }
                                 }
                                 if (foundDownLadderPos != null) {
-                                    player.setPosition(new GridPoint2((int)foundDownLadderPos.x, (int)foundDownLadderPos.y));
+                                    player.setPosition(
+                                            new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y));
                                 }
                                 hud.addMessage("Ascended to Level " + currentLevel);
                             } else {
@@ -629,12 +683,19 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             }
         }
 
-        switch (keycode) {
-            case Input.Keys.F1: debugManager.toggleOverlay(); return true;
-            case Input.Keys.F2: debugManager.toggleRenderMode(); return true;
+        switch (keycode)
+
+        {
+            case Input.Keys.F1:
+                debugManager.toggleOverlay();
+                return true;
+            case Input.Keys.F2:
+                debugManager.toggleRenderMode();
+                return true;
             case Input.Keys.F3:
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
-                eventManager.addEvent(new GameEvent("Debug Force Modifiers: " + (SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF"), 2f));
+                eventManager.addEvent(new GameEvent(
+                        "Debug Force Modifiers: " + (SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF"), 2f));
                 return true;
             case Input.Keys.M:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
@@ -643,7 +704,7 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
                 return true;
             case Input.Keys.I:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
-                    combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                        combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
                     game.setScreen(new InventoryScreen(game, this, player, maze));
                 }
                 return true;
@@ -654,13 +715,15 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
             case Input.Keys.F7:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
-                    eventManager.addEvent(new GameEvent("Debug Weather: " + worldManager.getWeatherManager().getCurrentWeather(), 2f));
+                    eventManager.addEvent(new GameEvent(
+                            "Debug Weather: " + worldManager.getWeatherManager().getCurrentWeather(), 2f));
                 }
                 return true;
             case Input.Keys.F8:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleIntensity();
-                    eventManager.addEvent(new GameEvent("Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
+                    eventManager.addEvent(new GameEvent(
+                            "Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
                 }
                 return true;
             case Input.Keys.F9:
@@ -673,24 +736,115 @@ public class GameScreen extends BaseScreen implements InputProcessor, Disposable
         return false;
     }
 
-    @Override public boolean keyUp(int keycode) { return false; }
-    @Override public boolean keyTyped(char character) { return false; }
-    @Override public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
-    @Override public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }
-    @Override public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
-    @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
-    @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
-    @Override public boolean scrolled(float amountX, float amountY) { return false; }
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
+    }
+
+    public void handleInventorySelection(com.bpm.minotaur.gamedata.item.Item item, InventoryScreen.InventoryMode mode) {
+        if (item == null)
+            return;
+
+        switch (mode) {
+            case QUAFF:
+                if (item.isPotion()) {
+                    player.quaff(item, discoveryManager, eventManager);
+                    playerTurnTakesAction();
+                } else {
+                    eventManager.addEvent(new GameEvent("You cannot quaff that!", 1.5f));
+                }
+                break;
+            case READ:
+                if (item.getType().name().startsWith("SCROLL")) {
+                    player.read(item, discoveryManager, eventManager, maze);
+                    playerTurnTakesAction();
+                } else {
+                    eventManager.addEvent(new GameEvent("You cannot read that!", 1.5f));
+                }
+                break;
+            case ZAP:
+                if (item.getType().name().startsWith("WAND")) {
+                    player.zap(item, player.getFacing(), discoveryManager, eventManager, maze);
+                    playerTurnTakesAction();
+                } else {
+                    eventManager.addEvent(new GameEvent("You cannot zap that!", 1.5f));
+                }
+                break;
+            case WIELD:
+                // Standard Wield
+                player.wield(item, eventManager);
+                playerTurnTakesAction();
+                break;
+            case WEAR:
+                if (item.isArmor() || item.isRing()) {
+                    player.wear(item, eventManager);
+                    playerTurnTakesAction();
+                } else {
+                    eventManager.addEvent(new GameEvent("You cannot wear that!", 1.5f));
+                }
+                break;
+            case TAKEOFF:
+                player.takeOff(item, eventManager);
+                playerTurnTakesAction();
+                break;
+            case NORMAL:
+                player.useItem(item, eventManager, discoveryManager, maze);
+                playerTurnTakesAction();
+                break;
+            default:
+                break;
+        }
+    }
 
     @Override
     public void dispose() {
         shapeRenderer.dispose();
         font.dispose();
-        if (hud != null) hud.dispose();
-        if (entityRenderer != null) entityRenderer.dispose();
-        if (soundManager != null) soundManager.dispose();
-        if (fbo != null) fbo.dispose();
-        if (crtShader != null) crtShader.dispose();
+        if (hud != null)
+            hud.dispose();
+        if (entityRenderer != null)
+            entityRenderer.dispose();
+        if (soundManager != null)
+            soundManager.dispose();
+        if (fbo != null)
+            fbo.dispose();
+        if (crtShader != null)
+            crtShader.dispose();
         postProcessBatch.dispose();
     }
 }

@@ -10,8 +10,11 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
 import com.bpm.minotaur.gamedata.monster.LootModifierManager;
-import com.bpm.minotaur.managers.PotionManager;
+import com.bpm.minotaur.managers.DiscoveryManager;
 import com.bpm.minotaur.managers.UnlockManager;
+import com.bpm.minotaur.gamedata.item.ScrollEffectType;
+import com.bpm.minotaur.gamedata.item.WandEffectType;
+import com.bpm.minotaur.gamedata.item.RingEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +24,7 @@ public class ItemDataManager {
 
     private final ObjectMap<ItemType, ItemTemplate> itemTemplates;
 
-
-    private PotionManager potionManager;
+    private DiscoveryManager discoveryManager;
     private final Random random = new Random();
 
     private final LootModifierManager lootModifierManager; // New field
@@ -31,12 +33,13 @@ public class ItemDataManager {
         this.itemTemplates = new ObjectMap<>();
         this.lootModifierManager = new LootModifierManager(); // Initialize
     }
+
     /**
-     * Sets the PotionManager. This must be called after PotionManager is
+     * Sets the DiscoveryManager. This must be called after DiscoveryManager is
      * constructed in GameScreen, but before any items are created.
      */
-    public void setPotionManager(PotionManager potionManager) {
-        this.potionManager = potionManager;
+    public void setDiscoveryManager(DiscoveryManager discoveryManager) {
+        this.discoveryManager = discoveryManager;
     }
 
     public void load() {
@@ -59,6 +62,84 @@ public class ItemDataManager {
             itemTemplates.get(ItemType.BOW).unlockId = "item_bow";
             Gdx.app.log("ItemDataManager", "TESTING: Locked BOW with id 'item_bow'");
         }
+
+        // --- Generate Randomized Templates (Scrolls/Wands) ---
+        // If they don't exist in JSON, we create them from base templates.
+
+        // Scrolls
+        ItemTemplate baseScroll = itemTemplates.get(ItemType.SCROLL);
+        if (baseScroll != null) {
+            for (ItemType type : ItemType.values()) {
+                if (type.name().startsWith("SCROLL_") && !itemTemplates.containsKey(type)) {
+                    ItemTemplate newTemplate = new ItemTemplate();
+                    // Copy fields (simplified, assuming shallow copy where safe or primitives)
+                    newTemplate.friendlyName = "Labeled Scroll"; // Base appearance name
+                    newTemplate.description = baseScroll.description; // "A scroll with strange writing."
+                    newTemplate.texturePath = baseScroll.texturePath; // Same sprite for now
+                    newTemplate.spriteData = baseScroll.spriteData;
+                    newTemplate.baseValue = baseScroll.baseValue;
+                    newTemplate.isUsable = true;
+                    newTemplate.isScrollAppearance = true;
+                    newTemplate.scale = baseScroll.scale;
+
+                    itemTemplates.put(type, newTemplate);
+                }
+            }
+        }
+
+        // Wands (Use Stick as base if Wand missing, or just assume Stick)
+        // Actually, let's assume STICK is a good base for Wands
+        ItemTemplate baseWand = itemTemplates.get(ItemType.STICK);
+        if (baseWand != null) {
+            for (ItemType type : ItemType.values()) {
+                if (type.name().startsWith("WAND_") && !itemTemplates.containsKey(type)) {
+                    ItemTemplate newTemplate = new ItemTemplate();
+                    newTemplate.friendlyName = "Wand";
+                    newTemplate.description = "A smooth stick with magical energy.";
+                    newTemplate.texturePath = baseWand.texturePath;
+                    newTemplate.spriteData = baseWand.spriteData; // Reuse stick sprite
+                    newTemplate.baseValue = 100;
+                    newTemplate.isUsable = true;
+                    newTemplate.isWandAppearance = true;
+                    newTemplate.scale = baseWand.scale;
+                    itemTemplates.put(type, newTemplate);
+                }
+            }
+        }
+
+        // Rings (Ensure they are marked as ring appearances)
+        ItemTemplate baseRing = itemTemplates.get(ItemType.SMALL_RING);
+        if (baseRing != null) {
+            List<ItemType> ringTypes = new ArrayList<>();
+            ringTypes.add(ItemType.SMALL_RING);
+            ringTypes.add(ItemType.LARGE_RING);
+            ringTypes.add(ItemType.RING_BLUE);
+            ringTypes.add(ItemType.RING_PINK);
+            ringTypes.add(ItemType.RING_PURPLE);
+
+            for (ItemType type : ringTypes) {
+                ItemTemplate t = itemTemplates.get(type);
+                if (t != null) {
+                    t.isRingAppearance = true;
+                    t.isRing = true;
+                } else {
+                    // Create if missing (e.g. if JSON only has SMALL_RING)
+                    ItemTemplate newTemplate = new ItemTemplate();
+                    newTemplate.friendlyName = "Ring";
+                    newTemplate.description = "A ring.";
+                    newTemplate.texturePath = baseRing.texturePath; // Placeholder
+                    newTemplate.spriteData = baseRing.spriteData;
+                    newTemplate.baseValue = 100;
+                    newTemplate.isUsable = false; // Rings are worn, not used? Or Apply?
+                    newTemplate.isRing = true;
+                    newTemplate.isRingAppearance = true;
+                    newTemplate.scale = baseRing.scale;
+                    itemTemplates.put(type, newTemplate);
+                }
+            }
+        }
+
+        initializeMissingTemplates();
 
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
@@ -95,7 +176,8 @@ public class ItemDataManager {
         ItemTemplate template = getTemplate(type);
 
         if (template.unlockId != null && !UnlockManager.getInstance().isUnlocked(template.unlockId)) {
-            Gdx.app.log("ItemDataManager", "Item locked: " + type.name() + " (Requires: " + template.unlockId + "). Spawning fallback.");
+            Gdx.app.log("ItemDataManager",
+                    "Item locked: " + type.name() + " (Requires: " + template.unlockId + "). Spawning fallback.");
             // Recursively create a fallback item (AXE) which we assume is unlocked.
             // Ensure we don't infinitely recurse if AXE is also locked (it shouldn't be).
             if (type != ItemType.AXE) {
@@ -110,44 +192,108 @@ public class ItemDataManager {
         if (template.isPotionAppearance) {
 
             Gdx.app.log("ItemDataManager [DEBUG]", "Type is a potion appearance.");
-            if (potionManager == null) {
-                Gdx.app.log("ItemDataManager [DEBUG]", "ERROR: PotionManager is NULL at item creation time!");
+            if (discoveryManager == null) {
+                Gdx.app.log("ItemDataManager [DEBUG]", "ERROR: DiscoveryManager is NULL at item creation time!");
                 return item; // Return a "dud" potion
             }
 
             // 1. Get the randomized effect from the manager
-            PotionEffectType effect = potionManager.getEffectForAppearance(type.name());
+            PotionEffectType effect = discoveryManager.getPotionEffect(type);
 
-            Gdx.app.log("ItemDataManager [DEBUG]", "Got effect from PotionManager: " + (effect == null ? "NULL" : effect.name()));
+            Gdx.app.log("ItemDataManager [DEBUG]",
+                    "Got effect from DiscoveryManager: " + (effect == null ? "NULL" : effect.name()));
 
             if (effect != null) {
                 // 2. Check if this effect is already identified
-                boolean isIdentified = potionManager.isEffectIdentified(effect);
+                boolean isIdentified = discoveryManager.isPotionIdentified(effect);
 
-                Gdx.app.log("ItemDataManager [DEBUG]", "Setting trueEffect ("+effect.name()+") and identified ("+isIdentified+") on item.");
+                Gdx.app.log("ItemDataManager [DEBUG]",
+                        "Setting trueEffect (" + effect.name() + ") and identified (" + isIdentified + ") on item.");
 
                 // 3. Set the hidden (true) properties on the item instance
                 item.setTrueEffect(effect);
                 item.setIdentified(isIdentified);
 
                 // 4. Set the visible name
-                item.setName(potionManager.getPotionDisplayName(template, effect, isIdentified));
+                if (isIdentified) {
+                    item.setName("Potion of " + effect.getBaseName());
+                } else {
+                    item.setName(template.friendlyName);
+                }
 
             } else {
-                // This is a potion appearance with no matching effect (e.g., 10 appearances, 8 effects)
-                Gdx.app.log("ItemDataManager [DEBUG]", "ERROR: Effect was NULL. This potion ("+type.name()+") will be a dud.");            }
+                // This is a potion appearance with no matching effect (e.g., 10 appearances, 8
+                // effects)
+                Gdx.app.log("ItemDataManager [DEBUG]",
+                        "ERROR: Effect was NULL. This potion (" + type.name() + ") will be a dud.");
+            }
+        }
+
+        // --- NEW SCROLL LOGIC ---
+        if (template.isScrollAppearance) {
+            if (discoveryManager != null) {
+                ScrollEffectType effect = discoveryManager.getScrollEffect(type);
+                if (effect != null) {
+                    item.setScrollEffect(effect);
+                    boolean isIdentified = discoveryManager.isScrollIdentified(effect);
+                    item.setIdentified(isIdentified);
+                    if (isIdentified) {
+                        item.setName("Scroll of " + effect.getBaseName());
+                    } else {
+                        // Keep generic appearance name, e.g. "Labeled Scroll"
+                        // Or we could append the unique label like "Scroll labeled ZELGO"
+                        // For now detailed labels are abstracted away by the ItemType (SCROLL_A etc)
+                        // But strictly, each SCROLL_A should have a consistent label text.
+                        // We can map SCROLL_A -> "ZELGO MER", SCROLL_B -> "JUYED AWK" etc globally.
+                        // For this iteration, just "Labeled Scroll" until identified is fine.
+                        item.setName("Labeled Scroll");
+                    }
+                }
+            }
+        }
+
+        // --- NEW WAND LOGIC ---
+        if (template.isWandAppearance) {
+            if (discoveryManager != null) {
+                WandEffectType effect = discoveryManager.getWandEffect(type);
+                if (effect != null) {
+                    item.setWandEffect(effect);
+                    // Wands start with random charges?
+                    item.setCharges(random.nextInt(6) + 3); // 3 to 8 charges
+
+                    boolean isIdentified = discoveryManager.isWandIdentified(effect);
+                    item.setIdentified(isIdentified);
+                    if (isIdentified) {
+                        item.setName("Wand of " + effect.getBaseName());
+                    } else {
+                        item.setName("Wand");
+                    }
+                }
+            }
+        }
+
+        // --- NEW RING LOGIC ---
+        if (template.isRingAppearance) {
+            if (discoveryManager != null) {
+                RingEffectType effect = discoveryManager.getRingEffect(type);
+                if (effect != null) {
+                    item.setRingEffect(effect);
+                    boolean isIdentified = discoveryManager.isRingIdentified(effect);
+                    item.setIdentified(isIdentified);
+                    if (isIdentified) {
+                        item.setName("Ring of " + effect.getBaseName());
+                    } else {
+                        // Default name from template (e.g. "Small Ring")
+                    }
+                }
+            }
         }
 
         // --- NEW: Apply Modifiers based on Item Color/Rarity ---
-        // We assume 'color' roughly equates to difficulty/level tier here for simplicity,
-        // or you can pass the actual dungeon level to createItem if you have it.
-        // For now, we infer power from the ItemColor multiplier.
-
-        if (color != ItemColor.TAN && color != ItemColor.GRAY) {
-            // If it's a special color (Green, Blue, Purple, etc.), give it a modifier
-            int estimatedLevel = (int)(color.getMultiplier() * 5);
-            lootModifierManager.applyModifiers(item, estimatedLevel);
-        }
+        // REMOVED: Modifiers are now handled by SpawnManager to ensure
+        // level-appropriate loot.
+        // We do NOT want to force modifiers based on color here, as it overrides the
+        // LootTable logic.
 
         return item;
     }
@@ -167,8 +313,10 @@ public class ItemDataManager {
     }
 
     /**
-     * Selects a valid ItemVariant (color/tier) for a given item type at a specific level.
-     * @param type The item type (e.g., BOW).
+     * Selects a valid ItemVariant (color/tier) for a given item type at a specific
+     * level.
+     * 
+     * @param type  The item type (e.g., BOW).
      * @param level The current dungeon level.
      * @return A valid ItemVariant, or null if none are found.
      */
@@ -208,7 +356,8 @@ public class ItemDataManager {
                 }
             }
             // If still nothing, return first available
-            if (!template.variants.isEmpty()) return template.variants.get(0);
+            if (!template.variants.isEmpty())
+                return template.variants.get(0);
 
             Gdx.app.error("ItemDataManager", "No valid variants found for " + type.name() + " at level " + level);
             return null;
@@ -228,4 +377,70 @@ public class ItemDataManager {
         return validVariants.get(0);
     }
 
+    private void initializeMissingTemplates() {
+        // --- NEW: Generate Templates for Corpses & Resources if missing ---
+        if (!itemTemplates.containsKey(ItemType.CORPSE)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = "Corpse";
+            t.description = "The remains of a creature.";
+            t.baseValue = 0;
+            ItemTemplate bones = itemTemplates.get(ItemType.BONES);
+            if (bones != null) {
+                t.texturePath = bones.texturePath;
+                t.spriteData = bones.spriteData;
+                t.scale = bones.scale;
+            } else {
+                t.friendlyName = "Corpse (Error)";
+                t.spriteData = new String[] { "??", "??" };
+                t.scale = createDefaultScale();
+            }
+            itemTemplates.put(ItemType.CORPSE, t);
+        }
+
+        // Resources
+        createResourceTemplate(ItemType.MEAT, "Meat", "Raw meat.", ItemType.FOOD);
+        createResourceTemplate(ItemType.COOKED_MEAT, "Cooked Meat", "Savory cooked meat.", ItemType.FOOD);
+        createResourceTemplate(ItemType.BONE, "Bone", "A sturdy bone.", ItemType.BONES);
+        createResourceTemplate(ItemType.CHITIN, "Chitin", "Hard insect carapace.", ItemType.LARGE_SHIELD);
+        createResourceTemplate(ItemType.TOOTH, "Tooth", "A sharp tooth.", ItemType.DART);
+        createResourceTemplate(ItemType.CLAW, "Claw", "A sharp claw.", ItemType.KNIFE);
+        createResourceTemplate(ItemType.NAIL, "Nail", "A rusty nail.", ItemType.BENT_NAIL);
+        createResourceTemplate(ItemType.BLOOD_VIAL, "Blood Vial", "A vial of blood.", ItemType.POTION_BLUE);
+        createResourceTemplate(ItemType.ORGAN, "Organ", "Typically useful organ.", ItemType.FOOD);
+        createResourceTemplate(ItemType.LEATHER_SCRAP, "Leather Scrap", "Scrap of hide.", ItemType.DIRTY_CLOTH);
+
+        // Debris fallback (just in case)
+        createResourceTemplate(ItemType.STICK, "Stick", "A wooden stick.", null);
+        createResourceTemplate(ItemType.SMALL_ROCK, "Rock", "A small rock.", null);
+        createResourceTemplate(ItemType.FLINT_SHARD, "Flint", "Sharp stone.", ItemType.SMALL_ROCK);
+        createResourceTemplate(ItemType.BROKEN_HILT, "Hilt", "Broken hilt.", ItemType.KNIFE);
+        createResourceTemplate(ItemType.METAL_SCRAP, "Scrap", "Metal scrap.", ItemType.AXE);
+    }
+
+    private void createResourceTemplate(ItemType type, String name, String desc, ItemType baseType) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = name;
+            t.description = desc;
+            t.baseValue = 1;
+
+            ItemTemplate base = (baseType != null) ? itemTemplates.get(baseType) : null;
+            if (base != null) {
+                t.texturePath = base.texturePath;
+                t.spriteData = base.spriteData;
+                t.scale = base.scale;
+            } else {
+                t.spriteData = new String[] { "??", "??" }; // Stub
+                t.scale = createDefaultScale();
+            }
+            itemTemplates.put(type, t);
+        }
+    }
+
+    private ItemTemplate.Vector2Wrapper createDefaultScale() {
+        ItemTemplate.Vector2Wrapper v = new ItemTemplate.Vector2Wrapper();
+        v.x = 1.0f;
+        v.y = 1.0f;
+        return v;
+    }
 }
