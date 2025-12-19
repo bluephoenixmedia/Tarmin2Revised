@@ -25,7 +25,8 @@ import com.bpm.minotaur.screens.LoadingScreen;
 import com.bpm.minotaur.screens.MainMenuScreen;
 
 /**
- * The main game class. Manages shared resources (SpriteBatch, Viewport, Managers)
+ * The main game class. Manages shared resources (SpriteBatch, Viewport,
+ * Managers)
  * and controls which screen is currently active.
  */
 public class Tarmin2 extends Game {
@@ -47,6 +48,11 @@ public class Tarmin2 extends Game {
 
     @Override
     public void create() {
+        // --- NEW: Set up Dual Logging ---
+        // This ensures all Gdx.app.log/error/debug calls go to BOTH console and file.
+        com.badlogic.gdx.ApplicationLogger existing = Gdx.app.getApplicationLogger();
+        Gdx.app.setApplicationLogger(new com.bpm.minotaur.managers.DualLogger(existing));
+
         BalanceLogger.getInstance().log("SESSION", "Engine Start. Initializing systems...");
 
         Bullet.init();
@@ -75,7 +81,8 @@ public class Tarmin2 extends Game {
         FileHandle spawnTableFile = Gdx.files.internal("data/spawntables.json");
         spawnTableData = json.fromJson(SpawnTableData.class, spawnTableFile);
 
-        // CRITICAL FIX: Manually convert containerLoot JsonValues to SpawnTableEntry objects
+        // CRITICAL FIX: Manually convert containerLoot JsonValues to SpawnTableEntry
+        // objects
         if (spawnTableData.containerLoot != null) {
             for (ObjectMap.Entry<String, Array<SpawnTableEntry>> entry : spawnTableData.containerLoot) {
                 Array<SpawnTableEntry> fixedArray = new Array<>();

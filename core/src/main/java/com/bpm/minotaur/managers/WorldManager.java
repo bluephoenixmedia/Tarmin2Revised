@@ -48,6 +48,9 @@ public class WorldManager {
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
 
+    // --- NEW: Master Seed ---
+    private long worldSeed;
+
     // --- NEW: Track where to place the return ladder ---
     private GridPoint2 pendingUpLadderPos = null;
 
@@ -55,11 +58,11 @@ public class WorldManager {
     private Player playerReference;
 
     public WorldManager(GameMode gameMode, Difficulty difficulty, int initialLevel,
-                        MonsterDataManager dataManager,
-                        ItemDataManager itemDataManager,
-                        AssetManager assetManager,
-                        SpawnTableData spawnTableData,
-                        SoundManager soundManager) {
+            MonsterDataManager dataManager,
+            ItemDataManager itemDataManager,
+            AssetManager assetManager,
+            SpawnTableData spawnTableData,
+            SoundManager soundManager) {
         this.gameMode = gameMode;
         this.difficulty = difficulty;
         this.currentLevel = initialLevel;
@@ -67,6 +70,10 @@ public class WorldManager {
         this.json.setUsePrototypes(false);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
         this.savingEnabled = true;
+
+        // Initialize Seed
+        this.worldSeed = new java.util.Random().nextLong();
+        Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
 
         this.biomeManager = new BiomeManager();
         this.dataManager = dataManager;
@@ -84,6 +91,17 @@ public class WorldManager {
         this.generators.put(Biome.FOREST, forestGen);
         this.generators.put(Biome.PLAINS, forestGen);
         this.currentLevelTheme = getThemeForLevel(initialLevel);
+    }
+
+    /**
+     * Calculates a deterministic seed for a specific chunk/level combination.
+     */
+    public long getChunkSeed(int level, int x, int y) {
+        long seed = worldSeed;
+        seed = 31 * seed + level;
+        seed = 31 * seed + x;
+        seed = 31 * seed + y;
+        return seed;
     }
 
     public void setPlayerReference(Player player) {
@@ -108,14 +126,49 @@ public class WorldManager {
         Gdx.app.log("WorldManager", "Saving has been enabled.");
     }
 
+    // --- NEW: Difficulty Persistence ---
+    private int difficultyOffset = 0;
+
     /**
-     * Calculates difficulty based on Depth + Horizontal Distance.
+     * Calculates difficulty based on Depth + Horizontal Distance + Offset.
      * Moving 2 chunks away is roughly equivalent to descending 1 floor.
      */
     private int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
         int horizontalDistance = Math.abs(chunkId.x) + Math.abs(chunkId.y);
         int distancePenalty = (int) (horizontalDistance * 0.5f);
-        return depth + distancePenalty;
+        return depth + distancePenalty + difficultyOffset;
+    }
+
+    public void resetWorldKeepDifficulty() {
+        Gdx.app.log("WorldManager", "RESETTING WORLD - PRESERVING DIFFICULTY");
+
+        // 1. Increase Difficulty Offset
+        // If we are at Level 5, we want next run's Level 1 to feel like Level 6 (or
+        // similar).
+        // effectiveLevel = 1 + offset.
+        // We want 1 + offset = currentLevel + 1?
+        // Let's simply add currentLevel to offset.
+        this.difficultyOffset += this.currentLevel;
+        Gdx.app.log("WorldManager", "Difficulty Offset increased to: " + difficultyOffset);
+
+        // 2. Clear Loaded State
+        loadedChunks.clear();
+        levelThemes.clear();
+        currentPlayerChunkId.set(0, 0);
+        this.currentLevel = 1;
+        this.currentLevelTheme = getThemeForLevel(1);
+        this.pendingUpLadderPos = null;
+
+        // 3. Delete Chunk Save Files (Keep Discovery, Keep Player meta if stored
+        // separately)
+        FileHandle saveDir = Gdx.files.local(SAVE_DIRECTORY);
+        if (saveDir.exists()) {
+            for (FileHandle file : saveDir.list()) {
+                if (file.name().startsWith("chunk_")) {
+                    file.delete();
+                }
+            }
+        }
     }
 
     // --- NEW: Descent Logic ---
@@ -136,7 +189,8 @@ public class WorldManager {
         // Update Deepest Level Tracking
         UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
 
-        Gdx.app.log("WorldManager", "Descending to Level " + currentLevel + ". Pending UP Ladder at " + pendingUpLadderPos);
+        Gdx.app.log("WorldManager",
+                "Descending to Level " + currentLevel + ". Pending UP Ladder at " + pendingUpLadderPos);
 
         // --- BALANCE LOGGING ---
         BalanceLogger.getInstance().log("NAVIGATION", "Descending to Depth " + currentLevel);
@@ -147,7 +201,8 @@ public class WorldManager {
 
     // --- NEW: Ascent Logic ---
     public boolean ascendLevel() {
-        if (currentLevel <= 1) return false;
+        if (currentLevel <= 1)
+            return false;
 
         saveAllChunks();
 
@@ -163,8 +218,9 @@ public class WorldManager {
     }
 
     private void saveAllChunks() {
-        if (!savingEnabled || gameMode == GameMode.CLASSIC) return;
-        for(Map.Entry<GridPoint2, Maze> entry : loadedChunks.entrySet()) {
+        if (!savingEnabled || gameMode == GameMode.CLASSIC)
+            return;
+        for (Map.Entry<GridPoint2, Maze> entry : loadedChunks.entrySet()) {
             saveChunk(entry.getValue(), entry.getKey());
         }
     }
@@ -175,8 +231,11 @@ public class WorldManager {
 
         if (gameMode == GameMode.CLASSIC) {
             Gdx.app.log("WorldManager", "CLASSIC mode: Generating new chunk.");
-            return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, difficulty, gameMode, RetroTheme.STANDARD_THEME,
-                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
+            long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
+            return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, effectiveLevel, difficulty,
+                    gameMode,
+                    RetroTheme.STANDARD_THEME,
+                    this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed);
         }
 
         if (loadedChunks.containsKey(chunkId)) {
@@ -232,9 +291,12 @@ public class WorldManager {
                 break;
         }
 
-        // Pass effectiveLevel instead of currentLevel
-        Maze newMaze = generator.generateChunk(chunkId, effectiveLevel, difficulty, gameMode, themeToGenerate,
-            this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData);
+        // Pass currentLevel as layoutLevel (for visuals) and effectiveLevel for
+        // difficulty (spawns)
+        long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
+        Maze newMaze = generator.generateChunk(chunkId, currentLevel, effectiveLevel, difficulty, gameMode,
+                themeToGenerate,
+                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed);
 
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
@@ -243,7 +305,8 @@ public class WorldManager {
 
         // --- BALANCE LOGGING ---
         BalanceLogger.getInstance().log("CHUNK_GEN",
-            String.format("Generated Chunk %s (Biome: %s) | Eff. Difficulty: %d", chunkId.toString(), biome.name(), effectiveLevel));
+                String.format("Generated Chunk %s (Biome: %s) | Eff. Difficulty: %d", chunkId.toString(), biome.name(),
+                        effectiveLevel));
 
         // Log all items spawned in this chunk to analyze distribution
         for (Item item : newMaze.getItems().values()) {
@@ -262,7 +325,9 @@ public class WorldManager {
         this.currentPlayerChunkId = chunkId;
     }
 
-    public int getCurrentLevel() { return currentLevel; }
+    public int getCurrentLevel() {
+        return currentLevel;
+    }
 
     public void setCurrentLevel(int level) {
         this.currentLevel = level;
@@ -282,12 +347,14 @@ public class WorldManager {
     }
 
     public void saveCurrentChunk(Maze maze) {
-        if (!savingEnabled || gameMode == GameMode.CLASSIC) return;
+        if (!savingEnabled || gameMode == GameMode.CLASSIC)
+            return;
         saveChunk(maze, this.currentPlayerChunkId);
     }
 
     private void saveChunk(Maze maze, GridPoint2 chunkId) {
-        if (!savingEnabled || gameMode == GameMode.CLASSIC) return;
+        if (!savingEnabled || gameMode == GameMode.CLASSIC)
+            return;
         try {
             ChunkData data = new ChunkData(maze);
             String jsonData = json.prettyPrint(data);
@@ -312,7 +379,8 @@ public class WorldManager {
             if (playerReference != null) {
                 Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
                 if (currentMaze != null) {
-                    boolean insideHome = currentMaze.isHomeTile((int)playerReference.getPosition().x, (int)playerReference.getPosition().y);
+                    boolean insideHome = currentMaze.isHomeTile((int) playerReference.getPosition().x,
+                            (int) playerReference.getPosition().y);
                     soundManager.setDampened(insideHome);
                 }
             }
@@ -356,7 +424,8 @@ public class WorldManager {
         Maze newMaze = loadedChunks.get(newChunkId);
         if (newMaze == null) {
             newMaze = this.loadChunk(newChunkId);
-            if (newMaze == null) return;
+            if (newMaze == null)
+                return;
         }
         this.currentPlayerChunkId = newChunkId;
         player.setMaze(newMaze);
@@ -366,10 +435,18 @@ public class WorldManager {
     public GridPoint2 getAdjacentChunkId(Direction direction) {
         GridPoint2 adj = new GridPoint2(this.currentPlayerChunkId);
         switch (direction) {
-            case NORTH: adj.y += 1; break;
-            case SOUTH: adj.y -= 1; break;
-            case EAST:  adj.x += 1; break;
-            case WEST:  adj.x -= 1; break;
+            case NORTH:
+                adj.y += 1;
+                break;
+            case SOUTH:
+                adj.y -= 1;
+                break;
+            case EAST:
+                adj.x += 1;
+                break;
+            case WEST:
+                adj.x -= 1;
+                break;
         }
         return adj;
     }

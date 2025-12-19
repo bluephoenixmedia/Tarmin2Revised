@@ -29,7 +29,8 @@ public class BalanceLogger {
     public static BalanceLogger getInstance() {
         if (instance == null) {
             instance = new BalanceLogger();
-            String header = "--- NEW SESSION: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + " ---\n";
+            String header = "--- NEW SESSION: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+                    + " ---\n";
             instance.writeRaw(header);
         }
         return instance;
@@ -53,17 +54,18 @@ public class BalanceLogger {
     // --- Analytics Helpers: Player ---
 
     public void logPlayerState(Player player) {
-        if (player == null) return;
+        if (player == null)
+            return;
         int pps = calculatePlayerPowerScore(player);
-        String state = String.format("Lvl: %d | XP: %d | WarStr: %d/%d | SpirStr: %d/%d | Food: %d | Arrows: %d | Est. Power Score: %d",
-            player.getLevel(),
-            player.getExperience(),
-            player.getWarStrength(), player.getEffectiveMaxWarStrength(),
-            player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength(),
-            player.getFood(),
-            player.getArrows(),
-            pps
-        );
+        String state = String.format(
+                "Lvl: %d | XP: %d | WarStr: %d/%d | SpirStr: %d/%d | Food: %d | Arrows: %d | Est. Power Score: %d",
+                player.getLevel(),
+                player.getExperience(),
+                player.getWarStrength(), player.getEffectiveMaxWarStrength(),
+                player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength(),
+                player.getFood(),
+                player.getArrows(),
+                pps);
         log("PLAYER_STATE", state);
     }
 
@@ -75,46 +77,60 @@ public class BalanceLogger {
         int delta = pps - mcr;
 
         String prediction = "Even Match";
-        if (delta > 20) prediction = "Player Advantage";
-        if (delta > 50) prediction = "STOMP";
-        if (delta < -10) prediction = "Hard Fight";
-        if (delta < -30) prediction = "DEADLY";
+        if (delta > 20)
+            prediction = "Player Advantage";
+        if (delta > 50)
+            prediction = "STOMP";
+        if (delta < -10)
+            prediction = "Hard Fight";
+        if (delta < -30)
+            prediction = "DEADLY";
 
         log("COMBAT_START", String.format("Vs %s (MCR: %d) | Player PPS: %d | Delta: %d (%s)",
-            monster.getMonsterType(), mcr, pps, delta, prediction));
+                monster.getMonsterType(), mcr, pps, delta, prediction));
     }
 
     public void logCombatRound(String attacker, String action, int roll, int damage, int targetHp) {
         log("COMBAT_ROUND", String.format("%s %s | Roll: %d | Dmg: %d | Target HP: %d",
-            attacker, action, roll, damage, targetHp));
+                attacker, action, roll, damage, targetHp));
     }
 
     public void logCombatEnd(String result, int turns, int damageTaken) {
         log("COMBAT_END", String.format("Result: %s | Turns: %d | Total Dmg Taken: %d",
-            result, turns, damageTaken));
+                result, turns, damageTaken));
     }
 
     // --- Analytics Helpers: Economy & Loot ---
 
     public void logItemSpawn(Item item, int level) {
-        if (item == null) return;
+        if (item == null)
+            return;
         String rarity = "Common/Tan";
 
         // Comprehensive Rarity Check
-        if (item.getItemColor() == ItemColor.GRAY) rarity = "Medium/Gray";
-        if (item.getItemColor() == ItemColor.GREEN) rarity = "Regular/Green";
-        if (item.getItemColor() == ItemColor.BLUE) rarity = "Rare/Blue";
-        if (item.getItemColor() == ItemColor.BLUE_STEEL) rarity = "Fair/BlueSteel";
-        if (item.getItemColor() == ItemColor.PURPLE) rarity = "Epic/Purple";
-        if (item.getItemColor() == ItemColor.YELLOW) rarity = "Legendary/Yellow";
-        if (item.getItemColor() == ItemColor.ORANGE) rarity = "Greater/Orange";
-        if (item.getItemColor() == ItemColor.WHITE) rarity = "Super/White";
+        if (item.getItemColor() == ItemColor.GRAY)
+            rarity = "Medium/Gray";
+        if (item.getItemColor() == ItemColor.GREEN)
+            rarity = "Regular/Green";
+        if (item.getItemColor() == ItemColor.BLUE)
+            rarity = "Rare/Blue";
+        if (item.getItemColor() == ItemColor.BLUE_STEEL)
+            rarity = "Fair/BlueSteel";
+        if (item.getItemColor() == ItemColor.PURPLE)
+            rarity = "Epic/Purple";
+        if (item.getItemColor() == ItemColor.YELLOW)
+            rarity = "Legendary/Yellow";
+        if (item.getItemColor() == ItemColor.ORANGE)
+            rarity = "Greater/Orange";
+        if (item.getItemColor() == ItemColor.WHITE)
+            rarity = "Super/White";
 
         // Filter out debris/junk from logs to keep it readable
-        if (item.getBaseValue() < 5 && !item.isKey()) return;
+        if (item.getBaseValue() < 5 && !item.isKey())
+            return;
 
         log("LOOT_SPAWN", String.format("Lvl %d | Item: %s (%s) | Val: %d | Rarity: %s",
-            level, item.getDisplayName(), item.getCategory(), item.getBaseValue(), rarity));
+                level, item.getDisplayName(), item.getCategory(), item.getBaseValue(), rarity));
     }
 
     public void logEconomy(String event, String detail, int value) {
@@ -131,12 +147,18 @@ public class BalanceLogger {
         score += player.getEffectiveMaxSpiritualStrength();
 
         // Equipment
-        if (player.getEquipment().getWornHelmet() != null) score += player.getEquipment().getWornHelmet().getArmorDefense() * 2;
-        if (player.getEquipment().getWornChest() != null) score += player.getEquipment().getWornChest().getArmorDefense() * 2;
-        if (player.getEquipment().getWornLegs() != null) score += player.getEquipment().getWornLegs().getArmorDefense() * 2;
-        if (player.getEquipment().getWornBoots() != null) score += player.getEquipment().getWornBoots().getArmorDefense() * 2;
-        if (player.getEquipment().getWornArms() != null) score += player.getEquipment().getWornArms().getArmorDefense() * 2;
-        if (player.getEquipment().getWornShield() != null) score += player.getEquipment().getWornShield().getArmorDefense() * 2;
+        if (player.getEquipment().getWornHelmet() != null)
+            score += player.getEquipment().getWornHelmet().getArmorDefense() * 2;
+        if (player.getEquipment().getWornChest() != null)
+            score += player.getEquipment().getWornChest().getArmorDefense() * 2;
+        if (player.getEquipment().getWornLegs() != null)
+            score += player.getEquipment().getWornLegs().getArmorDefense() * 2;
+        if (player.getEquipment().getWornBoots() != null)
+            score += player.getEquipment().getWornBoots().getArmorDefense() * 2;
+        if (player.getEquipment().getWornArms() != null)
+            score += player.getEquipment().getWornArms().getArmorDefense() * 2;
+        if (player.getEquipment().getWornShield() != null)
+            score += player.getEquipment().getWornShield().getArmorDefense() * 2;
 
         // Weapon
         if (player.getInventory().getRightHand() != null) {
@@ -154,8 +176,14 @@ public class BalanceLogger {
         score += monster.getArmor() * 3;
         score += monster.getDexterity();
 
-        if (monster.hasRangedAttack()) score += 15;
+        if (monster.hasRangedAttack())
+            score += 15;
 
         return score;
+    }
+
+    public void logWorldReset(int oldLevel, int newOffset, int effectiveDifficulty) {
+        log("WORLD_RESET", String.format("Portal Used! Reset from Lvl %d. New Diff Offset: %d. New Lvl 1 Eff. Diff: %d",
+                oldLevel, newOffset, effectiveDifficulty));
     }
 }

@@ -173,6 +173,7 @@ public class FirstPersonRenderer {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);
+            spriteBatch.end();
         } else {
             // RETRO MODE
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);

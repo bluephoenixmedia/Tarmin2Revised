@@ -23,7 +23,7 @@ public class Item implements Renderable {
         KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
         MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
-        REGULAR_CHEST, LAMP, UNKNOWN, LADDER,
+        REGULAR_CHEST, LAMP, UNKNOWN, LADDER, WAND,
 
         // Randomized Items
         SCROLL_A, SCROLL_B, SCROLL_C, SCROLL_D, SCROLL_E, SCROLL_F, SCROLL_G, SCROLL_H,
@@ -33,7 +33,8 @@ public class Item implements Renderable {
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT,
 
         // Corpse & Resources
-        CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP,
+        CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
+        MONSTER_EYE,
 
         // Debris
         STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
@@ -315,6 +316,10 @@ public class Item implements Renderable {
     }
 
     public ItemCategory getCategory() {
+        // Fix: Ensure Scrolls are always treated as USEFUL (Readable), never as Weapons
+        if (type.name().startsWith("SCROLL"))
+            return ItemCategory.USEFUL;
+
         if (isWeapon)
             return (spiritDamage > 0) ? ItemCategory.SPIRITUAL_WEAPON : ItemCategory.WAR_WEAPON;
         if (isArmor)

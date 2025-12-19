@@ -45,6 +45,9 @@ public class ItemTemplate {
 
     public Vector2Wrapper scale;
 
+    // --- Bone & Die System ---
+    public List<com.bpm.minotaur.gamedata.dice.DieDefinition> grantedDice;
+
     public List<ItemVariant> variants;
 
     public static class Vector2Wrapper {

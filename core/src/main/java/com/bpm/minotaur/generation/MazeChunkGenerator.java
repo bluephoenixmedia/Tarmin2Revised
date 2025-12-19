@@ -137,10 +137,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     @Override
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode,
+    public Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
+            GameMode gameMode,
             RetroTheme.Theme theme,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData) {
+            SpawnTableData spawnTableData, long chunkSeed) { // New Argument
+
+        // Initialize Random with the deterministic seed
+        random.setSeed(chunkSeed);
+        Gdx.app.log("MazeChunkGenerator", "Generating Chunk " + chunkId + " with Seed: " + chunkSeed);
 
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
         int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
@@ -149,7 +154,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int maxAttempts = 50;
 
         do {
-            createMazeFromArrayTiles(mapRows, mapCols, chunkId, level);
+            createMazeFromArrayTiles(mapRows, mapCols, chunkId, layoutLevel);
             attempts++;
         } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
 
@@ -159,15 +164,15 @@ public class MazeChunkGenerator implements IChunkGenerator {
             forceClearTile(forcedUpLadderPos);
         }
 
-        Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
+        Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme);
 
         if (!currentChunkHomeTiles.isEmpty()) {
             maze.setHomeTiles(new ArrayList<>(currentChunkHomeTiles));
         }
 
-        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager,
-                spawnTableData);
+        spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
+                spawnTableData, chunkSeed); // <-- Pass chunkSeed
         spawnLadder(maze, this.finalLayout);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -247,9 +252,14 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData) {
+            SpawnTableData spawnTableData, long chunkSeed) { // <-- Pass chunkSeed
+
+        // Derive a stable seed for SpawnManager that is independent of maze generation
+        // RNG usage
+        long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
+
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
-                level, layout, spawnTableData);
+                level, layout, spawnTableData, spawnSeed);
         spawnManager.spawnEntities();
     }
 

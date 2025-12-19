@@ -27,6 +27,7 @@ public enum StatusEffectType {
     SOAKED,
     SEIZURE,
     BLEEDING,
+    BLIND,
 
     // Positive Effects (Buffs)
     FOCUSED,
@@ -43,7 +44,7 @@ public enum StatusEffectType {
     SUPER_SPEED,
     HARDENED,
     SUPER_INTELLIGENT, // Identify items
-    OMNISCIENT;       // See map
+    OMNISCIENT; // See map
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;

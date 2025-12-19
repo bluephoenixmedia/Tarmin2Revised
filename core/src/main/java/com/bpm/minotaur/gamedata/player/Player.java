@@ -147,6 +147,13 @@ public class Player {
                 return;
             }
 
+            // --- NEW: Portal Interaction ---
+            if (itemInFront.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
+                useMysteriousPortal(maze, eventManager);
+                return;
+            }
+            // -------------------------------
+
             if (pickupItem(itemInFront)) {
                 maze.getItems().remove(targetTile);
                 soundManager.playPickupItemSound();
@@ -185,6 +192,25 @@ public class Player {
         if (item.isFood()) {
             // Basic food value
             stats.addFood(5);
+
+            // Apply Random Effect if present (e.g. Cooked Meat)
+            if (item.getTrueEffect() != null) {
+                item.getTrueEffect().applyEffect(this, statusManager);
+
+                // Show effect message
+                String msg = item.getTrueEffect().getConsumeMessage();
+                if (msg != null) {
+                    eventManager.addEvent(new GameEvent(msg, 2f));
+                }
+                // Identification check
+                if (!discoveryManager.isPotionIdentified(item.getTrueEffect())
+                        && item.getTrueEffect().doesSelfIdentify()) {
+                    discoveryManager.identifyPotion(this, item.getTrueEffect());
+                    eventManager.addEvent(
+                            new GameEvent("You discovered it was " + item.getTrueEffect().getBaseName() + "!", 2.0f));
+                }
+            }
+
             inventory.removeItem(item); // Consume it
             eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
             soundManager.playPickupItemSound(); // Re-using pickup sound for eating for now
@@ -195,6 +221,13 @@ public class Player {
         }
         // -------------------------------
 
+        // --- SCROLL HANDLING (Moved before isUsable check and widened) ---
+        if (item.getType().name().contains("SCROLL")) {
+            read(item, discoveryManager, eventManager, maze);
+            return;
+        }
+        // ----------------------------------------------------------------
+
         if (!item.isUsable() && !item.isPotion() && !item.isArmor() && !item.isRing()) {
             eventManager.addEvent(new GameEvent("You can't use that.", 2f));
             return;
@@ -202,11 +235,6 @@ public class Player {
 
         if (item.isPotion()) {
             quaff(item, discoveryManager, eventManager);
-            return;
-        }
-
-        if (item.getType().name().startsWith("SCROLL_")) {
-            read(item, discoveryManager, eventManager, maze);
             return;
         }
 
@@ -235,6 +263,17 @@ public class Player {
     }
 
     // --- NEW INTERACTION METHODS ---
+
+    private void useMysteriousPortal(Maze maze, GameEventManager eventManager) {
+        eventManager.addEvent(new GameEvent("You step into the swirling portal...", 2.0f));
+        eventManager.addEvent(new GameEvent("The world dissolves around you!", 3.0f));
+
+        // Trigger System Event
+        eventManager.addEvent(new GameEvent(GameEvent.EventType.PORTAL_ACTIVATED, null));
+
+        // --- BALANCE LOGGING ---
+        BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. Reset imminent.");
+    }
 
     public void quaff(Item potion, DiscoveryManager discoveryManager, GameEventManager eventManager) {
         if (potion == null) {
@@ -566,6 +605,11 @@ public class Player {
         // ------------------------------------------
     }
 
+    public void heal(int amount) {
+        setWarStrength(getWarStrength() + amount);
+        com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + getWarStrength());
+    }
+
     private void useConsumable(Item item, GameEventManager eventManager) {
         switch (item.getType()) {
             case WAR_BOOK:
@@ -598,18 +642,27 @@ public class Player {
             int warStrengthGained = 5;
             int spiritualStrengthGained = 5;
 
-            this.setWarStrength(Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
-            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
-                    stats.getSpiritualStrength() + spiritualStrengthGained));
+            // Check for Level Up
+            if (stats.canLevelUp()) {
+                performLevelUp(eventManager); // Call the private helper that calls stats.performLevelUp()
+                // Don't consume food if leveling up? Or maybe require food TO level up?
+                // Let's require food to level up as well.
+            } else {
+                // Standard Rest (Heal)
+                this.setWarStrength(
+                        Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
+                stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
+                        stats.getSpiritualStrength() + spiritualStrengthGained));
 
-            eventManager.addEvent(new GameEvent(
-                    ("WS restored to " + stats.getWarStrength() + ", SS restored to " + stats.getSpiritualStrength()),
-                    2f));
+                eventManager.addEvent(new GameEvent(
+                        ("WS restored to " + stats.getWarStrength() + ", SS restored to "
+                                + stats.getSpiritualStrength()),
+                        2f));
+            }
 
             // --- LOGGING ---
             BalanceLogger.getInstance().logEconomy("RES_USED", "Food", 1);
             // ---------------
-
         } else {
             eventManager.addEvent(new GameEvent("You have no food to rest.", 2f));
         }
@@ -628,11 +681,22 @@ public class Player {
 
         // --- CHIP DAMAGE FIX: Always take at least 1 damage ---
         int minDamage = 1;
-        amount = Math.max(minDamage, amount);
+        // Strict enforcement: If initial amount was > 0 (it was an attack), ensure at
+        // least 1 dmg
+        if (amount < minDamage) {
+            amount = minDamage;
+        }
         // ----------------------------------------------------
 
         int finalDamage = Math.max(0, (int) (amount * stats.getVulnerabilityMultiplier()));
+
+        // Final Safety: Ensure we don't heal from damage
+        if (finalDamage < 1)
+            finalDamage = 1;
+
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
+
+        com.badlogic.gdx.Gdx.app.log("Player", "Taken Damage: " + finalDamage + " (Adj. Amount: " + amount + ")");
 
         return finalDamage;
     }
@@ -1019,6 +1083,13 @@ public class Player {
         }
     }
 
+    // In interactWithItem, we need to detect the portal.
+    // The Portal is an ITEM on the ground? Or a Tile?
+    // User requested "encounter a mysterious portal".
+    // I implemented it as an ItemType.MYSTERIOUS_PORTAL.
+
+    // ... inside interactWithItem ...
+
     public void addArrows(int amount) {
         stats.addArrows(amount);
     }
@@ -1038,16 +1109,18 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean leveledUp = stats.addExperience(amount);
+        boolean readyToLevel = stats.addExperience(amount);
 
         eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
-        if (leveledUp) {
-            levelUp(eventManager);
+        if (readyToLevel) {
+            eventManager
+                    .addEvent(new GameEvent("You have enough experience to level up! Sleep in a bed to advance.", 3f));
         }
     }
 
-    private void levelUp(GameEventManager eventManager) {
+    private void performLevelUp(GameEventManager eventManager) {
+        stats.performLevelUp();
         soundManager.playPlayerLevelUpSound();
         eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
     }

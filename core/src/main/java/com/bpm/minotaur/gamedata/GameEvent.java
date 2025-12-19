@@ -8,8 +8,9 @@ public class GameEvent {
         CHUNK_TRANSITION,
         // --- NEW ---
         EFFECT_APPLIED, // For when an effect is first added
-        EFFECT_CURED    // For when an effect is removed (by potion, spell, or expiry)
+        EFFECT_CURED, // For when an effect is removed (by potion, spell, or expiry)
         // --- END NEW ---
+        PORTAL_ACTIVATED
     }
 
     // --- Fields ---
@@ -20,7 +21,8 @@ public class GameEvent {
 
     /**
      * Constructor for MESSAGE events.
-     * @param message The text to be displayed on the HUD.
+     * 
+     * @param message    The text to be displayed on the HUD.
      * @param timeToLive How long the message should be displayed.
      */
     public GameEvent(String message, float timeToLive) {
@@ -32,7 +34,8 @@ public class GameEvent {
 
     /**
      * Constructor for non-MESSAGE (system) events.
-     * @param type The type of event (e.g., CHUNK_TRANSITION).
+     * 
+     * @param type    The type of event (e.g., CHUNK_TRANSITION).
      * @param payload The data object associated with the event (e.g., a Gate).
      */
     public GameEvent(EventType type, Object payload) {

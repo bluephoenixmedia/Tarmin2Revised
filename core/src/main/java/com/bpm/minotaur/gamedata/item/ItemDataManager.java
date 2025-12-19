@@ -105,6 +105,20 @@ public class ItemDataManager {
                     itemTemplates.put(type, newTemplate);
                 }
             }
+
+            // --- Generic WAND Template ---
+            if (!itemTemplates.containsKey(ItemType.WAND)) {
+                ItemTemplate newTemplate = new ItemTemplate();
+                newTemplate.friendlyName = "Wand";
+                newTemplate.description = "A smooth stick with magical energy.";
+                newTemplate.texturePath = baseWand.texturePath;
+                newTemplate.spriteData = baseWand.spriteData;
+                newTemplate.baseValue = 100;
+                newTemplate.isUsable = true;
+                newTemplate.isWandAppearance = true;
+                newTemplate.scale = baseWand.scale;
+                itemTemplates.put(ItemType.WAND, newTemplate);
+            }
         }
 
         // Rings (Ensure they are marked as ring appearances)
@@ -235,19 +249,17 @@ public class ItemDataManager {
                 ScrollEffectType effect = discoveryManager.getScrollEffect(type);
                 if (effect != null) {
                     item.setScrollEffect(effect);
-                    boolean isIdentified = discoveryManager.isScrollIdentified(effect);
-                    item.setIdentified(isIdentified);
-                    if (isIdentified) {
+                    if (discoveryManager.isScrollIdentified(effect)) {
                         item.setName("Scroll of " + effect.getBaseName());
+                        item.setIdentified(true);
                     } else {
-                        // Keep generic appearance name, e.g. "Labeled Scroll"
-                        // Or we could append the unique label like "Scroll labeled ZELGO"
-                        // For now detailed labels are abstracted away by the ItemType (SCROLL_A etc)
-                        // But strictly, each SCROLL_A should have a consistent label text.
-                        // We can map SCROLL_A -> "ZELGO MER", SCROLL_B -> "JUYED AWK" etc globally.
-                        // For this iteration, just "Labeled Scroll" until identified is fine.
                         item.setName("Labeled Scroll");
                     }
+                    // TODO: We need a way to set category if it is not mutable.
+                    // For now, removing the invalid setCategory call to fix syntax.
+                    // implementation_plan.md noted checking ItemDataManager OR items.json.
+                    // If we can't set it here, we must rely on items.json having the correct
+                    // category.
                 }
             }
         }
@@ -255,6 +267,7 @@ public class ItemDataManager {
         // --- NEW WAND LOGIC ---
         if (template.isWandAppearance) {
             if (discoveryManager != null) {
+
                 WandEffectType effect = discoveryManager.getWandEffect(type);
                 if (effect != null) {
                     item.setWandEffect(effect);

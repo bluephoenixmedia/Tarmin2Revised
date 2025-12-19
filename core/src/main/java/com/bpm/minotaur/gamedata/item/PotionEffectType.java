@@ -30,14 +30,26 @@ public enum PotionEffectType {
         this.consumeMessage = consumeMessage;
     }
 
-    public String getBaseName() { return baseName; }
-    public String getDescription() { return description; }
-    public String getConsumeMessage() { return consumeMessage; }
-    public boolean doesSelfIdentify() { return selfIdentifies; }
+    public String getBaseName() {
+        return baseName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getConsumeMessage() {
+        return consumeMessage;
+    }
+
+    public boolean doesSelfIdentify() {
+        return selfIdentifies;
+    }
 
     /**
      * Applies the potion's effect to the player.
-     * @param player The player consuming the potion.
+     * 
+     * @param player        The player consuming the potion.
      * @param statusManager A reference to the game's StatusManager.
      */
     public void applyEffect(Player player, StatusManager statusManager) {
@@ -60,8 +72,7 @@ public enum PotionEffectType {
                 break;
             case BLINDNESS:
                 // Apply BLIND status for 20 turns
-                // We'll need to add BLIND to StatusEffectType enum
-                // statusManager.addEffect(StatusEffectType.BLIND, 20, 1, false);
+                statusManager.addEffect(StatusEffectType.BLIND, 20, 1, false);
                 break;
             case CONFUSION:
                 statusManager.addEffect(StatusEffectType.CONFUSED, 15, 1, false);

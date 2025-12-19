@@ -446,6 +446,9 @@ public class Hud implements Disposable {
             // Middle Column Background (Player Info)
             shapeRenderer.rect(360, 400, 340, 650);
 
+            // New Column Background (Entity List)
+            shapeRenderer.rect(720, 400, 260, 650);
+
             // Right Column Background (World/Items/Minimap)
             // Spanning width to include minimap area
             shapeRenderer.rect(1000, 400, 300, 650);
@@ -557,6 +560,127 @@ public class Hud implements Disposable {
                 } else {
                     defaultFont.draw(spriteBatch, "Empty", midColX, midY);
                     midY -= lineGap;
+                }
+            }
+
+            // --- COLUMN 2.5: ENTITY LIST ---
+            float entityColX = 730;
+            float entityY = 1030;
+
+            if (maze != null) {
+                // 1. Check for Portal
+                boolean hasPortal = false;
+                for (Item item : maze.getItems().values()) {
+                    if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
+                        hasPortal = true;
+                        break;
+                    }
+                }
+
+                if (hasPortal) {
+                    defaultFont.setColor(Color.LIME);
+                    defaultFont.draw(spriteBatch, "PORTAL DETECTED!", entityColX, entityY);
+                    entityY -= lineGap;
+                } else {
+                    defaultFont.setColor(Color.GRAY);
+                    defaultFont.draw(spriteBatch, "No Portal", entityColX, entityY);
+                    entityY -= lineGap;
+                }
+
+                entityY -= 10;
+
+                // 2. List Monsters
+                defaultFont.setColor(Color.RED);
+                defaultFont.draw(spriteBatch, "MONSTERS", entityColX, entityY);
+                entityY -= lineGap;
+                defaultFont.setColor(Color.WHITE);
+
+                java.util.Map<String, Integer> monsterCounts = new java.util.HashMap<>();
+                for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                    String name = m.getType().name();
+                    monsterCounts.put(name, monsterCounts.getOrDefault(name, 0) + 1);
+                }
+                for (java.util.Map.Entry<String, Integer> entry : monsterCounts.entrySet()) {
+                    if (entityY < 420)
+                        break;
+                    defaultFont.draw(spriteBatch, entry.getValue() + "x " + entry.getKey(), entityColX, entityY);
+                    entityY -= lineGap;
+                }
+
+                entityY -= 10;
+
+                // 3. List Items
+                defaultFont.setColor(Color.YELLOW);
+                defaultFont.draw(spriteBatch, "ITEMS (REVEALED)", entityColX, entityY);
+                entityY -= lineGap;
+
+                defaultFont.setColor(Color.CYAN);
+                java.util.Map<String, Integer> itemCounts = new java.util.HashMap<>();
+                java.util.Map<String, Item> sampleItems = new java.util.HashMap<>();
+
+                for (Item item : maze.getItems().values()) {
+                    // Skip Portal in this list as it has its own dedicated status line above
+                    if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL)
+                        continue;
+
+                    String name = item.getFriendlyName();
+                    if (name == null || name.isEmpty())
+                        name = item.getType().name();
+
+                    if (item.getType().name().contains("SCROLL")) {
+                        if (item.getScrollEffect() != null) {
+                            name = "Scroll: " + item.getScrollEffect().getBaseName();
+                        }
+                    } else if (item.isPotion() && item.getTrueEffect() != null) {
+                        name = "Potion: " + item.getTrueEffect().getBaseName();
+                    }
+
+                    itemCounts.put(name, itemCounts.getOrDefault(name, 0) + 1);
+                    if (!sampleItems.containsKey(name)) {
+                        sampleItems.put(name, item);
+                    }
+                }
+                java.util.List<String> sortedKeys = new java.util.ArrayList<>(itemCounts.keySet());
+                java.util.Collections.sort(sortedKeys);
+
+                for (String key : sortedKeys) {
+                    if (entityY < 420)
+                        break;
+
+                    Item sample = sampleItems.get(key);
+
+                    // --- Draw Icon ---
+                    spriteBatch.end();
+                    shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+                    float iconSize = 10f;
+                    float iconX = entityColX - 15;
+                    float iconY = entityY - 10; // Adjust for baseline
+
+                    if (sample.getCategory() == ItemCategory.WAR_WEAPON
+                            || sample.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+                        shapeRenderer.setColor(Color.ORANGE);
+                        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
+                    } else if (sample.isPotion()) {
+                        shapeRenderer.setColor(Color.PINK);
+                        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
+                    } else if (sample.getType().toString().contains("SCROLL")) {
+                        shapeRenderer.setColor(Color.CYAN);
+                        shapeRenderer.rect(iconX, iconY, iconSize, iconSize);
+                    } else {
+                        shapeRenderer.setColor(Color.YELLOW);
+                        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
+                    }
+
+                    shapeRenderer.end();
+                    spriteBatch.begin();
+                    // -----------------
+
+                    // Truncate if too long
+                    String dispKey = key.length() > 22 ? key.substring(0, 22) + "..." : key;
+                    defaultFont.setColor(Color.LIGHT_GRAY);
+                    defaultFont.draw(spriteBatch, itemCounts.get(key) + "x " + dispKey, entityColX, entityY);
+                    entityY -= lineGap;
                 }
             }
 

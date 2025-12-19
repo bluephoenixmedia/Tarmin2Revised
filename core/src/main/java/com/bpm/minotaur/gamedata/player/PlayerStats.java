@@ -17,6 +17,11 @@ public class PlayerStats {
     private int experience;
     private int experienceToNextLevel;
 
+    // --- NEW: Bone & Die System ---
+    private java.util.List<com.bpm.minotaur.gamedata.dice.Die> dicePool = new java.util.ArrayList<>();
+    private java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> artifacts = new java.util.ArrayList<>();
+    private int stamina = 3; // Initial stamina for dice selection
+
     // --- UPDATED: XP CONSTANTS FOR SLOWER PROGRESSION ---
     private static final int BASE_XP_REQUIRED = 150; // Increased from 100
     private static final double LOG_BASE = 1.5; // Increased from 1.2 for steeper curve
@@ -57,25 +62,27 @@ public class PlayerStats {
     }
 
     /**
-     * Adds experience and handles leveling up internally.
+     * Adds experience. Does NOT automatically level up.
      * 
      * @param amount The amount of experience to add.
-     * @return true if the player leveled up, false otherwise.
+     * @return true if the player now has enough XP to level up.
      */
     public boolean addExperience(int amount) {
         if (amount <= 0)
             return false;
         this.experience += amount;
 
-        boolean leveledUp = false;
-        while (this.experience >= this.experienceToNextLevel) {
-            levelUp();
-            leveledUp = true;
-        }
-        return leveledUp;
+        return canLevelUp();
     }
 
-    private void levelUp() {
+    public boolean canLevelUp() {
+        return this.experience >= this.experienceToNextLevel;
+    }
+
+    public void performLevelUp() {
+        if (!canLevelUp())
+            return;
+
         this.experience -= this.experienceToNextLevel; // Carry over remaining XP
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
@@ -235,5 +242,22 @@ public class PlayerStats {
 
     public void setDexterity(int dexterity) {
         this.dexterity = dexterity;
+    }
+
+    // --- Bone & Die Getters ---
+    public java.util.List<com.bpm.minotaur.gamedata.dice.Die> getDicePool() {
+        return dicePool;
+    }
+
+    public java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> getArtifacts() {
+        return artifacts;
+    }
+
+    public int getStamina() {
+        return stamina;
+    }
+
+    public void setStamina(int stamina) {
+        this.stamina = stamina;
     }
 }

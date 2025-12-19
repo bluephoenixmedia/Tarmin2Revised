@@ -17,6 +17,11 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.gamedata.item.ItemCategory;
+import com.bpm.minotaur.gamedata.dice.Die;
+import com.bpm.minotaur.gamedata.dice.DieResult;
+import com.bpm.minotaur.gamedata.dice.DieFaceType;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.util.Random;
 
@@ -25,6 +30,7 @@ public class CombatManager {
     public enum CombatState {
         INACTIVE,
         PLAYER_TURN,
+        PLAYER_SELECT_DICE, // NEW: Choosing hand
         PHYSICS_RESOLUTION, // Rolling
         PHYSICS_DELAY, // Viewing Result
         MONSTER_TURN,
@@ -271,22 +277,38 @@ public class CombatManager {
     }
 
     // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
+    // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
     public void playerAttackWithDice() {
         if (currentState != CombatState.PLAYER_TURN)
             return;
-        if (!prepareAttack())
+
+        // Transition to Dice Selection Overlay
+        currentState = CombatState.PLAYER_SELECT_DICE;
+        BalanceLogger.getInstance().log("COMBAT_STATE", "Transitioned to PLAYER_SELECT_DICE. Waiting for UI.");
+        Gdx.app.log("CombatManager", "State changed to PLAYER_SELECT_DICE");
+    }
+
+    public void confirmDiceSelection(List<Die> selectedHand) {
+        if (currentState != CombatState.PLAYER_SELECT_DICE)
             return;
+
+        if (selectedHand.isEmpty()) {
+            // Fallback for empty hand (Fists)
+            selectedHand.add(new Die("Fists", com.badlogic.gdx.graphics.Color.WHITE,
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.SWORD, 1),
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.BLANK, 0),
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.SWORD, 1),
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.BLANK, 0),
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.SHIELD, 1),
+                    new com.bpm.minotaur.gamedata.dice.DieFace(DieFaceType.SWORD, 2)));
+        }
 
         // TRIGGER PHYSICS STATE
         currentState = CombatState.PHYSICS_RESOLUTION;
         physicsTimer = 0f;
 
-        // Calculate die size
-        int dieSize = calculateDieSize();
-        float force = 10f + (player.getWarStrength() * 2f);
-
-        // Spawn the correct die type
-        stochasticManager.spawnDie(dieSize, force);
+        // Spawn the selected dice
+        stochasticManager.spawnDice(selectedHand);
 
         eventManager.addEvent(new GameEvent("Rolling for fate...", 1f));
     }
@@ -294,6 +316,92 @@ public class CombatManager {
     // Kept for backward compatibility if called elsewhere, maps to Instant
     public void playerAttack() {
         playerAttackInstant();
+    }
+
+    private void resolveDiceHand(List<DieResult> results) {
+        currentCombatTurns++;
+
+        int totalDamage = 0;
+        int totalBlock = 0;
+        int healing = 0;
+        int fireDamage = 0;
+        int lightningDamage = 0;
+
+        StringBuilder log = new StringBuilder("Rolled: ");
+
+        for (DieResult res : results) {
+            log.append(res.getRolledFace().toString()).append(", ");
+            switch (res.getRolledFace().getType()) {
+                case SWORD:
+                    totalDamage += res.getRolledFace().getValue();
+                    break;
+                case SHIELD:
+                    totalBlock += res.getRolledFace().getValue();
+                    break;
+                case HEART:
+                    healing += res.getRolledFace().getValue();
+                    break;
+                case FIRE:
+                    fireDamage += res.getRolledFace().getValue();
+                    break;
+                case LIGHTNING:
+                    lightningDamage += res.getRolledFace().getValue();
+                    break;
+                case SKULL:
+                    // Risky Logic later
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        Gdx.app.log("CombatManager", log.toString());
+
+        // --- Apply Results ---
+
+        // 1. Healing
+        if (healing > 0) {
+            player.heal(healing);
+            eventManager.addEvent(new GameEvent("Healed " + healing + " HP", 1f));
+        }
+
+        // 2. Damage
+        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getStats().getAttackModifier();
+
+        // Log artifacts logic here later
+
+        if (totalAttack > 0) {
+            int actualDamage = monster.takeDamage(totalAttack);
+            // Visuals
+            String[] sprite = itemDataManager.getTemplate(com.bpm.minotaur.gamedata.item.Item.ItemType.DART).spriteData; // Default
+                                                                                                                         // punch
+            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
+                    player.getPosition(), monster.getPosition(),
+                    com.bpm.minotaur.gamedata.item.ItemColor.WHITE.getColor(), 0.5f,
+                    sprite));
+
+            if (actualDamage > 0) {
+                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
+                Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
+                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+            }
+            showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+            eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
+
+            lastDamageDealt = actualDamage;
+        } else {
+            eventManager.addEvent(new GameEvent("Miss!", 1f));
+        }
+
+        stochasticManager.clearDice();
+
+        if (monster.getWarStrength() <= 0) {
+            currentState = CombatState.VICTORY;
+            // Victory Logic reused from update()
+        } else {
+            currentState = CombatState.MONSTER_TURN;
+        }
     }
 
     private void resolveAttack(int rollBonus) {
@@ -522,8 +630,8 @@ public class CombatManager {
             physicsTimer += delta;
             if (physicsTimer > RESULT_VIEW_TIME) {
                 // --- GET REAL ROLL ---
-                int realRoll = stochasticManager.getRolledResult();
-                resolveAttack(realRoll);
+                List<DieResult> results = stochasticManager.getRolledResults();
+                resolveDiceHand(results);
             }
             return;
         }

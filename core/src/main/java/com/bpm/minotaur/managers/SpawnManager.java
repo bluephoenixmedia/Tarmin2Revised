@@ -1,6 +1,5 @@
 package com.bpm.minotaur.managers;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
@@ -56,8 +55,9 @@ public class SpawnManager {
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             Maze maze, Difficulty difficulty, int level, String[] layout,
-            SpawnTableData spawnTableData) {
+            SpawnTableData spawnTableData, long seed) {
         this.maze = maze;
+        this.random.setSeed(seed); // Initialize with deterministic seed
         this.difficulty = difficulty;
         this.level = level;
         this.dataManager = dataManager;
@@ -150,18 +150,46 @@ public class SpawnManager {
         spawnDebris(budget.debrisBudget); // <-- NEW CALL
     }
 
+    // --- NEW: Helper for Prediction ---
+    public static WeightedRandomList<SpawnTableEntry> buildDebrisPool(SpawnTableData data, int level) {
+        WeightedRandomList<SpawnTableEntry> pool = new WeightedRandomList<>();
+        if (data.debrisSpawnTable != null) {
+            for (SpawnTableEntry entry : data.debrisSpawnTable) {
+                if (level >= entry.minLevel && level <= entry.maxLevel) {
+                    pool.add(entry);
+                }
+            }
+        }
+        return pool;
+    }
+
+    public static int getDebrisBudget(SpawnTableData data, int level) {
+        LevelBudget budget = data.defaultBudget;
+        for (LevelBudget b : data.levelBudgets) {
+            if (b.level == level) {
+                budget = b;
+                break;
+            }
+        }
+        return budget.debrisBudget;
+    }
+
     // --- NEW METHOD ---
     private void spawnDebris(int budget) {
-        if (debrisPool.isEmpty() || validSpawnPoints.isEmpty())
+        if (debrisPool.isEmpty())
             return;
 
         for (int i = 0; i < budget; i++) {
-            // Pick a random floor tile (reuse tiles allowed)
-            GridPoint2 spawnPoint = validSpawnPoints.get(random.nextInt(validSpawnPoints.size()));
-
-            SpawnTableEntry entry = debrisPool.getRandomEntry();
+            // [REFACTORED] What before Where
+            // 1. Pick Item Type FIRST
+            SpawnTableEntry entry = debrisPool.getRandomEntry(this.random); // Ensure WeightedRandomList uses OUR random
             if (entry == null)
                 continue;
+
+            // 2. Then pick Spot
+            if (validSpawnPoints.isEmpty())
+                continue;
+            GridPoint2 spawnPoint = validSpawnPoints.get(random.nextInt(validSpawnPoints.size()));
 
             Item.ItemType type;
             try {
@@ -180,13 +208,32 @@ public class SpawnManager {
             float offsetX = 0.2f + random.nextFloat() * 0.6f;
             float offsetY = 0.2f + random.nextFloat() * 0.6f;
 
-            // Ensure Item.java has setPosition(float, float) or use this:
             if (debris.getPosition() != null) {
                 debris.getPosition().set(spawnPoint.x + offsetX, spawnPoint.y + offsetY);
             }
 
             maze.addItem(debris);
         }
+    }
+
+    /**
+     * STATIC PREDICTION METHOD
+     * Simulates debris spawning to fail-fast check if a portal exists.
+     */
+    public static boolean predictPortalSpawn(long seed, int budget, WeightedRandomList<SpawnTableEntry> _debrisPool) {
+        java.util.Random simRandom = new java.util.Random(seed);
+
+        if (_debrisPool == null || _debrisPool.isEmpty())
+            return false;
+
+        for (int i = 0; i < budget; i++) {
+            // We must simulate the exact same random calls as spawnDebris
+            SpawnTableEntry entry = _debrisPool.getRandomEntry(simRandom);
+            if (entry != null && "MYSTERIOUS_PORTAL".equals(entry.type)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void spawnMonsters(int budget) {

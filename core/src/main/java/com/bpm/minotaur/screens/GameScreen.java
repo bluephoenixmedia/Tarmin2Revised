@@ -6,7 +6,7 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -36,12 +36,15 @@ import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.managers.CraftingManager;
 import com.bpm.minotaur.rendering.*;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
+import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
+import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GameScreen extends BaseScreen implements InputProcessor {
+public class GameScreen extends BaseScreen {
 
     // --- Core Dependencies ---
     private final DebugManager debugManager = DebugManager.getInstance();
@@ -75,6 +78,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     private Maze maze;
     private int currentLevel;
     private CombatManager combatManager;
+    private CombatDiceOverlay combatDiceOverlay; // NEW
     private MonsterAiManager monsterAiManager;
     private DiscoveryManager discoveryManager;
     private CraftingManager craftingManager;
@@ -212,6 +216,11 @@ public class GameScreen extends BaseScreen implements InputProcessor {
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
                 worldManager, game.getItemDataManager(), stochasticManager);
+
+        // --- DICE UI INTEGRATION ---
+        this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager);
+        // ---------------------------
+
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
@@ -266,6 +275,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
     public void render(float delta) {
         time += delta;
         combatManager.update(delta);
+        if (combatDiceOverlay != null)
+            combatDiceOverlay.update(delta);
         animationManager.update(delta);
         if (maze != null)
             maze.update(delta);
@@ -297,7 +308,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         }
 
         ScreenUtils.clear(0, 0, 0, 1);
-        Gdx.gl.glClear(Gdx.gl.GL_DEPTH_BUFFER_BIT);
+        Gdx.gl.glClear(com.badlogic.gdx.graphics.GL20.GL_DEPTH_BUFFER_BIT);
         Viewport currentViewport = useCrtFilter ? fboViewport : game.getViewport();
 
         boolean isShaking = (player != null && trauma > 0.01f);
@@ -310,7 +321,14 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             player.getCameraPlane().rotateRad(angle);
         }
 
-        if (player != null && maze != null) {
+        boolean isBlind = (player != null
+                && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BLIND));
+
+        if (isBlind) {
+            game.getBatch().begin();
+            // Blindness rendering (black screen)
+            game.getBatch().end();
+        } else if (player != null && maze != null) {
             firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
                     gameMode);
 
@@ -330,7 +348,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 camera3d.up.set(0, 1, 0);
                 camera3d.update();
 
-                ModelBatch modelBatch = ((Tarmin2) game).getModelBatch();
+                ModelBatch modelBatch = game.getModelBatch();
                 boolean batchBegun = false;
 
                 if (modelBatch != null && maze != null) {
@@ -397,6 +415,8 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             }
         }
 
+        // Moved CombatDiceOverlay to end of frame
+
         if (hud != null) {
             hud.render();
         }
@@ -406,6 +426,7 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         animationManager.renderDamageText(game.getBatch(), currentViewport);
         font.setColor(Color.WHITE);
         font.draw(game.getBatch(), "Level: " + currentLevel, 10, currentViewport.getWorldHeight() - 10);
+
         game.getBatch().end();
 
         if (useCrtFilter) {
@@ -418,9 +439,27 @@ public class GameScreen extends BaseScreen implements InputProcessor {
             crtShader.setUniformf("u_time", time);
             postProcessBatch.draw(fbo.getColorBufferTexture(), 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
             postProcessBatch.end();
-        } else {
             // --- CRT FIX: Reset view when CRT is off ---
             game.getViewport().apply();
+        }
+
+        renderCombatOverlay();
+    }
+
+    private void renderCombatOverlay() {
+        // Log errors but don't spam trace logs
+        if (combatDiceOverlay == null)
+            return;
+
+        try {
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
+            combatDiceOverlay.render(game.getBatch());
+            game.getBatch().end();
+        } catch (Exception e) {
+            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_ERROR",
+                    "Crash in CombatDiceOverlay: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -459,6 +498,25 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                     performChunkTransition(transitionGate);
                 }
             }
+        }
+
+        // --- NEW: Portal Reset Handling ---
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
+            Gdx.app.log("GameScreen", "PORTAL_ACTIVATED detected. Resetting world.");
+
+            // 1. Reset World Data
+            worldManager.resetWorldKeepDifficulty();
+            this.currentLevel = worldManager.getCurrentLevel(); // Should be 1
+
+            // 2. Clear Rendering State
+            worldManager.clearLoadedChunks();
+
+            // 3. Regenerate Level 1 (Simulate new game start)
+            generateLevel(this.currentLevel);
+
+            // 4. Feedback
+            hud.addMessage("The world shifts...");
+            hud.addMessage("You are back at the start, but stronger.");
         }
     }
 
@@ -558,6 +616,22 @@ public class GameScreen extends BaseScreen implements InputProcessor {
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+
+            // --- CONFUSION LOGIC ---
+            if (player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED)) {
+                if (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
+                        keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT) {
+
+                    // Simple random walk
+                    int[] dirs = { Input.Keys.UP, Input.Keys.DOWN, Input.Keys.LEFT, Input.Keys.RIGHT };
+                    keycode = dirs[com.badlogic.gdx.math.MathUtils.random(dirs.length - 1)];
+
+                    // Optional: Add a "Stumble" message or sound?
+                    // Let's keep it subtle for now, just the erratic movement.
+                }
+            }
+            // -----------------------
+
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
@@ -720,10 +794,35 @@ public class GameScreen extends BaseScreen implements InputProcessor {
                 }
                 return true;
             case Input.Keys.F8:
-                if (worldManager.getWeatherManager() != null) {
-                    worldManager.getWeatherManager().debugCycleIntensity();
-                    eventManager.addEvent(new GameEvent(
-                            "Debug Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
+                Gdx.app.log("GameScreen", "--- PREDICTING PORTALS ---");
+                eventManager.addEvent(new GameEvent("Predicting Portals (Check Log)", 2f));
+
+                SpawnTableData data = game.getSpawnTableData();
+                GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+                StringBuilder found = new StringBuilder();
+
+                for (int i = 1; i <= 10; i++) {
+                    int targetLevel = currentLevel + i;
+                    long seed = worldManager.getChunkSeed(targetLevel, chunkId.x, chunkId.y);
+                    WeightedRandomList<SpawnTableEntry> pool = SpawnManager.buildDebrisPool(data, targetLevel);
+
+                    // Use exact budget from data
+                    int heuristicBudget = SpawnManager.getDebrisBudget(data, targetLevel);
+
+                    // Derive the same seed as MazeChunkGenerator uses
+                    long spawnSeed = seed ^ 0xDEADBEEF12345678L;
+
+                    boolean hasPortal = SpawnManager.predictPortalSpawn(spawnSeed, heuristicBudget, pool);
+                    if (hasPortal) {
+                        Gdx.app.log("GameScreen", "FOUND PORTAL at Level " + targetLevel);
+                        found.append("L").append(targetLevel).append(" ");
+                    }
+                }
+
+                if (found.length() > 0) {
+                    eventManager.addEvent(new GameEvent("Portals nearby: " + found.toString(), 5f));
+                } else {
+                    eventManager.addEvent(new GameEvent("No portals in next 10 levels.", 3f));
                 }
                 return true;
             case Input.Keys.F9:

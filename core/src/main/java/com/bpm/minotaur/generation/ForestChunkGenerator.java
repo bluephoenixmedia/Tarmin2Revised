@@ -10,8 +10,6 @@ import com.bpm.minotaur.gamedata.spawntables.SpawnTableData; // <-- ADD THIS IMP
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -34,88 +32,114 @@ public class ForestChunkGenerator implements IChunkGenerator {
     // R = Impassable Rock
     // B = Passable Bush
 
-    String[] forestTile1 = new String[]{
-        "TTTTTTT....T",
-        ".T...T...R.T",
-        "T...B..TTT.T",
-        ".T....B.....",
-        "T....TT.TTTT",
-        "T..R..T....T",
-        "TTT..B...R.T",
-        "T..T...T.T..",
-        "....R..T...T",
-        "T.T...B...BT",
-        "T...TT...R.T",
-        "TTT..TTTTTTT"
+    String[] forestTile1 = new String[] {
+            "TTTTTTT....T",
+            ".T...T...R.T",
+            "T...B..TTT.T",
+            ".T....B.....",
+            "T....TT.TTTT",
+            "T..R..T....T",
+            "TTT..B...R.T",
+            "T..T...T.T..",
+            "....R..T...T",
+            "T.T...B...BT",
+            "T...TT...R.T",
+            "TTT..TTTTTTT"
     };
-    String[] forestTile2 = new String[]{
-        "T..R.TT....T",
-        "T.T...T..R.T",
-        "TB.B..TTT.TT",
-        ".T.T..B.....",
-        "T..B.TT.TTTT",
-        "T..R..T....T",
-        "TT...B...R.T",
-        "T..T...T.T..",
-        "..T.R..T...T",
-        "T.T...B...BT",
-        "T...TT...R.T",
-        "TTT..TTTTTTT"
-    };
-
-    String[] forestTile3 = new String[]{
-        "TTTTRTT....T",
-        "T.T...T..R.T",
-        "TB.B...TT.TT",
-        ".T.T..B.....",
-        "T..B.TT.TTTT",
-        "T..R...R...T",
-        "TT...B...R.T",
-        "T..T...T.T..",
-        "..T.R..T...T",
-        "T.T...B...BT",
-        "T...TT...R.T",
-        "TTT..TTTTTTT"
+    String[] forestTile2 = new String[] {
+            "T..R.TT....T",
+            "T.T...T..R.T",
+            "TB.B..TTT.TT",
+            ".T.T..B.....",
+            "T..B.TT.TTTT",
+            "T..R..T....T",
+            "TT...B...R.T",
+            "T..T...T.T..",
+            "..T.R..T...T",
+            "T.T...B...BT",
+            "T...TT...R.T",
+            "TTT..TTTTTTT"
     };
 
-    String[] forestTile4 = new String[]{
-        "TTTTRTT....T",
-        "T.T...T..R.T",
-        "TB.B...TT.TT",
-        ".T.T..B.....",
-        "T..B.TT.TTRT",
-        "T..R...R.B.T",
-        "TT...B...R.T",
-        "T..T...T.T..",
-        "..T.R..T...T",
-        "T.T...B...BT",
-        "TR..TT...R.T",
-        "TTT..TTTTTTT"
+    String[] forestTile3 = new String[] {
+            "TTTTRTT....T",
+            "T.T...T..R.T",
+            "TB.B...TT.TT",
+            ".T.T..B.....",
+            "T..B.TT.TTTT",
+            "T..R...R...T",
+            "TT...B...R.T",
+            "T..T...T.T..",
+            "..T.R..T...T",
+            "T.T...B...BT",
+            "T...TT...R.T",
+            "TTT..TTTTTTT"
+    };
+
+    String[] forestTile4 = new String[] {
+            "TTTTRTT....T",
+            "T.T...T..R.T",
+            "TB.B...TT.TT",
+            ".T.T..B.....",
+            "T..B.TT.TTRT",
+            "T..R...R.B.T",
+            "TT...B...R.T",
+            "T..T...T.T..",
+            "..T.R..T...T",
+            "T.T...B...BT",
+            "TR..TT...R.T",
+            "TTT..TTTTTTT"
     };
 
     // --- Corridor Tile Templates (same as MazeChunkGenerator) ---
-    String[] corridorUL = new String[]{ "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
-    String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    String[] corridorR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorLL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........", "############" };
-    String[] corridorB = new String[]{ "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............", "############" };
-    String[] corridorLR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#", "############" };
+    String[] corridorUL = new String[] { "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx" };
+    String[] corridorT = new String[] { "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx" };
+    String[] corridorUR = new String[] { "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#" };
+    String[] corridorL = new String[] { "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx" };
+    String[] corridorR = new String[] { "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#" };
+    String[] corridorLL = new String[] { "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........",
+            "############" };
+    String[] corridorB = new String[] { "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............",
+            "############" };
+    String[] corridorLR = new String[] { "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#",
+            "############" };
 
     // A simple 2x2 grid of tile info
-    private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
+    private static class TileInfo {
+        int id;
+        int rotation;
 
+        TileInfo(int id, int rotation) {
+            this.id = id;
+            this.rotation = rotation;
+        }
+    }
 
     /**
      * [MODIFIED] Signature updated to match IChunkGenerator
      */
     @Override
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
-                              MonsterDataManager dataManager,
-                              ItemDataManager itemDataManager,
-                              AssetManager assetManager,
-                              SpawnTableData spawnTableData) { // <-- ADDED THIS PARAM
+    public Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
+            GameMode gameMode,
+            RetroTheme.Theme theme,
+            MonsterDataManager dataManager,
+            ItemDataManager itemDataManager,
+            AssetManager assetManager,
+            SpawnTableData spawnTableData,
+            long chunkSeed) { // <-- ADDED THIS PARAM
 
         // Forest chunks are always 3x2, regardless of game mode
         int mapRows = 3;
@@ -123,11 +147,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
         createForestFromArrayTiles(mapRows, mapCols);
 
         // --- 2. Create Maze Object ---
-        Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
+        Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme); // Set the theme (e.g., FOREST_THEME)
 
         // --- 3. Populate Maze ---
-        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager, spawnTableData); // <-- PASS PARAM
+        spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
+                spawnTableData, chunkSeed); // <-- PASS PARAM
 
         spawnLadder(maze, this.finalLayout);
 
@@ -144,7 +169,6 @@ public class ForestChunkGenerator implements IChunkGenerator {
         return maze;
     }
 
-
     @Override
     public GridPoint2 getInitialPlayerStartPos() {
         // This generator is never used for the initial spawn,
@@ -152,9 +176,9 @@ public class ForestChunkGenerator implements IChunkGenerator {
         return playerSpawnPoint;
     }
 
-
     /**
      * Finds a safe, passable spawn point.
+     * 
      * @param layout The newly generated text layout.
      */
     private void findPlayerStart(String[] layout) {
@@ -190,18 +214,20 @@ public class ForestChunkGenerator implements IChunkGenerator {
      * [MODIFIED] Signature updated
      */
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
-                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-                               SpawnTableData spawnTableData) { // <-- ADDED THIS PARAM
+            MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+            SpawnTableData spawnTableData, long chunkSeed) { // <-- ADDED THIS PARAM
 
         // --- [MODIFIED] ---
         // This is the compile fix
+        // Use stable derived seed
+        long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
+
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager,
-            maze, difficulty, level, layout, spawnTableData); // <-- PASSED PARAM
+                maze, difficulty, level, layout, spawnTableData, spawnSeed);
         // --- [END MODIFIED] ---
 
         spawnManager.spawnEntities();
     }
-
 
     private void spawnLadder(Maze maze, String[] layout) {
         int x, y;
@@ -210,12 +236,11 @@ public class ForestChunkGenerator implements IChunkGenerator {
             y = random.nextInt(maze.getHeight());
             // Only spawn on floor, not bushes
         } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
-            maze.getItems().containsKey(new GridPoint2(x, y)) ||
-            maze.getMonsters().containsKey(new GridPoint2(x, y)));
+                maze.getItems().containsKey(new GridPoint2(x, y)) ||
+                maze.getMonsters().containsKey(new GridPoint2(x, y)));
         maze.addLadder(new Ladder(x, y));
         Gdx.app.log("ForestChunkGenerator", "Ladder spawned at (" + x + ", " + y + ")");
     }
-
 
     /**
      * Spawns four transition gates for ADVANCED mode.
@@ -248,7 +273,6 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
         Gdx.app.log("ForestChunkGenerator", "Spawned 4 transition gates for chunk " + chunkId);
     }
-
 
     private void createForestFromArrayTiles(int mapRows, int mapCols) {
         // We only have 4 forest tiles, so we just list them
@@ -303,22 +327,32 @@ public class ForestChunkGenerator implements IChunkGenerator {
         boolean isLeft = (x == 0);
         boolean isRight = (x == cols - 1);
 
-        if (isTop && isLeft) return corridorUL;
-        if (isTop && isRight) return corridorUR;
-        if (isBottom && isLeft) return corridorLL;
-        if (isBottom && isRight) return corridorLR;
-        if (isTop) return corridorT;
-        if (isBottom) return corridorB;
-        if (isLeft) return corridorL;
-        if (isRight) return corridorR;
+        if (isTop && isLeft)
+            return corridorUL;
+        if (isTop && isRight)
+            return corridorUR;
+        if (isBottom && isLeft)
+            return corridorLL;
+        if (isBottom && isRight)
+            return corridorLR;
+        if (isTop)
+            return corridorT;
+        if (isBottom)
+            return corridorB;
+        if (isLeft)
+            return corridorL;
+        if (isRight)
+            return corridorR;
 
         // Center tile (no walls)
-        return new String[]{"xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx"};
+        return new String[] { "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+                "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+                "xxxxxxxxxxxx" };
     }
 
-
     private String[] rotateTile(String[] tile, int rotation) {
-        if (rotation == 0) return tile;
+        if (rotation == 0)
+            return tile;
         String[] currentTile = tile;
         for (int i = 0; i < rotation; i++) {
             int height = currentTile.length;
@@ -330,7 +364,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                 }
             }
             String[] rotated = new String[width];
-            for(int x = 0; x < width; x++){
+            for (int x = 0; x < width; x++) {
                 rotated[x] = new String(temp[x]);
             }
             currentTile = rotated;
@@ -338,7 +372,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
         return currentTile;
     }
 
-    private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager, AssetManager assetManager) {
+    private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager,
+            AssetManager assetManager) {
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
@@ -372,10 +407,14 @@ public class ForestChunkGenerator implements IChunkGenerator {
                 if (layout[layoutY].charAt(x) != '#') { // If NOT a wall
                     int mask = 0;
                     // Check neighbors. Only '#' counts as a wall.
-                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
-                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
-                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
-                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
+                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#')
+                        mask |= 0b01000000;
+                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#')
+                        mask |= 0b00000100;
+                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#')
+                        mask |= 0b00010000;
+                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#')
+                        mask |= 0b00000001;
                     bitmaskedData[y][x] = mask;
                 }
             }
