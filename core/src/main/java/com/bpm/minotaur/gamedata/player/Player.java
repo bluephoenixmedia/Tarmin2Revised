@@ -55,11 +55,19 @@ public class Player {
         this.stats = new PlayerStats(difficulty);
         this.statusManager = new StatusManager();
 
-        inventory.setRightHand(
-                itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager));
+        Item knife = itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager);
+        inventory.setRightHand(knife);
+        if (knife.getGrantedDie() != null) {
+            stats.getDicePool().add(knife.getGrantedDie());
+            BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
+        }
 
-        equipment.setWornBack(
-                itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager));
+        Item pack = itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager);
+        equipment.setWornBack(pack);
+        // Packs don't usually grant dice, but good to be consistent if we expand
+        if (pack.getGrantedDie() != null) {
+            stats.getDicePool().add(pack.getGrantedDie());
+        }
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
     }
@@ -69,7 +77,13 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
-        return inventory.pickup(item);
+        boolean pickedUp = inventory.pickup(item);
+        if (pickedUp && item.getGrantedDie() != null) {
+            stats.getDicePool().add(item.getGrantedDie());
+            BalanceLogger.getInstance().log("DICE_DEBUG",
+                    "Picked up " + item.getFriendlyName() + " -> Added " + item.getGrantedDie().getName());
+        }
+        return pickedUp;
     }
 
     public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {

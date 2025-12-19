@@ -14,5 +14,13 @@ public enum DieFaceType {
     LIGHTNING, // Lightning Damage / Chain
     HEART, // Heal Player
     MOON, // Spiritual/Mana restore or Magic Damage
-    CRIT // Multiplier for other dice
+    CRIT, // Multiplier for other dice
+    POISON, // Damage over time
+    ASH, // Failed fire roll / clutter
+    GOLD, // Economy gain
+    BULLSEYE, // Guaranteed hit / accuracy bonus
+    GLANCING, // Reduced damage hit
+    PARRY, // Counter-attack block
+    CURSE, // Debuff or risky trade
+    BONE // Necromancy resource
 }

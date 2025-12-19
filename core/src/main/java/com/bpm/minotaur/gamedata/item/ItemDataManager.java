@@ -202,6 +202,61 @@ public class ItemDataManager {
         // Standard item creation
         Item item = new Item(type, x, y, color, this, assetManager);
 
+        // --- NEW: THEMED DICE INTEGRATION ---
+        // Basic mapping for now. Ideally this is data-driven in items.json,
+        // but for this phase we hardcode the mapping to test the 10 themes.
+        com.bpm.minotaur.gamedata.dice.Die themedDie = null;
+
+        // Map ItemTypes/Names to Dice Themes
+        // 1. Rusty Iron Die
+        if (type == ItemType.KNIFE || type == ItemType.AXE) { // Basic weapons
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rusty Iron Die");
+        }
+        // 2. Warrior's Red Die
+        else if (type == ItemType.SWORD || type == ItemType.TWO_HANDED_SWORD) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Warrior's Red Die");
+        }
+        // 3. Guardian's Steel Die
+        else if (type == ItemType.SMALL_SHIELD || type == ItemType.LARGE_SHIELD) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Guardian's Steel Die");
+        }
+        // 4. Archer's Precision Die
+        else if (type == ItemType.BOW || type == ItemType.CROSSBOW) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Archer's Precision Die");
+        }
+        // 5. Pyromancer's Ember Die
+        else if (type == ItemType.SCROLL && template.friendlyName.contains("Fire")) { // Requires precise naming or
+                                                                                      // assumption
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Pyromancer's Ember Die");
+        }
+        // 6. Frostbound Die
+        else if (type == ItemType.SCROLL && template.friendlyName.contains("Ice")) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Frostbound Die");
+        }
+        // 7. Priest's Holy Die
+        else if (type == ItemType.AMULET || type == ItemType.SCROLL && template.friendlyName.contains("Heal")) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Priest's Holy Die");
+        }
+        // 8. Rogue's Shadow Die
+        else if (type == ItemType.DART || type == ItemType.RING_PURPLE) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rogue's Shadow Die");
+        }
+        // 9. Necromancer's Bone Die
+        else if (type == ItemType.BONES || type == ItemType.SKULL) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Necromancer's Bone Die");
+        }
+        // 10. Gambler's Gold Die
+        else if (type == ItemType.COINS || type == ItemType.RING_GOLD) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Gambler's Gold Die");
+        }
+
+        if (themedDie != null) {
+            item.setGrantedDie(themedDie);
+            // Gdx.app.log("ItemDataManager", "Granted " + themedDie.getName() + " to " +
+            // item.getName());
+        }
+        // ------------------------------------
+
         // --- NEW POTION LOGIC ---
         if (template.isPotionAppearance) {
 

@@ -218,7 +218,7 @@ public class GameScreen extends BaseScreen {
                 worldManager, game.getItemDataManager(), stochasticManager);
 
         // --- DICE UI INTEGRATION ---
-        this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager);
+        this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------
 
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,

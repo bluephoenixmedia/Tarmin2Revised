@@ -1,5 +1,5 @@
 {
-totalSteps: 13956
+totalSteps: 13972
 totalDoorsOpened: 610
 deepestLevelReached: 6
 monsterKills: {
@@ -19,7 +19,7 @@ monsterKills: {
 	MIMIC: 4
 	RUST_MONSTER: 1
 	MUMMY: 1
-	GOBLIN: 101
+	GOBLIN: 102
 	ZOMBIE: 38
 	HARPY: 1
 	ALLIGATOR: 3

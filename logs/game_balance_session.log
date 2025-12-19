@@ -1,1095 +1,224 @@
---- NEW SESSION: 2025-12-18 23:02:33 ---
-[23:02:33] [SESSION] Engine Start. Initializing systems...
-[23:02:33] [MonsterDataManager] Loaded 44 monster templates.
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_PACK
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_A
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_B
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_C
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_D
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_E
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_F
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_G
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_H
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_A
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_B
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_C
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_D
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_E
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_F
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_G
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_H
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: CORPSE
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: MEAT
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: CHITIN
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: NAIL
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: ORGAN
-[23:02:33] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_SCRAP
-[23:02:33] [ItemDataManager] TESTING: Locked BOW with id 'item_bow'
-[23:02:33] [ItemDataManager] Loaded 130 item templates.
-[23:02:33] [Tarmin2] Loading SpawnTableData...
-[23:02:33] [Tarmin2] SpawnTableData loaded.
-[23:02:33] [LoadingScreen] Starting asset loading...
-[23:02:36] [LoadingScreen] Asset loading complete!
-[23:02:36] [MainMenuScreen] Starting game in mode: ADVANCED
-[23:02:37] [WorldManager] World Initialized with Seed: -3754932305047807056
-[23:02:37] [GameScreen [DEBUG]] generateLevel START. Player is NULL
-[23:02:37] [DiscoveryManager] Loaded discovery state.
-[23:02:37] [ERROR] [WorldManager] Failed to load/parse chunk: (0, 0)
-com.badlogic.gdx.utils.SerializationException: Error reading file: saves/world/chunk_L1_0_0.json
-	at com.badlogic.gdx.utils.Json.fromJson(Json.java:802)
-	at com.bpm.minotaur.managers.WorldManager.loadChunk(WorldManager.java:256)
-	at com.bpm.minotaur.managers.WorldManager.getInitialMaze(WorldManager.java:116)
-	at com.bpm.minotaur.screens.GameScreen.generateLevel(GameScreen.java:205)
-	at com.bpm.minotaur.screens.GameScreen.show(GameScreen.java:161)
-	at com.badlogic.gdx.Game.setScreen(Game.java:63)
-	at com.bpm.minotaur.screens.MainMenuScreen.startGame(MainMenuScreen.java:171)
-	at com.bpm.minotaur.screens.MainMenuScreen.touchDown(MainMenuScreen.java:205)
-	at com.badlogic.gdx.InputEventQueue.drain(InputEventQueue.java:67)
-	at com.badlogic.gdx.backends.lwjgl3.DefaultLwjgl3Input.update(DefaultLwjgl3Input.java:190)
-	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window.update(Lwjgl3Window.java:414)
-	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.loop(Lwjgl3Application.java:181)
-	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.<init>(Lwjgl3Application.java:153)
-	at com.bpm.minotaur.lwjgl3.Lwjgl3Launcher.createApplication(Lwjgl3Launcher.java:16)
-	at com.bpm.minotaur.lwjgl3.Lwjgl3Launcher.main(Lwjgl3Launcher.java:12)
-Caused by: com.badlogic.gdx.utils.SerializationException: Class cannot be created (missing no-arg constructor): com.bpm.minotaur.gamedata.item.ItemModifier
-Serialization trace:
-modifiers (com.bpm.minotaur.gamedata.ChunkData$ItemData)
-items (com.bpm.minotaur.gamedata.ChunkData)
-	at com.badlogic.gdx.utils.Json.newInstance(Json.java:1225)
-	at com.badlogic.gdx.utils.Json.readValue(Json.java:1013)
-	at com.badlogic.gdx.utils.Json.readValue(Json.java:1113)
-	at com.badlogic.gdx.utils.Json.readFields(Json.java:906)
-	at com.badlogic.gdx.utils.Json.readValue(Json.java:1078)
-	at com.badlogic.gdx.utils.Json.readValue(Json.java:1113)
-	at com.badlogic.gdx.utils.Json.readFields(Json.java:906)
-	at com.badlogic.gdx.utils.Json.readValue(Json.java:1078)
-	at com.badlogic.gdx.utils.Json.fromJson(Json.java:800)
-	... 14 more
-Caused by: com.badlogic.gdx.utils.reflect.ReflectionException: Could not instantiate instance of class: com.bpm.minotaur.gamedata.item.ItemModifier
-	at com.badlogic.gdx.utils.reflect.ClassReflection.newInstance(ClassReflection.java:95)
-	at com.badlogic.gdx.utils.Json.newInstance(Json.java:1207)
-	... 22 more
-Caused by: java.lang.InstantiationException: com.bpm.minotaur.gamedata.item.ItemModifier
-	at java.base/java.lang.Class.newInstance(Class.java:639)
-	at com.badlogic.gdx.utils.reflect.ClassReflection.newInstance(ClassReflection.java:93)
-	... 23 more
-Caused by: java.lang.NoSuchMethodException: com.bpm.minotaur.gamedata.item.ItemModifier.<init>()
-	at java.base/java.lang.Class.getConstructor0(Class.java:3585)
-	at java.base/java.lang.Class.newInstance(Class.java:626)
-	... 24 more
-
-[23:02:37] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: -2132236704499004911
-[23:02:37] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
-[23:02:37] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
-[23:02:37] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: BOW
-[23:02:37] [UnlockManager] Profile loaded successfully.
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SCROLL
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SPEAR
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
-[23:02:37] [ItemDataManager [DEBUG]] Type is a potion appearance.
-[23:02:37] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: HEALING
-[23:02:37] [ItemDataManager [DEBUG]] Setting trueEffect (HEALING) and identified (false) on item.
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: BOW
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
-[23:02:37] [ItemDataManager [DEBUG]] Type is a potion appearance.
-[23:02:37] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: HEALING
-[23:02:37] [ItemDataManager [DEBUG]] Setting trueEffect (HEALING) and identified (false) on item.
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: BOW
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SPEAR
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: GAUNTLETS
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SCROLL
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: STICK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: MOSS_CLUMP
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: STICK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: STICK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: CHARRED_WOOD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: STICK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: STICK
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
-[23:02:37] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
-[23:02:37] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
-[23:02:37] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
-[23:02:37] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Bow (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Spear (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Bow (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Bow (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Gauntlets (ARMOR) | Val: 25 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Spear (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
-[23:02:37] [LOOT_SPAWN] Lvl 1 | Item: Scroll (USEFUL) | Val: 20 | Rarity: Common/Tan
-[23:02:37] [Player [DEBUG]] Constructor: Creating starting items...
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: KNIFE
-[23:02:37] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
-[23:02:37] [Player [DEBUG]] Constructor: Finished creating items.
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:37] [UI_TRACE] renderCombatOverlay called.
-[23:02:37] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:38] [UI_TRACE] renderCombatOverlay called.
-[23:02:38] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:39] [UI_TRACE] renderCombatOverlay called.
-[23:02:39] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:40] [UI_TRACE] renderCombatOverlay called.
-[23:02:40] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [COMBAT_START] Vs KOBOLD (MCR: 20) | Player PPS: 36 | Delta: 16 (Even Match)
-[23:02:41] [CombatManager] Combat started with KOBOLD
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:41] [UI_TRACE] renderCombatOverlay called.
-[23:02:41] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [Player] Taken Damage: 2 (Adj. Amount: 4)
-[23:02:42] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 14
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [UI_TRACE] renderCombatOverlay called.
-[23:02:42] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:42] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
-[23:02:42] [CombatManager] State changed to PLAYER_SELECT_DICE
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:43] [UI_TRACE] renderCombatOverlay called.
-[23:02:43] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
-[23:02:44] [UI_TRACE] renderCombatOverlay called.
-[23:02:44] [UI_ERROR] combatDiceOverlay is NULL!
---- NEW SESSION: 2025-12-18 23:05:34 ---
-[23:05:34] [SESSION] Engine Start. Initializing systems...
-[23:05:34] [MonsterDataManager] Loaded 44 monster templates.
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_PACK
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_A
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_B
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_C
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_D
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_E
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_F
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_G
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_H
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_A
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_B
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_C
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_D
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_E
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_F
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_G
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_H
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: CORPSE
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: MEAT
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: CHITIN
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: NAIL
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: ORGAN
-[23:05:34] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_SCRAP
-[23:05:34] [ItemDataManager] TESTING: Locked BOW with id 'item_bow'
-[23:05:34] [ItemDataManager] Loaded 130 item templates.
-[23:05:34] [Tarmin2] Loading SpawnTableData...
-[23:05:34] [Tarmin2] SpawnTableData loaded.
-[23:05:34] [LoadingScreen] Starting asset loading...
-[23:05:36] [LoadingScreen] Asset loading complete!
-[23:05:37] [MainMenuScreen] Starting game in mode: ADVANCED
-[23:05:37] [WorldManager] World Initialized with Seed: 2779751840277316335
-[23:05:38] [GameScreen [DEBUG]] generateLevel START. Player is NULL
-[23:05:38] [DiscoveryManager] Loaded discovery state.
-[23:05:38] [Player [DEBUG]] Constructor: Creating starting items...
-[23:05:38] [ItemDataManager [DEBUG]] createItem called for: KNIFE
-[23:05:38] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
-[23:05:38] [Player [DEBUG]] Constructor: Finished creating items.
-[23:05:42] [UnlockManager] Profile loaded successfully.
-[23:05:43] [Player] Taken Damage: 1 (Adj. Amount: 2)
-[23:05:43] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 1 | Target HP: 15
-[23:05:44] [Player] Taken Damage: 1 (Adj. Amount: 2)
-[23:05:44] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 1 | Target HP: 14
-[23:05:44] [COMBAT_START] Vs GOBLIN (MCR: 42) | Player PPS: 36 | Delta: -6 (Even Match)
-[23:05:44] [CombatManager] Combat started with GOBLIN
-[23:05:44] [Player] Taken Damage: 1 (Adj. Amount: 3)
-[23:05:44] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 13
-[23:05:45] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
-[23:05:45] [CombatManager] State changed to PLAYER_SELECT_DICE
---- NEW SESSION: 2025-12-18 23:16:25 ---
-[23:16:25] [SESSION] Engine Start. Initializing systems...
-[23:16:25] [MonsterDataManager] Loaded 44 monster templates.
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_PACK
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_A
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_B
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_C
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_D
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_E
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_F
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_G
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_H
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_A
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_B
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_C
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_D
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_E
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_F
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_G
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_H
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: CORPSE
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: MEAT
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: CHITIN
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: NAIL
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: ORGAN
-[23:16:25] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_SCRAP
-[23:16:25] [ItemDataManager] TESTING: Locked BOW with id 'item_bow'
-[23:16:25] [ItemDataManager] Loaded 130 item templates.
-[23:16:25] [Tarmin2] Loading SpawnTableData...
-[23:16:25] [Tarmin2] SpawnTableData loaded.
-[23:16:25] [LoadingScreen] Starting asset loading...
-[23:16:27] [LoadingScreen] Asset loading complete!
-[23:16:27] [MainMenuScreen] Starting game in mode: ADVANCED
-[23:16:28] [WorldManager] World Initialized with Seed: -2336526509118782826
-[23:16:28] [GameScreen [DEBUG]] generateLevel START. Player is NULL
-[23:16:28] [DiscoveryManager] Loaded discovery state.
-[23:16:28] [Player [DEBUG]] Constructor: Creating starting items...
-[23:16:29] [ItemDataManager [DEBUG]] createItem called for: KNIFE
-[23:16:29] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
-[23:16:29] [Player [DEBUG]] Constructor: Finished creating items.
-[23:16:29] [UI_DEBUG] Click detected at (1096.0,628.0)
-[23:16:29] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
-[23:16:30] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
-[23:16:31] [UnlockManager] Profile loaded successfully.
-[23:16:31] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
-[23:16:32] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
-[23:16:33] [COMBAT_ROUND] MONSTER Ranged (Miss) | Roll: -1 | Dmg: 0 | Target HP: 16
-[23:16:33] [Player] Taken Damage: 1 (Adj. Amount: 2)
-[23:16:33] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 1 | Target HP: 15
-[23:16:33] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
-[23:16:33] [COMBAT_START] Vs GOBLIN (MCR: 42) | Player PPS: 36 | Delta: -6 (Even Match)
-[23:16:33] [CombatManager] Combat started with GOBLIN
-[23:16:34] [Player] Taken Damage: 1 (Adj. Amount: 3)
-[23:16:34] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 14
-[23:16:34] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
-[23:16:34] [CombatManager] State changed to PLAYER_SELECT_DICE
-[23:16:34] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
-[23:16:34] [UI_DEBUG] CombatDiceOverlay rendering... State is active.
-[23:16:35] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
-[23:16:35] [UI_DEBUG] CombatDiceOverlay rendering... State is active.
-[23:16:36] [UI_DEBUG] Click detected at (1018.0,399.0)
-[23:16:36] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_RESOLUTION
-[23:16:37] [CombatManager] Rolled: SWORD (1), 
-[23:16:37] [Player] Taken Damage: 1 (Adj. Amount: 2)
-[23:16:37] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 13
-[23:16:38] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
-[23:16:39] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
-[23:16:39] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
-[23:16:39] [CombatManager] State changed to PLAYER_SELECT_DICE
-[23:16:40] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
-[23:16:40] [UI_DEBUG] CombatDiceOverlay rendering... State is active.
-[23:16:40] [UI_DEBUG] Click detected at (1012.0,401.0)
-[23:16:41] [CombatManager] Rolled: SWORD (1), 
-[23:16:41] [Player] Taken Damage: 1 (Adj. Amount: 2)
-[23:16:41] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 12
-[23:16:41] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+--- NEW SESSION: 2025-12-19 16:25:19 ---
+[16:25:19] [SESSION] Engine Start. Initializing systems...
+[16:25:20] [MonsterDataManager] Loaded 44 monster templates.
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_PACK
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SKULL
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: RING_GOLD
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_A
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_B
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_C
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_D
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_E
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_F
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_G
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: SCROLL_H
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_A
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_B
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_C
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_D
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_E
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_F
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_G
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: WAND_H
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: CORPSE
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: MEAT
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: CHITIN
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: NAIL
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: ORGAN
+[16:25:20] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_SCRAP
+[16:25:20] [ItemDataManager] TESTING: Locked BOW with id 'item_bow'
+[16:25:20] [ItemDataManager] Loaded 130 item templates.
+[16:25:20] [Tarmin2] Loading SpawnTableData...
+[16:25:20] [Tarmin2] SpawnTableData loaded.
+[16:25:20] [LoadingScreen] Starting asset loading...
+[16:25:20] [LoadingScreen] Asset loading complete!
+[16:25:21] [MainMenuScreen] Starting game in mode: ADVANCED
+[16:25:22] [WorldManager] World Initialized with Seed: -8595243291289725380
+[16:25:22] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[16:25:22] [DiscoveryManager] Initializing new game discovery state...
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_BLUE -> HEALING
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_GREEN -> LEVITATION
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_GOLD -> POISON
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_PINK -> CONFUSION
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> BLINDNESS
+[16:25:22] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> GAIN_STRENGTH
+[16:25:22] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: -1638403649922812923
+[16:25:22] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[16:25:22] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[16:25:22] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[16:25:22] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[16:25:22] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: CONFUSION
+[16:25:22] [ItemDataManager [DEBUG]] Setting trueEffect (CONFUSION) and identified (false) on item.
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HELMET
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HELMET
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: DART
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[16:25:22] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[16:25:22] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: HEALING
+[16:25:22] [ItemDataManager [DEBUG]] Setting trueEffect (HEALING) and identified (false) on item.
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: DART
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: BOX
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: KEY
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: LAMP
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: BOX
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: LAMP
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: KEY
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: CHARRED_WOOD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: STICK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: MUD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: MUD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: MOSS_CLUMP
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: HOLLOW_LOG
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: STICK
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: MUD
+[16:25:22] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[16:25:22] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[16:25:22] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[16:25:22] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Helmet (ARMOR) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Dart (WAR_WEAPON) | Val: 5 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Helmet (ARMOR) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Food (TREASURE) | Val: 5 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Dart +1 (WAR_WEAPON) | Val: 5 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[16:25:22] [LOOT_SPAWN] Lvl 1 | Item: Knife (WAR_WEAPON) | Val: 8 | Rarity: Common/Tan
+[16:25:22] [Player [DEBUG]] Constructor: Creating starting items...
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[16:25:22] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[16:25:22] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[16:25:22] [Player [DEBUG]] Constructor: Finished creating items.
+[16:25:22] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:23] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:24] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:24] [UnlockManager] Profile loaded successfully.
+[16:25:25] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:26] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:27] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:28] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:28] [COMBAT_ROUND] MONSTER Ranged (Miss) | Roll: -1 | Dmg: 0 | Target HP: 16
+[16:25:28] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[16:25:28] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 1 | Target HP: 15
+[16:25:28] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:29] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[16:25:29] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 1 | Target HP: 14
+[16:25:29] [COMBAT_START] Vs GOBLIN (MCR: 42) | Player PPS: 36 | Delta: -6 (Even Match)
+[16:25:29] [CombatManager] Combat started with GOBLIN
+[16:25:29] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[16:25:29] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 12
+[16:25:30] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+[16:25:30] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:30] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:31] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
+[16:25:31] [UI_DEBUG] Dice Overlay Active. Pool: Rusty Iron Die, 
+[16:25:32] [UI_DEBUG] Click detected at Screen(925,458) -> World(925.0,622.0)
+[16:25:32] [UI_DEBUG] Checking Zone 0 [918.0,560.0,64.0,96.0] vs Click (925.0,622.0) -> true
+[16:25:32] [UI_DEBUG] Selected: Rusty Iron Die
+[16:25:32] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
+[16:25:32] [UI_DEBUG] Dice Overlay Active. Pool: Rusty Iron Die, 
+[16:25:33] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
+[16:25:33] [UI_DEBUG] Dice Overlay Active. Pool: Rusty Iron Die, 
+[16:25:33] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:34] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_DELAY
+[16:25:35] [CombatManager] Rolled: SWORD (1), 
+[16:25:35] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 6
+[16:25:35] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[16:25:35] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 11
+[16:25:36] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+[16:25:36] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:36] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:37] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
+[16:25:37] [UI_DEBUG] Dice Overlay Active. Pool: Rusty Iron Die, 
+[16:25:38] [UI_DEBUG] Click detected at Screen(968,459) -> World(968.0,621.0)
+[16:25:38] [UI_DEBUG] Checking Zone 0 [918.0,560.0,64.0,96.0] vs Click (968.0,621.0) -> true
+[16:25:38] [UI_DEBUG] Deselected: Rusty Iron Die
+[16:25:38] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_SELECT_DICE
+[16:25:38] [UI_DEBUG] Dice Overlay Active. Pool: Rusty Iron Die, 
+[16:25:38] [UI_DEBUG] Click detected at Screen(963,466) -> World(962.99994,614.0)
+[16:25:38] [UI_DEBUG] Checking Zone 0 [918.0,560.0,64.0,96.0] vs Click (962.99994,614.0) -> true
+[16:25:38] [UI_DEBUG] Selected: Rusty Iron Die
+[16:25:39] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:39] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_DELAY
+[16:25:40] [CombatManager] Rolled: SWORD (1), 
+[16:25:40] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 5
+[16:25:40] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[16:25:40] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 9
+[16:25:41] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+[16:25:41] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:41] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:41] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:42] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_RESOLUTION
+[16:25:42] [CombatManager] Rolled: SWORD (1), 
+[16:25:42] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 4
+[16:25:42] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[16:25:42] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 8
+[16:25:43] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+[16:25:43] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:43] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:43] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:44] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_DELAY
+[16:25:44] [CombatManager] Rolled: SWORD (1), 
+[16:25:44] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 3
+[16:25:44] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[16:25:44] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 7
+[16:25:45] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:45] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:45] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:45] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_RESOLUTION
+[16:25:46] [CombatManager] Rolled: SWORD (1), 
+[16:25:46] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 2
+[16:25:46] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[16:25:46] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 5
+[16:25:47] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PLAYER_TURN
+[16:25:47] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:47] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:47] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:48] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_RESOLUTION
+[16:25:48] [CombatManager] Rolled: SWORD (1), 
+[16:25:48] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 1
+[16:25:48] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[16:25:48] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 4
+[16:25:48] [COMBAT_STATE] Transitioned to PLAYER_SELECT_DICE. Waiting for UI.
+[16:25:48] [CombatManager] State changed to PLAYER_SELECT_DICE
+[16:25:49] [UI_DEBUG] Key SPACE/ENTER pressed. Confirming selection.
+[16:25:49] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: PHYSICS_RESOLUTION
+[16:25:50] [CombatManager] Rolled: SWORD (1), 
+[16:25:50] [COMBAT_ROUND] PLAYER Dice Roll | Roll: 0 | Dmg: 1 | Target HP: 0
+[16:25:50] [COMBAT_END] Result: VICTORY | Turns: 7 | Total Dmg Taken: 10
+[16:25:50] [CombatManager] Combat ended.
+[16:25:50] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE
+[16:25:51] [UI_DEBUG] CombatDiceOverlay.render() INVOKED. State: INACTIVE

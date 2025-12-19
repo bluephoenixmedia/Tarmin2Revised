@@ -28,9 +28,13 @@ public class CombatDiceOverlay {
     private static final float DIE_SIZE = 64f;
     private static final float PADDING = 20f;
 
-    public CombatDiceOverlay(Player player, CombatManager combatManager) {
+    private final com.badlogic.gdx.utils.viewport.Viewport viewport;
+
+    public CombatDiceOverlay(Player player, CombatManager combatManager,
+            com.badlogic.gdx.utils.viewport.Viewport viewport) {
         this.player = player;
         this.combatManager = combatManager;
+        this.viewport = viewport;
         this.font = new BitmapFont();
         this.shapeRenderer = new ShapeRenderer();
     }
@@ -42,9 +46,14 @@ public class CombatDiceOverlay {
                 Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ENTER);
 
         if (clicked) {
-            Vector2 click = new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
-            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG", "Click detected at " + click);
-            handleClick(click);
+            // Correct coordinate handling: Unproject screen coordinates to world
+            // coordinates
+            Vector2 clickPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+            viewport.unproject(clickPos); // transforms in place to world coordinates
+
+            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG", "Click detected at Screen("
+                    + Gdx.input.getX() + "," + Gdx.input.getY() + ") -> World(" + clickPos.x + "," + clickPos.y + ")");
+            handleClick(clickPos);
             return;
         }
 
@@ -59,6 +68,7 @@ public class CombatDiceOverlay {
     private void handleClick(Vector2 click) {
         // 1. Check Roll Button
         if (rollButtonZone != null && rollButtonZone.contains(click)) {
+            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG", "Clicked ROLL BUTTON");
             combatManager.confirmDiceSelection(selectedHand);
             return;
         }
@@ -66,16 +76,31 @@ public class CombatDiceOverlay {
         // 2. Check Die Clicks
         for (int i = 0; i < dieClickZones.size(); i++) {
             Rectangle zone = dieClickZones.get(i);
-            if (zone.contains(click)) {
+            boolean hit = zone.contains(click);
+
+            // Log proximity for debugging
+            if (hit || click.dst(zone.x + zone.width / 2, zone.y + zone.height / 2) < 100) {
+                com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
+                        "Checking Zone " + i + " " + zone.toString() + " vs Click " + click + " -> " + hit);
+            }
+
+            if (hit) {
                 List<Die> pool = player.getStats().getDicePool();
                 if (i < pool.size()) {
                     Die toggledDie = pool.get(i);
                     if (selectedHand.contains(toggledDie)) {
                         selectedHand.remove(toggledDie);
+                        com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
+                                "Deselected: " + toggledDie.getName());
                     } else {
                         // Check stamina
                         if (selectedHand.size() < player.getStats().getStamina()) {
                             selectedHand.add(toggledDie);
+                            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
+                                    "Selected: " + toggledDie.getName());
+                        } else {
+                            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
+                                    "Cannot select (Stamina Full)");
                         }
                     }
                 }
@@ -96,8 +121,13 @@ public class CombatDiceOverlay {
 
         // For now, let's log the first time we see it or use a simple throttle.
         if (Gdx.graphics.getFrameId() % 60 == 0) {
+            StringBuilder diceNames = new StringBuilder();
+            List<Die> currentPool = player.getStats().getDicePool();
+            for (Die d : currentPool) {
+                diceNames.append(d.getName()).append(", ");
+            }
             com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
-                    "CombatDiceOverlay rendering... State is active.");
+                    "Dice Overlay Active. Pool: " + diceNames.toString());
         }
         // ---------------------
 

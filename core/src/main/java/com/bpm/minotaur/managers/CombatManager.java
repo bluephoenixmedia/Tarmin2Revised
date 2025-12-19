@@ -394,6 +394,9 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Miss!", 1f));
         }
 
+        BalanceLogger.getInstance().logCombatRound("PLAYER",
+                "Dice Roll", 0, lastDamageDealt, monster.getWarStrength());
+
         stochasticManager.clearDice();
 
         if (monster.getWarStrength() <= 0) {

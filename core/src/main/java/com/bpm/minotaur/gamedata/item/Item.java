@@ -25,6 +25,9 @@ public class Item implements Renderable {
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
         REGULAR_CHEST, LAMP, UNKNOWN, LADDER, WAND,
 
+        // NEW TYPES FOR DICE INTEGRATION
+        SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD,
+
         // Randomized Items
         SCROLL_A, SCROLL_B, SCROLL_C, SCROLL_D, SCROLL_E, SCROLL_F, SCROLL_G, SCROLL_H,
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
@@ -450,4 +453,16 @@ public class Item implements Renderable {
     public com.bpm.minotaur.gamedata.monster.Monster.MonsterType getCorpseSource() {
         return this.corpseSource;
     }
+
+    // --- NEW: Dice Integration ---
+    private com.bpm.minotaur.gamedata.dice.Die grantedDie;
+
+    public void setGrantedDie(com.bpm.minotaur.gamedata.dice.Die die) {
+        this.grantedDie = die;
+    }
+
+    public com.bpm.minotaur.gamedata.dice.Die getGrantedDie() {
+        return this.grantedDie;
+    }
+    // ----------------------------
 }
