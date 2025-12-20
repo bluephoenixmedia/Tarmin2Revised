@@ -209,7 +209,7 @@ public class DiscoveryManager {
     }
 
     public void identifyScroll(Player player, ScrollEffectType effect) {
-        if (!isScrollIdentified(effect)) {
+        if (effect != null && !isScrollIdentified(effect)) {
             scrollIdentified.put(effect, true);
             if (eventManager != null)
                 eventManager.addEvent(

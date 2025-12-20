@@ -42,7 +42,7 @@ public class DebugRenderer {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0f, 0f, 0f, 0.5f); // 50% transparent black
+        shapeRenderer.setColor(0f, 0f, 0f, 1f); // 100% opaque black
         // Add a small padding (e.g., 5 pixels) around the maze
         float padding = 5f;
         shapeRenderer.rect(mazeStartX - padding, mazeStartY - padding, totalMazeWidth + padding * 2,

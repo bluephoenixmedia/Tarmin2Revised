@@ -259,7 +259,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
-                level, layout, spawnTableData, spawnSeed);
+                level, level, layout, spawnTableData, spawnSeed); // Use level as proxy for playerLevel
         spawnManager.spawnEntities();
     }
 

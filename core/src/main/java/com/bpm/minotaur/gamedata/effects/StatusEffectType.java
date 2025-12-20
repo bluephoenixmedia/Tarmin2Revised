@@ -44,7 +44,16 @@ public enum StatusEffectType {
     SUPER_SPEED,
     HARDENED,
     SUPER_INTELLIGENT, // Identify items
-    OMNISCIENT; // See map
+    OMNISCIENT, // See map
+
+    // Intrinsics (Permanent/Long-term)
+    RESIST_FIRE,
+    RESIST_COLD,
+    RESIST_LIGHTNING,
+    RESIST_POISON,
+    TELEPATHY,
+    INVISIBLE,
+    SEE_INVISIBLE;
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;

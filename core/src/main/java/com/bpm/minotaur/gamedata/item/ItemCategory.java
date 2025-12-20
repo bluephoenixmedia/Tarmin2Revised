@@ -8,5 +8,6 @@ public enum ItemCategory {
     USEFUL, // Potions, books, keys
     TREASURE,
     CONTAINER,
+    FOOD, // NEW
     MISC // Flour, etc.
 }

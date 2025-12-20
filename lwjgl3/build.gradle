@@ -181,3 +181,23 @@ startScripts.classpath = project.tasks.jar.outputs.files
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
 }
+
+task runSpawnTest(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Spawn Distribution Test"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SpawnDistributionTest'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runSpritePreviewer(type: JavaExec) {
+    group = "debug"
+    description = "Runs the Sprite Previewer Tool"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SpritePreviewerLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}

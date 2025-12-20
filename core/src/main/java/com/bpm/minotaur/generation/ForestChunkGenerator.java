@@ -223,7 +223,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager,
-                maze, difficulty, level, layout, spawnTableData, spawnSeed);
+                maze, difficulty, level, level, layout, spawnTableData, spawnSeed); // Use level as proxy for
+                                                                                    // playerLevel
         // --- [END MODIFIED] ---
 
         spawnManager.spawnEntities();

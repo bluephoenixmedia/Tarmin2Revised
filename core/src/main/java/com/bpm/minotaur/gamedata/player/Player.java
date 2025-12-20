@@ -13,14 +13,34 @@ import com.bpm.minotaur.gamedata.item.ItemColor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import com.bpm.minotaur.gamedata.monster.Monster; // NEW
+import com.bpm.minotaur.gamedata.monster.MonsterDataManager; // NEW
+import com.bpm.minotaur.gamedata.item.ItemModifier; // NEW
+import com.bpm.minotaur.gamedata.ModifierType; // NEW
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 
 public class Player {
 
     // --- Stats ---
+    // --- Stats ---
     private final PlayerStats stats;
+    private int moveSpeed = 12; // Base speed, similar to Monster
 
     // --- Equipment ---
     private final PlayerEquipment equipment = new PlayerEquipment();
+
+    public int getEffectiveSpeed() {
+        int speed = moveSpeed; // 12
+        // Check for HASTE / SLOW effects
+        if (statusManager.hasEffect(StatusEffectType.SLOWED) || statusManager.hasEffect(StatusEffectType.SLOW)) {
+            speed /= 2;
+        }
+        if (statusManager.hasEffect(StatusEffectType.TEMP_SPEED)
+                || statusManager.hasEffect(StatusEffectType.SUPER_SPEED)) {
+            speed *= 2;
+        }
+        return Math.max(1, speed);
+    }
 
     private final StatusManager statusManager;
 
@@ -36,10 +56,11 @@ public class Player {
     // --- Managers ---
     private final SoundManager soundManager;
     private final ItemDataManager itemDataManager;
+    private final MonsterDataManager monsterDataManager; // NEW
     private final AssetManager assetManager;
 
     public Player(float startX, float startY, Difficulty difficulty,
-            ItemDataManager itemDataManager, AssetManager assetManager) {
+            ItemDataManager itemDataManager, MonsterDataManager monsterDataManager, AssetManager assetManager) {
 
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.facing = Direction.NORTH;
@@ -47,6 +68,7 @@ public class Player {
         this.cameraPlane = new Vector2();
         this.soundManager = new SoundManager(null);
         this.itemDataManager = itemDataManager;
+        this.monsterDataManager = monsterDataManager; // NEW
         this.assetManager = assetManager;
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Creating starting items...");
@@ -77,6 +99,14 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
+        // --- NEW: Food Consumption Logic ---
+        if (item.isFood()) {
+            stats.addFood(1); // CORRECTED
+            BalanceLogger.getInstance().logEconomy("CONSUME", item.getDisplayName(), 1);
+            return true; // Successfully "picked up" (consumed)
+        }
+        // -----------------------------------
+
         boolean pickedUp = inventory.pickup(item);
         if (pickedUp && item.getGrantedDie() != null) {
             stats.getDicePool().add(item.getGrantedDie());
@@ -225,6 +255,24 @@ public class Player {
                 }
             }
 
+            // Apply Intrinsic
+            if (item.getGrantedIntrinsic() != null) {
+                com.bpm.minotaur.gamedata.effects.StatusEffectType intrinsic = item.getGrantedIntrinsic();
+                if (!statusManager.hasEffect(intrinsic)) {
+                    statusManager.addEffect(intrinsic, -1, 1, false);
+                    eventManager.addEvent(new GameEvent("You feel a change in your nature.", 2.5f));
+                    // NetHack style messages?
+                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)
+                        eventManager.addEvent(new GameEvent("You feel cool.", 2f));
+                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)
+                        eventManager.addEvent(new GameEvent("You feel warm.", 2f));
+                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.TELEPATHY)
+                        eventManager.addEvent(new GameEvent("You feel mental waves.", 2f));
+                } else {
+                    eventManager.addEvent(new GameEvent("You feel nothing new.", 1.5f));
+                }
+            }
+
             inventory.removeItem(item); // Consume it
             eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
             soundManager.playPickupItemSound(); // Re-using pickup sound for eating for now
@@ -274,6 +322,28 @@ public class Player {
                 eventManager.addEvent(new GameEvent("Cannot use this item.", 2f));
                 break;
         }
+    }
+
+    public boolean hasIntrinsic(com.bpm.minotaur.gamedata.effects.StatusEffectType type) {
+        // Check Status Effects (Eating/Potions)
+        if (statusManager.hasEffect(type))
+            return true;
+
+        // Check Equipment
+        if (equipment != null) {
+            for (com.bpm.minotaur.gamedata.item.Item item : equipment.getAllEquipped()) {
+                if (item == null)
+                    continue;
+                for (com.bpm.minotaur.gamedata.item.ItemModifier mod : item.getModifiers()) {
+                    if (mod.type == com.bpm.minotaur.gamedata.ModifierType.GRANT_INTRINSIC) {
+                        if (mod.value == type.ordinal())
+                            return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     // --- NEW INTERACTION METHODS ---
@@ -367,9 +437,9 @@ public class Player {
                         // manager
                         if (i.isPotion())
                             discoveryManager.identifyPotion(this, i.getTrueEffect());
-                        if (i.getType().name().startsWith("SCROLL_"))
+                        if (i.getType().name().startsWith("SCROLL_") && i.getScrollEffect() != null)
                             discoveryManager.identifyScroll(this, i.getScrollEffect());
-                        if (i.getType().name().startsWith("WAND_"))
+                        if (i.getType().name().startsWith("WAND_") && i.getWandEffect() != null)
                             discoveryManager.identifyWand(this, i.getWandEffect());
                     }
                 }
@@ -377,33 +447,71 @@ public class Player {
                 break;
             case TELEPORT:
                 // Random position
-                // Needs logic to find valid floor.
-                // Simple random try 10 times
-                for (int k = 0; k < 10; k++) {
-                    int tx = (int) (Math.random() * 32); // Assuming chunk size or small area? Maze size unknown.
-                    int ty = (int) (Math.random() * 32);
-                    // This is risky without map bounds.
-                    // Just placeholder message for now.
+                int tries = 0;
+                while (tries < 20) {
+                    int tx = (int) (Math.random() * maze.getWidth());
+                    int ty = (int) (Math.random() * maze.getHeight());
+                    if (maze.getWallDataAt(tx, ty) == 0 && maze.getGameObjectAt(tx, ty) == null) {
+                        this.position.set(tx + 0.5f, ty + 0.5f);
+                        eventManager.addEvent(new GameEvent("You teleport to a new location!", 2.0f));
+                        break;
+                    }
+                    tries++;
                 }
-                eventManager.addEvent(new GameEvent("You feel disoriented... (Teleport NYI)", 2.0f));
+                if (tries >= 20)
+                    eventManager.addEvent(new GameEvent("The chaotic energies fizzle...", 2.0f));
                 break;
             case MAGIC_MAPPING:
                 eventManager.addEvent(new GameEvent("A map is etched in your mind. (Mapping NYI)", 2.0f));
                 break;
             case ENCHANT_WEAPON:
-                Item weapon = inventory.getRightHand(); // Assuming scroll read from left hand or inventory?
-                // Wait, if we Read from menu, 'scroll' is passed.
-                // We need to check finding a weapon.
-                // Simplification: Enchant weapon in Right Hand (if not scroll).
-                // If holding scroll in right and nothing in left...
-                // Let's just say "Your weapon glows."
-                eventManager.addEvent(new GameEvent("Your weapon glows blue!", 2.0f));
+                Item weapon = inventory.getRightHand();
+                if (weapon != null && weapon.isWeapon()) {
+                    weapon.addModifier(new ItemModifier(ModifierType.BONUS_DAMAGE, 1, "Enchanted"));
+                    eventManager.addEvent(new GameEvent("Your weapon glows with power!", 2.0f));
+                } else {
+                    eventManager.addEvent(new GameEvent("You need to hold a weapon.", 1.5f));
+                }
                 break;
             case ENCHANT_ARMOR:
-                eventManager.addEvent(new GameEvent("Your armor glows silver!", 2.0f));
+                Item armor = getRandomWornArmorHelper();
+                if (armor != null) {
+                    armor.addModifier(new ItemModifier(ModifierType.BONUS_DEFENSE, 1, "Blessed"));
+                    eventManager.addEvent(new GameEvent("Your " + armor.getDisplayName() + " glows silver!", 2.0f));
+                } else {
+                    eventManager.addEvent(new GameEvent("You are not wearing any armor to enchant.", 2.0f));
+                }
                 break;
             case CREATE_MONSTER:
-                eventManager.addEvent(new GameEvent("You hear a monster appear!", 2.0f));
+                int[][] dirs = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
+                boolean spawned = false;
+                for (int[] d : dirs) {
+                    int mx = (int) position.x + d[0];
+                    int my = (int) position.y + d[1];
+                    if (maze.getWallDataAt(mx, my) == 0 && maze.getGameObjectAt(mx, my) == null) {
+                        if (this.monsterDataManager == null) {
+                            eventManager.addEvent(new GameEvent("The spell fizzles (No Data).", 2.0f));
+                            break;
+                        }
+                        Monster.MonsterType mType = Monster.MonsterType.SKELETON; // Summon Skeleton
+                        try {
+                            com.bpm.minotaur.gamedata.monster.MonsterVariant variant = monsterDataManager
+                                    .getRandomVariantForMonster(mType, getLevel());
+                            if (variant != null) {
+                                Monster m = new Monster(mType, mx, my, variant.color, monsterDataManager, assetManager);
+                                m.scaleStats(getLevel());
+                                maze.getMonsters().put(new GridPoint2(mx, my), m);
+                                eventManager.addEvent(new GameEvent("A monster appears from the void!", 2.0f));
+                                spawned = true;
+                            }
+                            break;
+                        } catch (Exception e) {
+                            Gdx.app.error("Player", "Summon failed", e);
+                        }
+                    }
+                }
+                if (!spawned)
+                    eventManager.addEvent(new GameEvent("The summoning fails due to lack of space.", 2.0f));
                 break;
         }
 
@@ -1303,5 +1411,28 @@ public class Player {
         String name = item.getDisplayName().toLowerCase();
         return name.contains("axe") || name.contains("knife") || name.contains("shiv")
                 || name.contains("sword") || name.contains("dagger");
+    }
+
+    // --- Helper for Scrolls ---
+    private Item getRandomWornArmorHelper() {
+        List<Item> worn = new ArrayList<>();
+        PlayerEquipment eq = getEquipment();
+        if (eq.getWornHelmet() != null)
+            worn.add(eq.getWornHelmet());
+        if (eq.getWornChest() != null)
+            worn.add(eq.getWornChest());
+        if (eq.getWornLegs() != null)
+            worn.add(eq.getWornLegs());
+        if (eq.getWornBoots() != null)
+            worn.add(eq.getWornBoots());
+        if (eq.getWornGauntlets() != null)
+            worn.add(eq.getWornGauntlets());
+        if (eq.getWornShield() != null)
+            worn.add(eq.getWornShield());
+        // Add other slots if relevant
+
+        if (worn.isEmpty())
+            return null;
+        return worn.get(new Random().nextInt(worn.size()));
     }
 }

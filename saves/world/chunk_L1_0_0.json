@@ -2,40 +2,40 @@
 level: 1
 wallData: [
 	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-	[ 0, 17, 80, 80, 16, 16, 16, 80, 144, 80, 16, 80, 80, 16, 16, 16, 16, 16, 80, 16, 16, 16, 16, 80, 80, 80, 80, 80, 80, 80, 16, 80, 80, 80, 20, 0 ]
-	[ 0, 5, 0, 0, 1, 0, 4, 0, 5, 0, 5, 0, 0, 1, 0, 0, 64, 4, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 9, 80, 18, 64, 128, 64, 16, 36, 0, 133, 0, 0, 129, 64, 68, 0, 133, 0, 65, 128, 64, 68, 0, 0, 81, 80, 80, 88, 80, 10, 80, 82, 80, 4, 0 ]
-	[ 0, 5, 0, 5, 0, 5, 0, 1, 4, 0, 5, 0, 0, 5, 0, 0, 0, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 1, 80, 4, 0, 37, 0, 1, 0, 80, 164, 0, 81, 160, 80, 80, 80, 40, 80, 82, 160, 80, 80, 80, 80, 80, 80, 80, 88, 80, 10, 80, 82, 80, 4, 0 ]
-	[ 0, 5, 0, 5, 0, 69, 0, 1, 4, 0, 5, 0, 0, 5, 0, 0, 0, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 5, 0, 69, 0, 0, 17, 64, 72, 80, 38, 0, 0, 33, 16, 20, 0, 5, 0, 17, 32, 16, 20, 0, 0, 81, 80, 80, 88, 80, 10, 80, 82, 80, 4, 0 ]
-	[ 0, 1, 20, 0, 17, 16, 4, 0, 0, 0, 5, 0, 0, 1, 0, 8, 80, 6, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 1, 4, 0, 1, 0, 8, 80, 18, 16, 4, 0, 0, 1, 0, 4, 0, 5, 0, 1, 0, 0, 4, 0, 0, 81, 80, 80, 88, 80, 10, 80, 82, 80, 4, 0 ]
-	[ 0, 1, 72, 80, 66, 0, 68, 0, 65, 64, 68, 0, 0, 65, 64, 68, 0, 5, 0, 65, 64, 64, 68, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 17, 16, 16, 16, 16, 0, 16, 16, 16, 16, 16, 16, 80, 80, 80, 16, 20, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 4, 0, 9, 80, 82, 80, 4, 0 ]
-	[ 0, 1, 80, 88, 80, 10, 80, 82, 80, 80, 84, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 21, 0, 1, 4, 0, 5, 0, 0, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 64, 64, 64, 64, 64, 64, 0, 0, 4, 0, 133, 0, 1, 4, 0, 1, 16, 16, 16, 4, 0 ]
-	[ 0, 1, 80, 88, 80, 10, 80, 82, 80, 80, 84, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 5, 0, 1, 68, 0, 65, 64, 128, 64, 4, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 17, 16, 16, 20, 0, 1, 0, 0, 16, 32, 16, 4, 0, 0, 0, 0, 5, 0, 5, 0 ]
-	[ 0, 1, 80, 88, 80, 10, 80, 82, 80, 80, 80, 80, 0, 0, 4, 80, 1, 0, 0, 4, 0, 1, 0, 0, 64, 64, 128, 72, 80, 90, 80, 18, 32, 80, 4, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 65, 128, 64, 68, 0, 1, 0, 4, 0, 0, 5, 0, 0, 0, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 1, 80, 88, 80, 10, 80, 82, 80, 80, 84, 0, 1, 0, 4, 0, 0, 5, 0, 0, 0, 1, 0, 0, 16, 80, 96, 80, 80, 20, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 16, 16, 32, 16, 16, 16, 0, 0, 0, 4, 0, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 1, 80, 88, 80, 10, 80, 82, 80, 80, 84, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 81, 88, 80, 6, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 64, 0, 64, 64, 64, 64, 0, 4, 0, 0, 0, 0, 5, 0, 1, 0, 80, 4, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 65, 64, 64, 0, 4, 0, 5, 0, 0, 0, 0, 1, 0, 16, 16, 16, 16, 4, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 9, 80, 90, 80, 10, 80, 90, 80, 86, 0, 0, 0, 0, 0, 1, 4, 0, 9, 80, 82, 84, 0, 1, 0, 0, 64, 64, 64, 4, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 21, 0, 1, 4, 0, 5, 0, 0, 0, 0, 1, 0, 4, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 17, 16, 0, 16, 16, 20, 0, 0, 0, 0, 133, 0, 1, 4, 0, 1, 16, 16, 16, 16, 0, 0, 8, 80, 86, 0, 5, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 9, 80, 2, 0, 0, 0, 0, 8, 80, 22, 0, 0, 5, 0, 1, 68, 0, 65, 64, 128, 64, 64, 64, 0, 4, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 65, 64, 0, 64, 64, 68, 0, 1, 16, 16, 32, 16, 4, 0, 0, 0, 0, 5, 0, 0, 0, 1, 0, 16, 16, 16, 4, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 65, 64, 64, 64, 128, 72, 80, 90, 80, 18, 32, 80, 144, 80, 64, 64, 64, 64, 128, 68, 0, 1, 8, 80, 6, 0 ]
-	[ 0, 9, 80, 90, 80, 138, 80, 90, 80, 86, 0, 0, 0, 0, 5, 0, 0, 0, 0, 1, 4, 0, 5, 0, 0, 0, 0, 0, 5, 0, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 17, 80, 96, 80, 80, 20, 0, 1, 4, 0, 37, 0, 17, 16, 80, 80, 96, 88, 80, 2, 4, 0, 5, 0 ]
-	[ 0, 1, 16, 16, 16, 32, 16, 16, 16, 16, 16, 16, 4, 0, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0, 1, 4, 0, 0, 0, 0, 0, 1, 4, 0, 5, 0 ]
-	[ 0, 65, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 80, 80, 80, 80, 64, 80, 64, 64, 80, 64, 80, 64, 64, 80, 80, 80, 80, 80, 64, 64, 80, 68, 0 ]
+	[ 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16, 80, 80, 80, 80, 80, 80, 80, 144, 80, 80, 80, 16, 80, 80, 16, 16, 16, 16, 16, 80, 16, 16, 16, 20, 0 ]
+	[ 0, 1, 64, 64, 64, 128, 64, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 1, 0, 0, 64, 4, 0, 1, 0, 0, 4, 0 ]
+	[ 0, 5, 0, 0, 0, 5, 0, 1, 0, 0, 4, 0, 17, 16, 16, 16, 16, 16, 32, 16, 16, 16, 4, 0, 0, 129, 64, 68, 0, 133, 0, 65, 128, 64, 4, 0 ]
+	[ 0, 1, 80, 84, 0, 165, 0, 65, 64, 64, 68, 0, 65, 64, 64, 64, 64, 64, 64, 64, 128, 64, 4, 0, 0, 5, 0, 0, 0, 5, 0, 0, 5, 0, 5, 0 ]
+	[ 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 5, 0, 81, 160, 80, 80, 80, 40, 80, 82, 160, 80, 4, 0 ]
+	[ 0, 1, 16, 20, 0, 37, 0, 17, 16, 80, 144, 80, 16, 16, 80, 80, 80, 16, 20, 0, 37, 0, 5, 0, 0, 5, 0, 0, 0, 5, 0, 0, 5, 0, 5, 0 ]
+	[ 0, 1, 64, 68, 0, 5, 0, 1, 4, 0, 5, 0, 1, 4, 0, 0, 0, 1, 8, 80, 6, 0, 5, 0, 0, 33, 16, 20, 0, 5, 0, 17, 32, 16, 4, 0 ]
+	[ 0, 5, 0, 0, 0, 9, 80, 2, 4, 0, 37, 0, 1, 4, 0, 149, 0, 1, 4, 0, 5, 0, 133, 0, 0, 1, 0, 8, 80, 6, 0, 1, 0, 0, 4, 0 ]
+	[ 0, 1, 16, 20, 0, 5, 0, 1, 4, 0, 69, 0, 1, 4, 0, 5, 0, 1, 4, 0, 5, 0, 5, 0, 0, 1, 0, 4, 0, 5, 0, 1, 0, 0, 4, 0 ]
+	[ 0, 1, 64, 72, 80, 6, 0, 1, 4, 0, 0, 0, 1, 0, 16, 32, 16, 0, 4, 0, 1, 16, 32, 20, 0, 65, 64, 68, 0, 5, 0, 65, 64, 64, 4, 0 ]
+	[ 0, 5, 0, 0, 0, 5, 0, 65, 64, 80, 80, 80, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 5, 0 ]
+	[ 0, 5, 0, 0, 0, 1, 20, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 4, 0, 0, 0, 0, 0, 65, 20, 0, 0, 0, 5, 0 ]
+	[ 0, 9, 80, 86, 0, 1, 4, 0, 17, 16, 20, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 17, 16, 16, 20, 0, 5, 0, 17, 16, 4, 0 ]
+	[ 0, 5, 0, 0, 0, 1, 4, 0, 1, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0, 0, 4, 0, 5, 0, 1, 0, 4, 0 ]
+	[ 0, 5, 0, 17, 16, 0, 4, 0, 1, 0, 4, 0, 1, 0, 0, 64, 64, 64, 64, 64, 64, 0, 0, 4, 0, 1, 0, 0, 4, 0, 5, 0, 1, 0, 4, 0 ]
+	[ 0, 5, 0, 1, 0, 64, 132, 0, 65, 64, 132, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0, 65, 64, 64, 132, 0, 5, 0, 129, 64, 4, 0 ]
+	[ 0, 5, 0, 1, 4, 0, 5, 0, 0, 0, 5, 0, 1, 0, 4, 0, 17, 16, 16, 20, 0, 1, 0, 0, 20, 0, 0, 0, 5, 0, 5, 0, 5, 0, 5, 0 ]
+	[ 0, 1, 80, 64, 68, 0, 165, 0, 17, 80, 160, 80, 0, 0, 4, 80, 1, 0, 0, 4, 0, 1, 0, 0, 64, 80, 80, 80, 160, 80, 0, 80, 160, 80, 4, 0 ]
+	[ 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 5, 0, 1, 0, 4, 0, 65, 128, 64, 68, 0, 1, 0, 4, 0, 0, 0, 0, 5, 0, 5, 0, 5, 0, 5, 0 ]
+	[ 0, 1, 16, 16, 20, 0, 33, 80, 68, 0, 33, 16, 0, 0, 4, 0, 0, 5, 0, 0, 0, 1, 0, 4, 0, 17, 16, 16, 36, 0, 5, 0, 33, 16, 4, 0 ]
+	[ 0, 1, 0, 0, 4, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 16, 16, 32, 16, 16, 16, 0, 0, 4, 0, 1, 0, 0, 4, 0, 5, 0, 1, 0, 4, 0 ]
+	[ 0, 1, 0, 0, 4, 0, 5, 0, 89, 80, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 65, 64, 64, 68, 0, 5, 0, 65, 64, 4, 0 ]
+	[ 0, 1, 64, 64, 68, 0, 5, 0, 0, 0, 65, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 0, 4, 0, 0, 0, 0, 0, 17, 68, 0, 0, 0, 5, 0 ]
+	[ 0, 5, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 16, 16, 16, 16, 16, 4, 0, 17, 20, 0, 5, 0 ]
+	[ 0, 1, 16, 20, 0, 17, 0, 24, 80, 146, 84, 0, 0, 81, 80, 16, 16, 80, 80, 80, 88, 80, 2, 0, 0, 0, 64, 64, 64, 4, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 1, 64, 72, 80, 2, 0, 4, 0, 5, 0, 0, 0, 0, 0, 1, 4, 0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 5, 0, 0, 0, 1, 64, 68, 0, 97, 20, 0, 0, 21, 0, 1, 8, 80, 82, 144, 80, 80, 64, 64, 0, 8, 80, 86, 0, 5, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 9, 80, 18, 16, 68, 0, 0, 21, 0, 133, 0, 0, 5, 0, 1, 4, 0, 0, 5, 0, 0, 0, 0, 1, 4, 0, 0, 0, 5, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 5, 0, 1, 4, 0, 21, 0, 5, 0, 5, 0, 0, 9, 80, 2, 4, 0, 17, 32, 16, 16, 16, 16, 0, 0, 16, 16, 16, 4, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 1, 80, 0, 4, 0, 133, 0, 1, 80, 164, 0, 0, 5, 0, 1, 4, 0, 1, 64, 64, 64, 0, 0, 64, 64, 64, 64, 128, 68, 0, 1, 8, 80, 6, 0 ]
+	[ 0, 5, 0, 1, 4, 0, 5, 0, 5, 0, 5, 0, 0, 5, 0, 1, 4, 0, 5, 0, 0, 0, 1, 4, 0, 0, 0, 0, 5, 0, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 5, 0, 129, 64, 16, 32, 16, 72, 80, 38, 0, 0, 5, 0, 1, 4, 0, 5, 0, 89, 80, 2, 0, 16, 16, 80, 80, 96, 88, 80, 2, 4, 0, 5, 0 ]
+	[ 0, 5, 0, 5, 0, 1, 0, 4, 0, 0, 5, 0, 0, 5, 0, 1, 4, 0, 5, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0, 1, 4, 0, 5, 0 ]
+	[ 0, 65, 80, 96, 80, 64, 64, 64, 80, 80, 64, 80, 80, 64, 80, 64, 64, 80, 64, 80, 80, 80, 64, 64, 64, 64, 80, 80, 80, 80, 80, 64, 64, 80, 68, 0 ]
 	[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
 ]
 explorationState: [
@@ -144,24 +144,31 @@ homeTiles: [
 ]
 items: [
 	{
+		type: POTION_PINK
+		color: GRAY_SPIRITUAL
+		x: 16
+		y: 23
+		modifiers: []
+	}
+	{
+		type: BOX
+		color: CONTAINER_TAN
+		x: 18
+		y: 14
+		modifiers: []
+	}
+	{
+		type: ARROW_SLEEP
+		color: TAN
+		x: 10
+		y: 23
+		modifiers: []
+	}
+	{
 		type: FOOD
 		color: TAN
-		x: 1
-		y: 18
-		modifiers: []
-	}
-	{
-		type: SMALL_ROCK
-		color: GRAY
-		x: 17
-		y: 3
-		modifiers: []
-	}
-	{
-		type: HELMET
-		color: TAN
-		x: 13
-		y: 24
+		x: 25
+		y: 29
 		modifiers: []
 	}
 	{
@@ -172,59 +179,105 @@ items: [
 		modifiers: []
 	}
 	{
-		type: STICK
+		type: BOX
+		color: CONTAINER_TAN
+		x: 9
+		y: 18
+		modifiers: []
+	}
+	{
+		type: SMALL_SHIELD
 		color: TAN
-		x: 19
+		x: 22
+		y: 2
+		modifiers: [
+			{
+				type: BONUS_DEFENSE
+				value: 1
+				displayName: 1
+			}
+			{
+				type: BONUS_DEFENSE
+				value: 1
+				displayName: 1
+			}
+		]
+	}
+	{
+		type: BOX
+		color: CONTAINER_TAN
+		x: 5
+		y: 7
+		modifiers: []
+	}
+	{
+		type: KEY
+		color: CONTAINER_TAN
+		x: 16
 		y: 33
 		modifiers: []
 	}
 	{
-		type: POTION_PINK
-		color: GRAY_SPIRITUAL
-		x: 23
-		y: 14
+		type: KEY
+		color: CONTAINER_TAN
+		x: 7
+		y: 2
 		modifiers: []
 	}
 	{
-		type: SMALL_BAG
-		color: CONTAINER_TAN
-		x: 24
-		y: 25
+		type: SCROLL_G
+		color: WHITE_SPIRITUAL
+		x: 22
+		y: 8
+		modifiers: []
+	}
+	{
+		type: FLOUR_SACK
+		color: TAN
+		x: 5
+		y: 16
+		modifiers: []
+	}
+	{
+		type: GAUNTLETS
+		color: TAN
+		x: 28
+		y: 15
 		modifiers: []
 	}
 	{
 		type: FOOD
 		color: TAN
-		x: 18
-		y: 24
-		modifiers: []
-	}
-	{
-		type: LEAVES
-		color: ORANGE
-		x: 18
+		x: 3
 		y: 28
 		modifiers: []
 	}
 	{
-		type: MUD
+		type: FOOD
 		color: TAN
-		x: 29
-		y: 22
-		modifiers: []
-	}
-	{
-		type: DART
-		color: TAN
-		x: 23
-		y: 26
-		modifiers: []
-	}
-	{
-		type: SMALL_ROCK
-		color: GRAY
-		x: 34
+		x: 14
 		y: 21
+		modifiers: []
+	}
+	{
+		type: FOOD
+		color: TAN
+		x: 1
+		y: 7
+		modifiers: []
+	}
+	{
+		type: SMALL_BAG
+		color: CONTAINER_TAN
+		x: 3
+		y: 29
+		modifiers: []
+	}
+	{
+		type: FOOD
+		color: TAN
+		x: 13
+		y: 14
 		modifiers: []
 	}
 	{
@@ -235,138 +288,6 @@ items: [
 		modifiers: []
 	}
 	{
-		type: FLINT_SHARD
-		color: GRAY
-		x: 34
-		y: 23
-		modifiers: []
-	}
-	{
-		type: HELMET
-		color: TAN
-		x: 34
-		y: 25
-		modifiers: []
-	}
-	{
-		type: FOOD
-		color: TAN
-		x: 11
-		y: 33
-		modifiers: []
-	}
-	{
-		type: MUD
-		color: TAN
-		x: 32
-		y: 9
-		modifiers: []
-	}
-	{
-		type: STICK
-		color: TAN
-		x: 15
-		y: 14
-		modifiers: []
-	}
-	{
-		type: FLOUR_SACK
-		color: TAN
-		x: 34
-		y: 32
-		modifiers: []
-	}
-	{
-		type: KEY
-		color: CONTAINER_TAN
-		x: 25
-		y: 5
-		modifiers: []
-	}
-	{
-		type: DART
-		color: TAN
-		x: 26
-		y: 18
-		modifiers: [
-			{
-				type: BONUS_DAMAGE
-				value: 1
-				displayName: 1
-			}
-		]
-	}
-	{
-		type: DEAD_PLANT_MATTER
-		color: TAN
-		x: 13
-		y: 3
-		modifiers: []
-	}
-	{
-		type: KEY
-		color: CONTAINER_TAN
-		x: 32
-		y: 21
-		modifiers: []
-	}
-	{
-		type: LEAVES
-		color: ORANGE
-		x: 15
-		y: 27
-		modifiers: []
-	}
-	{
-		type: FLOUR_SACK
-		color: TAN
-		x: 1
-		y: 3
-		modifiers: []
-	}
-	{
-		type: HOLLOW_LOG
-		color: TAN
-		x: 13
-		y: 7
-		modifiers: []
-	}
-	{
-		type: BOX
-		color: CONTAINER_TAN
-		x: 32
-		y: 25
-		modifiers: []
-	}
-	{
-		type: BOX
-		color: CONTAINER_TAN
-		x: 3
-		y: 27
-		modifiers: []
-	}
-	{
-		type: LEAVES
-		color: ORANGE
-		x: 20
-		y: 22
-		modifiers: []
-	}
-	{
-		type: SMALL_BAG
-		color: CONTAINER_TAN
-		x: 9
-		y: 34
-		modifiers: []
-	}
-	{
-		type: POTION_BLUE
-		color: WHITE_SPIRITUAL
-		x: 3
-		y: 33
-		modifiers: []
-	}
-	{
 		type: HOME_CRAFTING_BENCH
 		color: BLUE
 		x: 19
@@ -374,10 +295,10 @@ items: [
 		modifiers: []
 	}
 	{
-		type: CHARRED_WOOD
-		color: GRAY
-		x: 6
-		y: 3
+		type: NET
+		color: TAN
+		x: 29
+		y: 32
 		modifiers: []
 	}
 	{
@@ -388,155 +309,147 @@ items: [
 		modifiers: []
 	}
 	{
-		type: KNIFE
-		color: TAN
-		x: 1
-		y: 13
-		modifiers: []
-	}
-	{
-		type: MUD
-		color: TAN
-		x: 20
-		y: 30
-		modifiers: []
-	}
-	{
-		type: MOSS_CLUMP
-		color: GREEN
-		x: 14
-		y: 30
+		type: KEY
+		color: CONTAINER_TAN
+		x: 18
+		y: 10
 		modifiers: []
 	}
 ]
 monsters: [
 	{
-		type: GOBLIN
-		color: GREEN
-		x: 27
-		y: 16
-		warStrength: 7
-		spiritualStrength: 5
-	}
-	{
-		type: ORC
+		type: GIANT_ANT
 		color: BLUE
-		x: 29
-		y: 25
-		warStrength: 10
-		spiritualStrength: 20
+		x: 13
+		y: 10
+		warStrength: 8
+		spiritualStrength: 8
 	}
 	{
-		type: KOBOLD
-		color: BROWN
-		x: 17
-		y: 6
-		warStrength: 6
-		spiritualStrength: 4
-	}
-	{
-		type: GOBLIN
-		color: GREEN
-		x: 5
-		y: 3
-		warStrength: 7
-		spiritualStrength: 5
-	}
-	{
-		type: ORC
+		type: GIANT_ANT
 		color: BLUE
-		x: 1
-		y: 9
-		warStrength: 10
-		spiritualStrength: 20
+		x: 20
+		y: 7
+		warStrength: 8
+		spiritualStrength: 8
 	}
 	{
-		type: GOBLIN
-		color: GREEN
-		x: 12
-		y: 19
-		warStrength: 7
-		spiritualStrength: 5
-	}
-	{
-		type: GOBLIN
-		color: GREEN
-		x: 24
-		y: 24
-		warStrength: 7
-		spiritualStrength: 5
-	}
-	{
-		type: KOBOLD
-		color: BROWN
-		x: 30
-		y: 11
-		warStrength: 6
-		spiritualStrength: 4
-	}
-	{
-		type: GOBLIN
-		color: GREEN
-		x: 17
-		y: 12
-		warStrength: 7
-		spiritualStrength: 5
-	}
-	{
-		type: GIANT_SCORPION
-		color: BLUE
-		x: 7
-		y: 3
+		type: SKELETON
+		color: WHITE
+		x: 31
+		y: 7
 		warStrength: 15
-		spiritualStrength: 20
+		spiritualStrength: 10
+	}
+	{
+		type: CLOAKED_SKELETON
+		color: WHITE
+		x: 31
+		y: 24
+		warStrength: 18
+		spiritualStrength: 15
+	}
+	{
+		type: SKELETON
+		color: WHITE
+		x: 7
+		y: 1
+		warStrength: 15
+		spiritualStrength: 10
+	}
+	{
+		type: CLOAKED_SKELETON
+		color: WHITE
+		x: 32
+		y: 20
+		warStrength: 18
+		spiritualStrength: 15
+	}
+	{
+		type: SKELETON
+		color: WHITE
+		x: 28
+		y: 24
+		warStrength: 15
+		spiritualStrength: 10
+	}
+	{
+		type: GIANT_ANT
+		color: BLUE
+		x: 21
+		y: 11
+		warStrength: 8
+		spiritualStrength: 8
+	}
+	{
+		type: GIANT_SNAKE
+		color: BLUE
+		x: 8
+		y: 29
+		warStrength: 12
+		spiritualStrength: 12
+	}
+	{
+		type: GHOUL
+		color: WHITE
+		x: 23
+		y: 19
+		warStrength: 20
+		spiritualStrength: 25
 	}
 ]
 doors: [
 	{
-		x: 29
-		y: 7
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
 		x: 19
-		y: 25
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 17
-		y: 4
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 2
-		y: 31
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 29
-		y: 9
+		y: 28
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 5
-		y: 4
+		y: 3
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 5
+		y: 5
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 6
+		y: 17
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 6
+		y: 19
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 28
+		y: 8
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 30
+		y: 32
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 22
+		y: 9
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 10
-		y: 4
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 10
-		y: 6
+		y: 7
 		state: CLOSED
 		animationProgress: 0
 	}
@@ -547,38 +460,92 @@ doors: [
 		animationProgress: 0
 	}
 	{
-		x: 20
-		y: 4
+		x: 28
+		y: 17
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 3
+		x: 6
+		y: 31
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 4
 		y: 10
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 5
-		y: 32
+		x: 28
+		y: 19
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 8
-		y: 2
+		x: 17
+		y: 27
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 20
+		x: 10
+		y: 17
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 32
+		y: 4
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 15
+		y: 9
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 10
+		y: 19
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 32
 		y: 6
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 22
+		x: 20
+		y: 5
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 28
 		y: 31
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 4
+		y: 26
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 10
+		y: 29
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 25
+		y: 4
 		state: CLOSED
 		animationProgress: 0
 	}
@@ -589,206 +556,32 @@ doors: [
 		animationProgress: 0
 	}
 	{
-		x: 13
-		y: 4
+		x: 10
+		y: 31
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 13
-		y: 6
+		x: 21
+		y: 25
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 25
-		y: 16
+		y: 6
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 18
-		y: 5
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 8
-		y: 25
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 20
-		y: 29
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 8
-		y: 31
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 30
-		y: 18
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 14
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 13
-		y: 28
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 16
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 18
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 20
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 22
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 30
-		y: 32
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 25
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 16
-		y: 8
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 18
-		y: 30
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 6
-		y: 31
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 28
-		y: 18
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
-		y: 14
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 28
-		y: 22
+		x: 32
+		y: 19
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 9
-		y: 7
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
-		y: 16
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
-		y: 18
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
-		y: 20
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
 		y: 22
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 28
-		y: 31
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 2
-		y: 3
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 4
-		y: 25
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 31
-		y: 3
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 16
-		y: 30
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 31
-		y: 5
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 31
-		y: 7
 		state: CLOSED
 		animationProgress: 0
 	}
@@ -799,38 +592,38 @@ doors: [
 		animationProgress: 0
 	}
 	{
-		x: 4
-		y: 31
+		x: 19
+		y: 7
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 31
-		y: 9
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 26
-		y: 19
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
-		x: 31
+		x: 2
 		y: 13
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 9
-		y: 28
+		y: 26
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 7
-		y: 9
+		x: 21
+		y: 32
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 30
+		y: 5
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 18
+		y: 2
 		state: CLOSED
 		animationProgress: 0
 	}
@@ -841,26 +634,38 @@ doors: [
 		animationProgress: 0
 	}
 	{
-		x: 2
+		x: 9
+		y: 32
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 3
+		y: 33
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 8
 		y: 25
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
-		x: 29
-		y: 3
-		state: CLOSED
-		animationProgress: 0
-	}
-	{
 		x: 14
-		y: 31
+		y: 29
 		state: CLOSED
 		animationProgress: 0
 	}
 	{
 		x: 29
-		y: 5
+		y: 4
+		state: CLOSED
+		animationProgress: 0
+	}
+	{
+		x: 6
+		y: 8
 		state: CLOSED
 		animationProgress: 0
 	}
@@ -931,8 +736,8 @@ gates: [
 ]
 ladders: [
 	{
-		x: 32
-		y: 29
+		x: 4
+		y: 22
 	}
 ]
 scenery: []

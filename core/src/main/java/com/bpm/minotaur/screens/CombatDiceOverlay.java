@@ -110,10 +110,7 @@ public class CombatDiceOverlay {
     }
 
     public void render(SpriteBatch batch) {
-        if (Gdx.graphics.getFrameId() % 60 == 0) {
-            com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
-                    "CombatDiceOverlay.render() INVOKED. State: " + combatManager.getCurrentState());
-        }
+        // Debug log removed
 
         if (combatManager.getCurrentState() != CombatManager.CombatState.PLAYER_SELECT_DICE) {
             return;

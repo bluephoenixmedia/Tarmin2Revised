@@ -450,4 +450,20 @@ public class WorldManager {
         }
         return adj;
     }
+
+    public void processTurn(Player player, int turnCount) {
+        // No periodic spawning on Level 1 (Home Base)
+        if (currentLevel <= 1)
+            return;
+
+        // Periodic Spawn Check (e.g., every 300 turns)
+        if (turnCount > 0 && turnCount % 300 == 0) {
+            SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
+                    loadedChunks.get(currentPlayerChunkId), difficulty, currentLevel, player.getLevel(),
+                    null, spawnTableData, System.nanoTime()); // Use System time for runtime randomness
+
+            sm.spawnPeriodicMonster(player);
+            Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount);
+        }
+    }
 }

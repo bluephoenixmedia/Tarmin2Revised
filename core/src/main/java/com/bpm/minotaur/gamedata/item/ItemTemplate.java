@@ -39,6 +39,15 @@ public class ItemTemplate {
     public boolean isUsable;
     public boolean isContainer;
     public boolean isRing;
+    public boolean isShield; // New Field
+    public boolean isHelmet; // New Field
+
+    // --- Refactored Stats ---
+    public String material = "wood"; // wood, iron, leather, etc.
+    public int baseCost = 0;
+    public float weight = 1.0f;
+    public int nutrition = 0;
+    public int probability = 0; // Relative spawn weight
 
     // --- Collision Logic ---
     public boolean isImpassable = false; // New Flag

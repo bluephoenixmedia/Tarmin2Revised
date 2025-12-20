@@ -54,7 +54,28 @@ public class ItemDataManager {
                 ItemTemplate template = json.readValue(ItemTemplate.class, data);
                 itemTemplates.put(type, template);
             } else {
-                Gdx.app.error("ItemDataManager", "No JSON data found for item type: " + type.name());
+                // Skip error logging for procedural/generated items
+                String name = type.name();
+                boolean isProcedural = name.startsWith("SCROLL_") ||
+                        name.startsWith("WAND_") ||
+                        name.startsWith("POTION_") ||
+                        name.equals("CORPSE") ||
+                        name.equals("MEAT") ||
+                        name.equals("COOKED_MEAT") ||
+                        name.equals("BONE") ||
+                        name.equals("CHITIN") ||
+                        name.equals("TOOTH") ||
+                        name.equals("CLAW") ||
+                        name.equals("NAIL") ||
+                        name.equals("BLOOD_VIAL") ||
+                        name.equals("ORGAN") ||
+                        name.equals("LEATHER_SCRAP") ||
+                        name.equals("MYSTERIOUS_PORTAL") || // defined in code or json?
+                        name.equals("MONSTER_EYE");
+
+                if (!isProcedural) {
+                    Gdx.app.error("ItemDataManager", "No JSON data found for item type: " + type.name());
+                }
             }
         }
 
@@ -158,6 +179,68 @@ public class ItemDataManager {
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
 
+    /**
+     * Loads weapon definitions from weapons.json.
+     * Called explicitly generally from Tarmin2.java.
+     */
+    public void loadWeapons() {
+        Json json = new Json();
+        FileHandle file = Gdx.files.internal("data/weapons.json");
+
+        if (!file.exists()) {
+            Gdx.app.error("ItemDataManager", "weapons.json missing!");
+            return;
+        }
+
+        JsonValue root = new JsonReader().parse(file);
+        int loadedCount = 0;
+
+        // Iterate over the JSON keys explicitly efficiently
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            String typeName = entry.name;
+            try {
+                ItemType type = ItemType.valueOf(typeName);
+                ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+                itemTemplates.put(type, template);
+                loadedCount++;
+            } catch (IllegalArgumentException e) {
+                Gdx.app.error("ItemDataManager", "Skipping unknown weapon type in JSON: " + typeName);
+            }
+        }
+
+        Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new weapons.");
+    }
+
+    /**
+     * Loads armor definitions from armor.json.
+     */
+    public void loadArmor() {
+        Json json = new Json();
+        FileHandle file = Gdx.files.internal("data/armor.json");
+
+        if (!file.exists()) {
+            Gdx.app.error("ItemDataManager", "armor.json missing!");
+            return;
+        }
+
+        JsonValue root = new JsonReader().parse(file);
+        int loadedCount = 0;
+
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            String typeName = entry.name;
+            try {
+                ItemType type = ItemType.valueOf(typeName);
+                ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+                itemTemplates.put(type, template);
+                loadedCount++;
+            } catch (IllegalArgumentException e) {
+                Gdx.app.error("ItemDataManager", "Skipping unknown armor type in JSON: " + typeName);
+            }
+        }
+
+        Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
+    }
+
     public ItemTemplate getTemplate(ItemType type) {
         ItemTemplate template = itemTemplates.get(type);
         if (template == null) {
@@ -187,6 +270,18 @@ public class ItemDataManager {
     public Item createItem(ItemType type, int x, int y, ItemColor color, AssetManager assetManager) {
 
         Gdx.app.log("ItemDataManager [DEBUG]", "createItem called for: " + type.name());
+
+        // --- FIX: Randomize Generic SCROLL ---
+        if (type == ItemType.SCROLL) {
+            ItemType[] scrolls = {
+                    ItemType.SCROLL_A, ItemType.SCROLL_B, ItemType.SCROLL_C, ItemType.SCROLL_D,
+                    ItemType.SCROLL_E, ItemType.SCROLL_F, ItemType.SCROLL_G, ItemType.SCROLL_H
+            };
+            type = scrolls[random.nextInt(scrolls.length)];
+            Gdx.app.log("ItemDataManager", "Converted generic SCROLL to " + type.name());
+        }
+        // -------------------------------------
+
         ItemTemplate template = getTemplate(type);
 
         if (template.unlockId != null && !UnlockManager.getInstance().isUnlocked(template.unlockId)) {
@@ -497,6 +592,17 @@ public class ItemDataManager {
                 t.texturePath = base.texturePath;
                 t.spriteData = base.spriteData;
                 t.scale = base.scale;
+
+                // Copy Properties
+                t.isFood = base.isFood;
+                t.isTreasure = base.isTreasure;
+                t.isWeapon = base.isWeapon;
+                t.isArmor = base.isArmor;
+                t.isPotion = base.isPotion;
+                t.isUsable = base.isUsable;
+                t.baseValue = base.baseValue; // Override base value? No, passed value implies 1. Use base if better?
+                // The method sets baseValue to 1. Let's keep that default but maybe allow
+                // override.
             } else {
                 t.spriteData = new String[] { "??", "??" }; // Stub
                 t.scale = createDefaultScale();

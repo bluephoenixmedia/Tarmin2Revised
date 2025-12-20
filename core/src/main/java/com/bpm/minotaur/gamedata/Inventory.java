@@ -22,18 +22,18 @@ public class Inventory {
      * If both full, returns false.
      */
     public boolean pickup(Item item) {
-        // 1. Try Quick Slots (HUD) - Prioritize immediate access
+        // 1. Try Main Inventory (Backpack) - CHANGED: Prioritize Backpack
+        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
+            mainInventory.add(item);
+            return true;
+        }
+
+        // 2. Try Quick Slots (HUD)
         for (int i = 0; i < quickSlots.length; i++) {
             if (quickSlots[i] == null) {
                 quickSlots[i] = item;
                 return true;
             }
-        }
-
-        // 2. Try Main Inventory (Backpack)
-        if (mainInventory.size() < MAX_BACKPACK_SIZE) {
-            mainInventory.add(item);
-            return true;
         }
 
         return false; // Inventory Full

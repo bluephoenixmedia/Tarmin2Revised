@@ -18,6 +18,7 @@ public class MonsterDataManager {
     // Use libGDX's ObjectMap for better performance than HashMap
     private final ObjectMap<Monster.MonsterType, MonsterTemplate> monsterTemplates;
     private final Random random = new Random(); // <-- ADD THIS FIELD
+
     public MonsterDataManager() {
         this.monsterTemplates = new ObjectMap<>();
     }
@@ -57,6 +58,10 @@ public class MonsterDataManager {
         return template;
     }
 
+    public ObjectMap.Values<MonsterTemplate> getAllTemplates() {
+        return monsterTemplates.values();
+    }
+
     /**
      * Tells the AssetManager to load all textures defined in our templates.
      */
@@ -69,8 +74,10 @@ public class MonsterDataManager {
     }
 
     /**
-     * Selects a valid MonsterVariant (color/tier) for a given monster type at a specific level.
-     * @param type The monster type (e.g., GIANT_ANT).
+     * Selects a valid MonsterVariant (color/tier) for a given monster type at a
+     * specific level.
+     * 
+     * @param type  The monster type (e.g., GIANT_ANT).
      * @param level The current dungeon level.
      * @return A valid MonsterVariant, or null if none are found.
      */

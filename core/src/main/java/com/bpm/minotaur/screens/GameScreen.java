@@ -2,7 +2,7 @@ package com.bpm.minotaur.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -34,7 +34,7 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
-import com.bpm.minotaur.managers.CraftingManager;
+
 import com.bpm.minotaur.rendering.*;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
@@ -81,7 +81,6 @@ public class GameScreen extends BaseScreen {
     private CombatDiceOverlay combatDiceOverlay; // NEW
     private MonsterAiManager monsterAiManager;
     private DiscoveryManager discoveryManager;
-    private CraftingManager craftingManager;
 
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
@@ -99,6 +98,9 @@ public class GameScreen extends BaseScreen {
     private final java.util.Random rng = new java.util.Random();
 
     private boolean hasLoadedLevel = false;
+    private int turnCount = 0;
+
+    private final TurnManager turnManager; // NEW
 
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
@@ -110,6 +112,7 @@ public class GameScreen extends BaseScreen {
         this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
         this.fboViewport.update(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
         this.soundManager = new SoundManager(debugManager);
+        this.turnManager = new TurnManager(); // NEW
 
         this.worldManager = new WorldManager(gameMode, difficulty, level,
                 game.getMonsterDataManager(),
@@ -119,7 +122,6 @@ public class GameScreen extends BaseScreen {
                 this.soundManager);
 
         this.monsterAiManager = new MonsterAiManager();
-        this.craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
 
         switch (level) {
             case 1:
@@ -183,7 +185,8 @@ public class GameScreen extends BaseScreen {
         if (discoveryManager != null && gameMode == GameMode.ADVANCED) {
             discoveryManager.saveState();
         }
-        MusicManager.getInstance().stop();
+        // MusicManager.getInstance().stop(); // Don't stop music when switching screens
+        // (like to Inventory)
     }
 
     private void generateLevel(int levelNumber) {
@@ -205,7 +208,7 @@ public class GameScreen extends BaseScreen {
             this.maze = worldManager.getInitialMaze();
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
-                    game.getItemDataManager(), game.getAssetManager());
+                    game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager);
             player.setMaze(this.maze);
         } else {
@@ -215,7 +218,7 @@ public class GameScreen extends BaseScreen {
         }
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                worldManager, game.getItemDataManager(), stochasticManager);
+                game.getItemDataManager(), stochasticManager);
 
         // --- DICE UI INTEGRATION ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
@@ -332,14 +335,6 @@ public class GameScreen extends BaseScreen {
             firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
                     gameMode);
 
-            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
-                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
-            } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport,
-                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
-            }
-
             // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
             if (camera3d != null) {
                 // Negate Y here to convert to standard 3D forward (-Z)
@@ -389,6 +384,16 @@ public class GameScreen extends BaseScreen {
                         modelBatch.end();
                 }
             }
+
+            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
+                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+            } else {
+                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport,
+                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+            }
+
+            // 3D Rendering Moved Above EntityRenderer
 
             animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(),
                     firstPersonRenderer, maze);
@@ -524,7 +529,10 @@ public class GameScreen extends BaseScreen {
         this.maze = newMaze;
         player.setMaze(newMaze);
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                worldManager, game.getItemDataManager(), stochasticManager);
+                game.getItemDataManager(), stochasticManager);
+        // --- FIX: Re-initialize Dice UI with new Manager ---
+        this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
+        // ---------------------------------------------------
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
@@ -535,9 +543,13 @@ public class GameScreen extends BaseScreen {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            monsterAiManager.updateMonsterLogic(maze, player, true, combatManager);
+            turnManager.processTurn(maze, player, monsterAiManager, combatManager);
         }
         combatManager.checkForAdjacentMonsters();
+
+        // --- Periodic Spawning Hook ---
+        turnCount++;
+        worldManager.processTurn(player, turnCount);
     }
 
     private void performChunkTransition(Gate transitionGate) {
@@ -674,11 +686,15 @@ public class GameScreen extends BaseScreen {
                     Item itemInFront = maze.getItems().get(target);
 
                     if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
-                        InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
-                                InventoryScreen.InventoryMode.CRAFT);
-                        invScreen.setCraftingManager(this.craftingManager);
-                        game.setScreen(invScreen);
-                        return true;
+                        try {
+                            OssuaryManager oMgr = new OssuaryManager(); // Create dynamically for now, or fetch from
+                                                                        // game
+                            OssuaryScreen ossuaryScreen = new OssuaryScreen(game, this, player, oMgr);
+                            game.setScreen(ossuaryScreen);
+                            return true;
+                        } catch (Exception e) {
+                            Gdx.app.error("GameScreen", "Failed to open Ossuary", e);
+                        }
                     }
 
                     if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_FIRE_POT) {

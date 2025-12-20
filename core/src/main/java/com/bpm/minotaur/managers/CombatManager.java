@@ -12,6 +12,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.monster.MonsterTemplate; // NEW
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
@@ -21,7 +22,6 @@ import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import java.util.List;
-import java.util.ArrayList;
 
 import java.util.Random;
 
@@ -67,7 +67,6 @@ public class CombatManager {
     private final AnimationManager animationManager;
     private final GameEventManager eventManager;
     private final SoundManager soundManager;
-    private final WorldManager worldManager;
 
     private final StochasticManager stochasticManager;
 
@@ -92,7 +91,7 @@ public class CombatManager {
     private int damageTakenInCombat = 0;
 
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
-            GameEventManager eventManager, SoundManager soundManager, WorldManager worldManager,
+            GameEventManager eventManager, SoundManager soundManager,
             ItemDataManager itemDataManager, StochasticManager stochasticManager) {
         this.player = player;
         this.maze = maze;
@@ -100,7 +99,6 @@ public class CombatManager {
         this.animationManager = animationManager;
         this.eventManager = eventManager;
         this.soundManager = soundManager;
-        this.worldManager = worldManager;
         this.itemDataManager = itemDataManager;
         this.stochasticManager = stochasticManager;
     }
@@ -318,37 +316,129 @@ public class CombatManager {
         playerAttackInstant();
     }
 
+    private int playerCurrentBlock = 0; // Reset every round
+
     private void resolveDiceHand(List<DieResult> results) {
         currentCombatTurns++;
 
         int totalDamage = 0;
-        int totalBlock = 0;
+        playerCurrentBlock = 0; // Reset for this round
         int healing = 0;
         int fireDamage = 0;
         int lightningDamage = 0;
+        int poisonStacks = 0;
 
         StringBuilder log = new StringBuilder("Rolled: ");
 
         for (DieResult res : results) {
             log.append(res.getRolledFace().toString()).append(", ");
+            int val = res.getRolledFace().getValue();
             switch (res.getRolledFace().getType()) {
                 case SWORD:
-                    totalDamage += res.getRolledFace().getValue();
+                    totalDamage += val;
+                    // Log basic damage contribution? Maybe too spammy, let's stick to special
+                    // effects
                     break;
                 case SHIELD:
-                    totalBlock += res.getRolledFace().getValue();
+                    playerCurrentBlock += val;
+                    eventManager.addEvent(new GameEvent("Shield Up! (+" + val + ")", 1f));
+                    BalanceLogger.getInstance().log("DICE_EFFECT",
+                            "Shield increased by " + val + ". Total: " + playerCurrentBlock);
+                    break;
+                case PARRY:
+                    // Parry adds block + maybe a riposte mechanic later
+                    playerCurrentBlock += val;
+                    eventManager.addEvent(new GameEvent("Parry Stance!", 1f));
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Parry: Shield increased by " + val);
                     break;
                 case HEART:
-                    healing += res.getRolledFace().getValue();
+                    if (val > 0) {
+                        healing += val;
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Healing prepared: " + val);
+                    } else {
+                        int cost = -val;
+                        player.takeDamage(cost, DamageType.PHYSICAL);
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Sacrifice! Took " + cost + " damage.");
+                    }
                     break;
                 case FIRE:
-                    fireDamage += res.getRolledFace().getValue();
+                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Fire Resisted by " + monster.getMonsterType());
+                        eventManager.addEvent(new GameEvent("Resisted Fire!", 0.5f));
+                    } else {
+                        fireDamage += val;
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Fire Charge: " + val);
+                    }
+                    break;
+                case ICE:
+                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Ice Resisted by " + monster.getMonsterType());
+                        eventManager.addEvent(new GameEvent("Resisted Ice!", 0.5f));
+                    } else {
+                        // Cold damage + potentially slow
+                        totalDamage += val;
+                        if (monster != null) {
+                            monster.getStatusManager().addEffect(StatusEffectType.SLOWED, 2, 1, false);
+                        }
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Ice Damage: " + val);
+                    }
                     break;
                 case LIGHTNING:
-                    lightningDamage += res.getRolledFace().getValue();
+                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
+                        BalanceLogger.getInstance().log("DICE_EFFECT",
+                                "Lightning Resisted by " + monster.getMonsterType());
+                        eventManager.addEvent(new GameEvent("Resisted Lightning!", 0.5f));
+                    } else {
+                        lightningDamage += val;
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Lightning Charge: " + val);
+                    }
+                    break;
+                case POISON:
+                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
+                        BalanceLogger.getInstance().log("DICE_EFFECT",
+                                "Poison Resisted by " + monster.getMonsterType());
+                        eventManager.addEvent(new GameEvent("Resisted Poison!", 0.5f));
+                    } else {
+                        poisonStacks += val;
+                        if (monster != null) {
+                            monster.getStatusManager().addEffect(StatusEffectType.POISONED, 3, poisonStacks, true);
+                        }
+                        BalanceLogger.getInstance().log("DICE_EFFECT", "Poison Stacks: " + val);
+                    }
+                    break;
+                case GOLD:
+                    player.getStats().incrementTreasureScore(val);
+                    eventManager.addEvent(new GameEvent("Stole " + val + " Gold!", 1f));
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Stole Gold: " + val);
+                    break;
+                case BULLSEYE: // Crit / High Acc
+                    int critDmg = (int) (val * 1.5f);
+                    totalDamage += critDmg;
+                    BalanceLogger.getInstance().log("DICE_EFFECT",
+                            "Bullseye! Crit Damage: " + critDmg + " (Base: " + val + ")");
+                    break;
+                case GLANCING:
+                    int glanceDmg = Math.max(1, val / 2);
+                    totalDamage += glanceDmg;
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Glancing Hit. Damage: " + glanceDmg);
+                    break;
+                case BONE: // Physical blunt damage
+                    totalDamage += val;
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Bone Bash: " + val);
+                    break;
+                case CURSE: // Damage but maybe hurts player?
+                    totalDamage += val * 2;
+                    player.takeDamage(1, DamageType.PHYSICAL);
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Curse! Dealt " + (val * 2) + ", Took 1 self-dmg.");
+                    break;
+                case ASH:
+                    // Failed fire, 1 dmg
+                    totalDamage += 1;
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Ash (Failed Fire). Damage: 1");
                     break;
                 case SKULL:
-                    // Risky Logic later
+                    // High damage risky
+                    totalDamage += val;
                     break;
                 default:
                     break;
@@ -365,7 +455,14 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Healed " + healing + " HP", 1f));
         }
 
-        // 2. Damage
+        // 2. Status Effects
+        if (poisonStacks > 0) {
+            monster.getStatusManager().addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED, 3,
+                    poisonStacks, true);
+            eventManager.addEvent(new GameEvent("Poisoned Monster!", 1f));
+        }
+
+        // 3. Damage
         int totalAttack = totalDamage + fireDamage + lightningDamage + player.getStats().getAttackModifier();
 
         // Log artifacts logic here later
@@ -374,7 +471,7 @@ public class CombatManager {
             int actualDamage = monster.takeDamage(totalAttack);
             // Visuals
             String[] sprite = itemDataManager.getTemplate(com.bpm.minotaur.gamedata.item.Item.ItemType.DART).spriteData; // Default
-                                                                                                                         // punch
+
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
                     player.getPosition(), monster.getPosition(),
                     com.bpm.minotaur.gamedata.item.ItemColor.WHITE.getColor(), 0.5f,
@@ -391,7 +488,15 @@ public class CombatManager {
 
             lastDamageDealt = actualDamage;
         } else {
-            eventManager.addEvent(new GameEvent("Miss!", 1f));
+            if (poisonStacks == 0 && playerCurrentBlock == 0 && healing == 0) {
+                eventManager.addEvent(new GameEvent("Miss!", 1f));
+            } else {
+                // Action happened (Block/Poison/Heal)
+            }
+        }
+
+        if (playerCurrentBlock > 0) {
+            eventManager.addEvent(new GameEvent("Blocking " + playerCurrentBlock + " dmg", 1.5f));
         }
 
         BalanceLogger.getInstance().logCombatRound("PLAYER",
@@ -401,7 +506,8 @@ public class CombatManager {
 
         if (monster.getWarStrength() <= 0) {
             currentState = CombatState.VICTORY;
-            // Victory Logic reused from update()
+            // Additional victory cleanup?
+            monster.takeDamage(999); // Ensure dead
         } else {
             currentState = CombatState.MONSTER_TURN;
         }
@@ -414,7 +520,7 @@ public class CombatManager {
         currentCombatTurns++;
 
         int attackModifier = player.getAttackModifier() + rollBonus;
-        boolean attackSuccessful = false;
+
         int damage = 0;
         int actualDamage = 0;
 
@@ -438,7 +544,6 @@ public class CombatManager {
                 // --------------------------------------------------
 
                 lastDamageDealt = actualDamage;
-                attackSuccessful = true;
 
                 if (actualDamage > 0) {
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
@@ -468,7 +573,6 @@ public class CombatManager {
                 // --------------------------------------------------
 
                 lastDamageDealt = actualDamage;
-                attackSuccessful = true;
 
                 if (actualDamage > 0) {
                     Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
@@ -490,18 +594,24 @@ public class CombatManager {
                     monster.getPosition(), pendingWeapon.getColor(), 0.5f,
                     itemDataManager.getTemplate(Item.ItemType.LARGE_LIGHTNING).spriteData));
 
-            damage = pendingWeapon.getSpiritDamage() + attackModifier;
-            monster.takeSpiritualDamage(damage);
-            damage = pendingWeapon.getSpiritDamage() + attackModifier;
-            monster.takeSpiritualDamage(damage);
-            actualDamage = damage;
-            attackSuccessful = true;
+            if (random.nextInt(100) < monster.getMagicResistance()) {
+                damage = 0;
+                actualDamage = 0;
+                eventManager.addEvent(new GameEvent("Spell Resisted!", 1f));
+            } else {
+                damage = pendingWeapon.getSpiritDamage() + attackModifier;
+                monster.takeSpiritualDamage(damage);
+                damage = pendingWeapon.getSpiritDamage() + attackModifier;
+                monster.takeSpiritualDamage(damage);
+                actualDamage = damage;
+            }
 
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
             if (actualDamage > 0) {
                 maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
             }
-            eventManager.addEvent(new GameEvent("Spell Cast! " + actualDamage + " dmg", 2f));
+            if (actualDamage > 0)
+                eventManager.addEvent(new GameEvent("Spell Cast! " + actualDamage + " dmg", 2f));
 
             if (pendingWeapon.isUsable()) {
                 player.getInventory().setRightHand(null);
@@ -519,18 +629,7 @@ public class CombatManager {
         stochasticManager.clearDice();
 
         if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
-            currentState = CombatState.VICTORY;
-            Gdx.app.log("CombatManager", "You have defeated" + monster.getMonsterType());
-            eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
-            UnlockManager.getInstance().recordKill(monster.getMonsterType());
-            int baseExp = monster.getBaseExperience();
-            float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
-            float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
-            int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
-            eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
-            player.addExperience(totalExp, eventManager);
-            maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
-            spawnCorpseEffects(monster);
+            handleMonsterDeath();
 
         } else {
             currentState = CombatState.MONSTER_TURN;
@@ -539,6 +638,17 @@ public class CombatManager {
 
     public boolean performMonsterRangedAttack(Monster attacker) {
         int range = attacker.getAttackRange();
+
+        // --- NEW: Weapon Check ---
+        Item weapon = attacker.getInventory().getRightHand();
+        boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
+
+        if (!attacker.hasRangedAttack() && !hasRangedWeapon)
+            return false;
+
+        if (hasRangedWeapon)
+            range = weapon.getRange(); // Use weapon range if available, else default?
+
         if (range <= 0)
             range = 8;
         Vector2 diff = player.getPosition().cpy().sub(attacker.getPosition());
@@ -670,17 +780,115 @@ public class CombatManager {
     }
 
     private void spawnCorpseEffects(Monster monster) {
-        // 1. Spawn Item
+        // 1. Spawn Item (BONE for Ossuary)
         if (maze != null && itemDataManager != null) {
-            Item corpse = itemDataManager.createItem(Item.ItemType.CORPSE,
+            Item bone = itemDataManager.createItem(Item.ItemType.BONE,
                     (int) monster.getPosition().x, (int) monster.getPosition().y,
-                    ItemColor.TAN, game.getAssetManager());
+                    ItemColor.WHITE, game.getAssetManager());
 
-            if (corpse != null) {
-                corpse.setCorpseSource(monster.getType());
+            if (bone != null) {
+                bone.setCorpseSource(monster.getType());
                 maze.getItems().put(
                         new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y),
-                        corpse);
+                        bone);
+
+                BalanceLogger.getInstance().log("LOOT_DROP", "Dropped " + bone.getDisplayName() +
+                        " from " + monster.getMonsterType());
+            }
+
+            // --- NEW: MEAT / CHITIN DROPS ---
+            // 50% chance for meat if not undead/construct etc.
+            // Simple check: most monsters are fleshy.
+            boolean isFleshy = true;
+            String mType = monster.getMonsterType();
+            if (mType.contains("SKELETON") || mType.contains("GOLEM") || mType.contains("GHOST")
+                    || mType.contains("WRAITH") || mType.contains("SLIME")) {
+                isFleshy = false;
+            }
+
+            if (isFleshy) {
+                if (random.nextBoolean()) { // 50%
+                    Item meat = itemDataManager.createItem(Item.ItemType.MEAT,
+                            (int) monster.getPosition().x, (int) monster.getPosition().y,
+                            ItemColor.TAN, game.getAssetManager());
+                    if (meat != null) {
+                        // Find unexpected free spot or stack? For now, just try to place or overwrite
+                        // (limitations)
+                        // Maze items is a map, only 1 item per tile?
+                        // If we already placed a BONE, we can't place MEAT on same tile in current
+                        // system?
+                        // Inventory.java line 95: maze.getItems().get(playerTile2) -> single item.
+                        // We need to place it adjacent or only drop one.
+                        // Let's drop Meat INSTEAD of Bone effectively? Or place nearby?
+                        // "Smart" drop: check tile, if taken, try neighbor.
+                        GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+
+                        // --- INTRINSIC LOGIC ---
+                        MonsterTemplate t = monster.getTemplate();
+                        if (t != null && t.corpseEffect != null) {
+                            if (random.nextInt(100) < t.corpseEffectChance) {
+                                meat.setGrantedIntrinsic(t.corpseEffect);
+                            }
+                        }
+                        // -----------------------
+
+                        if (!maze.getItems().containsKey(pos)) {
+                            maze.getItems().put(pos, meat);
+                            BalanceLogger.getInstance().log("LOOT_DROP", "Dropped Meat from " + mType);
+                        } else {
+                            // Try scatter
+                            for (int dx = -1; dx <= 1; dx++) {
+                                for (int dy = -1; dy <= 1; dy++) {
+                                    GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
+                                    if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH)
+                                            && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) { // Simple
+                                        // floor
+                                        // check
+                                        meat.getPosition().set(p.x + 0.5f, p.y + 0.5f);
+                                        maze.getItems().put(p, meat);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // -------------------------------
+        }
+
+        // 3. Drop Inventory Contents (NEW)
+        if (monster.getInventory() != null) {
+            for (Item item : monster.getInventory().getAllItems()) {
+                if (item != null) {
+                    item.setPosition(monster.getPosition().x, monster.getPosition().y);
+                    // Handle stacking/collision if needed, for now just put in map?
+                    // Map only holds ONE item per tile.
+                    // We need a 'dropItem' helper in Maze or logic here to find free spot.
+                    // Reuse scatter logic?
+
+                    GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+                    if (!maze.getItems().containsKey(pos)) {
+                        maze.getItems().put(pos, item);
+                    } else {
+                        // Scatter
+                        boolean placed = false;
+                        for (int dx = -1; dx <= 1; dx++) {
+                            for (int dy = -1; dy <= 1; dy++) {
+                                GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
+                                if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH)
+                                        && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) {
+                                    item.setPosition(p.x + 0.5f, p.y + 0.5f);
+                                    maze.getItems().put(p, item);
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                            if (placed)
+                                break;
+                        }
+                    }
+                }
             }
         }
 
@@ -743,6 +951,11 @@ public class CombatManager {
         if (monster == null)
             return;
 
+        // Process Statuses FIRST (DoT, etc.)
+        processMonsterStatusEffects();
+        if (currentState == CombatState.VICTORY)
+            return; // Died from poison/status
+
         // Try ranged first
         if (monster.hasRangedAttack()) {
             float dist = monster.getPosition().dst(player.getPosition());
@@ -775,7 +988,21 @@ public class CombatManager {
         int damage = baseDmg + random.nextInt(3);
         // -------------------------------
 
-        int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
+        // --- BLOCK LOGIC ---
+        int damageAfterBlock = damage;
+        if (playerCurrentBlock > 0) {
+            damageAfterBlock = Math.max(0, damage - playerCurrentBlock);
+            int blockedAmount = damage - damageAfterBlock;
+
+            if (blockedAmount > 0) {
+                eventManager.addEvent(new GameEvent("Blocked " + blockedAmount + " dmg!", 1f));
+                BalanceLogger.getInstance().log("COMBAT_MITIGATION",
+                        "Incoming: " + damage + " | Block: " + playerCurrentBlock + " | Reduced By: " + blockedAmount
+                                + " | Final: " + damageAfterBlock);
+            }
+        }
+
+        int actualDamage = player.takeDamage(damageAfterBlock, DamageType.PHYSICAL); // PHYSICAL is known valid
         maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
 
         damageTakenInCombat += actualDamage;
@@ -788,5 +1015,44 @@ public class CombatManager {
         } else {
             currentState = CombatState.PLAYER_TURN;
         }
+    }
+
+    private void processMonsterStatusEffects() {
+        if (monster == null)
+            return;
+        StatusManager sm = monster.getStatusManager();
+
+        // Handle Poison
+        if (sm.hasEffect(StatusEffectType.POISONED)) {
+            int potency = sm.getEffect(StatusEffectType.POISONED).getPotency();
+            int dmg = monster.takeDamage(potency);
+            maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
+            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " takes " + dmg + " poison dmg!", 1.5f));
+            BalanceLogger.getInstance().log("COMBAT_EFFECT", "Monster took " + dmg + " poison damage.");
+
+            if (monster.getWarStrength() <= 0) {
+                // Trigger death logic reuse
+                handleMonsterDeath();
+                return;
+            }
+        }
+
+        sm.updateTurn();
+    }
+
+    // Extracted death logic to reuse for Poison kills
+    private void handleMonsterDeath() {
+        currentState = CombatState.VICTORY;
+        Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
+        eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
+        UnlockManager.getInstance().recordKill(monster.getMonsterType());
+        int baseExp = monster.getBaseExperience();
+        float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
+        float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
+        int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
+        eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
+        player.addExperience(totalExp, eventManager);
+        maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
+        spawnCorpseEffects(monster);
     }
 }

@@ -12,6 +12,10 @@ import java.util.List;
 
 public class Item implements Renderable {
 
+    public enum Beatitude {
+        CURSED, UNCURSED, BLESSED
+    }
+
     public enum ItemType {
         // ... (Keep all existing Enum values) ...
         BOW, CROSSBOW, KNIFE, AXE, DART, SPEAR, PROJECTILE, SCROLL, BOOK,
@@ -27,6 +31,52 @@ public class Item implements Renderable {
 
         // NEW TYPES FOR DICE INTEGRATION
         SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD,
+
+        // NEW WEAPONS (Generated)
+        ALHULAK, ANKUS_ELEPHANT_GOAD, ARQUEBUS, ARROW_DAIKYU, ARROW_FLIGHT, ARROW_FORGET, ARROW_GIANT_KIN, ARROW_KENYAN,
+        ARROW_MAIL_PIERCER, ARROW_SHEAF, ARROW_SLEEP, ARROW_STONE_FLIGHT, ARROW_WAR, ASSEGAI, AXE_BATTLE, AXE_FOREARM,
+        AXE_HAND_THROWING, AXE_TWO_HANDED_BATTLE, BAGH_NAKH_TIGER_CLAWS, BARDS_FRIEND, BASILARD, BELAYING_PIN, BLOWGUN,
+        BLOWGUN_BARBED_DART, BLOWGUN_NEEDLE, BLUNDERBUS, BO_STICK, BOLA, BOW_COMPOSITE_LONG, BOW_COMPOSITE_SHORT,
+        BOW_ELVEN, BOW_FOLDING_SHORT, BOW_GIANT_KIN_LONG, BOW_KENYAN_LONG, BOW_LONG, BOW_PIXIE, BOW_SHORT,
+        BUCKLER_SPIKED, CAHULAKS, CALTROP, CARRIKAL, CAVILER, CESTUS, CHAIN, CHAKRAM, CHATKCHA, CLUB, CLUB_DATCHI,
+        CLUB_DWARVEN_WAR, CLUB_GREAT, CLUB_RIM, CROSSBOW_DISK, CROSSBOW_DOUBLED, CROSSBOW_HAND, CROSSBOW_HEAVY,
+        CROSSBOW_LIGHT, DAGGER, DAGGER_BONE, DAGGER_CLIMBING, DAGGER_GIANT_KIN, DAGGER_PARRYING, DAGGER_STONE, DAIKYU,
+        DART_BARBED, DEJADA, DEJADA_CESTUS, DIRK, DISK_CROSSBOW, DRAGONS_PAW, FLAIL_BLADEBACK, FLAIL_CHAIN,
+        FLAIL_FOOTMANS, FLAIL_GRAIN, FLAIL_HORSEMANS, FLINDBAR, GADA, GAFF_HOOK_ATTACHED, GAFF_HOOK_HELD,
+        GLADIATORS_FRIEND_FOOTMANS, GLADIATORS_FRIEND_HORSEMANS, GLOVE_NAIL, GOUGE, HARPOON_ONE_HANDED,
+        HARPOON_TWO_HANDED, HATCHET, HATCHET_HAWK, HORA, IMPALER, IUAK_SNOW_BLADE, JAMBIYA, JAVELIN_ONE_HANDED,
+        JAVELIN_STONE_ONE_HANDED, JAVELIN_STONE_TWO_HANDED, JAVELIN_TWO_HANDED, KATAR_PUNCH_DAGGER, KICK_SLASHER,
+        KNIFE_BONE, KNIFE_HARNESS, KNIFE_STONE, KNIFE_THROWING, KNIFE_WIDOWS, KNOBKERRIE, KORA, KUKRI, LANCE_FLIGHT,
+        LANCE_HEAVY_HORSE1, LANCE_JOUSTING1, LANCE_LIGHT_HORSE1, LANCE_MEDIUM_HORSE1, LASSO, LOTULIS, MACA,
+        MACE_BLADEBACK, MACE_FOOTMANS, MACE_FOOTMANS_WHISTLING, MACE_GIANT_KIN, MACE_GREAT, MACE_HORSEMANS,
+        MACE_HORSEMANS_WHISTLING, MACHETE, MADU, MAIN_GAUCHE, MANCATCHER2, MORNING_STAR, MORNING_STAR_DOUBLE_BALL,
+        MUSKET, NET, NUNCHAKU, NYEK_PLE_NEN_TOH, PATA1, PESHKABZ, PICK_FOOTMANS, PICK_HORSEMANS, PICK_ICE,
+        PIKE_WEIGHTED, PISTOL_STARWHEEL, POLEARM_AWL_PIKE3, POLEARM_BARDICHE, POLEARM_BEC_DE_CORBIN,
+        POLEARM_BILL_GUISARME, POLEARM_CRUSHER, POLEARM_FAUCHARD, POLEARM_FAUCHARD_FORK, POLEARM_GIANT_KIN_HALBERD,
+        POLEARM_GLAIVE_GUISARME4, POLEARM_GLAIVE4, POLEARM_GUISARME, POLEARM_GUISARME_VOULGE, POLEARM_GYTHKA,
+        POLEARM_HALBERD, POLEARM_HOOK_FAUCHARD, POLEARM_LUCERN_HAMMER3, POLEARM_MILITARY_FORK4, POLEARM_NAGINATA3,
+        POLEARM_PARTISAN3, POLEARM_QUAD_FAUCHARD, POLEARM_RANSEUR3, POLEARM_SPETUM3, POLEARM_TETSUBO, POLEARM_TRIKAL,
+        POLEARM_VOULGE, PUCHIK, PUNCH_CUTTER, QUABONE, QUARREL_HAND, QUARREL_HEAVY, QUARREL_LIGHT, QUARTERSTAFF, RAZOR,
+        RITIIK, SAI, SAP, SCOURGE, SCYTHE, SHIELD_SPIKE, SHOKA, SHOTEL, SHURIKEN, SICKLE, SLING, SLING_BULLET,
+        SLING_STONE, SPEAR_CASTER, SPEAR_DOUBLE_BLADED, SPEAR_HEAVY_ONE_HANDED, SPEAR_HEAVY_TWO_HANDED,
+        SPEAR_HOOK_TAILED, SPEAR_LONG_ONE_HANDED, SPEAR_LONG_TWO_HANDED3, SPEAR_ONE_HANDED, SPEAR_PADDLE,
+        SPEAR_STONE_ONE_HANDED, SPEAR_STONE_TWO_HANDED, SPEAR_THROWING, SPEAR_TWO_HANDED3, SPIKE_ELBOW, SPIKE_HEAD,
+        SPIKE_KNEE, SPIKES_BODY, STAFF_SLING, STAFF_SLING_STINKPOT, STAFF_HAMANUS, STAFF_HORNHEAD, STICK_GOBLIN,
+        STICKS_SINGING, STILETTO, SWORD_BASTARD_ONE_HANDED, SWORD_BASTARD_TWO_HANDED, SWORD_BROAD, SWORD_CLAYMORE,
+        SWORD_CUTLASS, SWORD_DRUSUS, SWORD_DWARVEN_CLAYMORE, SWORD_FALCHION, SWORD_FLAMBERGE,
+        SWORD_GIANT_KIN_TWO_HANDED, SWORD_GREAT_SCIMITAR, SWORD_HOOK, SWORD_KATANA_ONE_HANDED, SWORD_KATANA_TWO_HANDED,
+        SWORD_KHANDAR_ONE_HANDED, SWORD_KHANDAR_TWO_HANDED, SWORD_KHOPESH, SWORD_LONG, SWORD_MANDIBLE, SWORD_MARINERS,
+        SWORD_PIERCER, SWORD_PIXIE, SWORD_RAPIER, SWORD_SABRE, SWORD_SCIMITAR, SWORD_SHORT, SWORD_TALWAR,
+        SWORD_TWO_HANDED, SWORD_WAKIZASHI, SWORDLET, TALID, TORTOISE_BLADES, TRIDENT_ONE_HANDED, TRIDENT_TWO_HANDED,
+        TROMBASH_HELD, TROMBASH_THROWN, TUFENK, WARHAMMER, WHIP, WHIP_CHAIN, WHIP_MASTERS, WRIST_RAZOR, ZAGHNAL,
+
+        // NEW ARMOR (Generated)
+        BANDED_MAIL, BRIGANDINE, BACK_AND_BREAST, BASINET, BRONZE_PLATE, CHAIN_HAUBERK, CHAIN_LAMELLAR, CHAIN_MAIL,
+        CORD_MAIL, FIELD_PLATE, FULL_PLATE, GALLIC_ARMOR, HALF_PLATE, CAP, CLOSED_FACE, MAIL_COIF, GREAT_HELM,
+        LEATHER_HELM, OPEN_FACED, HIDE_ARMOR, HOPLITE_ARMOR, IMPROVED_MAIL, LAMELLAR_SHIRT, LEATHER_ARMOR,
+        LIGHT_SCALE, LORICA_HAMATA, LORICA_SEGMENTA, MAIL_AND_PLATE, METAL_LAMELLAR, PADDED_ARMOR, PLATE_MAIL,
+        RING_MAIL, SCALE_ARMOR, SHIELD_BODY, BUCKLER, SHIELD_SMALL, SHIELD_MEDIUM, SHIELD_LARGE, SPLINT_MAIL,
+        STUDDED_LEATHER, THREE_QUARTER_PLATE, WOOD_BONE_ARMOR,
 
         // Randomized Items
         SCROLL_A, SCROLL_B, SCROLL_C, SCROLL_D, SCROLL_E, SCROLL_F, SCROLL_G, SCROLL_H,
@@ -75,11 +125,16 @@ public class Item implements Renderable {
     private final boolean isUsable;
     private final boolean isContainer;
     private final boolean isRing;
+    private final boolean isShield; // New Field
+    private final boolean isHelmet; // New Field
     private final boolean isImpassable; // New Field
 
     // --- NetHack-style Properties ---
+    private Beatitude beatitude = Beatitude.UNCURSED; // Default
     private int erosion = 0; // 0 = none, 1 = rusty/burnt, 2 = very rusty/burnt, 3 = corroded/rotted
+    private int enchantment = 0; // +/- to hit/damage/AC
     private int charges = 0; // For wands and tools
+    private boolean trapped = false; // chests/doors
 
     // --- Corpse Property ---
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
@@ -123,6 +178,8 @@ public class Item implements Renderable {
         this.isUsable = template.isUsable;
         this.isContainer = template.isContainer;
         this.isRing = template.isRing;
+        this.isShield = template.isShield;
+        this.isHelmet = template.isHelmet;
         this.range = template.range;
         this.isImpassable = template.isImpassable; // Assign from template
 
@@ -138,6 +195,13 @@ public class Item implements Renderable {
             this.texture = assetManager.get(template.texturePath, Texture.class);
         } else {
             this.texture = null;
+        }
+
+        // DEBUG: Check Food Status
+        if (this.isFood) {
+            Gdx.app.log("Item [DEBUG]", "Created FOOD Item: " + type + " (isFood=true)");
+        } else if (type == ItemType.FLOUR_SACK || type == ItemType.FOOD || type == ItemType.MEAT) {
+            Gdx.app.log("Item [DEBUG]", "WARNING: Item " + type + " has isFood=FALSE!");
         }
 
         if (this.isContainer) {
@@ -175,6 +239,15 @@ public class Item implements Renderable {
     public String getDisplayName() {
         if (isPotion)
             return this.friendlyName;
+
+        // NEW: Dynamic Bone Naming
+        if (this.type == ItemType.BONE && this.corpseSource != null) {
+            // Formats "MINOTAUR" to "Minotaur Bone"
+            String sourceName = this.corpseSource.name().charAt(0) +
+                    this.corpseSource.name().substring(1).toLowerCase().replace('_', ' ');
+            return sourceName + " Bone";
+        }
+
         if (!isModified())
             return this.friendlyName;
         StringBuilder nameBuilder = new StringBuilder();
@@ -329,8 +402,10 @@ public class Item implements Renderable {
             return ItemCategory.ARMOR;
         if (isRing)
             return ItemCategory.RING;
-        if (isTreasure || isFood)
+        if (isTreasure)
             return ItemCategory.TREASURE;
+        if (isFood)
+            return ItemCategory.FOOD;
         if (isContainer)
             return ItemCategory.CONTAINER;
         if (isUsable || isPotion || isKey)
@@ -465,4 +540,39 @@ public class Item implements Renderable {
         return this.grantedDie;
     }
     // ----------------------------
+
+    // --- Corpse Intrinsics ---
+    private com.bpm.minotaur.gamedata.effects.StatusEffectType grantedIntrinsic;
+
+    public void setGrantedIntrinsic(com.bpm.minotaur.gamedata.effects.StatusEffectType effect) {
+        this.grantedIntrinsic = effect;
+    }
+
+    public com.bpm.minotaur.gamedata.effects.StatusEffectType getGrantedIntrinsic() {
+        return this.grantedIntrinsic;
+    }
+
+    public Beatitude getBeatitude() {
+        return beatitude;
+    }
+
+    public void setBeatitude(Beatitude beatitude) {
+        this.beatitude = beatitude;
+    }
+
+    public int getEnchantment() {
+        return enchantment;
+    }
+
+    public void setEnchantment(int enchantment) {
+        this.enchantment = enchantment;
+    }
+
+    public boolean isTrapped() {
+        return trapped;
+    }
+
+    public void setTrapped(boolean trapped) {
+        this.trapped = trapped;
+    }
 }

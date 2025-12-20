@@ -795,6 +795,8 @@ public class EntityRenderer {
         int drawStartX = Math.max(0, screenX - spriteWidth / 2);
         int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
         boolean isModifiedItem = (entity instanceof Item && ((Item) entity).isModified());
+
+        // Pass 1: Draw Glow (if modified)
         if (isModifiedItem) {
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth()
@@ -805,8 +807,10 @@ public class EntityRenderer {
                         if (screenY < 0 || screenY >= viewport.getScreenHeight())
                             continue;
                         int texY = 23 - (int) (((double) y / spriteHeight) * 24.0);
-                        if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24) {
-                            if (spriteData[texY].charAt(texX) == '#') {
+                        if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24 && texY < spriteData.length
+                                && texX < spriteData[texY].length()) {
+                            char pixelChar = spriteData[texY].charAt(texX);
+                            if (pixelChar != '.') {
                                 shapeRenderer.setColor(GLOW_COLOR_RETRO);
                                 shapeRenderer.rect(stripe - 1, screenY, 1, 1);
                                 shapeRenderer.rect(stripe + 1, screenY, 1, 1);
@@ -818,6 +822,8 @@ public class EntityRenderer {
                 }
             }
         }
+
+        // Pass 2: Draw Actual Pixels
         for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
             if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth()
                     && transformY < depthBuffer[stripe]) {
@@ -827,15 +833,55 @@ public class EntityRenderer {
                     if (screenY < 0 || screenY >= viewport.getScreenHeight())
                         continue;
                     int texY = 23 - (int) (((double) y / spriteHeight) * 24.0);
-                    if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24) {
-                        if (spriteData[texY].charAt(texX) == '#') {
+                    if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24 && texY < spriteData.length
+                            && texX < spriteData[texY].length()) {
+                        char pixelChar = spriteData[texY].charAt(texX);
+                        if (pixelChar != '.') {
+                            Color pixelColor = getPixelColor(pixelChar, entity.getColor());
                             shapeRenderer.setColor(
-                                    applyTorchLighting(entity.getColor(), WorldConstants.TORCH_FADE_END, new Color()));
+                                    applyTorchLighting(pixelColor, WorldConstants.TORCH_FADE_END, new Color()));
                             shapeRenderer.rect(stripe, screenY, 1, 1);
                         }
                     }
                 }
             }
+        }
+    }
+
+    private Color getPixelColor(char pixelChar, Color defaultColor) {
+        switch (pixelChar) {
+            case '#':
+                return defaultColor;
+            case 'R':
+                return Color.RED;
+            case 'G':
+                return Color.GREEN;
+            case 'L':
+                return Color.LIME;
+            case 'B':
+                return Color.BLUE;
+            case 'Y':
+                return Color.YELLOW;
+            case 'W':
+                return Color.WHITE;
+            case 'K':
+                return Color.BLACK;
+            case 'O':
+                return Color.ORANGE;
+            case 'P':
+                return Color.PURPLE;
+            case 'M':
+                return Color.MAGENTA;
+            case 'C':
+                return Color.CYAN;
+            case 'S':
+                return Color.GRAY;
+            case 'D':
+                return Color.GOLD;
+            case 'T':
+                return Color.TEAL;
+            default:
+                return defaultColor;
         }
     }
 

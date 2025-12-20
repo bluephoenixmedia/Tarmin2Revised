@@ -49,5 +49,8 @@ public enum ModifierType {
     BANE_UNDEAD,
     BANE_MYTHICAL,
     BANE_ANIMAL, // Kept separate from BEAST for things like snakes/spiders
-    BANE_HUMAN,  // Kept separate from HUMANOID for... humans
+    BANE_HUMAN, // Kept separate from HUMANOID for... humans
+
+    // --- Special ---
+    GRANT_INTRINSIC; // Value = StatusEffectType.ordinal()
 }

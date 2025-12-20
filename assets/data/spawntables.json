@@ -371,19 +371,19 @@
       "type": "POTION_BLUE",
       "minLevel": 1,
       "maxLevel": 99,
-      "weight": 5
+      "weight": 10
     },
     {
       "type": "POTION_PINK",
       "minLevel": 1,
       "maxLevel": 99,
-      "weight": 5
+      "weight": 10
     },
     {
       "type": "POTION_GREEN",
       "minLevel": 2,
       "maxLevel": 99,
-      "weight": 4
+      "weight": 8
     },
     {
       "type": "POTION_GOLD",
@@ -395,25 +395,25 @@
       "type": "FOOD",
       "minLevel": 1,
       "maxLevel": 99,
-      "weight": 15
+      "weight": 30
     },
     {
       "type": "FLOUR_SACK",
       "minLevel": 1,
       "maxLevel": 99,
-      "weight": 10
+      "weight": 20
     },
     {
       "type": "KNIFE",
       "minLevel": 1,
-      "maxLevel": 5,
-      "weight": 12
+      "maxLevel": 50,
+      "weight": 1
     },
     {
       "type": "DART",
       "minLevel": 1,
-      "maxLevel": 8,
-      "weight": 12
+      "maxLevel": 50,
+      "weight": 1
     },
     {
       "type": "BOW",
@@ -522,6 +522,1656 @@
       "minLevel": 2,
       "maxLevel": 99,
       "weight": 3
+    },
+    {
+      "type": "ALHULAK",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ANKUS_ELEPHANT_GOAD",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARQUEBUS",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_DAIKYU",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_FLIGHT",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_FORGET",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_GIANT_KIN",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_KENYAN",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_MAIL_PIERCER",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_SHEAF",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_SLEEP",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_STONE_FLIGHT",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ARROW_WAR",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ASSEGAI",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "AXE_BATTLE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "AXE_FOREARM",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "AXE_HAND_THROWING",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "AXE_TWO_HANDED_BATTLE",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BAGH_NAKH_TIGER_CLAWS",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BASILARD",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BELAYING_PIN",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BLOWGUN",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BLOWGUN_BARBED_DART",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BLOWGUN_NEEDLE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BLUNDERBUS",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BO_STICK",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOLA",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_COMPOSITE_LONG",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_COMPOSITE_SHORT",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_ELVEN",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_FOLDING_SHORT",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_GIANT_KIN_LONG",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_KENYAN_LONG",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_LONG",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_PIXIE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BOW_SHORT",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BUCKLER_SPIKED",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CAHULAKS",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CALTROP",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CARRIKAL",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CAVILER",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CESTUS",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CHAIN",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CHAKRAM",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CHATKCHA",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CLUB",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CLUB_DATCHI",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CLUB_DWARVEN_WAR",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CLUB_GREAT",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CLUB_RIM",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CROSSBOW_DISK",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CROSSBOW_DOUBLED",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CROSSBOW_HAND",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CROSSBOW_HEAVY",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "CROSSBOW_LIGHT",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER_BONE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER_CLIMBING",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER_GIANT_KIN",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER_PARRYING",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAGGER_STONE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DAIKYU",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DART_BARBED",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DEJADA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DEJADA_CESTUS",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DIRK",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "DISK_CROSSBOW",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "FLAIL_BLADEBACK",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "FLAIL_CHAIN",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "FLAIL_GRAIN",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "FLINDBAR",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "GADA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "GAFF_HOOK_ATTACHED",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "GAFF_HOOK_HELD",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "GLOVE_NAIL",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "GOUGE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "HARPOON_ONE_HANDED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "HARPOON_TWO_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "HATCHET",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "HATCHET_HAWK",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "HORA",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "IMPALER",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "IUAK_SNOW_BLADE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "JAMBIYA",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "JAVELIN_ONE_HANDED",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "JAVELIN_STONE_ONE_HANDED",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "JAVELIN_STONE_TWO_HANDED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "JAVELIN_TWO_HANDED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KATAR_PUNCH_DAGGER",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KICK_SLASHER",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KNIFE_BONE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KNIFE_HARNESS",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KNIFE_STONE",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KNIFE_THROWING",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KNOBKERRIE",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KORA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "KUKRI",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LANCE_FLIGHT",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LANCE_HEAVY_HORSE1",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LANCE_JOUSTING1",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LANCE_LIGHT_HORSE1",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LANCE_MEDIUM_HORSE1",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LASSO",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "LOTULIS",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MACA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MACE_BLADEBACK",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MACE_GIANT_KIN",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MACE_GREAT",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MACHETE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MADU",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MAIN_GAUCHE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MANCATCHER2",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MORNING_STAR",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MORNING_STAR_DOUBLE_BALL",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "MUSKET",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "NET",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "NUNCHAKU",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "NYEK_PLE_NEN_TOH",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PATA1",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PESHKABZ",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PICK_ICE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PIKE_WEIGHTED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PISTOL_STARWHEEL",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_AWL_PIKE3",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_BARDICHE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_BEC_DE_CORBIN",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_BILL_GUISARME",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_CRUSHER",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_FAUCHARD",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_FAUCHARD_FORK",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GIANT_KIN_HALBERD",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GLAIVE_GUISARME4",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GLAIVE4",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GUISARME",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GUISARME_VOULGE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_GYTHKA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_HALBERD",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_HOOK_FAUCHARD",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_LUCERN_HAMMER3",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_MILITARY_FORK4",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_NAGINATA3",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_PARTISAN3",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_QUAD_FAUCHARD",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_RANSEUR3",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_SPETUM3",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_TETSUBO",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_TRIKAL",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "POLEARM_VOULGE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PUCHIK",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "PUNCH_CUTTER",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "QUABONE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "QUARREL_HAND",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "QUARREL_HEAVY",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "QUARREL_LIGHT",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "QUARTERSTAFF",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "RAZOR",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "RITIIK",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SAI",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SAP",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SCOURGE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SCYTHE",
+      "minLevel": 12,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SHIELD_SPIKE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SHOKA",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SHOTEL",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SHURIKEN",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SICKLE",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SLING",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SLING_BULLET",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SLING_STONE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_CASTER",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_DOUBLE_BLADED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_HEAVY_ONE_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_HEAVY_TWO_HANDED",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_HOOK_TAILED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_LONG_ONE_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_LONG_TWO_HANDED3",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_ONE_HANDED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_PADDLE",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_STONE_ONE_HANDED",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_STONE_TWO_HANDED",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_THROWING",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPEAR_TWO_HANDED3",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPIKE_ELBOW",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPIKE_HEAD",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPIKE_KNEE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SPIKES_BODY",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STAFF_SLING",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STAFF_SLING_STINKPOT",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STAFF_HORNHEAD",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STICK_GOBLIN",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STICKS_SINGING",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "STILETTO",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_BASTARD_ONE_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_BASTARD_TWO_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_BROAD",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_CLAYMORE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_CUTLASS",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_DRUSUS",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_DWARVEN_CLAYMORE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_FALCHION",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_FLAMBERGE",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_GIANT_KIN_TWO_HANDED",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_GREAT_SCIMITAR",
+      "minLevel": 14,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_HOOK",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_KATANA_ONE_HANDED",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_KATANA_TWO_HANDED",
+      "minLevel": 10,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_KHANDAR_ONE_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_KHANDAR_TWO_HANDED",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_KHOPESH",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_LONG",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_MANDIBLE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_PIERCER",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_PIXIE",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_RAPIER",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_SABRE",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_SCIMITAR",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_SHORT",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_TALWAR",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_TWO_HANDED",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORD_WAKIZASHI",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "SWORDLET",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TALID",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TORTOISE_BLADES",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TRIDENT_ONE_HANDED",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TRIDENT_TWO_HANDED",
+      "minLevel": 8,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TROMBASH_HELD",
+      "minLevel": 2,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TROMBASH_THROWN",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "TUFENK",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "WARHAMMER",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "WHIP",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "WHIP_CHAIN",
+      "minLevel": 1,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "WRIST_RAZOR",
+      "minLevel": 6,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "ZAGHNAL",
+      "minLevel": 4,
+      "maxLevel": 50,
+      "weight": 1
+    },
+    {
+      "type": "BANDED_MAIL",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "BRIGANDINE",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BACK_AND_BREAST",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BASINET",
+      "minLevel": 5,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BRONZE_PLATE",
+      "minLevel": 19,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "CHAIN_HAUBERK",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAIN_LAMELLAR",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAIN_MAIL",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CORD_MAIL",
+      "minLevel": 7,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FIELD_PLATE",
+      "minLevel": 25,
+      "maxLevel": 99,
+      "weight": 1
+    },
+    {
+      "type": "FULL_PLATE",
+      "minLevel": 28,
+      "maxLevel": 99,
+      "weight": 1
+    },
+    {
+      "type": "GALLIC_ARMOR",
+      "minLevel": 7,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "CAP",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CLOSED_FACE",
+      "minLevel": 9,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "MAIL_COIF",
+      "minLevel": 5,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "GREAT_HELM",
+      "minLevel": 9,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEATHER_HELM",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "OPEN_FACED",
+      "minLevel": 5,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HIDE_ARMOR",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_ARMOR",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "IMPROVED_MAIL",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "LAMELLAR_SHIRT",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEATHER_ARMOR",
+      "minLevel": 4,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LORICA_HAMATA",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LORICA_SEGMENTA",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "MAIL_AND_PLATE",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "METAL_LAMELLAR",
+      "minLevel": 16,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "PADDED_ARMOR",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "PLATE_MAIL",
+      "minLevel": 19,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "RING_MAIL",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SCALE_ARMOR",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SHIELD_BODY",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BUCKLER",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SHIELD_SMALL",
+      "minLevel": 5,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SHIELD_MEDIUM",
+      "minLevel": 9,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SHIELD_LARGE",
+      "minLevel": 13,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SPLINT_MAIL",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER",
+      "minLevel": 7,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "THREE_QUARTER_PLATE",
+      "minLevel": 19,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "WOOD_BONE_ARMOR",
+      "minLevel": 10,
+      "maxLevel": 99,
+      "weight": 5
     }
   ],
   "containerSpawnTable": [

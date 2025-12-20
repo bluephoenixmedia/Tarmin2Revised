@@ -69,10 +69,10 @@ public class Tarmin2 extends Game {
         monsterDataManager = new MonsterDataManager();
         itemDataManager = new ItemDataManager();
 
-        // --- 2. Load Monster Definitions (Synchronous) ---
-        // This is fast and needs to happen before queueing assets
         monsterDataManager.load();
         itemDataManager.load();
+        itemDataManager.loadWeapons(); // Load extended weapon list
+        itemDataManager.loadArmor(); // Load extended armor list
 
         Gdx.app.log("Tarmin2", "Loading SpawnTableData...");
         Json json = new Json();

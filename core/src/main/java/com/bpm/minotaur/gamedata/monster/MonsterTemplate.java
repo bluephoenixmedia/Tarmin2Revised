@@ -1,8 +1,10 @@
 package com.bpm.minotaur.gamedata.monster;
 
 import com.badlogic.gdx.utils.Array;
+import com.bpm.minotaur.gamedata.Alignment; // New Import
 import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.effects.EffectApplicationData;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 
 import java.util.List;
 
@@ -16,17 +18,49 @@ public class MonsterTemplate {
         public float y;
     }
 
+    // --- Refactored Stats ---
+    public int baseLevel = 1; // 1-30+
+    public int frequency = 0; // 0-7, weighted probability
+    public int baseAC = 10; // Armor Class, descending scale (lower is better, 10 is base)
+    public int magicResistance = 0; // 0-100%
+    public int moveSpeed = 12; // Base speed (player usually 12)
+
+    public Alignment alignment = Alignment.NEUTRAL; // Default
+
+    // Flags (Bitmasks can be used, but for JSON ease, we might use lists of strings
+    // or boolean flags)
+    // For now, let's keep it simple with fields, but the plan mentioned bitmasks.
+    // Let's use simple integers for flags if we want to stick to the C-style, or
+    // specific booleans.
+    // The design doc mentioned bitmasks. Let's provide an int for raw flags, but
+    // maybe helper booleans?
+    // Generation Flags
+    public static final int G_UNIQ = 1; // Unique
+    public static final int G_NOHELL = 2; // Not in Hell
+    public static final int G_HELL = 4; // Only in Hell
+    public static final int G_GENO = 8; // Geno'able
+    public static final int G_LGROUP = 16; // Small Group
+    public static final int G_SGROUP = 32; // Large Group
+
+    public int generationFlags = 0; // G_GENO, G_HELL, etc.
+    public int behaviorFlags = 0; // M1_FLY, M2_NASTY, etc.
+
+    // Attacks
+    public List<AttackDefinition> attacks;
+
+    // ------------------------
+
     public int warStrength;
     public int spiritualStrength;
-    public int armor;
+    public int armor; // Deprecated by baseAC? Let's keep for now until migration complete.
     public int baseExperience;
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
     public String[] spriteData;
     public ScaleData scale;
-    public int warDamage; // <-- This was missing from the file but in CombatManager
-    public int spiritDamage; // <-- This was missing from the file but in CombatManager
-    public DamageType damageType = DamageType.PHYSICAL; // <-- This was missing, added default
+    public int warDamage;
+    public int spiritDamage;
+    public DamageType damageType = DamageType.PHYSICAL;
     public int dexterity; // For Hit Chance calculation
     public boolean hasRangedAttack; // Can this monster shoot back?
     public int attackRange; // How far can they shoot?
@@ -35,8 +69,13 @@ public class MonsterTemplate {
 
     public Array<EffectApplicationData> onHitEffects;
 
-    public List<MonsterVariant> variants; // <-- ADD THIS LINE
+    // --- Corpse Intrinsics ---
+    public StatusEffectType corpseEffect;
+    public int corpseEffectChance = 100;
+
+    public List<MonsterVariant> variants;
 
     // A no-argument constructor is required for the Json parser
-    public MonsterTemplate() { }
+    public MonsterTemplate() {
+    }
 }

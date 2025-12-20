@@ -224,7 +224,7 @@ public class SoundManager {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("monster_roar");
         } else {
-            playSound("tarmin_roar");
+            // playSound("tarmin_roar");
         }
     }
 
