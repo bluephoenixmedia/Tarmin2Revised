@@ -281,7 +281,11 @@ public class EntityRenderer {
         shapeRenderer.setTransformMatrix(new Matrix4());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
-        renderAsciiGibs(shapeRenderer, maze, camera, player, depthBuffer);
+
+        // STRICT SEPARATION: Only render ASCII gibs in RETRO mode.
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            renderAsciiGibs(shapeRenderer, maze, camera, player, depthBuffer);
+        }
 
         // Render Particles (Shape based)
         float halfWidth = camera.viewportWidth / 2.0f;
@@ -327,7 +331,18 @@ public class EntityRenderer {
             String[] spriteData = gib.spriteData;
 
             // Fallback for Texture Gibs in Retro Mode
+            // Fallback for Texture Gibs in Retro Mode
             if (spriteData == null) {
+                // If it's a texture gib (has region) and we are in MODERN mode, DO NOT fallback
+                // to ASCII.
+                // The texture gibs are handled by renderTextureGibs.
+                // If we are in RETRO mode, we might want the fallback (so they show as blocks).
+                if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN
+                        && (gib.textureRegion != null || gib.polygonRegion != null)) {
+                    continue;
+                }
+
+                // Otherwise (Retro mode or standard non-textured gib) use default meat chunk
                 spriteData = GibType.MEAT_CHUNK.spriteData;
             }
             if (spriteData == null)

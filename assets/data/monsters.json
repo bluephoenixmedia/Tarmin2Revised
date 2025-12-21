@@ -860,7 +860,7 @@
     "baseExperience": 200,
     "intelligence": 20,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/ghast.jpg",
     "spriteData": [
       "........#########.......",
       ".......#..#..#...#......",
@@ -919,7 +919,7 @@
     "armor": 12,
     "baseExperience": 250,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/beholder.jpg",
     "spriteData": [
       "......#.....#.....#.....",
       ".......#...#.#...#......",
@@ -993,7 +993,7 @@
     "armor": 8,
     "baseExperience": 120,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/cube.png",
     "spriteData": [
       "........................",
       ".....GGGGGGGGGGGGGG.....",
@@ -1067,7 +1067,7 @@
     "armor": 12,
     "baseExperience": 90,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/rust.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1133,7 +1133,7 @@
     "armor": 15,
     "baseExperience": 300,
     "family": "UNDEAD",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/lich.png",
     "spriteData": [
       ".........C....C.........",
       ".......C..WWWW..C.......",
@@ -1349,7 +1349,7 @@
     "armor": 10,
     "baseExperience": 180,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/owlbear.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1417,7 +1417,7 @@
     "armor": 6,
     "baseExperience": 220,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/dbeast.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1485,7 +1485,7 @@
     "armor": 14,
     "baseExperience": 280,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/u_hulk.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1553,7 +1553,7 @@
     "armor": 0,
     "baseExperience": 5,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/kobold.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1613,7 +1613,7 @@
     "armor": 1,
     "baseExperience": 8,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/goblin.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1673,7 +1673,7 @@
     "armor": 2,
     "baseExperience": 15,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/troglodyte.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1741,7 +1741,7 @@
     "armor": 4,
     "baseExperience": 25,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/hobgoblin.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1801,7 +1801,7 @@
     "armor": 2,
     "baseExperience": 20,
     "family": "UNDEAD",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/zombie.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1861,7 +1861,7 @@
     "armor": 5,
     "baseExperience": 60,
     "family": "UNDEAD",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/mummy.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1929,7 +1929,7 @@
     "armor": 2,
     "baseExperience": 40,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/harpy.png",
     "spriteData": [
       "........................",
       "...........##...........",
@@ -1989,7 +1989,7 @@
     "armor": 12,
     "baseExperience": 70,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/gargoyle.png",
     "spriteData": [
       "........................",
       "......#..........#......",
@@ -2049,7 +2049,7 @@
     "armor": 3,
     "baseExperience": 35,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/wererat.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2117,7 +2117,7 @@
     "armor": 6,
     "baseExperience": 110,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/werewolf.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2185,7 +2185,7 @@
     "armor": 4,
     "baseExperience": 130,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/troll.png",
     "spriteData": [
       "........................",
       "...........##...........",
@@ -2245,7 +2245,7 @@
     "armor": 8,
     "baseExperience": 140,
     "family": "HUMANOID",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/ogre.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2305,7 +2305,7 @@
     "armor": 10,
     "baseExperience": 160,
     "family": "BEAST",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/basilisk.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2373,7 +2373,7 @@
     "armor": 5,
     "baseExperience": 200,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/medusa.png",
     "spriteData": [
       "..........#..#..........",
       ".........#....#.........",
