@@ -588,10 +588,55 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    // Helper to spawn one of each armor type (Debug)
+    private void giveAllArmor() {
+        Item.ItemType[] armorTypes = {
+                Item.ItemType.HELMET, // Head (Generic)
+                Item.ItemType.LEATHER_HELM, // Head (Specific Bug Test)
+                Item.ItemType.HAUBERK, // Chest (Heavy)
+                Item.ItemType.LEATHER_ARMOR, // Chest (Light)
+                Item.ItemType.LEGS, // Legs
+                Item.ItemType.BOOTS, // Feet
+                Item.ItemType.GAUNTLETS, // Hands
+                Item.ItemType.SMALL_SHIELD, // Left Hand
+                Item.ItemType.CLOAK, // Back
+                Item.ItemType.AMULET, // Neck
+                Item.ItemType.RING_GOLD, // Ring
+                Item.ItemType.EYES // Eyes (if available) - ItemType.EYES exists in enum
+        };
+
+        for (Item.ItemType type : armorTypes) {
+            try {
+                Item item = game.getItemDataManager().createItem(type, (int) player.getPosition().x,
+                        (int) player.getPosition().y, com.bpm.minotaur.gamedata.item.ItemColor.WHITE,
+                        game.getAssetManager());
+                if (item != null) {
+                    if (!player.getInventory().pickupToBackpack(item)) {
+                        hud.addMessage("Inventory Full! Could not add " + type);
+                    }
+                } else {
+                    Gdx.app.log("Debug", "Failed to create item: " + type);
+                }
+            } catch (Exception e) {
+                Gdx.app.error("Debug", "Error creating debug armor: " + type, e);
+            }
+        }
+        hud.addMessage("Debug: Spawned Armor Set");
+    }
+
     @Override
     public boolean keyDown(int keycode) {
         if (player == null || maze == null)
             return false;
+
+        // --- Debug Shortcuts ---
+        if (debugManager.isDebugOverlayVisible()) {
+            if (keycode == Input.Keys.A && (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+                    || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))) {
+                giveAllArmor();
+                return true;
+            }
+        }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
                 || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {

@@ -475,6 +475,8 @@ public class Hud implements Disposable {
             defaultFont.draw(spriteBatch, "FORCE MODIFIERS: " + SpawnManager.DEBUG_FORCE_MODIFIERS + " (F3)", leftColX,
                     yPos);
             yPos -= lineGap;
+            defaultFont.draw(spriteBatch, "FPS: " + Gdx.graphics.getFramesPerSecond(), leftColX, yPos);
+            yPos -= lineGap;
 
             yPos -= 10;
             defaultFont.setColor(Color.CYAN);

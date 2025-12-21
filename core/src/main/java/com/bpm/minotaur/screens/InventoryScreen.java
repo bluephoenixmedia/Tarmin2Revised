@@ -546,7 +546,17 @@ public class InventoryScreen extends BaseScreen {
             inv.setLeftHand(item);
             // --- FIX: If this item is a shield, also set it in PlayerEquipment so armor
             // calcs work ---
-            if (item != null && (item.getType() == ItemType.SMALL_SHIELD || item.getType() == ItemType.LARGE_SHIELD)) {
+            boolean isShield = item != null && item.isShield();
+            if (item != null && !isShield) {
+                try {
+                    com.bpm.minotaur.gamedata.item.ItemTemplate t = InventoryScreen.this.game.getItemDataManager()
+                            .getTemplate(item.getType());
+                    if (t != null && t.isShield)
+                        isShield = true;
+                } catch (Exception e) {
+                }
+            }
+            if (isShield) {
                 eq.setWornShield(item);
             } else {
                 eq.setWornShield(null);
@@ -799,14 +809,51 @@ public class InventoryScreen extends BaseScreen {
                 return false;
 
             if (type == SlotType.EQUIPMENT) {
-                if ("L.Hand".equals(name) || "R.Hand".equals(name))
+                if ("L.Hand".equals(name))
+                    return true; // Accepts anything, but specialized logic handles shields
+                if ("R.Hand".equals(name))
                     return true;
-                if ("Chest".equals(name)) {
-                    return item.getType() == ItemType.HAUBERK || item.getType() == ItemType.BREASTPLATE;
+
+                if ("Head".equals(name)) {
+                    boolean valid = item.isHelmet();
+                    if (!valid) {
+                        try {
+                            com.bpm.minotaur.gamedata.item.ItemTemplate t = InventoryScreen.this.game
+                                    .getItemDataManager().getTemplate(item.getType());
+                            if (t != null && t.isHelmet)
+                                valid = true;
+                        } catch (Exception e) {
+                            Gdx.app.error("Inventory", "Error checking template for helmet fallback", e);
+                        }
+                    }
+                    if (!valid) {
+                        Gdx.app.log("InventoryDebug",
+                                "REJECTED Head slot. Type: " + item.getType() + " isHelmet: " + item.isHelmet());
+                    }
+                    return valid;
                 }
+                if ("Eyes".equals(name)) // Assuming isEyes exists or check type
+                    return item.getType() == ItemType.EYES; // EYES seems to be single type still
+                if ("Neck".equals(name))
+                    return item.getType() == ItemType.AMULET || item.getType() == ItemType.NECKLACE;
+                if ("Back".equals(name))
+                    return item.getType() == ItemType.CLOAK;
+                if ("Chest".equals(name))
+                    return item.isArmor() && !item.isHelmet() && !item.isShield() && !item.isRing(); // Broad check for
+                                                                                                     // body armor
+                if ("Arms".equals(name))
+                    return item.getType() == ItemType.ARMS;
+                if ("Hands".equals(name))
+                    return item.getType() == ItemType.GAUNTLETS;
+                if ("Legs".equals(name))
+                    return item.getType() == ItemType.LEGS; // Add GREAVES if it exists
+                if ("Feet".equals(name))
+                    return item.getType() == ItemType.BOOTS;
                 if ("Ring".equals(name)) {
                     return item.isRing();
                 }
+
+                // Fallback for strict matches if not covered above
                 return item.getType() == restrictType;
             }
             return true;

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
@@ -13,6 +14,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.gore.BloodParticle;
 import com.bpm.minotaur.gamedata.gore.Gib;
+import com.bpm.minotaur.gamedata.gore.GibType;
 import com.bpm.minotaur.gamedata.gore.SurfaceDecal;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
@@ -28,7 +30,7 @@ import java.util.List;
 
 public class EntityRenderer {
 
-    private final SpriteBatch spriteBatch;
+    private final PolygonSpriteBatch spriteBatch;
     private final Matrix4 transformMatrix = new Matrix4();
     private static final float CLOSE_ITEM_Y_BOOST = 140.0f;
     private final DebugManager debugManager = DebugManager.getInstance();
@@ -48,7 +50,7 @@ public class EntityRenderer {
     private float hoveredScreenY = 0;
 
     public EntityRenderer(ItemDataManager itemDataManager) {
-        this.spriteBatch = new SpriteBatch();
+        this.spriteBatch = new PolygonSpriteBatch();
         this.itemDataManager = itemDataManager;
 
         // Create a default font for tooltips
@@ -86,6 +88,7 @@ public class EntityRenderer {
 
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
+
         if (depthBuffer == null)
             return;
 
@@ -200,7 +203,7 @@ public class EntityRenderer {
         }
 
         renderCorpses(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
-        this.renderGore(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
+        this.renderGore(shapeRenderer, spriteBatch, maze, viewport.getCamera(), player, depthBuffer);
 
         if (spriteBatch.isDrawing())
             spriteBatch.end();
@@ -209,9 +212,10 @@ public class EntityRenderer {
         if (hoveredItem != null) {
             renderTooltip(spriteBatch, shapeRenderer, viewport);
         }
+
     }
 
-    private void renderTooltip(SpriteBatch batch, ShapeRenderer shape, Viewport viewport) {
+    private void renderTooltip(PolygonSpriteBatch batch, ShapeRenderer shape, Viewport viewport) {
         // 1. Prepare Text
         StringBuilder sb = new StringBuilder();
         sb.append(hoveredItem.getDisplayName()).append("\n");
@@ -270,12 +274,16 @@ public class EntityRenderer {
     }
 
     // ... [GORE RENDER METHODS UNCHANGED] ...
-    public void renderGore(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
+    public void renderGore(ShapeRenderer shapeRenderer, PolygonSpriteBatch spriteBatch, Maze maze, Camera camera,
+            Player player,
+            float[] depthBuffer) {
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.setTransformMatrix(new Matrix4());
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
-        renderGibs(shapeRenderer, maze, camera, player, depthBuffer);
+        renderAsciiGibs(shapeRenderer, maze, camera, player, depthBuffer);
+
+        // Render Particles (Shape based)
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
         for (BloodParticle p : maze.getGoreManager().getActiveParticles()) {
@@ -286,10 +294,10 @@ public class EntityRenderer {
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
-            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformX = invDet * (dirY * dx - dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-            if (transformY > 0.1f) {
-                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+            if (transformY > 0) {
+                int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (p.position.y - 0.5f) * spriteScale;
@@ -301,12 +309,30 @@ public class EntityRenderer {
             }
         }
         shapeRenderer.end();
+
+        // Render Texture Gibs (ONLY IN MODERN MODE)
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            spriteBatch.setProjectionMatrix(camera.combined);
+            spriteBatch.begin();
+            renderTextureGibs(spriteBatch, maze, camera, player, depthBuffer);
+            spriteBatch.end();
+        }
     }
 
-    private void renderGibs(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player, float[] depthBuffer) {
+    private void renderAsciiGibs(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player,
+            float[] depthBuffer) {
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
         for (Gib gib : maze.getGoreManager().getActiveGibs()) {
+            String[] spriteData = gib.spriteData;
+
+            // Fallback for Texture Gibs in Retro Mode
+            if (spriteData == null) {
+                spriteData = GibType.MEAT_CHUNK.spriteData;
+            }
+            if (spriteData == null)
+                continue;
+
             float dx = gib.position.x - player.getPosition().x;
             float dy = gib.position.z - player.getPosition().y;
             float planeX = player.getCameraPlane().x;
@@ -314,25 +340,29 @@ public class EntityRenderer {
             float dirX = player.getDirectionVector().x;
             float dirY = player.getDirectionVector().y;
             float invDet = 1.0f / (planeX * dirY - dirX * planeY);
-            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformX = invDet * (dirY * dx - dirX * dy);
             float transformY = invDet * (-planeY * dx + planeX * dy);
-            if (transformY > 0.1f) {
-                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+            if (transformY > 0) {
+                int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
                 if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
                     float spriteScale = Math.abs(camera.viewportHeight / transformY);
                     float screenY = halfHeight + (gib.position.y - 0.5f) * spriteScale;
+                    int rows = spriteData.length;
+                    int cols = spriteData[0].length();
+                    // Scale factor for gibs
+                    float gibScale = 0.5f;
+                    float fullSpriteSize = spriteScale * gibScale;
+                    float partPixelSize = fullSpriteSize / Math.max(rows, cols);
+                    float startOffsetX = screenX - (cols * partPixelSize) / 2.0f;
+                    float startOffsetY = screenY - (rows * partPixelSize) / 2.0f;
                     Matrix4 originalMatrix = shapeRenderer.getTransformMatrix().cpy();
-                    transformMatrix.set(originalMatrix);
-                    transformMatrix.translate(screenX, screenY, 0);
-                    transformMatrix.rotate(0, 0, 1, gib.rotation);
-                    shapeRenderer.setTransformMatrix(transformMatrix);
-                    float partPixelSize = spriteScale / 30.0f;
-                    int rows = gib.spriteData.length;
-                    int cols = gib.spriteData[0].length();
-                    float startOffsetX = -(cols * partPixelSize) / 2.0f;
-                    float startOffsetY = -(rows * partPixelSize) / 2.0f;
+                    Matrix4 rotationMatrix = new Matrix4();
+                    rotationMatrix.translate(screenX, screenY, 0);
+                    rotationMatrix.rotate(0, 0, 1, gib.rotation);
+                    rotationMatrix.translate(-screenX, -screenY, 0);
+                    shapeRenderer.setTransformMatrix(rotationMatrix);
                     for (int r = 0; r < rows; r++) {
-                        String row = gib.spriteData[r];
+                        String row = spriteData[r];
                         for (int c = 0; c < cols; c++) {
                             if (c < row.length() && row.charAt(c) == '#') {
                                 shapeRenderer.setColor(gib.color);
@@ -342,6 +372,72 @@ public class EntityRenderer {
                         }
                     }
                     shapeRenderer.setTransformMatrix(originalMatrix);
+                }
+            }
+        }
+    }
+
+    private void renderTextureGibs(PolygonSpriteBatch spriteBatch, Maze maze, Camera camera, Player player,
+            float[] depthBuffer) {
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+
+        for (Gib gib : maze.getGoreManager().getActiveGibs()) {
+            if (gib.textureRegion == null && gib.polygonRegion == null)
+                continue;
+
+            float dx = gib.position.x - player.getPosition().x;
+            float dy = gib.position.z - player.getPosition().y;
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (dirY * dx - dirX * dy);
+
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+
+            if (transformY > 0) {
+                int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+
+                // Base size for 1.0 world unit height
+                float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                float screenY = halfHeight + (gib.position.y - 0.5f) * spriteScale;
+
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    spriteBatch.setColor(gib.color);
+
+                    if (gib.polygonRegion != null) {
+                        // Polygon Rendering (Voronoi Shards)
+                        float texHeight = gib.polygonRegion.getRegion().getRegionHeight();
+                        float scale = spriteScale / texHeight;
+
+                        // Draw centered on centroid
+                        // Note: screenX/Y defines where the CENTROID should be on screen.
+                        // originX/Y defines the pivot point relative to the draw pos (x,y).
+                        // Scaling/Rotation happens around (x+originX, y+originY).
+                        // We want this pivot to be at (screenX, screenY).
+                        // So x + originX = screenX => x = screenX - originX.
+                        // (originX/Y are raw pixel offsets).
+                        spriteBatch.draw(gib.polygonRegion,
+                                screenX - gib.centroidX,
+                                screenY - gib.centroidY,
+                                gib.centroidX, gib.centroidY,
+                                gib.polygonRegion.getRegion().getRegionWidth(),
+                                gib.polygonRegion.getRegion().getRegionHeight(),
+                                scale, scale,
+                                gib.rotation);
+                    } else if (gib.textureRegion != null) {
+                        // Legacy/Fallback Texture Rendering (Quadrants)
+                        float gibSize = spriteScale * 0.5f;
+                        float drawX = screenX - gibSize / 2f;
+                        float drawY = screenY - gibSize / 2f;
+
+                        spriteBatch.draw(gib.textureRegion, drawX, drawY, gibSize / 2f, gibSize / 2f, gibSize, gibSize,
+                                1f, 1f, gib.rotation);
+                    }
+
+                    spriteBatch.setColor(Color.WHITE);
                 }
             }
         }
@@ -386,7 +482,9 @@ public class EntityRenderer {
             if (distanceToMonster > biome.getFogDistance())
                 return;
         }
-        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && monster.getTexture() != null) {
+        boolean forceTexture = (monster.getType() == Monster.MonsterType.GIANT_ANT);
+        if ((debugManager.getRenderMode() == DebugManager.RenderMode.MODERN || forceTexture)
+                && monster.getTexture() != null) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.begin();
             drawMonsterTexture(spriteBatch, player, monster, viewport, depthBuffer, firstPersonRenderer, maze);
@@ -456,7 +554,7 @@ public class EntityRenderer {
 
     // --- MODIFIED HELPER METHODS ---
 
-    private void drawMonsterTexture(SpriteBatch spriteBatch, Player player, Monster monster, Viewport viewport,
+    private void drawMonsterTexture(PolygonSpriteBatch spriteBatch, Player player, Monster monster, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
         float spriteX = monster.getPosition().x - player.getPosition().x;
         float spriteY = monster.getPosition().y - player.getPosition().y;
@@ -496,7 +594,7 @@ public class EntityRenderer {
         }
     }
 
-    private void drawItemTexture(SpriteBatch spriteBatch, Player player, Item item, Viewport viewport,
+    private void drawItemTexture(PolygonSpriteBatch spriteBatch, Player player, Item item, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
         float spriteX = item.getPosition().x - player.getPosition().x;
         float spriteY = item.getPosition().y - player.getPosition().y;

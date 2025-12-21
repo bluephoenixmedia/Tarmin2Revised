@@ -7,8 +7,10 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.Maze;
+import com.badlogic.gdx.graphics.g2d.PolygonRegion;
 import java.util.HashMap;
 import java.util.Map;
+import com.bpm.minotaur.utils.ShatterUtils;
 
 public class GoreManager {
 
@@ -53,7 +55,8 @@ public class GoreManager {
         }
     };
 
-    public GoreManager() {}
+    public GoreManager() {
+    }
 
     /**
      * Spawns blood particles using the global UNIFIED_BLOOD_COLOR.
@@ -101,19 +104,112 @@ public class GoreManager {
         int boneCount = MathUtils.random(2, 4);
 
         // Use unified color for meat chunks
-        for(int i=0; i<meatCount; i++) spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+        for (int i = 0; i < meatCount; i++)
+            spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
 
-        // Bones, ribs, intestines, etc usually have their own default tint or use the unified color if we choose
-        for(int i=0; i<boneCount; i++) spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean(0.3f)) spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
+        // Bones, ribs, intestines, etc usually have their own default tint or use the
+        // unified color if we choose
+        for (int i = 0; i < boneCount; i++)
+            spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
+        if (MathUtils.randomBoolean())
+            spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
+        if (MathUtils.randomBoolean())
+            spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
+        if (MathUtils.randomBoolean(0.3f))
+            spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
     }
 
     private void spawnGib(Vector3 origin, GibType type, Color color) {
         Gib g = gibPool.obtain();
-        Vector3 vel = new Vector3(MathUtils.random(-1f, 1f), MathUtils.random(2f, 6f), MathUtils.random(-1f, 1f)).nor().scl(MathUtils.random(3f, 8f));
+        Vector3 vel = new Vector3(MathUtils.random(-1f, 1f), MathUtils.random(2f, 6f), MathUtils.random(-1f, 1f)).nor()
+                .scl(MathUtils.random(3f, 8f));
         g.init(origin, vel, type, color);
+        activeGibs.add(g);
+    }
+
+    public void spawnTextureGibs(Vector3 origin, com.badlogic.gdx.graphics.Texture texture) {
+        if (texture == null)
+            return;
+
+        // Create a TextureRegion for the whole texture
+        com.badlogic.gdx.graphics.g2d.TextureRegion fullRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                texture);
+
+        // Generate Voronoi-like shards (triangles)
+        // 10 internal points results in roughly 20-30 shards
+        Array<ShatterUtils.Shard> shards = ShatterUtils.shatter(fullRegion, 10);
+
+        for (ShatterUtils.Shard shard : shards) {
+            Gib g = gibPool.obtain();
+            // Random explosion velocity
+            Vector3 vel = new Vector3(
+                    MathUtils.random(-0.8f, 0.8f),
+                    MathUtils.random(2f, 5f),
+                    MathUtils.random(-0.8f, 0.8f)).nor().scl(MathUtils.random(2f, 5f));
+
+            g.init(origin, vel, shard);
+            activeGibs.add(g);
+        }
+    }
+
+    public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {
+        if (spriteData == null || spriteData.length == 0)
+            return;
+
+        int rows = spriteData.length;
+        int cols = spriteData[0].length();
+        int halfRows = rows / 2;
+        int halfCols = cols / 2;
+
+        // Top-Left
+        spawnQuadrantGib(origin, spriteData, 0, 0, halfCols, halfRows, color);
+        // Top-Right
+        spawnQuadrantGib(origin, spriteData, halfCols, 0, cols, halfRows, color);
+        // Bottom-Left
+        spawnQuadrantGib(origin, spriteData, 0, halfRows, halfCols, rows, color);
+        // Bottom-Right
+        spawnQuadrantGib(origin, spriteData, halfCols, halfRows, cols, rows, color);
+    }
+
+    private void spawnQuadrantGib(Vector3 origin, String[] fullSprite, int startCol, int startRow, int endCol,
+            int endRow, Color color) {
+        int height = endRow - startRow;
+        String[] chunk = new String[height];
+        boolean isEmpty = true;
+
+        for (int i = 0; i < height; i++) {
+            if (startRow + i < fullSprite.length) {
+                String row = fullSprite[startRow + i];
+                // Ensure we don't go out of bounds if row is short
+                int actualStart = Math.max(0, Math.min(row.length(), startCol));
+                int actualEnd = Math.max(0, Math.min(row.length(), endCol));
+                chunk[i] = row.substring(actualStart, actualEnd);
+
+                // Check if this chunk actually has pixels
+                for (char c : chunk[i].toCharArray()) {
+                    if (c != '.') {
+                        isEmpty = false;
+                    }
+                }
+            } else {
+                chunk[i] = "";
+            }
+        }
+
+        if (isEmpty)
+            return;
+
+        Gib g = gibPool.obtain();
+        // Burst outwards
+        float spreadX = (startCol < endCol / 2) ? -1f : 1f; // Rough heuristic
+        float spreadZ = MathUtils.random(-0.5f, 0.5f);
+
+        Vector3 vel = new Vector3(
+                MathUtils.random(-1f, 1f),
+                MathUtils.random(3f, 6f),
+                MathUtils.random(-1f, 1f)).nor().scl(MathUtils.random(3f, 7f));
+
+        g.init(origin, vel, chunk, color);
         activeGibs.add(g);
     }
 
@@ -141,10 +237,10 @@ public class GoreManager {
             p.update(delta);
 
             // --- THIN WALL COLLISION LOGIC ---
-            int currGridX = (int)p.position.x;
-            int currGridY = (int)p.position.z;
-            int prevGridX = (int)prevX;
-            int prevGridY = (int)prevZ;
+            int currGridX = (int) p.position.x;
+            int currGridY = (int) p.position.z;
+            int prevGridX = (int) prevX;
+            int prevGridY = (int) prevZ;
 
             boolean hitWall = false;
             int hitX = currGridX;
@@ -160,7 +256,7 @@ public class GoreManager {
                     side = 0;
                     hitX = prevGridX;
                     hitY = prevGridY;
-                    wallX = p.position.z - (int)p.position.z;
+                    wallX = p.position.z - (int) p.position.z;
                 }
             }
 
@@ -170,7 +266,7 @@ public class GoreManager {
                 if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
                     hitWall = true;
                     side = 1;
-                    wallX = p.position.x - (int)p.position.x;
+                    wallX = p.position.x - (int) p.position.x;
                     hitX = prevGridX;
                     hitY = prevGridY;
                 }
@@ -226,7 +322,15 @@ public class GoreManager {
         activeDecals.add(d);
     }
 
-    public Array<BloodParticle> getActiveParticles() { return activeParticles; }
-    public Array<SurfaceDecal> getActiveDecals() { return activeDecals; }
-    public Array<Gib> getActiveGibs() { return activeGibs; }
+    public Array<BloodParticle> getActiveParticles() {
+        return activeParticles;
+    }
+
+    public Array<SurfaceDecal> getActiveDecals() {
+        return activeDecals;
+    }
+
+    public Array<Gib> getActiveGibs() {
+        return activeGibs;
+    }
 }

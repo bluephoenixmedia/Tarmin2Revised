@@ -317,6 +317,14 @@ public class Item implements Renderable {
         return this.isImpassable;
     } // New Getter
 
+    public boolean isHelmet() {
+        return this.isHelmet;
+    }
+
+    public boolean isShield() {
+        return this.isShield;
+    }
+
     public int getWarDamage() {
         int totalDamage = this.warDamage;
         for (ItemModifier mod : modifiers) {

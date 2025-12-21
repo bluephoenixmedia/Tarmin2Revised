@@ -18,6 +18,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager; // NEW
 import com.bpm.minotaur.gamedata.item.ItemModifier; // NEW
 import com.bpm.minotaur.gamedata.ModifierType; // NEW
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.item.Item.ItemType;
 
 public class Player {
 
@@ -649,62 +650,57 @@ public class Player {
         Item previousItem = null;
         String slotName = "";
 
-        switch (armor.getType()) {
-            case HELMET:
-                previousItem = equipment.getWornHelmet();
-                equipment.setWornHelmet(armor);
-                slotName = "Head";
-                break;
-            case SMALL_SHIELD:
-            case LARGE_SHIELD:
-                previousItem = equipment.getWornShield();
-                equipment.setWornShield(armor);
-                slotName = "Off-hand";
-                break;
-            case GAUNTLETS:
-                previousItem = equipment.getWornGauntlets();
-                equipment.setWornGauntlets(armor);
-                slotName = "Hands";
-                break;
-            case HAUBERK:
-            case BREASTPLATE:
-                previousItem = equipment.getWornChest();
-                equipment.setWornChest(armor);
-                slotName = "Chest";
-                break;
-            case BOOTS:
+        if (armor.isHelmet()) {
+            previousItem = equipment.getWornHelmet();
+            equipment.setWornHelmet(armor);
+            slotName = "Head";
+        } else if (armor.isShield()) {
+            previousItem = equipment.getWornShield();
+            equipment.setWornShield(armor);
+            slotName = "Off-hand";
+        } else if (armor.getType() == ItemType.GAUNTLETS) {
+            previousItem = equipment.getWornGauntlets();
+            equipment.setWornGauntlets(armor);
+            slotName = "Hands";
+        } else if (armor.getType() == ItemType.HAUBERK || armor.getType() == ItemType.BREASTPLATE || armor.isArmor()) {
+            // Broad fallback for generic body armor if not one of the above special slots
+            // But we should be careful about other slots like Leg/Boots if we can detect
+            // them.
+            // Currently check specific types first?
+
+            if (armor.getType() == ItemType.BOOTS) {
                 previousItem = equipment.getWornBoots();
                 equipment.setWornBoots(armor);
                 slotName = "Feet";
-                break;
-            case LEGS:
+            } else if (armor.getType() == ItemType.LEGS) {
                 previousItem = equipment.getWornLegs();
                 equipment.setWornLegs(armor);
                 slotName = "Legs";
-                break;
-            case ARMS:
+            } else if (armor.getType() == ItemType.ARMS) {
                 previousItem = equipment.getWornArms();
                 equipment.setWornArms(armor);
                 slotName = "Arms";
-                break;
-            case EYES:
-                previousItem = equipment.getWornEyes();
-                equipment.setWornEyes(armor);
-                slotName = "Eyes";
-                break;
-            case CLOAK:
+            } else if (armor.getType() == ItemType.CLOAK) {
                 previousItem = equipment.getWornBack();
                 equipment.setWornBack(armor);
                 slotName = "Back";
-                break;
-            case AMULET:
+            } else if (armor.getType() == ItemType.AMULET) {
                 previousItem = equipment.getWornNeck();
                 equipment.setWornNeck(armor);
                 slotName = "Neck";
-                break;
-            default:
-                eventManager.addEvent(new GameEvent("Cannot equip this.", 2f));
-                return;
+            } else if (armor.getType() == ItemType.EYES) {
+                previousItem = equipment.getWornEyes();
+                equipment.setWornEyes(armor);
+                slotName = "Eyes";
+            } else {
+                // Default Body Slot
+                previousItem = equipment.getWornChest();
+                equipment.setWornChest(armor);
+                slotName = "Chest";
+            }
+        } else {
+            eventManager.addEvent(new GameEvent("Cannot equip this.", 2f));
+            return;
         }
 
         // Put the new item in the slot, and put the old item (if any) in the hand
@@ -715,7 +711,6 @@ public class Player {
         // --- NEW: Recalculate Stats Immediately ---
         // This ensures that if you equip "of Brawn", your Max HP updates.
         // Optional: If you want "Brawn" to heal you for the difference, do this:
-        int oldMaxWar = stats.getMaxWarStrength(); // Base max
         // Note: getEffectiveMax... calculates total with gear.
 
         // Log the change

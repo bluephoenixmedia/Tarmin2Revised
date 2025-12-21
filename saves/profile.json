@@ -1,32 +1,32 @@
 {
-totalSteps: 16486
-totalDoorsOpened: 737
+totalSteps: 17389
+totalDoorsOpened: 759
 deepestLevelReached: 6
 monsterKills: {
 	class: java.util.HashMap
 	WRAITH: 3
-	ORC: 150
+	ORC: 156
 	LICH: 1
 	DWARF: 138
 	WERERAT: 9
 	HOBGOBLIN: 18
-	GIANT_ANT: 95
-	GIANT_SCORPION: 82
+	GIANT_ANT: 109
+	GIANT_SCORPION: 88
 	GHAST: 6
 	GELATINOUS_CUBE: 1
-	SKELETON: 138
-	GHOUL: 27
+	SKELETON: 163
+	GHOUL: 43
 	MIMIC: 4
 	RUST_MONSTER: 1
 	MUMMY: 1
 	GOBLIN: 117
 	ZOMBIE: 39
 	HARPY: 1
-	ALLIGATOR: 3
+	ALLIGATOR: 4
 	KOBOLD: 133
 	TROGLODYTE: 45
-	CLOAKED_SKELETON: 30
-	GIANT_SNAKE: 6
+	CLOAKED_SKELETON: 39
+	GIANT_SNAKE: 35
 }
 unlockedContent: {
 	class: java.util.HashSet

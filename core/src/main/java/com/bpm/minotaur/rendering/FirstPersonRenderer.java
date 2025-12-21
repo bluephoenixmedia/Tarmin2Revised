@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -80,13 +81,18 @@ public class FirstPersonRenderer {
     // Blank texture for Retro rendering
     private final Texture blankTexture;
 
+    private ShaderProgram floorShader;
+    private ShaderProgram retroFloorShader;
+
     private WeatherRenderer weatherRenderer;
 
     public FirstPersonRenderer() {
         spriteBatch = new SpriteBatch();
         wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
+        wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         doorTexture = new Texture(Gdx.files.internal("images/door.png"));
         floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
+        floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         skyboxNorth = new Texture(Gdx.files.internal("images/skybox_castle.png"));
         skyboxEast = new Texture(Gdx.files.internal("images/skybox_east.png"));
         skyboxSouth = new Texture(Gdx.files.internal("images/skybox_south.png"));
@@ -108,6 +114,21 @@ public class FirstPersonRenderer {
         pixmap.dispose();
 
         setTheme(RetroTheme.STANDARD_THEME);
+
+        // Compile Shader
+        ShaderProgram.pedantic = false;
+        floorShader = new ShaderProgram(Gdx.files.internal("shaders/floor.vert"),
+                Gdx.files.internal("shaders/floor.frag"));
+        if (!floorShader.isCompiled()) {
+            Gdx.app.error("FirstPersonRenderer", "Floor shader compilation failed:\n" + floorShader.getLog());
+        }
+
+        retroFloorShader = new ShaderProgram(Gdx.files.internal("shaders/floor.vert"),
+                Gdx.files.internal("shaders/retro_floor.frag"));
+        if (!retroFloorShader.isCompiled()) {
+            Gdx.app.error("FirstPersonRenderer",
+                    "Retro Floor shader compilation failed:\n" + retroFloorShader.getLog());
+        }
     }
 
     public void setTheme(RetroTheme.Theme theme) {
@@ -172,7 +193,8 @@ public class FirstPersonRenderer {
             if (!isIndoors) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
-            renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor, lightIntensity, maze);
+            renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor,
+                    lightIntensity, maze);
             spriteBatch.end();
         } else {
             // RETRO MODE
@@ -227,7 +249,9 @@ public class FirstPersonRenderer {
             }
             spriteBatch.end();
 
-        } else {
+        } else
+
+        {
             // Retro Path
             spriteBatch.setShader(null);
             spriteBatch.begin();
@@ -302,116 +326,75 @@ public class FirstPersonRenderer {
     }
 
     // ADDED: Maze maze parameter
-    private void renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled,
+    private int renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled,
             float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
-        for (int y = (int) (viewport.getWorldHeight() / 2); y >= 0; y--) {
-            float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
-            float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
-            float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
-            float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
 
-            int p_down = (int) (viewport.getWorldHeight() / 2) - y;
-            float posZ = 0.5f * viewport.getWorldHeight();
-            float rowDistance = (p_down == 0) ? Float.MAX_VALUE : posZ / p_down;
-
-            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE)
-                continue;
-
-            float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
-            float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
-
-            float floorX = player.getPosition().x + rowDistance * rayDirX0;
-            float floorY = player.getPosition().y + rowDistance * rayDirY0;
-
-            Color rowColor = new Color(Color.WHITE);
-            if (fogEnabled) {
-                float fogAmount = Math.max(0, Math.min(1f,
-                        (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
-                rowColor = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-            }
-            rowColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-
-            // OPTIMIZATION: Track the last marked tile to reduce method calls per scanline
-            int lastMarkedX = -999;
-            int lastMarkedY = -999;
-
-            for (int x = 0; x < viewport.getWorldWidth(); ++x) {
-                int cellX = (int) (floorX);
-                int cellY = (int) (floorY);
-
-                // --- NEW: Mark Floor as Visited ---
-                // We assume if you can see the floor pixel, you can see the tile.
-                // Check against lastMarked to avoid calling map.markVisited 1920 times per line
-
-                // ----------------------------------
-
-                int tx = (int) (floorTexture.getWidth() * (floorX - cellX)) & (floorTexture.getWidth() - 1);
-                int ty = (int) (floorTexture.getHeight() * (floorY - cellY)) & (floorTexture.getHeight() - 1);
-
-                floorX += floorStepX;
-                floorY += floorStepY;
-
-                float brightness = Math.max(0.2f, Math.min(1.0f, 1.0f - rowDistance / 20.0f));
-                fogLerpColor.set(rowColor.r * brightness, rowColor.g * brightness, rowColor.b * brightness, 1.0f);
-                spriteBatch.setColor(fogLerpColor);
-                spriteBatch.draw(floorTexture, x, y, 1, 1, tx, ty, 1, 1, false, false);
-            }
+        if (floorShader == null || !floorShader.isCompiled()) {
+            // Fallback or error handling? For now, just return 0 to avoid crash loop if
+            // shader failed.
+            return 0;
         }
+
+        spriteBatch.setShader(floorShader);
+
+        // Pass Uniforms
+        floorShader.setUniformf("u_playerPos", player.getPosition());
+        floorShader.setUniformf("u_dir", player.getDirectionVector());
+        floorShader.setUniformf("u_plane", player.getCameraPlane());
+        floorShader.setUniformf("u_screenWidth", viewport.getWorldWidth());
+        floorShader.setUniformf("u_screenHeight", viewport.getWorldHeight());
+        floorShader.setUniformf("u_fogDist", fogDistance);
+        floorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b); // Pass RGB vec3
+        floorShader.setUniformf("u_lightIntensity", lightIntensity);
+        floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+
+        // Draw the floor quad (Bottom half of screen)
+        // Note: Shader handles tinting via u_lightIntensity/fog,
+        // but we can set color to WHITE to pass through unmodified vertex color if
+        // needed.
         spriteBatch.setColor(Color.WHITE);
+
+        // Texture Coordinates (u,v) are handled in frag shader manually via floorX/Y
+        // calculation.
+        // We just need to trigger the fragment shader for the pixels.
+        // We pass the wallTexture (or floorTexture?) -> floorTexture.
+
+        spriteBatch.draw(floorTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+
+        // Reset Shader
+        spriteBatch.setShader(null); // Important to reset!
+
+        return 1; // 1 Draw Call
     }
 
     // Retro floor rendering (Removed Blood Support)
     private void renderRetroFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, Maze maze,
             boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
-        for (int y = (int) (viewport.getWorldHeight() / 2); y >= 0; y--) {
-            // ... (keep rayDir and math setup exactly as is) ...
-            float rayDirX0 = player.getDirectionVector().x - player.getCameraPlane().x;
-            float rayDirY0 = player.getDirectionVector().y - player.getCameraPlane().y;
-            float rayDirX1 = player.getDirectionVector().x + player.getCameraPlane().x;
-            float rayDirY1 = player.getDirectionVector().y + player.getCameraPlane().y;
 
-            int p_down = (int) (viewport.getWorldHeight() / 2) - y;
-            float posZ = 0.5f * viewport.getWorldHeight();
-            float rowDistance = (p_down == 0) ? Float.MAX_VALUE : posZ / p_down;
-
-            if (rowDistance <= 0 || rowDistance == Float.MAX_VALUE)
-                continue;
-
-            float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / viewport.getWorldWidth();
-            float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / viewport.getWorldWidth();
-
-            float floorX = player.getPosition().x + rowDistance * rayDirX0;
-            float floorY = player.getPosition().y + rowDistance * rayDirY0;
-
-            Color baseTint = new Color(Color.WHITE);
-            // ... (keep fog logic) ...
-            if (fogEnabled) {
-                float fogAmount = Math.max(0, Math.min(1f,
-                        (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
-                baseTint = fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-            }
-            baseTint.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-
-            for (int x = 0; x < viewport.getWorldWidth(); ++x) {
-                // --- NEW: Mark Floor Visited ---
-                int cX = (int) floorX;
-                int cY = (int) floorY;
-
-                // -------------------------------
-
-                // Apply torch brightness
-                float brightness = calculateTorchBrightness(rowDistance);
-                Color finalColor = new Color(currentFloorColor).mul(baseTint).mul(brightness, brightness, brightness,
-                        1f);
-
-                spriteBatch.setColor(finalColor);
-                spriteBatch.draw(blankTexture, x, y, 1, 1);
-
-                floorX += floorStepX;
-                floorY += floorStepY;
-            }
+        if (retroFloorShader == null || !retroFloorShader.isCompiled()) {
+            return;
         }
+
+        spriteBatch.setShader(retroFloorShader);
+
+        // Pass Uniforms
+        retroFloorShader.setUniformf("u_playerPos", player.getPosition());
+        retroFloorShader.setUniformf("u_dir", player.getDirectionVector());
+        retroFloorShader.setUniformf("u_plane", player.getCameraPlane());
+        retroFloorShader.setUniformf("u_screenWidth", viewport.getWorldWidth());
+        retroFloorShader.setUniformf("u_screenHeight", viewport.getWorldHeight());
+        retroFloorShader.setUniformf("u_fogDist", fogDistance);
+        retroFloorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
+        retroFloorShader.setUniformf("u_lightIntensity", lightIntensity);
+        retroFloorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+
+        // Pass Floor Color (Theme color)
+        retroFloorShader.setUniformf("u_floorColor", currentFloorColor.r, currentFloorColor.g, currentFloorColor.b);
+
         spriteBatch.setColor(Color.WHITE);
+        spriteBatch.draw(blankTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+
+        spriteBatch.setShader(null);
     }
 
     private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,

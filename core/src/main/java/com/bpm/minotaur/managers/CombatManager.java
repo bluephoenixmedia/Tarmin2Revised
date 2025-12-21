@@ -11,8 +11,10 @@ import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate; // NEW
+import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
@@ -1053,6 +1055,24 @@ public class CombatManager {
         eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
         player.addExperience(totalExp, eventManager);
         maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
+
+        // --- GIB ANIMATION ---
+        com.badlogic.gdx.math.Vector3 gibOrigin = new com.badlogic.gdx.math.Vector3(monster.getPosition().x, 0.5f,
+                monster.getPosition().y);
+
+        if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO) {
+            String[] spriteData = monster.getSpriteData();
+            if (spriteData != null) {
+                maze.getGoreManager().spawnRetroGibs(gibOrigin, spriteData, monster.getColor());
+            } else {
+                maze.getGoreManager().spawnGibExplosion(gibOrigin); // Fallback
+            }
+        } else if (monster.getTexture() != null) {
+            maze.getGoreManager().spawnTextureGibs(gibOrigin, monster.getTexture());
+        } else {
+            maze.getGoreManager().spawnGibExplosion(gibOrigin);
+        }
+
         spawnCorpseEffects(monster);
     }
 }
