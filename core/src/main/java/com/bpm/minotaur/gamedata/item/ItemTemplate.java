@@ -13,6 +13,10 @@ public class ItemTemplate {
     public float modelYOffset = 0.0f;
     public float modelRotation = 0.0f;
 
+    // --- Texture Offsets ---
+    public float offsetX = 0.0f;
+    public float offsetY = 0.0f;
+
     public String unlockId;
 
     public String[] spriteData;

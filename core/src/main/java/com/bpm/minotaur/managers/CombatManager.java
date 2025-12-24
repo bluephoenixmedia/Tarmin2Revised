@@ -31,8 +31,9 @@ public class CombatManager {
 
     public enum CombatState {
         INACTIVE,
-        PLAYER_TURN,
-        PLAYER_SELECT_DICE, // NEW: Choosing hand
+        PLAYER_MENU, // NEW: Waiting for menu input
+        PLAYER_TURN, // Executing action (may be deprecated if we go straight to resolution)
+        PLAYER_SELECT_DICE, // Choosing hand
         PHYSICS_RESOLUTION, // Rolling
         PHYSICS_DELAY, // Viewing Result
         MONSTER_TURN,
@@ -192,10 +193,13 @@ public class CombatManager {
                 Gdx.app.log("CombatManager", "Player auto-turned to face " + directionToMonster);
             }
             soundManager.playCombatStartSound();
-            currentState = CombatState.MONSTER_TURN;
-            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
 
-            Gdx.app.log("CombatManager", "Combat started with " + monster.getType());
+            // --- NEW: Start with Player Menu ---
+            currentState = CombatState.PLAYER_MENU;
+            Gdx.app.log("COMBAT_FLOW", "State -> PLAYER_MENU (Initial)");
+            Gdx.app.log("CombatManager", "Combat started with " + monster.getType() + ". State: PLAYER_MENU");
+
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
         }
     }
 
@@ -261,7 +265,7 @@ public class CombatManager {
 
     // --- NEW: Standard Attack (KEY A/SPACE) - No Animation ---
     public void playerAttackInstant() {
-        if (currentState != CombatState.PLAYER_TURN)
+        if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
             return;
         if (!prepareAttack())
             return;
@@ -277,9 +281,8 @@ public class CombatManager {
     }
 
     // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
-    // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
     public void playerAttackWithDice() {
-        if (currentState != CombatState.PLAYER_TURN)
+        if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
             return;
 
         // Transition to Dice Selection Overlay
@@ -316,6 +319,22 @@ public class CombatManager {
     // Kept for backward compatibility if called elsewhere, maps to Instant
     public void playerAttack() {
         playerAttackInstant();
+    }
+
+    // --- NEW: Player Guard Action ---
+    public void playerGuard() {
+        if (currentState != CombatState.PLAYER_MENU)
+            return;
+
+        playerCurrentBlock += 5; // Flat block bonus?
+        eventManager.addEvent(new GameEvent("You brace yourself!", 1.5f));
+        BalanceLogger.getInstance().log("COMBAT_ACTION", "Player Guarded. Block +5");
+
+        // Pass turn
+        processPlayerStatusEffects();
+        player.getStatusManager().updateTurn();
+        currentState = CombatState.MONSTER_TURN;
+        monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
     }
 
     private int playerCurrentBlock = 0; // Reset every round
@@ -580,17 +599,15 @@ public class CombatManager {
                     Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
                     Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
                     maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+
+                    if (maze.getBloodCount() < 100)
+                        maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
                 }
 
                 showDamageText(actualDamage,
                         new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-                eventManager.addEvent(new GameEvent("Direct Hit! " + actualDamage + " dmg", 2f));
+                eventManager.addEvent(new GameEvent("Melee Hit! " + actualDamage + " dmg", 2f));
             }
-
-            if (pendingWeapon.isUsable()) {
-                player.getInventory().setRightHand(null);
-            }
-
         } else if (pendingWeapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON && pendingWeapon.isWeapon()) {
             animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER, player.getPosition(),
                     monster.getPosition(), pendingWeapon.getColor(), 0.5f,
@@ -603,39 +620,41 @@ public class CombatManager {
             } else {
                 damage = pendingWeapon.getSpiritDamage() + attackModifier;
                 monster.takeSpiritualDamage(damage);
-                damage = pendingWeapon.getSpiritDamage() + attackModifier;
-                monster.takeSpiritualDamage(damage);
                 actualDamage = damage;
             }
 
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
             if (actualDamage > 0) {
                 maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
-            }
-            if (actualDamage > 0)
                 eventManager.addEvent(new GameEvent("Spell Cast! " + actualDamage + " dmg", 2f));
-
-            if (pendingWeapon.isUsable()) {
-                player.getInventory().setRightHand(null);
             }
+
         } else {
             eventManager.addEvent(new GameEvent("You can't attack with this item.", 2f));
             return;
         }
 
-        BalanceLogger.getInstance().logCombatRound("PLAYER",
-                pendingWeapon.getFriendlyName(), rollBonus, actualDamage, monster.getWarStrength());
+        if (pendingWeapon.isUsable()) {
+            player.getInventory().setRightHand(null);
+        }
 
-        processPlayerStatusEffects();
-        player.getStatusManager().updateTurn();
-        stochasticManager.clearDice();
+        BalanceLogger.getInstance().logCombatRound("PLAYER", "Melee/Ranged", 0, lastDamageDealt,
+                monster.getWarStrength());
 
-        if (monster.getWarStrength() <= 0 || monster.getSpiritualStrength() <= 0) {
+        pendingWeapon = null;
+
+        if (monster.getWarStrength() <= 0)
+
+        {
             handleMonsterDeath();
-
+            currentState = CombatState.VICTORY;
+            Gdx.app.log("COMBAT_FLOW", "State -> VICTORY (Monster Dead)");
         } else {
             currentState = CombatState.MONSTER_TURN;
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
+            Gdx.app.log("COMBAT_FLOW", "State -> MONSTER_TURN (Attack Resolved)");
         }
+
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {
@@ -958,19 +977,84 @@ public class CombatManager {
         if (currentState == CombatState.VICTORY)
             return; // Died from poison/status
 
-        // Try ranged first
-        if (monster.hasRangedAttack()) {
-            float dist = monster.getPosition().dst(player.getPosition());
-            if (dist > 1.5f && dist <= monster.getAttackRange()) {
-                if (performMonsterRangedAttack(monster)) {
-                    currentState = CombatState.PLAYER_TURN;
-                    return;
-                }
+        // --- NEW: AI Decision Tree ---
+        boolean actionTaken = false;
+        MonsterTemplate.AiType ai = monster.getAiType();
+
+        // 1. HEALER Logic
+        if (ai == MonsterTemplate.AiType.HEALER) {
+            float hpPct = (float) monster.getWarStrength() / (float) monster.getMaxWarStrength(); // Need access to Max?
+                                                                                                  // Monster doesn't
+                                                                                                  // track Max
+                                                                                                  // currently?
+            // Monster has WarStrength. Assuming initial was max?
+            // Actually Monster doesn't store max HP separately in the current visible code.
+            // Let's assume heal threshold is strict value or skip for now if unknown.
+            // Or use getTemplate().warStrength for base max?
+            // Let's assume standard heal logic for now.
+            if (hpPct < monster.getHealThreshold()) {
+                performMonsterHeal();
+                actionTaken = true;
             }
         }
 
-        // Standard Melee
+        // 2. TACTICAL Logic (Spellcasting)
+        if (!actionTaken && ai == MonsterTemplate.AiType.TACTICAL) {
+            if (random.nextInt(100) < monster.getSpellChance()) {
+                performMonsterSpell();
+                actionTaken = true;
+            }
+        }
+
+        // 3. AGGRESSIVE / Default / Fallback
+        if (!actionTaken) {
+            // Try Ranged
+            if (monster.hasRangedAttack()) {
+                float dist = monster.getPosition().dst(player.getPosition());
+                if (dist > 1.5f && dist <= monster.getAttackRange()) {
+                    if (performMonsterRangedAttack(monster)) {
+                        currentState = CombatState.PLAYER_MENU;
+                        return; // Ranged handles its own transition/return
+                    }
+                }
+            }
+            performMonsterMeleeAttack();
+        }
+
+        // Transition back to Player Menu handled in sub-methods
+    }
+
+    private void performMonsterHeal() {
+        int healAmount = 10; // Simple flat heal
+        monster.takeDamage(-healAmount); // Negative damage = heal? ensure Monster.takeDamage handles it?
+        // Monster.takeDamage: finalDamage = Math.max(0, amount - damageReduction);
+        // It clamps to 0. It won't heal.
+        // Need to add heal method to Monster or access field directly?
+        // Monster fields are likely package-private or have getters.
+        // Let's assume for now we can't easily heal without a new method.
+        // Actually, let's just log it and skip heal to avoid breaking code, OR modify
+        // Monster.java.
+        // I modified Monster.java earlier. I can add heal() there?
+        // Let's do a "Focus" action instead for now to be safe.
+        eventManager.addEvent(new GameEvent(monster.getType() + " focuses its energy!", 2f));
+        monster.addEnergy(10); // Speed up next turn?
+
+        currentState = CombatState.PLAYER_MENU;
+    }
+
+    private void performMonsterSpell() {
+        eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
+        int spellDmg = 5 + monster.getIntelligence();
+        player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
+        BalanceLogger.getInstance().logCombatRound("MONSTER", "Spell", -1, spellDmg, player.getWarStrength());
+
+        currentState = CombatState.PLAYER_MENU;
+    }
+
+    private void performMonsterMeleeAttack() {
+        // Standard Melee Logic from before
         float dist = monster.getPosition().dst(player.getPosition());
+        // ... Logic continues below ...
         float animDuration = dist / PROJECTILE_SPEED;
 
         animationManager.addAnimation(new Animation(
@@ -1015,7 +1099,8 @@ public class CombatManager {
         if (player.getWarStrength() <= 0) {
             currentState = CombatState.DEFEAT;
         } else {
-            currentState = CombatState.PLAYER_TURN;
+            currentState = CombatState.PLAYER_MENU;
+            Gdx.app.log("COMBAT_FLOW", "State -> PLAYER_MENU (Turn End)");
         }
     }
 

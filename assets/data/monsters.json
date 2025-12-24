@@ -2441,7 +2441,7 @@
     "armor": 8,
     "baseExperience": 220,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/wyvern.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2509,7 +2509,7 @@
     "armor": 10,
     "baseExperience": 300,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/chimera.png",
     "spriteData": [
       "........................",
       ".....##....##....##.....",
@@ -2569,7 +2569,7 @@
     "armor": 12,
     "baseExperience": 350,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/hydra.png",
     "spriteData": [
       "........................",
       "..##...##...##...##...##",
@@ -2629,7 +2629,7 @@
     "armor": 8,
     "baseExperience": 400,
     "family": "UNDEAD",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/vampire.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2697,7 +2697,7 @@
     "armor": 25,
     "baseExperience": 500,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/minotaur.png",
+    "texturePath": "images/monsters/iron_golem.png",
     "spriteData": [
       "........................",
       ".........######.........",

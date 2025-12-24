@@ -40,6 +40,10 @@ public class CombatDiceOverlay {
     }
 
     public void update(float delta) {
+        if (combatManager.getCurrentState() != CombatManager.CombatState.PLAYER_SELECT_DICE) {
+            return;
+        }
+
         // Handle input if active
         boolean clicked = Gdx.input.justTouched();
         boolean keyPressed = Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.SPACE) ||

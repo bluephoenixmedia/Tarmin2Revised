@@ -129,6 +129,10 @@ public class Maze {
         return bloodMap;
     }
 
+    public int getBloodCount() {
+        return bloodMap.size();
+    }
+
     public int getHeight() {
         if (wallData == null)
             return 0;

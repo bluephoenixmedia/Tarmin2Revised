@@ -12,6 +12,10 @@ import java.util.List;
 // This class is just a data container.
 public class MonsterTemplate {
 
+    // --- Texture Offsets ---
+    public float offsetX = 0.0f;
+    public float offsetY = 0.0f;
+
     // This nested static class must also have public fields or a no-arg constructor
     public static class ScaleData {
         public float x;
@@ -66,6 +70,18 @@ public class MonsterTemplate {
     public int attackRange; // How far can they shoot?
 
     public int intelligence; // This will be loaded from JSON, defaulting to 0
+
+    // --- AI & Combat Behavior ---
+    public enum AiType {
+        AGGRESSIVE, // Blindly attacks (Low INT)
+        TACTICAL, // Uses items/spells if advantageous (Mid INT)
+        CAUTIOUS, // Flees if low HP (High INT)
+        HEALER // Prioritizes healing self/allies (Specific)
+    }
+
+    public AiType aiType = AiType.AGGRESSIVE; // Default
+    public float healThreshold = 0.3f; // Heal if HP < 30%
+    public int spellChance = 20; // 20% chance to cast spell if capable
 
     public Array<EffectApplicationData> onHitEffects;
 

@@ -235,7 +235,7 @@ public class FirstPersonRenderer {
                 if (result != null) {
                     maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
-                            lightIntensity);
+                            lightIntensity, maze);
                     depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
@@ -398,27 +398,225 @@ public class FirstPersonRenderer {
     }
 
     private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
                 : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float height = drawEnd - drawStart;
 
-        Texture texture = (result.wallType == WallType.DOOR) ? doorTexture : wallTexture;
-
+        // Common fog/lighting calculation
+        Color colorModifier = new Color(1, 1, 1, 1);
         if (fogEnabled) {
             float fogAmount = Math.max(0, Math.min(1f,
                     (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
-            fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-            fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-            spriteBatch.setColor(fogLerpColor);
-        } else {
-            spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+            colorModifier.lerp(fogColor, fogAmount);
         }
+        colorModifier.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
 
-        int texX = (int) (result.wallX * texture.getWidth());
-        spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(), false,
-                false);
+        if (result.wallType == WallType.DOOR) {
+            float doorEdgeMargin = (1.0f - DOOR_WIDTH) / 2.0f;
+            boolean isFramePart = result.wallX < doorEdgeMargin || result.wallX > 1.0f - doorEdgeMargin;
+
+            if (isFramePart) {
+                // RENDER FRAME (Wall Texture)
+                int texX = (int) (result.wallX * wallTexture.getWidth());
+                spriteBatch.setColor(colorModifier); // Wall texture doesn't need torch lighting usually? Or does it?
+                // Wait, the original code applied torch to retro but not modern?
+                // Modern code usually relies on shader or just tint.
+                // Original modern code:
+                // fogLerpColor.set(Color.WHITE).lerp(fogColor,
+                // fogAmount).mul(lightIntensity...);
+                // spriteBatch.setColor(fogLerpColor);
+                // Let's stick to the specific fog logic from original method for Modern mode to
+                // be consistent.
+
+                // Re-creating the specific color logic from original Modern method to avoid
+                // regressions:
+                if (fogEnabled) {
+                    float fogAmount = Math.max(0, Math.min(1f,
+                            (result.distance - (fogDistance * (1f - FOG_FADE_RATIO)))
+                                    / (fogDistance * FOG_FADE_RATIO)));
+                    fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+                    fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    spriteBatch.setColor(fogLerpColor);
+                } else {
+                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                }
+
+                spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallTexture.getHeight(),
+                        false, false);
+            } else {
+                // RENDER DOOR + LINTEL
+
+                // 1. Lintel (Wall Texture at top)
+                float doorHeight = height * DOOR_HEIGHT_RATIO;
+                float doorDrawStart = drawStart; // Bottom of screen (roughly, y goes up?)
+                // Wait, LibGDX y=0 is bottom. drawStart is bottom of the wall strip.
+                // drawEnd is top of the wall strip.
+                // So door is at the bottom (drawStart) up to doorHeight.
+                float doorDrawEnd = drawStart + doorHeight;
+
+                // Set color for wall/frame
+                if (fogEnabled) {
+                    float fogAmount = Math.max(0, Math.min(1f,
+                            (result.distance - (fogDistance * (1f - FOG_FADE_RATIO)))
+                                    / (fogDistance * FOG_FADE_RATIO)));
+                    fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+                    fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    spriteBatch.setColor(fogLerpColor);
+                } else {
+                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                }
+
+                // Draw Lintel (Area above door)
+                if (drawEnd > doorDrawEnd) {
+                    int texX = (int) (result.wallX * wallTexture.getWidth());
+                    // We need to map the vertical segment of the texture.
+                    // The wall is drawn from drawStart to drawEnd.
+                    // The lintel is from doorDrawEnd to drawEnd.
+                    // This corresponds to the top part of the texture.
+                    // height of wall = H. height of lintel = h_l.
+                    // texture V start = 0 (top? No, usually 0 is top in region but bottom in batch
+                    // draw if not flipped?)
+                    // Texture region: u, v, u2, v2.
+                    // wallTexture.getHeight() is full height.
+
+                    // Let's use simpler draw: draw(texture, x, y, width, height, srcX, srcY,
+                    // srcWidth, srcHeight, flipX, flipY)
+                    // wallTexture is full wall.
+                    // We want the part of the texture corresponding to this vertical slice.
+
+                    float wallHeightPixels = wallTexture.getHeight();
+                    float lintelRatio = (drawEnd - doorDrawEnd) / height; // e.g. 0.2
+                    // The lintel is the TOP 20% of the wall.
+                    // If bottom is 0, top is 1. Lintel is 0.8 to 1.0.
+                    // In LibGDX texture coordinates (0,0) is usually top-left for Region, but
+                    // Texture depends.
+                    // Standard Texture: 0,0 is Bottom-Left? No, typically Image is loaded such
+                    // that...
+                    // Let's look at original draw call:
+                    // draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1,
+                    // texture.getHeight(), false, false);
+                    // srcY=0, srcHeight=texture.getHeight(). This implies we draw the WHOLE column.
+
+                    // So for lintel:
+                    // srcY should be the top part.
+                    // If srcY=0 is bottom?
+                    // Let's assume standard mathematics: y is up.
+                    // So we want srcY from (0.8 * totalHeight) to totalHeight.
+
+                    int srcY = (int) (wallHeightPixels * DOOR_HEIGHT_RATIO);
+                    int srcHeight = (int) (wallHeightPixels * (1.0f - DOOR_HEIGHT_RATIO));
+
+                    spriteBatch.draw(wallTexture, screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd, texX, srcY, 1,
+                            srcHeight, false, true);
+                }
+
+                // 2. Door (Door Texture)
+                // Door is in the hole.
+
+                // Animation Logic
+                float currentDoorTop = doorDrawEnd;
+                float currentDoorBottom = doorDrawStart;
+
+                if (result.door != null && result.door.getState() == Door.DoorState.OPENING) {
+                    // Slide UP.
+                    // Meaning the bottom of the door moves up.
+                    float openingOffset = (doorDrawEnd - doorDrawStart) * result.door.getAnimationProgress();
+                    currentDoorBottom += openingOffset;
+                }
+
+                if (currentDoorTop > currentDoorBottom) {
+                    // Recalculate color for door (maybe slightly different if we want?)
+                    // Using same lighting for now.
+
+                    // Texture Mapping for Door
+                    // result.wallX is in [33%, 66%] of the tile.
+                    // We need to map this to [0, 1] for the door texture.
+                    // wallX relative to door start: result.wallX - doorEdgeMargin
+                    // door width in wall coords: DOOR_WIDTH
+                    // normalized X: (result.wallX - doorEdgeMargin) / DOOR_WIDTH
+
+                    float normalizedDoorX = (result.wallX - doorEdgeMargin) / DOOR_WIDTH;
+                    int doorTexX = (int) (normalizedDoorX * doorTexture.getWidth());
+
+                    // Vertical mapping
+                    // The visible part of the door is from currentDoorBottom to currentDoorTop.
+                    // If the door is opening (sliding up), we see the TOP part of the door texture?
+                    // Or the bottom part sliding up?
+
+                    // "Opening animation splits this image in the middle and animates it sliding
+                    // open" - User description of issue.
+                    // Retro animation: "Splits in middle"? No, Retro "animates the door opening
+                    // similar to the RETRO animation"
+                    // Retro code says:
+                    // float openingOffset = (doorDrawEnd - doorDrawStart) *
+                    // result.door.getAnimationProgress();
+                    // doorDrawStart += openingOffset;
+                    // This creates a gap at the bottom that grows. The door "floats" up.
+                    // So we want to draw the TOP part of the door texture at the TOP of the
+                    // opening.
+
+                    // Valid screen height: currentDoorTop - currentDoorBottom.
+                    // Corresponds to the TOP portion of the door texture.
+                    // Full Door Height = doorDrawEnd - OriginalDoorDrawStart.
+                    // Visible Ratio = (currentDoorTop - currentDoorBottom) / FullDoorHeight.
+                    // We want the pixels from (1 - VisibleRatio) * TexHeight to TexHeight.
+
+                    float visibleRatio = (currentDoorTop - currentDoorBottom) / (doorDrawEnd - doorDrawStart); // e.g.
+                                                                                                               // 0.5
+                    int doorTexHeight = doorTexture.getHeight();
+
+                    // If drawing strictly top part:
+                    // srcY = (1-visibleRatio) * doorTexHeight?
+                    // Let's assume Y=0 is bottom.
+                    // We want to draw the TOP part of the door. Ideally the handle moves up.
+                    // Wait, if it slides UP into the ceiling/lintel:
+                    // The persistent part is the BOTTOM of the door, moving up? No.
+                    // If it slides UP, the bottom becomes empty space.
+                    // The part we see is the BOTTOM of the door texture, but shifted up?
+                    // OR the physical door moves up.
+                    // If the specific animation is "Sliding Open" (Upwards):
+                    // We see the bottom of the door at `currentDoorBottom`.
+                    // And the top of the door is effectively clipped by the lintel.
+                    // So we should see the BOTTOM (visibleRatio) of the door texture?
+                    // Actually, if it slides UP, the top part disappears into the lintel.
+                    // So we see the BOTTOM part of the texture.
+                    // srcY = 0. srcHeight = visibleRatio * fullHeight.
+
+                    int srcDoorHeight = (int) (visibleRatio * doorTexHeight);
+                    int srcDoorY = 0; // Start from bottom of texture
+
+                    // Wait, if we use srcY=0, we draw the bottom of the texture.
+                    // And we draw it at `currentDoorBottom`.
+                    // So visually the bottom of the door texture is at `currentDoorBottom` (which
+                    // is rising).
+                    // This looks like the door is being LIFTED up.
+                    // Yes, that matches "Sliding Open".
+
+                    spriteBatch.draw(doorTexture, screenX, currentDoorBottom, 1, currentDoorTop - currentDoorBottom,
+                            doorTexX, srcDoorY, 1, srcDoorHeight, false, false);
+                }
+            }
+        } else {
+            // STANDARD WALL
+            Texture texture = wallTexture; // Always wall for non-doors
+            if (fogEnabled) {
+                float fogAmount = Math.max(0, Math.min(1f,
+                        (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+                fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                spriteBatch.setColor(fogLerpColor);
+            } else {
+                spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+            }
+
+            int texX = (int) (result.wallX * texture.getWidth());
+            spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(),
+                    false,
+                    false);
+        }
         spriteBatch.setColor(Color.WHITE);
     }
 

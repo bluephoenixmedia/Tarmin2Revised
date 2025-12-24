@@ -43,6 +43,7 @@ import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map;
 
 public class GameScreen extends BaseScreen {
 
@@ -60,7 +61,7 @@ public class GameScreen extends BaseScreen {
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
-    private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager());
+    private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager(), game.getAssetManager());
     private final Difficulty difficulty;
 
     // --- 3D Rendering Components ---
@@ -336,54 +337,60 @@ public class GameScreen extends BaseScreen {
                     gameMode);
 
             // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
-            if (camera3d != null) {
-                // Negate Y here to convert to standard 3D forward (-Z)
-                camera3d.position.set(player.getPosition().x, 0.5f, -player.getPosition().y);
-                camera3d.direction.set(player.getDirectionVector().x, 0, -player.getDirectionVector().y);
-                camera3d.up.set(0, 1, 0);
-                camera3d.update();
-
-                ModelBatch modelBatch = game.getModelBatch();
-                boolean batchBegun = false;
-
-                if (modelBatch != null && maze != null) {
-                    for (Item item : maze.getItems().values()) {
-                        ItemTemplate template = item.getTemplate();
-                        if (template != null && template.modelPath != null) {
-                            if (!isVisible(item.getPosition()))
-                                continue;
-                            ModelInstance inst = item3dCache.get(item);
-                            if (inst == null) {
-                                Model model = game.getAssetManager().get(template.modelPath, Model.class);
-                                if (model != null) {
-                                    inst = new ModelInstance(model);
-                                    item3dCache.put(item, inst);
-                                }
-                            }
-                            if (inst != null) {
-                                if (!batchBegun) {
-                                    modelBatch.begin(camera3d);
-                                    batchBegun = true;
-                                }
-                                inst.transform.idt();
-                                // Negate Y here as well for item position
-                                inst.transform.translate(
-                                        item.getPosition().x,
-                                        template.modelYOffset,
-                                        -item.getPosition().y);
-
-                                if (template.modelRotation != 0f) {
-                                    inst.transform.rotate(Vector3.Y, template.modelRotation);
-                                }
-                                inst.transform.scale(template.modelScale, template.modelScale, template.modelScale);
-                                modelBatch.render(inst, environment);
-                            }
-                        }
-                    }
-                    if (batchBegun)
-                        modelBatch.end();
-                }
-            }
+            // DISABLED FOR NOW: Reverting to 2D Sprites/Textures for all items as per user
+            // request.
+            /*
+             * if (camera3d != null) {
+             * // Negate Y here to convert to standard 3D forward (-Z)
+             * camera3d.position.set(player.getPosition().x, 0.5f, -player.getPosition().y);
+             * camera3d.direction.set(player.getDirectionVector().x, 0,
+             * -player.getDirectionVector().y);
+             * camera3d.up.set(0, 1, 0);
+             * camera3d.update();
+             * 
+             * ModelBatch modelBatch = game.getModelBatch();
+             * boolean batchBegun = false;
+             * 
+             * if (modelBatch != null && maze != null) {
+             * for (Item item : maze.getItems().values()) {
+             * ItemTemplate template = item.getTemplate();
+             * if (template != null && template.modelPath != null) {
+             * if (!isVisible(item.getPosition()))
+             * continue;
+             * ModelInstance inst = item3dCache.get(item);
+             * if (inst == null) {
+             * Model model = game.getAssetManager().get(template.modelPath, Model.class);
+             * if (model != null) {
+             * inst = new ModelInstance(model);
+             * item3dCache.put(item, inst);
+             * }
+             * }
+             * if (inst != null) {
+             * if (!batchBegun) {
+             * modelBatch.begin(camera3d);
+             * batchBegun = true;
+             * }
+             * inst.transform.idt();
+             * // Negate Y here as well for item position
+             * inst.transform.translate(
+             * item.getPosition().x,
+             * template.modelYOffset,
+             * -item.getPosition().y);
+             * 
+             * if (template.modelRotation != 0f) {
+             * inst.transform.rotate(Vector3.Y, template.modelRotation);
+             * }
+             * inst.transform.scale(template.modelScale, template.modelScale,
+             * template.modelScale);
+             * modelBatch.render(inst, environment);
+             * }
+             * }
+             * }
+             * if (batchBegun)
+             * modelBatch.end();
+             * }
+             * }
+             */
 
             if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                 entityRenderer.render(shapeRenderer, player, maze, currentViewport,
@@ -423,6 +430,10 @@ public class GameScreen extends BaseScreen {
         // Moved CombatDiceOverlay to end of frame
 
         if (hud != null) {
+            // --- NEW: Sync Combat Menu Visibility ---
+            if (combatManager != null && hud.combatMenu != null) {
+                hud.combatMenu.setVisible(combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU);
+            }
             hud.render();
         }
 
@@ -626,8 +637,66 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
-        if (player == null || maze == null)
+        if (worldManager == null || player == null || maze == null)
             return false;
+
+        // --- NEW: Combat Menu Input Interception ---
+        if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
+            if (hud != null && hud.combatMenu != null) {
+                switch (keycode) {
+                    case Input.Keys.I:
+                        InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
+                                InventoryScreen.InventoryMode.NORMAL);
+                        game.setScreen(invScreen);
+                        return true;
+                    case Input.Keys.UP:
+                        hud.combatMenu.navigateUp();
+                        return true;
+                    case Input.Keys.DOWN:
+                        hud.combatMenu.navigateDown();
+                        return true;
+                    case Input.Keys.ENTER:
+                    case Input.Keys.SPACE:
+                        int selection = hud.combatMenu.getSelectedIndex();
+                        switch (selection) {
+                            case 0: // ATTACK
+                                // USER FEEDBACK: "Attack" should be instant (Standard Weapon Attack)
+                                combatManager.playerAttackInstant();
+                                break;
+                            case 1: // CAST
+                                hud.addMessage("Magic is not yet implemented.");
+                                break;
+                            case 2: // ROLL
+                                // USER FEEDBACK: "Roll" mapped to Dice Mechanics / Skill check
+                                combatManager.playerAttackWithDice();
+                                break;
+                            case 3: // USE
+                                hud.addMessage("Combat Items not yet implemented.");
+                                break;
+                            case 4: // BLOCK
+                                combatManager.playerGuard();
+                                break;
+                        }
+                        return true;
+                }
+            }
+            // Block all other input during menu (except maybe Debug keys?)
+            // We'll allow F-keys to fall through by not returning true for default?
+            // Actually, let's just return true for "handled" or keys we want to block
+            // (WASD, SPACE).
+            // But checking every key is annoying.
+            // Better to return true for "handled" or keys we want to block (WASD, SPACE).
+            // For now, let's just return true for everything except F-keys?
+            // Hard to filter easily. Let's just block the main ones if we didn't handle
+            // navigation.
+            if (keycode == Input.Keys.W || keycode == Input.Keys.A || keycode == Input.Keys.S || keycode == Input.Keys.D
+                    ||
+                    keycode == Input.Keys.UP || keycode == Input.Keys.LEFT || keycode == Input.Keys.DOWN
+                    || keycode == Input.Keys.RIGHT ||
+                    keycode == Input.Keys.SPACE || keycode == Input.Keys.ENTER) {
+                return true;
+            }
+        }
 
         // --- Debug Shortcuts ---
         if (debugManager.isDebugOverlayVisible()) {
@@ -639,10 +708,12 @@ public class GameScreen extends BaseScreen {
         }
 
         if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
-                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             switch (keycode) {
                 case Input.Keys.S:
                     player.getInventory().swapHands();
+                    // If in Menu, we don't pass turn, just update UI
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
                     return true;

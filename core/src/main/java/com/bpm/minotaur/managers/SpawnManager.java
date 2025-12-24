@@ -113,9 +113,15 @@ public class SpawnManager {
         this.debrisPool = new WeightedRandomList<>();
         if (spawnTableData.debrisSpawnTable != null) {
             for (SpawnTableEntry entry : spawnTableData.debrisSpawnTable) {
-                if (level >= entry.minLevel && level <= entry.maxLevel) {
-                    debrisPool.add(entry);
+                // User Request: Completely random debris, NO TIER SYSTEM (Ignore min/max level)
+                // EXCEPTION: Portals must respect level limits to prevent skipping content or
+                // spawning on L1
+                if (entry.type.equals("MYSTERIOUS_PORTAL")) {
+                    if (level < entry.minLevel || level > entry.maxLevel) {
+                        continue;
+                    }
                 }
+                debrisPool.add(entry);
             }
         }
         // ------------------------
@@ -162,7 +168,7 @@ public class SpawnManager {
         spawnMonsters(budget.monsterBudget);
         spawnItems(budget.itemBudget);
         spawnContainers(budget.containerBudget);
-        // spawnDebris(budget.debrisBudget); // DISABLED as per User Request
+        spawnDebris(budget.debrisBudget); // RE-ENABLED
     }
 
     // --- NEW: Difficulty Calculation ---

@@ -66,6 +66,7 @@ public class Monster implements Renderable {
     private final Vector2 position;
     private final MonsterColor monsterColor;
     private int warStrength;
+    private int maxWarStrength; // New: For healing logic
     private int spiritualStrength;
     private int armor;
     private int ac; // Descending armor class
@@ -83,6 +84,11 @@ public class Monster implements Renderable {
     private int dexterity;
     private boolean hasRangedAttack;
     private int attackRange;
+
+    // --- AI Fields ---
+    private MonsterTemplate.AiType aiType;
+    private float healThreshold;
+    private int spellChance;
 
     // --- Refactored Instance Data ---
     private com.bpm.minotaur.gamedata.Inventory inventory;
@@ -106,11 +112,13 @@ public class Monster implements Renderable {
         this.magicResistance = template.magicResistance;
 
         this.warStrength = template.warStrength;
-        this.spiritualStrength = template.spiritualStrength;
-
         // Derive Damage Reduction (armor) from AC
         // AC 10 = 0 DR, AC 0 = 5 DR, AC -10 = 10 DR
         this.armor = Math.max(0, (10 - this.ac) / 2);
+
+        this.warStrength = template.warStrength;
+        this.maxWarStrength = template.warStrength; // Init Max
+        this.spiritualStrength = template.spiritualStrength;
 
         this.baseExperience = template.baseExperience;
         this.moveSpeed = template.moveSpeed; // Init speed
@@ -126,7 +134,29 @@ public class Monster implements Renderable {
         this.hasRangedAttack = template.hasRangedAttack;
         this.attackRange = template.attackRange;
 
+        // --- AI Initialization ---
+        this.aiType = template.aiType != null ? template.aiType : MonsterTemplate.AiType.AGGRESSIVE;
+        this.healThreshold = template.healThreshold;
+        this.spellChance = template.spellChance;
+
         this.inventory = new com.bpm.minotaur.gamedata.Inventory();
+    }
+
+    // --- AI Getters ---
+    public MonsterTemplate.AiType getAiType() {
+        return aiType;
+    }
+
+    public float getHealThreshold() {
+        return healThreshold;
+    }
+
+    public int getSpellChance() {
+        return spellChance;
+    }
+
+    public int getMaxWarStrength() {
+        return maxWarStrength;
     }
 
     public int takeDamage(int amount) {

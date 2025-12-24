@@ -249,6 +249,11 @@ public class Hud implements Disposable {
         rightTable.row();
         rightTable.add(rightHandStatsLabel).left().padTop(10).padRight(10);
 
+        // --- Initialize Combat Menu ---
+        combatMenu = new CombatMenu(font);
+        combatMenu.setVisible(false);
+        stage.addActor(combatMenu);
+
         // --- Assemble Main Content Table ---
         mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
         mainContentTable.add(rightTable).expandX().right().spaceTop(10);
@@ -1058,6 +1063,86 @@ public class Hud implements Disposable {
 
         shapeRenderer.end();
     }
+
+    // --- NEW: Combat Menu UI ---
+    public class CombatMenu extends Table {
+        private final Label attackLabel;
+        private final Label castLabel;
+        private final Label rollLabel;
+        private final Label useLabel;
+        private final Label blockLabel;
+        private final Label[] options;
+        private int selectedIndex = 0;
+
+        public CombatMenu(BitmapFont font) {
+            this.setBackground(new TextureRegionDrawable(new TextureRegion(hudBackground))); // Reuse bg for now
+            this.setSize(300, 180);
+            this.setPosition(20, 160); // Bottom Left above message log
+
+            Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
+            Label.LabelStyle selectedStyle = new Label.LabelStyle(font, Color.YELLOW);
+
+            attackLabel = new Label("ATTACK", style);
+            castLabel = new Label("CAST", style);
+            rollLabel = new Label("ROLL", style);
+            useLabel = new Label("USE", style);
+            blockLabel = new Label("BLOCK", style);
+
+            options = new Label[] { attackLabel, castLabel, rollLabel, useLabel, blockLabel };
+
+            this.add(attackLabel).pad(5).left().row();
+            this.add(castLabel).pad(5).left().row();
+            this.add(rollLabel).pad(5).left().row();
+            this.add(useLabel).pad(5).left().row();
+            this.add(blockLabel).pad(5).left().row();
+
+            updateSelection();
+        }
+
+        public void navigateUp() {
+            selectedIndex--;
+            if (selectedIndex < 0)
+                selectedIndex = options.length - 1;
+            updateSelection();
+        }
+
+        public void navigateDown() {
+            selectedIndex++;
+            if (selectedIndex >= options.length)
+                selectedIndex = 0;
+            updateSelection();
+        }
+
+        private void updateSelection() {
+            for (int i = 0; i < options.length; i++) {
+                options[i].setColor(i == selectedIndex ? Color.YELLOW : Color.WHITE);
+                options[i].setText((i == selectedIndex ? "> " : "  ") + getOptionName(i));
+            }
+        }
+
+        private String getOptionName(int index) {
+            switch (index) {
+                case 0:
+                    return "ATTACK";
+                case 1:
+                    return "CAST";
+                case 2:
+                    return "ROLL";
+                case 3:
+                    return "USE";
+                case 4:
+                    return "BLOCK";
+                default:
+                    return "???";
+            }
+        }
+
+        public int getSelectedIndex() {
+            return selectedIndex;
+        }
+    }
+
+    public CombatMenu combatMenu; // Exposed for GameScreen
 
     // --- NEW: Helper method to support GameScreen calls ---
     public void addMessage(String message) {
