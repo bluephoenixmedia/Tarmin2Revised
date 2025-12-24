@@ -5,6 +5,7 @@ deepestLevelReached: 2
 monsterKills: {
 	class: java.util.HashMap
 	GIANT_ANT: 6
+	GHAST: 1
 	CLOAKED_SKELETON: 4
 	GIANT_SNAKE: 9
 	SKELETON: 13

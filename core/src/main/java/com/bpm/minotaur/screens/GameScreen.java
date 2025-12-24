@@ -103,6 +103,10 @@ public class GameScreen extends BaseScreen {
 
     private final TurnManager turnManager; // NEW
 
+    // --- Debug UI ---
+    private DebugSpawnOverlay debugSpawnOverlay;
+    private com.badlogic.gdx.InputMultiplexer inputMultiplexer;
+
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
         this.difficulty = difficulty;
@@ -132,12 +136,15 @@ public class GameScreen extends BaseScreen {
                 MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
                 break;
         }
+
+        // Initialize Input Multiplexer
+        inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
     }
 
     @Override
 
     public void show() {
-        Gdx.input.setInputProcessor(this);
+        // Gdx.input.setInputProcessor(this); // Handled below via Multiplexer
 
         if (animationManager == null) {
             animationManager = new AnimationManager(entityRenderer);
@@ -235,6 +242,21 @@ public class GameScreen extends BaseScreen {
             firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
         }
         DebugRenderer.printMazeToConsole(maze);
+
+        // --- Init Debug Overlay ---
+        if (debugSpawnOverlay == null) {
+            debugSpawnOverlay = new DebugSpawnOverlay(this, null);
+            debugSpawnOverlay.setVisible(false); // Hidden by default
+            // Center it or put it somewhere nice
+            debugSpawnOverlay.setPosition(VIRTUAL_WIDTH / 2f - 150, VIRTUAL_HEIGHT / 2f);
+            hud.stage.addActor(debugSpawnOverlay);
+        }
+
+        // Setup Input Multiplexer
+        inputMultiplexer.clear();
+        inputMultiplexer.addProcessor(hud.stage); // UI First
+        inputMultiplexer.addProcessor(this); // Game Second
+        Gdx.input.setInputProcessor(inputMultiplexer);
     }
 
     private void resetPlayerPosition() {
@@ -635,6 +657,55 @@ public class GameScreen extends BaseScreen {
         hud.addMessage("Debug: Spawned Armor Set");
     }
 
+    public void spawnDebugItem(Item.ItemType type) {
+        if (player == null || maze == null)
+            return;
+
+        // Spawn 1 tile in front
+        Vector2 dir = player.getDirectionVector();
+        int tx = (int) (player.getPosition().x + dir.x);
+        int ty = (int) (player.getPosition().y + dir.y);
+
+        if (maze.isPassable(tx, ty)) {
+            try {
+                // Create default variant for debug
+                Item item = game.getItemDataManager().createItem(type, tx, ty,
+                        com.bpm.minotaur.gamedata.item.ItemColor.WHITE, game.getAssetManager());
+                maze.addItem(item);
+                hud.addMessage("Spawned: " + type.name());
+            } catch (Exception e) {
+                Gdx.app.error("Debug", "Failed to spawn item: " + type, e);
+            }
+        } else {
+            hud.addMessage("Cannot spawn here (Blocked)");
+        }
+    }
+
+    public void spawnDebugMonster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType type) {
+        if (player == null || maze == null)
+            return;
+
+        // Spawn 1 tile in front
+        Vector2 dir = player.getDirectionVector();
+        int tx = (int) (player.getPosition().x + dir.x);
+        int ty = (int) (player.getPosition().y + dir.y);
+
+        if (maze.isPassable(tx, ty) && !maze.getMonsters().containsKey(new GridPoint2(tx, ty))) {
+            try {
+                com.bpm.minotaur.gamedata.monster.Monster monster = new com.bpm.minotaur.gamedata.monster.Monster(type,
+                        tx, ty, com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, game.getMonsterDataManager(),
+                        game.getAssetManager());
+                monster.scaleStats(currentLevel); // Scale to current level just in case
+                maze.addMonster(monster);
+                hud.addMessage("Spawned: " + type.name());
+            } catch (Exception e) {
+                Gdx.app.error("Debug", "Failed to spawn monster: " + type, e);
+            }
+        } else {
+            hud.addMessage("Cannot spawn here (Blocked or Occupied)");
+        }
+    }
+
     @Override
     public boolean keyDown(int keycode) {
         if (worldManager == null || player == null || maze == null)
@@ -961,6 +1032,12 @@ public class GameScreen extends BaseScreen {
                 Gdx.app.log("GameScreen", "Dumping Exploration Memory to Console...");
                 DebugRenderer.printExplorationToConsole(maze);
                 eventManager.addEvent(new GameEvent("Exploration Dumped to Console", 2f));
+                return true;
+            case Input.Keys.F12:
+                if (debugSpawnOverlay != null) {
+                    boolean isVisible = !debugSpawnOverlay.isVisible();
+                    debugSpawnOverlay.setVisible(isVisible); // Toggle
+                }
                 return true;
         }
 

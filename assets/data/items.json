@@ -4220,7 +4220,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "texturePath": "images/items/glowing_lichen.png"
   },
   "COOKED_MEAT": {
     "friendlyName": "Cooked Meat",
@@ -4266,12 +4267,13 @@
     "isKey": false,
     "isUsable": true,
     "isContainer": false,
-    "isRing": false
+    "isRing": false,
+    "texturePath": "images/items/cooked__meat.png"
   },
   "TOOTH": {
     "friendlyName": "Tooth",
     "description": "A sharp tooth.",
-    "texturePath": "images/items/box_.png",
+    "texturePath": "images/items/tooth.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4341,7 +4343,7 @@
   "BLOOD_VIAL": {
     "friendlyName": "Blood Vial",
     "description": "A vial of blood.",
-    "texturePath": "images/items/potion_gold.png",
+    "texturePath": "images/items/vial.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4376,7 +4378,7 @@
   "MONSTER_EYE": {
     "friendlyName": "Eye",
     "description": "A small eye.",
-    "texturePath": "images/items/blue_ring.png",
+    "texturePath": "images/items/eye.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4446,7 +4448,7 @@
   "MYSTERIOUS_PORTAL": {
     "friendlyName": "Mysterious Portal",
     "description": "It hums with strange energy.",
-    "texturePath": "images/items/box.png",
+    "texturePath": "images/items/mysterious_portal.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4484,7 +4486,7 @@
   },
   "AMULET": {
     "friendlyName": "Amulet",
-    "texturePath": "images/items/blue_ring.png",
+    "texturePath": "images/items/amulet.png",
     "spriteData": [
       "........................",
       "........................",

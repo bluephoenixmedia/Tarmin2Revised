@@ -311,6 +311,7 @@ public class Hud implements Disposable {
     }
 
     public void update(float dt) {
+        stage.act(dt);
 
         warStrengthValueLabel
                 .setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
