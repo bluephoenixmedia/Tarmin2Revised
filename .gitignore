@@ -164,3 +164,8 @@ Thumbs.db
 **/resource-config.json
 
 distribution/
+logs/
+saves/*.json    
+saves/world/
+logs/game_balance_session.log
+saves/profile.json

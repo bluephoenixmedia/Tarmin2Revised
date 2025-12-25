@@ -179,6 +179,31 @@ public class GameScreen extends BaseScreen {
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
         environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+
+        // --- Init Debug Overlay (Ensure it exists and is added to HUD) ---
+        if (hud != null) {
+            if (debugSpawnOverlay == null) {
+                debugSpawnOverlay = new DebugSpawnOverlay(this, null);
+                debugSpawnOverlay.setVisible(false); // Hidden by default
+                debugSpawnOverlay.setPosition(VIRTUAL_WIDTH / 2f - 150, VIRTUAL_HEIGHT / 2f);
+            }
+            // Ensure actor is in stage (idempotent or check logic could be added, but safe
+            // to add if not present)
+            // Scene2D actors can only have one parent, so adding it again just moves it or
+            // does nothing if same.
+            // But we should be careful.
+            if (debugSpawnOverlay.getStage() == null) {
+                hud.stage.addActor(debugSpawnOverlay);
+            }
+        }
+
+        // --- Setup Input Multiplexer (CRITICAL for resuming from Inventory) ---
+        if (hud != null) {
+            inputMultiplexer.clear();
+            inputMultiplexer.addProcessor(hud.stage); // UI First
+            inputMultiplexer.addProcessor(this); // Game Second
+            Gdx.input.setInputProcessor(inputMultiplexer);
+        }
     }
 
     public GameEventManager getEventManager() {
@@ -243,20 +268,7 @@ public class GameScreen extends BaseScreen {
         }
         DebugRenderer.printMazeToConsole(maze);
 
-        // --- Init Debug Overlay ---
-        if (debugSpawnOverlay == null) {
-            debugSpawnOverlay = new DebugSpawnOverlay(this, null);
-            debugSpawnOverlay.setVisible(false); // Hidden by default
-            // Center it or put it somewhere nice
-            debugSpawnOverlay.setPosition(VIRTUAL_WIDTH / 2f - 150, VIRTUAL_HEIGHT / 2f);
-            hud.stage.addActor(debugSpawnOverlay);
-        }
-
-        // Setup Input Multiplexer
-        inputMultiplexer.clear();
-        inputMultiplexer.addProcessor(hud.stage); // UI First
-        inputMultiplexer.addProcessor(this); // Game Second
-        Gdx.input.setInputProcessor(inputMultiplexer);
+        // Input setup moved to show()
     }
 
     private void resetPlayerPosition() {

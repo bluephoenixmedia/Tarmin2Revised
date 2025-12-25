@@ -18000,3 +18000,1580 @@ Caused by: java.lang.NoSuchMethodException: com.bpm.minotaur.gamedata.item.ItemM
 [15:54:44] [Player [DEBUG]] Constructor: Finished creating items.
 [15:54:58] [ItemDataManager [DEBUG]] createItem called for: FOOD
 [15:54:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+--- NEW SESSION: 2025-12-24 23:43:50 ---
+[23:43:50] [SESSION] Engine Start. Initializing systems...
+[23:43:50] [MonsterDataManager] Loaded 44 monster templates.
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: AXE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DART
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOOK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_FIREBALL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_FIREBALL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_LIGHTNING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_LIGHTNING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_SHIELD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_SHIELD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GAUNTLETS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HAUBERK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BREASTPLATE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HELMET
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LEGS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARMS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: EYES
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ALHULAK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ANKUS_ELEPHANT_GOAD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARQUEBUS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_DAIKYU
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FLIGHT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FORGET
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_GIANT_KIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_KENYAN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_MAIL_PIERCER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SHEAF
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SLEEP
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_STONE_FLIGHT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_WAR
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: ASSEGAI
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_BATTLE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_FOREARM
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_HAND_THROWING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_TWO_HANDED_BATTLE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BAGH_NAKH_TIGER_CLAWS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BARDS_FRIEND
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BASILARD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BELAYING_PIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_BARBED_DART
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_NEEDLE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BLUNDERBUS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BO_STICK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOLA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_LONG
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_SHORT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_ELVEN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_FOLDING_SHORT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_GIANT_KIN_LONG
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_KENYAN_LONG
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_LONG
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_PIXIE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_SHORT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER_SPIKED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CAHULAKS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CALTROP
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CARRIKAL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CAVILER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CESTUS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CHAKRAM
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CHATKCHA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DATCHI
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DWARVEN_WAR
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_GREAT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_RIM
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DISK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DOUBLED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HAND
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HEAVY
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_LIGHT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_BONE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_CLIMBING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_GIANT_KIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_PARRYING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_STONE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DAIKYU
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DART_BARBED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA_CESTUS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DIRK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DISK_CROSSBOW
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: DRAGONS_PAW
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_BLADEBACK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_CHAIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_FOOTMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_GRAIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_HORSEMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: FLINDBAR
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GADA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_ATTACHED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_HELD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_FOOTMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_HORSEMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GLOVE_NAIL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: GOUGE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_ONE_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_TWO_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET_HAWK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: HORA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: IMPALER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: IUAK_SNOW_BLADE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: JAMBIYA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_ONE_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_ONE_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_TWO_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_TWO_HANDED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KATAR_PUNCH_DAGGER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KICK_SLASHER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_BONE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_HARNESS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_STONE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_THROWING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_WIDOWS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KNOBKERRIE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KORA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: KUKRI
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_FLIGHT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_HEAVY_HORSE1
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_JOUSTING1
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_LIGHT_HORSE1
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_MEDIUM_HORSE1
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LASSO
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: LOTULIS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACA
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_BLADEBACK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS_WHISTLING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GIANT_KIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GREAT
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS_WHISTLING
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MACHETE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MADU
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MAIN_GAUCHE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MANCATCHER2
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR_DOUBLE_BALL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: MUSKET
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: NET
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: NUNCHAKU
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: NYEK_PLE_NEN_TOH
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PATA1
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PESHKABZ
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_FOOTMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_HORSEMANS
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_ICE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PIKE_WEIGHTED
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: PISTOL_STARWHEEL
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_AWL_PIKE3
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BARDICHE
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BEC_DE_CORBIN
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BILL_GUISARME
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_CRUSHER
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD_FORK
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GIANT_KIN_HALBERD
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE_GUISARME4
+[23:43:50] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE4
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME_VOULGE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GYTHKA
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HALBERD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HOOK_FAUCHARD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_LUCERN_HAMMER3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_MILITARY_FORK4
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_NAGINATA3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_PARTISAN3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_QUAD_FAUCHARD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_RANSEUR3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_SPETUM3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TETSUBO
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TRIKAL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_VOULGE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: PUCHIK
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: PUNCH_CUTTER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: QUABONE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HAND
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HEAVY
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_LIGHT
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: QUARTERSTAFF
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: RAZOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: RITIIK
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SAI
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SAP
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SCOURGE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SCYTHE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SPIKE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHOKA
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHOTEL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHURIKEN
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SICKLE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SLING
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_BULLET
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_STONE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_CASTER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_DOUBLE_BLADED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HOOK_TAILED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_TWO_HANDED3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_PADDLE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_THROWING
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_TWO_HANDED3
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_ELBOW
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_HEAD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_KNEE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKES_BODY
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING_STINKPOT
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HAMANUS
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HORNHEAD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STICK_GOBLIN
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STICKS_SINGING
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STILETTO
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BROAD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CLAYMORE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CUTLASS
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DRUSUS
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DWARVEN_CLAYMORE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FALCHION
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FLAMBERGE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GIANT_KIN_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GREAT_SCIMITAR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_HOOK
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHOPESH
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_LONG
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MANDIBLE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MARINERS
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIERCER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIXIE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_RAPIER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SABRE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SCIMITAR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SHORT
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TALWAR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_WAKIZASHI
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SWORDLET
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TALID
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TORTOISE_BLADES
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_ONE_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_TWO_HANDED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_HELD
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_THROWN
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: TUFENK
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WARHAMMER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_CHAIN
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_MASTERS
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WRIST_RAZOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: ZAGHNAL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BANDED_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BRIGANDINE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BACK_AND_BREAST
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BASINET
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HAUBERK
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LAMELLAR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CORD_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CAP
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: CLOSED_FACE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_COIF
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: GREAT_HELM
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_HELM
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: OPEN_FACED
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: IMPROVED_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LAMELLAR_SHIRT
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_SEGMENTA
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_AND_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: METAL_LAMELLAR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_ARMOR
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SMALL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_MEDIUM
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_LARGE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: THREE_QUARTER_PLATE
+[23:43:51] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMOR
+[23:43:51] [ItemDataManager] Loaded 113 item templates.
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: BARD_S_FRIEND
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: DRAGON_S_PAW
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_FOOTMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_HORSEMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_FOOTMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_HORSEMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: KNIFE_WIDOW_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S_WHISTLING
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S_WHISTLING
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_FOOTMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_HORSEMAN_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: STAFF_HAMANU_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: SWORD_MARINER_S
+[23:43:51] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: WHIP_MASTER_S
+[23:43:51] [ItemDataManager] Loaded 248 new weapons.
+[23:43:51] [ItemDataManager] Loaded 53 new armor items.
+[23:43:51] [Tarmin2] Loading SpawnTableData...
+[23:43:51] [Tarmin2] SpawnTableData loaded.
+[23:43:51] [LoadingScreen] Starting asset loading...
+[23:43:57] [LoadingScreen] Asset loading complete!
+[23:43:59] [MainMenuScreen] Starting game in mode: ADVANCED
+[23:44:01] [WorldManager] World Initialized with Seed: -839569877540505392
+[23:44:01] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[23:44:01] [DiscoveryManager] Initializing new game discovery state...
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_GOLD -> BLINDNESS
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_PINK -> LEVITATION
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> CONFUSION
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> HEALING
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_GREEN -> POISON
+[23:44:01] [DiscoveryManager] Mapped Potion: POTION_BLUE -> GAIN_STRENGTH
+[23:44:01] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:01] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[23:44:01] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[23:44:01] [Player [DEBUG]] Constructor: Creating starting items...
+[23:44:01] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[23:44:01] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[23:44:01] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[23:44:01] [Player [DEBUG]] Constructor: Finished creating items.
+--- NEW SESSION: 2025-12-24 23:44:15 ---
+[23:44:15] [SESSION] Engine Start. Initializing systems...
+[23:44:15] [MonsterDataManager] Loaded 44 monster templates.
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: AXE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DART
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOOK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_FIREBALL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_FIREBALL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_LIGHTNING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_LIGHTNING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_SHIELD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_SHIELD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GAUNTLETS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HAUBERK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BREASTPLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HELMET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LEGS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARMS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: EYES
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ALHULAK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ANKUS_ELEPHANT_GOAD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARQUEBUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_DAIKYU
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FLIGHT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FORGET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_GIANT_KIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_KENYAN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_MAIL_PIERCER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SHEAF
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SLEEP
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_STONE_FLIGHT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_WAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ASSEGAI
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_BATTLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_FOREARM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_HAND_THROWING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_TWO_HANDED_BATTLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BAGH_NAKH_TIGER_CLAWS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BARDS_FRIEND
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BASILARD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BELAYING_PIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_BARBED_DART
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_NEEDLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BLUNDERBUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BO_STICK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOLA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_LONG
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_SHORT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_ELVEN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_FOLDING_SHORT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_GIANT_KIN_LONG
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_KENYAN_LONG
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_LONG
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_PIXIE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_SHORT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER_SPIKED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CAHULAKS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CALTROP
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CARRIKAL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CAVILER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CESTUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHAKRAM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHATKCHA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DATCHI
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DWARVEN_WAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_GREAT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_RIM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DISK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DOUBLED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HAND
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HEAVY
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_LIGHT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_BONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_CLIMBING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_GIANT_KIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_PARRYING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_STONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DAIKYU
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DART_BARBED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA_CESTUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DIRK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DISK_CROSSBOW
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: DRAGONS_PAW
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_BLADEBACK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_CHAIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_FOOTMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_GRAIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_HORSEMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FLINDBAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GADA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_ATTACHED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_HELD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_FOOTMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_HORSEMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GLOVE_NAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GOUGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET_HAWK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HORA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: IMPALER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: IUAK_SNOW_BLADE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: JAMBIYA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KATAR_PUNCH_DAGGER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KICK_SLASHER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_BONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_HARNESS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_STONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_THROWING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_WIDOWS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KNOBKERRIE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KORA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: KUKRI
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_FLIGHT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_HEAVY_HORSE1
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_JOUSTING1
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_LIGHT_HORSE1
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_MEDIUM_HORSE1
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LASSO
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LOTULIS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_BLADEBACK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS_WHISTLING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GIANT_KIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GREAT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS_WHISTLING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MACHETE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MADU
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MAIN_GAUCHE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MANCATCHER2
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR_DOUBLE_BALL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MUSKET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: NET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: NUNCHAKU
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: NYEK_PLE_NEN_TOH
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PATA1
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PESHKABZ
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_FOOTMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_HORSEMANS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_ICE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PIKE_WEIGHTED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PISTOL_STARWHEEL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_AWL_PIKE3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BARDICHE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BEC_DE_CORBIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BILL_GUISARME
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_CRUSHER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD_FORK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GIANT_KIN_HALBERD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE_GUISARME4
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE4
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME_VOULGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GYTHKA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HALBERD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HOOK_FAUCHARD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_LUCERN_HAMMER3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_MILITARY_FORK4
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_NAGINATA3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_PARTISAN3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_QUAD_FAUCHARD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_RANSEUR3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_SPETUM3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TETSUBO
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TRIKAL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_VOULGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PUCHIK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PUNCH_CUTTER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: QUABONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HAND
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HEAVY
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_LIGHT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: QUARTERSTAFF
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: RAZOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: RITIIK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SAI
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SAP
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SCOURGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SCYTHE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SPIKE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHOKA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHOTEL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHURIKEN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SICKLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SLING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_BULLET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_STONE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_CASTER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_DOUBLE_BLADED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HOOK_TAILED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_TWO_HANDED3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_PADDLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_THROWING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_TWO_HANDED3
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_ELBOW
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_HEAD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_KNEE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKES_BODY
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING_STINKPOT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HAMANUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HORNHEAD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STICK_GOBLIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STICKS_SINGING
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STILETTO
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BROAD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CLAYMORE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CUTLASS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DRUSUS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DWARVEN_CLAYMORE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FALCHION
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FLAMBERGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GIANT_KIN_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GREAT_SCIMITAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_HOOK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHOPESH
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_LONG
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MANDIBLE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MARINERS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIERCER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIXIE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_RAPIER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SABRE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SCIMITAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SHORT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TALWAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_WAKIZASHI
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SWORDLET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TALID
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TORTOISE_BLADES
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_ONE_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_TWO_HANDED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_HELD
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_THROWN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: TUFENK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WARHAMMER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_CHAIN
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_MASTERS
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WRIST_RAZOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: ZAGHNAL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BANDED_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BRIGANDINE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BACK_AND_BREAST
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BASINET
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HAUBERK
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LAMELLAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CORD_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CAP
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: CLOSED_FACE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_COIF
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: GREAT_HELM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_HELM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: OPEN_FACED
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: IMPROVED_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LAMELLAR_SHIRT
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_SEGMENTA
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_AND_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: METAL_LAMELLAR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_ARMOR
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SMALL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_MEDIUM
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_LARGE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: THREE_QUARTER_PLATE
+[23:44:15] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMOR
+[23:44:15] [ItemDataManager] Loaded 113 item templates.
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: BARD_S_FRIEND
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: DRAGON_S_PAW
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_FOOTMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_HORSEMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_FOOTMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_HORSEMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: KNIFE_WIDOW_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S_WHISTLING
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S_WHISTLING
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_FOOTMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_HORSEMAN_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: STAFF_HAMANU_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: SWORD_MARINER_S
+[23:44:15] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: WHIP_MASTER_S
+[23:44:15] [ItemDataManager] Loaded 248 new weapons.
+[23:44:15] [ItemDataManager] Loaded 53 new armor items.
+[23:44:15] [Tarmin2] Loading SpawnTableData...
+[23:44:15] [Tarmin2] SpawnTableData loaded.
+[23:44:15] [LoadingScreen] Starting asset loading...
+[23:44:21] [LoadingScreen] Asset loading complete!
+[23:44:22] [MainMenuScreen] Starting game in mode: ADVANCED
+[23:44:23] [WorldManager] World Initialized with Seed: -5257493776053992264
+[23:44:23] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[23:44:23] [DiscoveryManager] Initializing new game discovery state...
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_PINK -> HEALING
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> GAIN_STRENGTH
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_BLUE -> BLINDNESS
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_GOLD -> CONFUSION
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> POISON
+[23:44:23] [DiscoveryManager] Mapped Potion: POTION_GREEN -> LEVITATION
+[23:44:23] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 5306847443319235593
+[23:44:23] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[23:44:23] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[23:44:23] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: CALTROP
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: HELMET
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: LEATHER_HELM
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_SHIELD
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_SHIELD
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: BOW_COMPOSITE_LONG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: BOW
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: WHIP
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: CAP
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SCROLL
+[23:44:23] [ItemDataManager] Converted generic SCROLL to SCROLL_C
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[23:44:23] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: RUSTY_ARMOR
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: PARCHMENT_SCRAP
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: GLOWING_LICHEN
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FUNGAL_SPORE
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: GLOWING_LICHEN
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: MUD
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: STICK
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: SPIDER_SILK
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: BENT_NAIL
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: FUNGAL_SPORE
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[23:44:23] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[23:44:23] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[23:44:23] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[23:44:23] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[23:44:23] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Whip (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Bow, Composite Long (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Helmet (ARMOR) | Val: 20 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Shield (ARMOR) | Val: 20 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Bronze Bow +1 (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Bronze Caltrop (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[23:44:23] [LOOT_SPAWN] Lvl 1 | Item: Small Shield (ARMOR) | Val: 20 | Rarity: Common/Tan
+[23:44:24] [Player [DEBUG]] Constructor: Creating starting items...
+[23:44:24] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[23:44:24] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[23:44:24] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[23:44:24] [Player [DEBUG]] Constructor: Finished creating items.
+[23:44:32] [UnlockManager] Profile loaded successfully.
+[23:44:38] [COMBAT_START] Vs GIANT_SCORPION (MCR: 35) | Player PPS: 30 | Delta: -5 (Even Match)
+[23:44:38] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[23:44:38] [CombatManager] Combat started with GIANT_SCORPION. State: PLAYER_MENU
+[23:44:40] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:40] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 8
+[23:44:40] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:40] [Player] Taken Damage: 2 (Adj. Amount: 5)
+[23:44:40] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 14
+[23:44:40] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:41] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:41] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 1
+[23:44:41] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:41] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[23:44:41] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 13
+[23:44:41] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:42] [CombatManager] Instant Attack: Rolled 3 on D4
+[23:44:42] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 0
+[23:44:42] [CombatManager] You have defeated GIANT_SCORPION
+[23:44:42] [ItemDataManager [DEBUG]] createItem called for: BONE
+[23:44:42] [LOOT_DROP] Dropped Giant scorpion Bone from GIANT_SCORPION
+[23:44:42] [ItemDataManager [DEBUG]] createItem called for: MEAT
+[23:44:42] [Item [DEBUG]] Created FOOD Item: MEAT (isFood=true)
+[23:44:42] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[23:44:42] [COMBAT_END] Result: VICTORY | Turns: 3 | Total Dmg Taken: 3
+[23:44:42] [CombatManager] Combat ended.
+[23:44:46] [COMBAT_START] Vs GHOUL (MCR: 45) | Player PPS: 30 | Delta: -15 (Hard Fight)
+[23:44:46] [CombatManager] Player auto-turned to face EAST
+[23:44:46] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[23:44:46] [CombatManager] Combat started with GHOUL. State: PLAYER_MENU
+[23:44:48] [COMBAT_ACTION] Player Guarded. Block +5
+[23:44:48] [COMBAT_MITIGATION] Incoming: 6 | Block: 5 | Reduced By: 5 | Final: 1
+[23:44:48] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:48] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 12
+[23:44:48] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:49] [CombatManager] Instant Attack: Rolled 3 on D4
+[23:44:49] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 14
+[23:44:49] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:49] [COMBAT_MITIGATION] Incoming: 3 | Block: 5 | Reduced By: 3 | Final: 0
+[23:44:49] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:49] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 11
+[23:44:49] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:49] [CombatManager] Instant Attack: Rolled 1 on D4
+[23:44:49] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 10
+[23:44:49] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:49] [COMBAT_MITIGATION] Incoming: 3 | Block: 5 | Reduced By: 3 | Final: 0
+[23:44:49] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:49] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 10
+[23:44:49] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:49] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:49] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 3
+[23:44:49] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:50] [COMBAT_MITIGATION] Incoming: 3 | Block: 5 | Reduced By: 3 | Final: 0
+[23:44:50] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:50] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 9
+[23:44:50] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:50] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:50] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 0
+[23:44:50] [CombatManager] You have defeated GHOUL
+[23:44:50] [ItemDataManager [DEBUG]] createItem called for: BONE
+[23:44:50] [LOOT_DROP] Dropped Ghoul Bone from GHOUL
+[23:44:50] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[23:44:50] [COMBAT_END] Result: VICTORY | Turns: 4 | Total Dmg Taken: 4
+[23:44:50] [CombatManager] Combat ended.
+[23:44:50] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[23:44:53] [COMBAT_START] Vs GHOUL (MCR: 45) | Player PPS: 30 | Delta: -15 (Hard Fight)
+[23:44:53] [CombatManager] Player auto-turned to face EAST
+[23:44:53] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[23:44:53] [CombatManager] Combat started with GHOUL. State: PLAYER_MENU
+[23:44:54] [CombatManager] Instant Attack: Rolled 1 on D4
+[23:44:54] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 16
+[23:44:54] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:54] [COMBAT_MITIGATION] Incoming: 4 | Block: 5 | Reduced By: 4 | Final: 0
+[23:44:54] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:54] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 13
+[23:44:54] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:54] [CombatManager] Instant Attack: Rolled 3 on D4
+[23:44:54] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 10
+[23:44:54] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:55] [COMBAT_MITIGATION] Incoming: 4 | Block: 5 | Reduced By: 4 | Final: 0
+[23:44:55] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:55] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 12
+[23:44:55] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:55] [CombatManager] Instant Attack: Rolled 1 on D4
+[23:44:55] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 6
+[23:44:55] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:55] [COMBAT_MITIGATION] Incoming: 3 | Block: 5 | Reduced By: 3 | Final: 0
+[23:44:55] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:55] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 11
+[23:44:55] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:55] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:55] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 0
+[23:44:55] [CombatManager] You have defeated GHOUL
+[23:44:55] [ItemDataManager [DEBUG]] createItem called for: BONE
+[23:44:55] [LOOT_DROP] Dropped Ghoul Bone from GHOUL
+[23:44:55] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[23:44:55] [COMBAT_END] Result: VICTORY | Turns: 4 | Total Dmg Taken: 3
+[23:44:55] [CombatManager] Combat ended.
+[23:44:57] [COMBAT_START] Vs SKELETON (MCR: 25) | Player PPS: 30 | Delta: 5 (Even Match)
+[23:44:57] [CombatManager] Player auto-turned to face WEST
+[23:44:57] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[23:44:57] [CombatManager] Combat started with SKELETON. State: PLAYER_MENU
+[23:44:58] [CombatManager] Instant Attack: Rolled 4 on D4
+[23:44:58] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 8
+[23:44:58] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:58] [COMBAT_MITIGATION] Incoming: 5 | Block: 5 | Reduced By: 5 | Final: 0
+[23:44:58] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:58] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 10
+[23:44:58] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:59] [CombatManager] Instant Attack: Rolled 3 on D4
+[23:44:59] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 2
+[23:44:59] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[23:44:59] [COMBAT_MITIGATION] Incoming: 2 | Block: 5 | Reduced By: 2 | Final: 0
+[23:44:59] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[23:44:59] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 9
+[23:44:59] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[23:44:59] [CombatManager] Instant Attack: Rolled 1 on D4
+[23:44:59] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 0
+[23:44:59] [CombatManager] You have defeated SKELETON
+[23:44:59] [ItemDataManager [DEBUG]] createItem called for: BONE
+[23:44:59] [LOOT_DROP] Dropped Skeleton Bone from SKELETON
+[23:44:59] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[23:44:59] [COMBAT_END] Result: VICTORY | Turns: 3 | Total Dmg Taken: 2
+[23:44:59] [CombatManager] Combat ended.
+[23:45:03] [ECONOMY] PICKUP: Skeleton Bone (Val/Amt: 1)
+[23:45:04] [ECONOMY] PICKUP: Mud Pile (Val/Amt: 0)
+[23:45:07] [DICE_DEBUG] Picked up Knife -> Added Rusty Iron Die
+[23:45:07] [ECONOMY] PICKUP: Knife (Val/Amt: 10)
+[23:45:08] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[23:45:08] [DiscoveryManager] Saved discovery state.
+--- NEW SESSION: 2025-12-25 10:16:04 ---
+[10:16:04] [SESSION] Engine Start. Initializing systems...
+[10:16:04] [MonsterDataManager] Loaded 44 monster templates.
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: AXE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DART
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOOK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_FIREBALL
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_FIREBALL
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_LIGHTNING
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_LIGHTNING
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_SHIELD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_SHIELD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: GAUNTLETS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: HAUBERK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BREASTPLATE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: HELMET
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: LEGS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARMS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: EYES
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ALHULAK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ANKUS_ELEPHANT_GOAD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARQUEBUS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_DAIKYU
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FLIGHT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FORGET
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_GIANT_KIN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_KENYAN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_MAIL_PIERCER
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SHEAF
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SLEEP
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_STONE_FLIGHT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_WAR
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: ASSEGAI
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_BATTLE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_FOREARM
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_HAND_THROWING
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_TWO_HANDED_BATTLE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BAGH_NAKH_TIGER_CLAWS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BARDS_FRIEND
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BASILARD
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BELAYING_PIN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_BARBED_DART
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_NEEDLE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BLUNDERBUS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BO_STICK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOLA
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_LONG
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_SHORT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_ELVEN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_FOLDING_SHORT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_GIANT_KIN_LONG
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_KENYAN_LONG
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_LONG
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_PIXIE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_SHORT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER_SPIKED
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CAHULAKS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CALTROP
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CARRIKAL
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CAVILER
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CESTUS
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CHAKRAM
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CHATKCHA
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DATCHI
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DWARVEN_WAR
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_GREAT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_RIM
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DISK
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DOUBLED
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HAND
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HEAVY
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_LIGHT
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_BONE
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_CLIMBING
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_GIANT_KIN
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_PARRYING
+[10:16:04] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_STONE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DAIKYU
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DART_BARBED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA_CESTUS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DIRK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DISK_CROSSBOW
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: DRAGONS_PAW
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_BLADEBACK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_CHAIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_FOOTMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_GRAIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_HORSEMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FLINDBAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GADA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_ATTACHED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_HELD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_FOOTMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_HORSEMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GLOVE_NAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GOUGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET_HAWK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HORA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: IMPALER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: IUAK_SNOW_BLADE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: JAMBIYA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KATAR_PUNCH_DAGGER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KICK_SLASHER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_BONE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_HARNESS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_STONE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_THROWING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_WIDOWS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KNOBKERRIE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KORA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: KUKRI
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_FLIGHT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_HEAVY_HORSE1
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_JOUSTING1
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_LIGHT_HORSE1
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_MEDIUM_HORSE1
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LASSO
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LOTULIS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_BLADEBACK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS_WHISTLING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GIANT_KIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GREAT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS_WHISTLING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MACHETE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MADU
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MAIN_GAUCHE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MANCATCHER2
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR_DOUBLE_BALL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MUSKET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: NET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: NUNCHAKU
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: NYEK_PLE_NEN_TOH
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PATA1
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PESHKABZ
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_FOOTMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_HORSEMANS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_ICE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PIKE_WEIGHTED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PISTOL_STARWHEEL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_AWL_PIKE3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BARDICHE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BEC_DE_CORBIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BILL_GUISARME
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_CRUSHER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD_FORK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GIANT_KIN_HALBERD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE_GUISARME4
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE4
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME_VOULGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GYTHKA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HALBERD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HOOK_FAUCHARD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_LUCERN_HAMMER3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_MILITARY_FORK4
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_NAGINATA3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_PARTISAN3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_QUAD_FAUCHARD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_RANSEUR3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_SPETUM3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TETSUBO
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TRIKAL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_VOULGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PUCHIK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PUNCH_CUTTER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: QUABONE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HAND
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HEAVY
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_LIGHT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: QUARTERSTAFF
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: RAZOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: RITIIK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SAI
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SAP
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SCOURGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SCYTHE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SPIKE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHOKA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHOTEL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHURIKEN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SICKLE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SLING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_BULLET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_STONE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_CASTER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_DOUBLE_BLADED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HOOK_TAILED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_TWO_HANDED3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_PADDLE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_THROWING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_TWO_HANDED3
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_ELBOW
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_HEAD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_KNEE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKES_BODY
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING_STINKPOT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HAMANUS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HORNHEAD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STICK_GOBLIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STICKS_SINGING
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STILETTO
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BROAD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CLAYMORE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CUTLASS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DRUSUS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DWARVEN_CLAYMORE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FALCHION
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FLAMBERGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GIANT_KIN_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GREAT_SCIMITAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_HOOK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHOPESH
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_LONG
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MANDIBLE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MARINERS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIERCER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIXIE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_RAPIER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SABRE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SCIMITAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SHORT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TALWAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_WAKIZASHI
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SWORDLET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TALID
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TORTOISE_BLADES
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_ONE_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_TWO_HANDED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_HELD
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_THROWN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: TUFENK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WARHAMMER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_CHAIN
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_MASTERS
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WRIST_RAZOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: ZAGHNAL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BANDED_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BRIGANDINE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BACK_AND_BREAST
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BASINET
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HAUBERK
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LAMELLAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CORD_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CAP
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: CLOSED_FACE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_COIF
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: GREAT_HELM
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_HELM
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: OPEN_FACED
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: IMPROVED_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LAMELLAR_SHIRT
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_SEGMENTA
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_AND_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: METAL_LAMELLAR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_ARMOR
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SMALL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_MEDIUM
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_LARGE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: THREE_QUARTER_PLATE
+[10:16:05] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMOR
+[10:16:05] [ItemDataManager] Loaded 113 item templates.
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: BARD_S_FRIEND
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: DRAGON_S_PAW
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_FOOTMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_HORSEMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_FOOTMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_HORSEMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: KNIFE_WIDOW_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S_WHISTLING
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S_WHISTLING
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_FOOTMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_HORSEMAN_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: STAFF_HAMANU_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: SWORD_MARINER_S
+[10:16:05] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: WHIP_MASTER_S
+[10:16:05] [ItemDataManager] Loaded 248 new weapons.
+[10:16:05] [ItemDataManager] Loaded 53 new armor items.
+[10:16:05] [Tarmin2] Loading SpawnTableData...
+[10:16:05] [Tarmin2] SpawnTableData loaded.
+[10:16:05] [LoadingScreen] Starting asset loading...
+[10:16:11] [LoadingScreen] Asset loading complete!
+[10:16:29] [MainMenuScreen] Starting game in mode: ADVANCED
+[10:16:31] [WorldManager] World Initialized with Seed: -5650037404514257388
+[10:16:31] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[10:16:31] [DiscoveryManager] Loaded discovery state.
+[10:16:31] [ERROR] [WorldManager] Failed to load/parse chunk: (0, 0)
+com.badlogic.gdx.utils.SerializationException: Error reading file: saves/world/chunk_L1_0_0.json
+	at com.badlogic.gdx.utils.Json.fromJson(Json.java:802)
+	at com.bpm.minotaur.managers.WorldManager.loadChunk(WorldManager.java:256)
+	at com.bpm.minotaur.managers.WorldManager.getInitialMaze(WorldManager.java:116)
+	at com.bpm.minotaur.screens.GameScreen.generateLevel(GameScreen.java:241)
+	at com.bpm.minotaur.screens.GameScreen.show(GameScreen.java:171)
+	at com.badlogic.gdx.Game.setScreen(Game.java:63)
+	at com.bpm.minotaur.screens.MainMenuScreen.startGame(MainMenuScreen.java:171)
+	at com.bpm.minotaur.screens.MainMenuScreen.touchDown(MainMenuScreen.java:205)
+	at com.badlogic.gdx.InputEventQueue.drain(InputEventQueue.java:67)
+	at com.badlogic.gdx.backends.lwjgl3.DefaultLwjgl3Input.update(DefaultLwjgl3Input.java:190)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window.update(Lwjgl3Window.java:414)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.loop(Lwjgl3Application.java:181)
+	at com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application.<init>(Lwjgl3Application.java:153)
+	at com.bpm.minotaur.lwjgl3.Lwjgl3Launcher.createApplication(Lwjgl3Launcher.java:16)
+	at com.bpm.minotaur.lwjgl3.Lwjgl3Launcher.main(Lwjgl3Launcher.java:12)
+Caused by: com.badlogic.gdx.utils.SerializationException: Class cannot be created (missing no-arg constructor): com.bpm.minotaur.gamedata.item.ItemModifier
+Serialization trace:
+modifiers (com.bpm.minotaur.gamedata.ChunkData$ItemData)
+items (com.bpm.minotaur.gamedata.ChunkData)
+	at com.badlogic.gdx.utils.Json.newInstance(Json.java:1225)
+	at com.badlogic.gdx.utils.Json.readValue(Json.java:1013)
+	at com.badlogic.gdx.utils.Json.readValue(Json.java:1113)
+	at com.badlogic.gdx.utils.Json.readFields(Json.java:906)
+	at com.badlogic.gdx.utils.Json.readValue(Json.java:1078)
+	at com.badlogic.gdx.utils.Json.readValue(Json.java:1113)
+	at com.badlogic.gdx.utils.Json.readFields(Json.java:906)
+	at com.badlogic.gdx.utils.Json.readValue(Json.java:1078)
+	at com.badlogic.gdx.utils.Json.fromJson(Json.java:800)
+	... 14 more
+Caused by: com.badlogic.gdx.utils.reflect.ReflectionException: Could not instantiate instance of class: com.bpm.minotaur.gamedata.item.ItemModifier
+	at com.badlogic.gdx.utils.reflect.ClassReflection.newInstance(ClassReflection.java:95)
+	at com.badlogic.gdx.utils.Json.newInstance(Json.java:1207)
+	... 22 more
+Caused by: java.lang.InstantiationException: com.bpm.minotaur.gamedata.item.ItemModifier
+	at java.base/java.lang.Class.newInstance(Class.java:639)
+	at com.badlogic.gdx.utils.reflect.ClassReflection.newInstance(ClassReflection.java:93)
+	... 23 more
+Caused by: java.lang.NoSuchMethodException: com.bpm.minotaur.gamedata.item.ItemModifier.<init>()
+	at java.base/java.lang.Class.getConstructor0(Class.java:3585)
+	at java.base/java.lang.Class.newInstance(Class.java:626)
+	... 24 more
+
+[10:16:31] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 6275354715416651053
+[10:16:31] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[10:16:31] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[10:16:31] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[10:16:31] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[10:16:31] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: HEALING
+[10:16:31] [ItemDataManager [DEBUG]] Setting trueEffect (HEALING) and identified (false) on item.
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[10:16:31] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[10:16:31] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[10:16:31] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[10:16:31] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[10:16:31] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[10:16:31] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SPEAR_CASTER
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SCROLL
+[10:16:31] [ItemDataManager] Converted generic SCROLL to SCROLL_F
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: COINS
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: BOX
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[10:16:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: KEY
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: BROKEN_COLUMN
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: RUSTED_CHAIN
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: CERAMIC_SHARD
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: CHARRED_WOOD
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: BAT_GUANO
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: RUSTED_CHAIN
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: RAT_SKULL
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: LOOSE_BRICK
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: SPIDER_SILK
+[10:16:31] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[10:16:31] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[10:16:31] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[10:16:31] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Spear Caster (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[10:16:31] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[10:16:31] [Player [DEBUG]] Constructor: Creating starting items...
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[10:16:31] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[10:16:31] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[10:16:31] [Player [DEBUG]] Constructor: Finished creating items.
+[10:16:37] [UnlockManager] Profile loaded successfully.
+[10:16:41] [COMBAT_START] Vs GIANT_ANT (MCR: 46) | Player PPS: 30 | Delta: -16 (Hard Fight)
+[10:16:41] [CombatManager] Player auto-turned to face EAST
+[10:16:41] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:16:41] [CombatManager] Combat started with GIANT_ANT. State: PLAYER_MENU
+[10:16:42] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:16:42] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 5 | Target HP: 3
+[10:16:42] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:16:43] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[10:16:43] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 14
+[10:16:43] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:16:43] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:16:43] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 0
+[10:16:43] [CombatManager] You have defeated GIANT_ANT
+[10:16:43] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:16:43] [LOOT_DROP] Dropped Giant ant Bone from GIANT_ANT
+[10:16:43] [ItemDataManager [DEBUG]] createItem called for: MEAT
+[10:16:43] [Item [DEBUG]] Created FOOD Item: MEAT (isFood=true)
+[10:16:43] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:16:43] [COMBAT_END] Result: VICTORY | Turns: 2 | Total Dmg Taken: 2
+[10:16:43] [CombatManager] Combat ended.
+[10:16:45] [ECONOMY] CONSUME: Meat (Val/Amt: 1)
+[10:16:45] [ECONOMY] PICKUP: Meat (Val/Amt: 5)
+[10:16:46] [ECONOMY] PICKUP: Giant ant Bone (Val/Amt: 1)
+[10:16:48] [ECONOMY] CONSUME: Meat (Val/Amt: 1)
+[10:16:48] [ECONOMY] PICKUP: Meat (Val/Amt: 5)
+[10:16:49] [COMBAT_START] Vs GHOUL (MCR: 45) | Player PPS: 30 | Delta: -15 (Hard Fight)
+[10:16:49] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:16:49] [CombatManager] Combat started with GHOUL. State: PLAYER_MENU
+[10:16:51] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:16:51] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 14
+[10:16:51] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:16:51] [Player] Taken Damage: 2 (Adj. Amount: 5)
+[10:16:51] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 12
+[10:16:51] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:16:51] [CombatManager] Instant Attack: Rolled 1 on D4
+[10:16:51] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 10
+[10:16:51] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:16:51] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[10:16:51] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 11
+[10:16:51] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:16:52] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:16:52] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 3
+[10:16:52] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:16:52] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[10:16:52] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 10
+[10:16:52] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:16:52] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:16:52] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 0
+[10:16:52] [CombatManager] You have defeated GHOUL
+[10:16:52] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:16:52] [LOOT_DROP] Dropped Ghoul Bone from GHOUL
+[10:16:52] [ItemDataManager [DEBUG]] createItem called for: MEAT
+[10:16:52] [Item [DEBUG]] Created FOOD Item: MEAT (isFood=true)
+[10:16:52] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:16:52] [COMBAT_END] Result: VICTORY | Turns: 4 | Total Dmg Taken: 4
+[10:16:52] [CombatManager] Combat ended.
+[10:16:54] [ECONOMY] CONSUME: Meat (Val/Amt: 1)
+[10:16:54] [ECONOMY] PICKUP: Meat (Val/Amt: 5)
+[10:16:55] [ECONOMY] PICKUP: Ghoul Bone (Val/Amt: 1)
+[10:16:57] [ECONOMY] PICKUP: Small Bag (Val/Amt: 10)
+[10:17:01] [ECONOMY] RES_GAIN: Food (Val/Amt: 8)
+[10:17:01] [COMBAT_START] Vs GIANT_SNAKE (MCR: 24) | Player PPS: 30 | Delta: 6 (Even Match)
+[10:17:01] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:17:01] [CombatManager] Combat started with GIANT_SNAKE. State: PLAYER_MENU
+[10:17:02] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:17:02] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 6
+[10:17:02] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:02] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[10:17:02] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 9
+[10:17:02] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:03] [CombatManager] Instant Attack: Rolled 1 on D4
+[10:17:03] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 4 | Target HP: 2
+[10:17:03] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:03] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[10:17:03] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 8
+[10:17:03] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:03] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:17:03] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 0
+[10:17:03] [CombatManager] You have defeated GIANT_SNAKE
+[10:17:03] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:17:03] [LOOT_DROP] Dropped Giant snake Bone from GIANT_SNAKE
+[10:17:03] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:17:03] [COMBAT_END] Result: VICTORY | Turns: 3 | Total Dmg Taken: 2
+[10:17:03] [CombatManager] Combat ended.
+[10:17:05] [ECONOMY] PICKUP: Giant snake Bone (Val/Amt: 1)
+[10:17:09] [ECONOMY] PICKUP: Spear Caster (Val/Amt: 10)
+[10:17:10] [COMBAT_START] Vs CLOAKED_SKELETON (MCR: 33) | Player PPS: 30 | Delta: -3 (Even Match)
+[10:17:10] [CombatManager] Player auto-turned to face EAST
+[10:17:10] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:17:10] [CombatManager] Combat started with CLOAKED_SKELETON. State: PLAYER_MENU
+[10:17:11] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:17:11] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 11
+[10:17:11] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:11] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[10:17:11] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 6
+[10:17:11] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:11] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:17:11] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 5
+[10:17:11] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:12] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[10:17:12] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 5
+[10:17:12] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:12] [CombatManager] Instant Attack: Rolled 2 on D4
+[10:17:12] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 5 | Target HP: 0
+[10:17:12] [CombatManager] You have defeated CLOAKED_SKELETON
+[10:17:12] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:17:12] [LOOT_DROP] Dropped Cloaked skeleton Bone from CLOAKED_SKELETON
+[10:17:12] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:17:12] [COMBAT_END] Result: VICTORY | Turns: 3 | Total Dmg Taken: 3
+[10:17:12] [CombatManager] Combat ended.
+[10:17:12] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[10:17:13] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[10:17:13] [COMBAT_START] Vs GHOUL (MCR: 45) | Player PPS: 30 | Delta: -15 (Hard Fight)
+[10:17:13] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:17:13] [CombatManager] Combat started with GHOUL. State: PLAYER_MENU
+[10:17:14] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:17:14] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 13
+[10:17:14] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:14] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[10:17:14] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 13
+[10:17:14] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:15] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:17:15] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 7
+[10:17:15] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:15] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[10:17:15] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 12
+[10:17:15] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:15] [CombatManager] Instant Attack: Rolled 2 on D4
+[10:17:15] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 5 | Target HP: 2
+[10:17:15] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:16] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[10:17:16] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 10
+[10:17:16] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:18] [CombatManager] Instant Attack: Rolled 4 on D4
+[10:17:18] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 7 | Target HP: 0
+[10:17:18] [CombatManager] You have defeated GHOUL
+[10:17:18] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:17:18] [LOOT_DROP] Dropped Ghoul Bone from GHOUL
+[10:17:18] [ItemDataManager [DEBUG]] createItem called for: MEAT
+[10:17:18] [Item [DEBUG]] Created FOOD Item: MEAT (isFood=true)
+[10:17:18] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:17:18] [COMBAT_END] Result: VICTORY | Turns: 4 | Total Dmg Taken: 5
+[10:17:18] [CombatManager] Combat ended.
+[10:17:19] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[10:17:34] [COMBAT_START] Vs GIANT_SCORPION (MCR: 35) | Player PPS: 30 | Delta: -5 (Even Match)
+[10:17:34] [COMBAT_FLOW] State -> PLAYER_MENU (Initial)
+[10:17:34] [CombatManager] Combat started with GIANT_SCORPION. State: PLAYER_MENU
+[10:17:35] [CombatManager] Instant Attack: Rolled 2 on D4
+[10:17:35] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 5 | Target HP: 10
+[10:17:35] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:35] [Player] Taken Damage: 2 (Adj. Amount: 5)
+[10:17:35] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 2 | Target HP: 13
+[10:17:35] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:35] [CombatManager] Instant Attack: Rolled 3 on D4
+[10:17:35] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 6 | Target HP: 4
+[10:17:35] [COMBAT_FLOW] State -> MONSTER_TURN (Attack Resolved)
+[10:17:35] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[10:17:35] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 1 | Target HP: 12
+[10:17:35] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[10:17:36] [CombatManager] Instant Attack: Rolled 2 on D4
+[10:17:36] [COMBAT_ROUND] PLAYER Melee/Ranged | Roll: 0 | Dmg: 5 | Target HP: 0
+[10:17:36] [CombatManager] You have defeated GIANT_SCORPION
+[10:17:36] [ItemDataManager [DEBUG]] createItem called for: BONE
+[10:17:36] [LOOT_DROP] Dropped Giant scorpion Bone from GIANT_SCORPION
+[10:17:36] [ItemDataManager [DEBUG]] createItem called for: MEAT
+[10:17:36] [Item [DEBUG]] Created FOOD Item: MEAT (isFood=true)
+[10:17:36] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[10:17:36] [COMBAT_END] Result: VICTORY | Turns: 3 | Total Dmg Taken: 3
+[10:17:36] [CombatManager] Combat ended.
+[10:17:37] [ECONOMY] PICKUP: Giant scorpion Bone (Val/Amt: 1)
+[10:17:39] [ECONOMY] CONSUME: Meat (Val/Amt: 1)
+[10:17:39] [ECONOMY] PICKUP: Meat (Val/Amt: 5)
+[10:17:40] [ECONOMY] CONSUME: Food (Val/Amt: 1)
+[10:17:40] [ECONOMY] PICKUP: Food (Val/Amt: 5)
+[10:17:42] [DICE_DEBUG] Picked up Knife -> Added Rusty Iron Die
+[10:17:42] [ECONOMY] PICKUP: Knife (Val/Amt: 10)
+[10:17:49] [ECONOMY] RES_GAIN: Food (Val/Amt: 6)
+[10:17:54] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[10:17:56] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[10:17:56] [DiscoveryManager] Saved discovery state.
+[10:18:10] [ECONOMY] CONSUME: Meat (Val/Amt: 1)
+[10:18:10] [ECONOMY] PICKUP: Meat (Val/Amt: 5)
+[10:18:12] [ECONOMY] PICKUP: Ghoul Bone (Val/Amt: 1)
+[10:18:13] [ECONOMY] PICKUP: Cloaked skeleton Bone (Val/Amt: 1)
+[10:18:16] [Player [DEBUG]] Move blocked by WALL MASK from (15,21) facing SOUTH
+[10:18:19] [Player [DEBUG]] Move blocked by WALL MASK from (14,18) facing EAST
+[10:18:26] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[10:18:26] [DiscoveryManager] Saved discovery state.
+[10:18:40] [ECONOMY] TREASURE: Coins (Val/Amt: 10)
