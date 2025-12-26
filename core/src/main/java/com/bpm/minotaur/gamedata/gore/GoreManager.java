@@ -58,12 +58,31 @@ public class GoreManager {
     public GoreManager() {
     }
 
+    // --- Modern Textures ---
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> dropTextures = new Array<>();
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smearTextures = new Array<>();
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibTextures = new Array<>();
+    private com.badlogic.gdx.graphics.g2d.TextureRegion spatterTexture;
+
+    public void setTextures(Array<com.badlogic.gdx.graphics.g2d.TextureRegion> drops,
+            Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smears,
+            com.badlogic.gdx.graphics.g2d.TextureRegion spatter,
+            Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibs) {
+        this.dropTextures.clear();
+        this.dropTextures.addAll(drops);
+        this.smearTextures.clear();
+        this.smearTextures.addAll(smears);
+        this.spatterTexture = spatter;
+        this.gibTextures.clear();
+        this.gibTextures.addAll(gibs);
+    }
+
     /**
      * Spawns blood particles using the global UNIFIED_BLOOD_COLOR.
      * Includes variation logic for clots vs arterial spray.
      */
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
-        int count = intensity * 12;
+        int count = intensity * 36;
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
             float spreadX = MathUtils.random(-0.4f, 0.4f);
@@ -91,7 +110,13 @@ public class GoreManager {
 
             float size = MathUtils.random(0.03f, 0.07f);
             float life = MathUtils.random(1.0f, 3.0f);
-            p.init(origin, vel, finalColor, life, size);
+
+            com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+            if (dropTextures.size > 0) {
+                tex = dropTextures.random();
+            }
+
+            p.init(origin, vel, finalColor, life, size, tex);
             activeParticles.add(p);
         }
     }
@@ -100,23 +125,47 @@ public class GoreManager {
      * Spawns gibs using the global UNIFIED_BLOOD_COLOR.
      */
     public void spawnGibExplosion(Vector3 origin) {
-        int meatCount = MathUtils.random(3, 6);
-        int boneCount = MathUtils.random(2, 4);
+        // Modern Mode: Texture Gibs
+        if (gibTextures.size > 0) {
+            int count = MathUtils.random(4, 7);
+            for (int i = 0; i < count; i++) {
+                Gib g = gibPool.obtain();
+                com.badlogic.gdx.graphics.g2d.TextureRegion tex = gibTextures.random();
 
-        // Use unified color for meat chunks
-        for (int i = 0; i < meatCount; i++)
-            spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+                // Explosive velocity: Up and out
+                float angle = MathUtils.random(0, 360) * MathUtils.degreesToRadians;
+                float speed = MathUtils.random(2.0f, 6.0f);
+                float up = MathUtils.random(3.0f, 8.0f);
 
-        // Bones, ribs, intestines, etc usually have their own default tint or use the
-        // unified color if we choose
-        for (int i = 0; i < boneCount; i++)
-            spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
-        if (MathUtils.randomBoolean())
-            spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
-        if (MathUtils.randomBoolean())
-            spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
-        if (MathUtils.randomBoolean(0.3f))
-            spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
+                Vector3 vel = new Vector3(MathUtils.cos(angle) * speed, up, MathUtils.sin(angle) * speed);
+
+                g.init(origin, vel, tex);
+                activeGibs.add(g);
+            }
+        } else {
+            // Fallback or just ignore if no textures
+        }
+
+        /*
+         * int meatCount = MathUtils.random(3, 6);
+         * int boneCount = MathUtils.random(2, 4);
+         * 
+         * // Use unified color for meat chunks
+         * for (int i = 0; i < meatCount; i++)
+         * spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+         * 
+         * // Bones, ribs, intestines, etc usually have their own default tint or use
+         * the
+         * // unified color if we choose
+         * for (int i = 0; i < boneCount; i++)
+         * spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean())
+         * spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean())
+         * spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean(0.3f))
+         * spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
+         */
     }
 
     private void spawnGib(Vector3 origin, GibType type, Color color) {
@@ -220,7 +269,15 @@ public class GoreManager {
         }
         float splatRadius = radius * MathUtils.random(1.5f, 3.0f);
         WallDecal wd = wallDecalPool.obtain();
-        wd.init(x, y, side, wallX, height, splatRadius, color);
+
+        com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+        if (spatterTexture != null && MathUtils.randomBoolean(0.3f)) {
+            tex = spatterTexture;
+        } else if (smearTextures.size > 0) {
+            tex = smearTextures.random();
+        }
+
+        wd.init(x, y, side, wallX, height, splatRadius, color, tex);
         wallDecals.get(key).add(wd);
     }
 
@@ -318,7 +375,15 @@ public class GoreManager {
             decalPool.free(old);
         }
         SurfaceDecal d = decalPool.obtain();
-        d.init(pos, color, originalSize * 2.5f);
+
+        com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+        if (smearTextures.size > 0) {
+            tex = smearTextures.random();
+        } else if (spatterTexture != null) {
+            tex = spatterTexture;
+        }
+
+        d.init(pos, color, originalSize * 2.5f, tex);
         activeDecals.add(d);
     }
 

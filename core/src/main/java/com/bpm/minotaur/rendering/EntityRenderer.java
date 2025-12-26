@@ -285,20 +285,28 @@ public class EntityRenderer {
     }
 
     // ... [GORE RENDER METHODS UNCHANGED] ...
+
     public void renderGore(ShapeRenderer shapeRenderer, PolygonSpriteBatch spriteBatch, Maze maze, Camera camera,
-            Player player,
-            float[] depthBuffer) {
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.setTransformMatrix(new Matrix4());
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
+            Player player, float[] depthBuffer) {
 
-        // STRICT SEPARATION: Only render ASCII gibs in RETRO mode.
         if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
             renderAsciiGibs(shapeRenderer, maze, camera, player, depthBuffer);
+            renderParticles(shapeRenderer, maze, camera, player, depthBuffer);
+            shapeRenderer.end();
+        } else {
+            shapeRenderer.end();
+            spriteBatch.setProjectionMatrix(camera.combined);
+            spriteBatch.begin();
+            renderDecals(spriteBatch, maze, camera, player, depthBuffer);
+            renderParticles(spriteBatch, maze, camera, player, depthBuffer);
+            renderTextureGibs(spriteBatch, maze, camera, player, depthBuffer);
+            spriteBatch.end();
         }
+    }
 
-        // Render Particles (Shape based)
+    private void renderParticles(ShapeRenderer shapeRenderer, Maze maze, Camera camera, Player player,
+            float[] depthBuffer) {
         float halfWidth = camera.viewportWidth / 2.0f;
         float halfHeight = camera.viewportHeight / 2.0f;
         for (BloodParticle p : maze.getGoreManager().getActiveParticles()) {
@@ -323,14 +331,81 @@ public class EntityRenderer {
                 }
             }
         }
-        shapeRenderer.end();
+    }
 
-        // Render Texture Gibs (ONLY IN MODERN MODE)
-        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
-            spriteBatch.setProjectionMatrix(camera.combined);
-            spriteBatch.begin();
-            renderTextureGibs(spriteBatch, maze, camera, player, depthBuffer);
-            spriteBatch.end();
+    private void renderParticles(PolygonSpriteBatch spriteBatch, Maze maze, Camera camera, Player player,
+            float[] depthBuffer) {
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+
+        for (BloodParticle p : maze.getGoreManager().getActiveParticles()) {
+            if (p.textureRegion == null)
+                continue;
+
+            float dx = p.position.x - player.getPosition().x;
+            float dy = p.position.z - player.getPosition().y;
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (dirY * dx - dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+            if (transformY > 0) {
+                int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                    float screenY = halfHeight + (p.position.y - 0.5f) * spriteScale;
+                    // Boost size for textured particles to make them visible
+                    float particleSize = spriteScale * p.size * 4.0f;
+
+                    // Assuming texture has its own color, or use WHITE to avoid darkening
+                    spriteBatch.setColor(Color.WHITE);
+                    spriteBatch.draw(p.textureRegion, screenX - particleSize / 2, screenY - particleSize / 2,
+                            particleSize, particleSize);
+                }
+            }
+        }
+    }
+
+    private void renderDecals(PolygonSpriteBatch spriteBatch, Maze maze, Camera camera, Player player,
+            float[] depthBuffer) {
+        float halfWidth = camera.viewportWidth / 2.0f;
+        float halfHeight = camera.viewportHeight / 2.0f;
+        for (SurfaceDecal d : maze.getGoreManager().getActiveDecals()) {
+            if (d.textureRegion == null)
+                continue;
+
+            float dx = d.position.x - player.getPosition().x;
+            float dy = d.position.z - player.getPosition().y;
+            float planeX = player.getCameraPlane().x;
+            float planeY = player.getCameraPlane().y;
+            float dirX = player.getDirectionVector().x;
+            float dirY = player.getDirectionVector().y;
+            float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+            float transformX = invDet * (-dirY * dx + dirX * dy);
+            float transformY = invDet * (-planeY * dx + planeX * dy);
+            if (transformY > 0.1f) {
+                int screenX = (int) (halfWidth * (1 + transformX / transformY));
+                if (screenX >= 0 && screenX < depthBuffer.length && transformY < depthBuffer[screenX]) {
+                    float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                    float screenY = halfHeight + (d.position.y - 0.5f) * spriteScale;
+                    float width = spriteScale * d.size * 2.0f;
+                    float height = spriteScale * d.size * 2.0f; // Square for texture (perspective fix handled by
+                                                                // texture?)
+                    // Actually SurfaceDecals were rects 2.0w x 0.5h.
+                    // Let's keep 1:1 aspect for texture splats, but squashed?
+                    // Splats are usually round.
+                    // Let's use 1.5x scale for width/height to make them visible.
+                    float size = spriteScale * d.size * 2.0f;
+
+                    spriteBatch.setColor(d.color);
+                    // Draw centered
+                    spriteBatch.draw(d.textureRegion, screenX - size / 2, screenY - size / 8, size, size * 0.25f); // Flatten
+                                                                                                                   // it
+                    spriteBatch.setColor(Color.WHITE);
+                }
+            }
         }
     }
 

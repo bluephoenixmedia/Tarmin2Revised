@@ -253,6 +253,54 @@ public class GameScreen extends BaseScreen {
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
                 game.getItemDataManager(), stochasticManager);
 
+        // --- LOAD BLOOD ASSETS ---
+        com.badlogic.gdx.assets.AssetManager am = game.getAssetManager();
+        String[] drops = { "images/blood_drop1.png", "images/blood_drop2.png", "images/blood_drop3.png",
+                "images/blood_drop4.png" };
+        String[] smears = { "images/blood_smear1.png", "images/blood_smear2.png", "images/blood_smear3.png" };
+        String spatter = "images/blood_spatter.png";
+
+        // Load Gibs
+        String[] gibs = new String[10];
+        for (int i = 0; i < 10; i++)
+            gibs[i] = "images/gib" + (i + 1) + ".png";
+
+        // Preload
+        for (String s : drops)
+            if (!am.isLoaded(s))
+                am.load(s, com.badlogic.gdx.graphics.Texture.class);
+        for (String s : smears)
+            if (!am.isLoaded(s))
+                am.load(s, com.badlogic.gdx.graphics.Texture.class);
+        if (!am.isLoaded(spatter))
+            am.load(spatter, com.badlogic.gdx.graphics.Texture.class);
+        for (String s : gibs)
+            if (!am.isLoaded(s))
+                am.load(s, com.badlogic.gdx.graphics.Texture.class);
+
+        am.finishLoading();
+
+        // Assign
+        com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> dropRegs = new com.badlogic.gdx.utils.Array<>();
+        for (String s : drops)
+            dropRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+
+        com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smearRegs = new com.badlogic.gdx.utils.Array<>();
+        for (String s : smears)
+            smearRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+
+        com.badlogic.gdx.graphics.g2d.TextureRegion spatterReg = new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                am.get(spatter, com.badlogic.gdx.graphics.Texture.class));
+
+        com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibRegs = new com.badlogic.gdx.utils.Array<>();
+        for (String s : gibs)
+            gibRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+
+        maze.getGoreManager().setTextures(dropRegs, smearRegs, spatterReg, gibRegs);
+
         // --- DICE UI INTEGRATION ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------

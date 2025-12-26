@@ -14154,8 +14154,6 @@
     "probability": 5,
     "friendlyName": "Crossbow",
     "texturePath": "images/items/crossbow.png",
-    "modelPath": "models/LP_PostApoc_CrossBow.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",

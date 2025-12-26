@@ -33,7 +33,7 @@ public class Tarmin2 extends Game {
 
     // --- Shared Resources (now private) ---
     private SpriteBatch batch;
-    private ModelBatch modelBatch;
+    // private ModelBatch modelBatch;
     private Viewport viewport;
 
     // --- Asset and Data Managers ---
@@ -59,7 +59,7 @@ public class Tarmin2 extends Game {
         batch = new SpriteBatch();
 
         // --- NEW: Initialize the ModelBatch ---
-        modelBatch = new ModelBatch();
+        // modelBatch = new ModelBatch();
 
         OrthographicCamera camera = new OrthographicCamera();
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
@@ -146,10 +146,6 @@ public class Tarmin2 extends Game {
     public void dispose() {
         batch.dispose();
 
-        if (modelBatch != null) {
-            modelBatch.dispose();
-        }
-
         assetManager.dispose();
 
         if (getScreen() != null) {
@@ -169,10 +165,6 @@ public class Tarmin2 extends Game {
 
     public SpriteBatch getBatch() {
         return batch;
-    }
-
-    public ModelBatch getModelBatch() {
-        return modelBatch;
     }
 
     public Viewport getViewport() {

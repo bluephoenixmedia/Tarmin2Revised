@@ -40,7 +40,7 @@
   "WAND": {
     "friendlyName": "Wand",
     "description": "A magical wand.",
-    "texturePath": "images/items/stick.png",
+    "texturePath": "images/wand.png",
     "spriteData": [
       "........................",
       "........................",
@@ -78,10 +78,7 @@
   "HOME_CHEST": {
     "friendlyName": "Storage Chest",
     "texturePath": "images/items/box.png",
-    "modelPath": "models/FancyChestClosed.g3db",
     "isImpassable": true,
-    "modelScale": 0.005,
-    "modelRotation": -90.0,
     "spriteData": [
       "........................",
       "........................",
@@ -138,9 +135,6 @@
   "HOME_CRAFTING_BENCH": {
     "friendlyName": "Crafting Bench",
     "texturePath": "images/items/crafting_bench.png",
-    "modelPath": "models/LP_PostApoc_CraftingBench.g3db",
-    "modelScale": 0.005,
-    "modelRotation": -90.0,
     "isImpassable": true,
     "spriteData": [
       "........................",
@@ -198,9 +192,6 @@
   "HOME_SLEEPING_BAG": {
     "friendlyName": "Sleeping Bag",
     "texturePath": "images/items/bedroll.png",
-    "modelPath": "models/LP_PostApoc_SleepingBag.g3db",
-    "modelScale": 0.005,
-    "modelRotation": -90.0,
     "isImpassable": true,
     "spriteData": [
       "........................",
@@ -258,9 +249,6 @@
   "HOME_FIRE_POT": {
     "friendlyName": "Cooking Fire",
     "texturePath": "images/items/cookingpot.png",
-    "modelPath": "models/LPHorror_Smelter.g3db",
-    "modelScale": 0.005,
-    "modelRotation": 180.0,
     "isImpassable": true,
     "spriteData": [
       "........................",
@@ -868,8 +856,6 @@
     "friendlyName": "Blue Potion",
     "description": "A swirling blue liquid.",
     "texturePath": "images/items/potion_blue.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -958,8 +944,6 @@
     "friendlyName": "Pink Potion",
     "description": "A viscous pink liquid.",
     "texturePath": "images/items/potion_pink.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -1048,8 +1032,6 @@
     "friendlyName": "Green Potion",
     "description": "A murky green liquid.",
     "texturePath": "images/items/potion_blue.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -1138,8 +1120,6 @@
     "friendlyName": "Gold Potion",
     "description": "A shimmering gold liquid.",
     "texturePath": "images/items/potion_gold.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -1228,8 +1208,6 @@
     "friendlyName": "Swirly Potion",
     "description": "A potion with mesmerizing swirls.",
     "texturePath": "images/items/potion_blue.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -1288,8 +1266,6 @@
     "friendlyName": "Bubbly Potion",
     "description": "A cheerfully bubbling liquid.",
     "texturePath": "images/items/potion_pink.png",
-    "modelPath": "models/potion1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -1883,8 +1859,6 @@
   "SMALL_BAG": {
     "friendlyName": "Small Bag",
     "texturePath": "images/items/small_bag.png",
-    "modelPath": "models/Sack2.g3db",
-    "modelScale": 0.004,
     "spriteData": [
       "........................",
       "........................",
@@ -2028,9 +2002,7 @@
   },
   "REGULAR_CHEST": {
     "friendlyName": "Regular Chest",
-    "texturePath": "images/items/pack.png",
-    "modelPath": "models/FancyChestClosed.g3db",
-    "modelScale": 0.01,
+    "texturePath": "images/items/chest.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2168,8 +2140,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2183,8 +2155,6 @@
   "COINS": {
     "friendlyName": "Coins",
     "texturePath": "images/items/coins.png",
-    "modelPath": "models/CoinPile1.g3db",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -2226,8 +2196,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2282,8 +2252,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2296,7 +2266,7 @@
   },
   "LAMP": {
     "friendlyName": "Lamp",
-    "texturePath": "images/items/chalice.png",
+    "texturePath": "images/items/lamp.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2338,8 +2308,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2394,8 +2364,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2450,8 +2420,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2506,8 +2476,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2562,8 +2532,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -2633,7 +2603,6 @@
   "LADDER": {
     "friendlyName": "Ladder",
     "texturePath": "images/items/ladder.png",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -2687,7 +2656,6 @@
   "LADDER_UP": {
     "friendlyName": "Ladder Up",
     "texturePath": "images/items/ladder_up.png",
-    "modelScale": 0.01,
     "spriteData": [
       "........................",
       "........................",
@@ -2773,7 +2741,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/stick.png"
+    "texturePath": "images/items/stick.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    }
   },
   "LEAVES": {
     "friendlyName": "Pile of Leaves",
@@ -2818,6 +2790,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/leaves.png"
   },
   "SMALL_ROCK": {
@@ -2857,6 +2833,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/small_rock.png"
   },
   "LARGE_BOULDER": {
@@ -2896,6 +2876,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/large_boulder.png"
   },
   "BROKEN_COLUMN": {
@@ -2935,6 +2919,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/broken_column.png"
   },
   "BROKEN_WALL": {
@@ -2974,6 +2962,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/brokenwall.png"
   },
   "VINES": {
@@ -3013,6 +3005,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/vines.png"
   },
   "PUDDLE_WATER": {
@@ -3052,7 +3048,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/puddle_water.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/puddle.png"
   },
   "STRANGE_METAL": {
     "friendlyName": "Strange Metal",
@@ -3091,7 +3091,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/strange_metal.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/metal_scrap.png"
   },
   "BONES": {
     "friendlyName": "Bones",
@@ -3122,6 +3126,11 @@
       "........................",
       "........................"
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/bones.png",
     "variants": [
       {
         "color": "WHITE",
@@ -3168,7 +3177,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/ancient_fossil.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/fossil.png"
   },
   "RUSTY_WEAPON": {
     "friendlyName": "Rusty Blade",
@@ -3207,6 +3220,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/rusty_weapon.png"
   },
   "RUSTY_ARMOR": {
@@ -3246,6 +3263,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/rusty_armor.png"
   },
   "DIRTY_CLOTH": {
@@ -3285,6 +3306,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/dirty_cloth.png"
   },
   "METAL_SCRAP": {
@@ -3324,6 +3349,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/metal_scrap.png"
   },
   "BROKEN_GLASS": {
@@ -3363,7 +3392,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/broken_glass.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/glass_shards.png"
   },
   "DEAD_PLANT_MATTER": {
     "friendlyName": "Dead Plant",
@@ -3402,7 +3435,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/dead_plant_matter.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/vines.png"
   },
   "MUD": {
     "friendlyName": "Mud Pile",
@@ -3441,6 +3478,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/mud.png"
   },
   "CHARRED_WOOD": {
@@ -3480,6 +3521,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/charred_wood.png"
   },
   "CERAMIC_SHARD": {
@@ -3519,6 +3564,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/ceramic_shard.png"
   },
   "ROTTEN_ROPE": {
@@ -3558,6 +3607,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/rotten_rope.png"
   },
   "FUNGAL_SPORE": {
@@ -3597,6 +3650,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/fungal_spore.png"
   },
   "BAT_GUANO": {
@@ -3636,6 +3693,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/bat_guano.png"
   },
   "LOOSE_BRICK": {
@@ -3675,6 +3736,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/loose_brick.png"
   },
   "TWISTED_ROOT": {
@@ -3714,6 +3779,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/twisted_root.png"
   },
   "SLIME_RESIDUE": {
@@ -3753,6 +3822,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/slime_residue.png"
   },
   "RAT_SKULL": {
@@ -3792,6 +3865,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/rat_skull.png"
   },
   "RUSTED_CHAIN": {
@@ -3831,6 +3908,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/rusted_chain.png"
   },
   "MOSS_CLUMP": {
@@ -3870,6 +3951,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/moss_clump.png"
   },
   "FLINT_SHARD": {
@@ -3909,6 +3994,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/flint_shard.png"
   },
   "HOLLOW_LOG": {
@@ -3948,6 +4037,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/hollow_log.png"
   },
   "SPIDER_SILK": {
@@ -3987,7 +4080,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/spider_silk.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/spider_web.png"
   },
   "BAT_WING": {
     "friendlyName": "Bat Wing",
@@ -4026,6 +4123,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/bat_wing.png"
   },
   "PARCHMENT_SCRAP": {
@@ -4065,6 +4166,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/parchment_scrap.png"
   },
   "BROKEN_HILT": {
@@ -4104,6 +4209,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/broken_hilt.png"
   },
   "BENT_NAIL": {
@@ -4143,6 +4252,10 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/bent_nail.png"
   },
   "STAGNANT_POOL": {
@@ -4182,7 +4295,11 @@
         "weight": 1
       }
     ],
-    "texturePath": "images/items/stagnant_pool.png"
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/slime_residue.png"
   },
   "GLOWING_LICHEN": {
     "friendlyName": "Glowing Lichen",
@@ -4221,12 +4338,15 @@
         "weight": 1
       }
     ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/glowing_lichen.png"
   },
   "COOKED_MEAT": {
     "friendlyName": "Cooked Meat",
     "description": "A piece of cooked meat. Smells delicious.",
-    "texturePath": "images/items/box.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4268,12 +4388,20 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "texturePath": "images/items/cooked__meat.png"
+    "texturePath": "images/items/cooked__meat.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    }
   },
   "TOOTH": {
     "friendlyName": "Tooth",
     "description": "A sharp tooth.",
     "texturePath": "images/items/tooth.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "spriteData": [
       "........................",
       "........................",
@@ -4308,7 +4436,11 @@
   "CLAW": {
     "friendlyName": "Claw",
     "description": "A sharp claw.",
-    "texturePath": "images/items/box_.png",
+    "texturePath": "images/items/tooth.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "spriteData": [
       "........................",
       "........................",
@@ -4343,6 +4475,10 @@
   "BLOOD_VIAL": {
     "friendlyName": "Blood Vial",
     "description": "A vial of blood.",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/vial.png",
     "spriteData": [
       "........................",
@@ -4378,6 +4514,10 @@
   "MONSTER_EYE": {
     "friendlyName": "Eye",
     "description": "A small eye.",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/items/eye.png",
     "spriteData": [
       "........................",
@@ -4413,7 +4553,11 @@
   "BONE": {
     "friendlyName": "Bone",
     "description": "A dry bone.",
-    "texturePath": "images/items/box_.png",
+    "texturePath": "images/items/bone.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "spriteData": [
       "........................",
       "........................",
@@ -4449,6 +4593,10 @@
     "friendlyName": "Mysterious Portal",
     "description": "It hums with strange energy.",
     "texturePath": "images/items/mysterious_portal.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "spriteData": [
       "........................",
       "........................",
@@ -4487,6 +4635,10 @@
   "AMULET": {
     "friendlyName": "Amulet",
     "texturePath": "images/items/amulet.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "spriteData": [
       "........................",
       "........................",
@@ -4527,10 +4679,6 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
     "variants": [
       {
         "color": "GOLD",
@@ -4584,8 +4732,8 @@
     "isContainer": false,
     "isRing": true,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -4640,8 +4788,8 @@
     "isContainer": true,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {
@@ -4654,7 +4802,7 @@
   },
   "SKULL": {
     "friendlyName": "Skull",
-    "texturePath": "images/items/box.png",
+    "texturePath": "images/items/skull.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4696,8 +4844,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.5,
+      "y": 0.5
     },
     "variants": [
       {

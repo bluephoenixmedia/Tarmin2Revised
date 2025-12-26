@@ -10,8 +10,10 @@ public class WallDecal implements Pool.Poolable {
     public float height; // 0.0 to 1.0 (Vertical position in world space)
     public float radius; // Size of the splat
     public Color color = new Color();
+    public com.badlogic.gdx.graphics.g2d.TextureRegion textureRegion; // For Modern Mode
 
-    public void init(int x, int y, int s, float wx, float h, float r, Color c) {
+    public void init(int x, int y, int s, float wx, float h, float r, Color c,
+            com.badlogic.gdx.graphics.g2d.TextureRegion texture) {
         this.gridX = x;
         this.gridY = y;
         this.side = s;
@@ -19,6 +21,7 @@ public class WallDecal implements Pool.Poolable {
         this.height = h;
         this.radius = r;
         this.color.set(c);
+        this.textureRegion = texture;
     }
 
     @Override

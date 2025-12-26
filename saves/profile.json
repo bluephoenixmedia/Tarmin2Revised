@@ -1,16 +1,18 @@
 {
-totalSteps: 372
-totalDoorsOpened: 9
+totalSteps: 803
+totalDoorsOpened: 30
 deepestLevelReached: 2
 monsterKills: {
 	class: java.util.HashMap
-	GIANT_ANT: 7
-	GIANT_SCORPION: 2
+	ORC: 2
+	DWARF: 1
+	GIANT_ANT: 13
+	GIANT_SCORPION: 5
 	GHAST: 1
-	CLOAKED_SKELETON: 5
-	GIANT_SNAKE: 10
-	SKELETON: 14
-	GHOUL: 9
+	CLOAKED_SKELETON: 14
+	GIANT_SNAKE: 20
+	SKELETON: 28
+	GHOUL: 24
 }
 unlockedContent: {
 	class: java.util.HashSet

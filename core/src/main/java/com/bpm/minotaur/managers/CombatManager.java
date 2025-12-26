@@ -526,9 +526,7 @@ public class CombatManager {
         stochasticManager.clearDice();
 
         if (monster.getWarStrength() <= 0) {
-            currentState = CombatState.VICTORY;
-            // Additional victory cleanup?
-            monster.takeDamage(999); // Ensure dead
+            handleMonsterDeath();
         } else {
             currentState = CombatState.MONSTER_TURN;
         }
@@ -913,43 +911,9 @@ public class CombatManager {
             }
         }
 
-        // 2. Spawn Visuals (Gibs)
-        String[] originalSprite = monster.getSpriteData();
-        if (originalSprite == null || originalSprite.length == 0)
-            return;
+        // 2. Spawn Visuals (Gibs) - REMOVED (Handled by GoreManager in
+        // handleMonsterDeath)
 
-        Vector2 mPos2 = monster.getPosition();
-        Vector3 centerPos = new Vector3(mPos2.x, 0.5f, mPos2.y);
-
-        for (int q = 0; q < 4; q++) {
-            String[] quadData = new String[12];
-
-            int startX = (q % 2 == 0) ? 0 : 12;
-            int startY = (q < 2) ? 0 : 12;
-
-            for (int r = 0; r < 12; r++) {
-                int sourceRowIndex = startY + r;
-                if (sourceRowIndex < originalSprite.length) {
-                    String row = originalSprite[sourceRowIndex];
-                    if (row.length() >= startX + 12) {
-                        quadData[r] = row.substring(startX, startX + 12);
-                    } else {
-                        quadData[r] = "            ";
-                    }
-                } else {
-                    quadData[r] = "            ";
-                }
-            }
-
-            float velX = (q % 2 == 0 ? -1f : 1f) * (0.2f + (float) Math.random() * 0.3f);
-            float velZ = (q < 2 ? 1f : -1f) * (0.2f + (float) Math.random() * 0.3f);
-            float velY = 0.8f + (float) Math.random() * 0.5f;
-
-            Vector3 velocity = new Vector3(velX, velY, velZ);
-            Vector3 partPos = new Vector3(centerPos).add(velX * 0.1f, 0, velZ * 0.1f);
-
-            maze.getCorpses().add(new CorpsePart(partPos, velocity, quadData, monster.getColor()));
-        }
     }
 
     public boolean performRangedAttack() {
@@ -1152,9 +1116,12 @@ public class CombatManager {
             } else {
                 maze.getGoreManager().spawnGibExplosion(gibOrigin); // Fallback
             }
-        } else if (monster.getTexture() != null) {
-            maze.getGoreManager().spawnTextureGibs(gibOrigin, monster.getTexture());
         } else {
+            // Modern Mode
+            if (monster.getTexture() != null) {
+                maze.getGoreManager().spawnTextureGibs(gibOrigin, monster.getTexture());
+            }
+            // ALSO spawn the new generic gibs for extra visceral feeling
             maze.getGoreManager().spawnGibExplosion(gibOrigin);
         }
 

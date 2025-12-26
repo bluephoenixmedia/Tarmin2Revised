@@ -64,6 +64,7 @@ public class FirstPersonRenderer {
     // Textures
     private final Texture wallTexture;
     private final Texture doorTexture;
+    private final Texture gateTexture;
     private final Texture floorTexture;
     private final Texture skyboxNorth;
     private final Texture skyboxEast;
@@ -91,6 +92,7 @@ public class FirstPersonRenderer {
         wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
         wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         doorTexture = new Texture(Gdx.files.internal("images/door.png"));
+        gateTexture = new Texture(Gdx.files.internal("images/gate.png"));
         floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
         floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         skyboxNorth = new Texture(Gdx.files.internal("images/skybox_castle.png"));
@@ -236,6 +238,14 @@ public class FirstPersonRenderer {
                     maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
                             lightIntensity, maze);
+
+                    if (result.windowHits != null) {
+                        for (int i = result.windowHits.size() - 1; i >= 0; i--) {
+                            renderModernWindow(spriteBatch, result.windowHits.get(i), x, viewport, fogEnabled,
+                                    fogDistance, fogColor, lightIntensity);
+                        }
+                    }
+
                     depthBuffer[x] = result.distance;
                 } else {
                     depthBuffer[x] = Float.MAX_VALUE;
@@ -421,7 +431,7 @@ public class FirstPersonRenderer {
             if (isFramePart) {
                 // RENDER FRAME (Wall Texture)
                 int texX = (int) (result.wallX * wallTexture.getWidth());
-                spriteBatch.setColor(colorModifier); // Wall texture doesn't need torch lighting usually? Or does it?
+                // Wall texture doesn't need torch lighting usually? Or does it?
                 // Wait, the original code applied torch to retro but not modern?
                 // Modern code usually relies on shader or just tint.
                 // Original modern code:
@@ -494,7 +504,6 @@ public class FirstPersonRenderer {
                     // In LibGDX texture coordinates (0,0) is usually top-left for Region, but
                     // Texture depends.
                     // Standard Texture: 0,0 is Bottom-Left? No, typically Image is loaded such
-                    // that...
                     // Let's look at original draw call:
                     // draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1,
                     // texture.getHeight(), false, false);
@@ -580,9 +589,7 @@ public class FirstPersonRenderer {
                     // If the specific animation is "Sliding Open" (Upwards):
                     // We see the bottom of the door at `currentDoorBottom`.
                     // And the top of the door is effectively clipped by the lintel.
-                    // So we should see the BOTTOM (visibleRatio) of the door texture?
-                    // Actually, if it slides UP, the top part disappears into the lintel.
-                    // So we see the BOTTOM part of the texture.
+                    // So we should see the BOTTOM part of the texture.
                     // srcY = 0. srcHeight = visibleRatio * fullHeight.
 
                     int srcDoorHeight = (int) (visibleRatio * doorTexHeight);
@@ -599,6 +606,9 @@ public class FirstPersonRenderer {
                             doorTexX, srcDoorY, 1, srcDoorHeight, false, false);
                 }
             }
+        } else if (result.wallType == WallType.GATE) {
+            renderGateModern(spriteBatch, result, screenX, viewport, drawStart, drawEnd, height, colorModifier,
+                    lightIntensity, fogEnabled, fogDistance, fogColor);
         } else {
             // STANDARD WALL
             Texture texture = wallTexture; // Always wall for non-doors
@@ -740,6 +750,151 @@ public class FirstPersonRenderer {
                 spriteBatch.setColor(Color.WHITE);
             }
         }
+    }
+
+    private void renderGateModern(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
+            float drawStart, float drawEnd, float height, Color colorModifier, float lightIntensity, boolean fogEnabled,
+            float fogDistance, Color fogColor) {
+
+        float doorEdgeMargin = (1.0f - DOOR_WIDTH) / 2.0f;
+        boolean isFramePart = result.wallX < doorEdgeMargin || result.wallX > 1.0f - doorEdgeMargin;
+
+        if (isFramePart) {
+            // RENDER FRAME (Wall Texture) - Identical to Door Frame
+            int texX = (int) (result.wallX * wallTexture.getWidth());
+
+            if (fogEnabled) {
+                float fogAmount = Math.max(0, Math.min(1f,
+                        (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+                fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                spriteBatch.setColor(fogLerpColor);
+            } else {
+                spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+            }
+
+            spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallTexture.getHeight(),
+                    false, false);
+        } else {
+            // RENDER GATE INNER (No Lintel, extends to top)
+
+            // Gate uses FULL height
+            float doorDrawStart = drawStart;
+            float doorDrawEnd = drawEnd; // Extends to top of wall
+
+            // 2. Gate (Gate Texture)
+
+            // Animation Logic
+            float currentGateTop = doorDrawEnd;
+            float currentGateBottom = doorDrawStart;
+
+            if (result.gate != null && result.gate.getState() == Gate.GateState.OPENING) {
+                // Slide UP.
+                float openingOffset = (doorDrawEnd - doorDrawStart) * result.gate.getAnimationProgress();
+                currentGateBottom += openingOffset;
+            } else if (result.gate != null && result.gate.getState() == Gate.GateState.OPEN) {
+                // Fully open - draw nothing or draw it fully raised (invisible)
+                currentGateBottom = currentGateTop;
+            }
+
+            if (currentGateTop > currentGateBottom) {
+                // Texture Mapping for Gate
+                float normalizedGateX = (result.wallX - doorEdgeMargin) / DOOR_WIDTH;
+                int gateTexX = (int) (normalizedGateX * gateTexture.getWidth());
+
+                // Vertical mapping
+                // Visible Ratio = (currentGateTop - currentGateBottom) / FullDoorHeight.
+                float fullDoorHeight = doorDrawEnd - doorDrawStart;
+                float visibleRatio = (currentGateTop - currentGateBottom) / fullDoorHeight;
+                int gateTexHeight = gateTexture.getHeight();
+
+                // Draw the BOTTOM part of the texture (since the gate slides up)
+                int srcGateHeight = (int) (visibleRatio * gateTexHeight);
+                int srcGateY = 0; // Start from bottom of texture
+
+                // Use slightly brighter color for contrast if desired, or same lighting
+                if (fogEnabled) {
+                    float fogAmount = Math.max(0, Math.min(1f,
+                            (result.distance - (fogDistance * (1f - FOG_FADE_RATIO)))
+                                    / (fogDistance * FOG_FADE_RATIO)));
+                    fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+                    fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    spriteBatch.setColor(fogLerpColor);
+                } else {
+                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                }
+
+                spriteBatch.draw(gateTexture, screenX, currentGateBottom, 1, currentGateTop - currentGateBottom,
+                        gateTexX, srcGateY, 1, srcGateHeight, false, false);
+            }
+        }
+    }
+
+    private void renderModernWindow(SpriteBatch spriteBatch, WindowHit hit, int screenX, Viewport viewport,
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+        int lineHeight = (hit.distance <= 0) ? Integer.MAX_VALUE
+                : (int) (viewport.getWorldHeight() / hit.distance);
+        float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
+        float height = drawEnd - drawStart;
+
+        // Window Dimensions (50% size centered)
+        float holeYStart = drawStart + height * 0.25f;
+        float holeYEnd = drawStart + height * 0.75f;
+
+        float margin = 0.25f; // 25% margin on left/right
+        boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
+
+        // Color Logic
+        if (fogEnabled) {
+            float fogAmount = Math.max(0, Math.min(1f,
+                    (hit.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+            fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
+            fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+            spriteBatch.setColor(fogLerpColor);
+        } else {
+            spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+        }
+
+        // Texture Logic
+        int texWidth = wallTexture.getWidth();
+        int texX = (int) (hit.wallX * texWidth);
+        // Clamp texX to be safe
+        if (texX < 0)
+            texX = 0;
+        if (texX >= texWidth)
+            texX = texWidth - 1;
+
+        int wallH = wallTexture.getHeight();
+
+        if (!isHoleX) {
+            // Draw Full Strip
+            spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallH, false, false);
+        } else {
+            // Draw Bottom Segment
+            float bottomHeight = holeYStart - drawStart;
+            if (bottomHeight > 0) {
+                // Corresponds to bottom 25% of texture
+                int srcHeight = (int) (wallH * 0.25f);
+                if (srcHeight > 0) {
+                    spriteBatch.draw(wallTexture, screenX, drawStart, 1, bottomHeight, texX, 0, 1, srcHeight, false,
+                            false);
+                }
+            }
+
+            // Draw Top Segment
+            float topHeight = drawEnd - holeYEnd;
+            if (topHeight > 0) {
+                // Corresponds to top 25% of texture (0.75 to 1.0)
+                int srcY = (int) (wallH * 0.75f);
+                int srcHeight = wallH - srcY; // Use remaining height to be safe
+                if (srcHeight > 0) {
+                    spriteBatch.draw(wallTexture, screenX, holeYEnd, 1, topHeight, texX, srcY, 1, srcHeight, false,
+                            false);
+                }
+            }
+        }
+        spriteBatch.setColor(Color.WHITE);
     }
 
     private void renderRetroWindow(SpriteBatch spriteBatch, WindowHit hit, int screenX, Viewport viewport,
