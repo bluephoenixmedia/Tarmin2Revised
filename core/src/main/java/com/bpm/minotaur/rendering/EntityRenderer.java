@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -232,13 +232,11 @@ public class EntityRenderer {
         sb.append(hoveredItem.getDisplayName()).append("\n");
 
         // Add stats
+        // Add stats
         if (hoveredItem.isWeapon()) {
-            if (hoveredItem.getWarDamage() > 0)
-                sb.append("War: ").append(hoveredItem.getWarDamage()).append(" ");
-            if (hoveredItem.getSpiritDamage() > 0)
-                sb.append("Spirit: ").append(hoveredItem.getSpiritDamage()).append(" ");
+            sb.append("Dmg: ").append(hoveredItem.getDamageDice()).append(" ");
         } else if (hoveredItem.isArmor()) {
-            sb.append("Def: ").append(hoveredItem.getArmorDefense());
+            sb.append("AC: +").append(hoveredItem.getArmorClassBonus());
         } else if (hoveredItem.isPotion() || hoveredItem.isFood()) {
             sb.append("Consumable");
         }

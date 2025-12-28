@@ -37,8 +37,8 @@ public class ChunkData {
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
 
-
-    public ChunkData() {}
+    public ChunkData() {
+    }
 
     public ChunkData(Maze maze) {
         this.level = maze.getLevel();
@@ -87,7 +87,7 @@ public class ChunkData {
 
         for (ItemData data : items) {
             Item item = new Item(data.type, data.x, data.y, data.color,
-                itemDataManager, assetManager);
+                    itemDataManager, assetManager);
             if (data.modifiers != null) {
                 for (ItemModifier mod : data.modifiers) {
                     item.addModifier(mod);
@@ -98,8 +98,8 @@ public class ChunkData {
 
         for (MonsterData data : monsters) {
             Monster monster = new Monster(data.type, data.x, data.y, data.color, dataManager, assetManager);
-            monster.setWarStrength(data.warStrength);
-            monster.setSpiritualStrength(data.spiritualStrength);
+            monster.setCurrentHP(data.warStrength);
+            monster.setCurrentMP(data.spiritualStrength);
             maze.addMonster(monster);
         }
 
@@ -136,11 +136,14 @@ public class ChunkData {
         public Scenery.SceneryType type;
         public int x;
         public int y;
-        public SceneryData() {}
+
+        public SceneryData() {
+        }
+
         public SceneryData(Scenery s) {
             this.type = s.getType();
-            this.x = (int)s.getPosition().x;
-            this.y = (int)s.getPosition().y;
+            this.x = (int) s.getPosition().x;
+            this.y = (int) s.getPosition().y;
         }
     }
 
@@ -150,12 +153,15 @@ public class ChunkData {
         public int x;
         public int y;
         public List<ItemModifier> modifiers = new ArrayList<>();
-        public ItemData() {}
+
+        public ItemData() {
+        }
+
         public ItemData(Item item) {
             this.type = item.getType();
             this.color = item.getItemColor();
-            this.x = (int)item.getPosition().x;
-            this.y = (int)item.getPosition().y;
+            this.x = (int) item.getPosition().x;
+            this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
         }
     }
@@ -167,12 +173,15 @@ public class ChunkData {
         public int y;
         public int warStrength;
         public int spiritualStrength;
-        public MonsterData() {}
+
+        public MonsterData() {
+        }
+
         public MonsterData(Monster monster) {
             this.type = monster.getType();
             this.color = monster.getMonsterColor();
-            this.x = (int)monster.getPosition().x;
-            this.y = (int)monster.getPosition().y;
+            this.x = (int) monster.getPosition().x;
+            this.y = (int) monster.getPosition().y;
             this.warStrength = monster.getWarStrength();
             this.spiritualStrength = monster.getSpiritualStrength();
         }
@@ -183,7 +192,10 @@ public class ChunkData {
         public int y;
         public DoorState state;
         public float animationProgress;
-        public DoorData() {}
+
+        public DoorData() {
+        }
+
         public DoorData(Door door) {
             GridPoint2 pos = door.findPositionIn(door.getMaze().getGameObjects());
             this.x = (pos != null) ? pos.x : 0;
@@ -200,10 +212,13 @@ public class ChunkData {
         public GridPoint2 targetPlayerPos;
         public GateState state;
         public float animationProgress;
-        public GateData() {}
+
+        public GateData() {
+        }
+
         public GateData(Gate gate) {
-            this.x = (int)gate.getPosition().x;
-            this.y = (int)gate.getPosition().y;
+            this.x = (int) gate.getPosition().x;
+            this.y = (int) gate.getPosition().y;
             this.targetChunkId = gate.getTargetChunkId();
             this.targetPlayerPos = gate.getTargetPlayerPos();
             this.state = gate.getState();
@@ -214,10 +229,13 @@ public class ChunkData {
     public static class LadderData {
         public int x;
         public int y;
-        public LadderData() {}
+
+        public LadderData() {
+        }
+
         public LadderData(Ladder ladder) {
-            this.x = (int)ladder.getPosition().x;
-            this.y = (int)ladder.getPosition().y;
+            this.x = (int) ladder.getPosition().x;
+            this.y = (int) ladder.getPosition().y;
         }
     }
 }

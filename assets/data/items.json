@@ -106,9 +106,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -163,9 +162,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -220,9 +218,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -277,9 +274,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -305,7 +301,7 @@
   },
   "PROJECTILE": {
     "friendlyName": "Projectile",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "........................",
@@ -333,10 +329,9 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
+    "damageDice": 0,
     "range": 1,
-    "armorDefense": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -390,9 +385,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -472,9 +466,8 @@
       "........................"
     ],
     "baseValue": 150,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -554,9 +547,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -636,9 +628,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -718,9 +709,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -800,9 +790,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -883,9 +872,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -971,9 +959,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1059,9 +1046,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1147,9 +1133,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1235,9 +1220,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1293,9 +1277,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1350,9 +1333,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1436,9 +1418,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1522,10 +1503,9 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
+    "damageDice": 0,
     "range": 1,
-    "armorDefense": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1610,9 +1590,8 @@
     ],
     "baseValue": 50,
     "range": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1696,9 +1675,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1782,9 +1760,8 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1838,9 +1815,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1886,9 +1862,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1934,9 +1909,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1982,9 +1956,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2030,9 +2003,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2078,9 +2050,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2126,9 +2097,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2182,9 +2152,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2238,9 +2207,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2294,9 +2262,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2350,9 +2317,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2406,9 +2372,8 @@
       "........................"
     ],
     "baseValue": 75,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2462,9 +2427,8 @@
       "........................"
     ],
     "baseValue": 150,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2518,9 +2482,8 @@
       "........................"
     ],
     "baseValue": 1000,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2574,9 +2537,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2630,9 +2592,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2683,9 +2644,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2923,7 +2883,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/broken_column.png"
+    "texturePath": "images/debris/broken_column.png"
   },
   "BROKEN_WALL": {
     "friendlyName": "Rubble",
@@ -2966,7 +2926,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/brokenwall.png"
+    "texturePath": "images/debris/brokenwall.png"
   },
   "VINES": {
     "friendlyName": "Vines",
@@ -3052,7 +3012,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/puddle.png"
+    "texturePath": "images/debris/puddle.png"
   },
   "STRANGE_METAL": {
     "friendlyName": "Strange Metal",
@@ -3095,7 +3055,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/metal_scrap.png"
+    "texturePath": "images/debris/metal_scrap.png"
   },
   "BONES": {
     "friendlyName": "Bones",
@@ -3130,7 +3090,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/bones.png",
+    "texturePath": "images/debris/bones.png",
     "variants": [
       {
         "color": "WHITE",
@@ -3224,7 +3184,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/rusty_weapon.png"
+    "texturePath": "images/weapons/rusty_weapon.png"
   },
   "RUSTY_ARMOR": {
     "friendlyName": "Rusted Plate",
@@ -3267,7 +3227,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/rusty_armor.png"
+    "texturePath": "images/armor/rusty_armor.png"
   },
   "DIRTY_CLOTH": {
     "friendlyName": "Dirty Rag",
@@ -3353,7 +3313,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/metal_scrap.png"
+    "texturePath": "images/debris/metal_scrap.png"
   },
   "BROKEN_GLASS": {
     "friendlyName": "Broken Glass",
@@ -3396,7 +3356,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/glass_shards.png"
+    "texturePath": "images/debris/glass_shards.png"
   },
   "DEAD_PLANT_MATTER": {
     "friendlyName": "Dead Plant",
@@ -3482,7 +3442,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/mud.png"
+    "texturePath": "images/debris/mud.png"
   },
   "CHARRED_WOOD": {
     "friendlyName": "Charred Wood",
@@ -3525,7 +3485,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/charred_wood.png"
+    "texturePath": "images/debris/charred_wood.png"
   },
   "CERAMIC_SHARD": {
     "friendlyName": "Ceramic Shard",
@@ -3568,7 +3528,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/ceramic_shard.png"
+    "texturePath": "images/debris/ceramic_shard.png"
   },
   "ROTTEN_ROPE": {
     "friendlyName": "Rotten Rope",
@@ -3611,7 +3571,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/rotten_rope.png"
+    "texturePath": "images/debris/rotten_rope.png"
   },
   "FUNGAL_SPORE": {
     "friendlyName": "Fungal Pod",
@@ -3740,7 +3700,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/loose_brick.png"
+    "texturePath": "images/debris/loose_brick.png"
   },
   "TWISTED_ROOT": {
     "friendlyName": "Twisted Root",
@@ -3783,7 +3743,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/twisted_root.png"
+    "texturePath": "images/debris/twisted_root.png"
   },
   "SLIME_RESIDUE": {
     "friendlyName": "Slime Residue",
@@ -3826,7 +3786,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/slime_residue.png"
+    "texturePath": "images/debris/slime_residue.png"
   },
   "RAT_SKULL": {
     "friendlyName": "Rat Skull",
@@ -3955,7 +3915,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/moss_clump.png"
+    "texturePath": "images/debris/moss_clump.png"
   },
   "FLINT_SHARD": {
     "friendlyName": "Flint",
@@ -3998,7 +3958,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/flint_shard.png"
+    "texturePath": "images/debris/flint_shard.png"
   },
   "HOLLOW_LOG": {
     "friendlyName": "Hollow Log",
@@ -4041,7 +4001,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/hollow_log.png"
+    "texturePath": "images/debris/hollow_log.png"
   },
   "SPIDER_SILK": {
     "friendlyName": "Spider Silk",
@@ -4170,7 +4130,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/parchment_scrap.png"
+    "texturePath": "images/debris/parchment_scrap.png"
   },
   "BROKEN_HILT": {
     "friendlyName": "Broken Hilt",
@@ -4213,7 +4173,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/broken_hilt.png"
+    "texturePath": "images/debris/broken_hilt.png"
   },
   "BENT_NAIL": {
     "friendlyName": "Bent Nail",
@@ -4299,7 +4259,7 @@
       "x": 0.5,
       "y": 0.5
     },
-    "texturePath": "images/items/slime_residue.png"
+    "texturePath": "images/debris/slime_residue.png"
   },
   "GLOWING_LICHEN": {
     "friendlyName": "Glowing Lichen",
@@ -4374,9 +4334,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -4666,9 +4625,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -4718,9 +4676,8 @@
       "........................"
     ],
     "baseValue": 250,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -4774,9 +4731,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -4830,9 +4786,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,

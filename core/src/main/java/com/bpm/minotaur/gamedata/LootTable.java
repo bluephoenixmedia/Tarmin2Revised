@@ -44,10 +44,10 @@ public class LootTable {
             // Basic numerical bonuses
             new ModInfo(ModifierType.BONUS_DAMAGE, 1, 10, 1, 1, "+1", ItemCategory.WAR_WEAPON),
             new ModInfo(ModifierType.BONUS_DAMAGE, 1, 10, 1, 1, "+1", ItemCategory.SPIRITUAL_WEAPON),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 1, 10, 1, 1, "+1", ItemCategory.ARMOR),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 1, 10, 1, 1, "+1", ItemCategory.RING),
-            new ModInfo(ModifierType.BONUS_WAR_STRENGTH, 3, 12, 1, 3, "of Brawn", ItemCategory.ARMOR),
-            new ModInfo(ModifierType.BONUS_SPIRITUAL_STRENGTH, 3, 12, 1, 3, "of Spirit", ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AC, 1, 10, 1, 1, "+1", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_AC, 1, 10, 1, 1, "+1", ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_MAX_HP, 3, 12, 1, 3, "of Brawn", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAX_MP, 3, 12, 1, 3, "of Spirit", ItemCategory.RING),
 
             // Simple Elemental Resistances
             new ModInfo(ModifierType.RESIST_FIRE, 4, 12, 1, 3, "Warm", ItemCategory.ARMOR),
@@ -66,8 +66,8 @@ public class LootTable {
             // Upgraded numerical bonuses
             new ModInfo(ModifierType.BONUS_DAMAGE, 6, 15, 2, 3, "+2", ItemCategory.WAR_WEAPON),
             new ModInfo(ModifierType.BONUS_DAMAGE, 6, 15, 2, 3, "+2", ItemCategory.SPIRITUAL_WEAPON),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 6, 15, 2, 3, "+2", ItemCategory.ARMOR),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 6, 15, 2, 3, "+2", ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AC, 6, 15, 2, 3, "+2", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_AC, 6, 15, 2, 3, "+2", ItemCategory.RING),
 
             // Elemental Damage
             new ModInfo(ModifierType.ADD_FIRE_DAMAGE, 7, 15, 2, 5, "Fiery", ItemCategory.WAR_WEAPON),
@@ -92,8 +92,8 @@ public class LootTable {
             // Top-tier numerical bonuses
             new ModInfo(ModifierType.BONUS_DAMAGE, 13, 99, 4, 6, "+3", ItemCategory.WAR_WEAPON),
             new ModInfo(ModifierType.BONUS_DAMAGE, 13, 99, 4, 6, "+3", ItemCategory.SPIRITUAL_WEAPON),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 13, 99, 4, 6, "+3", ItemCategory.ARMOR),
-            new ModInfo(ModifierType.BONUS_DEFENSE, 13, 99, 4, 6, "+3", ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AC, 13, 99, 4, 6, "+3", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_AC, 13, 99, 4, 6, "+3", ItemCategory.RING),
 
             // Advanced Elemental/Effect Damage
             new ModInfo(ModifierType.ADD_BLEED_DAMAGE, 13, 99, 3, 6, "Wounding", ItemCategory.WAR_WEAPON),

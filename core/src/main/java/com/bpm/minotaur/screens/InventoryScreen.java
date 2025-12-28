@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Payload;
@@ -54,7 +55,7 @@ public class InventoryScreen extends BaseScreen {
     private DragAndDrop dragAndDrop;
 
     private Table rootTable;
-    private Table paperDollTable;
+    // private Table paperDollTable; // Removed
     private Table backpackTable;
     private Table quickSlotTable;
 
@@ -167,6 +168,10 @@ public class InventoryScreen extends BaseScreen {
         this.craftingManager = cm;
     }
 
+    private Texture paperDollTexture;
+
+    // ... existing fields ...
+
     @Override
     public void show() {
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
@@ -175,6 +180,19 @@ public class InventoryScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+
+        // Load Paper Doll
+        try {
+            paperDollTexture = new Texture(Gdx.files.internal("images/inventory_paper_doll.png"));
+        } catch (Exception e) {
+            Gdx.app.error("Inventory", "Could not load paper doll image", e);
+            // Fallback to a simple color if missing, to prevent crash
+            Pixmap p = new Pixmap(400, 600, Pixmap.Format.RGBA8888);
+            p.setColor(Color.DARK_GRAY);
+            p.fill();
+            paperDollTexture = new Texture(p);
+            p.dispose();
+        }
 
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.WHITE);
@@ -207,51 +225,102 @@ public class InventoryScreen extends BaseScreen {
         rootTable.pad(50);
 
         // --- Left Panel: Paper Doll ---
-        paperDollTable = new Table();
-        paperDollTable.setBackground(new TextureRegionDrawable(whitePixel).tint(new Color(0.1f, 0.1f, 0.15f, 0.9f)));
+        // We use a WidgetGroup or just a Table with a Container/Group to allow absolute
+        // positioning
+        // layout: Root -> Split -> Left(GroupContainer) / Right(Table)
 
-        paperDollTable.add(createEquipSlot("Head", ItemType.HELMET)).size(64, 64).colspan(3).padBottom(10).row();
-        paperDollTable.add(createEquipSlot("Eyes", ItemType.EYES)).size(64, 64).colspan(3).padBottom(10).row();
-        paperDollTable.add(createEquipSlot("Neck", ItemType.AMULET)).size(64, 64).colspan(3).padBottom(20).row();
+        // --- SCALING LOGIC ---
+        // Target width for the paper doll to fit nicely in the UI
+        float targetWidth = 900f; // Increased from 550f. 1100f might be too tall for 1080p, 900 is safer but
+                                  // larger.
+        float scale = targetWidth / paperDollTexture.getWidth();
+        float scaledHeight = paperDollTexture.getHeight() * scale;
 
-        Table midSection = new Table();
-        midSection.add(createEquipSlot("L.Hand", null)).size(64, 64).padRight(20);
+        // Clamp to screen height with some padding if needed
+        if (scaledHeight > 900) {
+            scaledHeight = 900;
+            scale = scaledHeight / paperDollTexture.getHeight();
+            targetWidth = paperDollTexture.getWidth() * scale;
+        }
 
-        Table chestColumn = new Table();
-        chestColumn.add(createEquipSlot("Back", ItemType.CLOAK)).size(64, 64).padBottom(5).row();
-        chestColumn.add(createEquipSlot("Chest", ItemType.HAUBERK)).size(64, 64);
-        midSection.add(chestColumn).padRight(20);
+        Group paperDollGroup = new Group();
+        Image paperDollImage = new Image(paperDollTexture);
+        paperDollImage.setSize(targetWidth, scaledHeight);
+        paperDollGroup.setSize(targetWidth, scaledHeight);
+        paperDollGroup.addActor(paperDollImage);
 
-        midSection.add(createEquipSlot("R.Hand", null)).size(64, 64).row();
-        paperDollTable.add(midSection).colspan(3).padBottom(20).row();
+        // Define slot positions (relative to the paper doll image bottom-left)
+        // These are ESTIMATES and should be tuned based on the actual image.
+        // We center the slots horizontally based on the image width.
 
-        Table lowerMid = new Table();
-        lowerMid.add(createEquipSlot("Arms", ItemType.ARMS)).size(64, 64).padRight(20);
-        lowerMid.add(createEquipSlot("Hands", ItemType.GAUNTLETS)).size(64, 64).padRight(20);
-        lowerMid.add(createEquipSlot("Ring", null)).size(64, 64);
-        paperDollTable.add(lowerMid).colspan(3).padBottom(20).row();
+        float slotSize = 64;
 
-        paperDollTable.add(createEquipSlot("Legs", ItemType.LEGS)).size(64, 64).colspan(3).padBottom(10).row();
-        paperDollTable.add(createEquipSlot("Feet", ItemType.BOOTS)).size(64, 64).colspan(3).padBottom(20).row();
+        // Define standard column X positions (relative to 0..1 scale of targetWidth)
+        float leftColX = targetWidth * 0.14f; // Moved slightly in from 0.15 to avoid edge
+        float rightColX = targetWidth * 0.82f;
+
+        // Define row Y positions (relative to 0..1 scale of scaledHeight)
+        // Adjust these to match the visual "boxes" in the image.
+        float row1Y = scaledHeight * 0.76f; // Head / Neck
+        float row2Y = scaledHeight * 0.59f; // Chest / Back
+        float row3Y = scaledHeight * 0.40f; // Hands / MainHand
+        float row4Y = scaledHeight * 0.24f; // Legs / OffHand
+        float row5Y = scaledHeight * 0.06f; // Feet / Rings
+
+        // --- Left Column ---
+        addSlotToGroup(paperDollGroup, "Head", ItemType.HELMET, (leftColX - slotSize / 2), row1Y);
+        addSlotToGroup(paperDollGroup, "Chest", ItemType.HAUBERK, (leftColX - slotSize / 2), row2Y);
+        addSlotToGroup(paperDollGroup, "Hands", ItemType.GAUNTLETS, (leftColX - slotSize / 2) - 50, row3Y);
+        addSlotToGroup(paperDollGroup, "Legs", ItemType.LEGS, (leftColX - slotSize / 2), row4Y);
+        addSlotToGroup(paperDollGroup, "Feet", ItemType.BOOTS, (leftColX - slotSize / 2), row5Y);
+
+        // --- Right Column ---
+        addSlotToGroup(paperDollGroup, "Neck", ItemType.AMULET, (rightColX - slotSize / 2) - 15, row1Y);
+        addSlotToGroup(paperDollGroup, "Backpack", ItemType.BACKPACK, (rightColX - slotSize / 2) - 70, row2Y);
+        addSlotToGroup(paperDollGroup, "Back", ItemType.CLOAK, rightColX - slotSize / 2, row2Y);
+        addSlotToGroup(paperDollGroup, "R.Hand", ItemType.SWORD, rightColX - slotSize / 2, row3Y); // Main Hand (Sword
+                                                                                                   // icon)
+        addSlotToGroup(paperDollGroup, "L.Hand", ItemType.SHIELD, rightColX - slotSize / 2, row4Y); // Off Hand (Shield
+                                                                                                    // icon)
+
+        // Rings / Accessories (Row 5 split?)
+        // The screenshot shows two slots side-by-side or close at the bottom right?
+        // Let's put Ring and Eyes (Diamond) there.
+        addSlotToGroup(paperDollGroup, "Ring", ItemType.RING, rightColX - slotSize - 10, row5Y);
+        addSlotToGroup(paperDollGroup, "Eyes", ItemType.EYES, rightColX + 10, row5Y);
+
+        // Extra Slots
+        // "Arms" (Bracers) - Not clearly visible, let's put it next to Hands (Left
+        // Column) slightly offset?
+        // Or visually hide it if it's not important? No, it's equipment.
+        // Let's put it to the right of Hands (towards body)
+        addSlotToGroup(paperDollGroup, "Arms", ItemType.ARMS, (leftColX + slotSize + 10) - 50, row3Y);
 
         statsLabel = new Label("Stats...", new Label.LabelStyle(font, Color.LIME));
         statsLabel.setAlignment(Align.center);
-        paperDollTable.add(statsLabel).colspan(3).padTop(20).row();
+        // Position stats label at bottom
+        statsLabel.setPosition(targetWidth / 2f - 50, 20); // Re-using cx logic for stats label
+        paperDollGroup.addActor(statsLabel);
+
+        // Put the group in a container to center it in the left table cell
+        Container<Group> dollContainer = new Container<>(paperDollGroup);
+        // dollContainer.setBackground(new TextureRegionDrawable(whitePixel).tint(new
+        // Color(0.1f, 0.1f, 0.15f, 0.5f))); // Optional dark backing
 
         // --- Right Panel: Backpack ---
         backpackTable = new Table();
-        backpackTable.top().left();
+        backpackTable.top().right(); // Align content to right
         String title = "Backpack Storage (Right-Click to Drop)";
         Color titleColor = Color.GOLD;
 
         if (mode != InventoryMode.NORMAL) {
             title = "SELECT ITEM TO " + mode.name() + " (Click to select)";
             titleColor = Color.GREEN;
-            // Disable drag and drop during selection? Or just override click.
         }
 
         Label packLabel = new Label(title, new Label.LabelStyle(font, titleColor));
-        backpackTable.add(packLabel).padBottom(20).row();
+        packLabel.setAlignment(Align.right);
+        backpackTable.add(packLabel).padBottom(20).right().row();
 
         if (mode == InventoryMode.CRAFT) {
             Table recipeList = new Table();
@@ -282,12 +351,12 @@ public class InventoryScreen extends BaseScreen {
                             craftItem(recipe);
                         }
                     });
-                    recipeList.add(l).left().pad(10).row();
+                    recipeList.add(l).right().pad(10).row();
                 }
             } else {
                 recipeList.add(new Label("No Crafting Manager Linked", new Label.LabelStyle(font, Color.RED)));
             }
-            backpackTable.add(recipeList);
+            backpackTable.add(recipeList).right();
         } else {
             Table grid = new Table();
             for (int i = 0; i < 30; i++) {
@@ -295,28 +364,29 @@ public class InventoryScreen extends BaseScreen {
                 if ((i + 1) % 5 == 0)
                     grid.row();
             }
-            backpackTable.add(grid);
+            backpackTable.add(grid).right();
         }
 
         // --- Bottom Panel: Quick Slots ---
         quickSlotTable = new Table();
         Label quickLabel = new Label("Quick Slots (HUD)", new Label.LabelStyle(font, Color.CYAN));
-        quickSlotTable.add(quickLabel).padBottom(10).row();
+        quickLabel.setAlignment(Align.right);
+        quickSlotTable.add(quickLabel).padBottom(10).right().row();
         Table quickGrid = new Table();
         for (int i = 0; i < 6; i++) {
             quickGrid.add(createQuickSlot(i)).size(64, 64).pad(10);
         }
-        quickSlotTable.add(quickGrid);
+        quickSlotTable.add(quickGrid).right();
 
         // --- Assembly ---
         Table mainSplit = new Table();
-        mainSplit.add(paperDollTable).expandY().fillY().width(600).padRight(50);
+        mainSplit.add(dollContainer).left().expandY().fillY().padRight(50); // Left align doll
 
         Table rightSide = new Table();
-        rightSide.add(backpackTable).expand().fill().row();
-        rightSide.add(quickSlotTable).height(150).fillX();
+        rightSide.add(backpackTable).top().right().expand().fillX().row();
+        rightSide.add(quickSlotTable).bottom().right().height(150).fillX();
 
-        mainSplit.add(rightSide).expand().fill();
+        mainSplit.add(rightSide).expand().fill().right(); // Right align right side
 
         rootTable.add(mainSplit).expand().fill();
         stage.addActor(rootTable);
@@ -334,6 +404,13 @@ public class InventoryScreen extends BaseScreen {
         stage.addActor(tooltipTable);
 
         refreshSlots();
+    }
+
+    private void addSlotToGroup(Group group, String name, ItemType restrictType, float x, float y) {
+        InventorySlot slot = createEquipSlot(name, restrictType);
+        slot.setSize(110, 110);
+        slot.setPosition(x, y);
+        group.addActor(slot);
     }
 
     private InventorySlot createEquipSlot(String name, ItemType restrictType) {
@@ -405,15 +482,15 @@ public class InventoryScreen extends BaseScreen {
 
     private void updateStatsLabel() {
         // This triggers the new debug logging in PlayerEquipment
-        int armor = player.getArmorDefense();
-        int war = player.getWarStrength();
-        int spirit = player.getSpiritualStrength();
+        int armor = player.getArmorClass();
+        int war = player.getCurrentHP();
+        int spirit = player.getCurrentMP();
         int gold = player.getTreasureScore();
 
         statsLabel.setText(
-                "Total Armor: " + armor + "\n" +
-                        "War Strength: " + war + "\n" +
-                        "Spirit Strength: " + spirit + "\n" +
+                "Armor Class: " + armor + "\n" +
+                        "Current HP: " + war + "\n" +
+                        "Current MP: " + spirit + "\n" +
                         "Treasure: " + gold);
     }
 
@@ -574,15 +651,11 @@ public class InventoryScreen extends BaseScreen {
         }
 
         if (item.isWeapon()) {
-            if (item.getWarDamage() > 0)
-                sb.append("War Dmg: ").append(item.getWarDamage()).append("  ");
-            if (item.getSpiritDamage() > 0)
-                sb.append("Spirit Dmg: ").append(item.getSpiritDamage());
-            sb.append("\n");
+            sb.append("Dmg: ").append(item.getDamageDice()).append("\n");
         }
 
-        if (item.getArmorDefense() > 0) {
-            sb.append("Armor: ").append(item.getArmorDefense()).append("\n");
+        if (item.getArmorClassBonus() > 0) {
+            sb.append("AC: +").append(item.getArmorClassBonus()).append("\n");
         }
 
         return sb.toString();
@@ -757,6 +830,8 @@ public class InventoryScreen extends BaseScreen {
             slotBg.dispose();
         if (font != null)
             font.dispose();
+        if (paperDollTexture != null)
+            paperDollTexture.dispose();
     }
 
     private enum SlotType {
@@ -809,8 +884,11 @@ public class InventoryScreen extends BaseScreen {
                 return false;
 
             if (type == SlotType.EQUIPMENT) {
-                if ("L.Hand".equals(name))
-                    return true; // Accepts anything, but specialized logic handles shields
+                if ("L.Hand".equals(name)) {
+                    if (restrictType == ItemType.SHIELD)
+                        return item.isShield();
+                    return true;
+                }
                 if ("R.Hand".equals(name))
                     return true;
 
@@ -869,6 +947,26 @@ public class InventoryScreen extends BaseScreen {
         }
 
         private void drawItemPixels(Batch batch, Item item, float x, float y, float width, float height) {
+            // Check for Modern Rendering
+            if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.MODERN
+                    && item.getTexture() != null) {
+                float pad = 8f;
+                batch.draw(item.getTexture(), x + pad, y + pad, width - pad * 2, height - pad * 2);
+
+                // Draw enchantment glow if modified
+                if (item.isModified()) {
+                    batch.setColor(1, 0.9f, 0.2f, 0.3f);
+                    // Use texture for glow or just a box? Box is safer for shape.
+                    // Or draw texture again with tint?
+                    // Let's stick to the box for now to match retro behavior visually or just
+                    // standard glow.
+                    batch.draw(whitePixel, x, y, width, height);
+                    batch.setColor(Color.WHITE);
+                }
+                return;
+            }
+
+            // Retro Rendering (Sprite Data)
             String[] spriteData = item.getSpriteData();
             if (spriteData == null)
                 return;
@@ -986,4 +1084,5 @@ public class InventoryScreen extends BaseScreen {
             tooltipLabel.setText("Missing Ingredients!");
         }
     }
+
 }

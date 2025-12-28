@@ -235,7 +235,8 @@ public class WorldManager {
             return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, effectiveLevel, difficulty,
                     gameMode,
                     RetroTheme.STANDARD_THEME,
-                    this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed);
+                    this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed,
+                    playerReference != null ? playerReference.getLuck() : 0);
         }
 
         if (loadedChunks.containsKey(chunkId)) {
@@ -296,7 +297,8 @@ public class WorldManager {
         long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
         Maze newMaze = generator.generateChunk(chunkId, currentLevel, effectiveLevel, difficulty, gameMode,
                 themeToGenerate,
-                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed);
+                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed,
+                playerReference != null ? playerReference.getLuck() : 0);
 
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
@@ -460,7 +462,8 @@ public class WorldManager {
         if (turnCount > 0 && turnCount % 300 == 0) {
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
                     loadedChunks.get(currentPlayerChunkId), difficulty, currentLevel, player.getLevel(),
-                    null, spawnTableData, System.nanoTime()); // Use System time for runtime randomness
+                    player.getLuck(), null, spawnTableData, System.nanoTime()); // Use System time for runtime
+                                                                                // randomness
 
             sm.spawnPeriodicMonster(player);
             Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount);

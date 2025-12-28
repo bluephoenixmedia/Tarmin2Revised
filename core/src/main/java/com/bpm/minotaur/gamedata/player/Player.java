@@ -43,6 +43,10 @@ public class Player {
         return Math.max(1, speed);
     }
 
+    public int getLuck() {
+        return stats.getLuck();
+    }
+
     private final StatusManager statusManager;
 
     // --- Position and Movement ---
@@ -78,7 +82,7 @@ public class Player {
         this.stats = new PlayerStats(difficulty);
         this.statusManager = new StatusManager();
 
-        Item knife = itemDataManager.createItem(Item.ItemType.KNIFE, 0, 0, ItemColor.TAN, assetManager);
+        Item knife = itemDataManager.createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, assetManager);
         inventory.setRightHand(knife);
         if (knife.getGrantedDie() != null) {
             stats.getDicePool().add(knife.getGrantedDie());
@@ -477,7 +481,7 @@ public class Player {
             case ENCHANT_ARMOR:
                 Item armor = getRandomWornArmorHelper();
                 if (armor != null) {
-                    armor.addModifier(new ItemModifier(ModifierType.BONUS_DEFENSE, 1, "Blessed"));
+                    armor.addModifier(new ItemModifier(ModifierType.BONUS_AC, 1, "Blessed"));
                     eventManager.addEvent(new GameEvent("Your " + armor.getDisplayName() + " glows silver!", 2.0f));
                 } else {
                     eventManager.addEvent(new GameEvent("You are not wearing any armor to enchant.", 2.0f));
@@ -723,21 +727,22 @@ public class Player {
     }
 
     public void heal(int amount) {
-        setWarStrength(getWarStrength() + amount);
-        com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + getWarStrength());
+        stats.heal(amount);
+        com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
         switch (item.getType()) {
             case WAR_BOOK:
-                stats.setMaxWarStrength(stats.getMaxWarStrength() + 10);
-                this.setWarStrength(this.getEffectiveMaxWarStrength());
+                stats.modifyBaseHP(10);
+                this.heal(10); // Heal by amount gained? or full heal? ModifyBaseHP already heals.
+                // Re-sync logic if needed. modifyBaseHP calls heal.
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your knowledge of war grows.", 2f));
                 break;
             case SPIRITUAL_BOOK:
-                stats.setMaxSpiritualStrength(stats.getMaxSpiritualStrength() + 10);
-                stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
+                stats.setMaxMP(stats.getMaxMP() + 10);
+                stats.setCurrentMP(stats.getMaxMP());
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Your spiritual knowledge grows.", 2f));
                 break;
@@ -750,6 +755,69 @@ public class Player {
     private void updateVectors() {
         directionVector.set(facing.getVector());
         cameraPlane.set(-directionVector.y, directionVector.x).scl(0.66f);
+    }
+
+    // --- Stats Getters for New System ---
+    public int getCurrentHP() {
+        return stats.getCurrentHP();
+    }
+
+    public void setCurrentHP(int hp) {
+        stats.setCurrentHP(hp);
+    }
+
+    public int getMaxHP() {
+        return stats.getMaxHP();
+    }
+
+    public int getCurrentMP() {
+        return stats.getCurrentMP();
+    }
+
+    public void setCurrentMP(int mp) {
+        stats.setCurrentMP(mp);
+    }
+
+    public int getMaxMP() {
+        return stats.getMaxMP();
+    }
+
+    public int getEffectiveMaxHP() {
+        return stats.getMaxHP() + equipment.getEquippedModifierSum(ModifierType.BONUS_MAX_HP);
+    }
+
+    public int getEffectiveMaxMP() {
+        return stats.getMaxMP() + equipment.getEquippedModifierSum(ModifierType.BONUS_MAX_MP);
+    }
+
+    public int getArmorClass() { // Base 10 + Equipment AC
+        return 10 + equipment.getACBonus(); // Need to ensure equipment has this method or we calculate summation here.
+        // equipment.getArmorDefense() was doing summation.
+    }
+
+    public int getArmorDefense() {
+        return getArmorClass();
+    } // Alias for compatibility with Renderer?
+
+    // Deprecated Aliases
+    public int getWarStrength() {
+        return getCurrentHP();
+    }
+
+    public void setWarStrength(int val) {
+        setCurrentHP(val);
+    }
+
+    public int getSpiritualStrength() {
+        return getCurrentMP();
+    }
+
+    public int getEffectiveMaxWarStrength() {
+        return getEffectiveMaxHP();
+    }
+
+    public int getEffectiveMaxSpiritualStrength() {
+        return getEffectiveMaxMP();
     }
 
     public void rest(GameEventManager eventManager) {
@@ -832,33 +900,8 @@ public class Player {
         }
     }
 
-    public int getArmorDefense() {
-        return equipment.getArmorDefense();
-    }
-
-    public int getEffectiveMaxWarStrength() {
-        return stats.getMaxWarStrength() + equipment.getEquippedModifierSum(ModifierType.BONUS_WAR_STRENGTH);
-    }
-
-    public int getEffectiveMaxSpiritualStrength() {
-        return stats.getMaxSpiritualStrength()
-                + equipment.getEquippedModifierSum(ModifierType.BONUS_SPIRITUAL_STRENGTH);
-    }
-
     public Item getWornRing() {
         return equipment.getWornRing();
-    }
-
-    public void setWarStrength(int amount) {
-        stats.setWarStrength(Math.min(amount, this.getEffectiveMaxWarStrength()));
-    }
-
-    public void setMaxWarStrength(int amount) {
-        stats.setMaxWarStrength(amount);
-    }
-
-    private int getRingDefense() {
-        return equipment.getRingDefense();
     }
 
     private int getResistance(DamageType type) {
@@ -907,7 +950,7 @@ public class Player {
         move(facing.getOpposite(), maze, eventManager, gameMode);
     }
 
-    private void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) {
+    public void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) {
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
@@ -1155,7 +1198,7 @@ public class Player {
             case 1:
                 int temp = stats.getWarStrength();
                 setWarStrength(stats.getSpiritualStrength());
-                stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength()));
+                stats.setSpiritualStrength(Math.min(temp, stats.getMaxMP()));
                 eventManager.addEvent(new GameEvent("Your strengths feel reversed!", 2f));
                 break;
             case 2:
@@ -1164,7 +1207,7 @@ public class Player {
                 break;
             case 3:
                 stats.setSpiritualStrength(
-                        Math.min((int) (stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
+                        Math.min((int) (stats.getSpiritualStrength() * 0.75f), stats.getMaxMP()));
                 eventManager.addEvent(new GameEvent("Your spirit feels drained!", 2f));
                 break;
             default:
@@ -1294,14 +1337,6 @@ public class Player {
 
     public Vector2 getCameraPlane() {
         return cameraPlane;
-    }
-
-    public int getWarStrength() {
-        return stats.getWarStrength();
-    }
-
-    public int getSpiritualStrength() {
-        return stats.getSpiritualStrength();
     }
 
     public int getFood() {

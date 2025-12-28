@@ -59,7 +59,7 @@ public enum PotionEffectType {
         switch (this) {
             case HEALING:
                 // Heal for 25% of max HP (War Strength), or a flat 10, whichever is greater
-                int healAmount = Math.max(10, stats.getMaxWarStrength() / 4);
+                int healAmount = Math.max(10, stats.getMaxHP() / 4);
                 stats.heal(healAmount); // We added this method to PlayerStats in M1
                 break;
             case POISON:
@@ -68,7 +68,7 @@ public enum PotionEffectType {
                 break;
             case GAIN_STRENGTH:
                 // Permanently increase max War Strength
-                stats.modifyBaseWarStrength(1); // We added this method to PlayerStats in M1
+                stats.modifyBaseHP(1); // We added this method to PlayerStats in M1
                 break;
             case BLINDNESS:
                 // Apply BLIND status for 20 turns

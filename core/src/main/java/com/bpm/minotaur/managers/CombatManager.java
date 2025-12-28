@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
@@ -11,9 +12,8 @@ import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
-import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
-import com.bpm.minotaur.gamedata.monster.MonsterTemplate; // NEW
+import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
@@ -23,8 +23,8 @@ import com.bpm.minotaur.gamedata.item.ItemCategory;
 import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
+import com.bpm.minotaur.utils.DiceRoller;
 import java.util.List;
-
 import java.util.Random;
 
 public class CombatManager {
@@ -247,22 +247,6 @@ public class CombatManager {
         }
     }
 
-    // --- NEW: Helper to calculate die size/max damage ---
-    private int calculateDieSize() {
-        int attackModifier = player.getAttackModifier();
-        int potentialDamage;
-
-        if (pendingWeapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-            potentialDamage = pendingWeapon.getSpiritDamage() + attackModifier;
-        } else {
-            potentialDamage = pendingWeapon.getWarDamage() + attackModifier;
-        }
-
-        if (potentialDamage < 4)
-            potentialDamage = 4;
-        return potentialDamage;
-    }
-
     // --- NEW: Standard Attack (KEY A/SPACE) - No Animation ---
     public void playerAttackInstant() {
         if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
@@ -270,14 +254,13 @@ public class CombatManager {
         if (!prepareAttack())
             return;
 
-        // Simulate the roll immediately (1 to Max)
-        int dieSize = calculateDieSize();
-        int simulatedRoll = random.nextInt(dieSize) + 1;
+        // Roll d20
+        int d20Roll = DiceRoller.d20();
 
         // Log it so we know it worked
-        Gdx.app.log("CombatManager", "Instant Attack: Rolled " + simulatedRoll + " on D" + dieSize);
+        Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
 
-        resolveAttack(simulatedRoll);
+        resolveAttack(d20Roll);
     }
 
     // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
@@ -520,116 +503,61 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Blocking " + playerCurrentBlock + " dmg", 1.5f));
         }
 
-        BalanceLogger.getInstance().logCombatRound("PLAYER",
-                "Dice Roll", 0, lastDamageDealt, monster.getWarStrength());
-
-        stochasticManager.clearDice();
-
-        if (monster.getWarStrength() <= 0) {
-            handleMonsterDeath();
-        } else {
-            currentState = CombatState.MONSTER_TURN;
-        }
     }
 
-    private void resolveAttack(int rollBonus) {
+    private void resolveAttack(int d20Roll) {
         if (pendingWeapon == null)
             return;
 
         currentCombatTurns++;
 
-        int attackModifier = player.getAttackModifier() + rollBonus;
+        int attackBonus = player.getAttackModifier();
+        int attackRoll = d20Roll + attackBonus;
+        int targetAC = monster.getArmorClass();
+        boolean isCrit = (d20Roll == 20);
+        boolean isHit = (attackRoll >= targetAC) || isCrit;
 
-        int damage = 0;
-        int actualDamage = 0;
+        // Log Check
+        Gdx.app.log("CombatManger",
+                "Player Attack: Roll " + d20Roll + " + " + attackBonus + " = " + attackRoll + " vs AC " + targetAC);
 
-        if (pendingWeapon.getCategory() == ItemCategory.WAR_WEAPON && pendingWeapon.isWeapon()) {
-            if (pendingWeapon.isRanged()) {
-                if (pendingWeapon.getType() != Item.ItemType.DART) {
-                    player.decrementArrow();
-                }
-                String[] projectileSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
-                animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
-                        player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, projectileSprite));
+        if (isHit) {
+            // Roll Damage
+            String damageDice = pendingWeapon.getDamageDice();
+            int baseDamage = DiceRoller.roll(damageDice);
+            int damageBonus = player.getAttackModifier(); // Using same modifier for now
+            int totalDamage = Math.max(1, baseDamage + damageBonus);
 
-                damage = pendingWeapon.getWarDamage() + attackModifier;
-                actualDamage = monster.takeDamage(damage);
-
-                // --- NEW: Player Minimum Damage (Glancing Blow) ---
-                if (actualDamage < 1) {
-                    actualDamage = 1;
-                    monster.setWarStrength(monster.getWarStrength() - 1); // Force 1 HP loss
-                }
-                // --------------------------------------------------
-
-                lastDamageDealt = actualDamage;
-
-                if (actualDamage > 0) {
-                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
-                }
-
-                showDamageText(actualDamage,
-                        new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-                eventManager.addEvent(new GameEvent("Ranged Hit! " + actualDamage + " dmg", 2f));
-
-            } else {
-                String[] meleeSprite = pendingWeapon.getSpriteData();
-                if (meleeSprite == null)
-                    meleeSprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
-
-                animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
-                        player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, meleeSprite));
-
-                damage = pendingWeapon.getWarDamage() + attackModifier;
-
-                actualDamage = monster.takeDamage(damage);
-
-                // --- NEW: Player Minimum Damage (Glancing Blow) ---
-                if (actualDamage < 1) {
-                    actualDamage = 1;
-                    monster.setWarStrength(monster.getWarStrength() - 1); // Force 1 HP loss
-                }
-                // --------------------------------------------------
-
-                lastDamageDealt = actualDamage;
-
-                if (actualDamage > 0) {
-                    Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
-                    Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
-                    maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
-
-                    if (maze.getBloodCount() < 100)
-                        maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
-                }
-
-                showDamageText(actualDamage,
-                        new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-                eventManager.addEvent(new GameEvent("Melee Hit! " + actualDamage + " dmg", 2f));
+            if (isCrit) {
+                totalDamage *= 2;
+                eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
             }
-        } else if (pendingWeapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON && pendingWeapon.isWeapon()) {
-            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER, player.getPosition(),
-                    monster.getPosition(), pendingWeapon.getColor(), 0.5f,
-                    itemDataManager.getTemplate(Item.ItemType.LARGE_LIGHTNING).spriteData));
 
-            if (random.nextInt(100) < monster.getMagicResistance()) {
-                damage = 0;
-                actualDamage = 0;
-                eventManager.addEvent(new GameEvent("Spell Resisted!", 1f));
-            } else {
-                damage = pendingWeapon.getSpiritDamage() + attackModifier;
-                monster.takeSpiritualDamage(damage);
-                actualDamage = damage;
+            // Animation
+            String[] sprite = pendingWeapon.getSpriteData();
+            if (sprite == null)
+                sprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
+
+            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
+                    player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, sprite));
+
+            int actualDamage = monster.takeDamage(totalDamage);
+            lastDamageDealt = actualDamage;
+
+            if (actualDamage > 0) {
+                Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
+                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+                if (maze.getBloodCount() < 100)
+                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
             }
 
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-            if (actualDamage > 0) {
-                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
-                eventManager.addEvent(new GameEvent("Spell Cast! " + actualDamage + " dmg", 2f));
-            }
+            eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
 
         } else {
-            eventManager.addEvent(new GameEvent("You can't attack with this item.", 2f));
-            return;
+            // Miss
+            eventManager.addEvent(new GameEvent("Miss!", 1f));
         }
 
         if (pendingWeapon.isUsable()) {
@@ -637,13 +565,11 @@ public class CombatManager {
         }
 
         BalanceLogger.getInstance().logCombatRound("PLAYER", "Melee/Ranged", 0, lastDamageDealt,
-                monster.getWarStrength());
+                monster.getCurrentHP());
 
         pendingWeapon = null;
 
-        if (monster.getWarStrength() <= 0)
-
-        {
+        if (monster.getCurrentHP() <= 0) {
             handleMonsterDeath();
             currentState = CombatState.VICTORY;
             Gdx.app.log("COMBAT_FLOW", "State -> VICTORY (Monster Dead)");
@@ -652,13 +578,10 @@ public class CombatManager {
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
             Gdx.app.log("COMBAT_FLOW", "State -> MONSTER_TURN (Attack Resolved)");
         }
-
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {
         int range = attacker.getAttackRange();
-
-        // --- NEW: Weapon Check ---
         Item weapon = attacker.getInventory().getRightHand();
         boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
 
@@ -666,10 +589,10 @@ public class CombatManager {
             return false;
 
         if (hasRangedWeapon)
-            range = weapon.getRange(); // Use weapon range if available, else default?
-
+            range = weapon.getRange();
         if (range <= 0)
             range = 8;
+
         Vector2 diff = player.getPosition().cpy().sub(attacker.getPosition());
         Direction fireDir = null;
         if (Math.abs(diff.x) < 0.5f)
@@ -678,49 +601,51 @@ public class CombatManager {
             fireDir = (diff.x > 0) ? Direction.EAST : Direction.WEST;
         if (fireDir == null)
             return false;
+
         HitResult finalResult = raycastProjectile(attacker.getPosition(), fireDir, range, false);
         if (finalResult.type != HitResult.HitType.PLAYER)
             return false;
+
         float dist = attacker.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;
         animationManager.addAnimation(
                 new Animation(Animation.AnimationType.PROJECTILE_MONSTER, attacker.getPosition(), player.getPosition(),
                         attacker.getColor(), animDuration, itemDataManager.getTemplate(Item.ItemType.DART).spriteData));
         soundManager.playMonsterAttackSound(attacker);
-        int baseChance = 60;
-        int monsterDex = attacker.getDexterity();
-        int playerDex = player.getDexterity();
-        int hitChance = baseChance + (monsterDex * 2) - (int) (playerDex * 1.5);
-        if (hitChance < 10)
-            hitChance = 10;
-        if (hitChance > 95)
-            hitChance = 95;
 
-        int damage = 0;
-        if (random.nextInt(100) < hitChance) {
-            damage = attacker.getWarStrength() / 3;
-            if (damage < 1)
-                damage = 1;
-            int actualDamage = player.takeDamage(damage, DamageType.PHYSICAL);
+        // --- ATTACK ROLL ---
+        int attackBonus = 2 + (attacker.getDexterity() / 5);
+        int d20Roll = DiceRoller.d20();
+        int attackRoll = d20Roll + attackBonus;
+        int targetAC = player.getArmorClass();
 
-            // Log damage taken
+        int actualDamage = 0;
+        if (attackRoll >= targetAC) {
+            int dmg = attacker.getMaxHP() / 4; // Ranged default? Or use weapon?
+            if (hasRangedWeapon) {
+                dmg = DiceRoller.roll(weapon.getDamageDice());
+            } else {
+                dmg = DiceRoller.roll(attacker.getDamageDice());
+            }
+            if (dmg < 1)
+                dmg = 1;
+
+            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+
             if (actualDamage > 0) {
                 maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
-                damageTakenInCombat += actualDamage;
-                BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged", -1, actualDamage,
-                        player.getWarStrength());
-            }
-
-            if (actualDamage > 0)
-                eventManager.addEvent(new GameEvent(
-                        attacker.getMonsterType() + " shoots you for " + actualDamage + " damage!", 1.5f));
-            else
                 eventManager.addEvent(
-                        new GameEvent("Your armor deflects the " + attacker.getMonsterType() + "'s shot!", 1.5f));
+                        new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + "!", 1.5f));
+            } else {
+                eventManager.addEvent(new GameEvent("Armor deflected the shot!", 1.5f));
+            }
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.0f));
-            BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged (Miss)", -1, 0, player.getWarStrength());
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.5f));
         }
+
+        if (actualDamage > 0)
+            damageTakenInCombat += actualDamage;
+        BalanceLogger.getInstance().logCombatRound("MONSTER", "Ranged", -1, actualDamage, player.getCurrentHP());
         return true;
     }
 
@@ -784,7 +709,27 @@ public class CombatManager {
         } else if (currentState == CombatState.DEFEAT) {
             // Log Defeat
             BalanceLogger.getInstance().logCombatEnd("DEFEAT", currentCombatTurns, damageTakenInCombat);
-            game.setScreen(new GameOverScreen(game));
+
+            if (game != null) {
+                // --- CRITICAL FIX: Safe Disposal of Old GameScreen ---
+                final Screen oldScreen = game.getScreen(); // Capture current screen (GameScreen)
+                game.setScreen(new GameOverScreen(game)); // Switch screens (calls hide() on oldScreen)
+
+                if (oldScreen != null) {
+                    // Defer disposal until AFTER this update cycle completes to avoid native
+                    // crashes
+                    // while render() might still be on the stack.
+                    Gdx.app.postRunnable(new Runnable() {
+                        @Override
+                        public void run() {
+                            Gdx.app.log("Lifecycle", "Post-Runnable: Disposing old GameScreen.");
+                            oldScreen.dispose();
+                        }
+                    });
+                }
+            } else {
+                Gdx.app.log("CombatManager", "Headless Mode: Player Defeated. Skipping GameOverScreen.");
+            }
         }
     }
 
@@ -803,7 +748,7 @@ public class CombatManager {
         if (maze != null && itemDataManager != null) {
             Item bone = itemDataManager.createItem(Item.ItemType.BONE,
                     (int) monster.getPosition().x, (int) monster.getPosition().y,
-                    ItemColor.WHITE, game.getAssetManager());
+                    ItemColor.WHITE, (game != null) ? game.getAssetManager() : null);
 
             if (bone != null) {
                 bone.setCorpseSource(monster.getType());
@@ -826,10 +771,13 @@ public class CombatManager {
             }
 
             if (isFleshy) {
-                if (random.nextBoolean()) { // 50%
+                // --- NEW: Tarmin's Hunger Loot Decay ---
+                float baseChance = 0.5f;
+                float decay = com.bpm.minotaur.managers.DoomManager.getInstance().getLootChanceMultiplier();
+                if (random.nextFloat() < (baseChance * decay)) {
                     Item meat = itemDataManager.createItem(Item.ItemType.MEAT,
                             (int) monster.getPosition().x, (int) monster.getPosition().y,
-                            ItemColor.TAN, game.getAssetManager());
+                            ItemColor.TAN, (game != null) ? game.getAssetManager() : null);
                     if (meat != null) {
                         // Find unexpected free spot or stack? For now, just try to place or overwrite
                         // (limitations)
@@ -1016,9 +964,7 @@ public class CombatManager {
     }
 
     private void performMonsterMeleeAttack() {
-        // Standard Melee Logic from before
         float dist = monster.getPosition().dst(player.getPosition());
-        // ... Logic continues below ...
         float animDuration = dist / PROJECTILE_SPEED;
 
         animationManager.addAnimation(new Animation(
@@ -1031,36 +977,46 @@ public class CombatManager {
 
         soundManager.playMonsterAttackSound(monster);
 
-        // --- BALANCED DAMAGE FORMULA ---
-        // Old: WS / 3 + 1. New: WS / 8 + 2.
-        // This significantly reduces damage from high-HP monsters.
-        int baseDmg = (monster.getWarStrength() / 8) + 2;
-        int damage = baseDmg + random.nextInt(3);
-        // -------------------------------
-
-        // --- BLOCK LOGIC ---
-        int damageAfterBlock = damage;
-        if (playerCurrentBlock > 0) {
-            damageAfterBlock = Math.max(0, damage - playerCurrentBlock);
-            int blockedAmount = damage - damageAfterBlock;
-
-            if (blockedAmount > 0) {
-                eventManager.addEvent(new GameEvent("Blocked " + blockedAmount + " dmg!", 1f));
-                BalanceLogger.getInstance().log("COMBAT_MITIGATION",
-                        "Incoming: " + damage + " | Block: " + playerCurrentBlock + " | Reduced By: " + blockedAmount
-                                + " | Final: " + damageAfterBlock);
-            }
+        // --- ATTACK ROLL ---
+        int attackBonus = 2; // Base
+        MonsterTemplate t = monster.getTemplate();
+        if (t != null) {
+            // Rough approximation if level isn't directly exposed
+            attackBonus += (t.maxHP / 10);
         }
 
-        int actualDamage = player.takeDamage(damageAfterBlock, DamageType.PHYSICAL); // PHYSICAL is known valid
-        maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+        int d20Roll = DiceRoller.d20();
+        int attackRoll = d20Roll + attackBonus;
+        int targetAC = player.getArmorClass();
+        boolean isHit = (attackRoll >= targetAC);
+
+        int actualDamage = 0;
+
+        if (isHit) {
+            String dmgDice = monster.getDamageDice();
+            int baseDmg = DiceRoller.roll(dmgDice);
+            // Add bonus?
+            int dmg = baseDmg;
+
+            // Block Logic
+            if (playerCurrentBlock > 0) {
+                dmg = Math.max(0, dmg - playerCurrentBlock);
+                int blocked = baseDmg - dmg;
+                eventManager.addEvent(new GameEvent("Blocked " + blocked + " dmg", 1f));
+            }
+
+            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+
+            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + actualDamage, 1f));
+        } else {
+            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " misses!", 1f));
+        }
 
         damageTakenInCombat += actualDamage;
-        BalanceLogger.getInstance().logCombatRound("MONSTER", "Melee", -1, actualDamage, player.getWarStrength());
+        BalanceLogger.getInstance().logCombatRound("MONSTER", "Melee", -1, actualDamage, player.getCurrentHP());
 
-        eventManager.addEvent(new GameEvent(monster.getMonsterType() + " hits you for " + actualDamage, 1f));
-
-        if (player.getWarStrength() <= 0) {
+        if (player.getCurrentHP() <= 0) {
             currentState = CombatState.DEFEAT;
         } else {
             currentState = CombatState.PLAYER_MENU;

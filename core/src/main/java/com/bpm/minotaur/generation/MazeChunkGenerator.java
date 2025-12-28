@@ -141,7 +141,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             GameMode gameMode,
             RetroTheme.Theme theme,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData, long chunkSeed) { // New Argument
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // New Argument
 
         // Initialize Random with the deterministic seed
         random.setSeed(chunkSeed);
@@ -172,7 +172,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         }
 
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
-                spawnTableData, chunkSeed); // <-- Pass chunkSeed
+                spawnTableData, chunkSeed, playerLuck); // <-- Pass chunkSeed
         spawnLadder(maze, this.finalLayout);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -252,14 +252,14 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData, long chunkSeed) { // <-- Pass chunkSeed
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // <-- Pass chunkSeed
 
         // Derive a stable seed for SpawnManager that is independent of maze generation
         // RNG usage
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
-                level, level, layout, spawnTableData, spawnSeed); // Use level as proxy for playerLevel
+                level, level, playerLuck, layout, spawnTableData, spawnSeed); // Use level as proxy for playerLevel
         spawnManager.spawnEntities();
     }
 
@@ -514,13 +514,19 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     maze.addGameObject(new Door(), x, y);
                 else if (c == 'W')
                     maze.addGameObject(new Window(x, y), x, y); // NEW: Window
-                else if (c == 'S')
-                    maze.addItem(
-                            itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE, assetManager));
-                else if (c == 'H')
-                    maze.addItem(
-                            itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED, assetManager));
-                else if (c == 'C')
+                else if (c == 'S' || c == 'H') {
+                    // --- NEW: Tarmin's Hunger Loot Decay ---
+                    if (random.nextFloat() < com.bpm.minotaur.managers.DoomManager.getInstance()
+                            .getLootChanceMultiplier()) {
+                        if (c == 'S')
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE,
+                                    assetManager));
+                        else
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED,
+                                    assetManager));
+                    }
+                    // ---------------------------------------
+                } else if (c == 'C')
                     maze.addItem(
                             itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.BLUE, assetManager));
                 else if (c == 'N')

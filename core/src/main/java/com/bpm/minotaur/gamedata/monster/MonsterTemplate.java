@@ -45,6 +45,7 @@ public class MonsterTemplate {
     public static final int G_GENO = 8; // Geno'able
     public static final int G_LGROUP = 16; // Small Group
     public static final int G_SGROUP = 32; // Large Group
+    public static final int G_NOGEN = 64; // Do not generate randomly
 
     public int generationFlags = 0; // G_GENO, G_HELL, etc.
     public int behaviorFlags = 0; // M1_FLY, M2_NASTY, etc.
@@ -54,16 +55,18 @@ public class MonsterTemplate {
 
     // ------------------------
 
-    public int warStrength;
-    public int spiritualStrength;
-    public int armor; // Deprecated by baseAC? Let's keep for now until migration complete.
+    public int maxHP;
+    public int maxMP; // New
+    public int armorClass = 10; // Descending AC logic: Lower is good? Or Ascending? User said AD&D. Usually
+                                // Ascending in modern checks, or THAC0.
+    // Plan said: "Ascending AC. Unarmored = 10. Higher is better."
+
     public int baseExperience;
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
     public String[] spriteData;
     public ScaleData scale;
-    public int warDamage;
-    public int spiritDamage;
+    public String damageDice = "1d6";
     public DamageType damageType = DamageType.PHYSICAL;
     public int dexterity; // For Hit Chance calculation
     public boolean hasRangedAttack; // Can this monster shoot back?

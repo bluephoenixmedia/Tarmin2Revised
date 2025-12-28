@@ -65,11 +65,12 @@ public class Monster implements Renderable {
     private final MonsterType type;
     private final Vector2 position;
     private final MonsterColor monsterColor;
-    private int warStrength;
-    private int maxWarStrength; // New: For healing logic
-    private int spiritualStrength;
-    private int armor;
-    private int ac; // Descending armor class
+    private int currentHP;
+    private int maxHP;
+    private int currentMP;
+    private int maxMP;
+    private String damageDice;
+    private int armorClass;
     private int magicResistance; // 0-100%
     private int moveSpeed;
     private int baseExperience;
@@ -108,17 +109,15 @@ public class Monster implements Renderable {
 
         MonsterTemplate template = dataManager.getTemplate(type);
 
-        this.ac = template.baseAC; // NetHack-style (lower is better)
+        this.armorClass = template.armorClass;
         this.magicResistance = template.magicResistance;
 
-        this.warStrength = template.warStrength;
-        // Derive Damage Reduction (armor) from AC
-        // AC 10 = 0 DR, AC 0 = 5 DR, AC -10 = 10 DR
-        this.armor = Math.max(0, (10 - this.ac) / 2);
+        this.maxHP = template.maxHP;
+        this.currentHP = this.maxHP;
 
-        this.warStrength = template.warStrength;
-        this.maxWarStrength = template.warStrength; // Init Max
-        this.spiritualStrength = template.spiritualStrength;
+        this.maxMP = template.maxMP;
+        this.currentMP = this.maxMP;
+        this.damageDice = template.damageDice != null ? template.damageDice : "1d4";
 
         this.baseExperience = template.baseExperience;
         this.moveSpeed = template.moveSpeed; // Init speed
@@ -127,12 +126,28 @@ public class Monster implements Renderable {
         this.spriteData = template.spriteData;
         this.scale = new Vector2(template.scale.x, template.scale.y);
         this.statusManager = new StatusManager();
-        this.texture = assetManager.get(template.texturePath, Texture.class);
+        if (template.texturePath != null && !template.texturePath.isEmpty()) {
+            if (assetManager.isLoaded(template.texturePath, Texture.class)) {
+                this.texture = assetManager.get(template.texturePath, Texture.class);
+            } else {
+                com.badlogic.gdx.Gdx.app.error("Monster",
+                        "CRITICAL: Texture not loaded for " + type + "! Path: " + template.texturePath);
+                // Fallback to error texture or null
+            }
+        }
 
         this.intelligence = template.intelligence;
         this.dexterity = template.dexterity;
         this.hasRangedAttack = template.hasRangedAttack;
         this.attackRange = template.attackRange;
+
+        // --- NEW: Tarmin's Hunger Scaling (The Meat Grinder) ---
+        float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier();
+        if (scaling > 1.0f) {
+            this.maxHP = (int) (this.maxHP * scaling);
+            this.currentHP = this.maxHP;
+        }
+        // -------------------------------------------------------
 
         // --- AI Initialization ---
         this.aiType = template.aiType != null ? template.aiType : MonsterTemplate.AiType.AGGRESSIVE;
@@ -155,25 +170,18 @@ public class Monster implements Renderable {
         return spellChance;
     }
 
-    public int getMaxWarStrength() {
-        return maxWarStrength;
+    public int getMaxHP() {
+        return maxHP;
     }
 
     public int takeDamage(int amount) {
-        int damageReduction = this.armor;
-        int finalDamage = Math.max(0, amount - damageReduction);
-        this.warStrength -= finalDamage;
-        if (this.warStrength < 0) {
-            this.warStrength = 0;
+        // AC mitigation happens in combat calculation (hit/miss)
+        // Here we just take damage
+        this.currentHP -= amount;
+        if (this.currentHP < 0) {
+            this.currentHP = 0;
         }
-        return finalDamage; // NEW: Return the actual value
-    }
-
-    public void takeSpiritualDamage(int amount) {
-        this.spiritualStrength -= amount;
-        if (this.spiritualStrength < 0) {
-            this.spiritualStrength = 0;
-        }
+        return amount;
     }
 
     public String[] getSpriteData() {
@@ -192,10 +200,14 @@ public class Monster implements Renderable {
         if (level <= 1)
             return;
         float multiplier = 1.0f + ((level - 1) * 0.15f);
-        float armorMultiplier = 1.0f + ((level - 1) * 0.05f);
-        this.warStrength = (int) (this.warStrength * multiplier);
-        this.spiritualStrength = (int) (this.spiritualStrength * multiplier);
-        this.armor = (int) (this.armor * armorMultiplier);
+        // float armorMultiplier = 1.0f + ((level - 1) * 0.05f); // AC shouldn't scale
+        // linearly like armor DR
+        this.maxHP = (int) (this.maxHP * multiplier);
+        this.currentHP = this.maxHP;
+
+        // Maybe improve AC slightly?
+        this.armorClass += (level / 5); // +1 AC every 5 levels
+
         this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.10f)));
     }
 
@@ -212,24 +224,46 @@ public class Monster implements Renderable {
         return position;
     }
 
+    public int getCurrentHP() {
+        return currentHP;
+    }
+
+    // Deprecated alias for compatibility if needed, but better to remove
     public int getWarStrength() {
-        return warStrength;
+        return currentHP;
     }
 
     public int getSpiritualStrength() {
-        return spiritualStrength;
-    }
+        return 0;
+    } // Removed
 
     public int getBaseExperience() {
         return baseExperience;
     }
 
-    public void setWarStrength(int warStrength) {
-        this.warStrength = warStrength;
+    public void setCurrentHP(int hp) {
+        this.currentHP = Math.max(0, Math.min(maxHP, hp));
     }
 
-    public void setSpiritualStrength(int spiritualStrength) {
-        this.spiritualStrength = spiritualStrength;
+    public int getCurrentMP() {
+        return currentMP;
+    }
+
+    public void setCurrentMP(int mp) {
+        this.currentMP = Math.max(0, Math.min(maxMP, mp));
+    }
+
+    public int getMaxMP() {
+        return maxMP;
+    }
+
+    public String getDamageDice() {
+        return damageDice;
+    }
+
+    // Deprecated: Compatibility
+    public int getMaxWarStrength() {
+        return maxHP;
     }
 
     @Override
@@ -265,8 +299,8 @@ public class Monster implements Renderable {
         return attackRange;
     }
 
-    public int getArmor() {
-        return armor;
+    public int getArmorClass() {
+        return armorClass;
     }
 
     public com.bpm.minotaur.gamedata.Inventory getInventory() {
@@ -295,10 +329,6 @@ public class Monster implements Renderable {
 
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
-    }
-
-    public int getAC() {
-        return ac;
     }
 
     public int getMagicResistance() {

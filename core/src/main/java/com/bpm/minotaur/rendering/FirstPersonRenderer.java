@@ -95,18 +95,18 @@ public class FirstPersonRenderer {
         gateTexture = new Texture(Gdx.files.internal("images/gate.png"));
         floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
         floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        skyboxNorth = new Texture(Gdx.files.internal("images/skybox_castle.png"));
-        skyboxEast = new Texture(Gdx.files.internal("images/skybox_east.png"));
-        skyboxSouth = new Texture(Gdx.files.internal("images/skybox_south.png"));
-        skyboxWest = new Texture(Gdx.files.internal("images/skybox_west.png"));
-        retroSkyboxNorth = new Texture(Gdx.files.internal("images/retro_skybox_castle.jpg"));
-        retroSkyboxEast = new Texture(Gdx.files.internal("images/retro_skybox_east.jpg"));
-        retroSkyboxSouth = new Texture(Gdx.files.internal("images/retro_skybox_south.jpg"));
-        retroSkyboxWest = new Texture(Gdx.files.internal("images/retro_skybox_west.jpg"));
-        retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/retro_skybox_castle_storm.jpg"));
-        retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/retro_skybox_east_storm.jpg"));
-        retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/retro_skybox_south_storm.jpg"));
-        retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/retro_skybox_west_storm.jpg"));
+        skyboxNorth = new Texture(Gdx.files.internal("images/skybox/skybox_castle.png"));
+        skyboxEast = new Texture(Gdx.files.internal("images/skybox/skybox_east.png"));
+        skyboxSouth = new Texture(Gdx.files.internal("images/skybox/skybox_south.png"));
+        skyboxWest = new Texture(Gdx.files.internal("images/skybox/skybox_west.png"));
+        retroSkyboxNorth = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle.jpg"));
+        retroSkyboxEast = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east.jpg"));
+        retroSkyboxSouth = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south.jpg"));
+        retroSkyboxWest = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west.jpg"));
+        retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.jpg"));
+        retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east_storm.jpg"));
+        retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south_storm.jpg"));
+        retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west_storm.jpg"));
 
         // Create 1x1 white texture
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -176,6 +176,21 @@ public class FirstPersonRenderer {
             fogDistance = biome.getFogDistance();
             fogColor.set(biome.getFogColor());
         }
+
+        // --- NEW: Tarmin's Hunger Atmosphere ---
+        // As the bridge forms (deaths increase), the world darkens.
+        float bridgeIntegrity = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity(); // 0 to 100
+        // Map 0-100 to 1.0 - 0.4 (60% darkness at max)
+        float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
+        lightIntensity *= doomFactor;
+
+        // Optional: Tint fog red/purple at high doom?
+        if (bridgeIntegrity > 50) {
+            // Slight red tint
+            float tintStrength = (bridgeIntegrity - 50) / 50f; // 0 to 1
+            fogColor.lerp(Color.RED, tintStrength * 0.3f);
+        }
+        // ---------------------------------------
 
         setTheme(maze.getTheme());
 

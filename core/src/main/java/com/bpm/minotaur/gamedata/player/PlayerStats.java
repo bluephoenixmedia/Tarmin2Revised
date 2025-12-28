@@ -6,8 +6,8 @@ import java.util.Random;
 
 public class PlayerStats {
 
-    private int warStrength;
-    private int spiritualStrength;
+    private int currentHP;
+    private int currentMP;
     private int food;
     private int arrows;
     private int dexterity;
@@ -28,21 +28,21 @@ public class PlayerStats {
 
     private int treasureScore = 0;
 
-    private int maxWarStrength;
-    private int maxSpiritualStrength;
+    private int maxHP;
+    private int maxMP;
 
     private final float vulnerabilityMultiplier;
 
     public PlayerStats(Difficulty difficulty) {
         // Set stats based on difficulty
-        this.warStrength = difficulty.startWarStrength;
-        this.spiritualStrength = difficulty.startSpiritualStrength;
+        this.currentHP = difficulty.startWarStrength; // Note: Difficulty field names might still be old
+        this.currentMP = difficulty.startSpiritualStrength;
         this.food = difficulty.startFood;
         this.arrows = difficulty.startArrows;
         this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
-        this.maxWarStrength = difficulty.startWarStrength;
-        this.maxSpiritualStrength = difficulty.startSpiritualStrength;
+        this.maxHP = difficulty.startWarStrength;
+        this.maxMP = difficulty.startSpiritualStrength;
 
         this.dexterity = 10;
 
@@ -88,17 +88,15 @@ public class PlayerStats {
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
         // --- UPDATED: Increased Stat Growth ---
-        // Was 1 + Random(2) (1-2)
-        // Now 3 + Random(3) (3-5)
-        int wsIncrease = 3 + new Random().nextInt(3);
-        int ssIncrease = 3 + new Random().nextInt(3);
+        int hpIncrease = 3 + new Random().nextInt(3);
+        int mpIncrease = 3 + new Random().nextInt(3);
 
-        this.maxWarStrength += wsIncrease;
-        this.maxSpiritualStrength += ssIncrease;
+        this.maxHP += hpIncrease;
+        this.maxMP += mpIncrease;
 
         // Fully heal player on level up
-        this.warStrength = this.maxWarStrength;
-        this.spiritualStrength = this.maxSpiritualStrength;
+        this.currentHP = this.maxHP;
+        this.currentMP = this.maxMP;
     }
 
     /**
@@ -136,20 +134,37 @@ public class PlayerStats {
 
     // --- Getters and Setters ---
 
-    public int getWarStrength() {
-        return warStrength;
+    public int getCurrentHP() {
+        return currentHP;
     }
 
-    public void setWarStrength(int warStrength) {
-        this.warStrength = warStrength;
+    public void setCurrentHP(int currentHP) {
+        this.currentHP = currentHP;
+    }
+
+    public int getCurrentMP() {
+        return currentMP;
+    }
+
+    public void setCurrentMP(int currentMP) {
+        this.currentMP = currentMP;
+    }
+
+    // Deprecated Aliases for compatibility during refactor
+    public int getWarStrength() {
+        return currentHP;
     }
 
     public int getSpiritualStrength() {
-        return spiritualStrength;
+        return currentMP;
     }
 
-    public void setSpiritualStrength(int spiritualStrength) {
-        this.spiritualStrength = spiritualStrength;
+    public void setWarStrength(int val) {
+        this.currentHP = val;
+    }
+
+    public void setSpiritualStrength(int val) {
+        this.currentMP = val;
     }
 
     public int getFood() {
@@ -188,20 +203,20 @@ public class PlayerStats {
         this.treasureScore = treasureScore;
     }
 
-    public int getMaxWarStrength() {
-        return maxWarStrength;
+    public int getMaxHP() {
+        return maxHP;
     }
 
-    public void setMaxWarStrength(int maxWarStrength) {
-        this.maxWarStrength = maxWarStrength;
+    public void setMaxHP(int maxHP) {
+        this.maxHP = maxHP;
     }
 
-    public int getMaxSpiritualStrength() {
-        return maxSpiritualStrength;
+    public int getMaxMP() {
+        return maxMP;
     }
 
-    public void setMaxSpiritualStrength(int maxSpiritualStrength) {
-        this.maxSpiritualStrength = maxSpiritualStrength;
+    public void setMaxMP(int maxMP) {
+        this.maxMP = maxMP;
     }
 
     public float getVulnerabilityMultiplier() {
@@ -209,7 +224,7 @@ public class PlayerStats {
     }
 
     /**
-     * Heals the player's War Strength (health).
+     * Heals the player's Hit Points.
      * Cannot heal beyond maximum.
      * 
      * @param amount The amount to heal.
@@ -217,22 +232,22 @@ public class PlayerStats {
     public void heal(int amount) {
         if (amount <= 0)
             return;
-        this.warStrength += amount;
-        if (this.warStrength > this.maxWarStrength) {
-            this.warStrength = this.maxWarStrength;
+        this.currentHP += amount;
+        if (this.currentHP > this.maxHP) {
+            this.currentHP = this.maxHP;
         }
     }
 
     /**
-     * Permanently increases the player's base (max) War Strength.
+     * Permanently increases the player's base (max) HP.
      * Also heals the player for the same amount.
      * 
-     * @param amount The amount to increase max strength by.
+     * @param amount The amount to increase max HP by.
      */
-    public void modifyBaseWarStrength(int amount) {
+    public void modifyBaseHP(int amount) {
         if (amount <= 0)
             return;
-        this.maxWarStrength += amount;
+        this.maxHP += amount;
         heal(amount); // Also heal the player by the amount gained
     }
 
@@ -259,5 +274,28 @@ public class PlayerStats {
 
     public void setStamina(int stamina) {
         this.stamina = stamina;
+    }
+
+    // --- Luck System ---
+    private int luck = 0;
+
+    public int getLuck() {
+        return luck;
+    }
+
+    public void setLuck(int luck) {
+        this.luck = luck;
+    }
+
+    public void modifyLuck(int amount) {
+        this.luck += amount;
+        // Clamp luck if desired, e.g., -10 to 10 approx NetHack style
+        // For now leaving uncapped or soft capped?
+        // NetHack is complicated. Let's just allow int range for now or clamp -13 to
+        // 13.
+        if (this.luck > 13)
+            this.luck = 13;
+        if (this.luck < -13)
+            this.luck = -13;
     }
 }

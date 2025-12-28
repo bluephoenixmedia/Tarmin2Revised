@@ -5,9 +5,17 @@ public enum ItemCategory {
     SPIRITUAL_WEAPON,
     ARMOR,
     RING,
+    AMULET,
+    TOOL,
+    FOOD,
+    POTION,
+    SCROLL,
+    WAND,
+    BOOK,
+    GEM,
+    GOLD,
     USEFUL, // Potions, books, keys
     TREASURE,
     CONTAINER,
-    FOOD, // NEW
     MISC // Flour, etc.
 }

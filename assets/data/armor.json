@@ -2,7 +2,7 @@
   "BANDED_MAIL": {
     "friendlyName": "Banded mail",
     "description": "Defense: 7",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -60,7 +60,7 @@
   "BRIGANDINE": {
     "friendlyName": "Brigandine",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -118,7 +118,7 @@
   "BACK_AND_BREAST": {
     "friendlyName": "Back-and-breast",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -176,7 +176,7 @@
   "BASINET": {
     "friendlyName": "Basinet",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -234,7 +234,7 @@
   "BRONZE_PLATE": {
     "friendlyName": "Bronze Plate",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -292,7 +292,7 @@
   "CHAIN_HAUBERK": {
     "friendlyName": "Chain hauberk",
     "description": "Defense: 5",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -350,7 +350,7 @@
   "CHAIN_LAMELLAR": {
     "friendlyName": "Chain-lamellar",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -408,7 +408,7 @@
   "CHAIN_MAIL": {
     "friendlyName": "Chain mail",
     "description": "Defense: 6",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -466,7 +466,7 @@
   "CORD_MAIL": {
     "friendlyName": "Cord mail",
     "description": "Defense: 3",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -524,7 +524,7 @@
   "FIELD_PLATE": {
     "friendlyName": "Field plate",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -582,7 +582,7 @@
   "FULL_PLATE": {
     "friendlyName": "Full plate",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -640,7 +640,7 @@
   "GALLIC_ARMOR": {
     "friendlyName": "Gallic Armor",
     "description": "Defense: 3",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -698,7 +698,7 @@
   "HALF_PLATE": {
     "friendlyName": "Half-Plate",
     "description": "Defense: 5",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -756,7 +756,7 @@
   "CLOSED_FACE": {
     "friendlyName": "Closed face",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -814,7 +814,7 @@
   "MAIL_COIF": {
     "friendlyName": "Mail coif",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -872,7 +872,7 @@
   "GREAT_HELM": {
     "friendlyName": "Great Helm",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -930,7 +930,7 @@
   "LEATHER_HELM": {
     "friendlyName": "Leather Helm",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -988,7 +988,7 @@
   "OPEN_FACED": {
     "friendlyName": "Open faced",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1046,7 +1046,7 @@
   "HIDE_ARMOR": {
     "friendlyName": "Hide Armor",
     "description": "Defense: 2",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1104,7 +1104,7 @@
   "HOPLITE_ARMOR": {
     "friendlyName": "Hoplite armor",
     "description": "Defense: 6",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1162,7 +1162,7 @@
   "IMPROVED_MAIL": {
     "friendlyName": "Improved mail",
     "description": "Defense: 6",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1220,7 +1220,7 @@
   "LAMELLAR_SHIRT": {
     "friendlyName": "Lamellar shirt",
     "description": "Defense: 5",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1278,7 +1278,7 @@
   "LEATHER_ARMOR": {
     "friendlyName": "Leather armor",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1336,7 +1336,7 @@
   "LIGHT_SCALE": {
     "friendlyName": "Light scale",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1394,7 +1394,7 @@
   "LORICA_HAMATA": {
     "friendlyName": "Lorica hamata",
     "description": "Defense: 5",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1452,7 +1452,7 @@
   "LORICA_SEGMENTA": {
     "friendlyName": "Lorica segmenta",
     "description": "Defense: 6",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1510,7 +1510,7 @@
   "MAIL_AND_PLATE": {
     "friendlyName": "Mail and Plate",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1568,7 +1568,7 @@
   "METAL_LAMELLAR": {
     "friendlyName": "Metal Lamellar",
     "description": "Defense: 6",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1626,7 +1626,7 @@
   "PADDED_ARMOR": {
     "friendlyName": "Padded Armor",
     "description": "Defense: 1",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1684,7 +1684,7 @@
   "PLATE_MAIL": {
     "friendlyName": "Plate mail",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1742,7 +1742,7 @@
   "RING_MAIL": {
     "friendlyName": "Ring mail",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1800,7 +1800,7 @@
   "SCALE_ARMOR": {
     "friendlyName": "Scale armor",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1858,7 +1858,7 @@
   "SHIELD_BODY": {
     "friendlyName": "Body",
     "description": "Defense: 2",
-    "texturePath": "images/items/shield.png",
+    "texturePath": "images/armor/shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1916,7 +1916,7 @@
   "BUCKLER": {
     "friendlyName": "Buckler",
     "description": "Defense: 2",
-    "texturePath": "images/items/shield.png",
+    "texturePath": "images/armor/shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1974,7 +1974,7 @@
   "SHIELD_SMALL": {
     "friendlyName": "Small",
     "description": "Defense: 2",
-    "texturePath": "images/items/shield.png",
+    "texturePath": "images/armor/shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2032,7 +2032,7 @@
   "SHIELD_MEDIUM": {
     "friendlyName": "Medium",
     "description": "Defense: 2",
-    "texturePath": "images/items/shield.png",
+    "texturePath": "images/armor/shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2090,7 +2090,7 @@
   "SHIELD_LARGE": {
     "friendlyName": "Large",
     "description": "Defense: 2",
-    "texturePath": "images/items/shield.png",
+    "texturePath": "images/armor/shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2148,7 +2148,7 @@
   "SPLINT_MAIL": {
     "friendlyName": "Splint mail",
     "description": "Defense: 7",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2206,7 +2206,7 @@
   "STUDDED_LEATHER": {
     "friendlyName": "Studded leather",
     "description": "Defense: 2",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2264,7 +2264,7 @@
   "THREE_QUARTER_PLATE": {
     "friendlyName": "Three-quarter plate",
     "description": "Defense: 8",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2322,7 +2322,7 @@
   "WOOD_BONE_ARMOR": {
     "friendlyName": "Wood/bone armor",
     "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2379,7 +2379,7 @@
   },
   "BOOTS": {
     "friendlyName": "Boots",
-    "texturePath": "images/items/boots.png",
+    "texturePath": "images/armor/boots.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2464,7 +2464,7 @@
   },
   "LEGS": {
     "friendlyName": "Legs",
-    "texturePath": "images/items/legs.png",
+    "texturePath": "images/armor/legs.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2549,7 +2549,7 @@
   },
   "LARGE_SHIELD": {
     "friendlyName": "Large Shield",
-    "texturePath": "images/items/large_shield.png",
+    "texturePath": "images/armor/large_shield.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2634,7 +2634,7 @@
   },
   "GAUNTLETS": {
     "friendlyName": "Gauntlets",
-    "texturePath": "images/items/gauntlets.png",
+    "texturePath": "images/armor/gauntlets.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2719,7 +2719,7 @@
   },
   "HAUBERK": {
     "friendlyName": "Hauberk",
-    "texturePath": "images/items/breastplate.png",
+    "texturePath": "images/armor/breastplate.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2804,7 +2804,7 @@
   },
   "CLOAK": {
     "friendlyName": "Cloak",
-    "texturePath": "images/items/cloak.png",
+    "texturePath": "images/armor/cloak.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2889,7 +2889,7 @@
   },
   "EYES": {
     "friendlyName": "Eyes / Visor",
-    "texturePath": "images/items/visor.png",
+    "texturePath": "images/armor/visor.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2974,7 +2974,7 @@
   },
   "ARMS": {
     "friendlyName": "Arms",
-    "texturePath": "images/items/arms.png",
+    "texturePath": "images/armor/arms.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3059,7 +3059,7 @@
   },
   "HELMET": {
     "friendlyName": "Helmet",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/armor/helmet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3144,7 +3144,7 @@
   },
   "BREASTPLATE": {
     "friendlyName": "Breastplate",
-    "texturePath": "images/items/breastplate.png",
+    "texturePath": "images/armor/breastplate.png",
     "spriteData": [
       "........................",
       "........................",

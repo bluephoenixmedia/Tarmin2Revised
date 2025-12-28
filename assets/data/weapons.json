@@ -1,7 +1,7 @@
 {
   "RUSTY_SWORD": {
     "friendlyName": "Rusty Sword",
-    "texturePath": "images/items/rusty_weapon.png",
+    "texturePath": "images/weapons/rusty_weapon.png",
     "spriteData": [
       "........................",
       "........................",
@@ -56,7 +56,7 @@
   },
   "ALHULAK": {
     "friendlyName": "Alhulak",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -111,7 +111,7 @@
   },
   "ANKUS_ELEPHANT_GOAD": {
     "friendlyName": "Ankus (Elephant Goad)",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -166,7 +166,7 @@
   },
   "ARQUEBUS": {
     "friendlyName": "Arquebus",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -221,7 +221,7 @@
   },
   "ARROW_DAIKYU": {
     "friendlyName": "Arrow, Daikyu",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -276,7 +276,7 @@
   },
   "ARROW_FLIGHT": {
     "friendlyName": "Arrow, Flight",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -331,7 +331,7 @@
   },
   "ASSEGAI": {
     "friendlyName": "Assegai",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -386,7 +386,7 @@
   },
   "AXE_BATTLE": {
     "friendlyName": "Axe, Battle",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -441,7 +441,7 @@
   },
   "BAGH_NAKH_TIGER_CLAWS": {
     "friendlyName": "Bagh Nakh (Tiger Claws)",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -496,7 +496,7 @@
   },
   "BARD_S_FRIEND": {
     "friendlyName": "Bard's Friend",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -551,7 +551,7 @@
   },
   "BASILARD": {
     "friendlyName": "Basilard",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -606,7 +606,7 @@
   },
   "BLUNDERBUS": {
     "friendlyName": "Blunderbus",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -661,7 +661,7 @@
   },
   "BO_STICK": {
     "friendlyName": "Bo Stick",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -716,7 +716,7 @@
   },
   "BOLA": {
     "friendlyName": "Bola",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -771,7 +771,7 @@
   },
   "BOW_COMPOSITE_LONG": {
     "friendlyName": "Bow, Composite Long",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -826,7 +826,7 @@
   },
   "BOW_ELVEN": {
     "friendlyName": "Bow, Elven",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -881,7 +881,7 @@
   },
   "BUCKLER_SPIKED": {
     "friendlyName": "Buckler, Spiked",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -936,7 +936,7 @@
   },
   "CAHULAKS": {
     "friendlyName": "Cahulaks",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -991,7 +991,7 @@
   },
   "CARRIKAL": {
     "friendlyName": "Carrikal",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1046,7 +1046,7 @@
   },
   "CAVILER": {
     "friendlyName": "Caviler",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1101,7 +1101,7 @@
   },
   "CESTUS": {
     "friendlyName": "Cestus",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1156,7 +1156,7 @@
   },
   "CHAIN": {
     "friendlyName": "Chain",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1211,7 +1211,7 @@
   },
   "CHAKRAM": {
     "friendlyName": "Chakram",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1266,7 +1266,7 @@
   },
   "CHATKCHA": {
     "friendlyName": "Chatkcha",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1321,7 +1321,7 @@
   },
   "CLUB": {
     "friendlyName": "Club",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1376,7 +1376,7 @@
   },
   "CLUB_DATCHI": {
     "friendlyName": "Club, Datchi",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1431,7 +1431,7 @@
   },
   "CLUB_DWARVEN_WAR": {
     "friendlyName": "Club, Dwarven War",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1486,7 +1486,7 @@
   },
   "CROSSBOW_DOUBLED": {
     "friendlyName": "Crossbow, Doubled",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1541,7 +1541,7 @@
   },
   "DAGGER": {
     "friendlyName": "Dagger",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1596,7 +1596,7 @@
   },
   "DAIKYU": {
     "friendlyName": "Daikyu",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1651,7 +1651,7 @@
   },
   "DART": {
     "friendlyName": "Dart",
-    "texturePath": "images/items/dart.png",
+    "texturePath": "images/weapons/dart.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1706,7 +1706,7 @@
   },
   "DEJADA": {
     "friendlyName": "Dejada",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1761,7 +1761,7 @@
   },
   "DIRK": {
     "friendlyName": "Dirk",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1816,7 +1816,7 @@
   },
   "DRAGON_S_PAW": {
     "friendlyName": "Dragon's Paw",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1871,7 +1871,7 @@
   },
   "FLAIL_BLADEBACK": {
     "friendlyName": "Flail, Bladeback",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1926,7 +1926,7 @@
   },
   "FLAIL_CHAIN": {
     "friendlyName": "Flail, Chain",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1981,7 +1981,7 @@
   },
   "FLINDBAR": {
     "friendlyName": "Flindbar",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2036,7 +2036,7 @@
   },
   "GADA": {
     "friendlyName": "Gada",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2091,7 +2091,7 @@
   },
   "GLOVE_NAIL": {
     "friendlyName": "Glove Nail",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2146,7 +2146,7 @@
   },
   "GOUGE": {
     "friendlyName": "Gouge",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2201,7 +2201,7 @@
   },
   "HARPOON_ONE_HANDED": {
     "friendlyName": "Harpoon, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2256,7 +2256,7 @@
   },
   "HORA": {
     "friendlyName": "Hora",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2311,7 +2311,7 @@
   },
   "IMPALER": {
     "friendlyName": "Impaler",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2366,7 +2366,7 @@
   },
   "IUAK_SNOW_BLADE": {
     "friendlyName": "Iuak (Snow Blade)",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2421,7 +2421,7 @@
   },
   "JAMBIYA": {
     "friendlyName": "Jambiya",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2476,7 +2476,7 @@
   },
   "JAVELIN_ONE_HANDED": {
     "friendlyName": "Javelin, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2531,7 +2531,7 @@
   },
   "KATAR_PUNCH_DAGGER": {
     "friendlyName": "Katar (Punch Dagger)",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2586,7 +2586,7 @@
   },
   "KICK_SLASHER": {
     "friendlyName": "Kick-slasher",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2641,7 +2641,7 @@
   },
   "KNIFE": {
     "friendlyName": "Knife",
-    "texturePath": "images/items/knife.png",
+    "texturePath": "images/weapons/knife.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2696,7 +2696,7 @@
   },
   "KNOBKERRIE": {
     "friendlyName": "Knobkerrie",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2751,7 +2751,7 @@
   },
   "KORA": {
     "friendlyName": "Kora",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2806,7 +2806,7 @@
   },
   "KUKRI": {
     "friendlyName": "Kukri",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2861,7 +2861,7 @@
   },
   "LOTULIS": {
     "friendlyName": "Lotulis",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2916,7 +2916,7 @@
   },
   "MACA": {
     "friendlyName": "Maca",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2971,7 +2971,7 @@
   },
   "MACE_GREAT": {
     "friendlyName": "Mace, Great",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3026,7 +3026,7 @@
   },
   "MACHETE": {
     "friendlyName": "Machete",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3081,7 +3081,7 @@
   },
   "MADU": {
     "friendlyName": "Madu",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3136,7 +3136,7 @@
   },
   "MAIN_GAUCHE": {
     "friendlyName": "Main-Gauche",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3191,7 +3191,7 @@
   },
   "MORNING_STAR": {
     "friendlyName": "Morning Star",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3246,7 +3246,7 @@
   },
   "MORNING_STAR_DOUBLE_BALL": {
     "friendlyName": "Morning Star, Double-Ball",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3301,7 +3301,7 @@
   },
   "MUSKET": {
     "friendlyName": "Musket",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3356,7 +3356,7 @@
   },
   "NET": {
     "friendlyName": "Net",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3411,7 +3411,7 @@
   },
   "NUNCHAKU": {
     "friendlyName": "Nunchaku",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3466,7 +3466,7 @@
   },
   "NYEK_PLE_NEN_TOH": {
     "friendlyName": "Nyek-ple-nen-toh",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3521,7 +3521,7 @@
   },
   "PATA1": {
     "friendlyName": "Pata1",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3576,7 +3576,7 @@
   },
   "PESHKABZ": {
     "friendlyName": "Peshkabz",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3631,7 +3631,7 @@
   },
   "PICK_FOOTMAN_S": {
     "friendlyName": "Pick, Footman's",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3686,7 +3686,7 @@
   },
   "PICK_HORSEMAN_S": {
     "friendlyName": "Pick, Horseman's",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3741,7 +3741,7 @@
   },
   "PICK_ICE": {
     "friendlyName": "Pick, Ice",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3796,7 +3796,7 @@
   },
   "PIKE_WEIGHTED": {
     "friendlyName": "Pike, Weighted",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3851,7 +3851,7 @@
   },
   "PISTOL_STARWHEEL": {
     "friendlyName": "Pistol, Starwheel",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3906,7 +3906,7 @@
   },
   "POLEARM_AWL_PIKE3": {
     "friendlyName": "Polearm, Awl Pike3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -3961,7 +3961,7 @@
   },
   "POLEARM_BARDICHE": {
     "friendlyName": "Polearm, Bardiche",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4016,7 +4016,7 @@
   },
   "POLEARM_BEC_DE_CORBIN": {
     "friendlyName": "Polearm, Bec De Corbin",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4071,7 +4071,7 @@
   },
   "POLEARM_BILL_GUISARME": {
     "friendlyName": "Polearm, Bill-Guisarme",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4126,7 +4126,7 @@
   },
   "POLEARM_CRUSHER": {
     "friendlyName": "Polearm, Crusher",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4181,7 +4181,7 @@
   },
   "POLEARM_FAUCHARD": {
     "friendlyName": "Polearm, Fauchard",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4236,7 +4236,7 @@
   },
   "POLEARM_FAUCHARD_FORK": {
     "friendlyName": "Polearm, Fauchard-Fork",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4291,7 +4291,7 @@
   },
   "POLEARM_GIANT_KIN_HALBERD": {
     "friendlyName": "Polearm, Giant-kin Halberd",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4346,7 +4346,7 @@
   },
   "POLEARM_GLAIVE_GUISARME4": {
     "friendlyName": "Polearm, Glaive-Guisarme4",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4401,7 +4401,7 @@
   },
   "POLEARM_GLAIVE4": {
     "friendlyName": "Polearm, Glaive4",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4456,7 +4456,7 @@
   },
   "POLEARM_GUISARME": {
     "friendlyName": "Polearm, Guisarme",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4511,7 +4511,7 @@
   },
   "POLEARM_GUISARME_VOULGE": {
     "friendlyName": "Polearm, Guisarme-Voulge",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4566,7 +4566,7 @@
   },
   "POLEARM_GYTHKA": {
     "friendlyName": "Polearm, Gythka",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4621,7 +4621,7 @@
   },
   "POLEARM_HALBERD": {
     "friendlyName": "Polearm, Halberd",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4676,7 +4676,7 @@
   },
   "POLEARM_HOOK_FAUCHARD": {
     "friendlyName": "Polearm, Hook Fauchard",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4731,7 +4731,7 @@
   },
   "POLEARM_LUCERN_HAMMER3": {
     "friendlyName": "Polearm, Lucern Hammer3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4786,7 +4786,7 @@
   },
   "POLEARM_MILITARY_FORK4": {
     "friendlyName": "Polearm, Military Fork4",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4841,7 +4841,7 @@
   },
   "POLEARM_NAGINATA3": {
     "friendlyName": "Polearm, Naginata3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4896,7 +4896,7 @@
   },
   "POLEARM_PARTISAN3": {
     "friendlyName": "Polearm, Partisan3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4951,7 +4951,7 @@
   },
   "POLEARM_QUAD_FAUCHARD": {
     "friendlyName": "Polearm, Quad Fauchard",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5006,7 +5006,7 @@
   },
   "POLEARM_RANSEUR3": {
     "friendlyName": "Polearm, Ranseur3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5061,7 +5061,7 @@
   },
   "POLEARM_SPETUM3": {
     "friendlyName": "Polearm, Spetum3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5116,7 +5116,7 @@
   },
   "POLEARM_TETSUBO": {
     "friendlyName": "Polearm, Tetsubo",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5171,7 +5171,7 @@
   },
   "POLEARM_TRIKAL": {
     "friendlyName": "Polearm, Trikal",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5226,7 +5226,7 @@
   },
   "POLEARM_VOULGE": {
     "friendlyName": "Polearm, Voulge",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5281,7 +5281,7 @@
   },
   "PUCHIK": {
     "friendlyName": "Puchik",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5336,7 +5336,7 @@
   },
   "PUNCH_CUTTER": {
     "friendlyName": "Punch-cutter",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5391,7 +5391,7 @@
   },
   "QUABONE": {
     "friendlyName": "Quabone",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5446,7 +5446,7 @@
   },
   "QUARREL_HAND": {
     "friendlyName": "Quarrel, Hand",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5501,7 +5501,7 @@
   },
   "QUARREL_HEAVY": {
     "friendlyName": "Quarrel, Heavy",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5556,7 +5556,7 @@
   },
   "QUARREL_LIGHT": {
     "friendlyName": "Quarrel, Light",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5611,7 +5611,7 @@
   },
   "QUARTERSTAFF": {
     "friendlyName": "Quarterstaff",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5666,7 +5666,7 @@
   },
   "RAZOR": {
     "friendlyName": "Razor",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5721,7 +5721,7 @@
   },
   "RITIIK": {
     "friendlyName": "Ritiik",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5776,7 +5776,7 @@
   },
   "SAI": {
     "friendlyName": "Sai",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5831,7 +5831,7 @@
   },
   "SAP": {
     "friendlyName": "Sap",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5886,7 +5886,7 @@
   },
   "SCOURGE": {
     "friendlyName": "Scourge",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5941,7 +5941,7 @@
   },
   "SCYTHE": {
     "friendlyName": "Scythe",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5996,7 +5996,7 @@
   },
   "SHIELD_SPIKE": {
     "friendlyName": "Shield, Spike",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6051,7 +6051,7 @@
   },
   "SHOKA": {
     "friendlyName": "Shoka",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6106,7 +6106,7 @@
   },
   "SHOTEL": {
     "friendlyName": "Shotel",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6161,7 +6161,7 @@
   },
   "SHURIKEN": {
     "friendlyName": "Shuriken",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6216,7 +6216,7 @@
   },
   "SICKLE": {
     "friendlyName": "Sickle",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6271,7 +6271,7 @@
   },
   "SLING": {
     "friendlyName": "Sling",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6326,7 +6326,7 @@
   },
   "SLING_BULLET": {
     "friendlyName": "Sling, Bullet",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6381,7 +6381,7 @@
   },
   "SLING_STONE": {
     "friendlyName": "Sling, Stone",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6436,7 +6436,7 @@
   },
   "SPEAR_CASTER": {
     "friendlyName": "Spear Caster",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6491,7 +6491,7 @@
   },
   "SPEAR_DOUBLE_BLADED": {
     "friendlyName": "Spear, Double-Bladed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6546,7 +6546,7 @@
   },
   "SPEAR_HEAVY_ONE_HANDED": {
     "friendlyName": "Spear, Heavy, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6601,7 +6601,7 @@
   },
   "SPEAR_HEAVY_TWO_HANDED": {
     "friendlyName": "Spear, Heavy, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6656,7 +6656,7 @@
   },
   "SPEAR_HOOK_TAILED": {
     "friendlyName": "Spear, Hook-Tailed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6711,7 +6711,7 @@
   },
   "SPEAR_LONG_ONE_HANDED": {
     "friendlyName": "Spear, Long, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6766,7 +6766,7 @@
   },
   "SPEAR_LONG_TWO_HANDED3": {
     "friendlyName": "Spear, Long, Two-Handed3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6821,7 +6821,7 @@
   },
   "SPEAR_ONE_HANDED": {
     "friendlyName": "Spear, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6876,7 +6876,7 @@
   },
   "SPEAR_PADDLE": {
     "friendlyName": "Spear, Paddle",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6931,7 +6931,7 @@
   },
   "SPEAR_STONE_ONE_HANDED": {
     "friendlyName": "Spear, Stone, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -6986,7 +6986,7 @@
   },
   "SPEAR_STONE_TWO_HANDED": {
     "friendlyName": "Spear, Stone, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7041,7 +7041,7 @@
   },
   "SPEAR_THROWING": {
     "friendlyName": "Spear, Throwing",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7096,7 +7096,7 @@
   },
   "SPEAR_TWO_HANDED3": {
     "friendlyName": "Spear, Two-Handed3",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7151,7 +7151,7 @@
   },
   "SPIKE_ELBOW": {
     "friendlyName": "Spike, Elbow",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7206,7 +7206,7 @@
   },
   "SPIKE_HEAD": {
     "friendlyName": "Spike, Head",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7261,7 +7261,7 @@
   },
   "SPIKE_KNEE": {
     "friendlyName": "Spike, Knee",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7316,7 +7316,7 @@
   },
   "SPIKES_BODY": {
     "friendlyName": "Spikes, Body",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7371,7 +7371,7 @@
   },
   "STAFF_SLING": {
     "friendlyName": "Staff Sling",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7426,7 +7426,7 @@
   },
   "STAFF_SLING_STINKPOT": {
     "friendlyName": "Staff Sling, Stinkpot",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7481,7 +7481,7 @@
   },
   "STAFF_HAMANU_S": {
     "friendlyName": "Staff, Hamanu's",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7536,7 +7536,7 @@
   },
   "STAFF_HORNHEAD": {
     "friendlyName": "Staff, Hornhead",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7591,7 +7591,7 @@
   },
   "STICK_GOBLIN": {
     "friendlyName": "Stick, Goblin",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7646,7 +7646,7 @@
   },
   "STICKS_SINGING": {
     "friendlyName": "Sticks, Singing",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7701,7 +7701,7 @@
   },
   "STILETTO": {
     "friendlyName": "Stiletto",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7756,7 +7756,7 @@
   },
   "SWORD_BASTARD_ONE_HANDED": {
     "friendlyName": "Sword, Bastard, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7811,7 +7811,7 @@
   },
   "SWORD_BASTARD_TWO_HANDED": {
     "friendlyName": "Sword, Bastard, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7866,7 +7866,7 @@
   },
   "SWORD_BROAD": {
     "friendlyName": "Sword, Broad",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7921,7 +7921,7 @@
   },
   "SWORD_CLAYMORE": {
     "friendlyName": "Sword, Claymore",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -7976,7 +7976,7 @@
   },
   "SWORD_CUTLASS": {
     "friendlyName": "Sword, Cutlass",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8031,7 +8031,7 @@
   },
   "SWORD_DRUSUS": {
     "friendlyName": "Sword, Drusus",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8086,7 +8086,7 @@
   },
   "SWORD_DWARVEN_CLAYMORE": {
     "friendlyName": "Sword, Dwarven Claymore",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8141,7 +8141,7 @@
   },
   "SWORD_FALCHION": {
     "friendlyName": "Sword, Falchion",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8196,7 +8196,7 @@
   },
   "SWORD_FLAMBERGE": {
     "friendlyName": "Sword, Flamberge",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8251,7 +8251,7 @@
   },
   "SWORD_GIANT_KIN_TWO_HANDED": {
     "friendlyName": "Sword, Giant-kin Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8306,7 +8306,7 @@
   },
   "SWORD_GREAT_SCIMITAR": {
     "friendlyName": "Sword, Great Scimitar",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8361,7 +8361,7 @@
   },
   "SWORD_HOOK": {
     "friendlyName": "Sword, Hook",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8416,7 +8416,7 @@
   },
   "SWORD_KATANA_ONE_HANDED": {
     "friendlyName": "Sword, Katana, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8471,7 +8471,7 @@
   },
   "SWORD_KATANA_TWO_HANDED": {
     "friendlyName": "Sword, Katana, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8526,7 +8526,7 @@
   },
   "SWORD_KHANDAR_ONE_HANDED": {
     "friendlyName": "Sword, Khandar, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8581,7 +8581,7 @@
   },
   "SWORD_KHANDAR_TWO_HANDED": {
     "friendlyName": "Sword, Khandar, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8636,7 +8636,7 @@
   },
   "SWORD_KHOPESH": {
     "friendlyName": "Sword, Khopesh",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8691,7 +8691,7 @@
   },
   "SWORD_LONG": {
     "friendlyName": "Sword, Long",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8746,7 +8746,7 @@
   },
   "SWORD_MANDIBLE": {
     "friendlyName": "Sword, Mandible",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8801,7 +8801,7 @@
   },
   "SWORD_MARINER_S": {
     "friendlyName": "Sword, Mariner's",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8856,7 +8856,7 @@
   },
   "SWORD_PIERCER": {
     "friendlyName": "Sword, Piercer",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8911,7 +8911,7 @@
   },
   "SWORD_PIXIE": {
     "friendlyName": "Sword, Pixie",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -8966,7 +8966,7 @@
   },
   "SWORD_RAPIER": {
     "friendlyName": "Sword, Rapier",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9021,7 +9021,7 @@
   },
   "SWORD_SABRE": {
     "friendlyName": "Sword, Sabre",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9076,7 +9076,7 @@
   },
   "SWORD_SCIMITAR": {
     "friendlyName": "Sword, Scimitar",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9131,7 +9131,7 @@
   },
   "SWORD_SHORT": {
     "friendlyName": "Sword, Short",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9186,7 +9186,7 @@
   },
   "SWORD_TALWAR": {
     "friendlyName": "Sword, Talwar",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9241,7 +9241,7 @@
   },
   "SWORD_TWO_HANDED": {
     "friendlyName": "Sword, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9296,7 +9296,7 @@
   },
   "SWORD_WAKIZASHI": {
     "friendlyName": "Sword, Wakizashi",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9351,7 +9351,7 @@
   },
   "SWORDLET": {
     "friendlyName": "Swordlet",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9406,7 +9406,7 @@
   },
   "TALID": {
     "friendlyName": "Talid",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9461,7 +9461,7 @@
   },
   "TORTOISE_BLADES": {
     "friendlyName": "Tortoise Blades",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9516,7 +9516,7 @@
   },
   "TRIDENT_ONE_HANDED": {
     "friendlyName": "Trident, One-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9571,7 +9571,7 @@
   },
   "TRIDENT_TWO_HANDED": {
     "friendlyName": "Trident, Two-Handed",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9626,7 +9626,7 @@
   },
   "TROMBASH_HELD": {
     "friendlyName": "Trombash, Held",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9681,7 +9681,7 @@
   },
   "TROMBASH_THROWN": {
     "friendlyName": "Trombash, Thrown",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9736,7 +9736,7 @@
   },
   "TUFENK": {
     "friendlyName": "Tufenk",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9791,7 +9791,7 @@
   },
   "WARHAMMER": {
     "friendlyName": "Warhammer",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9846,7 +9846,7 @@
   },
   "WHIP": {
     "friendlyName": "Whip",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9901,7 +9901,7 @@
   },
   "WHIP_CHAIN": {
     "friendlyName": "Whip, Chain",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -9956,7 +9956,7 @@
   },
   "WHIP_MASTER_S": {
     "friendlyName": "Whip, Master's",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10011,7 +10011,7 @@
   },
   "WRIST_RAZOR": {
     "friendlyName": "Wrist Razor",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10066,7 +10066,7 @@
   },
   "ZAGHNAL": {
     "friendlyName": "Zaghnal",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10125,7 +10125,7 @@
     "weight": 2.0,
     "probability": 10,
     "friendlyName": "Bow",
-    "texturePath": "images/items/bow.png",
+    "texturePath": "images/weapons/bow.png",
     "accuracyModifier": 2,
     "spriteData": [
       "........................",
@@ -10216,7 +10216,7 @@
     "weight": 5.0,
     "probability": 5,
     "friendlyName": "Crossbow",
-    "texturePath": "images/items/crossbow.png",
+    "texturePath": "images/weapons/crossbow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10306,7 +10306,7 @@
     "weight": 4.0,
     "probability": 15,
     "friendlyName": "Axe",
-    "texturePath": "images/items/axe.png",
+    "texturePath": "images/weapons/axe.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10392,7 +10392,7 @@
   },
   "SPEAR": {
     "friendlyName": "Spear",
-    "texturePath": "images/items/spear.png",
+    "texturePath": "images/weapons/spear.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10650,7 +10650,7 @@
   },
   "SMALL_FIREBALL": {
     "friendlyName": "Small Fireball",
-    "texturePath": "images/items/firenball.png",
+    "texturePath": "images/weapons/firenball.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10736,7 +10736,7 @@
   },
   "LARGE_FIREBALL": {
     "friendlyName": "Large Fireball",
-    "texturePath": "images/items/big_fireball.png",
+    "texturePath": "images/weapons/big_fireball.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10821,7 +10821,7 @@
   },
   "SMALL_LIGHTNING": {
     "friendlyName": "Small Lightning",
-    "texturePath": "images/items/lightning_bolt.png",
+    "texturePath": "images/weapons/lightning_bolt.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10907,7 +10907,7 @@
   },
   "LARGE_LIGHTNING": {
     "friendlyName": "Large Lightning",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "........................",
@@ -10992,7 +10992,7 @@
   },
   "SWORD": {
     "friendlyName": "Sword",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "........................",
@@ -11047,7 +11047,7 @@
   },
   "TWO_HANDED_SWORD": {
     "friendlyName": "Greatsword",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "..........#.............",
@@ -11102,7 +11102,7 @@
   },
   "WAND": {
     "friendlyName": "Wand",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "........................",

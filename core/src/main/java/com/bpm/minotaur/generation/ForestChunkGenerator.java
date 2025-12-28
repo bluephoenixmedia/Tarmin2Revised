@@ -139,7 +139,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
             ItemDataManager itemDataManager,
             AssetManager assetManager,
             SpawnTableData spawnTableData,
-            long chunkSeed) { // <-- ADDED THIS PARAM
+            long chunkSeed,
+            int playerLuck) { // <-- ADDED THIS PARAM
 
         // Forest chunks are always 3x2, regardless of game mode
         int mapRows = 3;
@@ -152,7 +153,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
         // --- 3. Populate Maze ---
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
-                spawnTableData, chunkSeed); // <-- PASS PARAM
+                spawnTableData, chunkSeed, playerLuck); // <-- PASS PARAM
 
         spawnLadder(maze, this.finalLayout);
 
@@ -215,7 +216,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
      */
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData, long chunkSeed) { // <-- ADDED THIS PARAM
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // <-- ADDED THIS PARAM
 
         // --- [MODIFIED] ---
         // This is the compile fix
@@ -223,8 +224,9 @@ public class ForestChunkGenerator implements IChunkGenerator {
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager,
-                maze, difficulty, level, level, layout, spawnTableData, spawnSeed); // Use level as proxy for
-                                                                                    // playerLevel
+                maze, difficulty, level, level, playerLuck, layout, spawnTableData, spawnSeed); // Use level as proxy
+                                                                                                // for
+        // playerLevel
         // --- [END MODIFIED] ---
 
         spawnManager.spawnEntities();

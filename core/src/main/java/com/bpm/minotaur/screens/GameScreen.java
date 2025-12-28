@@ -10,8 +10,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
+
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
@@ -20,7 +19,6 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -30,7 +28,7 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.item.ItemTemplate;
+
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
@@ -142,8 +140,8 @@ public class GameScreen extends BaseScreen {
     }
 
     @Override
-
     public void show() {
+
         // Gdx.input.setInputProcessor(this); // Handled below via Multiplexer
 
         if (animationManager == null) {
@@ -255,15 +253,16 @@ public class GameScreen extends BaseScreen {
 
         // --- LOAD BLOOD ASSETS ---
         com.badlogic.gdx.assets.AssetManager am = game.getAssetManager();
-        String[] drops = { "images/blood_drop1.png", "images/blood_drop2.png", "images/blood_drop3.png",
-                "images/blood_drop4.png" };
-        String[] smears = { "images/blood_smear1.png", "images/blood_smear2.png", "images/blood_smear3.png" };
-        String spatter = "images/blood_spatter.png";
+        String[] drops = { "images/gore/blood_drop1.png", "images/gore/blood_drop2.png", "images/gore/blood_drop3.png",
+                "images/gore/blood_drop4.png" };
+        String[] smears = { "images/gore/blood_smear1.png", "images/gore/blood_smear2.png",
+                "images/gore/blood_smear3.png" };
+        String spatter = "images/gore/blood_spatter.png";
 
         // Load Gibs
         String[] gibs = new String[10];
         for (int i = 0; i < 10; i++)
-            gibs[i] = "images/gib" + (i + 1) + ".png";
+            gibs[i] = "images/gore/gib" + (i + 1) + ".png";
 
         // Preload
         for (String s : drops)
@@ -667,7 +666,7 @@ public class GameScreen extends BaseScreen {
         game.getViewport().update(width, height, true);
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
         if (hud != null)
-            hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+            hud.resize(width, height);
     }
 
     private void processPlayerStatusEffects() {
@@ -1213,6 +1212,8 @@ public class GameScreen extends BaseScreen {
             fbo.dispose();
         if (crtShader != null)
             crtShader.dispose();
+        if (stochasticManager != null)
+            stochasticManager.dispose();
         postProcessBatch.dispose();
     }
 }

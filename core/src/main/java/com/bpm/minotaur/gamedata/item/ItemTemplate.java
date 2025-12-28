@@ -22,9 +22,8 @@ public class ItemTemplate {
     public String[] spriteData;
     public int baseValue;
 
-    public int warDamage;
-    public int spiritDamage;
-    public int armorDefense;
+    public String damageDice = "1d4";
+    public int armorClassBonus;
     public int accuracyModifier;
 
     public int range = 1;

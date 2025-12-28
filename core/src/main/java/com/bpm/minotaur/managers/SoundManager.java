@@ -36,6 +36,13 @@ public class SoundManager {
         loadModernSounds();
     }
 
+    // Protected constructor for Headless/Mocking
+    protected SoundManager() {
+        this.debugManager = null;
+        this.retroAudioDevice = null;
+        // Do not load sounds
+    }
+
     private void loadModernSounds() {
         loadSound("player_attack", "sounds/player_attack.wav");
         loadSound("player_bow_attack", "sounds/player_bow_attack.wav");

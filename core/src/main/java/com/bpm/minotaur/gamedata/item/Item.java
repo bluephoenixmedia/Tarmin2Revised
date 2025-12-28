@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.item;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
@@ -21,16 +22,16 @@ public class Item implements Renderable {
         BOW, CROSSBOW, KNIFE, AXE, DART, SPEAR, PROJECTILE, SCROLL, BOOK,
         SMALL_FIREBALL, LARGE_FIREBALL, SMALL_LIGHTNING, LARGE_LIGHTNING,
         SMALL_SHIELD, LARGE_SHIELD, GAUNTLETS, HAUBERK, BREASTPLATE, HELMET,
-        BOOTS, LEGS, ARMS, EYES, CLOAK, AMULET,
+        BOOTS, LEGS, ARMS, EYES, CLOAK, AMULET, RING,
         SMALL_RING, LARGE_RING, RING_BLUE, RING_PINK, RING_GREEN, RING_PURPLE,
         POTION_BLUE, POTION_PINK, POTION_GREEN, POTION_GOLD, POTION_SWIRLY, POTION_BUBBLY,
         KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
         MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
-        REGULAR_CHEST, LAMP, UNKNOWN, LADDER, LADDER_UP, WAND,
+        REGULAR_CHEST, LAMP, UNKNOWN, LADDER, LADDER_UP, WAND, SHIELD, BACKPACK,
 
         // NEW TYPES FOR DICE INTEGRATION
-        SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD,
+        SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD, RUSTY_SWORD,
 
         // NEW WEAPONS (Generated)
         ALHULAK, ANKUS_ELEPHANT_GOAD, ARQUEBUS, ARROW_DAIKYU, ARROW_FLIGHT, ARROW_FORGET, ARROW_GIANT_KIN, ARROW_KENYAN,
@@ -110,9 +111,8 @@ public class Item implements Renderable {
     private final String[] spriteData;
     private final Texture texture;
     private final int baseValue;
-    private final int warDamage;
-    private final int spiritDamage;
-    private final int armorDefense;
+    private final String damageDice;
+    private final int armorClassBonus;
 
     // --- Type Flags ---
     private final boolean isWeapon;
@@ -165,9 +165,8 @@ public class Item implements Renderable {
         this.friendlyName = template.friendlyName;
         this.spriteData = template.spriteData;
         this.baseValue = template.baseValue;
-        this.warDamage = template.warDamage;
-        this.spiritDamage = template.spiritDamage;
-        this.armorDefense = template.armorDefense;
+        this.damageDice = template.damageDice;
+        this.armorClassBonus = template.armorClassBonus;
         this.isWeapon = template.isWeapon;
         this.isRanged = template.isRanged;
         this.isArmor = template.isArmor;
@@ -191,7 +190,8 @@ public class Item implements Renderable {
             this.scale = new Vector2(1.0f, 1.0f);
         }
 
-        if (template.texturePath != null && !template.texturePath.isEmpty() && !this.isPotion) {
+        if (template.texturePath != null && !template.texturePath.isEmpty() && !this.isPotion
+                && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
             this.texture = assetManager.get(template.texturePath, Texture.class);
         } else {
             this.texture = null;
@@ -255,7 +255,7 @@ public class Item implements Renderable {
         String suffix = null;
         String bonus = null;
         for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_DEFENSE) {
+            if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_AC) {
                 bonus = mod.displayName;
             } else if (mod.displayName.startsWith("of ")) {
                 suffix = mod.displayName;
@@ -325,31 +325,17 @@ public class Item implements Renderable {
         return this.isShield;
     }
 
-    public int getWarDamage() {
-        int totalDamage = this.warDamage;
-        for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DAMAGE)
-                totalDamage += mod.value;
-        }
-        return totalDamage;
+    public String getDamageDice() {
+        return this.damageDice;
     }
 
-    public int getSpiritDamage() {
-        int totalDamage = this.spiritDamage;
+    public int getArmorClassBonus() {
+        int totalBonus = this.armorClassBonus;
         for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DAMAGE)
-                totalDamage += mod.value;
+            if (mod.type == ModifierType.BONUS_AC)
+                totalBonus += mod.value;
         }
-        return totalDamage;
-    }
-
-    public int getArmorDefense() {
-        int totalDefense = this.armorDefense;
-        for (ItemModifier mod : modifiers) {
-            if (mod.type == ModifierType.BONUS_DEFENSE)
-                totalDefense += mod.value;
-        }
-        return totalDefense;
+        return totalBonus;
     }
 
     public boolean isModified() {
@@ -404,8 +390,12 @@ public class Item implements Renderable {
         if (type.name().startsWith("SCROLL"))
             return ItemCategory.USEFUL;
 
-        if (isWeapon)
-            return (spiritDamage > 0) ? ItemCategory.SPIRITUAL_WEAPON : ItemCategory.WAR_WEAPON;
+        if (isWeapon) {
+            // Refactor: With removal of War/Spirit stats, distinction is less relevant.
+            // We can treat everything as WAR_WEAPON or differentiate by Type if needed
+            // later.
+            return ItemCategory.WAR_WEAPON;
+        }
         if (isArmor)
             return ItemCategory.ARMOR;
         if (isRing)

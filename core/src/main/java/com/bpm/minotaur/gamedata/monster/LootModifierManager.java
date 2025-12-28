@@ -1,6 +1,5 @@
 package com.bpm.minotaur.gamedata.monster;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
@@ -16,7 +15,8 @@ public class LootModifierManager {
      */
     public void applyModifiers(Item item, int level) {
         // Only apply modifiers to weapons, armor, and rings
-        if (!item.isWeapon() && !item.isArmor() && !item.isRing()) return;
+        if (!item.isWeapon() && !item.isArmor() && !item.isRing())
+            return;
 
         // Chance to add a Suffix (e.g., "of Brawn")
         if (random.nextFloat() < 0.5f) {
@@ -37,15 +37,15 @@ public class LootModifierManager {
             switch (roll) {
                 case 0:
                     // Brawn: Increases Max War Strength (HP)
-                    item.addModifier(new ItemModifier(ModifierType.BONUS_WAR_STRENGTH, 5 * power, "of Brawn"));
+                    item.addModifier(new ItemModifier(ModifierType.BONUS_MAX_HP, 5 * power, "of Brawn"));
                     break;
                 case 1:
                     // Spirit: Increases Max Spiritual Strength (Mana)
-                    item.addModifier(new ItemModifier(ModifierType.BONUS_SPIRITUAL_STRENGTH, 5 * power, "of Spirit"));
+                    item.addModifier(new ItemModifier(ModifierType.BONUS_MAX_MP, 5 * power, "of Spirit"));
                     break;
                 case 2:
                     // Protection: Increases Armor Class directly
-                    item.addModifier(new ItemModifier(ModifierType.BONUS_DEFENSE, 1 + (power / 2), "of Protection"));
+                    item.addModifier(new ItemModifier(ModifierType.BONUS_AC, 1 + (power / 2), "of Protection"));
                     break;
             }
         } else if (item.isWeapon()) {
@@ -72,7 +72,7 @@ public class LootModifierManager {
             }
         } else if (item.isArmor()) {
             // Armor Prefixes
-            item.addModifier(new ItemModifier(ModifierType.BONUS_DEFENSE, 1 + (power/2), "Sturdy"));
+            item.addModifier(new ItemModifier(ModifierType.BONUS_AC, 1 + (power / 2), "Sturdy"));
         }
     }
 }

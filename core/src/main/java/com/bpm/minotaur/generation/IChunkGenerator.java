@@ -34,7 +34,8 @@ public interface IChunkGenerator {
             ItemDataManager itemDataManager,
             AssetManager assetManager,
             SpawnTableData spawnTableData,
-            long chunkSeed); // <-- ADDED THIS PARAMETER
+            long chunkSeed,
+            int playerLuck); // <-- ADDED THIS PARAMETER
 
     /**
      * Gets the default player starting position for this generator.

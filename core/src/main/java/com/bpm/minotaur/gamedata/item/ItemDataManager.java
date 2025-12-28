@@ -304,7 +304,7 @@ public class ItemDataManager {
 
         // Map ItemTypes/Names to Dice Themes
         // 1. Rusty Iron Die
-        if (type == ItemType.KNIFE || type == ItemType.AXE) { // Basic weapons
+        if (type == ItemType.KNIFE || type == ItemType.AXE || type == ItemType.RUSTY_SWORD) { // Basic weapons
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rusty Iron Die");
         }
         // 2. Warrior's Red Die

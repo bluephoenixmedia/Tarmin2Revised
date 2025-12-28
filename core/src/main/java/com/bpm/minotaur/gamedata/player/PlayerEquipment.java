@@ -62,58 +62,59 @@ public class PlayerEquipment {
         return total;
     }
 
-    public int getArmorDefense() {
+    public int getACBonus() {
         int totalDefense = 0;
         StringBuilder log = new StringBuilder();
 
         if (wornHelmet != null) {
-            totalDefense += wornHelmet.getArmorDefense();
-            log.append(" Head(").append(wornHelmet.getArmorDefense()).append(")");
+            totalDefense += wornHelmet.getArmorClassBonus();
+            log.append(" Head(").append(wornHelmet.getArmorClassBonus()).append(")");
         }
         if (wornChest != null) {
-            totalDefense += wornChest.getArmorDefense();
-            log.append(" Chest(").append(wornChest.getArmorDefense()).append(")");
+            totalDefense += wornChest.getArmorClassBonus();
+            log.append(" Chest(").append(wornChest.getArmorClassBonus()).append(")");
         }
         if (wornGauntlets != null) {
-            totalDefense += wornGauntlets.getArmorDefense();
-            log.append(" Hands(").append(wornGauntlets.getArmorDefense()).append(")");
+            totalDefense += wornGauntlets.getArmorClassBonus();
+            log.append(" Hands(").append(wornGauntlets.getArmorClassBonus()).append(")");
         }
         if (wornBoots != null) {
-            totalDefense += wornBoots.getArmorDefense();
-            log.append(" Feet(").append(wornBoots.getArmorDefense()).append(")");
+            totalDefense += wornBoots.getArmorClassBonus();
+            log.append(" Feet(").append(wornBoots.getArmorClassBonus()).append(")");
         }
         if (wornLegs != null) {
-            totalDefense += wornLegs.getArmorDefense();
-            log.append(" Legs(").append(wornLegs.getArmorDefense()).append(")");
+            totalDefense += wornLegs.getArmorClassBonus();
+            log.append(" Legs(").append(wornLegs.getArmorClassBonus()).append(")");
         }
         if (wornArms != null) {
-            totalDefense += wornArms.getArmorDefense();
-            log.append(" Arms(").append(wornArms.getArmorDefense()).append(")");
+            totalDefense += wornArms.getArmorClassBonus();
+            log.append(" Arms(").append(wornArms.getArmorClassBonus()).append(")");
         }
         if (wornShield != null) {
-            totalDefense += wornShield.getArmorDefense();
-            log.append(" Shield(").append(wornShield.getArmorDefense()).append(")");
+            totalDefense += wornShield.getArmorClassBonus();
+            log.append(" Shield(").append(wornShield.getArmorClassBonus()).append(")");
         }
 
         // Add bonus defense from all equipped items
-        int modifierDefense = getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+        int modifierDefense = getEquippedModifierSum(ModifierType.BONUS_AC);
         if (modifierDefense > 0) {
             totalDefense += modifierDefense;
             log.append(" Mods(").append(modifierDefense).append(")");
         }
 
-        // Gdx.app.log("Equipment", "Armor Calc: Total=" + totalDefense + " Breakdown:"
-        // + log.toString());
-
         return totalDefense;
+    }
+
+    public int getArmorDefense() {
+        return getACBonus();
     }
 
     public int getRingDefense() {
         int totalDefense = 0;
         if (wornRing != null) {
-            totalDefense += wornRing.getArmorDefense();
+            totalDefense += wornRing.getArmorClassBonus();
         }
-        totalDefense += getEquippedModifierSum(ModifierType.BONUS_DEFENSE);
+        totalDefense += getEquippedModifierSum(ModifierType.BONUS_AC);
         return totalDefense;
     }
 

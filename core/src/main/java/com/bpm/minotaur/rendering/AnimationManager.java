@@ -25,6 +25,12 @@ public class AnimationManager {
         this.entityRenderer = entityRenderer;
     }
 
+    // Protected constructor for Headless/Mocking
+    protected AnimationManager() {
+        this.damageFont = null;
+        this.entityRenderer = null;
+    }
+
     public void addAnimation(Animation animation) {
         animations.add(animation);
     }
@@ -36,23 +42,27 @@ public class AnimationManager {
         });
     }
 
-    public void render(ShapeRenderer shapeRenderer, Player player, Viewport viewport, float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
+    public void render(ShapeRenderer shapeRenderer, Player player, Viewport viewport, float[] depthBuffer,
+            FirstPersonRenderer firstPersonRenderer, Maze maze) {
         for (Animation animation : animations) {
-            if (animation.getType() == Animation.AnimationType.PROJECTILE_PLAYER || animation.getType() == Animation.AnimationType.PROJECTILE_MONSTER) {
+            if (animation.getType() == Animation.AnimationType.PROJECTILE_PLAYER
+                    || animation.getType() == Animation.AnimationType.PROJECTILE_MONSTER) {
                 float progress = animation.getProgress();
-                float x = animation.getStartPosition().x + (animation.getEndPosition().x - animation.getStartPosition().x) * progress;
-                float y = animation.getStartPosition().y + (animation.getEndPosition().y - animation.getStartPosition().y) * progress;
+                float x = animation.getStartPosition().x
+                        + (animation.getEndPosition().x - animation.getStartPosition().x) * progress;
+                float y = animation.getStartPosition().y
+                        + (animation.getEndPosition().y - animation.getStartPosition().y) * progress;
 
                 // Pass the sprite data from the animation to the projectile
                 Projectile p = new Projectile(
-                    new com.badlogic.gdx.math.Vector2(x, y),
-                    new com.badlogic.gdx.math.Vector2(0, 0),
-                    animation.getColor(),
-                    1f,
-                    animation.getSpriteData()
-                );
+                        new com.badlogic.gdx.math.Vector2(x, y),
+                        new com.badlogic.gdx.math.Vector2(0, 0),
+                        animation.getColor(),
+                        1f,
+                        animation.getSpriteData());
 
-                entityRenderer.renderSingleProjectile(shapeRenderer, player, p, viewport, depthBuffer, firstPersonRenderer, maze);
+                entityRenderer.renderSingleProjectile(shapeRenderer, player, p, viewport, depthBuffer,
+                        firstPersonRenderer, maze);
             }
         }
     }
@@ -74,7 +84,6 @@ public class AnimationManager {
                 // Fade out over time
                 float alpha = 1.0f - animation.getProgress();
                 damageFont.setColor(1f, 1f, 1f, alpha);
-
 
                 damageFont.draw(batch, animation.getDamageText(), screenX, screenY + floatOffset);
             }

@@ -69,6 +69,9 @@ public class Tarmin2 extends Game {
         monsterDataManager = new MonsterDataManager();
         itemDataManager = new ItemDataManager();
 
+        // --- NEW: Load Doom Manager (Tarmin's Hunger) ---
+        com.bpm.minotaur.managers.DoomManager.getInstance().load();
+
         monsterDataManager.load();
         itemDataManager.load();
         itemDataManager.loadWeapons(); // Load extended weapon list

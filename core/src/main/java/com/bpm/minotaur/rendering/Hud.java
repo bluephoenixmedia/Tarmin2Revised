@@ -177,7 +177,7 @@ public class Hud implements Disposable {
         warStrengthValueLabel = new Label("", labelStyle);
         warTable = new Table();
         warTable.padLeft(standardPadLeft);
-        warTable.add(new Label("WS", labelStyle)).padRight(10);
+        warTable.add(new Label("HP", labelStyle)).padRight(10);
         warTable.padBottom(-10);
         warTable.add(warStrengthValueLabel);
 
@@ -185,7 +185,7 @@ public class Hud implements Disposable {
         spiritualStrengthValueLabel = new Label("", labelStyle);
         spiritualTable = new Table();
         spiritualTable.padLeft(standardPadLeft);
-        spiritualTable.add(new Label("SS", labelStyle)).padRight(10);
+        spiritualTable.add(new Label("MP", labelStyle)).padRight(10);
         spiritualTable.padBottom(-10);
         spiritualTable.add(spiritualStrengthValueLabel);
 
@@ -314,9 +314,9 @@ public class Hud implements Disposable {
         stage.act(dt);
 
         warStrengthValueLabel
-                .setText(String.format("%d / %d", player.getWarStrength(), player.getEffectiveMaxWarStrength()));
+                .setText(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP()));
         spiritualStrengthValueLabel.setText(
-                String.format("%d / %d", player.getSpiritualStrength(), player.getEffectiveMaxSpiritualStrength()));
+                String.format("%d / %d", player.getCurrentMP(), player.getMaxMP()));
 
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -352,7 +352,7 @@ public class Hud implements Disposable {
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();
-            monsterStrengthLabel.setText("WS:" + monster.getWarStrength() + " SS:" + monster.getSpiritualStrength());
+            monsterStrengthLabel.setText("HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP());
             monsterStrengthLabel.setVisible(true);
             combatStatusLabel.setVisible(true);
 
@@ -405,8 +405,8 @@ public class Hud implements Disposable {
         // --- FIX: Only draw standard automap if debug overlay is NOT visible ---
         if (!debugManager.isDebugOverlayVisible()) {
             drawAutomap();
+            drawBridgeIntegrityBar(); // NEW: Tarmin's Hunger UI
         }
-
         // Toggle debug lines based on global DebugManager state
         boolean isDebug = debugManager.isDebugOverlayVisible();
 
@@ -527,14 +527,14 @@ public class Hud implements Disposable {
                 midY -= lineGap;
                 defaultFont.draw(spriteBatch, "Facing: " + player.getFacing().name(), midColX, midY);
                 midY -= lineGap;
-                defaultFont.draw(spriteBatch, "Defense: " + player.getArmorDefense(), midColX, midY);
+                defaultFont.draw(spriteBatch, "AC: " + player.getArmorClass(), midColX, midY);
                 midY -= lineGap;
                 defaultFont.draw(spriteBatch,
-                        "War Str: " + player.getWarStrength() + "/" + player.getEffectiveMaxWarStrength(), midColX,
+                        "HP: " + player.getCurrentHP() + "/" + player.getMaxHP(), midColX,
                         midY);
                 midY -= lineGap;
                 defaultFont.draw(spriteBatch,
-                        "Spirit: " + player.getSpiritualStrength() + "/" + player.getEffectiveMaxSpiritualStrength(),
+                        "MP: " + player.getCurrentMP() + "/" + player.getMaxMP(),
                         midColX, midY);
                 midY -= lineGap;
 
@@ -553,14 +553,10 @@ public class Hud implements Disposable {
                     defaultFont.draw(spriteBatch, "Category: " + rightHandItem.getCategory(), midColX, midY);
                     midY -= lineGap;
 
-                    if (rightHandItem.getCategory() == ItemCategory.WAR_WEAPON) {
-                        defaultFont.draw(spriteBatch, "Damage (War): " + rightHandItem.getWarDamage(), midColX, midY);
+                    if (rightHandItem.isWeapon()) {
+                        defaultFont.draw(spriteBatch, "Damage: " + rightHandItem.getDamageDice(), midColX, midY);
                         midY -= lineGap;
                         defaultFont.draw(spriteBatch, "Range: " + rightHandItem.getRange(), midColX, midY);
-                        midY -= lineGap;
-                    } else if (rightHandItem.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                        defaultFont.draw(spriteBatch, "Damage (Spirit): " + rightHandItem.getSpiritDamage(), midColX,
-                                midY);
                         midY -= lineGap;
                     }
                     defaultFont.draw(spriteBatch, "Is Ranged: " + rightHandItem.isRanged(), midColX, midY);
@@ -1162,5 +1158,53 @@ public class Hud implements Disposable {
         messageBackgroundTexture.dispose();
         if (debugFont != null)
             debugFont.dispose(); // Clean up debug font
+    }
+
+    // --- NEW: Tarmin's Hunger UI ---
+    private void drawBridgeIntegrityBar() {
+        if (com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() <= 0)
+            return;
+
+        float integrity = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity();
+        float maxW = 400;
+        float h = 20;
+        float x = (viewport.getWorldWidth() - maxW) / 2;
+        float y = viewport.getWorldHeight() - 40;
+
+        // 1. Draw Bar
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        // Background
+        shapeRenderer.setColor(Color.DARK_GRAY);
+        shapeRenderer.rect(x, y, maxW, h);
+
+        // Foreground (Purple/Magical)
+        shapeRenderer.setColor(Color.PURPLE);
+        shapeRenderer.rect(x, y, maxW * (integrity / 100f), h);
+
+        shapeRenderer.end();
+
+        // Border
+        Gdx.gl.glLineWidth(2);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.rect(x, y, maxW, h);
+        shapeRenderer.end();
+        Gdx.gl.glLineWidth(1);
+
+        // 2. Draw Text
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        String text = String.format("Bridge Integrity: %.0f%%", integrity);
+        glyphLayout.setText(font, text);
+
+        // Center text on bar
+        float textX = x + (maxW - glyphLayout.width) / 2;
+        float textY = y + (h + glyphLayout.height) / 2 - 2; // -2 for visual alignment
+
+        font.setColor(Color.WHITE);
+        font.draw(spriteBatch, text, textX, textY);
+        spriteBatch.end();
     }
 }
