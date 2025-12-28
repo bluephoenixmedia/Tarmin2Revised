@@ -1,7 +1,7 @@
 {
   "BANDED_MAIL": {
     "friendlyName": "Banded mail",
-    "description": "Defense: 6",
+    "description": "Defense: 7",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -30,9 +30,8 @@
       "........................"
     ],
     "baseValue": 200,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 7,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -60,7 +59,7 @@
   },
   "BRIGANDINE": {
     "friendlyName": "Brigandine",
-    "description": "Defense: 5",
+    "description": "Defense: 4",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -89,9 +88,8 @@
       "........................"
     ],
     "baseValue": 120,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -148,9 +146,8 @@
       "........................"
     ],
     "baseValue": 80,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -178,7 +175,7 @@
   },
   "BASINET": {
     "friendlyName": "Basinet",
-    "description": "Defense: 2",
+    "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -207,9 +204,8 @@
       "........................"
     ],
     "baseValue": 8,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -237,7 +233,7 @@
   },
   "BRONZE_PLATE": {
     "friendlyName": "Bronze Plate",
-    "description": "Defense: 7",
+    "description": "Defense: 8",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -266,9 +262,8 @@
       "........................"
     ],
     "baseValue": 400,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 7,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -296,65 +291,6 @@
   },
   "CHAIN_HAUBERK": {
     "friendlyName": "Chain hauberk",
-    "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..######........######..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      ".....##############.....",
-      ".....##############.....",
-      "...##################...",
-      "...##################...",
-      "......############......",
-      "........########........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 75,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 8,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
-  },
-  "CHAIN_LAMELLAR": {
-    "friendlyName": "Chain-lamellar",
     "description": "Defense: 5",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
@@ -383,10 +319,9 @@
       "........................",
       "........................"
     ],
-    "baseValue": 125,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "baseValue": 75,
+    "damageDice": 0,
+    "armorClassBonus": 5,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -406,14 +341,14 @@
     "variants": [
       {
         "color": "TAN",
-        "minLevel": 10,
+        "minLevel": 8,
         "maxLevel": 99,
         "weight": 5
       }
     ]
   },
-  "CHAIN_MAIL": {
-    "friendlyName": "Chain mail",
+  "CHAIN_LAMELLAR": {
+    "friendlyName": "Chain-lamellar",
     "description": "Defense: 4",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
@@ -442,10 +377,67 @@
       "........................",
       "........................"
     ],
+    "baseValue": 125,
+    "damageDice": 0,
+    "armorClassBonus": 4,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 10,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ]
+  },
+  "CHAIN_MAIL": {
+    "friendlyName": "Chain mail",
+    "description": "Defense: 6",
+    "texturePath": "images/items/helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
     "baseValue": 75,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 6,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -502,9 +494,8 @@
       "........................"
     ],
     "baseValue": 15,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 3,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -532,7 +523,7 @@
   },
   "FIELD_PLATE": {
     "friendlyName": "Field plate",
-    "description": "Defense: 9",
+    "description": "Defense: 8",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -561,9 +552,8 @@
       "........................"
     ],
     "baseValue": 2000,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 9,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -591,7 +581,7 @@
   },
   "FULL_PLATE": {
     "friendlyName": "Full plate",
-    "description": "Defense: 10",
+    "description": "Defense: 8",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -620,9 +610,8 @@
       "........................"
     ],
     "baseValue": 4000,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 10,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -679,9 +668,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 3,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -709,7 +697,7 @@
   },
   "HALF_PLATE": {
     "friendlyName": "Half-Plate",
-    "description": "Defense: 6",
+    "description": "Defense: 5",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -738,9 +726,8 @@
       "........................"
     ],
     "baseValue": 300,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 5,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -766,8 +753,8 @@
       }
     ]
   },
-  "CAP": {
-    "friendlyName": "Cap",
+  "CLOSED_FACE": {
+    "friendlyName": "Closed face",
     "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
@@ -796,69 +783,9 @@
       "........................",
       "........................"
     ],
-    "baseValue": 4,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 2,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
-  },
-  "CLOSED_FACE": {
-    "friendlyName": "Closed face",
-    "description": "Defense: 3",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..........###...........",
-      ".......#########........",
-      "....###############.....",
-      "....###############.....",
-      "....###############.....",
-      "..#########.#########...",
-      "..#########.#########...",
-      "..######.......######...",
-      ".....###.......###......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -886,7 +813,7 @@
   },
   "MAIL_COIF": {
     "friendlyName": "Mail coif",
-    "description": "Defense: 2",
+    "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -915,9 +842,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -945,7 +871,7 @@
   },
   "GREAT_HELM": {
     "friendlyName": "Great Helm",
-    "description": "Defense: 3",
+    "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -974,9 +900,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1033,9 +958,8 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1063,7 +987,7 @@
   },
   "OPEN_FACED": {
     "friendlyName": "Open faced",
-    "description": "Defense: 2",
+    "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1092,9 +1016,8 @@
       "........................"
     ],
     "baseValue": 12,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1122,7 +1045,7 @@
   },
   "HIDE_ARMOR": {
     "friendlyName": "Hide Armor",
-    "description": "Defense: 4",
+    "description": "Defense: 2",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1151,9 +1074,8 @@
       "........................"
     ],
     "baseValue": 35,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1210,9 +1132,8 @@
       "........................"
     ],
     "baseValue": 160,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 6,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1269,9 +1190,8 @@
       "........................"
     ],
     "baseValue": 180,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 6,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1328,9 +1248,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 5,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1358,7 +1277,7 @@
   },
   "LEATHER_ARMOR": {
     "friendlyName": "Leather armor",
-    "description": "Defense: 2",
+    "description": "Defense: 1",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1387,9 +1306,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1446,9 +1364,8 @@
       "........................"
     ],
     "baseValue": 80,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1505,9 +1422,8 @@
       "........................"
     ],
     "baseValue": 120,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 5,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1564,9 +1480,8 @@
       "........................"
     ],
     "baseValue": 175,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 6,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1594,7 +1509,7 @@
   },
   "MAIL_AND_PLATE": {
     "friendlyName": "Mail and Plate",
-    "description": "Defense: 5",
+    "description": "Defense: 8",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1623,9 +1538,8 @@
       "........................"
     ],
     "baseValue": 150,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1682,9 +1596,8 @@
       "........................"
     ],
     "baseValue": 250,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 6,
+    "damageDice": 0,
+    "armorClassBonus": 6,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1741,9 +1654,8 @@
       "........................"
     ],
     "baseValue": 4,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1771,7 +1683,7 @@
   },
   "PLATE_MAIL": {
     "friendlyName": "Plate mail",
-    "description": "Defense: 7",
+    "description": "Defense: 8",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1800,9 +1712,8 @@
       "........................"
     ],
     "baseValue": 600,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 7,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1830,7 +1741,7 @@
   },
   "RING_MAIL": {
     "friendlyName": "Ring mail",
-    "description": "Defense: 5",
+    "description": "Defense: 4",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1859,9 +1770,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1889,7 +1799,7 @@
   },
   "SCALE_ARMOR": {
     "friendlyName": "Scale armor",
-    "description": "Defense: 5",
+    "description": "Defense: 4",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
       "........................",
@@ -1918,9 +1828,8 @@
       "........................"
     ],
     "baseValue": 120,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -1948,7 +1857,7 @@
   },
   "SHIELD_BODY": {
     "friendlyName": "Body",
-    "description": "Defense: 4",
+    "description": "Defense: 2",
     "texturePath": "images/items/shield.png",
     "spriteData": [
       "........................",
@@ -1977,9 +1886,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2007,7 +1915,7 @@
   },
   "BUCKLER": {
     "friendlyName": "Buckler",
-    "description": "Defense: 1",
+    "description": "Defense: 2",
     "texturePath": "images/items/shield.png",
     "spriteData": [
       "........................",
@@ -2036,9 +1944,8 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2095,9 +2002,8 @@
       "........................"
     ],
     "baseValue": 3,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2125,7 +2031,7 @@
   },
   "SHIELD_MEDIUM": {
     "friendlyName": "Medium",
-    "description": "Defense: 3",
+    "description": "Defense: 2",
     "texturePath": "images/items/shield.png",
     "spriteData": [
       "........................",
@@ -2154,9 +2060,8 @@
       "........................"
     ],
     "baseValue": 7,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2184,7 +2089,7 @@
   },
   "SHIELD_LARGE": {
     "friendlyName": "Large",
-    "description": "Defense: 4",
+    "description": "Defense: 2",
     "texturePath": "images/items/shield.png",
     "spriteData": [
       "........................",
@@ -2213,9 +2118,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2243,124 +2147,6 @@
   },
   "SPLINT_MAIL": {
     "friendlyName": "Splint mail",
-    "description": "Defense: 4",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..######........######..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      ".....##############.....",
-      ".....##############.....",
-      "...##################...",
-      "...##################...",
-      "......############......",
-      "........########........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 80,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 8,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
-  },
-  "STUDDED_LEATHER": {
-    "friendlyName": "Studded leather",
-    "description": "Defense: 3",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..######........######..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      ".....##############.....",
-      ".....##############.....",
-      "...##################...",
-      "...##################...",
-      "......############......",
-      "........########........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 6,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
-  },
-  "THREE_QUARTER_PLATE": {
-    "friendlyName": "Three-quarter plate",
     "description": "Defense: 7",
     "texturePath": "images/items/helmet.png",
     "spriteData": [
@@ -2389,10 +2175,125 @@
       "........................",
       "........................"
     ],
+    "baseValue": 80,
+    "damageDice": 0,
+    "armorClassBonus": 7,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ]
+  },
+  "STUDDED_LEATHER": {
+    "friendlyName": "Studded leather",
+    "description": "Defense: 2",
+    "texturePath": "images/items/helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 20,
+    "damageDice": 0,
+    "armorClassBonus": 2,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 6,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ]
+  },
+  "THREE_QUARTER_PLATE": {
+    "friendlyName": "Three-quarter plate",
+    "description": "Defense: 8",
+    "texturePath": "images/items/helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
     "baseValue": 800,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 7,
+    "damageDice": 0,
+    "armorClassBonus": 8,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2449,9 +2350,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2507,95 +2407,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 1,
-        "maxLevel": 7,
-        "weight": 1
-      },
-      {
-        "color": "ORANGE",
-        "minLevel": 3,
-        "maxLevel": 7,
-        "weight": 3
-      },
-      {
-        "color": "BLUE",
-        "minLevel": 5,
-        "maxLevel": 14,
-        "weight": 5
-      },
-      {
-        "color": "GRAY",
-        "minLevel": 8,
-        "maxLevel": 14,
-        "weight": 8
-      },
-      {
-        "color": "YELLOW",
-        "minLevel": 13,
-        "maxLevel": 99,
-        "weight": 13
-      },
-      {
-        "color": "WHITE",
-        "minLevel": 21,
-        "maxLevel": 99,
-        "weight": 21
-      }
-    ]
-  },
-  "SMALL_SHIELD": {
-    "friendlyName": "Small Shield",
-    "texturePath": "images/items/shield.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".......#########........",
-      ".......#########........",
-      ".......#########........",
-      ".........#####..........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 3,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2679,9 +2492,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 5,
+    "damageDice": 0,
+    "armorClassBonus": 5,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2765,9 +2577,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2851,9 +2662,8 @@
       "........................"
     ],
     "baseValue": 25,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -2909,7 +2719,7 @@
   },
   "HAUBERK": {
     "friendlyName": "Hauberk",
-    "texturePath": "images/items/helmet.png",
+    "texturePath": "images/items/breastplate.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2937,9 +2747,8 @@
       "........................"
     ],
     "baseValue": 40,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 3,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -3023,9 +2832,8 @@
       "........................"
     ],
     "baseValue": 40,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -3109,9 +2917,8 @@
       "........................"
     ],
     "baseValue": 40,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
+    "damageDice": 0,
+    "armorClassBonus": 2,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -3195,9 +3002,8 @@
       "........................"
     ],
     "baseValue": 40,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
+    "damageDice": 0,
+    "armorClassBonus": 3,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -3281,9 +3087,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
+    "damageDice": 0,
+    "armorClassBonus": 1,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
@@ -3367,9 +3172,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
+    "damageDice": 0,
+    "armorClassBonus": 4,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": true,
