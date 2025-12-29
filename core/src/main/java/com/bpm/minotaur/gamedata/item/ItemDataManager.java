@@ -4,17 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
-import com.bpm.minotaur.gamedata.monster.LootModifierManager;
 import com.bpm.minotaur.managers.DiscoveryManager;
 import com.bpm.minotaur.managers.UnlockManager;
-import com.bpm.minotaur.gamedata.item.ScrollEffectType;
-import com.bpm.minotaur.gamedata.item.WandEffectType;
-import com.bpm.minotaur.gamedata.item.RingEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +24,8 @@ public class ItemDataManager {
     private DiscoveryManager discoveryManager;
     private final Random random = new Random();
 
-    private final LootModifierManager lootModifierManager; // New field
-
     public ItemDataManager() {
         this.itemTemplates = new ObjectMap<>();
-        this.lootModifierManager = new LootModifierManager(); // Initialize
     }
 
     /**
@@ -250,10 +244,18 @@ public class ItemDataManager {
     }
 
     public void queueAssets(AssetManager assetManager) {
+        // Queue Debris Atlas
+        assetManager.load("packed/debris.atlas", TextureAtlas.class);
+        // Queue Items Atlas
+        assetManager.load("packed/items.atlas", TextureAtlas.class);
+
         for (ItemTemplate template : itemTemplates.values()) {
             // Load 2D Texture
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
-                assetManager.load(template.texturePath, Texture.class);
+                // Skip indivual loading for packed atlases
+                if (!template.texturePath.contains("images/debris") && !template.texturePath.contains("images/items")) {
+                    assetManager.load(template.texturePath, Texture.class);
+                }
             }
 
             // Load 3D Model

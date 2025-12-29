@@ -1,0 +1,64 @@
+Initialized native services in: C:\Users\denni\.gradle\native
+Initialized jansi services in: C:\Users\denni\.gradle\native
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon JVM discovery is an incubating feature.
+Received JVM installation metadata from 'C:\Program Files\Java\jdk-24': {JAVA_HOME=C:\Program Files\Java\jdk-24, JAVA_VERSION=24.0.1, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=24.0.1+9-30, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=24.0.1+9-30, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm13372446895858435933probe Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Starting process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm5953032721309667914probe Command: C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Starting process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm16285612943053181708probe Command: C:\Program Files\Java\jre1.8.0_471\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-21.0.7': {JAVA_HOME=C:\Users\denni\.jdks\ms-21.0.7, JAVA_VERSION=21.0.7, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.7+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.7+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Program Files\Java\jre1.8.0_471': {JAVA_HOME=C:\Program Files\Java\jre1.8.0_471, JAVA_VERSION=1.8.0_471, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=1.8.0_471-b09, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=25.471-b09, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'Gradle build daemon'. Working directory: C:\Users\denni\.gradle\daemon\8.14.3 Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xms512M -Xmx1G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\gradle-daemon-main-8.14.3.jar -javaagent:C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+Successfully started process 'Gradle build daemon'
+An attempt to start the daemon took 0.921 secs.
+The client will now receive all logging from the daemon (pid: 18124). The daemon log file: C:\Users\denni\.gradle\daemon\8.14.3\daemon-18124.out.log
+Daemon will be stopped at the end of the build 
+Using 32 worker leases.
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Watching the file system is configured to be enabled if available
+Now considering [C:\Users\denni\Desktop\Tarmin2] as hierarchies to watch
+File system watching is active
+Starting Build
+Resolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0']
+Settings evaluated using settings file 'C:\Users\denni\Desktop\Tarmin2\settings.gradle'.
+Projects loaded. Root project using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+Included projects: [root project 'Tarmin2', project ':core', project ':lwjgl3']
+
+> Configure project :
+Evaluating root project 'Tarmin2' using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+
+> Configure project :core
+Evaluating project ':core' using build file 'C:\Users\denni\Desktop\Tarmin2\core\build.gradle'.
+
+> Configure project :lwjgl3
+Evaluating project ':lwjgl3' using build file 'C:\Users\denni\Desktop\Tarmin2\lwjgl3\build.gradle'.
+Resolved plugin [id: 'application']
+All projects evaluated.
+
+[Incubating] Problems report is available at: file:///C:/Users/denni/Desktop/Tarmin2/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Cannot locate tasks that match 'desktop:classes' as project 'desktop' not found in root project 'Tarmin2'.
+
+* Try:
+> Run gradlew projects to get a list of available projects.
+> For more on name expansion, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:name_abbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 5s
+Watched directory hierarchies: []

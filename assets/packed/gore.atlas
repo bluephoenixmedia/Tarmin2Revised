@@ -1,0 +1,132 @@
+
+gore.png
+size: 4096, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blood_drop1
+  rotate: false
+  xy: 517, 362
+  size: 290, 453
+  orig: 642, 646
+  offset: 164, 103
+  index: -1
+blood_drop2
+  rotate: false
+  xy: 3299, 1643
+  size: 454, 371
+  orig: 642, 646
+  offset: 72, 163
+  index: -1
+blood_drop3
+  rotate: false
+  xy: 1026, 1479
+  size: 494, 535
+  orig: 642, 646
+  offset: 65, 88
+  index: -1
+blood_drop4
+  rotate: false
+  xy: 0, 239
+  size: 515, 576
+  orig: 642, 646
+  offset: 61, 11
+  index: -1
+blood_smear1
+  rotate: false
+  xy: 2043, 1664
+  size: 637, 350
+  orig: 642, 646
+  offset: 0, 175
+  index: -1
+blood_smear2
+  rotate: false
+  xy: 0, 817
+  size: 617, 636
+  orig: 642, 646
+  offset: 6, 0
+  index: -1
+blood_smear3
+  rotate: false
+  xy: 2682, 1730
+  size: 615, 284
+  orig: 642, 646
+  offset: 12, 188
+  index: -1
+blood_spatter
+  rotate: false
+  xy: 0, 1455
+  size: 1024, 559
+  orig: 1024, 559
+  offset: 0, 0
+  index: -1
+gib1
+  rotate: false
+  xy: 1046, 1005
+  size: 495, 472
+  orig: 642, 646
+  offset: 94, 92
+  index: -1
+gib10
+  rotate: false
+  xy: 809, 530
+  size: 284, 402
+  orig: 642, 646
+  offset: 169, 112
+  index: -1
+gib2
+  rotate: false
+  xy: 1095, 696
+  size: 308, 307
+  orig: 642, 646
+  offset: 84, 159
+  index: -1
+gib3
+  rotate: false
+  xy: 2043, 1330
+  size: 449, 332
+  orig: 642, 646
+  offset: 114, 151
+  index: -1
+gib4
+  rotate: false
+  xy: 619, 934
+  size: 425, 519
+  orig: 642, 646
+  offset: 84, 82
+  index: -1
+gib5
+  rotate: false
+  xy: 3755, 1590
+  size: 331, 424
+  orig: 642, 646
+  offset: 134, 127
+  index: -1
+gib6
+  rotate: false
+  xy: 1543, 1044
+  size: 495, 472
+  orig: 642, 646
+  offset: 77, 85
+  index: -1
+gib7
+  rotate: false
+  xy: 2040, 974
+  size: 402, 354
+  orig: 642, 646
+  offset: 102, 163
+  index: -1
+gib8
+  rotate: false
+  xy: 0, 0
+  size: 261, 237
+  orig: 642, 646
+  offset: 161, 231
+  index: -1
+gib9
+  rotate: false
+  xy: 1522, 1518
+  size: 519, 496
+  orig: 642, 646
+  offset: 39, 105
+  index: -1

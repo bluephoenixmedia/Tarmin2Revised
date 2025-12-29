@@ -1,0 +1,137 @@
+Initialized native services in: C:\Users\denni\.gradle\native
+Initialized jansi services in: C:\Users\denni\.gradle\native
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon JVM discovery is an incubating feature.
+Starting process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm16479510345649987482probe Command: C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Starting process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm15006325948592866858probe Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Starting process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm14048152464273140759probe Command: C:\Program Files\Java\jre1.8.0_471\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''
+Successfully started process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-21.0.7': {JAVA_HOME=C:\Users\denni\.jdks\ms-21.0.7, JAVA_VERSION=21.0.7, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.7+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.7+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Program Files\Java\jre1.8.0_471': {JAVA_HOME=C:\Program Files\Java\jre1.8.0_471, JAVA_VERSION=1.8.0_471, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=1.8.0_471-b09, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=25.471-b09, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Program Files\Java\jdk-24': {JAVA_HOME=C:\Program Files\Java\jdk-24, JAVA_VERSION=24.0.1, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=24.0.1+9-30, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=24.0.1+9-30, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'Gradle build daemon'. Working directory: C:\Users\denni\.gradle\daemon\8.14.3 Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xms512M -Xmx1G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\gradle-daemon-main-8.14.3.jar -javaagent:C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+Successfully started process 'Gradle build daemon'
+An attempt to start the daemon took 1.026 secs.
+The client will now receive all logging from the daemon (pid: 30900). The daemon log file: C:\Users\denni\.gradle\daemon\8.14.3\daemon-30900.out.log
+Daemon will be stopped at the end of the build 
+Using 32 worker leases.
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Watching the file system is configured to be enabled if available
+Now considering [C:\Users\denni\Desktop\Tarmin2] as hierarchies to watch
+File system watching is active
+Starting Build
+Resolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0']
+Settings evaluated using settings file 'C:\Users\denni\Desktop\Tarmin2\settings.gradle'.
+Projects loaded. Root project using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+Included projects: [root project 'Tarmin2', project ':core', project ':lwjgl3']
+
+> Configure project :
+Evaluating root project 'Tarmin2' using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+
+> Configure project :core
+Evaluating project ':core' using build file 'C:\Users\denni\Desktop\Tarmin2\core\build.gradle'.
+
+> Configure project :lwjgl3
+Evaluating project ':lwjgl3' using build file 'C:\Users\denni\Desktop\Tarmin2\lwjgl3\build.gradle'.
+Resolved plugin [id: 'application']
+All projects evaluated.
+Task path 'core:compileJava' matched project ':core'
+Task name matched 'compileJava'
+Selected primary task 'compileJava' from project :core
+Tasks to be executed: [task ':core:compileJava']
+Tasks that were excluded: []
+Resolve mutations for :core:compileJava (Thread[Execution worker Thread 7,5,main]) started.
+:core:compileJava (Thread[included builds,5,main]) started.
+
+> Task :core:compileJava
+Caching disabled for task ':core:compileJava' because:
+  Build cache is disabled
+Task ':core:compileJava' is not up-to-date because:
+  Input property 'stableSources' file C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\ChunkData.java has changed.
+  Input property 'stableSources' file C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\LootTable.java has changed.
+  Input property 'stableSources' file C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\ModifierType.java has changed.
+  and more...
+Compilation mode: in-process compilation
+Created classpath snapshot for incremental compilation in 0.011 secs.
+Compiling with toolchain 'C:\Users\denni\.jdks\ms-17.0.15'.
+Compiling with JDK Java compiler API.
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\monster\Monster.java:118: error: cannot find symbol
+        this.maxMP = template.maxMP;
+                             ^
+  symbol:   variable maxMP
+  location: variable template of type MonsterTemplate
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\player\Player.java:1205: error: cannot find symbol
+                stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength()));
+                                                               ^
+  symbol:   method getMaxSpiritualStrength()
+  location: variable stats of type PlayerStats
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\player\Player.java:1214: error: cannot find symbol
+                        Math.min((int) (stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
+                                                                                    ^
+  symbol:   method getMaxSpiritualStrength()
+  location: variable stats of type PlayerStats
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:697: warning: [cast] redundant cast to float
+                    float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+                              ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:780: warning: [cast] redundant cast to float
+                    float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+                              ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:1096: warning: [cast] redundant cast to float
+                float u = (float) (stripe - (screenX - spriteWidth / 2 + offX)) / (float) spriteWidth;
+                          ^
+3 errors
+3 warnings
+Incremental compilation of 134 classes completed in 2.098 secs.
+
+> Task :core:compileJava FAILED
+
+[Incubating] Problems report is available at: file:///C:/Users/denni/Desktop/Tarmin2/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:compileJava'.
+> Compilation failed; see the compiler output below.
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\monster\Monster.java:118: error: cannot find symbol
+          this.maxMP = template.maxMP;
+                               ^
+    symbol:   variable maxMP
+    location: variable template of type MonsterTemplate
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:697: warning: [cast] redundant cast to float
+                      float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+                                ^
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:780: warning: [cast] redundant cast to float
+                      float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+                                ^
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:1096: warning: [cast] redundant cast to float
+                  float u = (float) (stripe - (screenX - spriteWidth / 2 + offX)) / (float) spriteWidth;
+                            ^
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\player\Player.java:1205: error: cannot find symbol
+                  stats.setSpiritualStrength(Math.min(temp, stats.getMaxSpiritualStrength()));
+                                                                 ^
+    symbol:   method getMaxSpiritualStrength()
+    location: variable stats of type PlayerStats
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\gamedata\player\Player.java:1214: error: cannot find symbol
+                          Math.min((int) (stats.getSpiritualStrength() * 0.75f), stats.getMaxSpiritualStrength()));
+                                                                                      ^
+    symbol:   method getMaxSpiritualStrength()
+    location: variable stats of type PlayerStats
+  3 errors
+  3 warnings
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 8s
+1 actionable task: 1 executed
+Watched directory hierarchies: [C:\Users\denni\Desktop\Tarmin2]

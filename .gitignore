@@ -169,3 +169,7 @@ saves/*.json
 saves/world/
 logs/game_balance_session.log
 saves/profile.json
+
+## Texture Packer Source Assets
+/assets/images/debris/
+/assets/images/gore/

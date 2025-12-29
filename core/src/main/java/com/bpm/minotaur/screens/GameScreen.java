@@ -251,52 +251,31 @@ public class GameScreen extends BaseScreen {
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
                 game.getItemDataManager(), stochasticManager);
 
-        // --- LOAD BLOOD ASSETS ---
+        // --- LOAD BLOOD ASSETS (Packed) ---
         com.badlogic.gdx.assets.AssetManager am = game.getAssetManager();
-        String[] drops = { "images/gore/blood_drop1.png", "images/gore/blood_drop2.png", "images/gore/blood_drop3.png",
-                "images/gore/blood_drop4.png" };
-        String[] smears = { "images/gore/blood_smear1.png", "images/gore/blood_smear2.png",
-                "images/gore/blood_smear3.png" };
-        String spatter = "images/gore/blood_spatter.png";
+        String goreAtlasPath = "packed/gore.atlas";
 
-        // Load Gibs
-        String[] gibs = new String[10];
-        for (int i = 0; i < 10; i++)
-            gibs[i] = "images/gore/gib" + (i + 1) + ".png";
+        if (!am.isLoaded(goreAtlasPath)) {
+            am.load(goreAtlasPath, com.badlogic.gdx.graphics.g2d.TextureAtlas.class);
+            am.finishLoading();
+        }
 
-        // Preload
-        for (String s : drops)
-            if (!am.isLoaded(s))
-                am.load(s, com.badlogic.gdx.graphics.Texture.class);
-        for (String s : smears)
-            if (!am.isLoaded(s))
-                am.load(s, com.badlogic.gdx.graphics.Texture.class);
-        if (!am.isLoaded(spatter))
-            am.load(spatter, com.badlogic.gdx.graphics.Texture.class);
-        for (String s : gibs)
-            if (!am.isLoaded(s))
-                am.load(s, com.badlogic.gdx.graphics.Texture.class);
+        com.badlogic.gdx.graphics.g2d.TextureAtlas goreAtlas = am.get(goreAtlasPath,
+                com.badlogic.gdx.graphics.g2d.TextureAtlas.class);
 
-        am.finishLoading();
-
-        // Assign
         com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> dropRegs = new com.badlogic.gdx.utils.Array<>();
-        for (String s : drops)
-            dropRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+        for (int i = 1; i <= 4; i++)
+            dropRegs.add(goreAtlas.findRegion("blood_drop" + i));
 
         com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smearRegs = new com.badlogic.gdx.utils.Array<>();
-        for (String s : smears)
-            smearRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+        for (int i = 1; i <= 3; i++)
+            smearRegs.add(goreAtlas.findRegion("blood_smear" + i));
 
-        com.badlogic.gdx.graphics.g2d.TextureRegion spatterReg = new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                am.get(spatter, com.badlogic.gdx.graphics.Texture.class));
+        com.badlogic.gdx.graphics.g2d.TextureRegion spatterReg = goreAtlas.findRegion("blood_spatter");
 
         com.badlogic.gdx.utils.Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibRegs = new com.badlogic.gdx.utils.Array<>();
-        for (String s : gibs)
-            gibRegs.add(new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                    am.get(s, com.badlogic.gdx.graphics.Texture.class)));
+        for (int i = 1; i <= 10; i++)
+            gibRegs.add(goreAtlas.findRegion("gib" + i));
 
         maze.getGoreManager().setTextures(dropRegs, smearRegs, spatterReg, gibRegs);
 
@@ -665,8 +644,15 @@ public class GameScreen extends BaseScreen {
     public void resize(int width, int height) {
         game.getViewport().update(width, height, true);
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
-        if (hud != null)
-            hud.resize(width, height);
+        if (hud != null) {
+            // Fix: If using CRT (FBO), the HUD must be resized to the FBO size (Virtual),
+            // not the Window size.
+            if (useCrtFilter) {
+                hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+            } else {
+                hud.resize(width, height);
+            }
+        }
     }
 
     private void processPlayerStatusEffects() {

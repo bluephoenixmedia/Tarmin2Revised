@@ -167,7 +167,9 @@ public class EntityRenderer {
             }
 
             boolean needsTexture = (entity instanceof Monster && ((Monster) entity).getTexture() != null) ||
-                    (entity instanceof Item && ((Item) entity).getTexture() != null) ||
+                    (entity instanceof Item
+                            && (((Item) entity).getTexture() != null || ((Item) entity).getTextureRegion() != null))
+                    ||
                     (entity instanceof Ladder && canRenderLadderAsTexture((Ladder) entity));
 
             if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && needsTexture) {
@@ -778,14 +780,39 @@ public class EntityRenderer {
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+
+                    Texture textureToDraw;
+                    float uStart, uEnd, vStart, vEnd;
+
+                    if (item.getTextureRegion() != null) {
+                        textureToDraw = item.getTextureRegion().getTexture();
+                        uStart = item.getTextureRegion().getU()
+                                + u * (item.getTextureRegion().getU2() - item.getTextureRegion().getU());
+                        uEnd = item.getTextureRegion().getU() + (u + (1.0f / spriteWidth))
+                                * (item.getTextureRegion().getU2() - item.getTextureRegion().getU());
+                        vStart = item.getTextureRegion().getV2(); // Use V2 (Bottom) as Start (Top) to flip
+                        vEnd = item.getTextureRegion().getV(); // Use V (Top) as End (Bottom)
+
+                        // Original code used v=1 (start) and v2=0 (end).
+                        // If region V (top) and V2 (bottom) match that orientation, fine.
+                        // However, TextureRegion V/V2 depend on how it was packed.
+                        // We'll trust the Region's orientation.
+                    } else {
+                        textureToDraw = item.getTexture();
+                        uStart = u;
+                        uEnd = u + (1.0f / spriteWidth);
+                        vStart = 1f;
+                        vEnd = 0f;
+                    }
+
                     if (item.isModified()) {
                         spriteBatch.setColor(GLOW_COLOR_MODERN);
-                        spriteBatch.draw(item.getTexture(), stripe - 1, drawY - 1, 1, spriteHeight + 2, u, 1,
-                                u + (1.0f / spriteWidth), 0);
+                        spriteBatch.draw(textureToDraw, stripe - 1, drawY - 1, 1, spriteHeight + 2, uStart, vStart,
+                                uEnd, vEnd);
                         spriteBatch.setColor(Color.WHITE);
                     }
-                    spriteBatch.draw(item.getTexture(), stripe, drawY, 1, spriteHeight, u, 1, u + (1.0f / spriteWidth),
-                            0);
+                    spriteBatch.draw(textureToDraw, stripe, drawY, 1, spriteHeight, uStart, vStart, uEnd,
+                            vEnd);
                 }
             }
         }

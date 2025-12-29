@@ -47,12 +47,22 @@ public class SpawnDistributionTest {
         System.out.println("STARTING SPAWN DISTRIBUTION ANALYSIS");
         System.out.println("==========================================");
 
+        com.badlogic.gdx.assets.AssetManager assetManager = new com.badlogic.gdx.assets.AssetManager();
+
         MonsterDataManager monsterData = new MonsterDataManager();
         monsterData.load();
 
         ItemDataManager itemData = new ItemDataManager();
         itemData.load();
         itemData.loadWeapons();
+        itemData.loadArmor(); // Load armor as well
+
+        // Queue and Load Assets
+        System.out.println("Loading Assets...");
+        monsterData.queueAssets(assetManager);
+        itemData.queueAssets(assetManager);
+        assetManager.finishLoading();
+        System.out.println("Assets Loaded.");
 
         SpawnTableData spawnTableData = loadSpawnTableData();
 
@@ -61,22 +71,29 @@ public class SpawnDistributionTest {
             layout[i] = "..........";
 
         for (int level = 1; level <= 50; level++) {
-            analyzeLevel(level, monsterData, itemData, spawnTableData, layout);
+            analyzeLevel(level, monsterData, itemData, spawnTableData, layout, assetManager);
         }
     }
 
     private static void analyzeLevel(int level, MonsterDataManager monsterData, ItemDataManager itemData,
-            SpawnTableData spawnTableData, String[] layout) throws Exception {
+            SpawnTableData spawnTableData, String[] layout, com.badlogic.gdx.assets.AssetManager assetManager)
+            throws Exception {
         System.out.println("\n--- LEVEL " + level + " ---");
 
         int[][] wallData = new int[layout.length][layout[0].length()];
         com.bpm.minotaur.gamedata.Maze maze = new com.bpm.minotaur.gamedata.Maze(level, wallData);
 
-        SpawnManager manager = new SpawnManager(monsterData, itemData, null, maze, Difficulty.MEDIUM, level, level,
-                layout, spawnTableData, 12345L);
+        SpawnManager manager = new SpawnManager(monsterData, itemData, assetManager, maze, Difficulty.MEDIUM, level,
+                level,
+                0, layout, spawnTableData, 12345L);
 
-        printPool(manager, "monsterPool", "Monsters");
-        printPool(manager, "itemPool", "Items");
+        // printPool(manager, "monsterPool", "Monsters");
+        // printPool(manager, "itemPool", "Items");
+
+        // Execute spawning to generate logs
+        System.out.println("Running spawnEntities() for debug log generation...");
+        manager.spawnEntities();
+        System.out.println("Finished spawnEntities().");
     }
 
     private static void printPool(Object target, String fieldName, String label) throws Exception {

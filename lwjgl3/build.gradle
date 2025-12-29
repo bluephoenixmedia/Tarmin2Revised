@@ -31,7 +31,9 @@ if (JavaVersion.current().isJava9Compatible()) {
 dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-  implementation "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop" // <--- ADD THIS LINE
+  implementation "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion" // <--- ADD THIS LINE
+  implementation "com.badlogicgames.gdx:gdx-tools:$gdxVersion" // For TexturePacker
   implementation project(':core')
 
   if(enableGraalNative == 'true') {
@@ -196,6 +198,26 @@ task runSpritePreviewer(type: JavaExec) {
     group = "debug"
     description = "Runs the Sprite Previewer Tool"
     mainClass = 'com.bpm.minotaur.lwjgl3.SpritePreviewerLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runHeadlessSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Headless Game Simulation"
+    mainClass = 'com.bpm.minotaur.lwjgl3.HeadlessSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runTexturePacker(type: JavaExec) {
+    group = "tools"
+    description = "Runs the Texture Packer"
+    mainClass = 'com.bpm.minotaur.lwjgl3.PackTextures'
     classpath = sourceSets.main.runtimeClasspath
     standardOutput = System.out
     workingDir = rootProject.file('assets')

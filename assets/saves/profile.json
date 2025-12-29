@@ -1,10 +1,10 @@
 {
-totalSteps: 2752
+totalSteps: 3470
 totalDoorsOpened: 0
 deepestLevelReached: 0
 monsterKills: {
 	class: java.util.HashMap
-	GOBLIN: 262
+	GOBLIN: 332
 }
 unlockedContent: {
 	class: java.util.HashSet

@@ -5,6 +5,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion; // New imports
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.Renderable;
@@ -110,6 +112,7 @@ public class Item implements Renderable {
     private String friendlyName;
     private final String[] spriteData;
     private final Texture texture;
+    private final TextureRegion textureRegion; // New field
     private final int baseValue;
     private final String damageDice;
     private final int armorClassBonus;
@@ -190,12 +193,51 @@ public class Item implements Renderable {
             this.scale = new Vector2(1.0f, 1.0f);
         }
 
+        Texture tempTexture = null;
+        TextureRegion tempRegion = null;
+
         if (template.texturePath != null && !template.texturePath.isEmpty() && !this.isPotion
                 && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
-            this.texture = assetManager.get(template.texturePath, Texture.class);
-        } else {
-            this.texture = null;
+
+            // Check for Debris Atlas (Hardcoded for now)
+            if (template.texturePath.contains("images/debris") && assetManager.isLoaded("packed/debris.atlas")) {
+                TextureAtlas atlas = assetManager.get("packed/debris.atlas");
+                String name = template.texturePath.substring(template.texturePath.lastIndexOf('/') + 1);
+                if (name.endsWith(".png"))
+                    name = name.substring(0, name.length() - 4);
+
+                tempRegion = atlas.findRegion(name);
+                if (tempRegion == null) {
+                    Gdx.app.error("Item", "Could not find region '" + name + "' in debris.atlas for " + type);
+                    // Fallback to loose texture if possible (though probably not loaded)
+                    if (assetManager.isLoaded(template.texturePath)) {
+                        tempTexture = assetManager.get(template.texturePath, Texture.class);
+                    }
+                }
+            }
+            // Check for Items Atlas
+            else if (template.texturePath.contains("images/items") && assetManager.isLoaded("packed/items.atlas")) {
+                TextureAtlas atlas = assetManager.get("packed/items.atlas");
+                String name = template.texturePath.substring(template.texturePath.lastIndexOf('/') + 1);
+                if (name.endsWith(".png"))
+                    name = name.substring(0, name.length() - 4);
+
+                tempRegion = atlas.findRegion(name);
+                if (tempRegion == null) {
+                    Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas for " + type);
+                    if (assetManager.isLoaded(template.texturePath)) {
+                        tempTexture = assetManager.get(template.texturePath, Texture.class);
+                    }
+                }
+            } else { // Standard Texture Loading
+                if (assetManager.isLoaded(template.texturePath)) {
+                    tempTexture = assetManager.get(template.texturePath, Texture.class);
+                }
+            }
         }
+
+        this.texture = tempTexture;
+        this.textureRegion = tempRegion;
 
         // DEBUG: Check Food Status
         if (this.isFood) {
@@ -374,6 +416,10 @@ public class Item implements Renderable {
 
     public Texture getTexture() {
         return texture;
+    }
+
+    public TextureRegion getTextureRegion() {
+        return textureRegion;
     }
 
     public Vector2 getScale() {
