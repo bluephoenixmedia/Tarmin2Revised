@@ -1,6 +1,7 @@
 package com.bpm.minotaur.video;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.AudioDevice;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -10,6 +11,7 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.ffmpeg.global.avutil;
 
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JavaCVVideoPlayer implements Disposable {
@@ -17,6 +19,7 @@ public class JavaCVVideoPlayer implements Disposable {
     private FFmpegFrameGrabber grabber;
     private Texture texture;
     private Pixmap pixmap;
+    private AudioDevice audioDevice;
 
     private Thread playbackThread;
     private volatile boolean isPlaying = false;
@@ -64,6 +67,8 @@ public class JavaCVVideoPlayer implements Disposable {
                 grabber.setFormat("mp4");
                 // Force RGBA output for direct upload to LibGDX Texture
                 grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
+                // Force 16-bit PCM for audio
+                grabber.setSampleFormat(avutil.AV_SAMPLE_FMT_S16);
                 grabber.start();
 
                 width = grabber.getImageWidth();
@@ -72,55 +77,86 @@ public class JavaCVVideoPlayer implements Disposable {
                 if (frameRate <= 0)
                     frameRate = 30; // Fallback
 
+                // Init audio
+                int channels = grabber.getAudioChannels();
+                int sampleRate = grabber.getSampleRate();
+                if (channels > 0) {
+                    // LibGDX AudioDevice expects isMono boolean. 1 channel = mono = true.
+                    audioDevice = Gdx.audio.newAudioDevice(sampleRate, channels == 1);
+                }
+
                 isPlaying = true;
 
                 int frameCount = 0;
+                long lastVideoTime = System.nanoTime();
+                long frameDurationNs = (long) (1_000_000_000.0 / frameRate);
+
                 while (isPlaying) {
-                    long startTime = System.currentTimeMillis();
-
-                    Frame frame = grabber.grabImage();
+                    Frame frame = grabber.grab();
                     if (frame == null) {
-                        Gdx.app.log("JavaCVVideoPlayer", "Frame is null, stopping. Count: " + frameCount);
-                        break; // End of stream
-                    }
-                    if (frame.image == null) {
-                        // Sometimes audio frames return non-null frame but null image?
-                        // But grabImage() should handle this.
-                        // Gdx.app.log("JavaCVVideoPlayer", "Frame image is null");
-                        continue;
+                        break;
                     }
 
-                    frameCount++;
-
-                    // Copy frame data safely
-                    synchronized (frameLock) {
-                        ByteBuffer src = (ByteBuffer) frame.image[0];
-                        // IMPORTANT: Reset position of source buffer just in case
-                        src.clear();
-
-                        if (transferBuffer == null || transferBuffer.capacity() < src.capacity()) {
-                            transferBuffer = ByteBuffer.allocateDirect(src.capacity());
+                    // Handle Audio (Process immediately)
+                    if (frame.samples != null && audioDevice != null) {
+                        ShortBuffer sb = (ShortBuffer) frame.samples[0];
+                        if (sb != null) {
+                            int limit = sb.limit();
+                            // Re-use array
+                            if (audioBuffer == null || audioBuffer.length < limit) {
+                                audioBuffer = new short[limit * 2]; // Allocate with some headroom
+                            }
+                            sb.get(audioBuffer, 0, limit);
+                            // Write samples (this BLOCKS if buffer is full, helping sync)
+                            audioDevice.writeSamples(audioBuffer, 0, limit);
                         }
-                        transferBuffer.clear();
-                        transferBuffer.put(src); // Copy data
-                        transferBuffer.flip();
-                        newFrameReady = true;
                     }
 
-                    // Throttle to frame rate
-                    long processingTime = System.currentTimeMillis() - startTime;
-                    long sleepTime = (long) (1000.0 / frameRate) - processingTime;
+                    // Handle Video
+                    if (frame.image != null) {
+                        frameCount++;
 
-                    if (sleepTime > 0) {
-                        try {
-                            Thread.sleep(sleepTime);
-                        } catch (InterruptedException e) {
-                            isPlaying = false;
-                            break;
+                        // Copy frame data safely
+                        synchronized (frameLock) {
+                            ByteBuffer src = (ByteBuffer) frame.image[0];
+                            src.clear();
+
+                            if (transferBuffer == null || transferBuffer.capacity() < src.capacity()) {
+                                transferBuffer = ByteBuffer.allocateDirect(src.capacity());
+                            }
+                            transferBuffer.clear();
+                            transferBuffer.put(src);
+                            transferBuffer.flip();
+                            newFrameReady = true;
+                        }
+
+                        // Robust Timing Logic:
+                        // We want to maintain 1/FPS interval between video frames.
+                        // We count time from the *previous* video frame to this one.
+                        long now = System.nanoTime();
+                        long elapsedNs = now - lastVideoTime;
+                        long sleepNs = frameDurationNs - elapsedNs;
+
+                        if (sleepNs > 0) {
+                            try {
+                                long sleepMs = sleepNs / 1_000_000;
+                                int sleepNanos = (int) (sleepNs % 1_000_000);
+                                Thread.sleep(sleepMs, sleepNanos);
+                            } catch (InterruptedException e) {
+                                isPlaying = false;
+                                break;
+                            }
+                            // Adjust lastVideoTime perfectly to maintain drift-free sync
+                            lastVideoTime += frameDurationNs;
+                        } else {
+                            // We are late (maybe due to audio blocking or slow decoding).
+                            // Don't sleep. Update lastVideoTime to now to prevent "fast forward"
+                            // catch-up effect if we are VERY late, or keep it relative if slightly late?
+                            // For simplicity/robustness against massive lag: reset to now.
+                            lastVideoTime = now;
                         }
                     }
                 }
-                Gdx.app.log("JavaCVVideoPlayer", "Playback loop finished. Total frames: " + frameCount);
 
                 // Cleanup
                 grabber.stop();
@@ -146,9 +182,13 @@ public class JavaCVVideoPlayer implements Disposable {
         playbackThread.start();
     }
 
+    private short[] audioBuffer;
+
     public void update() {
         if (!isPlaying && texture == null)
             return;
+
+        boolean frameUpdated = false;
 
         synchronized (frameLock) {
             if (newFrameReady && transferBuffer != null) {
@@ -163,25 +203,26 @@ public class JavaCVVideoPlayer implements Disposable {
                     texture = new Texture(pixmap);
                 }
 
-                // Upload data
+                // Upload data to Pixmap (CPU copy)
                 ByteBuffer dest = pixmap.getPixels();
                 dest.clear(); // Reset destination buffer position
-                transferBuffer.rewind(); // Reset source buffer position (already flipped in thread, but good safety)
+                transferBuffer.rewind(); // Reset source buffer position
 
                 if (dest.capacity() != transferBuffer.capacity()) {
-                    // This should rarely happen if width/height match, but safety first
-                    Gdx.app.error("JavaCVVideoPlayer",
-                            "Buffer mismatch! Dest: " + dest.capacity() + ", Src: " + transferBuffer.capacity());
+                    // Safety check
                 } else {
                     dest.put(transferBuffer);
-                    dest.rewind(); // Prepare for reading by Texture
-
-                    // Re-bind texture with new data
-                    texture.draw(pixmap, 0, 0);
+                    dest.rewind(); // Prepare for reading
+                    frameUpdated = true;
                 }
 
                 newFrameReady = false;
             }
+        }
+
+        // Upload to GPU (Texture) OUTSIDE the lock to avoid blocking the decoder thread
+        if (frameUpdated && texture != null) {
+            texture.draw(pixmap, 0, 0);
         }
     }
 
@@ -202,6 +243,10 @@ public class JavaCVVideoPlayer implements Disposable {
             }
             playbackThread = null;
         }
+        if (audioDevice != null) {
+            audioDevice.dispose();
+            audioDevice = null;
+        }
     }
 
     @Override
@@ -211,5 +256,7 @@ public class JavaCVVideoPlayer implements Disposable {
             texture.dispose();
         if (pixmap != null)
             pixmap.dispose();
+        if (audioDevice != null)
+            audioDevice.dispose();
     }
 }
