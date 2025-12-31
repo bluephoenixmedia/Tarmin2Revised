@@ -19,7 +19,28 @@ public class UnlockData {
     // Example IDs: "weapon_longsword", "class_ranger", "item_magic_lamp"
     public Set<String> unlockedContent = new HashSet<>();
 
+    public Map<String, UnlockRequirement> unlockPlan = new HashMap<>(); // ItemId -> Requirement
+
+    public transient java.util.List<String> sessionUnlocks = new java.util.ArrayList<>();
+
     public UnlockData() {
         // Default constructor for Json serialization
+    }
+
+    public static class UnlockRequirement {
+        public enum GateType {
+            TOTAL_STEPS, TOTAL_DOORS, MONSTER_KILLS, DEEPEST_LEVEL
+        }
+
+        public GateType type;
+        public long targetValue;
+
+        public UnlockRequirement() {
+        }
+
+        public UnlockRequirement(GateType type, long targetValue) {
+            this.type = type;
+            this.targetValue = targetValue;
+        }
     }
 }

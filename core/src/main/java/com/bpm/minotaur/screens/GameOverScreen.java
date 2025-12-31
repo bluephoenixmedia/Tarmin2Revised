@@ -271,6 +271,30 @@ public class GameOverScreen extends BaseScreen {
         font.draw(game.getBatch(), "Press any key to return to the Main Menu",
                 game.getViewport().getWorldWidth() / 2 - 450, game.getViewport().getWorldHeight() / 2 - 120);
 
+        // --- NEW: Display Session Unlocks ---
+        java.util.List<String> unlocks = com.bpm.minotaur.managers.UnlockManager.getInstance().getSessionUnlocks();
+        if (!unlocks.isEmpty()) {
+            font.setColor(Color.GOLD);
+            font.getData().setScale(2);
+            font.draw(game.getBatch(), "NEW DISCOVERIES!", 50, game.getViewport().getWorldHeight() - 50);
+
+            font.setColor(Color.YELLOW);
+            float y = game.getViewport().getWorldHeight() - 100;
+            for (String unlockId : unlocks) {
+                // Formatting: "item_rusty_sword" -> "Rusty Sword"
+                String name = unlockId.replace("item_", "").replace("monster_", "");
+                name = name.replace("_", " ").toUpperCase();
+
+                font.draw(game.getBatch(), "- " + name, 50, y);
+                y -= 40;
+
+                if (y < 100)
+                    break; // Overflow protection
+            }
+            font.getData().setScale(3); // Reset
+        }
+        // ------------------------------------
+
         game.getBatch().end();
     }
 

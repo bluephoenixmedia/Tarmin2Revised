@@ -673,6 +673,10 @@ public class EntityRenderer {
                 return;
             }
 
+            // --- VISUAL TAGGING ---
+            monster.setTagged(true);
+            // ----------------------
+
             Camera camera = viewport.getCamera();
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
@@ -696,6 +700,11 @@ public class EntityRenderer {
 
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
+                    // Fix: Check depth buffer to prevent monsters drawing through walls
+                    if (transformY >= depthBuffer[stripe]) {
+                        continue;
+                    }
+
                     float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
                     spriteBatch.draw(monster.getTexture(), stripe, drawY, 1, spriteHeight, u, 1,
                             u + (1.0f / spriteWidth), 0);
@@ -729,6 +738,10 @@ public class EntityRenderer {
             if (!atFeet && distanceToObstruction < distanceToItem - 0.1f) {
                 return;
             }
+
+            // --- VISUAL TAGGING ---
+            item.setSeen(true);
+            // ----------------------
 
             Camera camera = viewport.getCamera();
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
@@ -779,6 +792,11 @@ public class EntityRenderer {
 
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
+                    // Fix: Check depth buffer to prevent drawing through walls
+                    if (transformY >= depthBuffer[stripe]) {
+                        continue;
+                    }
+
                     float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
 
                     Texture textureToDraw;
@@ -792,11 +810,6 @@ public class EntityRenderer {
                                 * (item.getTextureRegion().getU2() - item.getTextureRegion().getU());
                         vStart = item.getTextureRegion().getV2(); // Use V2 (Bottom) as Start (Top) to flip
                         vEnd = item.getTextureRegion().getV(); // Use V (Top) as End (Bottom)
-
-                        // Original code used v=1 (start) and v2=0 (end).
-                        // If region V (top) and V2 (bottom) match that orientation, fine.
-                        // However, TextureRegion V/V2 depend on how it was packed.
-                        // We'll trust the Region's orientation.
                     } else {
                         textureToDraw = item.getTexture();
                         uStart = u;

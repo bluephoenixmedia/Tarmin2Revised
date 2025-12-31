@@ -2,7 +2,7 @@
   "BANDED_MAIL": {
     "friendlyName": "Banded mail",
     "description": "Defense: 7",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/banded.png",
     "spriteData": [
       "........................",
       "........................",
@@ -55,12 +55,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "BRIGANDINE": {
     "friendlyName": "Brigandine",
     "description": "Defense: 4",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/brigandine.png",
     "spriteData": [
       "........................",
       "........................",
@@ -113,70 +114,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
-  },
-  "BACK_AND_BREAST": {
-    "friendlyName": "Back-and-breast",
-    "description": "Defense: 4",
-    "texturePath": "images/armor/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..######........######..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      ".....##############.....",
-      ".....##############.....",
-      "...##################...",
-      "...##################...",
-      "......############......",
-      "........########........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
     ],
-    "baseValue": 80,
-    "damageDice": 0,
-    "armorClassBonus": 4,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 8,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
+    "locked": true
   },
   "BASINET": {
     "friendlyName": "Basinet",
     "description": "Defense: 1",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/bascinet.png",
     "spriteData": [
       "........................",
       "........................",
@@ -229,12 +173,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "BRONZE_PLATE": {
     "friendlyName": "Bronze Plate",
     "description": "Defense: 8",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/bronze_breastplate.png",
     "spriteData": [
       "........................",
       "........................",
@@ -287,12 +232,249 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
+  },
+  "BRONZE_LEGGINGS": {
+    "friendlyName": "Bronze Leggings",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/bronze_leggings.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 400,
+    "damageDice": 0,
+    "armorClassBonus": 3,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 14,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "BRONZE_BOOTS": {
+    "friendlyName": "Bronze Boots",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/bronze_boots.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 400,
+    "damageDice": 0,
+    "armorClassBonus": 3,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 14,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "BRONZE_HELMET": {
+    "friendlyName": "Bronze Helmet",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/bronze_helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........###...........",
+      ".......#########........",
+      "....###############.....",
+      "....###############.....",
+      "....###############.....",
+      "..#########.#########...",
+      "..#########.#########...",
+      "..######.......######...",
+      ".....###.......###......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 200,
+    "damageDice": 0,
+    "armorClassBonus": 3,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": true,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 14,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "BRONZE_GAUNTLETS": {
+    "friendlyName": "Bronze Gauntlets",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/bronze_gauntlets.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........###...........",
+      ".......#########........",
+      "....###############.....",
+      "....###############.....",
+      "....###############.....",
+      "..#########.#########...",
+      "..#########.#########...",
+      "..######.......######...",
+      ".....###.......###......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 200,
+    "damageDice": 0,
+    "armorClassBonus": 3,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": true,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 14,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
   },
   "CHAIN_HAUBERK": {
     "friendlyName": "Chain hauberk",
     "description": "Defense: 5",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/chain_hauberk.png",
     "spriteData": [
       "........................",
       "........................",
@@ -345,12 +527,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "CHAIN_LAMELLAR": {
     "friendlyName": "Chain-lamellar",
     "description": "Defense: 4",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/chain_lamellar.png",
     "spriteData": [
       "........................",
       "........................",
@@ -403,12 +586,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "CHAIN_MAIL": {
     "friendlyName": "Chain mail",
     "description": "Defense: 6",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/chain_mail.png",
     "spriteData": [
       "........................",
       "........................",
@@ -461,12 +645,131 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
+  },
+  "CHAIN_HELMET": {
+    "friendlyName": "Chain helmet",
+    "description": "Defense: 6",
+    "texturePath": "images/armor/chain_helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 75,
+    "damageDice": 0,
+    "armorClassBonus": 6,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "CHAIN_LEGGINGS": {
+    "friendlyName": "Chain leggings",
+    "description": "Defense: 6",
+    "texturePath": "images/armor/chain_leggings.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 75,
+    "damageDice": 0,
+    "armorClassBonus": 6,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
   },
   "CORD_MAIL": {
     "friendlyName": "Cord mail",
     "description": "Defense: 3",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/corded_mail.png",
     "spriteData": [
       "........................",
       "........................",
@@ -519,12 +822,13 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "FIELD_PLATE": {
     "friendlyName": "Field plate",
     "description": "Defense: 8",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/field_plate.png",
     "spriteData": [
       "........................",
       "........................",
@@ -577,12 +881,249 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
+  },
+  "FIELD_PLATE_HELMET": {
+    "friendlyName": "Field plate helmet",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/field_plate_helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 2000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FIELD_PLATE_GAUNTLETS": {
+    "friendlyName": "Field plate gauntlets",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/field_plate_gauntlets.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 2000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FIELD_PLATE_LEGGINGS": {
+    "friendlyName": "Field plate leggings",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/field_plate_leggings.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 2000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FIELD_PLATE_BOOTS": {
+    "friendlyName": "Field plate boots",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/field_plate_boots.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 2000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
   },
   "FULL_PLATE": {
     "friendlyName": "Full plate",
     "description": "Defense: 8",
-    "texturePath": "images/armor/helmet.png",
+    "texturePath": "images/armor/full_plate.png",
     "spriteData": [
       "........................",
       "........................",
@@ -635,7 +1176,303 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
+  },
+  "FULL_PLATE_HELMET": {
+    "friendlyName": "Full plate helmet",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/full_plate_helmet.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 4000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FULL_PLATE_ARMS": {
+    "friendlyName": "Full plate arms",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/full_plate_arms.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 4000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FULL_PLATE_GAUNTLETS": {
+    "friendlyName": "Full plate gauntlets",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/full_plate_gauntlets.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 4000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FULL_PLATE_LEGGINGS": {
+    "friendlyName": "Full plate leggings",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/full_plate_leggings.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 4000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
+  },
+  "FULL_PLATE_BOOTS": {
+    "friendlyName": "Full plate boots",
+    "description": "Defense: 8",
+    "texturePath": "images/armor/full_plate_boots.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..######........######..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      "..####################..",
+      ".....##############.....",
+      ".....##############.....",
+      "...##################...",
+      "...##################...",
+      "......############......",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 4000,
+    "damageDice": 0,
+    "armorClassBonus": 8,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": true,
+    "isShield": false,
+    "isHelmet": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ],
+    "locked": true
   },
   "GALLIC_ARMOR": {
     "friendlyName": "Gallic Armor",
@@ -693,7 +1530,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "HALF_PLATE": {
     "friendlyName": "Half-Plate",
@@ -751,123 +1589,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
-  },
-  "CLOSED_FACE": {
-    "friendlyName": "Closed face",
-    "description": "Defense: 1",
-    "texturePath": "images/armor/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..........###...........",
-      ".......#########........",
-      "....###############.....",
-      "....###############.....",
-      "....###############.....",
-      "..#########.#########...",
-      "..#########.#########...",
-      "..######.......######...",
-      ".....###.......###......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
     ],
-    "baseValue": 20,
-    "damageDice": 0,
-    "armorClassBonus": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 6,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
-  },
-  "MAIL_COIF": {
-    "friendlyName": "Mail coif",
-    "description": "Defense: 1",
-    "texturePath": "images/armor/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..........###...........",
-      ".......#########........",
-      "....###############.....",
-      "....###############.....",
-      "....###############.....",
-      "..#########.#########...",
-      "..#########.#########...",
-      "..######.......######...",
-      ".....###.......###......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 10,
-    "damageDice": 0,
-    "armorClassBonus": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isShield": false,
-    "isHelmet": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 4,
-        "maxLevel": 99,
-        "weight": 5
-      }
-    ]
+    "locked": true
   },
   "GREAT_HELM": {
     "friendlyName": "Great Helm",
@@ -925,7 +1648,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "LEATHER_HELM": {
     "friendlyName": "Leather Helm",
@@ -983,7 +1707,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "OPEN_FACED": {
     "friendlyName": "Open faced",
@@ -1041,7 +1766,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "HIDE_ARMOR": {
     "friendlyName": "Hide Armor",
@@ -1099,7 +1825,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "HOPLITE_ARMOR": {
     "friendlyName": "Hoplite armor",
@@ -1157,7 +1884,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "IMPROVED_MAIL": {
     "friendlyName": "Improved mail",
@@ -1215,7 +1943,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "LAMELLAR_SHIRT": {
     "friendlyName": "Lamellar shirt",
@@ -1273,7 +2002,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "LEATHER_ARMOR": {
     "friendlyName": "Leather armor",
@@ -1331,7 +2061,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": false
   },
   "LIGHT_SCALE": {
     "friendlyName": "Light scale",
@@ -1389,7 +2120,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "LORICA_HAMATA": {
     "friendlyName": "Lorica hamata",
@@ -1447,7 +2179,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "LORICA_SEGMENTA": {
     "friendlyName": "Lorica segmenta",
@@ -1505,7 +2238,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "MAIL_AND_PLATE": {
     "friendlyName": "Mail and Plate",
@@ -1563,7 +2297,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "METAL_LAMELLAR": {
     "friendlyName": "Metal Lamellar",
@@ -1621,7 +2356,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "PADDED_ARMOR": {
     "friendlyName": "Padded Armor",
@@ -1679,7 +2415,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "PLATE_MAIL": {
     "friendlyName": "Plate mail",
@@ -1737,7 +2474,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "RING_MAIL": {
     "friendlyName": "Ring mail",
@@ -1795,7 +2533,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SCALE_ARMOR": {
     "friendlyName": "Scale armor",
@@ -1853,7 +2592,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SHIELD_BODY": {
     "friendlyName": "Body",
@@ -1911,7 +2651,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "BUCKLER": {
     "friendlyName": "Buckler",
@@ -1969,7 +2710,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SHIELD_SMALL": {
     "friendlyName": "Small",
@@ -2027,7 +2769,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SHIELD_MEDIUM": {
     "friendlyName": "Medium",
@@ -2085,7 +2828,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SHIELD_LARGE": {
     "friendlyName": "Large",
@@ -2143,7 +2887,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "SPLINT_MAIL": {
     "friendlyName": "Splint mail",
@@ -2201,7 +2946,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "STUDDED_LEATHER": {
     "friendlyName": "Studded leather",
@@ -2259,7 +3005,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "THREE_QUARTER_PLATE": {
     "friendlyName": "Three-quarter plate",
@@ -2317,7 +3064,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "WOOD_BONE_ARMOR": {
     "friendlyName": "Wood/bone armor",
@@ -2375,7 +3123,8 @@
         "maxLevel": 99,
         "weight": 5
       }
-    ]
+    ],
+    "locked": true
   },
   "BOOTS": {
     "friendlyName": "Boots",
@@ -2460,7 +3209,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": false
   },
   "LEGS": {
     "friendlyName": "Legs",
@@ -2545,7 +3295,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "LARGE_SHIELD": {
     "friendlyName": "Large Shield",
@@ -2630,7 +3381,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "GAUNTLETS": {
     "friendlyName": "Gauntlets",
@@ -2715,7 +3467,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "HAUBERK": {
     "friendlyName": "Hauberk",
@@ -2800,7 +3553,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "CLOAK": {
     "friendlyName": "Cloak",
@@ -2885,7 +3639,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "EYES": {
     "friendlyName": "Eyes / Visor",
@@ -2970,7 +3725,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "ARMS": {
     "friendlyName": "Arms",
@@ -3055,7 +3811,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "HELMET": {
     "friendlyName": "Helmet",
@@ -3140,7 +3897,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "BREASTPLATE": {
     "friendlyName": "Breastplate",
@@ -3225,6 +3983,7 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   }
 }

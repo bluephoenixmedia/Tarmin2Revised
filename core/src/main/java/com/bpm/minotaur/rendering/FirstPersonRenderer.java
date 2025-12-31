@@ -39,7 +39,7 @@ public class FirstPersonRenderer {
     private final Color fogLerpColor = new Color();
 
     // --- Rendering Constants ---
-    private static final float DOOR_WIDTH = 1.0f / 3.0f;
+    private static final float DOOR_WIDTH = 0.25f;
     private static final float DOOR_HEIGHT_RATIO = 0.8f;
     private static final float FOG_FADE_RATIO = 0.5f;
 

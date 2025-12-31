@@ -251,4 +251,11 @@ public class PlayerEquipment {
             items.add(wornShield);
         return items;
     }
+
+    public boolean hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType type) {
+        if (wornRing != null && wornRing.getRingEffect() == type) {
+            return true;
+        }
+        return false;
+    }
 }

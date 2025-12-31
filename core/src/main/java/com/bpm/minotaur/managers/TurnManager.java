@@ -30,11 +30,49 @@ public class TurnManager {
         int playerSpeed = player.getEffectiveSpeed();
         float timeElapsed = BASE_TURN_COST / (float) playerSpeed;
 
+        // --- RING EFFECTS Processed Here ---
+        if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.REGENERATION)) {
+            // Regeneration: 1 HP per turn
+            if (player.getCurrentHP() < player.getMaxHP()) {
+                player.heal(1);
+            }
+        }
+
+        if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SEARCHING)) {
+            // Searching: Placeholder for now, maybe reveal adjacent traps later
+            // For now, just a tiny chance to reveal a random adjacent item if hidden? (Not
+            // impl yet)
+            // maze.detectSecretDoors(player.getPosition()); (Future)
+        }
+        // -----------------------------------
+
         // 2. Distribute Energy to Monsters
+        // --- RING EFFECTS Processed Here ---
+        if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.REGENERATION)) {
+            if (player.getCurrentHP() < player.getMaxHP()) {
+                player.heal(1);
+            }
+        }
+        if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SEARCHING)) {
+            // Placeholder for Searching
+        }
+        // -----------------------------------
         List<Monster> monsters = new ArrayList<>(maze.getMonsters().values());
         for (Monster monster : monsters) {
             if (monster.getWarStrength() <= 0)
                 continue; // Skip dead logic
+
+            // --- COMBAT LOCK FIX ---
+            if (combatManager != null && combatManager.getMonster() == monster) {
+                continue; // Skip the monster actively dueling the player (it acts via CombatManager)
+            }
+            // -----------------------
+
+            // --- COMBAT LOCK FIX ---
+            if (combatManager != null && combatManager.getMonster() == monster) {
+                continue; // Skip the monster actively dueling the player (it acts via CombatManager)
+            }
+            // -----------------------
 
             int monsterSpeed = monster.getEffectiveSpeed();
             float energyGain = timeElapsed * monsterSpeed;

@@ -38,6 +38,7 @@ public class WorldManager {
 
     private final WeatherManager weatherManager;
     private final SpawnTableData spawnTableData;
+    private final com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager;
 
     private final SoundManager soundManager;
 
@@ -61,6 +62,7 @@ public class WorldManager {
             MonsterDataManager dataManager,
             ItemDataManager itemDataManager,
             AssetManager assetManager,
+            com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
             SpawnTableData spawnTableData,
             SoundManager soundManager) {
         this.gameMode = gameMode;
@@ -79,6 +81,7 @@ public class WorldManager {
         this.dataManager = dataManager;
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
+        this.encounterManager = encounterManager;
         this.spawnTableData = spawnTableData;
         this.soundManager = soundManager;
 
@@ -235,7 +238,8 @@ public class WorldManager {
             return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, effectiveLevel, difficulty,
                     gameMode,
                     RetroTheme.STANDARD_THEME,
-                    this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed,
+                    this.dataManager, this.itemDataManager, this.assetManager, this.encounterManager,
+                    this.spawnTableData, chunkSeed,
                     playerReference != null ? playerReference.getLuck() : 0);
         }
 
@@ -297,7 +301,8 @@ public class WorldManager {
         long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
         Maze newMaze = generator.generateChunk(chunkId, currentLevel, effectiveLevel, difficulty, gameMode,
                 themeToGenerate,
-                this.dataManager, this.itemDataManager, this.assetManager, this.spawnTableData, chunkSeed,
+                this.dataManager, this.itemDataManager, this.assetManager, this.encounterManager, this.spawnTableData,
+                chunkSeed,
                 playerReference != null ? playerReference.getLuck() : 0);
 
         loadedChunks.put(chunkId, newMaze);

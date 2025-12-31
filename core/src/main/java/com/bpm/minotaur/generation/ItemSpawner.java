@@ -37,6 +37,17 @@ public class ItemSpawner {
         return selectSpecificItem(selectedCategory);
     }
 
+    /**
+     * Spawns an item from a specific category.
+     * Used by MonsterFactory for equipping monsters.
+     *
+     * @param category The desired category
+     * @return The selected Item ID and Template
+     */
+    public Map.Entry<String, ItemTemplate> spawnItemByCategory(ItemCategory category) {
+        return selectSpecificItem(category);
+    }
+
     private Map<ItemCategory, Integer> getClassWeights(SpawnContext ctx) {
         EnumMap<ItemCategory, Integer> weights = new EnumMap<>(ItemCategory.class);
 
@@ -75,20 +86,21 @@ public class ItemSpawner {
             weights.put(ItemCategory.AMULET, 5);
             // weights.put(ItemCategory.GOLD, 0);
         } else {
-            // Default Context
-            weights.put(ItemCategory.FOOD, 20);
-            weights.put(ItemCategory.POTION, 16);
-            weights.put(ItemCategory.SCROLL, 16);
-            weights.put(ItemCategory.WAR_WEAPON, 5);
-            weights.put(ItemCategory.SPIRITUAL_WEAPON, 5);
-            weights.put(ItemCategory.ARMOR, 10);
+            // Default Context - Balanced for "More Items/Weapons/Armor"
+            weights.put(ItemCategory.FOOD, 30); // 20 -> 30
+            weights.put(ItemCategory.POTION, 20); // 16 -> 20
+            weights.put(ItemCategory.SCROLL, 25); // 16 -> 25 (Scrolls requested)
+            weights.put(ItemCategory.WAR_WEAPON, 15); // 5 -> 15 (Weapons requested)
+            weights.put(ItemCategory.SPIRITUAL_WEAPON, 15);// 5 -> 15
+            weights.put(ItemCategory.ARMOR, 20); // 10 -> 20 (Armor requested)
+            weights.put(ItemCategory.WAND, 15); // 4 -> 15 (Wands requested)
+
+            // Standard/Rare
             weights.put(ItemCategory.TOOL, 8);
             weights.put(ItemCategory.GEM, 8);
-            weights.put(ItemCategory.WAND, 4);
-            weights.put(ItemCategory.BOOK, 4);
-            weights.put(ItemCategory.RING, 3);
-            weights.put(ItemCategory.AMULET, 1);
-            // weights.put(ItemCategory.GOLD, 0);
+            weights.put(ItemCategory.BOOK, 8); // 4 -> 8
+            weights.put(ItemCategory.RING, 6); // 3 -> 6
+            weights.put(ItemCategory.AMULET, 2); // 1 -> 2
         }
 
         return weights;
@@ -116,99 +128,42 @@ public class ItemSpawner {
     private Map.Entry<String, ItemTemplate> selectSpecificItem(ItemCategory category) {
         // Need to iterate map and filter by value type
         List<Map.Entry<String, ItemTemplate>> candidates = new ArrayList<>();
+        List<Integer> effectiveWeights = new ArrayList<>();
 
         for (Map.Entry<String, ItemTemplate> entry : registry.entrySet()) {
-            // Check if item matches category. Use ItemDataManager logic?
-            // Since we only have template, we check template properties?
-            // Actually, ItemTemplate doesn't have ItemCategory field visible in the snippet
-            // I saw!
-            // Wait, let me check ItemTemplate again.
-            // It had "public ItemCategory category;"? No, I only saw booleans!
-            // "public boolean isPotion;" etc.
-
-            // I need to map "ItemCategory" enum to the booleans if the field doesn't exist.
-            // Or rely on metadata if ItemTemplate DOES have it but I missed it
-            // interactively?
-            // The snippet showed booleans: isWeapon, isPotion, etc.
-
             ItemTemplate t = entry.getValue();
-            boolean match = false;
-            switch (category) {
-                case POTION:
-                    match = t.isPotion;
-                    break;
-                case SCROLL:
-                    match = t.isScrollAppearance;
-                    break; // isScrollAppearance? Or isScroll?
-                // The snippet had: "boolean isScrollAppearance; // New"
-                // I should verify if there is an "isScroll" boolean or Category field.
-                // Assuming mapping logic for now:
-                case WAR_WEAPON:
-                    match = t.isWeapon;
-                    break; // Rough approx
-                case SPIRITUAL_WEAPON:
-                    match = t.isWeapon;
-                    break; // Rough
-                case ARMOR:
-                    match = t.isArmor;
-                    break;
-                case FOOD:
-                    match = t.isFood;
-                    break;
-                case RING:
-                    match = t.isRing;
-                    break;
-                // case WAND: match = t.isWand?
-                // case BOOK: match = t.isBook?
-                default:
-                    match = false;
-                    break;
-            }
 
-            // BUT, this is brittle. Ideally ItemTemplate should have the category field.
-            // Let's assume for this integration task that I should match broadly or that I
-            // missed the category field.
-            // Actually, checking ItemTemplate again...
-            // It has "public boolean isWeapon", "isRanged", "isArmor", "isPotion",
-            // "isFood", "isKey", "isUsable", "isContainer", "isRing", "isShield",
-            // "isHelmet".
-            // It does NOT show "category" field of type ItemCategory.
-
-            // However, Item.java probably has it.
-            // Since I am creating a spawner for templates (definitions), I should rely on
-            // what's available.
-
-            // BETTER APPROACH: Use logic to determine category from booleans,
-            // OR assume I should add the category field to ItemTemplate.
-            // Since I am "Senior Systems Architect", I should probably add the field to
-            // make this robust.
-            // BUT, I'll stick to what's visible to minimize diffs, OR check if I can just
-            // add it.
-
-            // NOTE: For now, I'll just check probability > 0.
             if (t.probability > 0 && isCategoryMatch(t, category)) {
+                int weight = t.probability;
+
+                if (t.locked) {
+                    if (!com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(entry.getKey())) {
+                        continue; // Skip locked items
+                    }
+                    // Boost weight for unlocked items to ensure they are seen
+                    weight *= 3;
+                }
+
                 candidates.add(entry);
+                effectiveWeights.add(weight);
             }
         }
 
         if (candidates.isEmpty()) {
-            // Fallback
-            // throw new IllegalStateException("No templates found for category: " +
-            // category);
             return null;
         }
 
-        int sumProbability = candidates.stream().mapToInt(e -> e.getValue().probability).sum();
+        int sumProbability = effectiveWeights.stream().mapToInt(Integer::intValue).sum();
         if (sumProbability <= 0) {
             return candidates.get(rng.rn2(candidates.size()));
         }
 
         int roll = rng.rn2(sumProbability);
 
-        for (Map.Entry<String, ItemTemplate> entry : candidates) {
-            roll -= entry.getValue().probability;
+        for (int i = 0; i < candidates.size(); i++) {
+            roll -= effectiveWeights.get(i);
             if (roll < 0) {
-                return entry;
+                return candidates.get(i);
             }
         }
 

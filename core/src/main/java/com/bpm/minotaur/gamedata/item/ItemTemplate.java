@@ -17,7 +17,10 @@ public class ItemTemplate {
     public float offsetX = 0.0f;
     public float offsetY = 0.0f;
 
+    public RingEffectType ringEffect; // New: For JSON Loading
+
     public String unlockId;
+    public boolean locked; // Matches JSON "locked": true
 
     public String[] spriteData;
     public int baseValue;

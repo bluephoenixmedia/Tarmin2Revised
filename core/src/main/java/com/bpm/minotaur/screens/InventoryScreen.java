@@ -948,22 +948,27 @@ public class InventoryScreen extends BaseScreen {
 
         private void drawItemPixels(Batch batch, Item item, float x, float y, float width, float height) {
             // Check for Modern Rendering
-            if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.MODERN
-                    && item.getTexture() != null) {
-                float pad = 8f;
-                batch.draw(item.getTexture(), x + pad, y + pad, width - pad * 2, height - pad * 2);
-
-                // Draw enchantment glow if modified
-                if (item.isModified()) {
-                    batch.setColor(1, 0.9f, 0.2f, 0.3f);
-                    // Use texture for glow or just a box? Box is safer for shape.
-                    // Or draw texture again with tint?
-                    // Let's stick to the box for now to match retro behavior visually or just
-                    // standard glow.
-                    batch.draw(whitePixel, x, y, width, height);
-                    batch.setColor(Color.WHITE);
+            // Check for Modern Rendering
+            if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.MODERN) {
+                boolean drawn = false;
+                if (item.getTextureRegion() != null) {
+                    float pad = 8f;
+                    batch.draw(item.getTextureRegion(), x + pad, y + pad, width - pad * 2, height - pad * 2);
+                    drawn = true;
+                } else if (item.getTexture() != null) {
+                    float pad = 8f;
+                    batch.draw(item.getTexture(), x + pad, y + pad, width - pad * 2, height - pad * 2);
+                    drawn = true;
                 }
-                return;
+
+                if (drawn) {
+                    if (item.isModified()) {
+                        batch.setColor(1, 0.9f, 0.2f, 0.3f);
+                        batch.draw(whitePixel, x, y, width, height);
+                        batch.setColor(Color.WHITE);
+                    }
+                    return;
+                }
             }
 
             // Retro Rendering (Sprite Data)

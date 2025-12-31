@@ -10,7 +10,8 @@ public class GameEvent {
         EFFECT_APPLIED, // For when an effect is first added
         EFFECT_CURED, // For when an effect is removed (by potion, spell, or expiry)
         // --- END NEW ---
-        PORTAL_ACTIVATED
+        PORTAL_ACTIVATED,
+        ENCOUNTER_TRIGGERED
     }
 
     // --- Fields ---

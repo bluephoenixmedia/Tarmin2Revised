@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Item implements Renderable {
+    private boolean isSeen = false; // Minimap tracking
 
     public enum Beatitude {
         CURSED, UNCURSED, BLESSED
@@ -184,6 +185,8 @@ public class Item implements Renderable {
         this.isHelmet = template.isHelmet;
         this.range = template.range;
         this.isImpassable = template.isImpassable; // Assign from template
+        this.isLocked = template.locked; // Initialize from template
+        this.ringEffect = template.ringEffect; // Initialize from template
 
         this.dataManager = dataManager;
 
@@ -196,7 +199,7 @@ public class Item implements Renderable {
         Texture tempTexture = null;
         TextureRegion tempRegion = null;
 
-        if (template.texturePath != null && !template.texturePath.isEmpty() && !this.isPotion
+        if (template.texturePath != null && !template.texturePath.isEmpty()
                 && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
 
             // Check for Debris Atlas (Hardcoded for now)
@@ -618,5 +621,13 @@ public class Item implements Renderable {
 
     public void setTrapped(boolean trapped) {
         this.trapped = trapped;
+    }
+
+    public boolean isSeen() {
+        return isSeen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.isSeen = seen;
     }
 }

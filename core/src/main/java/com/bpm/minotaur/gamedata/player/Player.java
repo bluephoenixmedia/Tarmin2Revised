@@ -58,6 +58,27 @@ public class Player {
     // --- Inventory ---
     private final Inventory inventory = new Inventory();
 
+    // --- Spells ---
+    private final List<com.bpm.minotaur.gamedata.spells.SpellType> knownSpells = new ArrayList<>();
+
+    public List<com.bpm.minotaur.gamedata.spells.SpellType> getKnownSpells() {
+        return knownSpells;
+    }
+
+    public void learnSpell(com.bpm.minotaur.gamedata.spells.SpellType spell) {
+        if (!knownSpells.contains(spell)) {
+            knownSpells.add(spell);
+        }
+    }
+
+    public boolean hasEnoughMana(int cost) {
+        return stats.getCurrentMP() >= cost;
+    }
+
+    public void deductMana(int amount) {
+        stats.setCurrentMP(Math.max(0, stats.getCurrentMP() - amount));
+    }
+
     // --- Managers ---
     private final SoundManager soundManager;
     private final ItemDataManager itemDataManager;
@@ -97,6 +118,9 @@ public class Player {
         }
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
+
+        // Initialize Spells
+        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
     }
 
     public void setPosition(GridPoint2 newPos) {
@@ -104,14 +128,7 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
-        // --- NEW: Food Consumption Logic ---
-        if (item.isFood()) {
-            stats.addFood(1); // CORRECTED
-            BalanceLogger.getInstance().logEconomy("CONSUME", item.getDisplayName(), 1);
-            return true; // Successfully "picked up" (consumed)
-        }
-        // -----------------------------------
-
+        // Food is now picked up normally
         boolean pickedUp = inventory.pickup(item);
         if (pickedUp && item.getGrantedDie() != null) {
             stats.getDicePool().add(item.getGrantedDie());
@@ -195,6 +212,18 @@ public class Player {
                 // ---------------
                 return;
             }
+            if (itemInFront.getType() == Item.ItemType.MEAT) {
+                soundManager.playPickupItemSound();
+                int foodFound = new Random().nextInt(6) + 10; // 10-15 food value
+                stats.addFood(foodFound);
+                maze.getItems().remove(targetTile);
+                eventManager.addEvent(new GameEvent("You ate the meat. (" + foodFound + " food)", 2f));
+
+                // --- LOGGING ---
+                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Meat", foodFound);
+                // ---------------
+                return;
+            }
 
             // --- NEW: Portal Interaction ---
             if (itemInFront.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
@@ -209,6 +238,11 @@ public class Player {
                 eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
 
                 // --- LOGGING ---
+                Gdx.app.log("Player",
+                        "Attempting pickup at " + targetTile + ". Items before: " + maze.getItems().size());
+                maze.getItems().remove(targetTile);
+                Gdx.app.log("Player", "Items after: " + maze.getItems().size());
+
                 BalanceLogger.getInstance().logEconomy("PICKUP", itemInFront.getDisplayName(),
                         itemInFront.getBaseValue());
                 // ---------------
@@ -1015,6 +1049,12 @@ public class Player {
         } else {
             position.set(nextX + 0.5f, nextY + 0.5f);
             UnlockManager.getInstance().incrementStat("steps", 1);
+
+            String eventId = maze.getEventAt(nextX, nextY);
+            if (eventId != null) {
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, eventId));
+                maze.removeEvent(nextX, nextY);
+            }
         }
     }
 
@@ -1283,6 +1323,7 @@ public class Player {
         stats.performLevelUp();
         soundManager.playPlayerLevelUpSound();
         eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
+        eventManager.addEvent(new GameEvent("Attack Bonus increased to +" + stats.getAttackModifier() + "!", 2f));
     }
 
     public void takeStatusEffectDamage(int amount, DamageType type) {

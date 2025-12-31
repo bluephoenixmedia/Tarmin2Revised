@@ -23,8 +23,8 @@ public class PlayerStats {
     private int stamina = 3; // Initial stamina for dice selection
 
     // --- UPDATED: XP CONSTANTS FOR SLOWER PROGRESSION ---
-    private static final int BASE_XP_REQUIRED = 150; // Increased from 100
-    private static final double LOG_BASE = 1.5; // Increased from 1.2 for steeper curve
+    private static final int BASE_XP_REQUIRED = 250; // Increased from 150
+    private static final double LOG_BASE = 1.6; // Changed from 1.5 to 1.6
 
     private int treasureScore = 0;
 

@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -44,6 +45,7 @@ public class Hud implements Disposable {
     private final CombatManager combatManager;
     private final GameEventManager eventManager;
     private final BitmapFont font;
+    private final BitmapFont logFont; // Separate font for game log
     private BitmapFont debugFont; // Default font for debug overlay
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
@@ -89,6 +91,7 @@ public class Hud implements Disposable {
     private final Table messageTable;
     private final Table mainContainer;
     private final WorldManager worldManager;
+    private final EncounterWindow encounterWindow;
 
     private String equippedWeapon = "NOTHING";
     private String damage = "0";
@@ -100,6 +103,26 @@ public class Hud implements Disposable {
     private final GameMode gameMode;
 
     private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
+
+    // --- Attack Indicators ---
+    private static class AttackIndicator {
+        Direction direction;
+        float duration;
+
+        public AttackIndicator(Direction direction) {
+            this.direction = direction;
+            this.duration = 1.0f; // 1 second fade
+        }
+    }
+
+    private java.util.List<AttackIndicator> attackIndicators = new java.util.ArrayList<>();
+
+    public void showAttackIndicator(Direction dir) {
+        if (dir == null)
+            return;
+        attackIndicators.add(new AttackIndicator(dir));
+    }
+    // -------------------------
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
             WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
@@ -140,6 +163,14 @@ public class Hud implements Disposable {
         parameter.size = 48; // Larger font size for the compass
         directionFont = generator.generateFont(parameter);
         generator.dispose();
+
+        // --- Attack Indicators ---
+        attackIndicators = new java.util.ArrayList<>();
+        // -------------------------
+
+        // --- Game Log Font (Default Arial is thinner than Intellivision) ---
+        logFont = new BitmapFont();
+        logFont.getData().setScale(1.0f);
 
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
@@ -254,6 +285,20 @@ public class Hud implements Disposable {
         combatMenu.setVisible(false);
         stage.addActor(combatMenu);
 
+        // --- Encounter Window ---
+        com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle btnStyle = new com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle();
+        btnStyle.font = font;
+        btnStyle.fontColor = Color.WHITE;
+        btnStyle.downFontColor = Color.GRAY;
+
+        encounterWindow = new EncounterWindow(
+                new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(font, Color.WHITE),
+                new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(font, Color.WHITE),
+                btnStyle);
+        encounterWindow.setSize(1000, 800);
+        encounterWindow.setPosition((1920 - 1000) / 2f, (1080 - 800) / 2f);
+        stage.addActor(encounterWindow);
+
         // --- Assemble Main Content Table ---
         mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
         mainContentTable.add(rightTable).expandX().right().spaceTop(10);
@@ -357,14 +402,16 @@ public class Hud implements Disposable {
             combatStatusLabel.setVisible(true);
 
             // Display different status messages based on whose turn it is
+            // Display different status messages based on whose turn it is
             switch (combatManager.getCurrentState()) {
                 case PLAYER_TURN:
-                    eventManager.addEvent((new GameEvent("PLAYER TURN - PRESS A to Attack!", 1f)));
+                    combatStatusLabel.setText("PLAYER TURN");
                     break;
                 case MONSTER_TURN:
-                    eventManager.addEvent((new GameEvent(monster.getType() + " ATTACKS!", 1f)));
+                    combatStatusLabel.setText("MONSTER ATTACKS!");
                     break;
                 default:
+                    combatStatusLabel.setText(combatManager.getCurrentState().toString());
                     break;
             }
         } else {
@@ -804,9 +851,20 @@ public class Hud implements Disposable {
     }
 
     /**
-     * Draws the player's inventory (backpack and hands) using ShapeRenderer.
+     * Draws the player's inventory (backpack and hands) using ShapeRenderer for
+     * RETRO
+     * mode
+     * or SpriteBatch for MODERN mode.
      */
     private void drawInventory() {
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            renderRetroInventory();
+        } else {
+            renderModernInventory();
+        }
+    }
+
+    private void renderRetroInventory() {
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -848,6 +906,102 @@ public class Hud implements Disposable {
         }
 
         shapeRenderer.end();
+    }
+
+    private void renderModernInventory() {
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+
+        // Draw quick slots items (HUD belt)
+        Item[] quickSlots = player.getInventory().getQuickSlots();
+        for (int i = 0; i < quickSlots.length; i++) {
+            Item item = quickSlots[i];
+            Actor slot = backpackSlots[i];
+            if (item != null) {
+                Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
+                drawModernItem(item, pos.x, pos.y, slot.getWidth(), slot.getHeight());
+            }
+        }
+
+        // Draw left hand item
+        Item leftHand = player.getInventory().getLeftHand();
+        if (leftHand != null) {
+            Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            drawModernItem(leftHand, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight());
+        }
+
+        // Draw right hand item
+        Item rightHand = player.getInventory().getRightHand();
+        if (rightHand != null) {
+            Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            drawModernItem(rightHand, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight());
+        }
+
+        spriteBatch.end();
+
+        // Render optional glows or overlays if needed (e.g. for modified items)
+        // using ShapeRenderer afterward, or integrated above if purely texture based.
+        // For now, let's add a simple glow for modified items using ShapeRenderer ON
+        // TOP
+        renderModernItemOverlays();
+    }
+
+    private void renderModernItemOverlays() {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        // Define common slots checks to avoid code duplication if Refactoring,
+        // but for now we follow the pattern:
+
+        // Quick Slots
+        Item[] quickSlots = player.getInventory().getQuickSlots();
+        for (int i = 0; i < quickSlots.length; i++) {
+            Item item = quickSlots[i];
+            Actor slot = backpackSlots[i];
+            if (item != null && item.isModified()) {
+                Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
+                drawItemGlow(pos.x, pos.y, slot.getWidth(), slot.getHeight());
+            }
+        }
+
+        // Left Hand
+        Item leftHand = player.getInventory().getLeftHand();
+        if (leftHand != null && leftHand.isModified()) {
+            Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            drawItemGlow(pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight());
+        }
+
+        // Right Hand
+        Item rightHand = player.getInventory().getRightHand();
+        if (rightHand != null && rightHand.isModified()) {
+            Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
+            drawItemGlow(pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight());
+        }
+
+        shapeRenderer.end();
+    }
+
+    private void drawItemGlow(float x, float y, float width, float height) {
+        shapeRenderer.setColor(GLOW_COLOR_UI);
+        shapeRenderer.rect(x - 2, y - 2, width + 4, height + 4);
+    }
+
+    private void drawModernItem(Item item, float x, float y, float width, float height) {
+        TextureRegion region = item.getTextureRegion();
+        Texture texture = item.getTexture();
+
+        if (region != null) {
+            spriteBatch.draw(region, x, y, width, height);
+        } else if (texture != null) {
+            spriteBatch.draw(texture, x, y, width, height);
+        } else {
+            // Fallback if no texture found?
+            // Could render a placeholder or just skip.
+            // For now, let's render a small colored rect using a 1x1 white pixel if
+            // possible,
+            // or just ignore it to avoid breaking the batch.
+        }
     }
 
     private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y,
@@ -1059,6 +1213,184 @@ public class Hud implements Disposable {
         }
 
         shapeRenderer.end();
+
+        // --- 4. Draw Monsters (Red Dots) ---
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+
+        GridPoint2 playerPosVal = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+        for (java.util.Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+            GridPoint2 mPos = entry.getKey();
+            Monster monster = entry.getValue(); // Use monster object if needed later?
+
+            // Distance Check (Hearing) - Radius 4
+            float dist = Vector2.dst(playerPosVal.x, playerPosVal.y, mPos.x, mPos.y);
+            boolean isAudible = dist <= 4.0f;
+
+            // Visibility Check (Sight)
+            // Only strictly needed if outside audible range, but requirements say "Seen OR
+            // Audible"
+            boolean isVisible = false;
+
+            // Optimization: Only check LOS if NOT audible (since audible is sufficient to
+            // show)
+            // UPDATED LOGIC: User said "As long as they are in view".
+            // If they are strictly visual range (e.g. 8 tiles away) but usually seen?
+            // "Once a monster is 'seen'... as long as they are in view" implies immediate
+            // update.
+            // If audible is true, we show. If audible is false, check LOS.
+
+            if (isAudible) {
+                isVisible = true;
+            } else if (monster.isTagged()) {
+                isVisible = true; // Always visible if tagged
+            } else if (dist <= 15) { // Check for new tags
+                if (checkhudLineOfSight(playerPosVal, mPos)) {
+                    monster.setTagged(true); // Tag it!
+                    isVisible = true;
+                }
+            }
+
+            if (isVisible) {
+                float mx = startX + (mPos.x * cellSize);
+                float my = startY + (mPos.y * cellSize);
+                // Draw slightly larger than walls? Or same size.
+                // "Red square".
+                shapeRenderer.rect(mx, my, cellSize, cellSize);
+            }
+        }
+        shapeRenderer.end();
+
+        // --- 5. Draw Game Log (New Feature) ---
+        drawGameLog(startX, startY);
+    }
+
+    /**
+     * Simple Bresenham LOS check for the HUD.
+     */
+    private boolean checkhudLineOfSight(GridPoint2 start, GridPoint2 end) {
+        int x0 = start.x;
+        int y0 = start.y;
+        int x1 = end.x;
+        int y1 = end.y;
+
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+
+        int err = dx - dy;
+
+        int cx = x0;
+        int cy = y0;
+
+        while (true) {
+            if (cx == x1 && cy == y1)
+                return true;
+
+            if (!(cx == start.x && cy == start.y)) {
+                // Check walls
+                int walls = maze.getWallDataAt(cx, cy);
+                // Standard walls have bits set. 0 is empty?
+                // In MonsterAiManager, checks were loose.
+                // Let's use isPassable for simplicity BUT isPassable checks monsters/items too.
+                // We ONLY care about OPAQUE walls/doors.
+                // WallDataAt returns 255 if OOB.
+
+                // Inspecting Maze.java: "walls" is raw int.
+                // "if ((currentCellData & wallMask) != 0)" -> Blocks.
+                // If cell has ANY wall, does it block LOS?
+                // No, a cell can have a North wall but allow E-W passage.
+
+                // ACCURATE LOS needs to check crossing edges.
+                // BUT for simple minimap, cell-based occlusion (is the cell solid?) is often
+                // used.
+                // Let's assume non-zero wall data implies *some* structure.
+                // However, "isWallBlocking" logic suggests complex bitmasking.
+
+                // Simpler check: Doors.
+                // If it's a door and closed, it blocks.
+                Object obj = maze.getGameObjectAt(cx, cy);
+                if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN)
+                    return false;
+
+                // Wall check:
+                // If it has ALL walls (solid block)?
+                // Or simplified: Just check if we can see through.
+                // Let's copy the simpler approach: if wallData implies high density or specific
+                // blocking?
+                // Actually, let's treat any wallData != 0 as potential occlusion?
+                // No, floor tiles might be 0.
+                // Let's assume if it blocks MOVEMENT it blocks SIGHT?
+                // No, Gates block movement but not sight.
+
+                // Best Approximation:
+                // If it is a CLOSED DOOR, block.
+                // If it is a SOLID WALL (all bits?), block.
+
+                // Re-reading MonsterAiManager:
+                // "if (walls != 0) return false;" <- It assumed 0 is open.
+                // I will use that for consistency.
+                if (walls != 0)
+                    return false;
+            }
+
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                cx += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                cy += sy;
+            }
+        }
+    }
+
+    /**
+     * Draws the running game log below the minimap.
+     * 
+     * @param mapX X coordinate where the minimap STARTS (left edge)
+     * @param mapY Y coordinate where the minimap STARTS (bottom edge)
+     */
+    private void drawGameLog(float mapX, float mapY) {
+        float logWidth = 1920 - mapX - 20; // Align with map width
+        float logHeight = 300;
+        float logY = mapY - logHeight - 10; // 10px padding below map
+
+        if (logY < 0)
+            logY = 10; // Safety clamp
+
+        // 1. Log Background
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.6f); // Semi-transparent black
+        shapeRenderer.rect(mapX, logY, logWidth, logHeight);
+        shapeRenderer.end();
+
+        // 2. Log Text
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+
+        logFont.setColor(Color.YELLOW); // Bright Yellow per user request
+
+        List<String> history = eventManager.getMessageHistory();
+        float textY = logY + logHeight - 10;
+        float lineHeight = 16; // Smaller line height for smaller font
+
+        for (String msg : history) {
+            if (textY < logY + 10)
+                break; // Don't overflow bottom
+            logFont.draw(spriteBatch, msg, mapX + 10, textY);
+            textY -= lineHeight;
+        }
+
+        logFont.setColor(Color.WHITE); // Restore
+
+        spriteBatch.end();
     }
 
     // --- NEW: Combat Menu UI ---
@@ -1206,5 +1538,123 @@ public class Hud implements Disposable {
         font.setColor(Color.WHITE);
         font.draw(spriteBatch, text, textX, textY);
         spriteBatch.end();
+        // --- Draw Attack Indicators ---
+        if (!attackIndicators.isEmpty()) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+            java.util.Iterator<AttackIndicator> it = attackIndicators.iterator();
+            while (it.hasNext()) {
+                AttackIndicator ind = it.next();
+                ind.duration -= Gdx.graphics.getDeltaTime();
+
+                if (ind.duration <= 0) {
+                    it.remove();
+                    continue;
+                }
+
+                // Fade out
+                float alpha = MathUtils.clamp(ind.duration, 0f, 1f);
+                shapeRenderer.setColor(1f, 0f, 0f, alpha);
+
+                // Draw Arrow based on Screen Edges
+                float cx = 1920f / 2f;
+                float cy = 1080f / 2f;
+                float offset = 300f; // Distance from center
+                float size = 50f;
+
+                // Transform world direction to screen relative direction based on player facing
+                // Only if we want relative (Left/Right) or absolute (North/South)?
+                // Request says "from a direction they are not facing", implying relative.
+                // But Hud is 2D.
+                // Let's assume Screen Top = Direction player is facing?
+                // Or Screen Top = North?
+
+                // If 3D view: Top is "Forward".
+                // We need relative direction.
+
+                Direction playerFacing = player.getFacing();
+                // We need to find rotation Difference.
+
+                // Map Directions to angles (North=0, East=90...)
+                // N=0, E=270, S=180, W=90 (GDX rotation? No, let's just use indices)
+                // Let N=0, E=1, S=2, W=3
+                int pIndex = getDirIndex(playerFacing);
+                int aIndex = getDirIndex(ind.direction);
+
+                // Diff: Forward (0), Right (1), Back (2), Left (3)
+                int diff = (aIndex - pIndex + 4) % 4;
+
+                // 0=Front (Shouldn't happen for flank usually, but maybe), 1=Right, 2=Back,
+                // 3=Left
+
+                float drawX = cx;
+                float drawY = cy;
+
+                // Coordinates for Triangle
+                float x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0;
+
+                switch (diff) {
+                    case 0: // Front (Top)
+                        drawY += offset;
+                        x1 = drawX;
+                        y1 = drawY;
+                        x2 = drawX - size / 2;
+                        y2 = drawY + size;
+                        x3 = drawX + size / 2;
+                        y3 = drawY + size;
+                        break;
+                    case 1: // Right
+                        drawX += offset;
+                        x1 = drawX;
+                        y1 = drawY;
+                        x2 = drawX + size;
+                        y2 = drawY + size / 2;
+                        x3 = drawX + size;
+                        y3 = drawY - size / 2;
+                        break;
+                    case 2: // Back (Bottom)
+                        drawY -= offset;
+                        x1 = drawX;
+                        y1 = drawY;
+                        x2 = drawX - size / 2;
+                        y2 = drawY - size;
+                        x3 = drawX + size / 2;
+                        y3 = drawY - size;
+                        break;
+                    case 3: // Left
+                        drawX -= offset;
+                        x1 = drawX;
+                        y1 = drawY;
+                        x2 = drawX - size;
+                        y2 = drawY + size / 2;
+                        x3 = drawX - size;
+                        y3 = drawY - size / 2;
+                        break;
+                }
+
+                shapeRenderer.triangle(x1, y1, x2, y2, x3, y3);
+            }
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+    }
+
+    private int getDirIndex(Direction d) {
+        switch (d) {
+            case NORTH:
+                return 0;
+            case EAST:
+                return 1;
+            case SOUTH:
+                return 2;
+            case WEST:
+                return 3;
+        }
+        return 0;
+    }
+
+    public EncounterWindow getEncounterWindow() {
+        return encounterWindow;
     }
 }

@@ -1,0 +1,144 @@
+Initialized native services in: C:\Users\denni\.gradle\native
+Initialized jansi services in: C:\Users\denni\.gradle\native
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon JVM discovery is an incubating feature.
+
+
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AReceived JVM installation metadata from 'C:\Program Files\Java\jdk-24': {JAVA_HOME=C:\Program Files\Java\jdk-24, JAVA_VERSION=24.0.1, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=24.0.1+9-30, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=24.0.1+9-30, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm12911451218282881174probe Command: C:\Program Files\Java\jre1.8.0_471\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe[0K
+Starting process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm2434417811092364494probe Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''
+Successfully started process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+
+[0K
+[2A[1B[1m> Starting Daemon > Extracting toolchain metadata from 'C:\Program Files\Java\j[m[79D[1B[2AReceived JVM installation metadata from 'C:\Program Files\Java\jre1.8.0_471': {JAVA_HOME=C:\Program Files\Java\jre1.8.0_471, JAVA_VERSION=1.8.0_471, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=1.8.0_471-b09, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=25.471-b09, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm17809469384385210292probe Command: C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe[0K
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-21.0.7': {JAVA_HOME=C:\Users\denni\.jdks\ms-21.0.7, JAVA_VERSION=21.0.7, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.7+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.7+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Starting process 'Gradle build daemon'. Working directory: C:\Users\denni\.gradle\daemon\8.14.3 Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xms512M -Xmx1G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\gradle-daemon-main-8.14.3.jar -javaagent:C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+Successfully started process 'Gradle build daemon'
+
+[0K
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AAn attempt to start the daemon took 0.937 secs.
+The client will now receive all logging from the daemon (pid: 39812). The daemon log file: C:\Users\denni\.gradle\daemon\8.14.3\daemon-39812.out.log[0K
+Daemon will be stopped at the end of the build 
+
+[0K
+[2A[1B> IDLE[6D[1B[2AUsing 32 worker leases.
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [59ms][m[38D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [158ms][m[39D[2B[2AReceived JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [257ms][m[39D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [359ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [458ms][m[39D[2B[2AWatching the file system is configured to be enabled if available[0K
+Now considering [C:\Users\denni\Desktop\Tarmin2] as hierarchies to watch[0K
+File system watching is active
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [559ms][m[39D[1B[1m> Evaluating settings[m[21D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [659ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [760ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [857ms][m[39D[2B[2AStarting Build[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [959ms][m[39D[1B[1m> Evaluating settings[m[21D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[0K[36D[2B[1A[1m> Evaluating settings > Resolve dependencies of detachedConfiguration1[m[70D[1B[2AResolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0'][0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[0K[36D[1B[1m> Evaluating settings[m[21D[1B[2ASettings evaluated using settings file 'C:\Users\denni\Desktop\Tarmin2\settings.gradle'.[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% CONFIGURING [1s][m[35D[1B[1m> Loading projects[m[18D[1B[2AProjects loaded. Root project using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.[0K
+Included projects: [root project 'Tarmin2', project ':core', project ':lwjgl3'][0K
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% CONFIGURING [1s][m[35D[1B[1m> root project[m[14D[1B[2A[1m<[0;1m-------------> 0% CONFIGURING [2s][m[35D[2B[2A[0K
+[1m> Configure project :[m[0K
+Evaluating root project 'Tarmin2' using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+
+[1m> Configure project :core[m
+Evaluating project ':core' using build file 'C:\Users\denni\Desktop\Tarmin2\core\build.gradle'.
+[0K
+[0K
+[2A[1m<[0;32;1m========[0;39;1m-----> 66% CONFIGURING [2s][m[36D[1B[1m> :lwjgl3[m[9D[1B[2A[1m<[0;32;1m========[0;39;1m-----> 66% CONFIGURING [3s][m[36D[2B[2A[0K
+[1m> Configure project :lwjgl3[m[0K
+Evaluating project ':lwjgl3' using build file 'C:\Users\denni\Desktop\Tarmin2\lwjgl3\build.gradle'.
+Resolved plugin [id: 'application']
+All projects evaluated.
+Task path 'lwjgl3:dependencies' matched project ':lwjgl3'
+Task name matched 'dependencies'
+Selected primary task 'dependencies' from project :lwjgl3
+Tasks to be executed: [task ':lwjgl3:dependencies']
+Tasks that were excluded: []
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% EXECUTING [3s][m[33D[1B> IDLE[6D[1B[2AResolve mutations for :lwjgl3:dependencies (Thread[Execution worker Thread 5,5,main]) started.[0K
+:lwjgl3:dependencies (Thread[Execution worker Thread 5,5,main]) started.[0K
+
+[1m> Task :lwjgl3:dependencies[m
+Caching disabled for task ':lwjgl3:dependencies' because:
+  Build cache is disabled
+Task ':lwjgl3:dependencies' is not up-to-date because:
+  Task is untracked because: Uses the whole project state as an input
+
+[1m------------------------------------------------------------[m
+[1mProject ':lwjgl3'[m
+[1m------------------------------------------------------------[m
+
+[32mruntimeClasspath[39m[33m - Runtime classpath of source set 'main'.[39m
+[33m+--- [39mcom.badlogicgames.gdx:gdx-backend-lwjgl3:1.13.1
+[33m|    +--- [39mcom.badlogicgames.gdx:gdx:1.13.1
+[33m|    |    \--- [39mcom.badlogicgames.gdx:gdx-jnigen-loader:2.5.2
+[33m|    +--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39morg.lwjgl:lwjgl-glfw:3.3.3
+[33m|    |    \--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39morg.lwjgl:lwjgl-jemalloc:3.3.3
+[33m|    |    \--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39morg.lwjgl:lwjgl-openal:3.3.3
+[33m|    |    \--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39morg.lwjgl:lwjgl-opengl:3.3.3
+[33m|    |    \--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39morg.lwjgl:lwjgl-stb:3.3.3
+[33m|    |    \--- [39morg.lwjgl:lwjgl:3.3.3
+[33m|    +--- [39mcom.badlogicgames.jlayer:jlayer:1.0.1-gdx
+[33m|    \--- [39morg.jcraft:jorbis:0.0.17
+[33m+--- [39mcom.badlogicgames.gdx:gdx-platform:1.13.1
+[33m+--- [39mcom.badlogicgames.gdx:gdx-bullet-platform:1.13.1
+[33m+--- [39mcom.badlogicgames.gdx-video:gdx-video-lwjgl3:1.3.3
+[33m|    +--- [39mcom.badlogicgames.gdx-video:gdx-video-desktop:1.3.3
+[33m|    |    \--- [39mcom.badlogicgames.gdx-video:gdx-video:1.3.3
+[33m|    |         \--- [39mcom.badlogicgames.gdx:gdx:1.12.0 -> 1.13.1[33m (*)[39m
+[33m|    \--- [39mcom.badlogicgames.gdx:gdx-backend-lwjgl3:1.12.0 -> 1.13.1[33m (*)[39m
+[33m+--- [39mcom.badlogicgames.gdx:gdx-backend-headless:1.13.1
+[33m|    \--- [39mcom.badlogicgames.gdx:gdx:1.13.1[33m (*)[39m
+[33m+--- [39mcom.badlogicgames.gdx:gdx-tools:1.13.1
+[33m|    +--- [39mcom.badlogicgames.gdx:gdx-backend-lwjgl:1.13.1
+[33m|    |    +--- [39mcom.badlogicgames.gdx:gdx:1.13.1[33m (*)[39m
+[33m|    |    +--- [39morg.lwjgl.lwjgl:lwjgl:2.9.3
+[33m|    |    |    +--- [39morg.lwjgl.lwjgl:lwjgl-platform:2.9.3
+[33m|    |    |    \--- [39mnet.java.jinput:jinput:2.0.5
+[33m|    |    |         +--- [39mnet.java.jutils:jutils:1.0.0
+[33m|    |    |         \--- [39mnet.java.jinput:jinput-platform:2.0.5
+[33m|    |    +--- [39mcom.badlogicgames.jlayer:jlayer:1.0.1-gdx
+[33m|    |    \--- [39morg.jcraft:jorbis:0.0.17
+[33m|    +--- [39mcom.badlogicgames.gdx:gdx-freetype:1.13.1
+[33m|    |    \--- [39mcom.badlogicgames.gdx:gdx:1.13.1[33m (*)[39m
+[33m|    \--- [39mcom.badlogicgames.gdx:gdx-backend-headless:1.13.1[33m (*)[39m
+[33m\--- [39mproject :core
+[33m     +--- [39mcom.badlogicgames.gdx:gdx:1.13.1[33m (*)[39m
+[33m     +--- [39mcom.badlogicgames.gdx:gdx-bullet:1.13.1
+[33m     |    \--- [39mcom.badlogicgames.gdx:gdx:1.13.1[33m (*)[39m
+[33m     +--- [39mcom.badlogicgames.gdx-video:gdx-video:1.3.3[33m (*)[39m
+[33m     +--- [39mcom.badlogicgames.gdx:gdx-freetype:1.13.1[33m (*)[39m
+[33m     \--- [39mcom.badlogicgames.gdx:gdx-freetype-platform:1.13.1
+
+[33m(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.[39m
+
+A web-based, searchable dependency report is available by adding the [1m--scan[m option.
+
+[Incubating] Problems report is available at: file:///C:/Users/denni/Desktop/Tarmin2/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+[32;1mBUILD SUCCESSFUL[0;39m in 5s
+1 actionable task: 1 executed
+Watched directory hierarchies: []
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% WAITING[m[26D[1B> IDLE[6D[1B[2A[2K[1B[2K[1A

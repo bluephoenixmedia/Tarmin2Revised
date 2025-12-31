@@ -26,6 +26,8 @@ import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import com.bpm.minotaur.utils.DiceRoller;
 import java.util.List;
 import java.util.Random;
+import com.bpm.minotaur.managers.TurnManager;
+import com.bpm.minotaur.managers.MonsterAiManager;
 
 public class CombatManager {
 
@@ -72,6 +74,11 @@ public class CombatManager {
     private final SoundManager soundManager;
 
     private final StochasticManager stochasticManager;
+    private com.bpm.minotaur.rendering.Hud hud; // Set via setter
+
+    public void setHud(com.bpm.minotaur.rendering.Hud hud) {
+        this.hud = hud;
+    }
 
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f;
@@ -93,9 +100,13 @@ public class CombatManager {
     private int currentCombatTurns = 0;
     private int damageTakenInCombat = 0;
 
+    private final TurnManager turnManager;
+    private final MonsterAiManager monsterAiManager;
+
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
             GameEventManager eventManager, SoundManager soundManager,
-            ItemDataManager itemDataManager, StochasticManager stochasticManager) {
+            ItemDataManager itemDataManager, StochasticManager stochasticManager,
+            TurnManager turnManager, MonsterAiManager monsterAiManager) {
         this.player = player;
         this.maze = maze;
         this.game = game;
@@ -104,6 +115,8 @@ public class CombatManager {
         this.soundManager = soundManager;
         this.itemDataManager = itemDataManager;
         this.stochasticManager = stochasticManager;
+        this.turnManager = turnManager;
+        this.monsterAiManager = monsterAiManager;
     }
 
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer) {
@@ -248,6 +261,74 @@ public class CombatManager {
     }
 
     // --- NEW: Standard Attack (KEY A/SPACE) - No Animation ---
+    public void playerCast() {
+        if (currentState != CombatState.PLAYER_MENU && currentState != CombatState.PLAYER_TURN)
+            return;
+
+        com.bpm.minotaur.gamedata.spells.SpellType spell = com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW;
+
+        if (!player.getKnownSpells().contains(spell)) {
+            eventManager.addEvent(new GameEvent("You don't know any spells!", 1.5f));
+            return;
+        }
+
+        if (!player.hasEnoughMana(spell.getMpCost())) {
+            eventManager.addEvent(new GameEvent("Not enough MP!", 1.5f));
+            return;
+        }
+
+        player.deductMana(spell.getMpCost());
+
+        // Cast Magic Arrow
+        eventManager.addEvent(new GameEvent("Cast " + spell.getDisplayName() + "!", 1.5f));
+        // soundManager.playMagicSound(); // TODO: Add magic sound
+
+        // Visuals
+        // Offset start so it doesn't clip camera (which makes it look huge)
+        com.badlogic.gdx.math.Vector2 startPos = player.getPosition().cpy()
+                .add(player.getDirectionVector().cpy().scl(0.6f));
+
+        animationManager.addAnimation(new Animation(
+                Animation.AnimationType.PROJECTILE_SPELL,
+                startPos, monster.getPosition(),
+                com.badlogic.gdx.graphics.Color.CYAN, 0.6f,
+                new String[] { "#" } // Visual single pixel
+        ));
+
+        // Damage Calculation
+        int magicDamage = 5 + (player.getLevel());
+
+        int actualDamage = monster.takeDamage(magicDamage);
+        lastDamageDealt = actualDamage;
+
+        showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+
+        if (actualDamage > 0) {
+            // Add some nice blood/glitter impact?
+        }
+
+        BalanceLogger.getInstance().log("COMBAT_ACTION", "Cast Magic Arrow. Dmg: " + magicDamage);
+
+        if (monster.getCurrentHP() <= 0) {
+            handleMonsterDeath();
+            currentState = CombatState.VICTORY;
+            Gdx.app.log("COMBAT_FLOW", "State -> VICTORY (Monster Dead via Spell)");
+        } else {
+            // Pass Turn
+            processPlayerStatusEffects();
+            player.getStatusManager().updateTurn();
+
+            // --- WORLD ACTIONS ---
+            if (turnManager != null && monsterAiManager != null) {
+                turnManager.processTurn(maze, player, monsterAiManager, this);
+            }
+            // ---------------------
+
+            currentState = CombatState.MONSTER_TURN;
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
+        }
+    }
+
     public void playerAttackInstant() {
         if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
             return;
@@ -316,6 +397,13 @@ public class CombatManager {
         // Pass turn
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
+
+        // --- WORLD ACTIONS ---
+        if (turnManager != null && monsterAiManager != null) {
+            turnManager.processTurn(maze, player, monsterAiManager, this);
+        }
+        // ---------------------
+
         currentState = CombatState.MONSTER_TURN;
         monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
     }
@@ -576,6 +664,13 @@ public class CombatManager {
         } else {
             currentState = CombatState.MONSTER_TURN;
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
+
+            // --- WORLD ACTIONS ---
+            if (turnManager != null && monsterAiManager != null) {
+                turnManager.processTurn(maze, player, monsterAiManager, this);
+            }
+            // ---------------------
+
             Gdx.app.log("COMBAT_FLOW", "State -> MONSTER_TURN (Attack Resolved)");
         }
     }
@@ -995,8 +1090,9 @@ public class CombatManager {
         if (isHit) {
             String dmgDice = monster.getDamageDice();
             int baseDmg = DiceRoller.roll(dmgDice);
-            // Add bonus?
-            int dmg = baseDmg;
+            // Apply Doom Scaling (Bridge Integration)
+            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
+            int dmg = Math.max(1, (int) (baseDmg * doomScale));
 
             // Block Logic
             if (playerCurrentBlock > 0) {
@@ -1046,6 +1142,83 @@ public class CombatManager {
 
         sm.updateTurn();
     }
+
+    // --- FLANK ATTACK LOGIC ---
+    public boolean performMonsterFlankAttack(Monster attacker) {
+        if (attacker == null || attacker == this.monster)
+            return false; // Can't flank if you are the main duel target
+
+        // Check adjacency
+        int dist = (int) (Math.abs(attacker.getPosition().x - player.getPosition().x)
+                + Math.abs(attacker.getPosition().y - player.getPosition().y));
+        if (dist > 1)
+            return false; // Too far
+
+        // Determine Direction for Indicator
+        Direction attackDir = null;
+        float ax = attacker.getPosition().x;
+        float ay = attacker.getPosition().y;
+        float px = player.getPosition().x;
+        float py = player.getPosition().y;
+
+        // Relative to player
+        if (ax > px)
+            attackDir = Direction.EAST;
+        else if (ax < px)
+            attackDir = Direction.WEST;
+        else if (ay > py)
+            attackDir = Direction.NORTH;
+        else if (ay < py)
+            attackDir = Direction.SOUTH;
+
+        // Visual Indicator via Hud
+        if (hud != null && attackDir != null) {
+            hud.showAttackIndicator(attackDir);
+        }
+
+        // Roll Attack
+        int attackBonus = 2 + (attacker.getDexterity() / 5);
+        int d20Roll = DiceRoller.d20();
+        int attackRoll = d20Roll + attackBonus;
+        int targetAC = player.getArmorClass();
+
+        // Bonus for flanking? (Advantage or flat +2)
+        attackRoll += 2; // Flanking bonus
+
+        if (attackRoll >= targetAC) {
+            int dmg = DiceRoller.roll(attacker.getDamageDice());
+            if (dmg < 1)
+                dmg = 1;
+
+            int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+
+            if (actualDamage > 0) {
+                maze.addBlood((int) px, (int) py, 0.05f);
+                eventManager.addEvent(
+                        new GameEvent(attacker.getMonsterType() + " flanks you for " + actualDamage + "!", 1.5f));
+
+                // Gore
+                Vector3 hitPos = new Vector3(px, 0.5f, py);
+                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor(); // TODO:
+                                                                                                                     // Direction
+                                                                                                                     // away
+                                                                                                                     // from
+                                                                                                                     // attack?
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 3);
+            } else {
+                eventManager
+                        .addEvent(new GameEvent("Armor blocked flank from " + attacker.getMonsterType() + "!", 1.5f));
+            }
+
+            damageTakenInCombat += actualDamage;
+            BalanceLogger.getInstance().logCombatRound("MONSTER", "Flank", -1, actualDamage, player.getCurrentHP());
+            return true;
+        } else {
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " tries to flank but misses!", 1.5f));
+            return false;
+        }
+    }
+    // --------------------------
 
     // Extracted death logic to reuse for Poison kills
     private void handleMonsterDeath() {

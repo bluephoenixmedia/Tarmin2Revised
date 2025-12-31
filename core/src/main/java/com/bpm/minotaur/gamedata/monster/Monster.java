@@ -100,6 +100,18 @@ public class Monster implements Renderable {
     private final StatusManager statusManager;
     private final MonsterDataManager dataManager; // Stored reference for template access
 
+    // --- State Machine Fields ---
+    public enum MonsterState {
+        IDLE,
+        WANDERING, // Moves randomly occasionally
+        HUNTING // Actively pathfinding to target
+    }
+
+    private MonsterState state = MonsterState.IDLE;
+    private com.badlogic.gdx.math.GridPoint2 lastKnownTargetPos = null;
+    private int turnsSinceLastSeen = 0;
+    private boolean isTagged = false; // Persistent minimap tracking
+
     public Monster(MonsterType type, float startX, float startY, MonsterColor color,
             MonsterDataManager dataManager, AssetManager assetManager) {
         this.type = type;
@@ -146,6 +158,8 @@ public class Monster implements Renderable {
         if (scaling > 1.0f) {
             this.maxHP = (int) (this.maxHP * scaling);
             this.currentHP = this.maxHP;
+            com.badlogic.gdx.Gdx.app.log("Monster", "Spawned " + type + " with Doom Scaling: x"
+                    + String.format("%.2f", scaling) + " HP: " + this.maxHP);
         }
         // -------------------------------------------------------
 
@@ -208,7 +222,7 @@ public class Monster implements Renderable {
         // Maybe improve AC slightly?
         this.armorClass += (level / 5); // +1 AC every 5 levels
 
-        this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.10f)));
+        this.baseExperience = (int) (this.baseExperience * (1.0f + ((level - 1) * 0.25f)));
     }
 
     public MonsterType getType() {
@@ -364,5 +378,38 @@ public class Monster implements Renderable {
 
     public void addEnergy(float amount) {
         this.energy += amount;
+    }
+
+    // --- AI State Getters/Setters ---
+    public MonsterState getState() {
+        return state;
+    }
+
+    public void setState(MonsterState state) {
+        this.state = state;
+    }
+
+    public com.badlogic.gdx.math.GridPoint2 getLastKnownTargetPos() {
+        return lastKnownTargetPos;
+    }
+
+    public void setLastKnownTargetPos(com.badlogic.gdx.math.GridPoint2 pos) {
+        this.lastKnownTargetPos = pos;
+    }
+
+    public int getTurnsSinceLastSeen() {
+        return turnsSinceLastSeen;
+    }
+
+    public void setTurnsSinceLastSeen(int turns) {
+        this.turnsSinceLastSeen = turns;
+    }
+
+    public boolean isTagged() {
+        return isTagged;
+    }
+
+    public void setTagged(boolean tagged) {
+        this.isTagged = tagged;
     }
 }

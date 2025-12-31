@@ -102,7 +102,7 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         // 5. Setup Combat
         // Passing 'null' for Tarmin2 (Game) instance.
         combatManager = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
-                itemDataManager, stochasticManager);
+                itemDataManager, stochasticManager, null, null);
 
         System.out.println("Simulation Initialized.");
     }
@@ -172,7 +172,7 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
 
             // Reset Combat Manager to clear state
             combatManager = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
-                    itemDataManager, stochasticManager);
+                    itemDataManager, stochasticManager, null, null);
         }
     }
 

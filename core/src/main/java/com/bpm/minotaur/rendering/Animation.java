@@ -9,6 +9,7 @@ public class Animation {
     public enum AnimationType {
         PROJECTILE_MONSTER,
         PROJECTILE_PLAYER,
+        PROJECTILE_SPELL, // NEW: For magic missiles with particle trails
         DAMAGE_TEXT
     }
 
@@ -26,7 +27,8 @@ public class Animation {
     private GridPoint2 textPosition;
 
     // Existing constructor for projectiles
-    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration, String[] spriteData) {
+    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration,
+            String[] spriteData) {
         this.type = type;
         this.startPosition = startPosition.cpy();
         this.endPosition = endPosition.cpy();

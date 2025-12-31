@@ -1,38 +1,672 @@
 {
-totalSteps: 1477
-totalDoorsOpened: 58
-deepestLevelReached: 2
+totalSteps: 3163
+totalDoorsOpened: 93
+deepestLevelReached: 11
 monsterKills: {
 	class: java.util.HashMap
-	ORC: 2
-	DWARF: 1
-	WERERAT: 2
-	HOBGOBLIN: 2
-	WEREWOLF: 1
-	GIANT_ANT: 22
-	MEDUSA: 1
-	GIANT_SCORPION: 14
-	BASILISK: 1
-	GHAST: 2
-	GELATINOUS_CUBE: 1
-	SPIDER: 3
-	SKELETON: 57
-	GHOUL: 24
-	OGRE: 1
-	MIMIC: 3
-	RUST_MONSTER: 1
-	ZOMBIE: 1
-	GOBLIN: 10
+	ORC: 1
+	WERERAT: 4
+	HOBGOBLIN: 3
+	GIANT_SCORPION: 28
+	CHIMERA: 1
+	SPIDER: 4
+	SKELETON: 23
+	GARGOYLE: 2
+	MIMIC: 2
+	TROLL: 1
+	HARPY: 1
+	OWLBEAR: 1
+	ALLIGATOR: 4
 	TROGLODYTE: 11
-	KOBOLD: 10
-	CLOAKED_SKELETON: 14
-	GIANT_SNAKE: 34
+	KOBOLD: 8
+	CLOAKED_SKELETON: 3
+	WRAITH: 1
+	DWARF: 2
+	GIANT_ANT: 30
+	BASILISK: 1
+	UMBER_HULK: 3
+	GHAST: 3
+	GELATINOUS_CUBE: 2
+	GHOUL: 8
+	OGRE: 1
+	DISPLACER_BEAST: 2
+	RUST_MONSTER: 4
+	GOBLIN: 15
+	ZOMBIE: 5
+	GIANT_SNAKE: 23
 }
 unlockedContent: {
 	class: java.util.HashSet
 	items: [
-		item_speed_boots
-		item_bow
+		STICK_GOBLIN
+		HARPOON_ONE_HANDED
+		MADU
+		SHIELD_BODY
+		DEJADA
+		SPEAR
+		GAUNTLETS
+		WRIST_RAZOR
+		ANKUS_ELEPHANT_GOAD
+		LEATHER_HELM
+		CAHULAKS
+		SWORD_BASTARD_ONE_HANDED
+		SMALL_FIREBALL
+		SWORD_KATANA_ONE_HANDED
+		BOLA
+		LARGE_LIGHTNING
+		PESHKABZ
+		HELMET
+		BUCKLER
+		SPIKE_ELBOW
+		WAND
+		IMPROVED_MAIL
+		OPEN_FACED
+		BOW
+		POLEARM_GLAIVE_GUISARME4
+		SHIELD_SMALL
+		SHIELD_SPIKE
+		ALHULAK
+		STAFF_HORNHEAD
+		ARROW_FLIGHT
+		CROSSBOW
+		POLEARM_BARDICHE
+		HAUBERK
+		EYES
+		PADDED_ARMOR
+		FIELD_PLATE
+		JAVELIN_ONE_HANDED
+		STUDDED_LEATHER
+		POLEARM_HOOK_FAUCHARD
+		BOW_ELVEN
+		KUKRI
+		SPEAR_STONE_TWO_HANDED
+		SMALL_LIGHTNING
+		IMPALER
+		PUNCH_CUTTER
+		LOTULIS
+		SHIELD_MEDIUM
+		DIRK
+		DART
+		FULL_PLATE
+		MAIL_COIF
+		SPEAR_HEAVY_ONE_HANDED
+		ASSEGAI
+		ARROW_DAIKYU
+		CESTUS
+		LARGE_FIREBALL
+		CLOSED_FACE
+		POLEARM_HALBERD
+		SPIKE_HEAD
+		CROSSBOW_DOUBLED
+		BASILARD
+		BASINET
+		GREAT_HELM
+		GADA
+		QUABONE
+		SWORD_HOOK
+		SWORD_RAPIER
+		MACE_GREAT
+		CHAIN_LAMELLAR
+		GLOVE_NAIL
 	]
+}
+unlockPlan: {
+	class: java.util.HashMap
+	HIDE_ARMOR: {
+		type: TOTAL_DOORS
+		targetValue: 488
+	}
+	DAIKYU: {
+		type: TOTAL_STEPS
+		targetValue: 8925
+	}
+	GOUGE: {
+		type: TOTAL_STEPS
+		targetValue: 11862
+	}
+	LEGS: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	PISTOL_STARWHEEL: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	SPEAR_STONE_ONE_HANDED: {
+		type: TOTAL_STEPS
+		targetValue: 85871
+	}
+	HOPLITE_ARMOR: {
+		type: TOTAL_STEPS
+		targetValue: 143082
+	}
+	SPIKE_KNEE: {
+		type: TOTAL_STEPS
+		targetValue: 123165
+	}
+	SPEAR_LONG_ONE_HANDED: {
+		type: TOTAL_STEPS
+		targetValue: 82214
+	}
+	BO_STICK: {
+		type: TOTAL_DOORS
+		targetValue: 106
+	}
+	WHIP_CHAIN: {
+		type: TOTAL_DOORS
+		targetValue: 457
+	}
+	NYEK_PLE_NEN_TOH: {
+		type: MONSTER_KILLS
+		targetValue: 1061
+	}
+	POLEARM_BEC_DE_CORBIN: {
+		type: TOTAL_DOORS
+		targetValue: 229
+	}
+	POLEARM_GUISARME_VOULGE: {
+		type: MONSTER_KILLS
+		targetValue: 313
+	}
+	RITIIK: {
+		type: TOTAL_DOORS
+		targetValue: 272
+	}
+	CARRIKAL: {
+		type: TOTAL_DOORS
+		targetValue: 129
+	}
+	TWO_HANDED_SWORD: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	POLEARM_LUCERN_HAMMER3: {
+		type: TOTAL_DOORS
+		targetValue: 250
+	}
+	POLEARM_GIANT_KIN_HALBERD: {
+		type: TOTAL_DOORS
+		targetValue: 957
+	}
+	MACHETE: {
+		type: TOTAL_STEPS
+		targetValue: 20197
+	}
+	NUNCHAKU: {
+		type: TOTAL_DOORS
+		targetValue: 210
+	}
+	LARGE_SHIELD: {
+		type: MONSTER_KILLS
+		targetValue: 929
+	}
+	STICKS_SINGING: {
+		type: MONSTER_KILLS
+		targetValue: 584
+	}
+	SWORD_MANDIBLE: {
+		type: MONSTER_KILLS
+		targetValue: 638
+	}
+	SWORD_SHORT: {
+		type: TOTAL_STEPS
+		targetValue: 97417
+	}
+	SWORD_LONG: {
+		type: MONSTER_KILLS
+		targetValue: 1758
+	}
+	THREE_QUARTER_PLATE: {
+		type: TOTAL_DOORS
+		targetValue: 1418
+	}
+	BACK_AND_BREAST: {
+		type: MONSTER_KILLS
+		targetValue: 2019
+	}
+	CORD_MAIL: {
+		type: TOTAL_STEPS
+		targetValue: 105545
+	}
+	SWORD_DRUSUS: {
+		type: TOTAL_DOORS
+		targetValue: 346
+	}
+	PIKE_WEIGHTED: {
+		type: TOTAL_DOORS
+		targetValue: 912
+	}
+	SWORD_KHANDAR_TWO_HANDED: {
+		type: TOTAL_DOORS
+		targetValue: 704
+	}
+	BANDED_MAIL: {
+		type: MONSTER_KILLS
+		targetValue: 3207
+	}
+	QUARREL_HAND: {
+		type: TOTAL_STEPS
+		targetValue: 28392
+	}
+	TORTOISE_BLADES: {
+		type: MONSTER_KILLS
+		targetValue: 804
+	}
+	SWORD_KHOPESH: {
+		type: TOTAL_STEPS
+		targetValue: 48371
+	}
+	POLEARM_CRUSHER: {
+		type: TOTAL_STEPS
+		targetValue: 24139
+	}
+	SPEAR_ONE_HANDED: {
+		type: MONSTER_KILLS
+		targetValue: 1274
+	}
+	MORNING_STAR: {
+		type: MONSTER_KILLS
+		targetValue: 1673
+	}
+	SWORD_SABRE: {
+		type: TOTAL_STEPS
+		targetValue: 93473
+	}
+	WARHAMMER: {
+		type: TOTAL_STEPS
+		targetValue: 114032
+	}
+	SWORDLET: {
+		type: TOTAL_DOORS
+		targetValue: 399
+	}
+	JAMBIYA: {
+		type: TOTAL_STEPS
+		targetValue: 15038
+	}
+	SWORD_TWO_HANDED: {
+		type: TOTAL_STEPS
+		targetValue: 137941
+	}
+	GALLIC_ARMOR: {
+		type: MONSTER_KILLS
+		targetValue: 1589
+	}
+	CHAIN_MAIL: {
+		type: MONSTER_KILLS
+		targetValue: 2788
+	}
+	ZAGHNAL: {
+		type: TOTAL_STEPS
+		targetValue: 65602
+	}
+	HORA: {
+		type: TOTAL_STEPS
+		targetValue: 13414
+	}
+	TROMBASH_HELD: {
+		type: TOTAL_STEPS
+		targetValue: 56759
+	}
+	TROMBASH_THROWN: {
+		type: TOTAL_STEPS
+		targetValue: 59651
+	}
+	LAMELLAR_SHIRT: {
+		type: TOTAL_STEPS
+		targetValue: 132872
+	}
+	SWORD_KATANA_TWO_HANDED: {
+		type: MONSTER_KILLS
+		targetValue: 2292
+	}
+	SWORD_GREAT_SCIMITAR: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	BRONZE_PLATE: {
+		type: TOTAL_DOORS
+		targetValue: 1310
+	}
+	ARQUEBUS: {
+		type: TOTAL_DOORS
+		targetValue: 1205
+	}
+	CLOAK: {
+		type: MONSTER_KILLS
+		targetValue: 993
+	}
+	TALID: {
+		type: MONSTER_KILLS
+		targetValue: 748
+	}
+	SWORD: {
+		type: MONSTER_KILLS
+		targetValue: 2389
+	}
+	BREASTPLATE: {
+		type: MONSTER_KILLS
+		targetValue: 1845
+	}
+	SPEAR_DOUBLE_BLADED: {
+		type: TOTAL_STEPS
+		targetValue: 78652
+	}
+	METAL_LAMELLAR: {
+		type: MONSTER_KILLS
+		targetValue: 3101
+	}
+	IUAK_SNOW_BLADE: {
+		type: TOTAL_DOORS
+		targetValue: 158
+	}
+	CHAIN: {
+		type: TOTAL_DOORS
+		targetValue: 142
+	}
+	MAIL_AND_PLATE: {
+		type: MONSTER_KILLS
+		targetValue: 3314
+	}
+	BUCKLER_SPIKED: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	SPEAR_LONG_TWO_HANDED3: {
+		type: MONSTER_KILLS
+		targetValue: 1202
+	}
+	PLATE_MAIL: {
+		type: TOTAL_DOORS
+		targetValue: 1364
+	}
+	SHIELD_LARGE: {
+		type: TOTAL_STEPS
+		targetValue: 68661
+	}
+	SWORD_FLAMBERGE: {
+		type: TOTAL_DOORS
+		targetValue: 666
+	}
+	POLEARM_FAUCHARD: {
+		type: MONSTER_KILLS
+		targetValue: 272
+	}
+	AXE_BATTLE: {
+		type: TOTAL_DOORS
+		targetValue: 95
+	}
+	KNOBKERRIE: {
+		type: TOTAL_STEPS
+		targetValue: 18406
+	}
+	TRIDENT_ONE_HANDED: {
+		type: MONSTER_KILLS
+		targetValue: 1507
+	}
+	ARMS: {
+		type: TOTAL_STEPS
+		targetValue: 109705
+	}
+	SHURIKEN: {
+		type: MONSTER_KILLS
+		targetValue: 535
+	}
+	SWORD_DWARVEN_CLAYMORE: {
+		type: TOTAL_DOORS
+		targetValue: 1103
+	}
+	SWORD_PIERCER: {
+		type: MONSTER_KILLS
+		targetValue: 692
+	}
+	WHIP: {
+		type: TOTAL_STEPS
+		targetValue: 62591
+	}
+	SWORD_CUTLASS: {
+		type: TOTAL_STEPS
+		targetValue: 43065
+	}
+	SPEAR_HOOK_TAILED: {
+		type: MONSTER_KILLS
+		targetValue: 1131
+	}
+	MUSKET: {
+		type: MONSTER_KILLS
+		targetValue: 2586
+	}
+	HALF_PLATE: {
+		type: TOTAL_STEPS
+		targetValue: 148318
+	}
+	TUFENK: {
+		type: TOTAL_DOORS
+		targetValue: 428
+	}
+	CHAKRAM: {
+		type: TOTAL_STEPS
+		targetValue: 7564
+	}
+	PUCHIK: {
+		type: MONSTER_KILLS
+		targetValue: 397
+	}
+	SHOTEL: {
+		type: TOTAL_STEPS
+		targetValue: 35394
+	}
+	POLEARM_BILL_GUISARME: {
+		type: TOTAL_STEPS
+		targetValue: 22156
+	}
+	RING_MAIL: {
+		type: MONSTER_KILLS
+		targetValue: 2107
+	}
+	BOW_COMPOSITE_LONG: {
+		type: TOTAL_DOORS
+		targetValue: 117
+	}
+	SWORD_SCIMITAR: {
+		type: MONSTER_KILLS
+		targetValue: 1428
+	}
+	SPEAR_CASTER: {
+		type: TOTAL_STEPS
+		targetValue: 75186
+	}
+	FLAIL_BLADEBACK: {
+		type: TOTAL_DOORS
+		targetValue: 784
+	}
+	KORA: {
+		type: TOTAL_DOORS
+		targetValue: 175
+	}
+	SPEAR_PADDLE: {
+		type: TOTAL_DOORS
+		targetValue: 592
+	}
+	SCROLL: {
+		type: TOTAL_STEPS
+		targetValue: 71744
+	}
+	SCALE_ARMOR: {
+		type: TOTAL_DOORS
+		targetValue: 1053
+	}
+	SWORD_KHANDAR_ONE_HANDED: {
+		type: TOTAL_DOORS
+		targetValue: 372
+	}
+	LORICA_SEGMENTA: {
+		type: MONSTER_KILLS
+		targetValue: 2891
+	}
+	SAI: {
+		type: MONSTER_KILLS
+		targetValue: 442
+	}
+	WOOD_BONE_ARMOR: {
+		type: MONSTER_KILLS
+		targetValue: 1932
+	}
+	SWORD_TALWAR: {
+		type: TOTAL_STEPS
+		targetValue: 53891
+	}
+	CHAIN_HAUBERK: {
+		type: MONSTER_KILLS
+		targetValue: 2487
+	}
+	KNIFE: {
+		type: TOTAL_STEPS
+		targetValue: 3888
+	}
+	STILETTO: {
+		type: TOTAL_DOORS
+		targetValue: 320
+	}
+	POLEARM_FAUCHARD_FORK: {
+		type: TOTAL_STEPS
+		targetValue: 26170
+	}
+	SCOURGE: {
+		type: MONSTER_KILLS
+		targetValue: 488
+	}
+	CAVILER: {
+		type: TOTAL_STEPS
+		targetValue: 6227
+	}
+	SAP: {
+		type: TOTAL_STEPS
+		targetValue: 30686
+	}
+	SHOKA: {
+		type: TOTAL_STEPS
+		targetValue: 33028
+	}
+	LORICA_HAMATA: {
+		type: TOTAL_DOORS
+		targetValue: 1153
+	}
+	POLEARM_GYTHKA: {
+		type: MONSTER_KILLS
+		targetValue: 354
+	}
+	SWORD_FALCHION: {
+		type: TOTAL_STEPS
+		targetValue: 45694
+	}
+	MAIN_GAUCHE: {
+		type: MONSTER_KILLS
+		targetValue: 232
+	}
+	SPEAR_TWO_HANDED3: {
+		type: TOTAL_DOORS
+		targetValue: 629
+	}
+	SPEAR_THROWING: {
+		type: TOTAL_STEPS
+		targetValue: 89576
+	}
+	SPLINT_MAIL: {
+		type: MONSTER_KILLS
+		targetValue: 2995
+	}
+	MACA: {
+		type: TOTAL_DOORS
+		targetValue: 192
+	}
+	SWORD_PIXIE: {
+		type: TOTAL_STEPS
+		targetValue: 51119
+	}
+	BAGH_NAKH_TIGER_CLAWS: {
+		type: TOTAL_STEPS
+		targetValue: 4962
+	}
+	SCYTHE: {
+		type: TOTAL_DOORS
+		targetValue: 868
+	}
+	BLUNDERBUS: {
+		type: TOTAL_DOORS
+		targetValue: 1257
+	}
+	SPEAR_HEAVY_TWO_HANDED: {
+		type: TOTAL_DOORS
+		targetValue: 556
+	}
+	BRIGANDINE: {
+		type: TOTAL_DOORS
+		targetValue: 1005
+	}
+	SWORD_WAKIZASHI: {
+		type: TOTAL_DOORS
+		targetValue: 743
+	}
+	SWORD_BASTARD_TWO_HANDED: {
+		type: TOTAL_STEPS
+		targetValue: 37927
+	}
+	LIGHT_SCALE: {
+		type: TOTAL_STEPS
+		targetValue: 118455
+	}
+	SWORD_BROAD: {
+		type: TOTAL_STEPS
+		targetValue: 40484
+	}
+	SWORD_GIANT_KIN_TWO_HANDED: {
+		type: MONSTER_KILLS
+		targetValue: 1350
+	}
+	SPIKES_BODY: {
+		type: TOTAL_STEPS
+		targetValue: 127899
+	}
+	AXE: {
+		type: TOTAL_STEPS
+		targetValue: 101457
+	}
+	TRIDENT_TWO_HANDED: {
+		type: DEEPEST_LEVEL
+		targetValue: 12
+	}
+	SICKLE: {
+		type: TOTAL_DOORS
+		targetValue: 296
+	}
+	FLINDBAR: {
+		type: TOTAL_STEPS
+		targetValue: 10358
+	}
+	FLAIL_CHAIN: {
+		type: TOTAL_DOORS
+		targetValue: 826
+	}
+	CHATKCHA: {
+		type: TOTAL_DOORS
+		targetValue: 521
+	}
+	BOOK: {
+		type: MONSTER_KILLS
+		targetValue: 866
+	}
+	KICK_SLASHER: {
+		type: TOTAL_STEPS
+		targetValue: 16710
+	}
+	POLEARM_AWL_PIKE3: {
+		type: MONSTER_KILLS
+		targetValue: 2197
+	}
+	SWORD_CLAYMORE: {
+		type: MONSTER_KILLS
+		targetValue: 2686
+	}
 }
 }

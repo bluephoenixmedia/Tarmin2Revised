@@ -26,6 +26,7 @@ import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 import com.bpm.minotaur.generation.ItemSpawner;
 import com.bpm.minotaur.generation.MonsterSpawner;
+import com.bpm.minotaur.generation.MonsterFactory; // Added Import
 import com.bpm.minotaur.generation.NetHackRNG;
 import com.bpm.minotaur.generation.SpawnContext;
 
@@ -75,6 +76,7 @@ public class SpawnManager {
     // --- New Spawner Services ---
     private final MonsterSpawner monsterSpawner;
     private final ItemSpawner itemSpawner;
+    private final MonsterFactory monsterFactory; // New
     private final NetHackRNG rng;
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
@@ -90,6 +92,9 @@ public class SpawnManager {
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
         this.spawnTableData = spawnTableData;
+
+        // Initialize UnlockManager with Data Manager for planning
+        UnlockManager.getInstance().setItemDataManager(itemDataManager);
 
         // Initialize NetHack Services
         // 1. RNG
@@ -119,6 +124,7 @@ public class SpawnManager {
         // 3. Init Spawners
         this.monsterSpawner = new MonsterSpawner(monsterRegistry, rng);
         this.itemSpawner = new ItemSpawner(itemRegistry, rng);
+        this.monsterFactory = new MonsterFactory(dataManager, itemDataManager, assetManager, rng, itemSpawner);
 
         findValidSpawnPoints(layout);
 
@@ -189,11 +195,19 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        int multiplier = 3;
-        spawnMonsters(budget.monsterBudget * multiplier);
-        spawnItems((int) (budget.itemBudget * 1.75f * multiplier));
-        spawnContainers((int) (budget.containerBudget * 0.5f * multiplier));
-        spawnDebris((int) (budget.debrisBudget * 0.25f * multiplier));
+        // Reduced global multiplier to avoid excessive density
+        float globalMultiplier = 1.0f;
+
+        spawnMonsters((int) (budget.monsterBudget * globalMultiplier)); // 1.0x monsters
+
+        // Items were spamming (30+ on level 1). Reduced significantly.
+        // Budget usually ~4-5. 2.0x = ~10 items.
+        spawnItems((int) (budget.itemBudget * 2.0f * globalMultiplier));
+
+        spawnContainers((int) (budget.containerBudget * 0.5f * globalMultiplier));
+
+        // Debris was non-existent. Increased from 0.02 to 0.5.
+        spawnDebris((int) (budget.debrisBudget * 0.5f * globalMultiplier));
     }
 
     // --- Helpers ---
@@ -309,12 +323,15 @@ public class SpawnManager {
                 continue;
             }
 
-            MonsterVariant variant = dataManager.getRandomVariantForMonster(type, level);
-            Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y,
-                    (variant != null) ? variant.color : MonsterColor.WHITE,
-                    dataManager, assetManager);
+            // Use Factory
+            Monster monster = monsterFactory.createMonster(type, level, ctx);
 
-            monster.scaleStats(level);
+            // Set Position (Factory created it at 0,0)
+            monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+
+            // Manual Scaling Removed - Factory handles it in createMonster via scaleStats
+            // monster.scaleStats(level);
+
             maze.addMonster(monster);
 
             SpawnLogger.getInstance().logMonsterSpawn(monster, "Level Generation (Budget)");
@@ -352,11 +369,11 @@ public class SpawnManager {
             uniqueMonstersSpawned.add(monsterId);
         }
 
-        MonsterVariant variant = dataManager.getRandomVariantForMonster(type, level);
-        Monster monster = new Monster(type, spawnPoint.x, spawnPoint.y,
-                (variant != null) ? variant.color : MonsterColor.WHITE,
-                dataManager, assetManager);
-        monster.scaleStats(level);
+        // Use Factory
+        Monster monster = monsterFactory.createMonster(type, level, ctx);
+        // Set Position
+        monster.getPosition().set(spawnPoint.x + 0.5f, spawnPoint.y + 0.5f);
+
         maze.addMonster(monster);
 
         SpawnLogger.getInstance().logMonsterSpawn(monster, "Periodic Spawn (Runtime)");

@@ -33,6 +33,7 @@ public interface IChunkGenerator {
             MonsterDataManager dataManager,
             ItemDataManager itemDataManager,
             AssetManager assetManager,
+            com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
             SpawnTableData spawnTableData,
             long chunkSeed,
             int playerLuck); // <-- ADDED THIS PARAMETER

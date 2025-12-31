@@ -138,9 +138,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
             MonsterDataManager dataManager,
             ItemDataManager itemDataManager,
             AssetManager assetManager,
+            com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
             SpawnTableData spawnTableData,
             long chunkSeed,
             int playerLuck) { // <-- ADDED THIS PARAM
+
+        random.setSeed(chunkSeed);
 
         // Forest chunks are always 3x2, regardless of game mode
         int mapRows = 3;
@@ -154,6 +157,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
         // --- 3. Populate Maze ---
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck); // <-- PASS PARAM
+
+        spawnEncounters(maze, encounterManager);
 
         spawnLadder(maze, this.finalLayout);
 
@@ -230,6 +235,34 @@ public class ForestChunkGenerator implements IChunkGenerator {
         // --- [END MODIFIED] ---
 
         spawnManager.spawnEntities();
+    }
+
+    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager) {
+        if (encounterManager == null)
+            return;
+
+        int numEncounters = 1 + random.nextInt(3);
+        for (int i = 0; i < numEncounters; i++) {
+            int x, y;
+            int attempts = 0;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+                attempts++;
+            } while ((maze.getScenery().containsKey(new GridPoint2(x, y))
+                    || maze.getItems().containsKey(new GridPoint2(x, y))
+                    || maze.getMonsters().containsKey(new GridPoint2(x, y))
+                    || maze.getEventAt(x, y) != null || finalLayout[maze.getHeight() - 1 - y].charAt(x) != '.')
+                    && attempts < 50);
+
+            if (attempts < 50) {
+                String encounterId = encounterManager.getRandomEncounterId();
+                if (encounterId != null) {
+                    maze.addEvent(x, y, encounterId);
+                    Gdx.app.log("ForestChunkGenerator", "Added event " + encounterId + " at " + x + "," + y);
+                }
+            }
+        }
     }
 
     private void spawnLadder(Maze maze, String[] layout) {

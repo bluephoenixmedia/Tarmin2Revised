@@ -31,6 +31,54 @@ public class NetHackRNG {
     }
 
     /**
+     * Returns a random integer from 1 to x.
+     * Equivalent to rn2(x) + 1.
+     *
+     * @param x Upper bound (inclusive)
+     * @return Random integer in [1, x]
+     */
+    public int rnd(int x) {
+        if (x <= 0)
+            return 0;
+        return random.nextInt(x) + 1;
+    }
+
+    /**
+     * Simulates rolling n dice with x sides and summing the result.
+     * Produces a normal distribution (Bell Curve).
+     *
+     * @param n Number of dice
+     * @param x Sides per die
+     * @return Sum of rolls
+     */
+    public int d(int n, int x) {
+        if (n <= 0 || x <= 0)
+            return n; // Fallback
+        int sum = 0;
+        for (int i = 0; i < n; i++) {
+            sum += rnd(x);
+        }
+        return sum;
+    }
+
+    /**
+     * Returns a value based on exponential decay.
+     * Used for enchantment generation to make high power items rare.
+     * Logic: Start at 1. While rn2(x) == 0, increment.
+     *
+     * @param x Probability denominator (e.g. 3 means 1/3 chance to increment)
+     * @return Generated value (usually small)
+     */
+    public int rne(int x) {
+        int val = 1;
+        // Cap at a reasonable limit to prevent theoretical infinite loops
+        while (rn2(x) == 0 && val < 100) {
+            val++;
+        }
+        return val;
+    }
+
+    /**
      * Returns rn2(x) + y.
      *
      * @param x Range
@@ -68,6 +116,23 @@ public class NetHackRNG {
     }
 
     public long nextLong(long bound) {
-        return random.nextLong(bound);
+        // Handle bound <= 0
+        if (bound <= 0)
+            return 0;
+        // Since Random.nextLong(bound) is Java 17+, and we might be on older
+        // Android/LibGDX,
+        // we can simulate it if needed, but assuming modern Java for desktop:
+        // Actually, java.util.Random on Android/LibGDX usually supports nextLong() but
+        // not always nextLong(bound).
+        // Let's implement safe fallback.
+        long r = random.nextLong();
+        long m = bound - 1;
+        if ((bound & m) == 0) // i.e., bound is a power of 2
+            r = (r & m);
+        else {
+            for (long u = r >>> 1; u + m - (r = u % bound) < 0; u = random.nextLong() >>> 1)
+                ;
+        }
+        return r;
     }
 }

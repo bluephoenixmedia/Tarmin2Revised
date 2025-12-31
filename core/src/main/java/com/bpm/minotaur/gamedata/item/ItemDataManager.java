@@ -46,6 +46,12 @@ public class ItemDataManager {
 
             if (data != null) {
                 ItemTemplate template = json.readValue(ItemTemplate.class, data);
+
+                // FIX: Set default probability if missing to ensure they spawn
+                if (template.probability == 0) {
+                    template.probability = 10;
+                }
+
                 itemTemplates.put(type, template);
             } else {
                 // Skip error logging for procedural/generated items
@@ -195,6 +201,12 @@ public class ItemDataManager {
             try {
                 ItemType type = ItemType.valueOf(typeName);
                 ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+
+                // FIX: Set default probability if missing to ensure they spawn
+                if (template.probability == 0) {
+                    template.probability = 10;
+                }
+
                 itemTemplates.put(type, template);
                 loadedCount++;
             } catch (IllegalArgumentException e) {
@@ -225,6 +237,12 @@ public class ItemDataManager {
             try {
                 ItemType type = ItemType.valueOf(typeName);
                 ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+
+                // FIX: Set default probability if missing
+                if (template.probability == 0) {
+                    template.probability = 10;
+                }
+
                 itemTemplates.put(type, template);
                 loadedCount++;
             } catch (IllegalArgumentException e) {
@@ -252,10 +270,11 @@ public class ItemDataManager {
         for (ItemTemplate template : itemTemplates.values()) {
             // Load 2D Texture
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
-                // Skip indivual loading for packed atlases
-                if (!template.texturePath.contains("images/debris") && !template.texturePath.contains("images/items")) {
-                    assetManager.load(template.texturePath, Texture.class);
-                }
+                // FORCE LOAD: We need standalone textures for EntityRenderer's current logic
+                // if (!template.texturePath.contains("images/debris") &&
+                // !template.texturePath.contains("images/items")) {
+                assetManager.load(template.texturePath, Texture.class);
+                // }
             }
 
             // Load 3D Model

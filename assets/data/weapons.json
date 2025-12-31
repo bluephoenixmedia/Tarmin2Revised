@@ -52,7 +52,8 @@
         "maxLevel": 1,
         "weight": 100
       }
-    ]
+    ],
+    "locked": false
   },
   "ALHULAK": {
     "friendlyName": "Alhulak",
@@ -107,7 +108,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ANKUS_ELEPHANT_GOAD": {
     "friendlyName": "Ankus (Elephant Goad)",
@@ -162,7 +164,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ARQUEBUS": {
     "friendlyName": "Arquebus",
@@ -217,7 +220,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ARROW_DAIKYU": {
     "friendlyName": "Arrow, Daikyu",
@@ -272,7 +276,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ARROW_FLIGHT": {
     "friendlyName": "Arrow, Flight",
@@ -327,7 +332,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ASSEGAI": {
     "friendlyName": "Assegai",
@@ -382,7 +388,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "AXE_BATTLE": {
     "friendlyName": "Axe, Battle",
@@ -437,7 +444,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BAGH_NAKH_TIGER_CLAWS": {
     "friendlyName": "Bagh Nakh (Tiger Claws)",
@@ -492,7 +500,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BARD_S_FRIEND": {
     "friendlyName": "Bard's Friend",
@@ -547,7 +556,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BASILARD": {
     "friendlyName": "Basilard",
@@ -602,7 +612,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BLUNDERBUS": {
     "friendlyName": "Blunderbus",
@@ -657,7 +668,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BO_STICK": {
     "friendlyName": "Bo Stick",
@@ -712,7 +724,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BOLA": {
     "friendlyName": "Bola",
@@ -767,7 +780,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BOW_COMPOSITE_LONG": {
     "friendlyName": "Bow, Composite Long",
@@ -822,7 +836,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BOW_ELVEN": {
     "friendlyName": "Bow, Elven",
@@ -877,7 +892,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BUCKLER_SPIKED": {
     "friendlyName": "Buckler, Spiked",
@@ -932,7 +948,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CAHULAKS": {
     "friendlyName": "Cahulaks",
@@ -987,7 +1004,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CARRIKAL": {
     "friendlyName": "Carrikal",
@@ -1042,7 +1060,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CAVILER": {
     "friendlyName": "Caviler",
@@ -1097,7 +1116,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CESTUS": {
     "friendlyName": "Cestus",
@@ -1152,7 +1172,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CHAIN": {
     "friendlyName": "Chain",
@@ -1207,7 +1228,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CHAKRAM": {
     "friendlyName": "Chakram",
@@ -1262,7 +1284,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CHATKCHA": {
     "friendlyName": "Chatkcha",
@@ -1317,7 +1340,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "CLUB": {
     "friendlyName": "Club",
@@ -1372,7 +1396,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "CLUB_DATCHI": {
     "friendlyName": "Club, Datchi",
@@ -1427,7 +1452,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "CLUB_DWARVEN_WAR": {
     "friendlyName": "Club, Dwarven War",
@@ -1482,7 +1508,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "CROSSBOW_DOUBLED": {
     "friendlyName": "Crossbow, Doubled",
@@ -1537,7 +1564,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "DAGGER": {
     "friendlyName": "Dagger",
@@ -1592,7 +1620,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "DAIKYU": {
     "friendlyName": "Daikyu",
@@ -1647,7 +1676,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "DART": {
     "friendlyName": "Dart",
@@ -1702,7 +1732,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "DEJADA": {
     "friendlyName": "Dejada",
@@ -1757,7 +1788,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "DIRK": {
     "friendlyName": "Dirk",
@@ -1812,7 +1844,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "DRAGON_S_PAW": {
     "friendlyName": "Dragon's Paw",
@@ -1867,7 +1900,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "FLAIL_BLADEBACK": {
     "friendlyName": "Flail, Bladeback",
@@ -1922,7 +1956,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "FLAIL_CHAIN": {
     "friendlyName": "Flail, Chain",
@@ -1977,7 +2012,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "FLINDBAR": {
     "friendlyName": "Flindbar",
@@ -2032,7 +2068,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "GADA": {
     "friendlyName": "Gada",
@@ -2087,7 +2124,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "GLOVE_NAIL": {
     "friendlyName": "Glove Nail",
@@ -2142,7 +2180,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "GOUGE": {
     "friendlyName": "Gouge",
@@ -2197,7 +2236,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "HARPOON_ONE_HANDED": {
     "friendlyName": "Harpoon, One-Handed",
@@ -2252,7 +2292,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "HORA": {
     "friendlyName": "Hora",
@@ -2307,7 +2348,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "IMPALER": {
     "friendlyName": "Impaler",
@@ -2362,7 +2404,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "IUAK_SNOW_BLADE": {
     "friendlyName": "Iuak (Snow Blade)",
@@ -2417,7 +2460,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "JAMBIYA": {
     "friendlyName": "Jambiya",
@@ -2472,7 +2516,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "JAVELIN_ONE_HANDED": {
     "friendlyName": "Javelin, One-Handed",
@@ -2527,7 +2572,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "KATAR_PUNCH_DAGGER": {
     "friendlyName": "Katar (Punch Dagger)",
@@ -2582,7 +2628,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "KICK_SLASHER": {
     "friendlyName": "Kick-slasher",
@@ -2637,7 +2684,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "KNIFE": {
     "friendlyName": "Knife",
@@ -2692,7 +2740,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "KNOBKERRIE": {
     "friendlyName": "Knobkerrie",
@@ -2747,7 +2796,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "KORA": {
     "friendlyName": "Kora",
@@ -2802,7 +2852,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "KUKRI": {
     "friendlyName": "Kukri",
@@ -2857,7 +2908,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "LOTULIS": {
     "friendlyName": "Lotulis",
@@ -2912,7 +2964,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MACA": {
     "friendlyName": "Maca",
@@ -2967,7 +3020,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MACE_GREAT": {
     "friendlyName": "Mace, Great",
@@ -3022,7 +3076,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MACHETE": {
     "friendlyName": "Machete",
@@ -3077,7 +3132,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MADU": {
     "friendlyName": "Madu",
@@ -3132,7 +3188,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MAIN_GAUCHE": {
     "friendlyName": "Main-Gauche",
@@ -3187,7 +3244,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MORNING_STAR": {
     "friendlyName": "Morning Star",
@@ -3242,7 +3300,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "MUSKET": {
     "friendlyName": "Musket",
@@ -3297,7 +3356,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "NUNCHAKU": {
     "friendlyName": "Nunchaku",
@@ -3352,7 +3412,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "NYEK_PLE_NEN_TOH": {
     "friendlyName": "Nyek-ple-nen-toh",
@@ -3407,7 +3468,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PESHKABZ": {
     "friendlyName": "Peshkabz",
@@ -3462,7 +3524,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PICK_FOOTMAN_S": {
     "friendlyName": "Pick, Footman's",
@@ -3517,7 +3580,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PIKE_WEIGHTED": {
     "friendlyName": "Pike, Weighted",
@@ -3572,7 +3636,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PISTOL_STARWHEEL": {
     "friendlyName": "Pistol, Starwheel",
@@ -3627,7 +3692,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_AWL_PIKE3": {
     "friendlyName": "Polearm, Awl Pike3",
@@ -3682,7 +3748,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_BARDICHE": {
     "friendlyName": "Polearm, Bardiche",
@@ -3737,7 +3804,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_BEC_DE_CORBIN": {
     "friendlyName": "Polearm, Bec De Corbin",
@@ -3792,7 +3860,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_BILL_GUISARME": {
     "friendlyName": "Polearm, Bill-Guisarme",
@@ -3847,7 +3916,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_CRUSHER": {
     "friendlyName": "Polearm, Crusher",
@@ -3902,7 +3972,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_FAUCHARD": {
     "friendlyName": "Polearm, Fauchard",
@@ -3957,7 +4028,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_FAUCHARD_FORK": {
     "friendlyName": "Polearm, Fauchard-Fork",
@@ -4012,7 +4084,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_GIANT_KIN_HALBERD": {
     "friendlyName": "Polearm, Giant-kin Halberd",
@@ -4067,7 +4140,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_GLAIVE_GUISARME4": {
     "friendlyName": "Polearm, Glaive-Guisarme4",
@@ -4122,7 +4196,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_GUISARME_VOULGE": {
     "friendlyName": "Polearm, Guisarme-Voulge",
@@ -4177,7 +4252,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_GYTHKA": {
     "friendlyName": "Polearm, Gythka",
@@ -4232,7 +4308,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_HALBERD": {
     "friendlyName": "Polearm, Halberd",
@@ -4287,7 +4364,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_HOOK_FAUCHARD": {
     "friendlyName": "Polearm, Hook Fauchard",
@@ -4342,7 +4420,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "POLEARM_LUCERN_HAMMER3": {
     "friendlyName": "Polearm, Lucern Hammer3",
@@ -4397,7 +4476,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PUCHIK": {
     "friendlyName": "Puchik",
@@ -4452,7 +4532,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "PUNCH_CUTTER": {
     "friendlyName": "Punch-cutter",
@@ -4507,7 +4588,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "QUABONE": {
     "friendlyName": "Quabone",
@@ -4562,7 +4644,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "QUARREL_HAND": {
     "friendlyName": "Quarrel, Hand",
@@ -4617,7 +4700,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "QUARTERSTAFF": {
     "friendlyName": "Quarterstaff",
@@ -4672,7 +4756,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "RITIIK": {
     "friendlyName": "Ritiik",
@@ -4727,7 +4812,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SAI": {
     "friendlyName": "Sai",
@@ -4782,7 +4868,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SAP": {
     "friendlyName": "Sap",
@@ -4837,7 +4924,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SCOURGE": {
     "friendlyName": "Scourge",
@@ -4892,7 +4980,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SCYTHE": {
     "friendlyName": "Scythe",
@@ -4947,7 +5036,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SHIELD_SPIKE": {
     "friendlyName": "Shield, Spike",
@@ -5002,7 +5092,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SHOKA": {
     "friendlyName": "Shoka",
@@ -5057,7 +5148,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SHOTEL": {
     "friendlyName": "Shotel",
@@ -5112,7 +5204,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SHURIKEN": {
     "friendlyName": "Shuriken",
@@ -5167,7 +5260,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SICKLE": {
     "friendlyName": "Sickle",
@@ -5222,7 +5316,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SLING": {
     "friendlyName": "Sling",
@@ -5277,7 +5372,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "SLING_BULLET": {
     "friendlyName": "Sling, Bullet",
@@ -5332,7 +5428,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "SLING_STONE": {
     "friendlyName": "Sling, Stone",
@@ -5387,7 +5484,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "SPEAR_CASTER": {
     "friendlyName": "Spear Caster",
@@ -5442,7 +5540,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_DOUBLE_BLADED": {
     "friendlyName": "Spear, Double-Bladed",
@@ -5497,7 +5596,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_HEAVY_ONE_HANDED": {
     "friendlyName": "Spear, Heavy, One-Handed",
@@ -5552,7 +5652,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_HEAVY_TWO_HANDED": {
     "friendlyName": "Spear, Heavy, Two-Handed",
@@ -5607,7 +5708,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_HOOK_TAILED": {
     "friendlyName": "Spear, Hook-Tailed",
@@ -5662,7 +5764,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_LONG_ONE_HANDED": {
     "friendlyName": "Spear, Long, One-Handed",
@@ -5717,7 +5820,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_LONG_TWO_HANDED3": {
     "friendlyName": "Spear, Long, Two-Handed3",
@@ -5772,7 +5876,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_ONE_HANDED": {
     "friendlyName": "Spear, One-Handed",
@@ -5827,7 +5932,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_PADDLE": {
     "friendlyName": "Spear, Paddle",
@@ -5882,7 +5988,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_STONE_ONE_HANDED": {
     "friendlyName": "Spear, Stone, One-Handed",
@@ -5937,7 +6044,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_STONE_TWO_HANDED": {
     "friendlyName": "Spear, Stone, Two-Handed",
@@ -5992,7 +6100,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_THROWING": {
     "friendlyName": "Spear, Throwing",
@@ -6047,7 +6156,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR_TWO_HANDED3": {
     "friendlyName": "Spear, Two-Handed3",
@@ -6102,7 +6212,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPIKE_ELBOW": {
     "friendlyName": "Spike, Elbow",
@@ -6157,7 +6268,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPIKE_HEAD": {
     "friendlyName": "Spike, Head",
@@ -6212,7 +6324,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPIKE_KNEE": {
     "friendlyName": "Spike, Knee",
@@ -6267,7 +6380,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SPIKES_BODY": {
     "friendlyName": "Spikes, Body",
@@ -6322,7 +6436,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "STAFF_SLING": {
     "friendlyName": "Staff Sling",
@@ -6377,7 +6492,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "STAFF_SLING_STINKPOT": {
     "friendlyName": "Staff Sling, Stinkpot",
@@ -6432,7 +6548,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": false
   },
   "STAFF_HAMANU_S": {
     "friendlyName": "Staff, Hamanu's",
@@ -6487,7 +6604,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "STAFF_HORNHEAD": {
     "friendlyName": "Staff, Hornhead",
@@ -6542,7 +6660,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "STICK_GOBLIN": {
     "friendlyName": "Stick, Goblin",
@@ -6597,7 +6716,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "STICKS_SINGING": {
     "friendlyName": "Sticks, Singing",
@@ -6652,7 +6772,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "STILETTO": {
     "friendlyName": "Stiletto",
@@ -6707,7 +6828,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_BASTARD_ONE_HANDED": {
     "friendlyName": "Sword, Bastard, One-Handed",
@@ -6762,7 +6884,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_BASTARD_TWO_HANDED": {
     "friendlyName": "Sword, Bastard, Two-Handed",
@@ -6817,7 +6940,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_BROAD": {
     "friendlyName": "Sword, Broad",
@@ -6872,7 +6996,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_CLAYMORE": {
     "friendlyName": "Sword, Claymore",
@@ -6927,7 +7052,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_CUTLASS": {
     "friendlyName": "Sword, Cutlass",
@@ -6982,7 +7108,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_DRUSUS": {
     "friendlyName": "Sword, Drusus",
@@ -7037,7 +7164,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_DWARVEN_CLAYMORE": {
     "friendlyName": "Sword, Dwarven Claymore",
@@ -7092,7 +7220,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_FALCHION": {
     "friendlyName": "Sword, Falchion",
@@ -7147,7 +7276,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_FLAMBERGE": {
     "friendlyName": "Sword, Flamberge",
@@ -7202,7 +7332,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_GIANT_KIN_TWO_HANDED": {
     "friendlyName": "Sword, Giant-kin Two-Handed",
@@ -7257,7 +7388,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_GREAT_SCIMITAR": {
     "friendlyName": "Sword, Great Scimitar",
@@ -7312,7 +7444,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_HOOK": {
     "friendlyName": "Sword, Hook",
@@ -7367,7 +7500,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_KATANA_ONE_HANDED": {
     "friendlyName": "Sword, Katana, One-Handed",
@@ -7422,7 +7556,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_KATANA_TWO_HANDED": {
     "friendlyName": "Sword, Katana, Two-Handed",
@@ -7477,7 +7612,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_KHANDAR_ONE_HANDED": {
     "friendlyName": "Sword, Khandar, One-Handed",
@@ -7532,7 +7668,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_KHANDAR_TWO_HANDED": {
     "friendlyName": "Sword, Khandar, Two-Handed",
@@ -7587,7 +7724,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_KHOPESH": {
     "friendlyName": "Sword, Khopesh",
@@ -7642,7 +7780,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_LONG": {
     "friendlyName": "Sword, Long",
@@ -7697,7 +7836,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_MANDIBLE": {
     "friendlyName": "Sword, Mandible",
@@ -7752,7 +7892,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_MARINER_S": {
     "friendlyName": "Sword, Mariner's",
@@ -7807,7 +7948,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_PIERCER": {
     "friendlyName": "Sword, Piercer",
@@ -7862,7 +8004,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_PIXIE": {
     "friendlyName": "Sword, Pixie",
@@ -7917,7 +8060,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_RAPIER": {
     "friendlyName": "Sword, Rapier",
@@ -7972,7 +8116,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_SABRE": {
     "friendlyName": "Sword, Sabre",
@@ -8027,7 +8172,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_SCIMITAR": {
     "friendlyName": "Sword, Scimitar",
@@ -8082,7 +8228,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_SHORT": {
     "friendlyName": "Sword, Short",
@@ -8137,7 +8284,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_TALWAR": {
     "friendlyName": "Sword, Talwar",
@@ -8192,7 +8340,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_TWO_HANDED": {
     "friendlyName": "Sword, Two-Handed",
@@ -8247,7 +8396,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD_WAKIZASHI": {
     "friendlyName": "Sword, Wakizashi",
@@ -8302,7 +8452,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORDLET": {
     "friendlyName": "Swordlet",
@@ -8357,7 +8508,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TALID": {
     "friendlyName": "Talid",
@@ -8412,7 +8564,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TORTOISE_BLADES": {
     "friendlyName": "Tortoise Blades",
@@ -8467,7 +8620,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TRIDENT_ONE_HANDED": {
     "friendlyName": "Trident, One-Handed",
@@ -8522,7 +8676,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TRIDENT_TWO_HANDED": {
     "friendlyName": "Trident, Two-Handed",
@@ -8577,7 +8732,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TROMBASH_HELD": {
     "friendlyName": "Trombash, Held",
@@ -8632,7 +8788,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TROMBASH_THROWN": {
     "friendlyName": "Trombash, Thrown",
@@ -8687,7 +8844,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TUFENK": {
     "friendlyName": "Tufenk",
@@ -8742,7 +8900,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WARHAMMER": {
     "friendlyName": "Warhammer",
@@ -8797,7 +8956,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WHIP": {
     "friendlyName": "Whip",
@@ -8852,7 +9012,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WHIP_CHAIN": {
     "friendlyName": "Whip, Chain",
@@ -8907,7 +9068,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WHIP_MASTER_S": {
     "friendlyName": "Whip, Master's",
@@ -8962,7 +9124,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WRIST_RAZOR": {
     "friendlyName": "Wrist Razor",
@@ -9017,7 +9180,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "ZAGHNAL": {
     "friendlyName": "Zaghnal",
@@ -9072,7 +9236,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "BOW": {
     "material": "wood",
@@ -9163,7 +9328,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "CROSSBOW": {
     "material": "wood",
@@ -9253,7 +9419,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "AXE": {
     "material": "iron",
@@ -9343,7 +9510,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "SPEAR": {
     "friendlyName": "Spear",
@@ -9429,7 +9597,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "SCROLL": {
     "friendlyName": "Scroll",
@@ -9515,7 +9684,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "BOOK": {
     "friendlyName": "Book",
@@ -9601,7 +9771,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "SMALL_FIREBALL": {
     "friendlyName": "Small Fireball",
@@ -9687,7 +9858,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "LARGE_FIREBALL": {
     "friendlyName": "Large Fireball",
@@ -9772,7 +9944,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "SMALL_LIGHTNING": {
     "friendlyName": "Small Lightning",
@@ -9858,7 +10031,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "LARGE_LIGHTNING": {
     "friendlyName": "Large Lightning",
@@ -9943,7 +10117,8 @@
         "maxLevel": 99,
         "weight": 21
       }
-    ]
+    ],
+    "locked": true
   },
   "SWORD": {
     "friendlyName": "Sword",
@@ -9998,7 +10173,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "TWO_HANDED_SWORD": {
     "friendlyName": "Greatsword",
@@ -10053,7 +10229,8 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   },
   "WAND": {
     "friendlyName": "Wand",
@@ -10108,6 +10285,7 @@
         "maxLevel": 99,
         "weight": 1
       }
-    ]
+    ],
+    "locked": true
   }
 }

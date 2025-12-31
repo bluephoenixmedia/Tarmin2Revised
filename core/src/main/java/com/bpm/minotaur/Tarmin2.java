@@ -40,6 +40,7 @@ public class Tarmin2 extends Game {
     private AssetManager assetManager;
     private MonsterDataManager monsterDataManager;
     private ItemDataManager itemDataManager;
+    private com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager;
     private SpawnTableData spawnTableData;
 
     // Constants for a consistent virtual resolution.
@@ -68,12 +69,14 @@ public class Tarmin2 extends Game {
         assetManager = new AssetManager();
         monsterDataManager = new MonsterDataManager();
         itemDataManager = new ItemDataManager();
+        encounterManager = new com.bpm.minotaur.gamedata.encounters.EncounterManager();
 
         // --- NEW: Load Doom Manager (Tarmin's Hunger) ---
         com.bpm.minotaur.managers.DoomManager.getInstance().load();
 
         monsterDataManager.load();
         itemDataManager.load();
+        encounterManager.load();
         itemDataManager.loadWeapons(); // Load extended weapon list
         itemDataManager.loadArmor(); // Load extended armor list
 
@@ -121,6 +124,7 @@ public class Tarmin2 extends Game {
         // Queue monster textures and 3D models (via DataManagers)
         monsterDataManager.queueAssets(assetManager);
         itemDataManager.queueAssets(assetManager);
+        encounterManager.queueAssets(assetManager);
 
         // --- 4. Load Settings (Synchronous) ---
         SettingsManager.getInstance().load();
@@ -176,6 +180,10 @@ public class Tarmin2 extends Game {
 
     public AssetManager getAssetManager() {
         return assetManager;
+    }
+
+    public com.bpm.minotaur.gamedata.encounters.EncounterManager getEncounterManager() {
+        return encounterManager;
     }
 
     public MonsterDataManager getMonsterDataManager() {

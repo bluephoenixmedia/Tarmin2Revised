@@ -24,7 +24,7 @@ public class DoomManager {
 
     // --- Constants ---
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
-    private static final float DAMAGE_SCALE_PER_DEATH = 0.05f; // +5% per death
+    private static final float DAMAGE_SCALE_PER_DEATH = 0.025f; // +2.5% per death (Reduced from 5%)
     private static final float LOOT_DECAY_RATE = 0.02f; // -2% loot chance per death
     private static final String SAVE_FILE = "saves/doom_state.json";
 
@@ -66,7 +66,9 @@ public class DoomManager {
      *         Formula: (1 - 0.02) ^ Deaths
      */
     public float getLootChanceMultiplier() {
-        return (float) Math.pow(1.0f - LOOT_DECAY_RATE, deathCount);
+        // PER USER REQUEST: Disabled loot scarcity impact for now.
+        return 1.0f;
+        // return (float) Math.pow(1.0f - LOOT_DECAY_RATE, deathCount);
     }
 
     /**

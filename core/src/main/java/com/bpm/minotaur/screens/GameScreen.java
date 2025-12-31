@@ -121,6 +121,7 @@ public class GameScreen extends BaseScreen {
                 game.getMonsterDataManager(),
                 game.getItemDataManager(),
                 game.getAssetManager(),
+                game.getEncounterManager(),
                 game.getSpawnTableData(),
                 this.soundManager);
 
@@ -249,7 +250,7 @@ public class GameScreen extends BaseScreen {
         }
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                game.getItemDataManager(), stochasticManager);
+                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager);
 
         // --- LOAD BLOOD ASSETS (Packed) ---
         com.badlogic.gdx.assets.AssetManager am = game.getAssetManager();
@@ -576,6 +577,20 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.ENCOUNTER_TRIGGERED)) != null) {
+            String eventId = (String) event.payload;
+            if (game.getEncounterManager() != null) {
+                com.bpm.minotaur.gamedata.encounters.Encounter encounter = game.getEncounterManager()
+                        .getEncounter(eventId);
+                if (encounter != null && hud != null && hud.getEncounterWindow() != null) {
+                    hud.getEncounterWindow().configure(player, game.getEncounterManager(), eventManager,
+                            game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager(),
+                            maze, null);
+                    hud.getEncounterWindow().show(encounter);
+                }
+            }
+        }
+
         // --- NEW: Portal Reset Handling ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
             Gdx.app.log("GameScreen", "PORTAL_ACTIVATED detected. Resetting world.");
@@ -600,13 +615,14 @@ public class GameScreen extends BaseScreen {
         this.maze = newMaze;
         player.setMaze(newMaze);
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                game.getItemDataManager(), stochasticManager);
+                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager);
         // --- FIX: Re-initialize Dice UI with new Manager ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------------------------------
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        combatManager.setHud(hud);
         DebugRenderer.printMazeToConsole(maze);
     }
 
@@ -756,6 +772,10 @@ public class GameScreen extends BaseScreen {
         if (worldManager == null || player == null || maze == null)
             return false;
 
+        if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
+            return true;
+        }
+
         // --- NEW: Combat Menu Input Interception ---
         if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             if (hud != null && hud.combatMenu != null) {
@@ -780,7 +800,7 @@ public class GameScreen extends BaseScreen {
                                 combatManager.playerAttackInstant();
                                 break;
                             case 1: // CAST
-                                hud.addMessage("Magic is not yet implemented.");
+                                combatManager.playerCast();
                                 break;
                             case 2: // ROLL
                                 // USER FEEDBACK: "Roll" mapped to Dice Mechanics / Skill check
@@ -886,6 +906,10 @@ public class GameScreen extends BaseScreen {
             }
 
             switch (keycode) {
+                case Input.Keys.PERIOD:
+                    hud.addMessage("You wait...");
+                    playerTurnTakesAction();
+                    return true;
                 case Input.Keys.UP:
                     player.moveForward(maze, eventManager, gameMode);
                     combatManager.checkForAdjacentMonsters();

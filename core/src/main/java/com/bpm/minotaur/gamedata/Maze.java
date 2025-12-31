@@ -29,6 +29,7 @@ public class Maze {
     private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
+    private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
     private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
@@ -96,6 +97,18 @@ public class Maze {
         if (x >= 0 && x < width && y >= 0 && y < height) {
             explorationState[y][x] = VISIBILITY_SEEN;
         }
+    }
+
+    public void addEvent(int x, int y, String id) {
+        eventTriggers.put(new GridPoint2(x, y), id);
+    }
+
+    public String getEventAt(int x, int y) {
+        return eventTriggers.get(new GridPoint2(x, y));
+    }
+
+    public void removeEvent(int x, int y) {
+        eventTriggers.remove(new GridPoint2(x, y));
     }
 
     public boolean isVisited(int x, int y) {

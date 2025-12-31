@@ -141,6 +141,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             GameMode gameMode,
             RetroTheme.Theme theme,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+            com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
             SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // New Argument
 
         // Initialize Random with the deterministic seed
@@ -173,6 +174,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck); // <-- Pass chunkSeed
+        spawnEncounters(maze, encounterManager);
         spawnLadder(maze, this.finalLayout);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -635,6 +637,53 @@ public class MazeChunkGenerator implements IChunkGenerator {
             if (pos.x >= 0 && pos.x < sb.length()) {
                 sb.setCharAt(pos.x, '.');
                 finalLayout[layoutY] = sb.toString();
+            }
+        }
+    }
+
+    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager) {
+        if (encounterManager == null)
+            return;
+
+        int numEncounters = 1 + random.nextInt(3);
+        for (int i = 0; i < numEncounters; i++) {
+            int x, y;
+            int attempts = 0;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+                attempts++;
+
+                // Check accessibility: Must be a floor tile '.'
+                // finalLayout is stored top-down (index 0 is Y=Max)
+                boolean isFloor = false;
+                if (finalLayout != null) {
+                    int layoutY = maze.getHeight() - 1 - y;
+                    if (layoutY >= 0 && layoutY < finalLayout.length) {
+                        if (finalLayout[layoutY].charAt(x) == '.') {
+                            isFloor = true;
+                        }
+                    }
+                }
+
+                if (!isFloor)
+                    continue;
+
+            } while ((maze.getScenery().containsKey(new GridPoint2(x, y))
+                    || maze.getItems().containsKey(new GridPoint2(x, y))
+                    || maze.getMonsters().containsKey(new GridPoint2(x, y))
+                    || maze.getEventAt(x, y) != null
+            // Additional check: Ensure it's not a door or wall (which bitmask 0 check
+            // implies, but explicit floor check handles it)
+            )
+                    && attempts < 50);
+
+            if (attempts < 50) { // Found a valid spot
+                String encounterId = encounterManager.getRandomEncounterId();
+                if (encounterId != null) {
+                    maze.addEvent(x, y, encounterId);
+                    Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " at " + x + "," + y);
+                }
             }
         }
     }
