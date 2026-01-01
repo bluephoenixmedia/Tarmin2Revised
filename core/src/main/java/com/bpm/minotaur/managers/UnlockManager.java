@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class UnlockManager {
     private static final UnlockManager INSTANCE = new UnlockManager();
-    private static final String SAVE_FILE = "saves/profile.json";
+    private String saveFile = "saves/profile.json";
 
     private UnlockData data;
     private final Json json;
@@ -27,8 +27,13 @@ public class UnlockManager {
         return INSTANCE;
     }
 
+    public void setSaveFile(String path) {
+        this.saveFile = path;
+        load(); // Reload from new path
+    }
+
     public void load() {
-        FileHandle file = Gdx.files.local(SAVE_FILE);
+        FileHandle file = Gdx.files.local(saveFile);
         if (file.exists()) {
             try {
                 data = json.fromJson(UnlockData.class, file);
@@ -45,7 +50,7 @@ public class UnlockManager {
 
     public void save() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(saveFile);
             file.writeString(json.prettyPrint(data), false);
         } catch (Exception e) {
             Gdx.app.error("UnlockManager", "Failed to save profile.", e);

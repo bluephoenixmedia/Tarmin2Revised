@@ -23,7 +23,7 @@ public class Gib implements Pool.Poolable {
     public float lifeTimer;
 
     // Gibs stay for a while, then disappear or persist (we'll fade them after 20s)
-    public static final float MAX_GIB_LIFE = 20.0f;
+    public static final float MAX_GIB_LIFE = 10.0f;
 
     public Gib() {
     }
@@ -99,6 +99,8 @@ public class Gib implements Pool.Poolable {
     }
 
     public void update(float delta) {
+        lifeTimer -= delta;
+
         if (onGround)
             return;
 
@@ -127,6 +129,5 @@ public class Gib implements Pool.Poolable {
             }
         }
 
-        lifeTimer -= delta;
     }
 }

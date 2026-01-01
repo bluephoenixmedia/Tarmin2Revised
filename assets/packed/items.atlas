@@ -135,12 +135,60 @@ size: 4096, 4096
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-box_
+bat_wing
   rotate: false
-  xy: 3295, 831
-  size: 650, 567
-  orig: 680, 571
-  offset: 8, 2
+  xy: 1849, 0
+  size: 1997, 1229
+  orig: 2048, 1464
+  offset: 25, 118
+  index: -1
+quiver
+  rotate: false
+  xy: 1943, 1231
+  size: 2115, 1364
+  orig: 2182, 1536
+  offset: 33, 86
+  index: -1
+spider_web
+  rotate: false
+  xy: 0, 2031
+  size: 1941, 2048
+  orig: 2048, 2048
+  offset: 53, 0
+  index: -1
+tarmin_treasure
+  rotate: false
+  xy: 1943, 2597
+  size: 2060, 1482
+  orig: 2145, 1536
+  offset: 42, 27
+  index: -1
+wand
+  rotate: false
+  xy: 0, 109
+  size: 1847, 1920
+  orig: 2048, 2048
+  offset: 100, 64
+  index: -1
+
+items4.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+boulder
+  rotate: false
+  xy: 2237, 1040
+  size: 1694, 1613
+  orig: 2048, 2048
+  offset: 177, 218
+  index: -1
+large_boulder
+  rotate: false
+  xy: 2237, 1040
+  size: 1694, 1613
+  orig: 2048, 2048
+  offset: 177, 218
   index: -1
 coins
   rotate: false
@@ -149,19 +197,12 @@ coins
   orig: 2816, 1536
   offset: 127, 74
   index: -1
-cookingpot
+flour_sack
   rotate: false
-  xy: 1929, 40
-  size: 1364, 1294
-  orig: 1401, 1536
-  offset: 18, 121
-  index: -1
-eye
-  rotate: false
-  xy: 2237, 1400
-  size: 1826, 1170
-  orig: 2048, 1314
-  offset: 111, 72
+  xy: 2564, 2655
+  size: 1460, 1413
+  orig: 1492, 1536
+  offset: 16, 62
   index: -1
 ingot
   rotate: false
@@ -170,26 +211,12 @@ ingot
   orig: 2407, 1536
   offset: 86, 97
   index: -1
-ladder_up
+scroll
   rotate: false
-  xy: 2564, 2572
-  size: 1324, 1496
-  orig: 1366, 1536
-  offset: 34, 7
-  index: -1
-potion_gold
-  rotate: false
-  xy: 3295, 201
-  size: 349, 628
-  orig: 361, 630
-  offset: 4, 2
-  index: -1
-potion_pink
-  rotate: false
-  xy: 3646, 201
-  size: 349, 628
-  orig: 361, 630
-  offset: 4, 2
+  xy: 1929, 2
+  size: 2047, 1036
+  orig: 2154, 1143
+  offset: 53, 54
   index: -1
 vines
   rotate: false
@@ -199,104 +226,70 @@ vines
   offset: 60, 155
   index: -1
 
-items4.png
-size: 4096, 4096
-format: RGBA8888
-filter: Nearest, Nearest
-repeat: none
-bat_wing
-  rotate: false
-  xy: 0, 7
-  size: 1997, 1229
-  orig: 2048, 1464
-  offset: 25, 118
-  index: -1
-leaves
-  rotate: false
-  xy: 1999, 0
-  size: 1908, 1109
-  orig: 2048, 1236
-  offset: 70, 64
-  index: -1
-quiver
-  rotate: false
-  xy: 0, 2722
-  size: 2115, 1364
-  orig: 2182, 1536
-  offset: 33, 86
-  index: -1
-rusted_chain
-  rotate: false
-  xy: 2062, 1111
-  size: 2010, 925
-  orig: 2048, 1102
-  offset: 19, 89
-  index: -1
-spider_web
-  rotate: false
-  xy: 2117, 2038
-  size: 1941, 2048
-  orig: 2048, 2048
-  offset: 53, 0
-  index: -1
-tarmin_treasure
-  rotate: false
-  xy: 0, 1238
-  size: 2060, 1482
-  orig: 2145, 1536
-  offset: 42, 27
-  index: -1
-
 items5.png
 size: 4096, 4096
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-book
+bone
   rotate: false
-  xy: 1888, 1442
-  size: 1459, 1248
-  orig: 1522, 1536
-  offset: 31, 144
-  index: -1
-chalice
-  rotate: false
-  xy: 0, 0
-  size: 1178, 1437
-  orig: 1362, 1536
-  offset: 92, 50
+  xy: 1430, 19
+  size: 1784, 1068
+  orig: 2048, 1276
+  offset: 132, 104
   index: -1
 chest
   rotate: false
-  xy: 0, 1439
+  xy: 1910, 1089
   size: 1886, 1590
   orig: 2048, 2048
   offset: 81, 229
   index: -1
-flour_sack
+leaves
   rotate: false
-  xy: 1180, 24
-  size: 1460, 1413
-  orig: 1492, 1536
-  offset: 16, 62
+  xy: 0, 2020
+  size: 1908, 1109
+  orig: 2048, 1236
+  offset: 70, 64
+  index: -1
+money_belt
+  rotate: false
+  xy: 0, 1216
+  size: 1506, 802
+  orig: 1695, 1100
+  offset: 94, 149
+  index: -1
+potion_gold
+  rotate: false
+  xy: 1508, 1390
+  size: 349, 628
+  orig: 361, 630
+  offset: 4, 2
   index: -1
 rat_skull
   rotate: false
-  xy: 2642, 353
+  xy: 0, 0
   size: 1428, 1087
   orig: 1644, 1458
   offset: 108, 186
   index: -1
-scroll
+rusted_chain
   rotate: false
-  xy: 0, 3031
-  size: 2047, 1036
-  orig: 2154, 1143
-  offset: 53, 54
+  xy: 0, 3131
+  size: 2010, 925
+  orig: 2048, 1102
+  offset: 19, 89
+  index: -1
+small_bag
+  rotate: false
+  xy: 3216, 98
+  size: 825, 989
+  orig: 1131, 1204
+  offset: 153, 108
   index: -1
 small_rock
   rotate: false
-  xy: 2049, 2692
+  xy: 2012, 2681
   size: 1928, 1375
   orig: 2048, 1464
   offset: 60, 45
@@ -307,58 +300,58 @@ size: 4096, 4096
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-bone
+cookingpot
   rotate: false
-  xy: 0, 3014
-  size: 1784, 1068
-  orig: 2048, 1276
-  offset: 132, 104
+  xy: 0, 1592
+  size: 1364, 1294
+  orig: 1401, 1536
+  offset: 18, 121
   index: -1
-boulder
+eye
   rotate: false
-  xy: 0, 0
-  size: 1694, 1613
-  orig: 2048, 2048
-  offset: 177, 218
-  index: -1
-large_boulder
-  rotate: false
-  xy: 0, 0
-  size: 1694, 1613
-  orig: 2048, 2048
-  offset: 177, 218
+  xy: 0, 2888
+  size: 1826, 1170
+  orig: 2048, 1314
+  offset: 111, 72
   index: -1
 glowing_lichen
   rotate: false
-  xy: 1786, 2932
+  xy: 1828, 2908
   size: 1768, 1150
   orig: 2048, 1216
   offset: 140, 33
   index: -1
-large_bag
+ladder_up
   rotate: false
-  xy: 1765, 1658
-  size: 1226, 1272
-  orig: 1359, 1382
-  offset: 66, 55
+  xy: 1640, 11
+  size: 1324, 1496
+  orig: 1366, 1536
+  offset: 34, 7
   index: -1
-mysterious_portal
+potion_pink
   rotate: false
-  xy: 1696, 30
-  size: 1604, 1583
-  orig: 1688, 1660
-  offset: 42, 39
+  xy: 3598, 3430
+  size: 349, 628
+  orig: 361, 630
+  offset: 4, 2
+  index: -1
+skull
+  rotate: false
+  xy: 0, 0
+  size: 1638, 1507
+  orig: 1832, 1678
+  offset: 97, 86
   index: -1
 stick
   rotate: false
-  xy: 2993, 1906
+  xy: 2966, 483
   size: 1024, 1024
   orig: 1024, 1024
   offset: 0, 0
   index: -1
 tooth
   rotate: false
-  xy: 0, 1615
+  xy: 1828, 1509
   size: 1763, 1397
   orig: 1842, 1568
   offset: 39, 86
@@ -371,77 +364,91 @@ filter: Nearest, Nearest
 repeat: none
 amulet
   rotate: false
-  xy: 1640, 1698
+  xy: 1606, 1792
   size: 1662, 1048
   orig: 2048, 1390
   offset: 193, 171
   index: -1
 bent_nail
   rotate: false
-  xy: 1640, 2748
+  xy: 1606, 2842
   size: 1654, 1254
   orig: 2036, 1458
   offset: 191, 102
   index: -1
-box
+box_
   rotate: false
-  xy: 1624, 518
-  size: 1411, 1178
-  orig: 1626, 1218
-  offset: 107, 20
+  xy: 3262, 3529
+  size: 650, 567
+  orig: 680, 571
+  offset: 8, 2
   index: -1
 dirty_cloth
   rotate: false
-  xy: 1624, 0
+  xy: 1603, 1274
   size: 1663, 516
   orig: 2048, 754
   offset: 192, 119
   index: -1
+large_bag
+  rotate: false
+  xy: 1624, 0
+  size: 1226, 1272
+  orig: 1359, 1382
+  offset: 66, 55
+  index: -1
+mysterious_portal
+  rotate: false
+  xy: 0, 2513
+  size: 1604, 1583
+  orig: 1688, 1660
+  offset: 42, 39
+  index: -1
 pack
   rotate: false
-  xy: 0, 1222
+  xy: 0, 1240
   size: 1601, 1271
   orig: 1776, 1536
   offset: 87, 133
   index: -1
-skull
-  rotate: false
-  xy: 0, 2495
-  size: 1638, 1507
-  orig: 1832, 1678
-  offset: 97, 86
-  index: -1
-small_bag
-  rotate: false
-  xy: 3037, 707
-  size: 825, 989
-  orig: 1131, 1204
-  offset: 153, 108
-  index: -1
 vial
   rotate: false
-  xy: 0, 28
+  xy: 0, 46
   size: 1622, 1192
   orig: 1780, 1308
   offset: 79, 58
   index: -1
 
 items8.png
-size: 2048, 2048
+size: 4096, 4096
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
 bat_guano
   rotate: false
-  xy: 0, 804
+  xy: 0, 0
   size: 1368, 1054
   orig: 1608, 1240
   offset: 120, 93
   index: -1
-money_belt
+book
   rotate: false
-  xy: 0, 0
-  size: 1506, 802
-  orig: 1695, 1100
-  offset: 94, 149
+  xy: 0, 2495
+  size: 1459, 1248
+  orig: 1522, 1536
+  offset: 31, 144
+  index: -1
+box
+  rotate: false
+  xy: 1461, 2565
+  size: 1411, 1178
+  orig: 1626, 1218
+  offset: 107, 20
+  index: -1
+chalice
+  rotate: false
+  xy: 0, 1056
+  size: 1178, 1437
+  orig: 1362, 1536
+  offset: 92, 50
   index: -1

@@ -52,5 +52,15 @@ public class PackTextures {
             e.printStackTrace();
             System.exit(1);
         }
+
+        // Pack Armor
+        System.out.println("Packing Armor assets...");
+        try {
+            TexturePacker.process(settings, "images/armor", "packed", "armor");
+            System.out.println("Textures packed successfully to assets/packed/armor.atlas");
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }

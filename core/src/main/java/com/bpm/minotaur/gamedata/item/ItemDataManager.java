@@ -266,6 +266,8 @@ public class ItemDataManager {
         assetManager.load("packed/debris.atlas", TextureAtlas.class);
         // Queue Items Atlas
         assetManager.load("packed/items.atlas", TextureAtlas.class);
+        // Queue Armor Atlas
+        assetManager.load("packed/armor.atlas", TextureAtlas.class);
 
         for (ItemTemplate template : itemTemplates.values()) {
             // Load 2D Texture

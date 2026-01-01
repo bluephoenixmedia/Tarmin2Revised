@@ -233,7 +233,24 @@ public class Item implements Renderable {
                     }
                 }
             } else { // Standard Texture Loading
-                if (assetManager.isLoaded(template.texturePath)) {
+                // NEW: Texture Atlas Support for Armor
+                boolean loadedFromAtlas = false;
+                if (template.texturePath.contains("images/armor") && assetManager.isLoaded("packed/armor.atlas")) {
+                    TextureAtlas atlas = assetManager.get("packed/armor.atlas");
+                    String name = template.texturePath.substring(template.texturePath.lastIndexOf('/') + 1);
+                    if (name.endsWith(".png"))
+                        name = name.substring(0, name.length() - 4);
+
+                    tempRegion = atlas.findRegion(name);
+                    if (tempRegion != null) {
+                        loadedFromAtlas = true;
+                    } else {
+                        Gdx.app.error("Item", "Could not find region '" + name + "' in armor.atlas for " + type);
+                    }
+                }
+
+                // Fallback to standalone texture if not in atlas
+                if (!loadedFromAtlas && assetManager.isLoaded(template.texturePath)) {
                     tempTexture = assetManager.get(template.texturePath, Texture.class);
                 }
             }

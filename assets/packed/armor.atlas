@@ -1,0 +1,778 @@
+
+armor.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+Lorica_hamata_arms
+  rotate: false
+  xy: 1288, 823
+  size: 1003, 512
+  orig: 1058, 546
+  offset: 10, 23
+  index: -1
+arms
+  rotate: false
+  xy: 0, 2590
+  size: 2304, 1483
+  orig: 2388, 1536
+  offset: 42, 27
+  index: -1
+banded
+  rotate: false
+  xy: 2306, 1105
+  size: 1695, 1507
+  orig: 1732, 1536
+  offset: 18, 15
+  index: -1
+bronze_helmet
+  rotate: false
+  xy: 1875, 63
+  size: 214, 275
+  orig: 237, 279
+  offset: 9, 2
+  index: -1
+full_plate_boots
+  rotate: false
+  xy: 0, 0
+  size: 1286, 1103
+  orig: 1732, 1536
+  offset: 268, 221
+  index: -1
+full_plate_helmet
+  rotate: false
+  xy: 1288, 1337
+  size: 1010, 1251
+  orig: 1732, 1536
+  offset: 329, 149
+  index: -1
+gauntlets
+  rotate: false
+  xy: 2306, 2614
+  size: 1742, 1459
+  orig: 1843, 1536
+  offset: 50, 39
+  index: -1
+helmet
+  rotate: false
+  xy: 0, 1106
+  size: 1272, 1482
+  orig: 1325, 1536
+  offset: 26, 27
+  index: -1
+hide_helmet
+  rotate: false
+  xy: 1875, 340
+  size: 408, 481
+  orig: 470, 509
+  offset: 48, 6
+  index: -1
+hoplite_silver_armor
+  rotate: false
+  xy: 1288, 14
+  size: 585, 807
+  orig: 661, 839
+  offset: 37, 19
+  index: -1
+leather_leggings
+  rotate: false
+  xy: 3450, 228
+  size: 644, 875
+  orig: 709, 909
+  offset: 17, 0
+  index: -1
+shield
+  rotate: false
+  xy: 2293, 16
+  size: 1155, 1087
+  orig: 1300, 1219
+  offset: 72, 66
+  index: -1
+
+armor2.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+bronze_gauntlets
+  rotate: false
+  xy: 0, 0
+  size: 1136, 1056
+  orig: 1386, 1212
+  offset: 115, 58
+  index: -1
+buckler
+  rotate: false
+  xy: 2166, 1028
+  size: 1395, 1524
+  orig: 1424, 1536
+  offset: 0, 12
+  index: -1
+chain_lamellar
+  rotate: false
+  xy: 0, 1058
+  size: 1385, 1536
+  orig: 1409, 1536
+  offset: 0, 0
+  index: -1
+chain_leggings
+  rotate: false
+  xy: 1387, 1058
+  size: 777, 1536
+  orig: 1732, 1536
+  offset: 498, 0
+  index: -1
+corded_mail
+  rotate: false
+  xy: 2166, 2554
+  size: 1411, 1536
+  orig: 1732, 1536
+  offset: 138, 0
+  index: -1
+gallic_arms
+  rotate: false
+  xy: 2914, 625
+  size: 569, 401
+  orig: 662, 495
+  offset: 30, 45
+  index: -1
+gallic_shield
+  rotate: false
+  xy: 3579, 3036
+  size: 443, 1054
+  orig: 454, 1090
+  offset: 3, 19
+  index: -1
+half_plate_leggings
+  rotate: false
+  xy: 3563, 565
+  size: 479, 720
+  orig: 520, 752
+  offset: 7, 23
+  index: -1
+hide_arms
+  rotate: false
+  xy: 2054, 569
+  size: 858, 457
+  orig: 950, 506
+  offset: 19, 32
+  index: -1
+hoplite_silver_helmet
+  rotate: false
+  xy: 3563, 1287
+  size: 526, 726
+  orig: 585, 740
+  offset: 41, 14
+  index: -1
+large_shield
+  rotate: false
+  xy: 0, 2596
+  size: 2164, 1494
+  orig: 2217, 1536
+  offset: 26, 21
+  index: -1
+light_scale_arms
+  rotate: false
+  xy: 2054, 49
+  size: 1082, 514
+  orig: 1131, 567
+  offset: 49, 40
+  index: -1
+padded_armor
+  rotate: false
+  xy: 1138, 84
+  size: 914, 972
+  orig: 935, 1006
+  offset: 0, 0
+  index: -1
+padded_leggings
+  rotate: false
+  xy: 3579, 2015
+  size: 420, 1019
+  orig: 475, 1029
+  offset: 47, 0
+  index: -1
+studded_leather_boots
+  rotate: false
+  xy: 3138, 48
+  size: 841, 515
+  orig: 903, 538
+  offset: 12, 0
+  index: -1
+
+armor3.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+bascinet
+  rotate: false
+  xy: 0, 0
+  size: 1009, 1536
+  orig: 1386, 1536
+  offset: 211, 0
+  index: -1
+boots
+  rotate: false
+  xy: 0, 2793
+  size: 1598, 1296
+  orig: 1721, 1536
+  offset: 61, 120
+  index: -1
+chain_hauberk
+  rotate: false
+  xy: 2854, 541
+  size: 1224, 1410
+  orig: 1300, 1536
+  offset: 36, 80
+  index: -1
+chain_mail
+  rotate: false
+  xy: 1011, 21
+  size: 1197, 1515
+  orig: 1732, 1536
+  offset: 263, 21
+  index: -1
+chainmail_armor
+  rotate: false
+  xy: 2210, 46
+  size: 632, 748
+  orig: 666, 770
+  offset: 22, 9
+  index: -1
+field_plate_gauntlets
+  rotate: false
+  xy: 0, 1538
+  size: 1349, 1253
+  orig: 1732, 1536
+  offset: 210, 127
+  index: -1
+full_plate_leggings
+  rotate: false
+  xy: 3009, 2950
+  size: 1083, 1139
+  orig: 1732, 1536
+  offset: 398, 188
+  index: -1
+half_plate_arms
+  rotate: false
+  xy: 3009, 2305
+  size: 1073, 643
+  orig: 1108, 679
+  offset: 5, 23
+  index: -1
+hoplite_boots
+  rotate: false
+  xy: 3007, 1972
+  size: 497, 331
+  orig: 519, 367
+  offset: 3, 13
+  index: -1
+hoplite_silver_arms
+  rotate: false
+  xy: 2086, 1548
+  size: 766, 403
+  orig: 843, 447
+  offset: 41, 20
+  index: -1
+light_scale_helmet
+  rotate: false
+  xy: 2210, 796
+  size: 633, 750
+  orig: 671, 813
+  offset: 0, 63
+  index: -1
+small_shield
+  rotate: false
+  xy: 1600, 2613
+  size: 1407, 1476
+  orig: 1410, 1536
+  offset: 3, 12
+  index: -1
+studded_leather_gauntlets
+  rotate: false
+  xy: 3348, 36
+  size: 644, 503
+  orig: 721, 519
+  offset: 28, 12
+  index: -1
+studded_leather_helmet
+  rotate: false
+  xy: 2844, 25
+  size: 502, 514
+  orig: 599, 573
+  offset: 35, 41
+  index: -1
+wood_bone_helmet
+  rotate: false
+  xy: 1351, 1543
+  size: 733, 760
+  orig: 788, 782
+  offset: 21, 15
+  index: -1
+wood_bone_leggings
+  rotate: false
+  xy: 2086, 1953
+  size: 919, 658
+  orig: 945, 745
+  offset: 10, 41
+  index: -1
+
+armor4.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+Lorica_hamata_armor
+  rotate: false
+  xy: 1592, 112
+  size: 882, 974
+  orig: 1013, 993
+  offset: 14, 13
+  index: -1
+body_shield
+  rotate: false
+  xy: 0, 2574
+  size: 866, 1512
+  orig: 900, 1536
+  offset: 13, 0
+  index: 1
+body_shield
+  rotate: false
+  xy: 0, 1060
+  size: 855, 1512
+  orig: 912, 1536
+  offset: 26, 0
+  index: 2
+breastplate
+  rotate: false
+  xy: 857, 1088
+  size: 1105, 1484
+  orig: 1293, 1536
+  offset: 94, 26
+  index: -1
+bronze_boots
+  rotate: false
+  xy: 2956, 2925
+  size: 1124, 1161
+  orig: 1732, 1536
+  offset: 334, 166
+  index: -1
+field_plate
+  rotate: false
+  xy: 868, 2614
+  size: 1136, 1472
+  orig: 1732, 1536
+  offset: 307, 25
+  index: -1
+field_plate_boots
+  rotate: false
+  xy: 2956, 1718
+  size: 1114, 1205
+  orig: 1732, 1536
+  offset: 263, 158
+  index: -1
+field_plate_helmet
+  rotate: false
+  xy: 2006, 2756
+  size: 942, 1330
+  orig: 1732, 1536
+  offset: 424, 128
+  index: -1
+full_plate
+  rotate: false
+  xy: 1964, 1172
+  size: 990, 1440
+  orig: 1732, 1536
+  offset: 371, 55
+  index: -1
+full_plate_gauntlets
+  rotate: false
+  xy: 0, 24
+  size: 1049, 1034
+  orig: 1732, 1536
+  offset: 575, 243
+  index: -1
+hoplite_silver_gauntlets
+  rotate: false
+  xy: 3567, 1213
+  size: 526, 503
+  orig: 545, 541
+  offset: 11, 0
+  index: -1
+hoplite_silver_legs
+  rotate: false
+  xy: 1051, 63
+  size: 539, 1023
+  orig: 611, 1036
+  offset: 27, 0
+  index: -1
+rusty_armor
+  rotate: false
+  xy: 2476, 0
+  size: 1334, 1170
+  orig: 1558, 1302
+  offset: 112, 66
+  index: -1
+splint_mail_gauntlets
+  rotate: false
+  xy: 2956, 1213
+  size: 609, 503
+  orig: 647, 541
+  offset: 30, 12
+  index: -1
+
+armor5.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+brigandine
+  rotate: false
+  xy: 3438, 1338
+  size: 657, 600
+  orig: 738, 645
+  offset: 48, 10
+  index: -1
+bronze_breastplate
+  rotate: false
+  xy: 897, 2835
+  size: 994, 1237
+  orig: 1732, 1536
+  offset: 351, 154
+  index: -1
+bronze_leggings
+  rotate: false
+  xy: 0, 1434
+  size: 920, 1296
+  orig: 1732, 1536
+  offset: 429, 84
+  index: -1
+chain_helmet
+  rotate: false
+  xy: 922, 1624
+  size: 972, 1209
+  orig: 1732, 1536
+  offset: 367, 197
+  index: -1
+chainmail_arms
+  rotate: false
+  xy: 2272, 1114
+  size: 819, 396
+  orig: 839, 459
+  offset: 1, 38
+  index: -1
+field_plate_leggings
+  rotate: false
+  xy: 1893, 2879
+  size: 1173, 1193
+  orig: 1732, 1536
+  offset: 284, 178
+  index: -1
+full_plate_arms
+  rotate: false
+  xy: 0, 216
+  size: 1214, 1216
+  orig: 1732, 1536
+  offset: 345, 161
+  index: -1
+half_plate_helmet
+  rotate: false
+  xy: 3632, 128
+  size: 461, 631
+  orig: 542, 674
+  offset: 41, 24
+  index: -1
+hide_armor
+  rotate: false
+  xy: 1216, 86
+  size: 677, 961
+  orig: 696, 991
+  offset: 8, 15
+  index: -1
+hide_boots
+  rotate: false
+  xy: 3093, 761
+  size: 809, 575
+  orig: 838, 607
+  offset: 5, 24
+  index: -1
+hide_leggings
+  rotate: false
+  xy: 1895, 95
+  size: 732, 952
+  orig: 791, 993
+  offset: 0, 7
+  index: -1
+hoplite_armor
+  rotate: false
+  xy: 2629, 429
+  size: 461, 683
+  orig: 508, 707
+  offset: 10, 5
+  index: -1
+hoplite_shield
+  rotate: false
+  xy: 1896, 1512
+  size: 859, 896
+  orig: 1005, 925
+  offset: 87, 5
+  index: -1
+leather_arms
+  rotate: false
+  xy: 2757, 1575
+  size: 679, 363
+  orig: 747, 434
+  offset: 35, 37
+  index: -1
+leather_helmet
+  rotate: false
+  xy: 1896, 1054
+  size: 374, 456
+  orig: 433, 509
+  offset: 22, 19
+  index: -1
+legs
+  rotate: false
+  xy: 0, 2732
+  size: 895, 1340
+  orig: 1107, 1536
+  offset: 106, 98
+  index: -1
+light_scale_armor
+  rotate: false
+  xy: 3068, 2539
+  size: 926, 913
+  orig: 936, 957
+  offset: 10, 31
+  index: -1
+light_scale_gauntlets
+  rotate: false
+  xy: 1216, 1049
+  size: 678, 573
+  orig: 717, 603
+  offset: 21, 12
+  index: -1
+splint_mail_arms
+  rotate: false
+  xy: 1896, 2410
+  size: 1160, 467
+  orig: 1190, 531
+  offset: 18, 50
+  index: -1
+splint_mail_helmet
+  rotate: false
+  xy: 3092, 0
+  size: 538, 759
+  orig: 560, 797
+  offset: 13, 24
+  index: -1
+wood_bone_arms
+  rotate: false
+  xy: 3058, 1940
+  size: 916, 597
+  orig: 926, 708
+  offset: 4, 43
+  index: -1
+wood_bone_boots
+  rotate: false
+  xy: 3068, 3454
+  size: 928, 618
+  orig: 941, 686
+  offset: 13, 9
+  index: -1
+
+armor6.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+chainmail_gauntlets
+  rotate: false
+  xy: 0, 26
+  size: 643, 351
+  orig: 693, 392
+  offset: 42, 0
+  index: -1
+chainmail_helmet
+  rotate: false
+  xy: 1102, 611
+  size: 538, 748
+  orig: 564, 786
+  offset: 13, 25
+  index: -1
+chainmail_leggings
+  rotate: false
+  xy: 2116, 2760
+  size: 597, 549
+  orig: 659, 589
+  offset: 36, 13
+  index: -1
+cloak
+  rotate: false
+  xy: 634, 3311
+  size: 776, 753
+  orig: 831, 768
+  offset: 27, 8
+  index: -1
+gallic_helmet
+  rotate: false
+  xy: 1679, 1929
+  size: 362, 467
+  orig: 475, 511
+  offset: 56, 33
+  index: -1
+gallic_leggings
+  rotate: false
+  xy: 1280, 1841
+  size: 397, 480
+  orig: 455, 526
+  offset: 33, 24
+  index: -1
+gallic_plate
+  rotate: false
+  xy: 0, 2186
+  size: 621, 938
+  orig: 663, 959
+  offset: 8, 13
+  index: -1
+great_boots
+  rotate: false
+  xy: 2930, 3317
+  size: 659, 747
+  orig: 746, 780
+  offset: 51, 6
+  index: -1
+great_helm
+  rotate: false
+  xy: 2715, 2619
+  size: 581, 690
+  orig: 621, 703
+  offset: 0, 0
+  index: -1
+half_plate
+  rotate: false
+  xy: 552, 402
+  size: 548, 913
+  orig: 582, 939
+  offset: 18, 8
+  index: -1
+half_plate_boots
+  rotate: false
+  xy: 623, 2221
+  size: 631, 594
+  orig: 653, 619
+  offset: 13, 25
+  index: -1
+half_plate_gauntlets
+  rotate: false
+  xy: 3591, 3586
+  size: 489, 478
+  orig: 519, 534
+  offset: 0, 37
+  index: -1
+hoplite_helmet
+  rotate: false
+  xy: 1655, 2398
+  size: 391, 490
+  orig: 461, 506
+  offset: 25, 3
+  index: -1
+hoplite_leggings
+  rotate: false
+  xy: 1280, 1371
+  size: 386, 468
+  orig: 468, 505
+  offset: 29, 13
+  index: -1
+hoplite_silver_boots
+  rotate: false
+  xy: 1412, 2890
+  size: 702, 492
+  orig: 747, 549
+  offset: 32, 0
+  index: -1
+leather_boots
+  rotate: false
+  xy: 1412, 3384
+  size: 808, 680
+  orig: 865, 705
+  offset: 33, 25
+  index: -1
+leather_plate
+  rotate: false
+  xy: 0, 3126
+  size: 632, 938
+  orig: 663, 980
+  offset: 5, 28
+  index: -1
+light_scale_boots
+  rotate: false
+  xy: 634, 2817
+  size: 703, 492
+  orig: 723, 511
+  offset: 20, 0
+  index: -1
+light_scale_leggings
+  rotate: false
+  xy: 3298, 2648
+  size: 585, 667
+  orig: 660, 748
+  offset: 48, 24
+  index: -1
+padded_helmet
+  rotate: false
+  xy: 1256, 2323
+  size: 397, 492
+  orig: 484, 501
+  offset: 49, 9
+  index: -1
+splint_mail_armor
+  rotate: false
+  xy: 0, 379
+  size: 550, 936
+  orig: 616, 975
+  offset: 39, 26
+  index: -1
+splint_mail_leggings
+  rotate: false
+  xy: 652, 1361
+  size: 626, 858
+  orig: 684, 897
+  offset: 29, 14
+  index: -1
+studded_leather_armor
+  rotate: false
+  xy: 1349, 0
+  size: 573, 609
+  orig: 620, 627
+  offset: 17, 5
+  index: -1
+studded_leather_arms
+  rotate: false
+  xy: 645, 49
+  size: 702, 351
+  orig: 779, 369
+  offset: 26, 18
+  index: -1
+studded_leather_leggings
+  rotate: false
+  xy: 2048, 2290
+  size: 538, 468
+  orig: 600, 558
+  offset: 24, 24
+  index: -1
+visor
+  rotate: false
+  xy: 2222, 3311
+  size: 706, 753
+  orig: 753, 768
+  offset: 23, 8
+  index: -1
+wood_bone_armor
+  rotate: false
+  xy: 0, 1317
+  size: 650, 867
+  orig: 672, 901
+  offset: 8, 28
+  index: -1

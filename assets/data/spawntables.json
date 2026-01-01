@@ -2172,6 +2172,432 @@
       "minLevel": 10,
       "maxLevel": 99,
       "weight": 5
+    },
+    {
+      "type": "BRONZE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BRONZE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BRONZE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BRONZE_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAIN_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAIN_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FIELD_PLATE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FIELD_PLATE_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FIELD_PLATE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FIELD_PLATE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FULL_PLATE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FULL_PLATE_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FULL_PLATE_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FULL_PLATE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "FULL_PLATE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "GALLIC_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "GALLIC_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "GALLIC_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "GALLIC_SHIELD",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HALF_PLATE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HIDE_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HIDE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HIDE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HIDE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SHIELD",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_ARMOR",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "HOPLITE_SILVER_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEATHER_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEATHER_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LEATHER_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LIGHT_SCALE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "LORICA_HAMATA_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "PADDED_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "PADDED_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SPLINT_MAIL_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SPLINT_MAIL_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SPLINT_MAIL_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SPLINT_MAIL_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "STUDDED_LEATHER_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "WOOD_BONE_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "WOOD_BONE_BOOTS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "WOOD_BONE_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "WOOD_BONE_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "SHIELD_BODY_2",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAINMAIL_ARMOR",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAINMAIL_ARMS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAINMAIL_GAUNTLETS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAINMAIL_HELMET",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "CHAINMAIL_LEGGINGS",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "RUSTY_ARMOR",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
     }
   ],
   "containerSpawnTable": [

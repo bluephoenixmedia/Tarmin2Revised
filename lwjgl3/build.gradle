@@ -224,3 +224,13 @@ task runTexturePacker(type: JavaExec) {
     workingDir = rootProject.file('assets')
     ignoreExitValue = true
 }
+
+task runUnlockSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Unlock System Simulation"
+    mainClass = 'com.bpm.minotaur.lwjgl3.UnlockSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}

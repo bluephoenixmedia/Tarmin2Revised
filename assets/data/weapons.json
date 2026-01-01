@@ -57,7 +57,7 @@
   },
   "ALHULAK": {
     "friendlyName": "Alhulak",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/Alhulak.png",
     "spriteData": [
       "........................",
       "........................",
@@ -113,7 +113,7 @@
   },
   "ANKUS_ELEPHANT_GOAD": {
     "friendlyName": "Ankus (Elephant Goad)",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/ankuselephantgoad.png",
     "spriteData": [
       "........................",
       "........................",
@@ -169,7 +169,7 @@
   },
   "ARQUEBUS": {
     "friendlyName": "Arquebus",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/Arquebus.png",
     "spriteData": [
       "........................",
       "........................",
@@ -225,63 +225,7 @@
   },
   "ARROW_DAIKYU": {
     "friendlyName": "Arrow, Daikyu",
-    "texturePath": "images/weapons/bow.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      ".......................#",
-      "......................#.",
-      ".....................##.",
-      "....................##..",
-      "...................##...",
-      "..................##....",
-      ".................##.....",
-      "................##......",
-      "...............##.......",
-      "..............##........",
-      ".............##.........",
-      "............##..........",
-      "...........##...........",
-      "..........##............",
-      ".........###............",
-      "........##.##...........",
-      ".......##...##..........",
-      "......###...###.........",
-      ".......#.....#..........",
-      ".......#.....#..........",
-      "........................"
-    ],
-    "baseValue": 10,
-    "damageDice": "1d4",
-    "armorClassBonus": 0,
-    "isWeapon": true,
-    "isRanged": false,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "variants": [
-      {
-        "color": "TAN",
-        "minLevel": 1,
-        "maxLevel": 99,
-        "weight": 1
-      }
-    ],
-    "locked": true
-  },
-  "ARROW_FLIGHT": {
-    "friendlyName": "Arrow, Flight",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/flightarrow.png",
     "spriteData": [
       "........................",
       "........................",
@@ -337,7 +281,7 @@
   },
   "ASSEGAI": {
     "friendlyName": "Assegai",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/assegai.png",
     "spriteData": [
       "........................",
       "........................",
@@ -393,7 +337,7 @@
   },
   "AXE_BATTLE": {
     "friendlyName": "Axe, Battle",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/battle_axe.png",
     "spriteData": [
       "........................",
       "........................",
@@ -449,7 +393,7 @@
   },
   "BAGH_NAKH_TIGER_CLAWS": {
     "friendlyName": "Bagh Nakh (Tiger Claws)",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/baghnakh.png",
     "spriteData": [
       "........................",
       "........................",
@@ -505,7 +449,7 @@
   },
   "BARD_S_FRIEND": {
     "friendlyName": "Bard's Friend",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/bardfriend.png",
     "spriteData": [
       "........................",
       "........................",
@@ -561,7 +505,7 @@
   },
   "BASILARD": {
     "friendlyName": "Basilard",
-    "texturePath": "images/weapons/bow.png",
+    "texturePath": "images/weapons/basiliard.png",
     "spriteData": [
       "........................",
       "........................",
