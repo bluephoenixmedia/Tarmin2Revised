@@ -38,6 +38,11 @@ import java.util.ArrayList;
 import java.util.List;
 import com.bpm.minotaur.managers.CraftingManager;
 import com.bpm.minotaur.managers.CraftingManager.Recipe;
+import com.bpm.minotaur.paperdoll.PaperDollWidget;
+
+import com.bpm.minotaur.paperdoll.data.FragmentResolver;
+import com.bpm.minotaur.paperdoll.data.SkeletonData;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 public class InventoryScreen extends BaseScreen {
 
@@ -58,6 +63,11 @@ public class InventoryScreen extends BaseScreen {
     // private Table paperDollTable; // Removed
     private Table backpackTable;
     private Table quickSlotTable;
+
+    // Paper Doll Components
+    private PaperDollWidget paperDollWidget;
+    private SkeletonData skeletonData;
+    private FragmentResolver fragmentResolver;
 
     private List<InventorySlot> allSlots = new ArrayList<>();
 
@@ -243,11 +253,51 @@ public class InventoryScreen extends BaseScreen {
             targetWidth = paperDollTexture.getWidth() * scale;
         }
 
+        // Initialize Paper Doll Components
+        if (paperDollWidget == null) {
+            skeletonData = new SkeletonData();
+            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+
+            TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
+            TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
+
+            fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
+            paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
+        }
+
+        // Pass debug assets (texture and font are already created in show())
+        if (whitePixel != null && font != null) {
+            paperDollWidget.setDebugAssets(whitePixel, font);
+        }
+
         Group paperDollGroup = new Group();
-        Image paperDollImage = new Image(paperDollTexture);
+        Image paperDollImage = new Image(paperDollTexture); // Old Static Image
         paperDollImage.setSize(targetWidth, scaledHeight);
+
+        // Setup Widget Size and Scale
+        paperDollWidget.setSize(targetWidth, scaledHeight);
+        // We might need to scale the widget's content?
+        // The widget draws fragments at offsets defined in skeleton.json.
+        // If skeleton.json coordinates are in pixels matching the original image size,
+        // we need to scale the Group to match targetWidth/ImageWidth.
+        paperDollWidget.setScale(scale);
+
+        // Add a background placeholder if needed, or the base body
         paperDollGroup.setSize(targetWidth, scaledHeight);
+
+        // Add static image first (Background/Body)
         paperDollGroup.addActor(paperDollImage);
+        // Add widget second (Armor/Equipment Layers)
+        paperDollGroup.addActor(paperDollWidget);
+
+        // --- NEW: Add Head Overlay ---
+        Texture headTexture = new Texture(Gdx.files.internal("images/inventory_doll_head.png"));
+        Image headImage = new Image(headTexture);
+        // Initial positioning - user said they would help position it.
+        // Assuming it matches the original paper doll scale.
+        headImage.setSize(paperDollTexture.getWidth() * .04f, paperDollTexture.getHeight() * .08f);
+        headImage.setPosition(402, 465); // Start at 0,0 relative to the group
+        paperDollGroup.addActor(headImage);
 
         // Define slot positions (relative to the paper doll image bottom-left)
         // These are ESTIMATES and should be tuned based on the actual image.
@@ -437,6 +487,35 @@ public class InventoryScreen extends BaseScreen {
     private void refreshSlots() {
         PlayerEquipment equip = player.getEquipment();
         Inventory inv = player.getInventory();
+
+        // --- Update Paper Doll Widget ---
+        if (paperDollWidget != null) {
+            paperDollWidget.clearEquipment();
+
+            // Add Base Body (Hardcoded for now, could be dynamic based on race/gender)
+            // paperDollWidget.setBody(new DollFragment(bodyRegion, ...));
+
+            // Iterate all equipment and equip to doll
+            // Note: We need to map slot items to widget logic.
+            // The widget's equip() method resolves items by Type.
+
+            if (equip.getWornHelmet() != null)
+                paperDollWidget.equip(equip.getWornHelmet());
+            if (equip.getWornChest() != null)
+                paperDollWidget.equip(equip.getWornChest());
+            if (equip.getWornLegs() != null)
+                paperDollWidget.equip(equip.getWornLegs());
+            if (equip.getWornBoots() != null)
+                paperDollWidget.equip(equip.getWornBoots());
+            if (equip.getWornGauntlets() != null)
+                paperDollWidget.equip(equip.getWornGauntlets());
+
+            // Weapons
+            if (inv.getRightHand() != null)
+                paperDollWidget.equip(inv.getRightHand());
+            if (inv.getLeftHand() != null)
+                paperDollWidget.equip(inv.getLeftHand()); // Shield or Offhand
+        }
 
         for (InventorySlot slot : allSlots) {
             slot.setItem(null);

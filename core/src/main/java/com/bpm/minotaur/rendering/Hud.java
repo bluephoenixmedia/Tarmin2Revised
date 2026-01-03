@@ -50,7 +50,8 @@ public class Hud implements Disposable {
     private final BitmapFont directionFont;
     private final SpriteBatch spriteBatch;
     private final ShapeRenderer shapeRenderer;
-    private final Texture hudBackground;
+    private final Texture bottomBarBg;
+    private final TextureRegionDrawable bottomBarDrawable;
 
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
@@ -60,7 +61,7 @@ public class Hud implements Disposable {
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
-    private final Label messageLabel;
+    private final Label logLabel; // Replaces messageLabel for the log area
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
     private Label heldItemLabel;
@@ -70,26 +71,13 @@ public class Hud implements Disposable {
     private final Actor leftHandSlot;
     private final Actor rightHandSlot;
 
-    private final Texture messageBackgroundTexture;
-
-    private final TextureRegionDrawable messageBackgroundDrawable;
-
-    private final GlyphLayout glyphLayout = new GlyphLayout();
-
-    // --- Table References for Debug Toggle ---
-    private final Table mainContentTable;
-    private final Table leftTable;
-    private final Table rightTable;
-    private final Table warTable;
-    private final Table spiritualTable;
-    private final Table foodTable;
-    private final Table arrowsTable;
-    private final Table treasureTable;
-    private final Table lvlExpTable;
-    private final Table handsAndCompassTable;
-    private final Table levelTable;
-    private final Table messageTable;
+    // --- Layout Tables ---
     private final Table mainContainer;
+    private final Table bottomBarTable;
+    private final Table statsTable;
+    private final Table logTable;
+    private final Table inventoryTable;
+
     private final WorldManager worldManager;
     private final EncounterWindow encounterWindow;
 
@@ -103,6 +91,7 @@ public class Hud implements Disposable {
     private final GameMode gameMode;
 
     private static final Color GLOW_COLOR_UI = new Color(1.0f, 0.9f, 0.2f, 0.7f);
+    private static final Color BG_COLOR_UI = new Color(0f, 0f, 0f, 0.8f);
 
     // --- Attack Indicators ---
     private static class AttackIndicator {
@@ -122,6 +111,8 @@ public class Hud implements Disposable {
             return;
         attackIndicators.add(new AttackIndicator(dir));
     }
+
+    private final GlyphLayout glyphLayout = new GlyphLayout();
     // -------------------------
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
@@ -141,16 +132,14 @@ public class Hud implements Disposable {
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
         stage = new Stage(viewport, sb);
 
-        hudBackground = new Texture(Gdx.files.internal("images/hud_background.png"));
-
-        // --- Create a semi-transparent background for the message table ---
+        // --- Create Background ---
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(1, 1, 1, 0.3f); // White, 30% opaque
+        pixmap.setColor(BG_COLOR_UI);
         pixmap.fill();
-        messageBackgroundTexture = new Texture(pixmap);
+        bottomBarBg = new Texture(pixmap);
+        bottomBarDrawable = new TextureRegionDrawable(new TextureRegion(bottomBarBg));
         pixmap.dispose();
 
-        messageBackgroundDrawable = new TextureRegionDrawable(new TextureRegion(messageBackgroundTexture));
         // --- Font Loading ---
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -164,128 +153,132 @@ public class Hud implements Disposable {
         directionFont = generator.generateFont(parameter);
         generator.dispose();
 
-        // --- Attack Indicators ---
         attackIndicators = new java.util.ArrayList<>();
-        // -------------------------
 
-        // --- Game Log Font (Default Arial is thinner than Intellivision) ---
+        // --- Game Log Font ---
         logFont = new BitmapFont();
         logFont.getData().setScale(1.0f);
 
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
+        Label.LabelStyle headerStyle = new Label.LabelStyle(font, Color.GOLD);
         Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
-        Label.LabelStyle messageLabelStyle = new Label.LabelStyle(font, Color.BLACK);
+        Label.LabelStyle logLabelStyle = new Label.LabelStyle(font, Color.LIGHT_GRAY);
 
         Label.LabelStyle heldItemStyle = new Label.LabelStyle(font, Color.WHITE);
         heldItemStyle.font.getData().setScale(0.8f);
 
-        // --- Layout Setup (Tables) ---
-        mainContentTable = new Table();
+        // --- Initialize Tables ---
+        bottomBarTable = new Table();
+        bottomBarTable.setBackground(bottomBarDrawable);
 
-        // --- Left Table (Backpack) ---
-        leftTable = new Table();
+        statsTable = new Table();
+        logTable = new Table();
+        inventoryTable = new Table();
 
+        // --- Stats Section (Left) ---
+        warStrengthValueLabel = new Label("", labelStyle);
+        spiritualStrengthValueLabel = new Label("", labelStyle);
+        foodValueLabel = new Label("", labelStyle);
+        levelLabel = new Label("", labelStyle);
+        xpLabel = new Label("", labelStyle);
+        dungeonLevelLabel = new Label("", labelStyle);
+        directionLabel = new Label("", directionLabelStyle); // Compass
+
+        statsTable.top().left().pad(20);
+
+        // Row 1: HP & MP
+        statsTable.add(new Label("HP:", headerStyle)).left();
+        statsTable.add(warStrengthValueLabel).left().padLeft(10).width(150);
+        statsTable.add(new Label("MP:", headerStyle)).left().padLeft(20);
+        statsTable.add(spiritualStrengthValueLabel).left().padLeft(10).expandX();
+        statsTable.row().padTop(10);
+
+        // Row 2: Food & Level
+        statsTable.add(new Label("FOOD:", headerStyle)).left();
+        statsTable.add(foodValueLabel).left().padLeft(10);
+        statsTable.add(new Label("LVL:", headerStyle)).left().padLeft(20);
+        statsTable.add(levelLabel).left().padLeft(10);
+        statsTable.row().padTop(10);
+
+        // Row 3: XP & Dungeon Level
+        statsTable.add(new Label("EXP:", headerStyle)).left();
+        statsTable.add(xpLabel).left().padLeft(10);
+        statsTable.add(dungeonLevelLabel).colspan(2).left().padLeft(20);
+        statsTable.row().padTop(10);
+
+        // Compass (Bottom of Left Panel)
+        statsTable.add(new Label("FACING:", headerStyle)).left().padTop(10);
+        statsTable.add(directionLabel).left().padLeft(10).padTop(10);
+
+        // --- Log Section (Center) ---
+        logLabel = new Label("", logLabelStyle);
+        logLabel.setWrap(true);
+        logLabel.setAlignment(com.badlogic.gdx.utils.Align.bottomLeft);
+
+        logTable.add(logLabel).grow().pad(10);
+
+        // --- Inventory Section (Right) ---
         float slotSize = 60f;
+
+        // Init Actors
         for (int i = 0; i < 6; i++) {
             backpackSlots[i] = new Actor();
         }
+        leftHandSlot = new Actor();
+        rightHandSlot = new Actor();
 
-        leftTable.add(backpackSlots[0]).width(slotSize).height(slotSize);
-        leftTable.add(backpackSlots[1]).width(slotSize).height(slotSize);
-        leftTable.add(backpackSlots[2]).width(slotSize).height(slotSize);
-        leftTable.row();
-        leftTable.add(backpackSlots[3]).width(slotSize).height(slotSize);
-        leftTable.add(backpackSlots[4]).width(slotSize).height(slotSize);
-        leftTable.add(backpackSlots[5]).width(slotSize).height(slotSize);
+        Table handsTable = new Table();
+        handsTable.add(new Label("L", headerStyle)).padRight(5);
+        handsTable.add(leftHandSlot).size(slotSize).padRight(20);
+        handsTable.add(rightHandSlot).size(slotSize).padLeft(20);
+        handsTable.add(new Label("R", headerStyle)).padLeft(5);
 
-        int standardPadLeft = 180;
+        Table backpackTable = new Table();
+        backpackTable.add(backpackSlots[0]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[1]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[2]).size(slotSize).pad(4);
+        backpackTable.row();
+        backpackTable.add(backpackSlots[3]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[4]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[5]).size(slotSize).pad(4);
 
-        // --- Right Table (Player Stats) ---
-        rightTable = new Table();
+        inventoryTable.add(handsTable).padBottom(10).row();
+        inventoryTable.add(backpackTable);
 
-        // War Strength
-        warStrengthValueLabel = new Label("", labelStyle);
-        warTable = new Table();
-        warTable.padLeft(standardPadLeft);
-        warTable.add(new Label("HP", labelStyle)).padRight(10);
-        warTable.padBottom(-10);
-        warTable.add(warStrengthValueLabel);
-
-        // Spiritual Strength
-        spiritualStrengthValueLabel = new Label("", labelStyle);
-        spiritualTable = new Table();
-        spiritualTable.padLeft(standardPadLeft);
-        spiritualTable.add(new Label("MP", labelStyle)).padRight(10);
-        spiritualTable.padBottom(-10);
-        spiritualTable.add(spiritualStrengthValueLabel);
-
-        // Food
-        foodValueLabel = new Label("", labelStyle);
-        foodTable = new Table();
-        foodTable.padLeft(standardPadLeft);
-        foodTable.add(new Label("FOOD", labelStyle)).padRight(10);
-        foodTable.padBottom(-10);
-        foodTable.add(foodValueLabel);
-
-        // Arrows
-        arrowsValueLabel = new Label("", labelStyle);
-        arrowsTable = new Table();
-        arrowsTable.padLeft(100);
-        arrowsTable.add(new Label("ARROWS", labelStyle)).padRight(10);
-        arrowsTable.padBottom(-10);
-        arrowsTable.add(arrowsValueLabel);
-
-        // Treasure
-        treasureValueLabel = new Label("", labelStyle);
-        treasureTable = new Table();
-        treasureTable.padLeft(standardPadLeft);
-        treasureTable.add(new Label("TREASURE", labelStyle)).padRight(30);
-        treasureTable.padBottom(-50);
-        treasureTable.add(treasureValueLabel);
-
-        // Level & Experience
-        levelLabel = new Label("", labelStyle);
-        xpLabel = new Label("", labelStyle);
-
-        lvlExpTable = new Table();
-        lvlExpTable.padLeft(standardPadLeft);
-        lvlExpTable.add(new Label("LVL:", labelStyle)).padRight(10);
-        lvlExpTable.add(levelLabel).padRight(30);
-        lvlExpTable.add(new Label("EXP:", labelStyle)).padRight(10);
-        lvlExpTable.add(xpLabel);
-
-        // --- Assemble Right Table ---
-        rightTable.add(warTable).left().padTop(10).padBottom(20).padRight(10);
-        rightTable.add(spiritualTable).right().expandX().padTop(10).padBottom(20).padRight(10);
-        rightTable.row();
-
-        rightTable.add(foodTable).left();
-        rightTable.add(arrowsTable).right().expandX().padRight(10);
-        rightTable.row();
-
-        rightTable.add(treasureTable).left().padTop(10);
-
-        // Combat Info
+        // --- Combat/Extra Labels (Hidden by default, overlaid or integrated) ---
+        // For now, keeping them simple.
         monsterStrengthLabel = new Label("", labelStyle);
         combatStatusLabel = new Label("", labelStyle);
-        rightTable.row();
-        rightTable.add(new Label("MONSTER", labelStyle)).left().padTop(50).padLeft(standardPadLeft);
-        rightTable.add(monsterStrengthLabel).right().padTop(50).padRight(10);
-        rightTable.row();
-        rightTable.row();
-        rightTable.add(lvlExpTable).left().padTop(10);
-
+        treasureValueLabel = new Label("", labelStyle);
+        arrowsValueLabel = new Label("", labelStyle);
         rightHandStatsLabel = new Label("", labelStyle);
-        rightTable.row();
-        rightTable.add(rightHandStatsLabel).left().padTop(10).padRight(10);
+        heldItemLabel = new Label("", heldItemStyle);
 
-        // --- Initialize Combat Menu ---
+        // Add combat info to stats table for now?
+        statsTable.row();
+        statsTable.add(monsterStrengthLabel).colspan(4).left().padTop(10);
+
+        // --- Assemble Bottom Bar ---
+        bottomBarTable.add(statsTable).width(500).left().top().pad(10).padLeft(320); // Shifted right for Combat Menu
+        bottomBarTable.add(inventoryTable).width(400).center().pad(10); // Inventory in center
+        bottomBarTable.add(logTable).expandX().fill().pad(10); // Log on right
+
+        // --- Main Container ---
+        mainContainer = new Table();
+        mainContainer.setFillParent(true);
+        mainContainer.bottom();
+        // Add Bottom Bar Height = 250px
+        mainContainer.add(bottomBarTable).growX().height(250);
+
+        stage.addActor(mainContainer);
+
+        // Initialize Combat Menu
         combatMenu = new CombatMenu(font);
         combatMenu.setVisible(false);
         stage.addActor(combatMenu);
 
-        // --- Encounter Window ---
+        // Encounter Window
         com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle btnStyle = new com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle();
         btnStyle.font = font;
         btnStyle.fontColor = Color.WHITE;
@@ -296,63 +289,8 @@ public class Hud implements Disposable {
                 new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(font, Color.WHITE),
                 btnStyle);
         encounterWindow.setSize(1000, 800);
-        encounterWindow.setPosition((1920 - 1000) / 2f, (1080 - 800) / 2f);
+        encounterWindow.setPosition((viewport.getWorldWidth() - 1000) / 2f, (viewport.getWorldHeight() - 800) / 2f);
         stage.addActor(encounterWindow);
-
-        // --- Assemble Main Content Table ---
-        mainContentTable.add(leftTable).width(500).padLeft(50).spaceTop(10).left();
-        mainContentTable.add(rightTable).expandX().right().spaceTop(10);
-
-        // --- Hands and Compass Table ---
-        handsAndCompassTable = new Table();
-
-        leftHandSlot = new Actor();
-        rightHandSlot = new Actor();
-        directionLabel = new Label("", directionLabelStyle);
-
-        handsAndCompassTable.add(leftHandSlot).width(slotSize).height(slotSize).padRight(20);
-        handsAndCompassTable.add(directionLabel).width(slotSize).height(slotSize);
-        handsAndCompassTable.add(rightHandSlot).width(slotSize).height(slotSize).padLeft(20);
-
-        handsAndCompassTable.row();
-        heldItemLabel = new Label("Empty", heldItemStyle);
-        handsAndCompassTable.add(heldItemLabel).colspan(3).padTop(10).center();
-
-        // --- Dungeon Level Table ---
-        dungeonLevelLabel = new Label("", labelStyle);
-        levelTable = new Table();
-        levelTable.add(dungeonLevelLabel);
-
-        // --- Message Table ---
-        messageLabel = new Label("", messageLabelStyle);
-        messageTable = new Table();
-
-        messageTable.setBackground(messageBackgroundDrawable);
-
-        messageTable.add(messageLabel).center().pad(5f);
-
-        // --- Root Table (Main Container) ---
-        mainContainer = new Table();
-        mainContainer.bottom();
-        mainContainer.setFillParent(true);
-
-        mainContainer.add(messageTable).colspan(3).expandX().padBottom(20);
-        mainContainer.row();
-
-        mainContainer.add(mainContentTable).colspan(3).expandX().fillX();
-        mainContainer.row();
-
-        mainContainer.add(new Actor()).expandX(); // Left spacer
-        mainContainer.add(handsAndCompassTable).padBottom(1);
-        mainContainer.add(new Actor()).expandX(); // Right spacer
-        mainContainer.row();
-
-        mainContainer.add(levelTable).colspan(3).expandX().padBottom(10);
-
-        stage.addActor(mainContainer);
-
-        messageLabel.setVisible(false);
-        messageTable.setBackground((Drawable) null);
     }
 
     public void update(float dt) {
@@ -366,7 +304,7 @@ public class Hud implements Disposable {
         foodValueLabel.setText(String.format("%d", player.getFood()));
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(player.getFacing().name().substring(0, 1));
-        dungeonLevelLabel.setText("DUNGEON LEVEL " + maze.getLevel());
+        dungeonLevelLabel.setText("DUNGEON LVL " + maze.getLevel());
         treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
@@ -402,7 +340,6 @@ public class Hud implements Disposable {
             combatStatusLabel.setVisible(true);
 
             // Display different status messages based on whose turn it is
-            // Display different status messages based on whose turn it is
             switch (combatManager.getCurrentState()) {
                 case PLAYER_TURN:
                     combatStatusLabel.setText("PLAYER TURN");
@@ -416,35 +353,33 @@ public class Hud implements Disposable {
             }
         } else {
             // Hide combat labels when not in combat
+            monsterStrengthLabel.setText(""); // clear text instead of hide to avoid layout shifts if we want
+                                              // consistency
             monsterStrengthLabel.setVisible(false);
             combatStatusLabel.setVisible(false);
         }
 
-        // Get only the message events
-        List<GameEvent> messageEvents = eventManager.getMessageEvents();
-
-        // Display the oldest game event message, or an empty string if there are no
-        // events
-        if (!messageEvents.isEmpty()) {
-            messageLabel.setText(messageEvents.get(0).message);
-
-            messageLabel.setVisible(true);
-            messageTable.setBackground(messageBackgroundDrawable);
+        // --- Update Log Label with History ---
+        List<String> messageEvents = eventManager.getMessageHistory();
+        if (messageEvents != null && !messageEvents.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            int limit = Math.min(messageEvents.size(), 6); // Show last 6 messages
+            // messages are usually newest first? eventManager.getMessageHistory() returns
+            // history.
+            // Let's assume list order.
+            for (int i = 0; i < limit; i++) {
+                sb.append(messageEvents.get(i)).append("\n");
+            }
+            logLabel.setText(sb.toString());
         } else {
-            messageLabel.setText("");
-            messageLabel.setVisible(false);
-            messageTable.setBackground((Drawable) null);
+            logLabel.setText("");
         }
     }
 
     public void render() {
         viewport.apply(); // Apply the viewport settings
 
-        // Draw the background image
-        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
-        spriteBatch.begin();
-        spriteBatch.draw(hudBackground, 0, 0, 1920, 1080);
-        spriteBatch.end();
+        // Removed background drawing
 
         // Draw the 2D inventory items
         drawInventory();
@@ -459,18 +394,10 @@ public class Hud implements Disposable {
 
         // Apply the debug status to all tables
         mainContainer.setDebug(isDebug);
-        mainContentTable.setDebug(isDebug);
-        leftTable.setDebug(isDebug);
-        rightTable.setDebug(isDebug);
-        warTable.setDebug(isDebug);
-        spiritualTable.setDebug(isDebug);
-        foodTable.setDebug(isDebug);
-        arrowsTable.setDebug(isDebug);
-        treasureTable.setDebug(isDebug);
-        lvlExpTable.setDebug(isDebug);
-        handsAndCompassTable.setDebug(isDebug);
-        levelTable.setDebug(isDebug);
-        messageTable.setDebug(isDebug);
+        bottomBarTable.setDebug(isDebug);
+        statsTable.setDebug(isDebug);
+        logTable.setDebug(isDebug);
+        inventoryTable.setDebug(isDebug);
 
         // This renders all actors (labels, etc.) *and* the debug lines (if enabled)
         stage.draw();
@@ -1262,8 +1189,8 @@ public class Hud implements Disposable {
         }
         shapeRenderer.end();
 
-        // --- 5. Draw Game Log (New Feature) ---
-        drawGameLog(startX, startY);
+        // --- 5. Game Log (New Feature) ---
+        // drawGameLog(startX, startY); // Merged into bottom bar
     }
 
     /**
@@ -1349,49 +1276,7 @@ public class Hud implements Disposable {
         }
     }
 
-    /**
-     * Draws the running game log below the minimap.
-     * 
-     * @param mapX X coordinate where the minimap STARTS (left edge)
-     * @param mapY Y coordinate where the minimap STARTS (bottom edge)
-     */
-    private void drawGameLog(float mapX, float mapY) {
-        float logWidth = 1920 - mapX - 20; // Align with map width
-        float logHeight = 300;
-        float logY = mapY - logHeight - 10; // 10px padding below map
-
-        if (logY < 0)
-            logY = 10; // Safety clamp
-
-        // 1. Log Background
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0f, 0f, 0f, 0.6f); // Semi-transparent black
-        shapeRenderer.rect(mapX, logY, logWidth, logHeight);
-        shapeRenderer.end();
-
-        // 2. Log Text
-        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
-        spriteBatch.begin();
-
-        logFont.setColor(Color.YELLOW); // Bright Yellow per user request
-
-        List<String> history = eventManager.getMessageHistory();
-        float textY = logY + logHeight - 10;
-        float lineHeight = 16; // Smaller line height for smaller font
-
-        for (String msg : history) {
-            if (textY < logY + 10)
-                break; // Don't overflow bottom
-            logFont.draw(spriteBatch, msg, mapX + 10, textY);
-            textY -= lineHeight;
-        }
-
-        logFont.setColor(Color.WHITE); // Restore
-
-        spriteBatch.end();
-    }
+    // drawGameLog removed as it is now integrated into the bottom bar log table.
 
     // --- NEW: Combat Menu UI ---
     public class CombatMenu extends Table {
@@ -1404,7 +1289,7 @@ public class Hud implements Disposable {
         private int selectedIndex = 0;
 
         public CombatMenu(BitmapFont font) {
-            this.setBackground(new TextureRegionDrawable(new TextureRegion(hudBackground))); // Reuse bg for now
+            this.setBackground(bottomBarDrawable); // Use bottom bar bg
             this.setSize(300, 180);
             this.setPosition(20, 160); // Bottom Left above message log
 
@@ -1485,9 +1370,11 @@ public class Hud implements Disposable {
         stage.dispose();
         font.dispose();
         directionFont.dispose();
-        hudBackground.dispose();
+        bottomBarBg.dispose();
         shapeRenderer.dispose();
-        messageBackgroundTexture.dispose();
+        // messageBackgroundTexture.dispose(); // Removed, as we use bottomBarBg now or
+        // separate logic?
+        // We removed messageBackgroundTexture in constructor, so no need to dispose it.
         if (debugFont != null)
             debugFont.dispose(); // Clean up debug font
     }

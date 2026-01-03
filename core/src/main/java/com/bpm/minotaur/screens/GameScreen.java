@@ -286,7 +286,7 @@ public class GameScreen extends BaseScreen {
 
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
-        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
             firstPersonRenderer.setTheme(RetroTheme.ADVANCED_COLOR_THEME_BLUE);
@@ -490,6 +490,20 @@ public class GameScreen extends BaseScreen {
 
         // Moved CombatDiceOverlay to end of frame
 
+        if (useCrtFilter) {
+            fbo.end();
+            game.getViewport().apply();
+            ScreenUtils.clear(0, 0, 0, 1);
+            postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
+            postProcessBatch.begin();
+            postProcessBatch.setShader(crtShader);
+            crtShader.setUniformf("u_time", time);
+            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
+            postProcessBatch.end();
+            // --- CRT FIX: Reset view when CRT is off ---
+            game.getViewport().apply();
+        }
+
         if (hud != null) {
             // --- NEW: Sync Combat Menu Visibility ---
             if (combatManager != null && hud.combatMenu != null) {
@@ -505,20 +519,6 @@ public class GameScreen extends BaseScreen {
         font.draw(game.getBatch(), "Level: " + currentLevel, 10, currentViewport.getWorldHeight() - 10);
 
         game.getBatch().end();
-
-        if (useCrtFilter) {
-            fbo.end();
-            game.getViewport().apply();
-            ScreenUtils.clear(0, 0, 0, 1);
-            postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
-            postProcessBatch.begin();
-            postProcessBatch.setShader(crtShader);
-            crtShader.setUniformf("u_time", time);
-            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
-            postProcessBatch.end();
-            // --- CRT FIX: Reset view when CRT is off ---
-            game.getViewport().apply();
-        }
 
         renderCombatOverlay();
     }
@@ -621,7 +621,7 @@ public class GameScreen extends BaseScreen {
         // ---------------------------------------------------
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
-        hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);
         DebugRenderer.printMazeToConsole(maze);
     }
@@ -661,13 +661,8 @@ public class GameScreen extends BaseScreen {
         game.getViewport().update(width, height, true);
         postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
         if (hud != null) {
-            // Fix: If using CRT (FBO), the HUD must be resized to the FBO size (Virtual),
-            // not the Window size.
-            if (useCrtFilter) {
-                hud.resize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-            } else {
-                hud.resize(width, height);
-            }
+            // Fix: Always resize HUD to window size for correct input mapping
+            hud.resize(width, height);
         }
     }
 

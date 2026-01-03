@@ -1413,6 +1413,7 @@
     "isPotion": false,
     "isFood": false,
     "isTreasure": false,
+    "locked": false,
     "isKey": true,
     "isUsable": false,
     "isContainer": false,

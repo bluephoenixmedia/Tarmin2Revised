@@ -45,8 +45,8 @@
     "isContainer": false,
     "isRing": false,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
+      "x": 0.75,
+      "y": 0.8
     },
     "variants": [
       {
@@ -56,7 +56,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRIGANDINE": {
     "friendlyName": "Brigandine",
@@ -115,7 +115,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BASINET": {
     "friendlyName": "Basinet",
@@ -174,7 +174,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRONZE_PLATE": {
     "friendlyName": "Bronze Plate",
@@ -233,7 +233,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRONZE_LEGGINGS": {
     "friendlyName": "Bronze Leggings",
@@ -292,7 +292,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRONZE_BOOTS": {
     "friendlyName": "Bronze Boots",
@@ -351,7 +351,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRONZE_HELMET": {
     "friendlyName": "Bronze Helmet",
@@ -410,7 +410,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BRONZE_GAUNTLETS": {
     "friendlyName": "Bronze Gauntlets",
@@ -469,7 +469,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAIN_HAUBERK": {
     "friendlyName": "Chain hauberk",
@@ -528,7 +528,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAIN_LAMELLAR": {
     "friendlyName": "Chain-lamellar",
@@ -587,7 +587,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAIN_MAIL": {
     "friendlyName": "Chain mail",
@@ -646,7 +646,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAIN_HELMET": {
     "friendlyName": "Chain helmet",
@@ -705,7 +705,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAIN_LEGGINGS": {
     "friendlyName": "Chain leggings",
@@ -764,7 +764,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CORD_MAIL": {
     "friendlyName": "Cord mail",
@@ -823,7 +823,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FIELD_PLATE": {
     "friendlyName": "Field plate",
@@ -882,7 +882,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FIELD_PLATE_HELMET": {
     "friendlyName": "Field plate helmet",
@@ -941,7 +941,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FIELD_PLATE_GAUNTLETS": {
     "friendlyName": "Field plate gauntlets",
@@ -1000,7 +1000,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FIELD_PLATE_LEGGINGS": {
     "friendlyName": "Field plate leggings",
@@ -1059,7 +1059,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FIELD_PLATE_BOOTS": {
     "friendlyName": "Field plate boots",
@@ -1118,7 +1118,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE": {
     "friendlyName": "Full plate",
@@ -1177,7 +1177,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE_HELMET": {
     "friendlyName": "Full plate helmet",
@@ -1236,7 +1236,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE_ARMS": {
     "friendlyName": "Full plate arms",
@@ -1295,7 +1295,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE_GAUNTLETS": {
     "friendlyName": "Full plate gauntlets",
@@ -1354,7 +1354,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE_LEGGINGS": {
     "friendlyName": "Full plate leggings",
@@ -1413,7 +1413,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "FULL_PLATE_BOOTS": {
     "friendlyName": "Full plate boots",
@@ -1472,7 +1472,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GALLIC_ARMOR": {
     "friendlyName": "Gallic Armor",
@@ -1531,7 +1531,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE": {
     "friendlyName": "Half-Plate",
@@ -1590,7 +1590,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GREAT_HELM": {
     "friendlyName": "Great Helm",
@@ -1649,7 +1649,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LEATHER_HELM": {
     "friendlyName": "Leather Helm",
@@ -1708,7 +1708,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HIDE_ARMOR": {
     "friendlyName": "Hide Armor",
@@ -1767,7 +1767,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_ARMOR": {
     "friendlyName": "Hoplite armor",
@@ -1826,7 +1826,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LAMELLAR_SHIRT": {
     "friendlyName": "Lamellar shirt",
@@ -1885,7 +1885,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE": {
     "friendlyName": "Light scale",
@@ -1944,7 +1944,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LORICA_HAMATA": {
     "friendlyName": "Lorica hamata",
@@ -2003,7 +2003,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "PADDED_ARMOR": {
     "friendlyName": "Padded Armor",
@@ -2062,7 +2062,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "RING_MAIL": {
     "friendlyName": "Ring mail",
@@ -2121,7 +2121,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SHIELD_BODY": {
     "friendlyName": "Body",
@@ -2180,7 +2180,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BUCKLER": {
     "friendlyName": "Buckler",
@@ -2239,7 +2239,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SHIELD_SMALL": {
     "friendlyName": "Small",
@@ -2298,7 +2298,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SPLINT_MAIL": {
     "friendlyName": "Splint mail",
@@ -2357,7 +2357,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER": {
     "friendlyName": "Studded leather",
@@ -2416,7 +2416,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "WOOD_BONE_ARMOR": {
     "friendlyName": "Wood/bone armor",
@@ -2475,7 +2475,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BOOTS": {
     "friendlyName": "Boots",
@@ -2647,7 +2647,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LARGE_SHIELD": {
     "friendlyName": "Large Shield",
@@ -2733,7 +2733,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GAUNTLETS": {
     "friendlyName": "Gauntlets",
@@ -2819,7 +2819,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HAUBERK": {
     "friendlyName": "Hauberk",
@@ -2905,7 +2905,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CLOAK": {
     "friendlyName": "Cloak",
@@ -2991,7 +2991,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "EYES": {
     "friendlyName": "Eyes / Visor",
@@ -3077,7 +3077,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "ARMS": {
     "friendlyName": "Arms",
@@ -3163,7 +3163,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HELMET": {
     "friendlyName": "Helmet",
@@ -3249,7 +3249,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "BREASTPLATE": {
     "friendlyName": "Breastplate",
@@ -3335,7 +3335,7 @@
         "weight": 21
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GALLIC_ARMS": {
     "friendlyName": "Gallic Arms",
@@ -3394,7 +3394,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GALLIC_HELMET": {
     "friendlyName": "Gallic Helmet",
@@ -3453,7 +3453,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GALLIC_LEGGINGS": {
     "friendlyName": "Gallic Leggings",
@@ -3512,7 +3512,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "GALLIC_SHIELD": {
     "friendlyName": "Gallic Shield",
@@ -3571,7 +3571,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE_ARMS": {
     "friendlyName": "Half-Plate Arms",
@@ -3630,7 +3630,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE_BOOTS": {
     "friendlyName": "Half-Plate Boots",
@@ -3689,7 +3689,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE_GAUNTLETS": {
     "friendlyName": "Half-Plate Gauntlets",
@@ -3748,7 +3748,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE_HELMET": {
     "friendlyName": "Half-Plate Helmet",
@@ -3807,7 +3807,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HALF_PLATE_LEGGINGS": {
     "friendlyName": "Half-Plate Leggings",
@@ -3866,7 +3866,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HIDE_ARMS": {
     "friendlyName": "Hide Arms",
@@ -3925,7 +3925,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HIDE_BOOTS": {
     "friendlyName": "Hide Boots",
@@ -3984,7 +3984,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HIDE_HELMET": {
     "friendlyName": "Hide Helmet",
@@ -4043,7 +4043,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HIDE_LEGGINGS": {
     "friendlyName": "Hide Leggings",
@@ -4102,7 +4102,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_BOOTS": {
     "friendlyName": "Hoplite Boots",
@@ -4161,7 +4161,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_HELMET": {
     "friendlyName": "Hoplite Helmet",
@@ -4220,7 +4220,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_LEGGINGS": {
     "friendlyName": "Hoplite Leggings",
@@ -4279,7 +4279,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SHIELD": {
     "friendlyName": "Hoplite Shield",
@@ -4338,7 +4338,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_ARMOR": {
     "friendlyName": "Silver Hoplite Armor",
@@ -4397,7 +4397,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_ARMS": {
     "friendlyName": "Silver Hoplite Arms",
@@ -4456,7 +4456,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_BOOTS": {
     "friendlyName": "Silver Hoplite Boots",
@@ -4515,7 +4515,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_GAUNTLETS": {
     "friendlyName": "Silver Hoplite Gauntlets",
@@ -4574,7 +4574,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_HELMET": {
     "friendlyName": "Silver Hoplite Helmet",
@@ -4633,7 +4633,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "HOPLITE_SILVER_LEGGINGS": {
     "friendlyName": "Silver Hoplite Leggings",
@@ -4692,7 +4692,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LEATHER_ARMOR": {
     "friendlyName": "Leather Armor",
@@ -4751,7 +4751,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LEATHER_ARMS": {
     "friendlyName": "Leather Arms",
@@ -4810,7 +4810,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LEATHER_BOOTS": {
     "friendlyName": "Leather Boots",
@@ -4869,7 +4869,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LEATHER_LEGGINGS": {
     "friendlyName": "Leather Leggings",
@@ -4928,7 +4928,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE_ARMS": {
     "friendlyName": "Light Scale Arms",
@@ -4987,7 +4987,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE_BOOTS": {
     "friendlyName": "Light Scale Boots",
@@ -5046,7 +5046,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE_GAUNTLETS": {
     "friendlyName": "Light Scale Gauntlets",
@@ -5105,7 +5105,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE_HELMET": {
     "friendlyName": "Light Scale Helmet",
@@ -5164,7 +5164,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LIGHT_SCALE_LEGGINGS": {
     "friendlyName": "Light Scale Leggings",
@@ -5223,7 +5223,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "LORICA_HAMATA_ARMS": {
     "friendlyName": "Lorica Hamata Arms",
@@ -5282,7 +5282,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "PADDED_HELMET": {
     "friendlyName": "Padded Helmet",
@@ -5341,7 +5341,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "PADDED_LEGGINGS": {
     "friendlyName": "Padded Leggings",
@@ -5400,7 +5400,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SPLINT_MAIL_ARMS": {
     "friendlyName": "Splint Mail Arms",
@@ -5459,7 +5459,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SPLINT_MAIL_GAUNTLETS": {
     "friendlyName": "Splint Mail Gauntlets",
@@ -5518,7 +5518,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SPLINT_MAIL_HELMET": {
     "friendlyName": "Splint Mail Helmet",
@@ -5577,7 +5577,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SPLINT_MAIL_LEGGINGS": {
     "friendlyName": "Splint Mail Leggings",
@@ -5636,7 +5636,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER_ARMS": {
     "friendlyName": "Studded Leather Arms",
@@ -5695,7 +5695,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER_BOOTS": {
     "friendlyName": "Studded Leather Boots",
@@ -5754,7 +5754,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER_GAUNTLETS": {
     "friendlyName": "Studded Leather Gauntlets",
@@ -5813,7 +5813,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER_HELMET": {
     "friendlyName": "Studded Leather Helmet",
@@ -5872,7 +5872,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "STUDDED_LEATHER_LEGGINGS": {
     "friendlyName": "Studded Leather Leggings",
@@ -5931,7 +5931,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "WOOD_BONE_ARMS": {
     "friendlyName": "Wood/Bone Arms",
@@ -5990,7 +5990,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "WOOD_BONE_BOOTS": {
     "friendlyName": "Wood/Bone Boots",
@@ -6049,7 +6049,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "WOOD_BONE_HELMET": {
     "friendlyName": "Wood/Bone Helmet",
@@ -6108,7 +6108,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "WOOD_BONE_LEGGINGS": {
     "friendlyName": "Wood/Bone Leggings",
@@ -6167,7 +6167,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "SHIELD_BODY_2": {
     "friendlyName": "Body Shield 2",
@@ -6226,7 +6226,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAINMAIL_ARMOR": {
     "friendlyName": "Chainmail Armor",
@@ -6285,7 +6285,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAINMAIL_ARMS": {
     "friendlyName": "Chainmail Arms",
@@ -6344,7 +6344,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAINMAIL_GAUNTLETS": {
     "friendlyName": "Chainmail Gauntlets",
@@ -6403,7 +6403,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAINMAIL_HELMET": {
     "friendlyName": "Chainmail Helmet",
@@ -6462,7 +6462,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "CHAINMAIL_LEGGINGS": {
     "friendlyName": "Chainmail Leggings",
@@ -6521,7 +6521,7 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   },
   "RUSTY_ARMOR": {
     "friendlyName": "Rusty Armor",
@@ -6580,6 +6580,6 @@
         "weight": 5
       }
     ],
-    "locked": true
+    "locked": false
   }
 }

@@ -164,6 +164,7 @@ public class Tarmin2 extends Game {
 
     @Override
     public void resize(int width, int height) {
+        super.resize(width, height); // fix: propagate resize to current Screen
         viewport.update(width, height, true);
         batch.setProjectionMatrix(viewport.getCamera().combined);
     }
