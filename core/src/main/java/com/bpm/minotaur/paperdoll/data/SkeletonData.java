@@ -33,9 +33,29 @@ public class SkeletonData {
         if (socketsJson != null) {
             for (JsonValue socketEntry = socketsJson.child; socketEntry != null; socketEntry = socketEntry.next) {
                 String name = socketEntry.name;
-                float x = socketEntry.getFloat("x", 0);
-                float y = socketEntry.getFloat("y", 0);
-                int z = socketEntry.getInt("z", 0);
+
+                // Handle nested structure: "x": { "value": 123 }
+                float x = 0;
+                float y = 0;
+                int z = 0;
+
+                if (socketEntry.has("x") && socketEntry.get("x").has("value")) {
+                    x = socketEntry.get("x").getFloat("value");
+                } else {
+                    x = socketEntry.getFloat("x", 0); // Fallback for simple format
+                }
+
+                if (socketEntry.has("y") && socketEntry.get("y").has("value")) {
+                    y = socketEntry.get("y").getFloat("value");
+                } else {
+                    y = socketEntry.getFloat("y", 0);
+                }
+
+                if (socketEntry.has("z") && socketEntry.get("z").has("value")) {
+                    z = socketEntry.get("z").getInt("value");
+                } else {
+                    z = socketEntry.getInt("z", 0);
+                }
 
                 sockets.put(name, new Vector2(x, y));
                 socketDepths.put(name, z);
@@ -51,5 +71,9 @@ public class SkeletonData {
 
     public int getSocketDepth(String socketName) {
         return socketDepths.get(socketName, 0);
+    }
+
+    public void setSocketPosition(String name, float x, float y) {
+        sockets.put(name, new Vector2(x, y));
     }
 }

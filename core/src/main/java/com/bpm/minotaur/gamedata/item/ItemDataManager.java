@@ -36,9 +36,20 @@ public class ItemDataManager {
         this.discoveryManager = discoveryManager;
     }
 
+    public void reloadAll() {
+        // Clear and reload all data
+        // load() re-initializes the map, so it effectively clears it.
+        load();
+        loadWeapons();
+        loadArmor();
+    }
+
     public void load() {
+        // If map exists, clear it instead of newing
+        itemTemplates.clear();
         Json json = new Json();
         FileHandle file = Gdx.files.internal("data/items.json");
+        // ... rest of load() implementation ...
         JsonValue root = new JsonReader().parse(file);
 
         for (ItemType type : ItemType.values()) {

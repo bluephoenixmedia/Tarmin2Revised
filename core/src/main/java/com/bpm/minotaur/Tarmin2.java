@@ -147,6 +147,10 @@ public class Tarmin2 extends Game {
     @Override
     public void render() {
         super.render();
+        // Debug Entry Point for Paperdoll Editor
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.F10)) {
+            this.setScreen(new com.bpm.minotaur.screens.PaperdollEditorScreen(this, this.getScreen()));
+        }
     }
 
     @Override

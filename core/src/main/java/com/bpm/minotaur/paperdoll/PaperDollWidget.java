@@ -135,9 +135,12 @@ public class PaperDollWidget extends Group {
         }
     }
 
+    private final java.util.Set<String> loggedFragments = new java.util.HashSet<>();
+
     public void clearEquipment() {
         renderQueue.clear();
         hasPhysicsItem = false;
+        loggedFragments.clear();
     }
 
     // Add a base body fragment derived from a texture region
@@ -177,45 +180,41 @@ public class PaperDollWidget extends Group {
 
     private void drawDebugGrid(Batch batch) {
         float step = 50;
-        // Calculate unscaled dimensions.
-        // Note: PaperDollWidget width/height being set to scaled values in
-        // InventoryScreen is a bit quirky,
-        // but assuming we want to visualize the coordinate space of the FRAGMENTS
-        // (which are unscaled logic coords).
-        // If we are scaled by S, and width is W*S. Then logic width is W.
         float logicWidth = getWidth() / getScaleX();
         float logicHeight = getHeight() / getScaleY();
         if (getScaleX() == 0)
-            logicWidth = getWidth(); // Avoid NaN
+            logicWidth = getWidth();
         if (getScaleY() == 0)
             logicHeight = getHeight();
 
         batch.setColor(com.badlogic.gdx.graphics.Color.CYAN);
-        float alpha = 0.5f;
+        float alpha = 0.3f;
         batch.setColor(0, 1, 1, alpha);
 
-        // Vertical Lines
+        // Grid
         for (float x = 0; x <= logicWidth; x += step) {
             batch.draw(debugPixel, x, 0, 1, logicHeight);
-            debugFont.draw(batch, "" + (int) x, x + 2, 20);
         }
-
-        // Horizontal Lines
         for (float y = 0; y <= logicHeight; y += step) {
             batch.draw(debugPixel, 0, y, logicWidth, 1);
-            debugFont.draw(batch, "" + (int) y, 2, y + 15);
         }
 
         // Draw Sockets
         batch.setColor(com.badlogic.gdx.graphics.Color.RED);
+        String[] debugSockets = { "head", "torso", "hand_main", "hand_off", "feet", "hips", "back", "backpack" };
 
-        // We can access skeletonData to draw sockets?
-        // skeletonData doesn't expose keys easily without iterator,
-        // but we can try to iterate if we had access to map.
-        // Actually SkeletonData internals are package-private or hidden?
-        // SkeletonData.sockets is likely private.
-        // We can just skip precise socket drawing unless we expose them.
-        // The user asked for GRID.
+        for (String socket : debugSockets) {
+            Vector2 pos = skeletonData.getSocketPosition(socket);
+            if (pos != null) {
+                // Draw crosshair
+                float sX = pos.x;
+                float sY = pos.y;
+                float size = 10;
+                batch.draw(debugPixel, sX - size, sY, size * 2, 2);
+                batch.draw(debugPixel, sX, sY - size, 2, size * 2);
+                debugFont.draw(batch, socket, sX + 5, sY + 20);
+            }
+        }
     }
 
     private void drawPhysicsChain(Batch batch, float parentAlpha) {
@@ -280,12 +279,24 @@ public class PaperDollWidget extends Group {
         // Draw with Scale
         float width = fragment.region.getRegionWidth();
         float height = fragment.region.getRegionHeight();
-        float originX = 0; // Or center? Logic currently uses top-left implied offset?
-        // Actually, drawX/drawY is likely top-left.
-        // If we scale, we should probably scale around the socket point?
-        // But localOffset is relative to socket.
-        // Let's just scale the sprite dimensions.
 
         batch.draw(fragment.region, drawX, drawY, 0, 0, width, height, fragment.scaleX, fragment.scaleY, 0);
+
+        // --- LOGGING ---
+        // Identify fragment by region name if possible, or socket+offset
+        String fragId = fragment.socketName + "_" + fragment.region;
+        if (fragment.region instanceof AtlasRegion) {
+            fragId = ((AtlasRegion) fragment.region).name + "_" + fragment.socketName;
+        }
+
+        if (!loggedFragments.contains(fragId)) {
+            com.badlogic.gdx.Gdx.app.log("PaperDoll",
+                    String.format(
+                            "Render %s: Pos(%.2f, %.2f) Scale(%.2f, %.2f) Socket(%s: %.2f, %.2f) LocalOff(%.2f, %.2f)",
+                            fragId, drawX, drawY, fragment.scaleX, fragment.scaleY,
+                            fragment.socketName, socketX, socketY,
+                            fragment.localOffset.x, fragment.localOffset.y));
+            loggedFragments.add(fragId);
+        }
     }
 }

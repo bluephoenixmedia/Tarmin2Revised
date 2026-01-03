@@ -179,6 +179,7 @@ public class InventoryScreen extends BaseScreen {
     }
 
     private Texture paperDollTexture;
+    private Texture headTexture;
 
     // ... existing fields ...
 
@@ -254,15 +255,39 @@ public class InventoryScreen extends BaseScreen {
         }
 
         // Initialize Paper Doll Components
-        if (paperDollWidget == null) {
-            skeletonData = new SkeletonData();
-            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+        // ALWAYS Reload to pick up Editor changes (skeleton.json)
+        skeletonData = new SkeletonData();
+        skeletonData.load(Gdx.files.internal("data/skeleton.json"));
 
-            TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
-            TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
+        TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
+        TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
 
-            fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
-            paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
+        fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
+        paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
+
+        // Sync Inventory Items with freshly loaded Templates (from Editor, via
+        // armor.json)
+        // This ensures existing items update their visuals immediately.
+        com.bpm.minotaur.gamedata.item.ItemDataManager dm = game.getItemDataManager();
+        if (player != null && player.getInventory() != null) {
+            java.util.List<Item> itemsToSync = new java.util.ArrayList<>();
+            if (player.getInventory() != null)
+                itemsToSync.addAll(player.getInventory().getAllItems());
+            if (player.getEquipment() != null)
+                itemsToSync.addAll(player.getEquipment().getAllEquipped());
+
+            for (Item item : itemsToSync) {
+                if (item == null)
+                    continue;
+                try {
+                    com.bpm.minotaur.gamedata.item.ItemTemplate t = dm.getTemplate(item.getType());
+                    item.setOffsetX(t.offsetX);
+                    item.setOffsetY(t.offsetY);
+                    if (item.getScale() != null)
+                        item.getScale().set(t.scaleX, t.scaleY);
+                } catch (Exception e) {
+                }
+            }
         }
 
         // Pass debug assets (texture and font are already created in show())
@@ -290,14 +315,8 @@ public class InventoryScreen extends BaseScreen {
         // Add widget second (Armor/Equipment Layers)
         paperDollGroup.addActor(paperDollWidget);
 
-        // --- NEW: Add Head Overlay ---
-        Texture headTexture = new Texture(Gdx.files.internal("images/inventory_doll_head.png"));
-        Image headImage = new Image(headTexture);
-        // Initial positioning - user said they would help position it.
-        // Assuming it matches the original paper doll scale.
-        headImage.setSize(paperDollTexture.getWidth() * .04f, paperDollTexture.getHeight() * .08f);
-        headImage.setPosition(402, 465); // Start at 0,0 relative to the group
-        paperDollGroup.addActor(headImage);
+        // --- Head Overlay removed from here (moved to PaperDollWidget fragments for
+        // Z-sorting) ---
 
         // Define slot positions (relative to the paper doll image bottom-left)
         // These are ESTIMATES and should be tuned based on the actual image.
@@ -491,6 +510,24 @@ public class InventoryScreen extends BaseScreen {
         // --- Update Paper Doll Widget ---
         if (paperDollWidget != null) {
             paperDollWidget.clearEquipment();
+
+            // --- HEAD OVERLAY (Z-Sorted) ---
+            if (headTexture == null) {
+                try {
+                    headTexture = new Texture(Gdx.files.internal("images/inventory_doll_head.png"));
+                } catch (Exception e) {
+                }
+            }
+            if (headTexture != null) {
+                com.badlogic.gdx.graphics.g2d.TextureRegion headRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                        headTexture);
+                // Z=35 (Chest=30, Head=60). Offset=40,40 relative to "head" socket (1048, 1200)
+                // Correctly places head overlay between chest armor and head armor (helmet).
+                com.bpm.minotaur.paperdoll.data.DollFragment headFrag = new com.bpm.minotaur.paperdoll.data.DollFragment(
+                        headRegion, 35, "head", 1f, 1f);
+                headFrag.localOffset.set(40, 40);
+                paperDollWidget.setBody(headFrag);
+            }
 
             // Add Base Body (Hardcoded for now, could be dynamic based on race/gender)
             // paperDollWidget.setBody(new DollFragment(bodyRegion, ...));

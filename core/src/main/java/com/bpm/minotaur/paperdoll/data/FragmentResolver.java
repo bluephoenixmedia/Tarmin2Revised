@@ -42,6 +42,8 @@ public class FragmentResolver {
                 return "padded_armor"; // Explicit match
             case "HIDE_ARMOR":
                 return "hide_armor"; // Explicit match
+            case "BASINET":
+                return "bascinet";
             default:
                 return itemName.toLowerCase();
         }
@@ -83,7 +85,9 @@ public class FragmentResolver {
                 plateRegion = armorAtlas.findRegion("plate_torso"); // Fallback
 
             if (plateRegion != null) {
-                fragments.add(new DollFragment(plateRegion, 50, "torso", sX, sY));
+                DollFragment fragment = new DollFragment(plateRegion, 50, "torso", sX, sY);
+                fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
+                fragments.add(fragment);
             }
         }
 
@@ -97,7 +101,9 @@ public class FragmentResolver {
                     String socket = "hand_main";
                     if (name.contains("SHIELD"))
                         socket = "hand_off";
-                    fragments.add(new DollFragment(weaponRegion, 70, socket, sX, sY));
+                    DollFragment fragment = new DollFragment(weaponRegion, 70, socket, sX, sY);
+                    fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
+                    fragments.add(fragment);
                     return fragments;
                 }
             }
@@ -110,20 +116,32 @@ public class FragmentResolver {
                     int zIndex = 30; // Default
                     String socket = "torso";
 
-                    if (name.contains("HELM")) {
+                    if (item.isHelmet()) {
                         zIndex = 60;
                         socket = "head";
-                    } else if (name.contains("BOOT")) {
+                    } else if (item.isBoots()) {
                         zIndex = 50;
                         socket = "feet";
-                    } else if (name.contains("GAUNTLET")) {
+                    } else if (item.isGauntlets()) {
                         zIndex = 55;
+                        socket = "hand_main";
+                    } else if (item.isLegs()) {
+                        zIndex = 40;
+                        socket = "hips"; // Mapping Legs to Hips for now
+                    } else if (item.isShield()) {
+                        zIndex = 55;
+                        socket = "hand_off";
+                    } else if (item.isArms()) {
+                        zIndex = 52;
                         socket = "hand_main";
                     }
 
-                    fragments.add(new DollFragment(armorRegion, zIndex, socket, sX, sY));
+                    DollFragment fragment = new DollFragment(armorRegion, zIndex, socket, sX, sY);
+                    fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
+                    fragments.add(fragment);
                 }
             }
+
         }
 
         return fragments;

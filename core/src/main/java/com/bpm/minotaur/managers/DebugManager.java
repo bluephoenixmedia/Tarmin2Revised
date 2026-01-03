@@ -14,7 +14,8 @@ public class DebugManager {
 
     private RenderMode renderMode = RenderMode.RETRO;
 
-    private DebugManager() {}
+    private DebugManager() {
+    }
 
     public static DebugManager getInstance() {
         return INSTANCE;
@@ -26,6 +27,10 @@ public class DebugManager {
 
     public void toggleOverlay() {
         isDebugOverlayVisible = !isDebugOverlayVisible;
+    }
+
+    public void setDebugOverlayVisible(boolean visible) {
+        this.isDebugOverlayVisible = visible;
     }
 
     public RenderMode getRenderMode() {

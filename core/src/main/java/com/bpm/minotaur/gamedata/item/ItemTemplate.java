@@ -14,8 +14,10 @@ public class ItemTemplate {
     public float modelRotation = 0.0f;
 
     // --- Texture Offsets ---
-    public float offsetX = 0.0f;
-    public float offsetY = 0.0f;
+    public float scaleX = 1f;
+    public float scaleY = 1f;
+    public float offsetX = 0f;
+    public float offsetY = 0f;
 
     public RingEffectType ringEffect; // New: For JSON Loading
 
@@ -47,6 +49,13 @@ public class ItemTemplate {
     public boolean isRing;
     public boolean isShield; // New Field
     public boolean isHelmet; // New Field
+    public boolean isGauntlets; // New Field
+    public boolean isBoots; // New Field
+    public boolean isLegs; // New Field
+    public boolean isTorso; // New Field
+    public boolean isArms; // New Field
+    public boolean isCloak; // New Field
+    public boolean isAmulet; // New Field
 
     // --- Refactored Stats ---
     public String material = "wood"; // wood, iron, leather, etc.

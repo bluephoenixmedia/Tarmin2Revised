@@ -752,8 +752,19 @@ public class EntityRenderer {
             float offX = 0;
             float offY = 0;
             if (item.getTemplate() != null) {
-                offX = item.getTemplate().offsetX;
-                offY = item.getTemplate().offsetY;
+                // Normalize offsets (which are in pixels) to 0..1 range relative to texture
+                // size
+                Texture tex = item.getTexture();
+                float texW = (tex != null) ? tex.getWidth() : 32f;
+                float texH = (tex != null) ? tex.getHeight() : 32f;
+
+                if (item.getTextureRegion() != null) {
+                    texW = item.getTextureRegion().getRegionWidth();
+                    texH = item.getTextureRegion().getRegionHeight();
+                }
+
+                offX = item.getTemplate().offsetX / texW;
+                offY = item.getTemplate().offsetY / texH;
             }
 
             if (atFeet) {

@@ -1,40 +1,92 @@
 {
-    "skeletonId": "humanoid_male",
-    "sockets": {
-        "head": {
-            "x": 128,
-            "y": 200,
-            "z": 60
-        },
-        "torso": {
-            "x": 815,
-            "y": 600,
-            "z": 20
-        },
-        "hand_main": {
-            "x": 64,
-            "y": 140,
-            "z": 70
-        },
-        "hand_off": {
-            "x": 192,
-            "y": 140,
-            "z": 75
-        },
-        "hips": {
-            "x": 128,
-            "y": 100,
-            "z": 25
-        },
-        "knees": {
-            "x": 128,
-            "y": 50,
-            "z": 20
-        },
-        "feet": {
-            "x": 128,
-            "y": 10,
-            "z": 10
-        }
-    }
+"sockets": {
+	"head": {
+		"x": {
+			"value": 1048
+		},
+		"y": {
+			"value": 1200
+		},
+		"z": {
+			"value": 40
+		}
+	},
+	"feet": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 10
+		}
+	},
+	"hips": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 20
+		}
+	},
+	"torso": {
+		"x": {
+			"value": 944
+		},
+		"y": {
+			"value": 575
+		},
+		"z": {
+			"value": 30
+		}
+	},
+	"hand_off": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 0
+		}
+	},
+	"hand_main": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 0
+		}
+	},
+	"backpack": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 0
+		}
+	},
+	"back": {
+		"x": {
+			"value": 0
+		},
+		"y": {
+			"value": 0
+		},
+		"z": {
+			"value": 0
+		}
+	}
+}
 }

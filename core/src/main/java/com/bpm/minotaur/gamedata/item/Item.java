@@ -104,34 +104,42 @@ public class Item implements Renderable {
     }
 
     // --- Core Item Properties (Dynamic) ---
-    private final ItemType type;
+    private ItemType type; // Removed final
     private final Vector2 position;
     private ItemColor itemColor;
     private List<ItemModifier> modifiers = new ArrayList<>();
 
     // --- Base Properties ---
     private String friendlyName;
-    private final String[] spriteData;
-    private final Texture texture;
-    private final TextureRegion textureRegion; // New field
-    private final int baseValue;
-    private final String damageDice;
-    private final int armorClassBonus;
+    private String[] spriteData; // Removed final
+    private Texture texture; // Removed final
+    private TextureRegion textureRegion; // New field
+    private int baseValue; // Removed final
+    private String damageDice; // Removed final
+    private int armorClassBonus; // Removed final
+    private String description;
 
     // --- Type Flags ---
-    private final boolean isWeapon;
-    private final boolean isRanged;
-    private final boolean isArmor;
-    private final boolean isPotion;
-    private final boolean isFood;
-    private final boolean isTreasure;
-    private final boolean isKey;
-    private final boolean isUsable;
-    private final boolean isContainer;
-    private final boolean isRing;
-    private final boolean isShield; // New Field
-    private final boolean isHelmet; // New Field
-    private final boolean isImpassable; // New Field
+    private boolean isWeapon; // Removed final
+    private boolean isRanged; // Removed final
+    private boolean isArmor; // Removed final
+    private boolean isPotion; // Removed final
+    private boolean isFood; // Removed final
+    private boolean isTreasure; // Removed final
+    private boolean isKey; // Removed final
+    private boolean isUsable; // Removed final
+    private boolean isContainer; // Removed final
+    private boolean isRing; // Removed final
+    private boolean isShield; // New Field, Removed final
+    private boolean isHelmet; // New Field, Removed final
+    private boolean isGauntlets; // New Field, Removed final
+    private boolean isBoots; // New Field, Removed final
+    private boolean isLegs; // New Field, Removed final
+    private boolean isTorso; // New Field, Removed final
+    private boolean isArms; // New Field, Removed final
+    private boolean isCloak; // New Field, Removed final
+    private boolean isAmulet; // New Field, Removed final
+    private boolean isImpassable; // New Field, Removed final
 
     // --- NetHack-style Properties ---
     private Beatitude beatitude = Beatitude.UNCURSED; // Default
@@ -144,8 +152,10 @@ public class Item implements Renderable {
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
 
     private boolean isLocked;
-    private final int range;
-    private final Vector2 scale;
+    private int range; // Removed final
+    private Vector2 scale; // Removed final
+    private float offsetX = 0f;
+    private float offsetY = 0f;
     private List<Item> contents = new ArrayList<>();
 
     private PotionEffectType trueEffect; // For potions only
@@ -158,6 +168,70 @@ public class Item implements Renderable {
     private ItemTemplate template;
     private final ItemDataManager dataManager;
 
+    public Item() {
+        this.position = new Vector2(); // Default position for items created via fromTemplate
+        this.spriteData = null; // Will be set later if needed
+        this.texture = null; // Will be set later if needed
+        this.textureRegion = null; // Will be set later if needed
+        this.dataManager = null; // Will be set later if needed
+    }
+
+    public float getOffsetX() {
+        return offsetX;
+    }
+
+    public void setOffsetX(float offsetX) {
+        this.offsetX = offsetX;
+    }
+
+    public float getOffsetY() {
+        return offsetY;
+    }
+
+    public void setOffsetY(float offsetY) {
+        this.offsetY = offsetY;
+    }
+
+    public static Item fromTemplate(ItemType type, ItemTemplate template) {
+        Item item = new Item();
+        item.type = type;
+        item.friendlyName = template.friendlyName;
+        item.description = template.description;
+        item.baseValue = template.baseValue;
+        item.damageDice = template.damageDice;
+        item.armorClassBonus = template.armorClassBonus;
+        item.isWeapon = template.isWeapon;
+        item.isRanged = template.isRanged;
+        item.isArmor = template.isArmor;
+        item.isShield = template.isShield;
+        item.isHelmet = template.isHelmet;
+        item.isPotion = template.isPotion;
+        item.isFood = template.isFood;
+        item.isTreasure = template.isTreasure;
+        item.isKey = template.isKey;
+        item.isUsable = template.isUsable;
+        item.isContainer = template.isContainer;
+        item.isRing = template.isRing;
+        item.isGauntlets = template.isGauntlets;
+        item.isLegs = template.isLegs;
+        item.isBoots = template.isBoots;
+        item.isTorso = template.isTorso;
+        item.isArms = template.isArms;
+        item.isCloak = template.isCloak;
+        item.isAmulet = template.isAmulet;
+        item.isImpassable = template.isImpassable;
+        item.isLocked = template.locked;
+        item.range = template.range;
+        item.ringEffect = template.ringEffect;
+
+        item.scale = new Vector2(template.scaleX, template.scaleY);
+        item.offsetX = template.offsetX;
+        item.offsetY = template.offsetY;
+
+        // Variants logic...
+        return item;
+    }
+
     public Item(ItemType type, int x, int y, ItemColor color,
             ItemDataManager dataManager, AssetManager assetManager) {
         this.type = type;
@@ -167,6 +241,7 @@ public class Item implements Renderable {
         ItemTemplate template = dataManager.getTemplate(type);
 
         this.friendlyName = template.friendlyName;
+        this.description = template.description; // Initialize new field
         this.spriteData = template.spriteData;
         this.baseValue = template.baseValue;
         this.damageDice = template.damageDice;
@@ -183,6 +258,13 @@ public class Item implements Renderable {
         this.isRing = template.isRing;
         this.isShield = template.isShield;
         this.isHelmet = template.isHelmet;
+        this.isGauntlets = template.isGauntlets;
+        this.isBoots = template.isBoots;
+        this.isLegs = template.isLegs;
+        this.isTorso = template.isTorso;
+        this.isArms = template.isArms;
+        this.isCloak = template.isCloak;
+        this.isAmulet = template.isAmulet;
         this.range = template.range;
         this.isImpassable = template.isImpassable; // Assign from template
         this.isLocked = template.locked; // Initialize from template
@@ -381,6 +463,34 @@ public class Item implements Renderable {
 
     public boolean isHelmet() {
         return this.isHelmet;
+    }
+
+    public boolean isGauntlets() {
+        return this.isGauntlets;
+    }
+
+    public boolean isBoots() {
+        return this.isBoots;
+    }
+
+    public boolean isLegs() {
+        return this.isLegs;
+    }
+
+    public boolean isTorso() {
+        return this.isTorso;
+    }
+
+    public boolean isArms() {
+        return this.isArms;
+    }
+
+    public boolean isCloak() {
+        return this.isCloak;
+    }
+
+    public boolean isAmulet() {
+        return this.isAmulet;
     }
 
     public boolean isShield() {
