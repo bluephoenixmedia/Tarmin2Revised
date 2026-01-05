@@ -117,6 +117,9 @@ public class Player {
             stats.getDicePool().add(pack.getGrantedDie());
         }
 
+        Item boots = itemDataManager.createItem(Item.ItemType.BOOTS, 0, 0, ItemColor.GRAY, assetManager);
+        equipment.setWornBoots(boots);
+
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
 
         // Initialize Spells

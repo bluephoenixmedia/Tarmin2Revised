@@ -45,6 +45,7 @@ public class PaperdollEditorScreen extends BaseScreen {
     private Texture headTexture;
     private SkeletonData skeletonData;
     private FragmentResolver fragmentResolver;
+    private com.badlogic.gdx.math.Vector2 initialHeadPos;
 
     // Editor data
     private Map<String, Item> equippedItems = new HashMap<>(); // slotName -> Item
@@ -140,6 +141,14 @@ public class PaperdollEditorScreen extends BaseScreen {
         TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
         fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
 
+        // Capture initial head position for static referencing
+        com.badlogic.gdx.math.Vector2 headSocket = skeletonData.getSocketPosition("head");
+        if (headSocket != null) {
+            this.initialHeadPos = new com.badlogic.gdx.math.Vector2(headSocket);
+        } else {
+            this.initialHeadPos = new com.badlogic.gdx.math.Vector2(1048, 1200); // Fallback default
+        }
+
         paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
         // Debug assets
         Pixmap p = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -204,7 +213,8 @@ public class PaperdollEditorScreen extends BaseScreen {
         // Slot Selection
         controls.add(new Label("Target Slot:", skin)).left();
         slotSelectBox = new SelectBox<>(skin);
-        slotSelectBox.setItems("Head", "Torso", "Hands", "Legs", "Feet", "MainHand", "OffHand", "Back", "Backpack");
+        slotSelectBox.setItems("Head", "Torso", "Hands", "Arms", "Legs", "Feet", "MainHand", "OffHand", "Back",
+                "Backpack");
         slotSelectBox.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -245,12 +255,12 @@ public class PaperdollEditorScreen extends BaseScreen {
 
         // Offset X
         controls.add(new Label("Offset X:", skin)).left();
-        offsetXSlider = new Slider(-100, 100, 1, false, skin);
+        offsetXSlider = new Slider(-300, 300, 1, false, skin);
         controls.add(offsetXSlider).width(200).row();
 
         // Offset Y
         controls.add(new Label("Offset Y:", skin)).left();
-        offsetYSlider = new Slider(-100, 100, 1, false, skin);
+        offsetYSlider = new Slider(-300, 300, 1, false, skin);
         controls.add(offsetYSlider).width(200).row();
 
         offsetValueLabel = new Label("0, 0", skin);
@@ -356,8 +366,10 @@ public class PaperdollEditorScreen extends BaseScreen {
 
             // Create item wrapper
             Item item = Item.fromTemplate(type, template);
-            equippedItems.put(selectedSlot, item);
 
+            // Clear previous items to isolate the current one for editing
+            equippedItems.clear();
+            equippedItems.put(selectedSlot, item);
             // Update widget
             refreshWidget();
 
@@ -525,22 +537,19 @@ public class PaperdollEditorScreen extends BaseScreen {
         // Let's try 0,0 first. It's safe.
         // Z-Index 45 to be > Chest(30) and < Helm(60).
 
+        // Fix: Use "none" socket and calculate absolute offset based on INITIAL head
+        // position
+        // This prevents the face from moving when we adjust the socket sliders
         com.bpm.minotaur.paperdoll.data.DollFragment headFragment = new com.bpm.minotaur.paperdoll.data.DollFragment(
-                headRegion, 35, "head", 1f, 1f);
+                headRegion, 35, "none", 1f, 1f);
 
-        // The head image is likely centered or top-left?
-        // Usually LibGDX draws from bottom-left.
-        // If the socket is the "Neck/Pivot", the face image needs to be positioned
-        // relative to it.
-        // I'll assume 0,0 offset from "head" socket is a good starting point given the
-        // helmet aligns there.
-        // Actually, the previous step's code used explicit adjustment:
-        // User changed my code to: headX = 1000; headY = 1200;
-        // This confirms the large coordinate system.
-        // So relative to socket (1048, 1200), the position (1000, 1200) is offset (-48,
-        // 0).
+        // Original offset was (40, 40) relative to socket "head"
+        // New offset is static position = InitialSocketPos + (40, 40)
+        // Since we use "none" socket (0,0), localOffset becomes the absolute position.
+        float staticX = (initialHeadPos != null ? initialHeadPos.x : 1048) + 385;
+        float staticY = (initialHeadPos != null ? initialHeadPos.y : 1200) + 220;
 
-        headFragment.localOffset.set(40, 40);
+        headFragment.localOffset.set(staticX, staticY);
         paperDollWidget.setBody(headFragment); // Use setBody to add "extra" fragments
 
         // Re-equip all
@@ -557,6 +566,8 @@ public class PaperdollEditorScreen extends BaseScreen {
                 return "torso";
             case "Hands":
                 return "hand_main"; // Or both?
+            case "Arms":
+                return "hand_main"; // Arms share the main hand socket usually
             case "Legs":
                 return "hips";
             case "Feet":

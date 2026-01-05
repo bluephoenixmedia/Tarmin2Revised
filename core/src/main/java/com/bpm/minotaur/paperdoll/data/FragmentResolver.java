@@ -44,6 +44,8 @@ public class FragmentResolver {
                 return "hide_armor"; // Explicit match
             case "BASINET":
                 return "bascinet";
+            case "BRONZE_PLATE":
+                return "bronze_breastplate";
             default:
                 return itemName.toLowerCase();
         }
@@ -95,7 +97,7 @@ public class FragmentResolver {
         else {
             // Try to find a region matching the item name
             // Weapons
-            if (weaponAtlas != null) {
+            if (weaponAtlas != null && (!item.isArmor() || item.isShield())) {
                 AtlasRegion weaponRegion = weaponAtlas.findRegion(regionName);
                 if (weaponRegion != null) {
                     String socket = "hand_main";
@@ -112,6 +114,8 @@ public class FragmentResolver {
             if (armorAtlas != null) {
                 AtlasRegion armorRegion = armorAtlas.findRegion(regionName);
                 if (armorRegion != null) {
+                    com.badlogic.gdx.Gdx.app.log("FR_DEBUG",
+                            item.getType() + " Boots=" + item.isBoots() + " Helm=" + item.isHelmet());
                     // Determine Z-Index based on type
                     int zIndex = 30; // Default
                     String socket = "torso";
@@ -138,6 +142,8 @@ public class FragmentResolver {
 
                     DollFragment fragment = new DollFragment(armorRegion, zIndex, socket, sX, sY);
                     fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
+                    com.badlogic.gdx.Gdx.app.log("FragmentResolver",
+                            "   -> Assigned Socket: " + socket + " Z: " + zIndex);
                     fragments.add(fragment);
                 }
             }

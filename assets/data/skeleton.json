@@ -2,10 +2,10 @@
 "sockets": {
 	"head": {
 		"x": {
-			"value": 1048
+			"value": 797
 		},
 		"y": {
-			"value": 1200
+			"value": 1011
 		},
 		"z": {
 			"value": 40
@@ -13,10 +13,10 @@
 	},
 	"feet": {
 		"x": {
-			"value": 0
+			"value": 849
 		},
 		"y": {
-			"value": 0
+			"value": 63
 		},
 		"z": {
 			"value": 10
@@ -24,10 +24,10 @@
 	},
 	"hips": {
 		"x": {
-			"value": 0
+			"value": 944
 		},
 		"y": {
-			"value": 0
+			"value": 219
 		},
 		"z": {
 			"value": 20
@@ -46,10 +46,10 @@
 	},
 	"hand_off": {
 		"x": {
-			"value": 0
+			"value": 1200
 		},
 		"y": {
-			"value": 0
+			"value": 646
 		},
 		"z": {
 			"value": 0
@@ -57,10 +57,10 @@
 	},
 	"hand_main": {
 		"x": {
-			"value": 0
+			"value": 669
 		},
 		"y": {
-			"value": 0
+			"value": 987
 		},
 		"z": {
 			"value": 0

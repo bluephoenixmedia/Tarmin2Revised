@@ -255,6 +255,9 @@ public class ItemDataManager {
                 }
 
                 itemTemplates.put(type, template);
+                if (type == ItemType.LEATHER_BOOTS) {
+                    Gdx.app.log("IDM_DEBUG", "Loaded LEATHER_BOOTS. isBoots=" + template.isBoots);
+                }
                 loadedCount++;
             } catch (IllegalArgumentException e) {
                 Gdx.app.error("ItemDataManager", "Skipping unknown armor type in JSON: " + typeName);

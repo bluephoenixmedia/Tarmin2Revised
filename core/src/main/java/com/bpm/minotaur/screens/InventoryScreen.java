@@ -1036,7 +1036,7 @@ public class InventoryScreen extends BaseScreen {
                     return item.isArmor() && !item.isHelmet() && !item.isShield() && !item.isRing(); // Broad check for
                                                                                                      // body armor
                 if ("Arms".equals(name))
-                    return item.getType() == ItemType.ARMS;
+                    return item.isArms();
                 if ("Hands".equals(name))
                     return item.getType() == ItemType.GAUNTLETS;
                 if ("Legs".equals(name))
