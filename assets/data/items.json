@@ -147,6 +147,80 @@
       "y": 1.0
     }
   },
+  "GIB_FLESH": {
+    "friendlyName": "Flesh",
+    "description": "A chunk of raw flesh.",
+    "texturePath": "images/items/food.png",
+    "baseValue": 1,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_BONE": {
+    "friendlyName": "Bone",
+    "description": "A bone fragment.",
+    "texturePath": "images/items/bone.png",
+    "baseValue": 1,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_ORGAN": {
+    "friendlyName": "Organ",
+    "description": "A visceral organ.",
+    "texturePath": "images/items/bat_guano.png",
+    "baseValue": 2,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_BILE": {
+    "friendlyName": "Bile",
+    "description": "A sac of bile.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 5,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_GLAZE": {
+    "friendlyName": "Glaze",
+    "description": "Strange glowing residue.",
+    "texturePath": "images/items/glowing_lichen.png",
+    "baseValue": 10,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "POTION_FERAL_DRAUGHT": {
+    "friendlyName": "Minor Feral Draught",
+    "description": "A toxic brew that boosts strength.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 50,
+    "isPotion": true,
+    "isUsable": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "POTION_TITAN_SLUDGE": {
+    "friendlyName": "Titans Sludge",
+    "description": "Thick black ichor. Extremely toxic.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 200,
+    "isPotion": true,
+    "isUsable": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
   "HOME_CHEST": {
     "friendlyName": "Storage Chest",
     "texturePath": "images/items/box.png",

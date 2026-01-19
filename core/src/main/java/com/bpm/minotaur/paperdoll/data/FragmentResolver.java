@@ -46,6 +46,8 @@ public class FragmentResolver {
                 return "bascinet";
             case "BRONZE_PLATE":
                 return "bronze_breastplate";
+            case "CHAIN_HAUBERK": // Explicitly handling user mention if needed, or rely on default
+                return "chain_hauberk"; // Default lower case works but being explicit helps debug
             default:
                 return itemName.toLowerCase();
         }
@@ -71,13 +73,13 @@ public class FragmentResolver {
 
         // --- Plate Armor Example ---
         if (name.contains("PLATE")) {
-            // 1. Chainmail Underlayer (Z=40)
+            // 1. Chainmail Underlayer (Z=35) - Below standard Torso (40)
             AtlasRegion mailRegion = armorAtlas.findRegion("chain_torso");
             if (mailRegion != null) {
-                fragments.add(new DollFragment(mailRegion, 40, "torso", sX, sY));
+                fragments.add(new DollFragment(mailRegion, 35, "torso", sX, sY));
             }
 
-            // 2. Plate Overlayer (Z=50)
+            // 2. Plate Overlayer (Z=40) - Matches standard Torso
             // Use resolved name logic or fallback
             AtlasRegion plateRegion = armorAtlas.findRegion(regionName + "_torso");
             if (plateRegion == null)
@@ -87,7 +89,7 @@ public class FragmentResolver {
                 plateRegion = armorAtlas.findRegion("plate_torso"); // Fallback
 
             if (plateRegion != null) {
-                DollFragment fragment = new DollFragment(plateRegion, 50, "torso", sX, sY);
+                DollFragment fragment = new DollFragment(plateRegion, 40, "torso", sX, sY);
                 fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
                 fragments.add(fragment);
             }
@@ -121,23 +123,30 @@ public class FragmentResolver {
                     String socket = "torso";
 
                     if (item.isHelmet()) {
-                        zIndex = 60;
+                        zIndex = 90;
                         socket = "head";
-                    } else if (item.isBoots()) {
-                        zIndex = 50;
-                        socket = "feet";
                     } else if (item.isGauntlets()) {
-                        zIndex = 55;
+                        zIndex = 60;
                         socket = "hand_main";
+                    } else if (item.isBoots()) {
+                        zIndex = 20;
+                        socket = "feet";
                     } else if (item.isLegs()) {
-                        zIndex = 40;
+                        zIndex = 30;
                         socket = "hips"; // Mapping Legs to Hips for now
                     } else if (item.isShield()) {
-                        zIndex = 55;
+                        zIndex = 70;
                         socket = "hand_off";
                     } else if (item.isArms()) {
-                        zIndex = 52;
+                        zIndex = 50;
                         socket = "hand_main";
+                        if (name.equals("CHAINMAIL_ARMS")) {
+                            com.badlogic.gdx.Gdx.app.log("FragmentResolver", "Resolving CHAINMAIL_ARMS. Region found: "
+                                    + (armorRegion != null) + " RegionName: " + regionName);
+                        }
+                    } else if (item.isCloak()) {
+                        zIndex = 10; // Behind everything (Body is usually ~10-20, Plate is 50)
+                        socket = "back";
                     }
 
                     DollFragment fragment = new DollFragment(armorRegion, zIndex, socket, sX, sY);

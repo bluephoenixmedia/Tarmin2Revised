@@ -6,6 +6,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
 import com.bpm.minotaur.paperdoll.data.DollFragment;
@@ -53,6 +56,7 @@ public class PaperDollWidget extends Group {
                 return Integer.compare(o1.zIndex, o2.zIndex);
             }
         };
+
     }
 
     public void setDebugAssets(com.badlogic.gdx.graphics.Texture pixel, com.badlogic.gdx.graphics.g2d.BitmapFont font) {
@@ -161,6 +165,7 @@ public class PaperDollWidget extends Group {
         // We do NOT call super.drawChildren() because we process our own queue.
 
         // Iterate through sorted fragments
+
         for (DollFragment fragment : renderQueue) {
             drawFragment(batch, fragment, parentAlpha);
         }
@@ -263,8 +268,8 @@ public class PaperDollWidget extends Group {
         }
 
         // 2. Handle Packing Offsets (Whitespace Stripping)
-        float drawX = getX() + socketX + fragment.localOffset.x;
-        float drawY = getY() + socketY + fragment.localOffset.y;
+        float drawX = socketX + fragment.localOffset.x;
+        float drawY = socketY + fragment.localOffset.y;
 
         // Correct for AtlasRegion packing if necessary
         if (fragment.region instanceof AtlasRegion) {

@@ -45,11 +45,14 @@ public class PaperdollEditorScreen extends BaseScreen {
     private Texture headTexture;
     private SkeletonData skeletonData;
     private FragmentResolver fragmentResolver;
-    private com.badlogic.gdx.math.Vector2 initialHeadPos;
 
     // Editor data
     private Map<String, Item> equippedItems = new HashMap<>(); // slotName -> Item
     private String selectedSlot = null; // Currently selected slot for editing
+
+    // Head Positioning (Editable)
+    private float headX = 700;
+    private float headY = 1200;
 
     // UI Controls
     private SelectBox<ItemType> itemSelectBox;
@@ -62,6 +65,10 @@ public class PaperdollEditorScreen extends BaseScreen {
     // Skeleton Controls
     private Slider socketXSlider, socketYSlider;
     private Label socketValueLabel;
+
+    // Head Controls
+    private Slider headXSlider, headYSlider;
+    private Label headValueLabel;
 
     private com.badlogic.gdx.Screen previousScreen;
 
@@ -135,19 +142,28 @@ public class PaperdollEditorScreen extends BaseScreen {
         // --- Paper Doll Setup ---
         paperDollTexture = new Texture(Gdx.files.internal("images/inventory_paper_doll.png"));
         skeletonData = new SkeletonData();
-        skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+        // Live Reload: Check for source file first
+        if (Gdx.files.local("assets/data/skeleton.json").exists()) {
+            skeletonData.load(Gdx.files.local("assets/data/skeleton.json"));
+            Gdx.app.log("Editor", "Live Reloading skeleton.json from source.");
+        } else {
+            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+        }
+
+        // Initialize Head Position from Skeleton 'face' socket if available
+        com.badlogic.gdx.math.Vector2 faceSocket = skeletonData.getSocketPosition("face");
+        if (faceSocket != null && (faceSocket.x != 0 || faceSocket.y != 0)) {
+            this.headX = faceSocket.x;
+            this.headY = faceSocket.y;
+        } else {
+            // Default if not set
+            this.headX = 700;
+            this.headY = 1200;
+        }
 
         TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
         TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
         fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
-
-        // Capture initial head position for static referencing
-        com.badlogic.gdx.math.Vector2 headSocket = skeletonData.getSocketPosition("head");
-        if (headSocket != null) {
-            this.initialHeadPos = new com.badlogic.gdx.math.Vector2(headSocket);
-        } else {
-            this.initialHeadPos = new com.badlogic.gdx.math.Vector2(1048, 1200); // Fallback default
-        }
 
         paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
         // Debug assets
@@ -182,21 +198,10 @@ public class PaperdollEditorScreen extends BaseScreen {
 
         paperDollGroup.addActor(bgImage);
 
-        // --- Head Overlay (Behind Armor) ---
-        Texture headTex = new Texture(Gdx.files.internal("images/inventory_doll_head.png"));
-        Image headImage = new Image(headTex);
-        // Position/Size from InventoryScreen, adapted for dynamic scale
-        // InventoryScreen used hardcoded 402, 465 and approx 4% / 8% size.
-        // We act as if those were for the original image and apply our 'scale'.
-        // Original logic: width * .04, height * .08
-        float headW = paperDollTexture.getWidth();
-        float headH = paperDollTexture.getHeight();
-        float headX = 1000; // Assuming 402 is relative to original
-        float headY = 1200;
+        paperDollGroup.addActor(bgImage);
 
-        headImage.setSize(headW, headH);
-        headImage.setPosition(headX, headY);
-        paperDollGroup.addActor(headImage);
+        // NOTE: The head is now rendered by the PaperDollWidget as a body fragment.
+        // We removed the separate Image actor to avoid duplicated/hidden layers.
 
         paperDollGroup.addActor(paperDollWidget);
 
@@ -315,15 +320,60 @@ public class PaperdollEditorScreen extends BaseScreen {
         socketXSlider.addListener(socketListener);
         socketYSlider.addListener(socketListener);
 
+        // --- Head Overlay Controls ---
+        controls.add(new Label("--- Head Overlay ---", skin, "default-font", Color.ORANGE))
+                .colspan(2).padTop(20).row();
+
+        // Scale note: The head texture might be huge, so the range needs to be large.
+        // Assuming texture is ~2048x2048 or similar, range 0-2048 is safe.
+        headXSlider = new Slider(0, 2048, 1, false, skin);
+        headYSlider = new Slider(0, 2048, 1, false, skin);
+
+        // Set initial values
+        headXSlider.setValue(this.headX);
+        headYSlider.setValue(this.headY);
+
+        controls.add(new Label("Head X:", skin)).left();
+        controls.add(headXSlider).width(200).row();
+        controls.add(new Label("Head Y:", skin)).left();
+        controls.add(headYSlider).width(200).row();
+
+        headValueLabel = new Label((int) headX + ", " + (int) headY, skin);
+        controls.add(headValueLabel).colspan(2).row();
+
+        ChangeListener headListener = new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                updateHeadTransform();
+            }
+        };
+        headXSlider.addListener(headListener);
+        headYSlider.addListener(headListener);
+
+        headXSlider.addListener(headListener);
+        headYSlider.addListener(headListener);
+
         // Buttons
-        TextButton saveButton = new TextButton("SAVE JSON (Armor/Skeleton)", skin);
+        TextButton saveHeadButton = new TextButton("Save Head Config", skin);
+        saveHeadButton.setColor(Color.ORANGE);
+        saveHeadButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                saveSkeleton();
+                Gdx.app.log("Editor", "Saved head configuration to skeleton.json");
+            }
+        });
+        controls.add(saveHeadButton).colspan(2).fillX().height(40).padTop(20).row();
+
+        TextButton saveButton = new TextButton("SAVE ALL (Armor + Skeleton)", skin);
         saveButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                saveData();
+                saveSkeleton();
+                saveArmor();
             }
         });
-        controls.add(saveButton).colspan(2).fillX().height(50).padTop(30).row();
+        controls.add(saveButton).colspan(2).fillX().height(50).padTop(10).row();
 
         TextButton closeButton = new TextButton("Close Editor", skin);
         closeButton.addListener(new ClickListener() {
@@ -438,6 +488,17 @@ public class PaperdollEditorScreen extends BaseScreen {
         socketValueLabel.setText((int) socketXSlider.getValue() + ", " + (int) socketYSlider.getValue());
     }
 
+    private void updateHeadTransform() {
+        this.headX = headXSlider.getValue();
+        this.headY = headYSlider.getValue();
+
+        // Update the skeleton data immediately so it's ready to save
+        skeletonData.setSocketPosition("face", headX, headY);
+
+        refreshWidget();
+        headValueLabel.setText((int) headX + ", " + (int) headY);
+    }
+
     private void refreshWidget() {
         paperDollWidget.clearEquipment();
 
@@ -487,7 +548,7 @@ public class PaperdollEditorScreen extends BaseScreen {
                 headRegion, 45, "none", 1f, 1f);
 
         // "none" socket means (0,0). So we set offset to (402, 465).
-        headFrag.localOffset.set(402, 465);
+        headFrag.localOffset.set(302, 465);
 
         // WAIT: InventoryScreen's 402,465 was for a specific target size maybe?
         // InventoryScreen used:
@@ -540,14 +601,13 @@ public class PaperdollEditorScreen extends BaseScreen {
         // Fix: Use "none" socket and calculate absolute offset based on INITIAL head
         // position
         // This prevents the face from moving when we adjust the socket sliders
+        // Z=80 (Layer 2: BELOW Helmet=90, ABOVE everything else)
         com.bpm.minotaur.paperdoll.data.DollFragment headFragment = new com.bpm.minotaur.paperdoll.data.DollFragment(
-                headRegion, 35, "none", 1f, 1f);
+                headRegion, 80, "none", 1f, 1f);
 
-        // Original offset was (40, 40) relative to socket "head"
-        // New offset is static position = InitialSocketPos + (40, 40)
-        // Since we use "none" socket (0,0), localOffset becomes the absolute position.
-        float staticX = (initialHeadPos != null ? initialHeadPos.x : 1048) + 385;
-        float staticY = (initialHeadPos != null ? initialHeadPos.y : 1200) + 220;
+        // Use the class-level headX/headY that the user is editing
+        float staticX = this.headX;
+        float staticY = this.headY;
 
         headFragment.localOffset.set(staticX, staticY);
         paperDollWidget.setBody(headFragment); // Use setBody to add "extra" fragments
@@ -581,39 +641,22 @@ public class PaperdollEditorScreen extends BaseScreen {
         }
     }
 
-    private void saveData() {
-        Json json = new Json();
-        json.setOutputType(JsonWriter.OutputType.json);
-        json.setTypeName(null);
-        json.setUsePrototypes(false);
-        json.setIgnoreUnknownFields(true);
-
-        // 1. Update Skeleton JSON
+    private void saveSkeleton() {
         try {
             FileHandle skelFile = Gdx.files.local("assets/data/skeleton.json");
 
-            // Reconstruct the expected JSON structure: { "sockets": { "name": {x,y,z}, ...
-            // } }
+            // Reconstruct the expected JSON structure
             Map<String, Map<String, Object>> root = new HashMap<>();
             Map<String, Object> socketsMap = new HashMap<>();
 
-            // We need to iterate over known sockets.
-            // Since SkeletonData stores them in private maps, we should probably access
-            // them via getters or assume keys.
-            // But we don't have public access to keys in SkeletonData.
-            // Let's assume the set of sockets we care about matches what's in the original
-            // file or just standard anatomy.
-            // Ideally SkeletonData should expose the keys.
-            // Only way right now is modifying SkeletonData to expose keys or iterating
-            // known slots.
-
-            // Workaround: We will rely on the mapped sockets logic.
-            String[] knownSockets = { "head", "torso", "hand_main", "hand_off", "feet", "hips", "back", "backpack" };
+            // ADD "face" to the known sockets list
+            String[] knownSockets = { "head", "face", "torso", "hand_main", "hand_off", "feet", "hips", "back",
+                    "backpack" };
 
             for (String sockName : knownSockets) {
                 com.badlogic.gdx.math.Vector2 pos = skeletonData.getSocketPosition(sockName);
                 int depth = skeletonData.getSocketDepth(sockName);
-                if (pos != null) { // only write if it exists/returns valid
+                if (pos != null) {
                     Map<String, Object> data = new HashMap<>();
                     data.put("x", pos.x);
                     data.put("y", pos.y);
@@ -624,19 +667,27 @@ public class PaperdollEditorScreen extends BaseScreen {
 
             root.put("sockets", socketsMap);
 
+            Json json = new Json();
+            json.setOutputType(JsonWriter.OutputType.json);
+
             skelFile.writeString(json.prettyPrint(root), false);
             Gdx.app.log("Editor", "Saved skeleton.json");
 
         } catch (Exception e) {
             Gdx.app.error("Editor", "Error saving skeleton", e);
         }
+    }
 
-        // 2. Update Armor/Items JSON
+    private void saveArmor() {
+        Json json = new Json();
+        json.setOutputType(JsonWriter.OutputType.json);
+        json.setTypeName(null);
+        json.setUsePrototypes(false);
+        json.setIgnoreUnknownFields(true);
+
         try {
             FileHandle armorFile = Gdx.files.local("assets/data/armor.json");
             @SuppressWarnings("unchecked")
-            // Use OrderedMap to preserve order if possible, though HashMap is often default
-            // for Json
             com.badlogic.gdx.utils.OrderedMap<String, ItemTemplate> armorMap = json
                     .fromJson(com.badlogic.gdx.utils.OrderedMap.class, ItemTemplate.class, armorFile);
 
@@ -648,22 +699,16 @@ public class PaperdollEditorScreen extends BaseScreen {
                 String key = item.getTypeName();
                 ItemTemplate t = armorMap.get(key);
                 if (t != null) {
-                    // Update only if changed? checking first might be optimization, but assigning
-                    // is fine.
-                    // Important: The UI might have floats like 1.00001, maybe round?
                     t.offsetX = item.getOffsetX();
                     t.offsetY = item.getOffsetY();
                     t.scaleX = item.getScale().x;
                     t.scaleY = item.getScale().y;
 
-                    // SYNC Vector2Wrapper scale to ensure World Rendering (EntityRenderer) picks it
-                    // up
                     if (t.scale == null) {
                         t.scale = new ItemTemplate.Vector2Wrapper();
                     }
                     t.scale.x = t.scaleX;
                     t.scale.y = t.scaleY;
-
                     Gdx.app.log("Editor", String.format("Updated %s: Scale(%.2f, %.2f) Offset(%.2f, %.2f)",
                             key, t.scaleX, t.scaleY, t.offsetX, t.offsetY));
                     changed = true;
@@ -675,13 +720,13 @@ public class PaperdollEditorScreen extends BaseScreen {
                 Gdx.app.log("Editor", "Saved armor.json");
             }
 
+            // Trigger Global Reload
+            game.getItemDataManager().reloadAll();
+            Gdx.app.log("Editor", "Triggered global ItemDataManager reload.");
+
         } catch (Exception e) {
             Gdx.app.error("Editor", "Failed to save armor JSON", e);
         }
-
-        // 3. Trigger Global Reload
-        game.getItemDataManager().reloadAll();
-        Gdx.app.log("Editor", "Triggered global ItemDataManager reload.");
     }
 
     @Override

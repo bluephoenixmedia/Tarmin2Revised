@@ -401,11 +401,45 @@ public class Player {
         BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. Reset imminent.");
     }
 
+    private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
+            String msg, GameEventManager eventManager) {
+        // 1. Damage (The Ordeal)
+        stats.setCurrentHP(stats.getCurrentHP() - damage);
+
+        // 2. Apply Stats
+        if (strBonus > 0) {
+            stats.setStrength(stats.getStrength() + strBonus);
+        }
+
+        if (maxHpPenalty > 0) {
+            stats.modifyBaseHP(-maxHpPenalty);
+        }
+
+        // 3. Increase Toxicity
+        stats.modifyToxicity(toxicityAdd);
+
+        eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
+        eventManager.addEvent(new GameEvent(msg, 3f));
+    }
+
     public void quaff(Item potion, DiscoveryManager discoveryManager, GameEventManager eventManager) {
         if (potion == null) {
             eventManager.addEvent(new GameEvent("Quaff what?", 1.0f));
             return;
         }
+
+        // NEW: Toxic Alchemy Potions
+        if (potion.getType() == ItemType.POTION_FERAL_DRAUGHT) {
+            drinkToxicConcoction(potion, 30, 1, 0, 15, "Strength surges through you, but it burns!", eventManager);
+            inventory.removeItem(potion);
+            return;
+        }
+        if (potion.getType() == ItemType.POTION_TITAN_SLUDGE) {
+            drinkToxicConcoction(potion, 50, 5, 5, 40, "You feel heavy and powerful... and sick.", eventManager);
+            inventory.removeItem(potion);
+            return;
+        }
+
         if (!potion.isPotion()) {
             eventManager.addEvent(new GameEvent("You can't drink that!", 1.0f));
             return;
@@ -416,16 +450,12 @@ public class Player {
         // We need to handle stack splitting if we ever have stacks, but currently
         // unique items.
         // Assuming single items for now or handle removal logic.
+        // ... existing logic ...
 
         if (potion.getTrueEffect() == null) {
             eventManager.addEvent(new GameEvent("It tastes like water.", 1.5f));
             // Consume
-            if (inventory.getRightHand() == potion)
-                inventory.setRightHand(null);
-            else if (inventory.getLeftHand() == potion)
-                inventory.setLeftHand(null);
-            else
-                inventory.removeItem(potion);
+            inventory.removeItem(potion);
             return;
         }
 
@@ -447,12 +477,7 @@ public class Player {
         BalanceLogger.getInstance().logEconomy("RES_USED", "Potion", 1);
 
         // Consume item
-        if (inventory.getRightHand() == potion)
-            inventory.setRightHand(null);
-        else if (inventory.getLeftHand() == potion)
-            inventory.setLeftHand(null);
-        else
-            inventory.removeItem(potion);
+        inventory.removeItem(potion);
     }
 
     public void read(Item scroll, DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze) {

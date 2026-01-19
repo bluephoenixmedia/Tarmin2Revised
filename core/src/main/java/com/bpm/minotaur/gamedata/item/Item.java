@@ -36,6 +36,11 @@ public class Item implements Renderable {
         // NEW TYPES FOR DICE INTEGRATION
         SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD, RUSTY_SWORD,
 
+        // NEW: Toxic Communion Gibs
+        GIB_FLESH, GIB_BONE, GIB_ORGAN, GIB_BILE, GIB_GLAZE,
+        // NEW: Alchemy Potions
+        POTION_FERAL_DRAUGHT, POTION_TITAN_SLUDGE,
+
         // NEW WEAPONS (Generated)
         ALHULAK, ANKUS_ELEPHANT_GOAD, ARQUEBUS, ARROW_DAIKYU, ARROW_FLIGHT, ARROW_FORGET, ARROW_GIANT_KIN, ARROW_KENYAN,
         ARROW_MAIL_PIERCER, ARROW_SHEAF, ARROW_SLEEP, ARROW_STONE_FLIGHT, ARROW_WAR, ASSEGAI, AXE_BATTLE, AXE_FOREARM,
@@ -416,10 +421,24 @@ public class Item implements Renderable {
 
         // NEW: Dynamic Bone Naming
         if (this.type == ItemType.BONE && this.corpseSource != null) {
-            // Formats "MINOTAUR" to "Minotaur Bone"
-            String sourceName = this.corpseSource.name().charAt(0) +
-                    this.corpseSource.name().substring(1).toLowerCase().replace('_', ' ');
+            String sourceName = toTitleCase(this.corpseSource.name());
             return sourceName + " Bone";
+        }
+
+        // NEW: Dynamic Gib Naming
+        if (this.type.name().startsWith("GIB_") && this.corpseSource != null) {
+            String sourceName = toTitleCase(this.corpseSource.name());
+            String partName = "Flesh";
+            if (type == ItemType.GIB_BILE)
+                partName = "Bile";
+            else if (type == ItemType.GIB_ORGAN)
+                partName = "Organ";
+            else if (type == ItemType.GIB_GLAZE)
+                partName = "Glaze";
+            else if (type == ItemType.GIB_BONE)
+                partName = "Bone";
+
+            return sourceName + " " + partName;
         }
 
         if (!isModified())
@@ -445,6 +464,14 @@ public class Item implements Renderable {
         if (suffix != null)
             nameBuilder.append(" ").append(suffix);
         return nameBuilder.toString();
+    }
+
+    // Helper for Title Case
+    private String toTitleCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.charAt(0) + input.substring(1).toLowerCase().replace('_', ' ');
     }
 
     public boolean isWeapon() {

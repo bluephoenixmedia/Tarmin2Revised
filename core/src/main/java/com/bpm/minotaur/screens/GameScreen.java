@@ -101,6 +101,10 @@ public class GameScreen extends BaseScreen {
 
     private final TurnManager turnManager; // NEW
 
+    // --- NEW: Visceral Feedback Components ---
+    private FirstPersonWeaponOverlay weaponOverlay;
+    private float hitPauseTimer = 0f;
+
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
     private com.badlogic.gdx.InputMultiplexer inputMultiplexer;
@@ -138,6 +142,9 @@ public class GameScreen extends BaseScreen {
 
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
+
+        // --- NEW: Weapon Overlay ---
+        this.weaponOverlay = new FirstPersonWeaponOverlay(game.getItemDataManager(), game.getAssetManager());
     }
 
     @Override
@@ -338,32 +345,46 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        time += delta;
-        combatManager.update(delta);
-        if (combatDiceOverlay != null)
-            combatDiceOverlay.update(delta);
-        animationManager.update(delta);
-        if (maze != null)
-            maze.update(delta);
-        if (hud != null)
-            hud.update(delta);
-        eventManager.update(delta);
-        handleSystemEvents();
+        // --- VISCERAL HIT PAUSE ---
+        if (hitPauseTimer > 0) {
+            hitPauseTimer -= delta;
+            // Freeze game logic during hit pause, but keep rendering the static frame (and
+            // shake!)
+            // We do NOT update time, combatManager, etc.
+            if (hitPauseTimer <= 0)
+                hitPauseTimer = 0;
+        } else {
+            // Normal Update Loop
+            time += delta;
+            combatManager.update(delta);
+            if (combatDiceOverlay != null)
+                combatDiceOverlay.update(delta);
+            animationManager.update(delta);
+            if (maze != null)
+                maze.update(delta);
+            if (hud != null)
+                hud.update(delta);
+            eventManager.update(delta);
+            handleSystemEvents();
 
-        if (worldManager != null) {
-            worldManager.update(delta);
-            if (worldManager.getWeatherManager() != null) {
-                float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
-                this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
+            if (worldManager != null) {
+                worldManager.update(delta);
+                if (worldManager.getWeatherManager() != null) {
+                    float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
+                    this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
+                }
             }
-        }
 
-        if (stochasticManager != null) {
-            stochasticManager.update(delta);
-        }
+            if (stochasticManager != null) {
+                stochasticManager.update(delta);
+            }
 
-        if (gameMode == GameMode.ADVANCED) {
-            checkForProactiveChunkLoading();
+            if (gameMode == GameMode.ADVANCED) {
+                checkForProactiveChunkLoading();
+            }
+
+            // Update Overlay Animation
+            weaponOverlay.update(delta);
         }
 
         if (useCrtFilter) {
@@ -463,8 +484,25 @@ public class GameScreen extends BaseScreen {
 
             // 3D Rendering Moved Above EntityRenderer
 
+            // 3D Rendering Moved Above EntityRenderer
+
             animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(),
                     firstPersonRenderer, maze);
+
+            // --- VISCERAL: Weapon Overlay ---
+            // Render 2D weapon swipe on top of 3D world but before HUD/PostProcess?
+            // Actually best to do it before CRT so it gets filtered.
+            // We need a SpriteBatch for this. Game has one.
+
+            // Use UI viewport (game.getViewport()) for overlay, NOT world viewport
+            // (currentViewport)
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+
+            if (weaponOverlay.isActive()) {
+                game.getBatch().begin();
+                weaponOverlay.render(game.getBatch(), game.getViewport());
+                game.getBatch().end();
+            }
 
             if (debugManager.isDebugOverlayVisible()) {
                 debugRenderer.render(shapeRenderer, player, maze, currentViewport);
@@ -788,7 +826,12 @@ public class GameScreen extends BaseScreen {
                         return true;
                     case Input.Keys.ENTER:
                     case Input.Keys.SPACE:
+                    case Input.Keys.A: // Binding 'A' to Attack for convenience
                         int selection = hud.combatMenu.getSelectedIndex();
+                        // If 'A' pressed, assume Attack regardless of menu unless we want strict nav
+                        if (keycode == Input.Keys.A)
+                            selection = 0;
+
                         switch (selection) {
                             case 0: // ATTACK
                                 // USER FEEDBACK: "Attack" should be instant (Standard Weapon Attack)
@@ -1203,6 +1246,10 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    public Maze getMaze() {
+        return maze;
+    }
+
     @Override
     public void dispose() {
         shapeRenderer.dispose();
@@ -1220,5 +1267,18 @@ public class GameScreen extends BaseScreen {
         if (stochasticManager != null)
             stochasticManager.dispose();
         postProcessBatch.dispose();
+    }
+
+    // --- NEW: Visceral API ---
+    public void addTrauma(float amount) {
+        this.trauma = Math.min(1.0f, this.trauma + amount);
+    }
+
+    public void triggerHitPause(float duration) {
+        this.hitPauseTimer = duration;
+    }
+
+    public FirstPersonWeaponOverlay getWeaponOverlay() {
+        return weaponOverlay;
     }
 }

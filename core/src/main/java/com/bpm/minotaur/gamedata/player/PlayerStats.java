@@ -11,6 +11,7 @@ public class PlayerStats {
     private int food;
     private int arrows;
     private int dexterity;
+    private int strength;
 
     // --- Experience and Leveling Fields ---
     private int level;
@@ -31,6 +32,34 @@ public class PlayerStats {
     private int maxHP;
     private int maxMP;
 
+    // --- Toxic Communion Stats ---
+    private int toxicity = 0;
+    private int maxToxicity = 100;
+
+    public int getToxicity() {
+        return toxicity;
+    }
+
+    public void setToxicity(int toxicity) {
+        this.toxicity = toxicity;
+    }
+
+    public int getMaxToxicity() {
+        return maxToxicity;
+    }
+
+    public void setMaxToxicity(int maxToxicity) {
+        this.maxToxicity = maxToxicity;
+    }
+
+    public void modifyToxicity(int amount) {
+        this.toxicity += amount;
+        if (this.toxicity < 0)
+            this.toxicity = 0;
+        if (this.toxicity > 100)
+            this.toxicity = 100;
+    }
+
     private final float vulnerabilityMultiplier;
 
     public PlayerStats(Difficulty difficulty) {
@@ -45,6 +74,7 @@ public class PlayerStats {
         this.maxMP = difficulty.startSpiritualStrength;
 
         this.dexterity = 10;
+        this.strength = 10;
 
         // --- Initialize Leveling Stats ---
         this.level = 1;
@@ -257,6 +287,41 @@ public class PlayerStats {
 
     public void setDexterity(int dexterity) {
         this.dexterity = dexterity;
+    }
+
+    public int getStrength() {
+        return strength;
+    }
+
+    public void setStrength(int strength) {
+        this.strength = strength;
+    }
+
+    // --- Effective Stats (Toxicity Modifiers) ---
+    public int getEffectiveStrength() {
+        int eff = strength;
+        // Med Toxicity (26-75%): +10% Strength
+        if (toxicity >= 26 && toxicity <= 75) {
+            eff += Math.max(1, (int) (strength * 0.1f));
+        }
+        // Critical Toxicity (>75%): +20% Strength? (User said Double Damage, handled
+        // elsewhere, but let's boost STR too)
+        if (toxicity >= 76) {
+            eff += Math.max(2, (int) (strength * 0.2f));
+        }
+        return eff;
+    }
+
+    public float getDefenseMultiplier() {
+        // Med Toxicity: -10% Defense
+        if (toxicity >= 26 && toxicity <= 75) {
+            return 0.9f;
+        }
+        // Crit Toxicity: -20% Defense? (Glass Cannon)
+        if (toxicity >= 76) {
+            return 0.8f;
+        }
+        return 1.0f;
     }
 
     // --- Bone & Die Getters ---

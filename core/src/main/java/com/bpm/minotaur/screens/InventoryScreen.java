@@ -257,7 +257,13 @@ public class InventoryScreen extends BaseScreen {
         // Initialize Paper Doll Components
         // ALWAYS Reload to pick up Editor changes (skeleton.json)
         skeletonData = new SkeletonData();
-        skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+        // Live Reload: Check for source file first
+        if (Gdx.files.local("assets/data/skeleton.json").exists()) {
+            skeletonData.load(Gdx.files.local("assets/data/skeleton.json"));
+            Gdx.app.log("Inventory", "Live Reloading skeleton.json from source.");
+        } else {
+            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
+        }
 
         TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
         TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
@@ -453,6 +459,37 @@ public class InventoryScreen extends BaseScreen {
 
         Table rightSide = new Table();
         rightSide.add(backpackTable).top().right().expand().fillX().row();
+
+        // Alchemy Button
+        TextButton alchemyBtn = new TextButton("Alchemy", new TextButton.TextButtonStyle(null, null, null, font));
+        // Simple style reuse or create new one if needed, InventoryScreen likely has
+        // basic styles?
+        // Actually InventoryScreen uses buildUI and likely has styles/fonts setup.
+        // But here I'm using `game.getSkin()` in previous failed attempt?
+        // InventoryScreen doesn't seem to have a global skin variable.
+        // It constructs things manually?
+        // Let's check how other buttons are made or just use a basic one.
+        // The previous code utilized `game.getSkin()` which was wrong.
+        // Let's make a style using the exiting font/textures in InventoryScreen if
+        // possible.
+        // "whitePixel" and "font" are available fields in InventoryScreen? Yes.
+
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+        btnStyle.font = font;
+        btnStyle.up = new TextureRegionDrawable(new TextureRegionDrawable(slotBg)); // Reuse slotBg
+        btnStyle.fontColor = Color.GREEN;
+
+        alchemyBtn.setStyle(btnStyle);
+
+        alchemyBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new AlchemyScreen(game, InventoryScreen.this.parentScreen, player));
+                dispose();
+            }
+        });
+        rightSide.add(alchemyBtn).right().pad(5).row();
+
         rightSide.add(quickSlotTable).bottom().right().height(150).fillX();
 
         mainSplit.add(rightSide).expand().fill().right(); // Right align right side
@@ -521,12 +558,26 @@ public class InventoryScreen extends BaseScreen {
             if (headTexture != null) {
                 com.badlogic.gdx.graphics.g2d.TextureRegion headRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
                         headTexture);
-                // Z=35 (Chest=30, Head=60). Offset=40,40 relative to "head" socket (1048, 1200)
-                // Correctly places head overlay between chest armor and head armor (helmet).
-                com.bpm.minotaur.paperdoll.data.DollFragment headFrag = new com.bpm.minotaur.paperdoll.data.DollFragment(
-                        headRegion, 35, "head", 1f, 1f);
-                headFrag.localOffset.set(40, 40);
-                paperDollWidget.setBody(headFrag);
+                // Z=53 (Plate=50, Helm=60).
+                // Use "face" socket from Editor if available, otherwise fallback.
+                com.badlogic.gdx.math.Vector2 facePos = skeletonData.getSocketPosition("face");
+
+                com.bpm.minotaur.paperdoll.data.DollFragment headFrag;
+                if (facePos != null && (facePos.x != 0 || facePos.y != 0)) {
+                    // Editor Mode: Absolute coordinates (Socket "face")
+                    // Z-Index 80 (As requested: Layer 2, below Helmet 90)
+                    headFrag = new com.bpm.minotaur.paperdoll.data.DollFragment(headRegion, 80, "face", 1f, 1f);
+                    headFrag.localOffset.set(0, 0);
+                    // The widget uses skeleton data for the "head" socket position.
+                    // We just need to ensure the fragment is added.
+                    paperDollWidget.setBody(headFrag);
+                } else {
+                    // Fallback Mode: Relative to "head" socket
+                    // Z=53
+                    headFrag = new com.bpm.minotaur.paperdoll.data.DollFragment(headRegion, 53, "head", 1f, 1f);
+                    headFrag.localOffset.set(385, 220);
+                    paperDollWidget.setBody(headFrag);
+                }
             }
 
             // Add Base Body (Hardcoded for now, could be dynamic based on race/gender)
@@ -1031,18 +1082,19 @@ public class InventoryScreen extends BaseScreen {
                 if ("Neck".equals(name))
                     return item.getType() == ItemType.AMULET || item.getType() == ItemType.NECKLACE;
                 if ("Back".equals(name))
-                    return item.getType() == ItemType.CLOAK;
+                    return item.isCloak(); // Use boolean flag
                 if ("Chest".equals(name))
-                    return item.isArmor() && !item.isHelmet() && !item.isShield() && !item.isRing(); // Broad check for
-                                                                                                     // body armor
+                    return item.isArmor() && !item.isHelmet() && !item.isShield() && !item.isRing()
+                            && !item.isGauntlets() && !item.isBoots() && !item.isLegs() && !item.isArms()
+                            && !item.isCloak();
                 if ("Arms".equals(name))
                     return item.isArms();
                 if ("Hands".equals(name))
-                    return item.getType() == ItemType.GAUNTLETS;
+                    return item.isGauntlets();
                 if ("Legs".equals(name))
-                    return item.getType() == ItemType.LEGS; // Add GREAVES if it exists
+                    return item.isLegs();
                 if ("Feet".equals(name))
-                    return item.getType() == ItemType.BOOTS;
+                    return item.isBoots();
                 if ("Ring".equals(name)) {
                     return item.isRing();
                 }

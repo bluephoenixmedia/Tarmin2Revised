@@ -2,89 +2,127 @@
 "sockets": {
 	"head": {
 		"x": {
+			"class": "java.lang.Float",
 			"value": 797
 		},
 		"y": {
-			"value": 1011
+			"class": "java.lang.Float",
+			"value": 987
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 40
 		}
 	},
 	"feet": {
 		"x": {
-			"value": 849
+			"class": "java.lang.Float",
+			"value": 845
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 63
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 10
+		}
+	},
+	"face": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 1086
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 1215
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
 		}
 	},
 	"hips": {
 		"x": {
-			"value": 944
+			"class": "java.lang.Float",
+			"value": 925
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 219
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 20
 		}
 	},
 	"torso": {
 		"x": {
-			"value": 944
+			"class": "java.lang.Float",
+			"value": 935
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 575
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 30
 		}
 	},
 	"hand_off": {
 		"x": {
+			"class": "java.lang.Float",
 			"value": 1200
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 646
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 0
 		}
 	},
 	"hand_main": {
 		"x": {
-			"value": 669
+			"class": "java.lang.Float",
+			"value": 911
 		},
 		"y": {
-			"value": 987
+			"class": "java.lang.Float",
+			"value": 660
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 0
 		}
 	},
 	"backpack": {
 		"x": {
+			"class": "java.lang.Float",
 			"value": 0
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 0
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 0
 		}
 	},
 	"back": {
 		"x": {
+			"class": "java.lang.Float",
 			"value": 0
 		},
 		"y": {
+			"class": "java.lang.Float",
 			"value": 0
 		},
 		"z": {
+			"class": "java.lang.Integer",
 			"value": 0
 		}
 	}

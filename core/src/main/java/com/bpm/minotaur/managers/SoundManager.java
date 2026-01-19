@@ -63,7 +63,16 @@ public class SoundManager {
         loadSound("thunder_3", "sounds/thunder_3.ogg");
         loadSound("lightning_crash_1", "sounds/lightning_crash_1.ogg");
         loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
+        loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
         loadSound("lightning_crash_3", "sounds/lightning_crash_3.ogg");
+
+        // --- NEW: Visceral Combat Sounds ---
+        loadSound("weapon_swing", "sounds/weapon_swing.wav"); // Defaults to a simple whoosh if file missing handled by
+                                                              // loadSound checks
+        loadSound("meat_hit", "sounds/meat_hit.wav");
+        loadSound("metal_hit", "sounds/metal_hit.wav");
+        loadSound("monster_grunt_light", "sounds/monster_grunt_light.wav");
+        loadSound("monster_roar_heavy", "sounds/monster_roar_heavy.wav");
     }
 
     private void loadSound(String name, String path) {
@@ -232,6 +241,52 @@ public class SoundManager {
             playSound("monster_roar");
         } else {
             // playSound("tarmin_roar");
+        }
+    }
+
+    // --- NEW: Visceral Combat Audio ---
+
+    public void playWeaponSwing() {
+        if (modernSounds.containsKey("weapon_swing")) {
+            long id = modernSounds.get("weapon_swing").play();
+            modernSounds.get("weapon_swing").setPitch(id, MathUtils.random(0.9f, 1.1f));
+        } else {
+            // Fallback existing
+            playSound("player_attack");
+        }
+    }
+
+    public void playWeaponImpact(boolean heavy) {
+        String sound = heavy ? "meat_hit" : "meat_hit"; // Can add metal_hit logic later if we know target armor
+        if (modernSounds.containsKey(sound)) {
+            long id = modernSounds.get(sound).play();
+            modernSounds.get(sound).setPitch(id, MathUtils.random(0.9f, 1.1f));
+        }
+    }
+
+    public void playMonsterReaction(Monster monster, float damageRatio) {
+        if (monster.getCurrentHP() <= 0) {
+            // Death sound (handled elsewhere usually, but good to have dedicated)
+            playSound("monster_roar");
+            return;
+        }
+
+        if (damageRatio > 0.25f) {
+            // Heavy Hit
+            if (modernSounds.containsKey("monster_roar_heavy")) {
+                long id = modernSounds.get("monster_roar_heavy").play();
+                modernSounds.get("monster_roar_heavy").setPitch(id, MathUtils.random(0.8f, 0.95f));
+            } else {
+                playSound("monster_roar");
+            }
+        } else {
+            // Light Hit
+            if (modernSounds.containsKey("monster_grunt_light")) {
+                long id = modernSounds.get("monster_grunt_light").play();
+                modernSounds.get("monster_grunt_light").setPitch(id, MathUtils.random(0.95f, 1.1f));
+            } else {
+                playSound("monster_attack"); // Re-use usually short sound
+            }
         }
     }
 

@@ -48,7 +48,14 @@ public class ItemDataManager {
         // If map exists, clear it instead of newing
         itemTemplates.clear();
         Json json = new Json();
-        FileHandle file = Gdx.files.internal("data/items.json");
+
+        // Live Reload: Check for source file first
+        FileHandle file = Gdx.files.local("assets/data/items.json");
+        if (!file.exists()) {
+            file = Gdx.files.internal("data/items.json");
+        } else {
+            Gdx.app.log("ItemDataManager", "Live Reloading items.json from source.");
+        }
         // ... rest of load() implementation ...
         JsonValue root = new JsonReader().parse(file);
 
@@ -196,7 +203,14 @@ public class ItemDataManager {
      */
     public void loadWeapons() {
         Json json = new Json();
-        FileHandle file = Gdx.files.internal("data/weapons.json");
+
+        // Live Reload: Check for source file first
+        FileHandle file = Gdx.files.local("assets/data/weapons.json");
+        if (!file.exists()) {
+            file = Gdx.files.internal("data/weapons.json");
+        } else {
+            Gdx.app.log("ItemDataManager", "Live Reloading weapons.json from source.");
+        }
 
         if (!file.exists()) {
             Gdx.app.error("ItemDataManager", "weapons.json missing!");
@@ -233,7 +247,14 @@ public class ItemDataManager {
      */
     public void loadArmor() {
         Json json = new Json();
-        FileHandle file = Gdx.files.internal("data/armor.json");
+
+        // Live Reload: Check for source file first
+        FileHandle file = Gdx.files.local("assets/data/armor.json");
+        if (!file.exists()) {
+            file = Gdx.files.internal("data/armor.json");
+        } else {
+            Gdx.app.log("ItemDataManager", "Live Reloading armor.json from source.");
+        }
 
         if (!file.exists()) {
             Gdx.app.error("ItemDataManager", "armor.json missing!");

@@ -237,6 +237,14 @@ public class CombatManager {
 
             Gdx.app.log("CombatManager", "Player took " + damage + " poison damage.");
         }
+
+        // NEW: Critical Toxicity DoT
+        if (player.getStats().getToxicity() >= 76) {
+            int dot = 2 + random.nextInt(3);
+            player.takeStatusEffectDamage(dot, DamageType.POISON);
+            eventManager.addEvent(new GameEvent("Toxicity burns! (-" + dot + " HP)", 2f));
+            damageTakenInCombat += dot;
+        }
     }
 
     // --- NEW: Helper to setup weapon and checks ---
@@ -334,6 +342,16 @@ public class CombatManager {
             return;
         if (!prepareAttack())
             return;
+
+        // --- VISCERAL: Trigger Weapon Animation & Sound ---
+        soundManager.playWeaponSwing();
+        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.getWeaponOverlay().triggerAttack(pendingWeapon);
+            // Since this is an instant attack, jump to the impact frame immediately
+            // so it is visible during the Hit Pause freeze.
+            gs.getWeaponOverlay().jumpToImpact();
+        }
 
         // Roll d20
         int d20Roll = DiceRoller.d20();
@@ -555,7 +573,13 @@ public class CombatManager {
         }
 
         // 3. Damage
-        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getStats().getAttackModifier();
+        int strBonus = Math.max(0, player.getStats().getEffectiveStrength() - 10);
+        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getStats().getAttackModifier() + strBonus;
+
+        // Toxic Communion: Critical Toxicity Double Damage
+        if (player.getStats().getToxicity() >= 76) {
+            totalAttack *= 2;
+        }
 
         // Log artifacts logic here later
 
@@ -621,24 +645,73 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
             }
 
-            // Animation
-            String[] sprite = pendingWeapon.getSpriteData();
-            if (sprite == null)
-                sprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
+            // --- VISCERAL: Feedback ---
+            float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
+            boolean isHeavy = damageRatio > 0.2f;
 
-            animationManager.addAnimation(new Animation(Animation.AnimationType.PROJECTILE_PLAYER,
-                    player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f, sprite));
+            // 1. Audio
+            soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
+            soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
+
+            // 2. Screen Shake & Hit Pause
+            if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+
+                // Shake
+                float trauma = isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f);
+                gs.addTrauma(trauma);
+
+                // Pause (Freeze frame)
+                float pauseDur = isCrit ? 0.15f : 0.05f;
+                gs.triggerHitPause(pauseDur);
+            }
+
+            // 3. Blood (Scaling)
+            if (damageRatio < 0.1f) {
+                // Chip damage (puff)
+                maze.getGoreManager().spawnBloodSpray(
+                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                        1);
+            } else if (damageRatio < 0.3f) {
+                // Solid Hit
+                maze.getGoreManager().spawnBloodSpray(
+                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                        4);
+                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
+            } else {
+                // Massive/Gib
+                maze.getGoreManager().spawnBloodSpray(
+                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                        8);
+                maze.getGoreManager()
+                        .spawnGibExplosion(new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y));
+                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
+            }
+
+            // Animation (Projectiles removed in favor of Weapon Swipe per user visuals
+            // preference?
+            // The prompt says "Weapon sprite begins sweeping arc... Camera snaps to
+            // cinematic view"
+            // We implemented the sprite sweep. We should arguably remove the projectile
+            // animation if it conflicts.
+            // But let's leave it for "ranged" checks or just remove if it looks weird.
+            // For now, let's keep it but maybe mute it?)
+            /*
+             * String[] sprite = pendingWeapon.getSpriteData();
+             * if (sprite == null)
+             * sprite = itemDataManager.getTemplate(Item.ItemType.DART).spriteData;
+             * 
+             * animationManager.addAnimation(new
+             * Animation(Animation.AnimationType.PROJECTILE_PLAYER,
+             * player.getPosition(), monster.getPosition(), pendingWeapon.getColor(), 0.5f,
+             * sprite));
+             */
 
             int actualDamage = monster.takeDamage(totalDamage);
             lastDamageDealt = actualDamage;
-
-            if (actualDamage > 0) {
-                Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
-                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
-                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
-                if (maze.getBloodCount() < 100)
-                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
-            }
 
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
             eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
@@ -646,6 +719,8 @@ public class CombatManager {
         } else {
             // Miss
             eventManager.addEvent(new GameEvent("Miss!", 1f));
+            // Maybe a "whoosh" sound if we didn't play one earlier? We played swing at
+            // start.
         }
 
         if (pendingWeapon.isUsable()) {
@@ -839,97 +914,79 @@ public class CombatManager {
     }
 
     private void spawnCorpseEffects(Monster monster) {
-        // 1. Spawn Item (BONE for Ossuary)
-        if (maze != null && itemDataManager != null) {
-            Item bone = itemDataManager.createItem(Item.ItemType.BONE,
-                    (int) monster.getPosition().x, (int) monster.getPosition().y,
-                    ItemColor.WHITE, (game != null) ? game.getAssetManager() : null);
+        if (maze == null || itemDataManager == null)
+            return;
 
-            if (bone != null) {
-                bone.setCorpseSource(monster.getType());
-                maze.getItems().put(
-                        new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y),
-                        bone);
+        GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
-                BalanceLogger.getInstance().log("LOOT_DROP", "Dropped " + bone.getDisplayName() +
-                        " from " + monster.getMonsterType());
-            }
+        // 1. Determine Gib Count based on Damage
+        int gibCount = 1 + random.nextInt(2); // 1-2 gibs default
 
-            // --- NEW: MEAT / CHITIN DROPS ---
-            // 50% chance for meat if not undead/construct etc.
-            // Simple check: most monsters are fleshy.
-            boolean isFleshy = true;
-            String mType = monster.getMonsterType();
-            if (mType.contains("SKELETON") || mType.contains("GOLEM") || mType.contains("GHOST")
-                    || mType.contains("WRAITH") || mType.contains("SLIME")) {
-                isFleshy = false;
-            }
-
-            if (isFleshy) {
-                // --- NEW: Tarmin's Hunger Loot Decay ---
-                float baseChance = 0.5f;
-                float decay = com.bpm.minotaur.managers.DoomManager.getInstance().getLootChanceMultiplier();
-                if (random.nextFloat() < (baseChance * decay)) {
-                    Item meat = itemDataManager.createItem(Item.ItemType.MEAT,
-                            (int) monster.getPosition().x, (int) monster.getPosition().y,
-                            ItemColor.TAN, (game != null) ? game.getAssetManager() : null);
-                    if (meat != null) {
-                        // Find unexpected free spot or stack? For now, just try to place or overwrite
-                        // (limitations)
-                        // Maze items is a map, only 1 item per tile?
-                        // If we already placed a BONE, we can't place MEAT on same tile in current
-                        // system?
-                        // Inventory.java line 95: maze.getItems().get(playerTile2) -> single item.
-                        // We need to place it adjacent or only drop one.
-                        // Let's drop Meat INSTEAD of Bone effectively? Or place nearby?
-                        // "Smart" drop: check tile, if taken, try neighbor.
-                        GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
-
-                        // --- INTRINSIC LOGIC ---
-                        MonsterTemplate t = monster.getTemplate();
-                        if (t != null && t.corpseEffect != null) {
-                            if (random.nextInt(100) < t.corpseEffectChance) {
-                                meat.setGrantedIntrinsic(t.corpseEffect);
-                            }
-                        }
-                        // -----------------------
-
-                        if (!maze.getItems().containsKey(pos)) {
-                            maze.getItems().put(pos, meat);
-                            BalanceLogger.getInstance().log("LOOT_DROP", "Dropped Meat from " + mType);
-                        } else {
-                            // Try scatter
-                            for (int dx = -1; dx <= 1; dx++) {
-                                for (int dy = -1; dy <= 1; dy++) {
-                                    GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
-                                    if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH)
-                                            && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) { // Simple
-                                        // floor
-                                        // check
-                                        meat.getPosition().set(p.x + 0.5f, p.y + 0.5f);
-                                        maze.getItems().put(p, meat);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // -------------------------------
+        if (lastDamageDealt > 10) {
+            gibCount += 1;
         }
 
-        // 3. Drop Inventory Contents (NEW)
+        // 2. Spawn Gibs
+        for (int i = 0; i < gibCount; i++) {
+            Item.ItemType gibType = Item.ItemType.GIB_FLESH;
+
+            // Chance for rare parts
+            int roll = random.nextInt(100);
+            if (roll < 10)
+                gibType = Item.ItemType.GIB_BILE;
+            else if (roll < 25)
+                gibType = Item.ItemType.GIB_ORGAN;
+            else if (roll < 50)
+                gibType = Item.ItemType.GIB_BONE;
+
+            // Monster Specifics
+            if (monster.getType().name().contains("SKELETON")) {
+                gibType = Item.ItemType.GIB_BONE;
+            } else if (monster.getType().name().contains("SLIME")) {
+                gibType = Item.ItemType.GIB_GLAZE;
+            }
+
+            Item gib = itemDataManager.createItem(gibType, pos.x, pos.y, ItemColor.RED,
+                    (game != null) ? game.getAssetManager() : null);
+
+            if (gib != null) {
+                gib.setCorpseSource(monster.getType());
+                // Scatter Logic
+                boolean placed = false;
+                if (!maze.getItems().containsKey(pos) && i == 0) {
+                    maze.getItems().put(pos, gib);
+                    placed = true;
+                } else {
+                    // Scatter adjacent
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dy = -1; dy <= 1; dy++) {
+                            if (dx == 0 && dy == 0)
+                                continue;
+                            GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
+                            if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH) // rough check
+                                    && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) {
+                                gib.setPosition(p.x + 0.5f, p.y + 0.5f);
+                                maze.getItems().put(p, gib);
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if (placed)
+                            break;
+                    }
+                }
+                if (placed) {
+                    BalanceLogger.getInstance().log("LOOT_DROP", "Dropped " + gib.getDisplayName());
+                }
+            }
+        } // End Gib Loop
+
+        // 3. Drop Inventory Contents
         if (monster.getInventory() != null) {
             for (Item item : monster.getInventory().getAllItems()) {
                 if (item != null) {
                     item.setPosition(monster.getPosition().x, monster.getPosition().y);
-                    // Handle stacking/collision if needed, for now just put in map?
-                    // Map only holds ONE item per tile.
-                    // We need a 'dropItem' helper in Maze or logic here to find free spot.
-                    // Reuse scatter logic?
 
-                    GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
                     if (!maze.getItems().containsKey(pos)) {
                         maze.getItems().put(pos, item);
                     } else {
@@ -953,10 +1010,6 @@ public class CombatManager {
                 }
             }
         }
-
-        // 2. Spawn Visuals (Gibs) - REMOVED (Handled by GoreManager in
-        // handleMonsterDeath)
-
     }
 
     public boolean performRangedAttack() {
