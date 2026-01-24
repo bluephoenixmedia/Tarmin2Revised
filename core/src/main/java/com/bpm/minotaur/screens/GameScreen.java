@@ -90,6 +90,8 @@ public class GameScreen extends BaseScreen {
     private final Viewport fboViewport;
     private static final int VIRTUAL_WIDTH = 1920;
     private static final int VIRTUAL_HEIGHT = 1080;
+    private static final int HUD_HEIGHT = 180;
+    private static final int GAME_HEIGHT = VIRTUAL_HEIGHT - HUD_HEIGHT; // 900px
 
     private float trauma = 0f;
     private final Vector2 originalDir = new Vector2();
@@ -116,8 +118,8 @@ public class GameScreen extends BaseScreen {
         this.currentLevel = level;
         this.stochasticManager = new StochasticManager();
 
-        this.fboViewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-        this.fboViewport.update(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
+        this.fboViewport = new FitViewport(VIRTUAL_WIDTH, GAME_HEIGHT); // Use GAME_HEIGHT
+        this.fboViewport.update(VIRTUAL_WIDTH, GAME_HEIGHT, true);
         this.soundManager = new SoundManager(debugManager);
         this.turnManager = new TurnManager(); // NEW
 
@@ -160,7 +162,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (fbo == null) {
-            fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
+            fbo = new FrameBuffer(Pixmap.Format.RGB888, VIRTUAL_WIDTH, GAME_HEIGHT, true); // Use GAME_HEIGHT
         }
 
         if (crtShader == null) {
@@ -178,7 +180,7 @@ public class GameScreen extends BaseScreen {
             hasLoadedLevel = true;
         }
 
-        camera3d = new PerspectiveCamera(67, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        camera3d = new PerspectiveCamera(67, VIRTUAL_WIDTH, GAME_HEIGHT); // Use GAME_HEIGHT
         camera3d.near = 0.01f;
         camera3d.far = 100f;
 
@@ -257,7 +259,7 @@ public class GameScreen extends BaseScreen {
         }
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager);
+                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager, worldManager);
 
         // --- LOAD BLOOD ASSETS (Packed) ---
         com.badlogic.gdx.assets.AssetManager am = game.getAssetManager();
@@ -536,7 +538,8 @@ public class GameScreen extends BaseScreen {
             postProcessBatch.begin();
             postProcessBatch.setShader(crtShader);
             crtShader.setUniformf("u_time", time);
-            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, 0, 1, 1);
+            // Draw FBO offset by HUD_HEIGHT (180)
+            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
             postProcessBatch.end();
             // --- CRT FIX: Reset view when CRT is off ---
             game.getViewport().apply();
@@ -653,7 +656,7 @@ public class GameScreen extends BaseScreen {
         this.maze = newMaze;
         player.setMaze(newMaze);
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
-                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager);
+                game.getItemDataManager(), stochasticManager, turnManager, monsterAiManager, worldManager);
         // --- FIX: Re-initialize Dice UI with new Manager ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
         // ---------------------------------------------------
@@ -668,7 +671,7 @@ public class GameScreen extends BaseScreen {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            turnManager.processTurn(maze, player, monsterAiManager, combatManager);
+            turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
         }
         combatManager.checkForAdjacentMonsters();
 
@@ -935,6 +938,15 @@ public class GameScreen extends BaseScreen {
             // -----------------------
 
             if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
+                // NEW: Priority - Use Active Quick Slot (Slot 0)
+                Item activeSlotItem = player.getInventory().getQuickSlots()[0];
+                if (activeSlotItem != null && keycode == Input.Keys.SPACE) {
+                    player.useItem(activeSlotItem, eventManager, discoveryManager, maze);
+                    playerTurnTakesAction();
+                    return true;
+                }
+
+                // Fallback: Ranged Attack
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     boolean attacked = combatManager.performRangedAttack();
                     if (attacked)
@@ -1144,6 +1156,9 @@ public class GameScreen extends BaseScreen {
                 if (debugSpawnOverlay != null) {
                     boolean isVisible = !debugSpawnOverlay.isVisible();
                     debugSpawnOverlay.setVisible(isVisible); // Toggle
+                    if (isVisible) {
+                        debugSpawnOverlay.toFront();
+                    }
                 }
                 return true;
         }

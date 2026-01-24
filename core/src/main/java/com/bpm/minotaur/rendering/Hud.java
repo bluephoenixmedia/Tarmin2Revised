@@ -19,7 +19,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -29,10 +28,14 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.*;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 
 import java.util.List;
+
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
 public class Hud implements Disposable {
 
@@ -51,11 +54,14 @@ public class Hud implements Disposable {
     private final SpriteBatch spriteBatch;
     private final ShapeRenderer shapeRenderer;
     private final Texture bottomBarBg;
+    private final Texture whiteTexture; // Generic white texture for tinting
     private final TextureRegionDrawable bottomBarDrawable;
 
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
-    private final Label foodValueLabel;
+    private final StatBar foodBar;
+    private final StatBar waterBar;
+    private final StatBar tempBar;
     private final Label arrowsValueLabel;
     private final Label directionLabel;
     private final Label dungeonLevelLabel;
@@ -71,10 +77,20 @@ public class Hud implements Disposable {
     private final Actor leftHandSlot;
     private final Actor rightHandSlot;
 
+    // Combat Menu
+    public CombatMenu combatMenu;
+
+    // Portrait
+    private TextureAtlas portraitAtlas;
+    private Image portraitImage;
+    private String currentPortraitName = "";
+
     // --- Layout Tables ---
     private final Table mainContainer;
     private final Table bottomBarTable;
+
     private final Table statsTable;
+    private final Table survivalTable; // New table for suvival stats
     private final Table logTable;
     private final Table inventoryTable;
 
@@ -113,6 +129,72 @@ public class Hud implements Disposable {
     }
 
     private final GlyphLayout glyphLayout = new GlyphLayout();
+
+    // --- StatBar Inner Class ---
+    private class StatBar extends Actor {
+        private final String name;
+        private float value;
+        private float maxValue;
+        private final Color barColor;
+        private final BitmapFont font;
+        private final GlyphLayout layout = new GlyphLayout();
+
+        public StatBar(String name, Color color, BitmapFont font) {
+            this.name = name;
+            this.barColor = new Color(color);
+            this.font = font;
+            this.maxValue = 100f;
+        }
+
+        public void setValue(float current, float max) {
+            this.value = current;
+            this.maxValue = max;
+        }
+
+        public void setBarColor(Color color) {
+            this.barColor.set(color);
+        }
+
+        @Override
+        public void draw(com.badlogic.gdx.graphics.g2d.Batch batch, float parentAlpha) {
+            Color color = getColor();
+            batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
+
+            float x = getX();
+            float y = getY();
+            float width = getWidth();
+            float height = getHeight();
+
+            // Background (Dark)
+            batch.setColor(0.1f, 0.1f, 0.1f, parentAlpha);
+            if (whiteTexture != null) {
+                batch.draw(whiteTexture, x, y, width, height);
+            }
+
+            // Foreground (Bar Color)
+            if (whiteTexture != null) {
+                float fillPercent = MathUtils.clamp(value / maxValue, 0f, 1f);
+                batch.setColor(barColor.r, barColor.g, barColor.b, barColor.a * parentAlpha);
+                batch.draw(whiteTexture, x, y, width * fillPercent, height);
+            }
+
+            // Text Overlay
+            String text;
+            if (name.equals("TEMP")) {
+                float farenheit = (value * 9.0f / 5.0f) + 32.0f;
+                text = String.format("%s: %.1fF", name, farenheit);
+            } else {
+                text = String.format("%s: %.0f/%.0f", name, value, maxValue);
+            }
+
+            layout.setText(font, text);
+            float textX = x + (width - layout.width) / 2;
+            float textY = y + (height + layout.height) / 2;
+
+            font.setColor(Color.WHITE);
+            font.draw(batch, layout, textX, textY);
+        }
+    }
     // -------------------------
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
@@ -138,6 +220,13 @@ public class Hud implements Disposable {
         pixmap.fill();
         bottomBarBg = new Texture(pixmap);
         bottomBarDrawable = new TextureRegionDrawable(new TextureRegion(bottomBarBg));
+        pixmap.dispose();
+
+        // --- Create White Texture ---
+        pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        whiteTexture = new Texture(pixmap);
         pixmap.dispose();
 
         // --- Font Loading ---
@@ -173,13 +262,14 @@ public class Hud implements Disposable {
         bottomBarTable.setBackground(bottomBarDrawable);
 
         statsTable = new Table();
+        survivalTable = new Table();
         logTable = new Table();
         inventoryTable = new Table();
 
         // --- Stats Section (Left) ---
         warStrengthValueLabel = new Label("", labelStyle);
         spiritualStrengthValueLabel = new Label("", labelStyle);
-        foodValueLabel = new Label("", labelStyle);
+
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         dungeonLevelLabel = new Label("", labelStyle);
@@ -194,9 +284,36 @@ public class Hud implements Disposable {
         statsTable.add(spiritualStrengthValueLabel).left().padLeft(10).expandX();
         statsTable.row().padTop(10);
 
-        // Row 2: Food & Level
-        statsTable.add(new Label("FOOD:", headerStyle)).left();
-        statsTable.add(foodValueLabel).left().padLeft(10);
+        // Row 2: Food, Hydration, Temp
+        // statsTable.add(new Label("FOOD:", headerStyle)).left(); // Removed label
+        // --- Survival Table Setup ---
+        survivalTable.top().left().pad(10);
+
+        foodBar = new StatBar("FOOD", Color.GREEN, font);
+        waterBar = new StatBar("H2O", Color.CYAN, font);
+        tempBar = new StatBar("TEMP", Color.ORANGE, font);
+
+        survivalTable.add(foodBar).fillX().height(24).width(160).padBottom(5).row();
+        survivalTable.add(waterBar).fillX().height(24).width(160).padBottom(5).row();
+        survivalTable.add(tempBar).fillX().height(24).width(160).padBottom(5).row();
+
+        // statsTable.add(new Label("H2O:", headerStyle)).left().padLeft(20);
+
+        // statsTable.row().padTop(10);
+        // statsTable.add(new Label("TEMP:", headerStyle)).left();
+
+        // statsTable.add(tempBar).left().width(140).height(24).padLeft(10);
+
+        // statsTable.add(new Label("LVL:", headerStyle)).left().padLeft(20);
+        // statsTable.add(levelLabel).left().padLeft(10);
+
+        // Re-arranging to fit 3 bars.
+        // Row 2: Food & Water
+        statsTable.row().padTop(10);
+
+        // Row 3: Temp & Level
+        statsTable.row().padTop(10);
+
         statsTable.add(new Label("LVL:", headerStyle)).left().padLeft(20);
         statsTable.add(levelLabel).left().padLeft(10);
         statsTable.row().padTop(10);
@@ -260,16 +377,35 @@ public class Hud implements Disposable {
         statsTable.add(monsterStrengthLabel).colspan(4).left().padTop(10);
 
         // --- Assemble Bottom Bar ---
-        bottomBarTable.add(statsTable).width(500).left().top().pad(10).padLeft(320); // Shifted right for Combat Menu
-        bottomBarTable.add(inventoryTable).width(400).center().pad(10); // Inventory in center
-        bottomBarTable.add(logTable).expandX().fill().pad(10); // Log on right
+
+        // Portrait
+        try {
+            if (game.getAssetManager().isLoaded("packed/portrait.atlas")) {
+                this.portraitAtlas = game.getAssetManager().get("packed/portrait.atlas", TextureAtlas.class);
+            }
+        } catch (Exception e) {
+            Gdx.app.error("Hud", "Failed to load portrait atlas", e);
+        }
+
+        if (portraitAtlas != null) {
+            TextureRegion region = portraitAtlas.findRegion("portrait", 100);
+            if (region != null) {
+                portraitImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(region);
+                bottomBarTable.add(portraitImage).size(100, 100).pad(5).left();
+            }
+        }
+
+        bottomBarTable.add(statsTable).width(500).left().top().pad(5); // Reduced padding
+        bottomBarTable.add(inventoryTable).width(400).left().pad(5).padLeft(10); // Reduced padding
+        bottomBarTable.add(survivalTable).width(200).left().top().pad(5).padLeft(10); // Reduced padding
+        bottomBarTable.add(logTable).expandX().fill().pad(5); // Reduced padding
 
         // --- Main Container ---
         mainContainer = new Table();
         mainContainer.setFillParent(true);
         mainContainer.bottom();
-        // Add Bottom Bar Height = 250px
-        mainContainer.add(bottomBarTable).growX().height(250);
+        // Add Bottom Bar Height = 180px
+        mainContainer.add(bottomBarTable).growX().height(180);
 
         stage.addActor(mainContainer);
 
@@ -293,15 +429,92 @@ public class Hud implements Disposable {
         stage.addActor(encounterWindow);
     }
 
+    private void updatePortrait() {
+        if (portraitAtlas == null)
+            return;
+
+        if (player == null)
+            return;
+
+        float hpPercent = (float) player.getCurrentHP() / (float) player.getMaxHP();
+        String suffix = "100";
+
+        if (hpPercent >= 0.8f)
+            suffix = "100";
+        else if (hpPercent >= 0.7f)
+            suffix = "80";
+        else if (hpPercent >= 0.6f)
+            suffix = "60"; // Mapped to closest if missing, assuming 60 exists
+        else if (hpPercent >= 0.5f)
+            suffix = "50";
+        else if (hpPercent >= 0.4f)
+            suffix = "40";
+        else if (hpPercent >= 0.3f)
+            suffix = "30";
+        else if (hpPercent >= 0.2f)
+            suffix = "20";
+        else
+            suffix = "10";
+
+        if (!suffix.equals(currentPortraitName)) {
+            // Use findRegion("portrait", index) because packer splits name_index
+            TextureRegion region = portraitAtlas.findRegion("portrait", Integer.parseInt(suffix));
+            if (region != null) {
+                if (portraitImage != null) {
+                    portraitImage.setDrawable(new TextureRegionDrawable(region));
+                }
+                currentPortraitName = suffix;
+            }
+        }
+    }
+
     public void update(float dt) {
         stage.act(dt);
+
+        updatePortrait();
 
         warStrengthValueLabel
                 .setText(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP()));
         spiritualStrengthValueLabel.setText(
                 String.format("%d / %d", player.getCurrentMP(), player.getMaxMP()));
 
-        foodValueLabel.setText(String.format("%d", player.getFood()));
+        // Update Bars
+        foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
+        if (player.getFood() < 20)
+            foodBar.setBarColor(Color.RED);
+        else
+            foodBar.setBarColor(Color.FOREST);
+
+        waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
+        if (player.getStats().getHydrationFloat() < 20)
+            waterBar.setBarColor(Color.RED);
+        else
+            waterBar.setBarColor(Color.ROYAL);
+
+        float temp = player.getStats().getBodyTemperature();
+        tempBar.setValue(temp, 50f); // Max arbitrary for bar, but text is what matters?
+        // For temp bar to look right, we might want a range.
+        // Normal is 37. range 20 to 50?
+        // Let's just use 37 as 'full' or 'middle'?
+        // Usually temp is 37. Overheat 41. Freezing 32.
+        // Let's map it: 0% = 30C, 100% = 45C?
+        // Or just visualization.
+        // Let's just do dynamic coloring and standard value for now.
+        // If we map 0-50, 37 is 74%.
+        tempBar.setValue(temp, 50f);
+
+        if (temp < 35f)
+            tempBar.setBarColor(Color.CYAN);
+        else if (temp > 38f)
+            tempBar.setBarColor(Color.RED);
+        else
+            tempBar.setBarColor(Color.ORANGE); // Normal-ish
+
+        // foodValueLabel.setText(String.format("%d", player.getFood()));
+        // hydrationValueLabel.setText(String.format("%d",
+        // player.getStats().getHydration())); // New
+        // tempValueLabel.setText(String.format("%.1f",
+        // player.getStats().getBodyTemperature())); // New
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(player.getFacing().name().substring(0, 1));
         dungeonLevelLabel.setText("DUNGEON LVL " + maze.getLevel());
@@ -381,9 +594,6 @@ public class Hud implements Disposable {
 
         // Removed background drawing
 
-        // Draw the 2D inventory items
-        drawInventory();
-
         // --- FIX: Only draw standard automap if debug overlay is NOT visible ---
         if (!debugManager.isDebugOverlayVisible()) {
             drawAutomap();
@@ -401,6 +611,9 @@ public class Hud implements Disposable {
 
         // This renders all actors (labels, etc.) *and* the debug lines (if enabled)
         stage.draw();
+
+        // Draw the 2D inventory items AFTER stage to appear on top
+        drawInventory();
 
         if (isDebug) {
 
@@ -844,6 +1057,20 @@ public class Hud implements Disposable {
         for (int i = 0; i < quickSlots.length; i++) {
             Item item = quickSlots[i];
             Actor slot = backpackSlots[i];
+
+            // NEW: Highlight Active Slot (Slot 0)
+            if (i == 0) {
+                spriteBatch.end();
+                shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+                shapeRenderer.setColor(Color.GOLD);
+                // Draw slightly larger rectangle
+                Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
+                shapeRenderer.rect(pos.x - 2, pos.y - 2, slot.getWidth() + 4, slot.getHeight() + 4);
+                shapeRenderer.end();
+                spriteBatch.begin();
+            }
+
             if (item != null) {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 drawModernItem(item, pos.x, pos.y, slot.getWidth(), slot.getHeight());
@@ -1356,8 +1583,6 @@ public class Hud implements Disposable {
         }
     }
 
-    public CombatMenu combatMenu; // Exposed for GameScreen
-
     // --- NEW: Helper method to support GameScreen calls ---
     public void addMessage(String message) {
         if (eventManager != null) {
@@ -1371,6 +1596,8 @@ public class Hud implements Disposable {
         font.dispose();
         directionFont.dispose();
         bottomBarBg.dispose();
+        if (whiteTexture != null)
+            whiteTexture.dispose();
         shapeRenderer.dispose();
         // messageBackgroundTexture.dispose(); // Removed, as we use bottomBarBg now or
         // separate logic?
