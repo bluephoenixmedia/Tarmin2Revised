@@ -60,6 +60,7 @@ public class FirstPersonRenderer {
     private float[] depthBuffer;
     private final DebugManager debugManager = DebugManager.getInstance();
     private final SpriteBatch spriteBatch;
+    private final java.util.ArrayList<WindowOverlay> windowOverlays = new java.util.ArrayList<>();
 
     // Textures
     private final Texture wallTexture;
@@ -146,8 +147,20 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
+    public void renderWindowOverlays(SpriteBatch batch, Viewport viewport) {
+        batch.begin();
+        for (WindowOverlay overlay : windowOverlays) {
+            renderModernWindow(batch, overlay.hit, overlay.x, viewport, overlay.fogEnabled, overlay.fogDistance,
+                    overlay.fogColor, overlay.lightIntensity);
+        }
+        batch.end();
+    }
+
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
             WorldManager worldManager, int currentLevel, GameMode gameMode) {
+
+        // Reset overlays at start
+        windowOverlays.clear();
 
         if (this.weatherRenderer == null && worldManager.getWeatherManager() != null) {
             this.weatherRenderer = new WeatherRenderer(worldManager.getWeatherManager());
@@ -192,6 +205,7 @@ public class FirstPersonRenderer {
         }
         // ---------------------------------------
 
+        // SYNC FIELDS FOR OVERLAY PASS
         setTheme(maze.getTheme());
 
         if (depthBuffer == null || depthBuffer.length != viewport.getScreenWidth()) {
@@ -246,30 +260,66 @@ public class FirstPersonRenderer {
         // 2. RENDER WALLS (Midground)
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             spriteBatch.setShader(null);
+            windowOverlays.clear();
             spriteBatch.begin();
             for (int x = 0; x < viewport.getScreenWidth(); x++) {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
-                if (result != null) {
+
+                boolean isSky = (result == null);
+
+                if (!isSky) {
+                    // Result indicates a HIT (Wall/Door/Window-Termination)
                     maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
                             lightIntensity, maze);
 
-                    if (result.windowHits != null) {
-                        for (int i = result.windowHits.size() - 1; i >= 0; i--) {
-                            renderModernWindow(spriteBatch, result.windowHits.get(i), x, viewport, fogEnabled,
+                    if (result.windowHits != null && !result.windowHits.isEmpty()) {
+                        // Render window immediately (for depth writing)
+                        if (result.windowHits.size() > 0) {
+                            renderModernWindow(spriteBatch, result.windowHits.get(0), x, viewport, fogEnabled,
                                     fogDistance, fogColor, lightIntensity);
+
+                            // Store for Overlay Pass (Draw over sprites)
+                            windowOverlays.add(new WindowOverlay(x, result.windowHits.get(0), fogEnabled,
+                                    fogDistance, fogColor, lightIntensity));
                         }
                     }
 
                     depthBuffer[x] = result.distance;
                 } else {
+                    // HIT IS FALSE (SKY/OOB) - Render Skybox Strip
                     depthBuffer[x] = Float.MAX_VALUE;
-                    if (fogEnabled) {
-                        Color wallFog = new Color(fogColor).mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-                        spriteBatch.setColor(wallFog);
-                        spriteBatch.draw(wallTexture, x, 0, 1, viewport.getWorldHeight(), 0, 0, 1, 1, false, false);
-                        spriteBatch.setColor(Color.WHITE);
+
+                    // Fix: If OOB/Sky, explicitly draw Skybox strip (to overwrite ceiling)
+                    Texture skyboxTexture;
+                    boolean isStormy = false;
+                    if (worldManager.getWeatherManager() != null) {
+                        isStormy = worldManager.getWeatherManager().isStormy();
                     }
+                    switch (player.getFacing()) {
+                        case EAST:
+                            skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
+                            break;
+                        case WEST:
+                            skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
+                            break;
+                        case SOUTH:
+                            skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
+                            break;
+                        default:
+                            skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
+                            break;
+                    }
+
+                    // Mapping: x corresponds to texture coord
+                    int texWidth = skyboxTexture.getWidth();
+                    int texX = (int) ((x / (float) viewport.getWorldWidth()) * texWidth);
+
+                    // Draw Skybox Strip
+                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    spriteBatch.draw(skyboxTexture, x, (viewport.getWorldHeight() / 2 - 160), 1,
+                            (viewport.getWorldHeight() / 2) + 160, texX, 0, 1, skyboxTexture.getHeight(), false, false);
+                    spriteBatch.setColor(Color.WHITE);
                 }
             }
             spriteBatch.end();
@@ -853,27 +903,10 @@ public class FirstPersonRenderer {
         float drawEnd = Math.min(viewport.getWorldHeight(), lineHeight / 2f + viewport.getWorldHeight() / 2f);
         float height = drawEnd - drawStart;
 
-        // Window Dimensions (50% size centered)
-        float holeYStart = drawStart + height * 0.25f;
-        float holeYEnd = drawStart + height * 0.75f;
-
-        float margin = 0.25f; // 25% margin on left/right
-        boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
-
-        // Color Logic
-        if (fogEnabled) {
-            float fogAmount = Math.max(0, Math.min(1f,
-                    (hit.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
-            fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-            fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-            spriteBatch.setColor(fogLerpColor);
-        } else {
-            spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
-        }
-
-        // Texture Logic
+        // Texture Logic (Shared)
         int texWidth = wallTexture.getWidth();
         int texX = (int) (hit.wallX * texWidth);
+
         // Clamp texX to be safe
         if (texX < 0)
             texX = 0;
@@ -882,30 +915,137 @@ public class FirstPersonRenderer {
 
         int wallH = wallTexture.getHeight();
 
-        if (!isHoleX) {
-            // Draw Full Strip
-            spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallH, false, false);
-        } else {
-            // Draw Bottom Segment
-            float bottomHeight = holeYStart - drawStart;
-            if (bottomHeight > 0) {
-                // Corresponds to bottom 25% of texture
-                int srcHeight = (int) (wallH * 0.25f);
-                if (srcHeight > 0) {
-                    spriteBatch.draw(wallTexture, screenX, drawStart, 1, bottomHeight, texX, 0, 1, srcHeight, false,
-                            false);
+        if (hit.door != null) {
+            // --- OPEN DOOR RENDERING (Lintel Only) ---
+            float doorHeight = height * DOOR_HEIGHT_RATIO;
+            float doorHoleTop = drawStart + doorHeight;
+
+            // Draw Lintel (Top Wall Segment)
+            float lintelHeight = drawEnd - doorHoleTop;
+            if (lintelHeight > 0) {
+
+                // Lintel corresponds to TOP part of texture (0..Ratio)
+                // We want the pixels from 0 to Ratio * Height.
+                // Correct logic: srcY = 0. srcHeight = (1-Ratio) * WallH ???
+                // Wait. Wall DrawStart corresponds to Texture Bottom (or Top?).
+                // If DrawStart is Bottom:
+                // Lintel starts at Ratio*H (from bottom).
+                // So we want texture from Ratio*H to H.
+                // So srcY = Ratio*H. srcHeight = H - srcY.
+                // This IS what I had: `srcYStart = (int) (wallH * DOOR_HEIGHT_RATIO);`
+
+                // BUT user says "Upside Down".
+                // This implies texture is mapped Top-Down?
+                // Or I am drawing Bottom-Up but Texture is Top-Down.
+                // If Texture is Top-Down (0 is top).
+                // Then Top of Wall (Lintel) is 0..Ratio.
+                // So I should draw srcY=0.
+
+                // Let's TRY shading first, and flip texture logic.
+                // Use TOP of texture for Lintel.
+
+                int srcYStart = 0;
+                int srcHPixels = (int) (wallH * (1.0f - DOOR_HEIGHT_RATIO));
+
+                // Check if side shading is needed
+                float shade = (hit.side == 1) ? 0.7f : 1.0f;
+
+                if (srcHPixels > 0) {
+                    // Apply shading to batch color before drawing
+                    Color c = spriteBatch.getColor();
+                    float oldR = c.r, oldG = c.g, oldB = c.b;
+                    spriteBatch.setColor(c.r * shade, c.g * shade, c.b * shade, c.a);
+
+                    spriteBatch.draw(wallTexture, screenX, doorHoleTop, 1, lintelHeight, texX, srcYStart, 1, srcHPixels,
+                            false, false);
+
+                    spriteBatch.setColor(oldR, oldG, oldB, c.a);
                 }
             }
+            // No jambs needed (castRay handles)
 
-            // Draw Top Segment
-            float topHeight = drawEnd - holeYEnd;
-            if (topHeight > 0) {
-                // Corresponds to top 25% of texture (0.75 to 1.0)
-                int srcY = (int) (wallH * 0.75f);
-                int srcHeight = wallH - srcY; // Use remaining height to be safe
-                if (srcHeight > 0) {
-                    spriteBatch.draw(wallTexture, screenX, holeYEnd, 1, topHeight, texX, srcY, 1, srcHeight, false,
-                            false);
+        } else {
+            // --- WINDOW RENDERING ---
+            float holeYStart = drawStart + height * 0.25f;
+            float holeYEnd = drawStart + height * 0.75f;
+
+            float margin = 0.25f; // 25% margin on left/right
+            boolean isHoleX = hit.wallX > margin && hit.wallX < (1f - margin);
+
+            // Shading
+            float shade = (hit.side == 1) ? 0.7f : 1.0f;
+            Color c = spriteBatch.getColor(); // Current tint (Fog/Light)
+            // Apply shade
+            spriteBatch.setColor(c.r * shade, c.g * shade, c.b * shade, c.a);
+
+            if (!isHoleX) {
+                // Draw Full Strip
+                spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallH, false, false);
+            } else {
+                // Draw Bottom Segment
+                float bottomHeight = holeYStart - drawStart;
+                if (bottomHeight > 0) {
+                    // Bottom 25% of texture
+                    // User said lintel was upside down. Maybe walls are upside down too?
+                    // Assuming texture 0 is TOP.
+                    // Bottom of wall is Texture 0.75 to 1.0.
+                    // srcY = 0.75 * H.
+                    int srcY = (int) (wallH * 0.75f);
+                    int srcHeight = wallH - srcY;
+
+                    if (srcHeight > 0) {
+                        spriteBatch.draw(wallTexture, screenX, drawStart, 1, bottomHeight, texX, srcY, 1, srcHeight,
+                                false,
+                                false);
+                    }
+                }
+
+                // Draw Top Segment
+                float topHeight = drawEnd - holeYEnd;
+                if (topHeight > 0) {
+                    // Top 25% of texture -> srcY = 0
+                    int srcHeight = (int) (wallH * 0.25f);
+
+                    if (srcHeight > 0) {
+                        spriteBatch.draw(wallTexture, screenX, holeYEnd, 1, topHeight, texX, 0, 1, srcHeight, false,
+                                false);
+                    }
+                }
+
+                // --- Window Frame ---
+                float frameThick = 0.03f; // 3% of wall width
+                boolean isJamb = (hit.wallX < (margin + frameThick)) || (hit.wallX > (1f - margin - frameThick));
+
+                // Frame Color
+                Color frameColor = new Color(currentWallDarkColor);
+                if (frameColor.r == 0 && frameColor.g == 0 && frameColor.b == 0 && frameColor.a == 0) {
+                    frameColor.set(0.3f, 0.2f, 0.1f, 1f);
+                }
+                if (fogEnabled) {
+                    float fogAmount = Math.max(0, Math.min(1f,
+                            (hit.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
+                    frameColor.lerp(fogColor, fogAmount);
+                }
+                // Apply light AND shade
+                frameColor.mul(lightIntensity * shade, lightIntensity * shade, lightIntensity * shade, 1f);
+                spriteBatch.setColor(frameColor);
+
+                float framePixelHeight = height * 0.04f;
+
+                if (isJamb) {
+                    spriteBatch.draw(blankTexture, screenX, holeYStart, 1, holeYEnd - holeYStart);
+                } else {
+                    spriteBatch.draw(blankTexture, screenX, holeYStart, 1, framePixelHeight);
+                    spriteBatch.draw(blankTexture, screenX, holeYEnd - framePixelHeight, 1, framePixelHeight);
+
+                    // --- FAKE RAIN EFFECT ---
+                    if (Math.random() < 0.2) {
+                        float rainLen = (float) (10 + Math.random() * 30);
+                        float rainY = (float) (holeYStart + Math.random() * (holeYEnd - holeYStart - rainLen));
+
+                        spriteBatch.setColor(0.6f, 0.7f, 0.9f, 0.4f);
+                        spriteBatch.draw(blankTexture, screenX, rainY, 1, rainLen);
+                    }
                 }
             }
         }
@@ -1067,7 +1207,7 @@ public class FirstPersonRenderer {
                     } else {
                         hit = true;
                     }
-                } else if (biome.isSeamless()) {
+                } else if (biome.isSeamless() || !windowHits.isEmpty()) {
                     break;
                 } else {
                     hit = true;
@@ -1093,6 +1233,7 @@ public class FirstPersonRenderer {
                     if (door.getState() != Door.DoorState.OPEN) {
                         hit = true;
                     } else {
+                        // Door is OPEN
                         float wallHitX;
                         if (side == 0) {
                             wallHitX = renderPosition.y + (sideDist.x - deltaDist.x) * rayDir.y;
@@ -1107,6 +1248,16 @@ public class FirstPersonRenderer {
                         if (hitsFrame) {
                             hit = true;
                         } else {
+                            // PASS THROUGH OPEN DOOR
+                            // Add as a "WindowHit" so we can render the Lintel later
+                            float perpDist;
+                            if (side == 0)
+                                perpDist = (sideDist.x - deltaDist.x);
+                            else
+                                perpDist = (sideDist.y - deltaDist.y);
+
+                            windowHits.add(new WindowHit(perpDist, wallHitX, side, null, door)); // Pass Door
+
                             objectToIgnore = door;
                         }
                     }
@@ -1454,12 +1605,37 @@ public class FirstPersonRenderer {
         final float wallX;
         final int side;
         final Window window;
+        final Door door;
 
         WindowHit(float distance, float wallX, int side, Window window) {
+            this(distance, wallX, side, window, null);
+        }
+
+        WindowHit(float distance, float wallX, int side, Window window, Door door) {
             this.distance = distance;
             this.wallX = wallX;
             this.side = side;
             this.window = window;
+            this.door = door;
+        }
+    }
+
+    private static class WindowOverlay {
+        final int x;
+        final WindowHit hit;
+        final boolean fogEnabled;
+        final float fogDistance;
+        final Color fogColor;
+        final float lightIntensity;
+
+        WindowOverlay(int x, WindowHit hit, boolean fogEnabled, float fogDistance, Color fogColor,
+                float lightIntensity) {
+            this.x = x;
+            this.hit = hit;
+            this.fogEnabled = fogEnabled;
+            this.fogDistance = fogDistance;
+            this.fogColor = fogColor;
+            this.lightIntensity = lightIntensity;
         }
     }
 }

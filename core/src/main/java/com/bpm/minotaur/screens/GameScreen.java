@@ -41,7 +41,6 @@ import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map;
 
 public class GameScreen extends BaseScreen {
 
@@ -105,7 +104,9 @@ public class GameScreen extends BaseScreen {
 
     // --- NEW: Visceral Feedback Components ---
     private FirstPersonWeaponOverlay weaponOverlay;
+
     private float hitPauseTimer = 0f;
+    private float sleepTimer = 0f;
 
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
@@ -250,7 +251,7 @@ public class GameScreen extends BaseScreen {
             GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
             player = new Player(startPos.x, startPos.y, difficulty,
                     game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager());
-            player.getStatusManager().initialize(this.eventManager);
+            player.getStatusManager().initialize(this.eventManager, player);
             player.setMaze(this.maze);
         } else {
             this.maze = worldManager.getInitialMaze();
@@ -355,6 +356,42 @@ public class GameScreen extends BaseScreen {
             // We do NOT update time, combatManager, etc.
             if (hitPauseTimer <= 0)
                 hitPauseTimer = 0;
+        } else if (player != null && player.getStatusManager().hasEffect(StatusEffectType.SLEEP) &&
+                (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
+                        || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
+                        || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU)) {
+            // --- SLEEP LOGIC ---
+            sleepTimer += delta;
+            if (sleepTimer > 0.5f) {
+                sleepTimer = 0f;
+                // Force Pass Turn
+                if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
+                        || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
+                    combatManager.playerGuard();
+                    eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent("Zzz...", 1f));
+                } else if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                    player.getStatusManager().updateTurn();
+                    turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
+                    eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent("Zzz...", 1f));
+
+                    // Update World
+                    if (worldManager != null) {
+                        worldManager.update(delta);
+                        // Weather trauma update
+                        if (worldManager.getWeatherManager() != null) {
+                            float targetTrauma = worldManager.getWeatherManager().getTraumaLevel();
+                            this.trauma = com.badlogic.gdx.math.MathUtils.lerp(this.trauma, targetTrauma, 2.0f * delta);
+                        }
+                    }
+                }
+            }
+            animationManager.update(delta); // Keep animations running
+
+            // Allow minimal updates?
+            if (hud != null)
+                hud.update(delta);
+            eventManager.update(delta);
+
         } else {
             // Normal Update Loop
             time += delta;
@@ -407,6 +444,38 @@ public class GameScreen extends BaseScreen {
             float angle = (rng.nextFloat() - 0.5f) * shakePower;
             player.getDirectionVector().rotateRad(angle);
             player.getCameraPlane().rotateRad(angle);
+            player.getCameraPlane().rotateRad(angle);
+        }
+
+        // --- NEW: Dizzy Effect (Camera Roll) ---
+        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.CONFUSED)) {
+            // Apply a gentle sway/roll
+            float dizzyAngle = 2.0f * com.badlogic.gdx.math.MathUtils.sin(time * 2.0f);
+
+            if (useCrtFilter) {
+                // If using FBO, we can rotate the sprite batch projection or the FBO rendering?
+                // Rotating the 2D projection is easiest for "whole screen spin"
+                // But wait, EntityRenderer and FirstPersonRenderer use their own cameras?
+                // FirstPersonRenderer uses `currentViewport.getCamera()` (which is fboViewport
+                // if CRT is on).
+                // Let's rotate the FBO viewport camera UP vector.
+                fboViewport.getCamera().up.set(0, 1, 0); // Reset first
+                fboViewport.getCamera().up.rotate(fboViewport.getCamera().direction, dizzyAngle);
+                fboViewport.getCamera().update();
+            } else {
+                game.getViewport().getCamera().up.set(0, 1, 0);
+                game.getViewport().getCamera().up.rotate(game.getViewport().getCamera().direction, dizzyAngle);
+                game.getViewport().getCamera().update();
+            }
+        } else {
+            // Reset Camera Up to ensure it doesn't get stuck
+            if (useCrtFilter) {
+                fboViewport.getCamera().up.set(0, 1, 0);
+                fboViewport.getCamera().update();
+            } else {
+                game.getViewport().getCamera().up.set(0, 1, 0);
+                game.getViewport().getCamera().update();
+            }
         }
 
         boolean isBlind = (player != null
@@ -476,13 +545,18 @@ public class GameScreen extends BaseScreen {
              * }
              */
 
-            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
+                    || combatManager.getMonster() == null) {
                 entityRenderer.render(shapeRenderer, player, maze, currentViewport,
                         firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
                 entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport,
                         firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
             }
+
+            // --- FIX: Window Overlay Pass (Clips entities at window base/top) ---
+            game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
+            firstPersonRenderer.renderWindowOverlays(game.getBatch(), currentViewport);
 
             // 3D Rendering Moved Above EntityRenderer
 
@@ -565,6 +639,33 @@ public class GameScreen extends BaseScreen {
     }
 
     private void renderCombatOverlay() {
+        // --- IRON SKIN VIGNETTE ---
+        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.HARDENED)) {
+            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+            shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(new Color(0.8f, 0.7f, 0.2f, 0.8f)); // Gold
+            // Draw thick border
+            int w = (int) game.getViewport().getWorldWidth();
+            int h = (int) game.getViewport().getWorldHeight();
+            for (int i = 0; i < 5; i++) {
+                shapeRenderer.rect(i, i, w - (i * 2), h - (i * 2));
+            }
+            shapeRenderer.end();
+            Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        }
+
+        // --- BERZERK VIGNETTE ---
+        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.BERZERK)) {
+            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+            shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(new Color(1f, 0f, 0f, 0.3f)); // Red tint
+            shapeRenderer.rect(0, 0, game.getViewport().getWorldWidth(), game.getViewport().getWorldHeight());
+            shapeRenderer.end();
+            Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        }
+
         // Log errors but don't spam trace logs
         if (combatDiceOverlay == null)
             return;
@@ -649,6 +750,12 @@ public class GameScreen extends BaseScreen {
             // 4. Feedback
             hud.addMessage("The world shifts...");
             hud.addMessage("You are back at the start, but stronger.");
+        }
+
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
+            Gdx.app.log("GameScreen", "PLAYER_DIED event received.");
+            game.setScreen(new GameOverScreen(game));
+            return;
         }
     }
 
@@ -812,6 +919,22 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        // --- FIX: Block Input if Sleeping ---
+        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.SLEEP)) {
+            // Allow Debug Keys (F1-F12) to pass through?
+            // F-keys are handled at the bottom of the method.
+            // If we return true here, we block F-keys too unless we specifically allow them
+            // or move the check.
+            // Let's allow F-keys by checking if keycode is NOT an F-key.
+            boolean isFunctionKey = (keycode >= Input.Keys.F1 && keycode <= Input.Keys.F12);
+            if (!isFunctionKey) {
+                // Only spam message if not holding down keys?
+                // eventManager.addEvent(new GameEvent("You are asleep...", 0.5f));
+                return true;
+            }
+        }
+        // ------------------------------------
+
         // --- NEW: Combat Menu Input Interception ---
         if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
             if (hud != null && hud.combatMenu != null) {
@@ -848,7 +971,7 @@ public class GameScreen extends BaseScreen {
                                 combatManager.playerAttackWithDice();
                                 break;
                             case 3: // USE
-                                hud.addMessage("Combat Items not yet implemented.");
+                                combatManager.playerUseItem(discoveryManager);
                                 break;
                             case 4: // BLOCK
                                 combatManager.playerGuard();
@@ -930,27 +1053,39 @@ public class GameScreen extends BaseScreen {
                     // Simple random walk
                     int[] dirs = { Input.Keys.UP, Input.Keys.DOWN, Input.Keys.LEFT, Input.Keys.RIGHT };
                     keycode = dirs[com.badlogic.gdx.math.MathUtils.random(dirs.length - 1)];
-
-                    // Optional: Add a "Stumble" message or sound?
-                    // Let's keep it subtle for now, just the erratic movement.
                 }
             }
             // -----------------------
 
-            if (keycode == Input.Keys.A || keycode == Input.Keys.SPACE) {
+            // --- NEW: Open Combat Menu Logic ---
+            if (keycode == Input.Keys.SPACE) {
+                combatManager.openMenu();
+                return true;
+            }
+
+            if (keycode == Input.Keys.A) {
+                // Keep 'A' for quick attack or just duplicate space?
+                // Let's map 'A' to open menu too? Or Instant Attack?
+                // Prompt says "access combat menu ANYTIME... pressing space bar".
+                // "The player can then attack anytime... and they can cast any spell".
+                // This implies Space -> Menu -> Attack/Cast.
+                // So "A" might be redundant or legacy.
+                // Let's leave A as "Use Quick Slot" or "Ranged".
+                // Actually existing logic handles A/SPACE as attack.
+                // I should overriding SPACE to open menu.
+                // And A can remain as Quick Slot / Ranged?
+            }
+
+            if (keycode == Input.Keys.A) { // Removed SPACE check
                 // NEW: Priority - Use Active Quick Slot (Slot 0)
                 Item activeSlotItem = player.getInventory().getQuickSlots()[0];
-                if (activeSlotItem != null && keycode == Input.Keys.SPACE) {
-                    player.useItem(activeSlotItem, eventManager, discoveryManager, maze);
-                    playerTurnTakesAction();
-                    return true;
-                }
+                // if (activeSlotItem != null && keycode == Input.Keys.SPACE) { ... } -> Removed
+                // SPACE check
 
                 // Fallback: Ranged Attack
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
-                    boolean attacked = combatManager.performRangedAttack();
-                    if (attacked)
-                        playerTurnTakesAction();
+                    combatManager.playerAttackInstant();
+                    // playerTurnTakesAction(); // handled in CM
                     return true;
                 }
             }
