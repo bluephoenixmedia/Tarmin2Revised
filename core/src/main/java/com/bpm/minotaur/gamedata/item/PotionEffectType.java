@@ -15,7 +15,11 @@ public enum PotionEffectType {
     GAIN_STRENGTH(true, "Gain Strength", "You feel stronger!", "You feel stronger!"),
     BLINDNESS(true, "Blindness", "You can't see!", "You are blinded!"),
     CONFUSION(true, "Confusion", "You feel confused...", "You feel confused..."),
-    LEVITATION(false, "Levitation", "You float in the air!", "You begin to float!"); // Example of non-self-identifying
+    LEVITATION(false, "Levitation", "You float in the air!", "You begin to float!"),
+    BERZERK(true, "Berzerk", "You see red!", "Rage consumes you!"),
+    RESTORE_ENERGY(true, "Energy", "You feel energized!", "You feel revitalized!"),
+    SUPER_VISION(true, "Vision", "Your senses expand!", "You see everything!"),
+    SLEEP(true, "Sleeping", "You feel very tired...", "You yawn uncontrollably...");
     // ... we can add more effects from the NetHack list later.
 
     private final boolean selfIdentifies;
@@ -79,6 +83,18 @@ public enum PotionEffectType {
                 break;
             case LEVITATION:
                 statusManager.addEffect(StatusEffectType.FLOATING, 30, 1, false);
+                break;
+            case BERZERK:
+                statusManager.addEffect(StatusEffectType.BERZERK, 30, 1, false);
+                break;
+            case RESTORE_ENERGY:
+                stats.restoreMP(10 * stats.getLevel());
+                break;
+            case SUPER_VISION:
+                statusManager.addEffect(StatusEffectType.OMNISCIENT, 30, 1, false);
+                break;
+            case SLEEP:
+                statusManager.addEffect(StatusEffectType.SLEEP, 20, 1, false);
                 break;
         }
     }

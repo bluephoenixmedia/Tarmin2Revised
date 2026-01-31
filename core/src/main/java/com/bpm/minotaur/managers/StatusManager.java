@@ -12,21 +12,26 @@ public class StatusManager {
     // Using ObjectMap for efficient enum-key mapping
     private final ObjectMap<StatusEffectType, ActiveStatusEffect> activeEffects = new ObjectMap<>();
 
-    // We'll need the GameEventManager to publish events (e.g., "Player cured of poison")
+    // We'll need the GameEventManager to publish events (e.g., "Player cured of
+    // poison")
     private transient GameEventManager eventManager;
+    private transient Object owner; // The entity owning this manager (Player or Monster)
 
     // Constructor for LibGDX JSON serialization
-    public StatusManager() {}
+    public StatusManager() {
+    }
 
-    public void initialize(GameEventManager eventManager) {
+    public void initialize(GameEventManager eventManager, Object owner) {
         this.eventManager = eventManager;
+        this.owner = owner;
     }
 
     /**
      * Applies a new status effect or updates/stacks an existing one.
-     * @param type The effect to apply
-     * @param duration Duration in turns. -1 for infinite.
-     * @param potency Potency (e.g., damage amount, stat boost)
+     * 
+     * @param type      The effect to apply
+     * @param duration  Duration in turns. -1 for infinite.
+     * @param potency   Potency (e.g., damage amount, stat boost)
      * @param stackable If true, adds duration. If false, resets duration.
      */
     public void addEffect(StatusEffectType type, int duration, int potency, boolean stackable) {
@@ -51,10 +56,26 @@ public class StatusManager {
 
     /**
      * Removes an effect immediately.
+     * 
      * @param type The effect to remove.
      */
     public void removeEffect(StatusEffectType type) {
         if (activeEffects.remove(type) != null) {
+
+            // --- Handle Effect Expiration/Removal Consequences ---
+            if (type == StatusEffectType.BERZERK && owner instanceof com.bpm.minotaur.gamedata.player.Player) {
+                com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
+                int dmg = Math.max(1, p.getCurrentHP() / 2);
+                p.takeDamage(dmg, com.bpm.minotaur.gamedata.DamageType.PHYSICAL); // Fatigue damage
+                if (eventManager != null) {
+                    eventManager.addEvent(
+                            new com.bpm.minotaur.gamedata.GameEvent("The rage fades, leaving you exhausted!", 2.5f));
+                    eventManager
+                            .addEvent(new com.bpm.minotaur.gamedata.GameEvent("You collapse (-" + dmg + " HP)", 2.0f));
+                }
+            }
+            // ----------------------------------------------------
+
             if (eventManager != null) {
                 // --- THE FIX IS HERE ---
                 // We must create a new GameEvent and use the 'addEvent' method.

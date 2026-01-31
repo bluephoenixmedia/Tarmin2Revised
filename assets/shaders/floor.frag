@@ -17,6 +17,11 @@ uniform vec3 u_fogColor;
 uniform float u_lightIntensity;
 uniform float u_fogEnabled; // 1.0 for true, 0.0 for false
 
+// Pseudo-random function
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+}
+
 void main() {
     // Current pixel coordinates
     // gl_FragCoord.y is 0 at bottom, increasing upwards.
@@ -53,11 +58,25 @@ void main() {
     float floorX = u_playerPos.x + rowDistance * rayDirX;
     float floorY = u_playerPos.y + rowDistance * rayDirY;
 
-    // Texture mapping (wrapping)
-    vec2 texCoord = vec2(floorX, floorY);
+    // --- Random Rotation Logic ---
+    vec2 tilePos = floor(vec2(floorX, floorY));
+    vec2 uv = fract(vec2(floorX, floorY));
     
+    float rnd = random(tilePos);
+    // 0..1 -> 0,1,2,3
+    float orientation = floor(rnd * 4.0);
+    
+    if (orientation == 1.0) {
+        uv = vec2(uv.y, 1.0 - uv.x);
+    } else if (orientation == 2.0) {
+        uv = vec2(1.0 - uv.x, 1.0 - uv.y);
+    } else if (orientation == 3.0) {
+        uv = vec2(1.0 - uv.y, uv.x);
+    }
+    // else 0: keep as is
+
     // Sample texture
-    vec4 texColor = texture2D(u_texture, texCoord);
+    vec4 texColor = texture2D(u_texture, uv);
 
     // Apply Fog
     if (u_fogEnabled > 0.5) {

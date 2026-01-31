@@ -80,6 +80,9 @@ public class FirstPersonRenderer {
     private final Texture retroSkyboxSouthStorm;
     private final Texture retroSkyboxWestStorm;
 
+    // --- Texture Cache for Biome Overrides ---
+    private final java.util.Map<String, Texture> textureCache = new java.util.HashMap<>();
+
     // Blank texture for Retro rendering
     private final Texture blankTexture;
 
@@ -141,6 +144,28 @@ public class FirstPersonRenderer {
         this.currentWallDarkColor = theme.wallDark;
         this.currentDoorColor = theme.door;
         this.currentDoorDarkColor = theme.doorDark;
+    }
+
+    private Texture getTexture(String path) {
+        if (path == null)
+            return null;
+        if (textureCache.containsKey(path)) {
+            return textureCache.get(path);
+        }
+        try {
+            if (Gdx.files.internal(path).exists()) {
+                Texture tex = new Texture(Gdx.files.internal(path));
+                tex.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat); // Floors/Walls might need repeat
+                textureCache.put(path, tex);
+                return tex;
+            } else {
+                Gdx.app.error("FirstPersonRenderer", "Texture not found: " + path);
+                return null;
+            }
+        } catch (Exception e) {
+            Gdx.app.error("FirstPersonRenderer", "Failed to load texture: " + path, e);
+            return null;
+        }
     }
 
     public float[] getDepthBuffer() {
@@ -225,7 +250,7 @@ public class FirstPersonRenderer {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor,
-                    lightIntensity, maze);
+                    lightIntensity, maze, worldManager);
             spriteBatch.end();
         } else {
             // RETRO MODE
@@ -375,6 +400,21 @@ public class FirstPersonRenderer {
 
     private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity,
             WorldManager worldManager) {
+
+        // --- Biome Override ---
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        Texture overrideSkybox = getTexture(biome.getSkyboxTexturePath());
+        if (overrideSkybox != null) {
+            spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+            // Draw full skybox (simple stretch for now, or maybe scrolling?)
+            // Assuming simple background for forest
+            spriteBatch.draw(overrideSkybox, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(),
+                    (viewport.getWorldHeight() / 2) + 160);
+            spriteBatch.setColor(Color.WHITE);
+            return;
+        }
+        // -----------------------
+
         Texture skyboxTexture;
         boolean isStormy = false;
         if (worldManager.getWeatherManager() != null) {
@@ -400,13 +440,11 @@ public class FirstPersonRenderer {
         spriteBatch.setColor(Color.WHITE);
     }
 
-    // ADDED: Maze maze parameter
+    // ADDED: WorldManager for biome floor lookup
     private int renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled,
-            float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
+            float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager) {
 
         if (floorShader == null || !floorShader.isCompiled()) {
-            // Fallback or error handling? For now, just return 0 to avoid crash loop if
-            // shader failed.
             return 0;
         }
 
@@ -419,27 +457,28 @@ public class FirstPersonRenderer {
         floorShader.setUniformf("u_screenWidth", viewport.getWorldWidth());
         floorShader.setUniformf("u_screenHeight", viewport.getWorldHeight());
         floorShader.setUniformf("u_fogDist", fogDistance);
-        floorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b); // Pass RGB vec3
+        floorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
         floorShader.setUniformf("u_lightIntensity", lightIntensity);
         floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
 
-        // Draw the floor quad (Bottom half of screen)
-        // Note: Shader handles tinting via u_lightIntensity/fog,
-        // but we can set color to WHITE to pass through unmodified vertex color if
-        // needed.
         spriteBatch.setColor(Color.WHITE);
 
-        // Texture Coordinates (u,v) are handled in frag shader manually via floorX/Y
-        // calculation.
-        // We just need to trigger the fragment shader for the pixels.
-        // We pass the wallTexture (or floorTexture?) -> floorTexture.
+        // --- Biome Floor Override ---
+        Texture activeFloor = floorTexture;
+        if (worldManager != null) {
+            Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+            Texture overrideFloor = getTexture(biome.getFloorTexturePath());
+            if (overrideFloor != null) {
+                activeFloor = overrideFloor;
+            }
+        }
+        // -----------------------------
 
-        spriteBatch.draw(floorTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+        spriteBatch.draw(activeFloor, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
 
-        // Reset Shader
         spriteBatch.setShader(null); // Important to reset!
 
-        return 1; // 1 Draw Call
+        return 1;
     }
 
     // Retro floor rendering (Removed Blood Support)

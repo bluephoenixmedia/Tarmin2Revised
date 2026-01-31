@@ -277,7 +277,8 @@ public class Player {
         // --- NEW: Handle Food Eating ---
         if (item.isFood()) {
             // Basic food value
-            stats.addFood(5);
+            stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 5);
+            stats.addHydration(item.getHydrationValue());
 
             // Apply Random Effect if present (e.g. Cooked Meat)
             if (item.getTrueEffect() != null) {
@@ -420,6 +421,11 @@ public class Player {
 
         eventManager.addEvent(new GameEvent("You take " + damage + " poison damage!", 2f));
         eventManager.addEvent(new GameEvent(msg, 3f));
+
+        // 4. Check for Death
+        if (stats.getCurrentHP() <= 0) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+        }
     }
 
     public void quaff(Item potion, DiscoveryManager discoveryManager, GameEventManager eventManager) {
@@ -460,7 +466,12 @@ public class Player {
         }
 
         PotionEffectType effect = potion.getTrueEffect();
-        effect.applyEffect(this, statusManager);
+        if (effect != null) {
+            effect.applyEffect(this, statusManager);
+        }
+
+        // Potions usually hydrate
+        stats.addHydration(potion.getHydrationValue() > 0 ? potion.getHydrationValue() : 5);
 
         // Message
         String msg = effect.getConsumeMessage();
@@ -1365,6 +1376,12 @@ public class Player {
         if (stats.getWarStrength() < 0) {
             stats.setWarStrength(0);
         }
+    }
+
+    public void takeTrueDamage(int amount) {
+        if (amount <= 0)
+            return;
+        stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 
     /**

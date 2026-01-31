@@ -20,11 +20,12 @@ public class Scenery implements Renderable {
     private double distanceToPlayer;
     private final boolean impassable;
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
+    private Texture texture; // Optional texture for Modern rendering
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
     private static final Color treeLeaves = new Color(0x3e7b4cff); // Dark Green
-    private static final Color rockColor = new Color(0x7b7b7bff);   // Gray
+    private static final Color rockColor = new Color(0x7b7b7bff); // Gray
     private static final Color bushColor = new Color(0x2b5736ff); // Darker Green
 
     public Scenery(SceneryType type, int x, int y) {
@@ -36,7 +37,7 @@ public class Scenery implements Renderable {
         switch (type) {
             case TREE:
                 this.impassable = true;
-                this.scale.set(1.0f, 2.0f); // <-- ADDED THIS (2x height)
+                this.scale.set(2.0f, 4.0f); // Taller and wider for billboard
                 break;
             case ROCK:
                 this.impassable = true;
@@ -71,13 +72,13 @@ public class Scenery implements Renderable {
         this.distanceToPlayer = distance;
     }
 
-
     public double getDistanceToPlayer() {
         return distanceToPlayer;
     }
 
     /**
      * NEW: Gets the sprite data from the ScenerySpriteData class.
+     * 
      * @return A String array representing the sprite.
      */
     public String[] getSpriteData() {
@@ -91,6 +92,7 @@ public class Scenery implements Renderable {
 
     /**
      * NEW: Gets the correct retro color for this scenery type.
+     * 
      * @return The LibGDX Color.
      */
     @Override
@@ -109,8 +111,19 @@ public class Scenery implements Renderable {
     }
 
     // --- Implemented from Renderable interface for compatibility ---
-    public Color getMonsterColor() { return null; }
-    public Color getItemColor() { return null; }
-    public Texture getTexture() { return null; }
-}
+    public Color getMonsterColor() {
+        return null;
+    }
 
+    public Color getItemColor() {
+        return null;
+    }
+
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+}

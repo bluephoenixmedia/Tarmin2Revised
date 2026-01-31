@@ -120,7 +120,7 @@ public class UnlockSimulationLauncher implements ApplicationListener {
         maze = new Maze(1, walls);
 
         combatManager = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
-                itemDataManager, stochasticManager, null, null);
+                itemDataManager, stochasticManager, null, null, null);
 
         System.out.println("Starting Run " + currentRun + "...");
     }

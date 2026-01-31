@@ -28,6 +28,9 @@ public enum StatusEffectType {
     SEIZURE,
     BLEEDING,
     BLIND,
+    BERZERK,
+    SLEEP,
+    RECOVERING,
 
     // Positive Effects (Buffs)
     FOCUSED,

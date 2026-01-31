@@ -26,7 +26,7 @@ public class PackTextures {
         // Name: "gore"
 
         try {
-            TexturePacker.process(settings, "images/gore", "packed", "gore");
+            TexturePacker.process(settings, "assets/images/gore", "assets/packed", "gore");
             System.out.println("Textures packed successfully to assets/packed/gore.atlas");
         } catch (Exception e) {
             e.printStackTrace();
@@ -36,7 +36,7 @@ public class PackTextures {
         // Pack Debris
         System.out.println("Packing Debris assets...");
         try {
-            TexturePacker.process(settings, "images/debris", "packed", "debris");
+            TexturePacker.process(settings, "assets/images/debris", "assets/packed", "debris");
             System.out.println("Textures packed successfully to assets/packed/debris.atlas");
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,7 +46,7 @@ public class PackTextures {
         // Pack Items
         System.out.println("Packing Items assets...");
         try {
-            TexturePacker.process(settings, "images/items", "packed", "items");
+            TexturePacker.process(settings, "assets/images/items", "assets/packed", "items");
             System.out.println("Textures packed successfully to assets/packed/items.atlas");
         } catch (Exception e) {
             e.printStackTrace();
@@ -56,8 +56,28 @@ public class PackTextures {
         // Pack Armor
         System.out.println("Packing Armor assets...");
         try {
-            TexturePacker.process(settings, "images/armor", "packed", "armor");
+            TexturePacker.process(settings, "assets/images/armor", "assets/packed", "armor");
             System.out.println("Textures packed successfully to assets/packed/armor.atlas");
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        // Pack Weapons
+        System.out.println("Packing Weapon assets...");
+        try {
+            TexturePacker.process(settings, "assets/images/weapons", "assets/packed", "weapons");
+            System.out.println("Textures packed successfully to assets/packed/weapons.atlas");
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        // Pack Portraits
+        System.out.println("Packing Portrait assets...");
+        try {
+            TexturePacker.process(settings, "assets/images/portrait", "assets/packed", "portrait");
+            System.out.println("Textures packed successfully to assets/packed/portrait.atlas");
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

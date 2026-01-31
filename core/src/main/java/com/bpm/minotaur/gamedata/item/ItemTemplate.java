@@ -18,6 +18,20 @@ public class ItemTemplate {
     public float scaleY = 1f;
     public float offsetX = 0f;
     public float offsetY = 0f;
+    public float rotation = 0f; // New: 2D Sprite Rotation for Paperdoll
+
+    // --- Weapon Animation ---
+    public float attackStartRotation = -60f;
+    public float attackEndRotation = 60f;
+    public float attackScaleX = 1.0f;
+    public float attackScaleY = 1.0f;
+
+    // Default: Slash from Right (0.75) to Left (0.25), slightly below screen
+    // (-0.05)
+    public float attackStartX = 0.75f;
+    public float attackEndX = 0.25f;
+    public float attackStartY = -0.05f;
+    public float attackEndY = -0.05f;
 
     public RingEffectType ringEffect; // New: For JSON Loading
 
@@ -62,6 +76,8 @@ public class ItemTemplate {
     public int baseCost = 0;
     public float weight = 1.0f;
     public int nutrition = 0;
+    public int hydrationValue = 0; // New
+    public float warmthBonus = 0.0f; // New
     public int probability = 0; // Relative spawn weight
 
     // --- Collision Logic ---

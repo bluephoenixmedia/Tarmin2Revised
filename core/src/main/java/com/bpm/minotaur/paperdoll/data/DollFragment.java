@@ -19,6 +19,7 @@ public class DollFragment {
 
     public float scaleX = 1f;
     public float scaleY = 1f;
+    public float rotation = 0f;
 
     public DollFragment(TextureRegion region, int zIndex, String socketName) {
         this.region = region;

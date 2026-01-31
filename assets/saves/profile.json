@@ -1,15 +1,41 @@
 {
-totalSteps: 4604
+totalSteps: 4765
 totalDoorsOpened: 0
 deepestLevelReached: 0
 monsterKills: {
 	class: java.util.HashMap
-	GOBLIN: 451
+	GOBLIN: 465
 }
 unlockedContent: {
 	class: java.util.HashSet
 	items: [
+		STILETTO
+		AXE_BATTLE
+		CAVILER
+		PADDED_ARMOR
+		GOUGE
+		MADU
+		STUDDED_LEATHER
+		SWORD_PIERCER
+		SMALL_LIGHTNING
 		item_speed_boots
+		ANKUS_ELEPHANT_GOAD
+		HORA
+		CHAKRAM
+		SWORD_BASTARD_ONE_HANDED
+		PUNCH_CUTTER
+		CARRIKAL
+		PESHKABZ
+		SHOTEL
+		POLEARM_BILL_GUISARME
+		STICKS_SINGING
+		SWORD_MANDIBLE
+		SHIELD_SMALL
+		KICK_SLASHER
+		ARROW_FLIGHT
+		GLOVE_NAIL
+		POLEARM_FAUCHARD
+		POLEARM_BARDICHE
 	]
 }
 unlockPlan: {
@@ -25,10 +51,6 @@ unlockPlan: {
 	DAIKYU: {
 		type: TOTAL_DOORS
 		targetValue: 46
-	}
-	GOUGE: {
-		type: MONSTER_KILLS
-		targetValue: 122
 	}
 	LEGS: {
 		type: DEEPEST_LEVEL
@@ -74,17 +96,9 @@ unlockPlan: {
 		type: DEEPEST_LEVEL
 		targetValue: 2
 	}
-	CARRIKAL: {
-		type: MONSTER_KILLS
-		targetValue: 69
-	}
 	LARGE_LIGHTNING: {
 		type: TOTAL_DOORS
 		targetValue: 14
-	}
-	PESHKABZ: {
-		type: MONSTER_KILLS
-		targetValue: 189
 	}
 	POLEARM_GIANT_KIN_HALBERD: {
 		type: TOTAL_STEPS
@@ -105,10 +119,6 @@ unlockPlan: {
 	WAND: {
 		type: TOTAL_DOORS
 		targetValue: 195
-	}
-	SWORD_MANDIBLE: {
-		type: MONSTER_KILLS
-		targetValue: 392
 	}
 	CORD_MAIL: {
 		type: TOTAL_STEPS
@@ -153,10 +163,6 @@ unlockPlan: {
 	SPEAR_ONE_HANDED: {
 		type: TOTAL_STEPS
 		targetValue: 51027
-	}
-	STUDDED_LEATHER: {
-		type: MONSTER_KILLS
-		targetValue: 450
 	}
 	SWORD_SABRE: {
 		type: MONSTER_KILLS
@@ -250,18 +256,6 @@ unlockPlan: {
 		type: TOTAL_STEPS
 		targetValue: 52968
 	}
-	POLEARM_FAUCHARD: {
-		type: MONSTER_KILLS
-		targetValue: 247
-	}
-	AXE_BATTLE: {
-		type: MONSTER_KILLS
-		targetValue: 57
-	}
-	SWORD_PIERCER: {
-		type: MONSTER_KILLS
-		targetValue: 419
-	}
 	SPEAR_HOOK_TAILED: {
 		type: DEEPEST_LEVEL
 		targetValue: 8
@@ -274,10 +268,6 @@ unlockPlan: {
 		type: TOTAL_DOORS
 		targetValue: 178
 	}
-	CHAKRAM: {
-		type: MONSTER_KILLS
-		targetValue: 94
-	}
 	BOLA: {
 		type: TOTAL_STEPS
 		targetValue: 6799
@@ -285,10 +275,6 @@ unlockPlan: {
 	PUCHIK: {
 		type: DEEPEST_LEVEL
 		targetValue: 5
-	}
-	SHOTEL: {
-		type: MONSTER_KILLS
-		targetValue: 291
 	}
 	HELMET: {
 		type: DEEPEST_LEVEL
@@ -322,25 +308,13 @@ unlockPlan: {
 		type: MONSTER_KILLS
 		targetValue: 728
 	}
-	POLEARM_BARDICHE: {
-		type: MONSTER_KILLS
-		targetValue: 208
-	}
 	KNIFE: {
 		type: TOTAL_DOORS
 		targetValue: 18
 	}
-	STILETTO: {
-		type: MONSTER_KILLS
-		targetValue: 340
-	}
 	RUSTY_ARMOR: {
 		type: TOTAL_STEPS
 		targetValue: 5706
-	}
-	CAVILER: {
-		type: MONSTER_KILLS
-		targetValue: 81
 	}
 	POLEARM_GYTHKA: {
 		type: DEEPEST_LEVEL
@@ -446,10 +420,6 @@ unlockPlan: {
 		type: DEEPEST_LEVEL
 		targetValue: 5
 	}
-	MADU: {
-		type: MONSTER_KILLS
-		targetValue: 171
-	}
 	SHIELD_BODY: {
 		type: TOTAL_STEPS
 		targetValue: 37276
@@ -470,17 +440,9 @@ unlockPlan: {
 		type: TOTAL_STEPS
 		targetValue: 35713
 	}
-	ANKUS_ELEPHANT_GOAD: {
-		type: MONSTER_KILLS
-		targetValue: 38
-	}
 	RITIIK: {
 		type: TOTAL_STEPS
 		targetValue: 16816
-	}
-	SWORD_BASTARD_ONE_HANDED: {
-		type: MONSTER_KILLS
-		targetValue: 365
 	}
 	SMALL_FIREBALL: {
 		type: TOTAL_STEPS
@@ -502,10 +464,6 @@ unlockPlan: {
 		type: TOTAL_STEPS
 		targetValue: 38889
 	}
-	STICKS_SINGING: {
-		type: MONSTER_KILLS
-		targetValue: 315
-	}
 	SWORD_SHORT: {
 		type: DEEPEST_LEVEL
 		targetValue: 9
@@ -517,14 +475,6 @@ unlockPlan: {
 	SWORD_DRUSUS: {
 		type: TOTAL_STEPS
 		targetValue: 25570
-	}
-	ARROW_FLIGHT: {
-		type: MONSTER_KILLS
-		targetValue: 47
-	}
-	PADDED_ARMOR: {
-		type: MONSTER_KILLS
-		targetValue: 15
 	}
 	SWORD_KHOPESH: {
 		type: TOTAL_STEPS
@@ -542,10 +492,6 @@ unlockPlan: {
 		type: DEEPEST_LEVEL
 		targetValue: 5
 	}
-	SMALL_LIGHTNING: {
-		type: MONSTER_KILLS
-		targetValue: 22
-	}
 	JAMBIYA: {
 		type: TOTAL_DOORS
 		targetValue: 69
@@ -554,17 +500,9 @@ unlockPlan: {
 		type: TOTAL_DOORS
 		targetValue: 543
 	}
-	HORA: {
-		type: MONSTER_KILLS
-		targetValue: 137
-	}
 	TROMBASH_HELD: {
 		type: TOTAL_DOORS
 		targetValue: 163
-	}
-	PUNCH_CUTTER: {
-		type: MONSTER_KILLS
-		targetValue: 268
 	}
 	LAMELLAR_SHIRT: {
 		type: MONSTER_KILLS
@@ -662,10 +600,6 @@ unlockPlan: {
 		type: DEEPEST_LEVEL
 		targetValue: 9
 	}
-	POLEARM_BILL_GUISARME: {
-		type: MONSTER_KILLS
-		targetValue: 227
-	}
 	SPIKE_ELBOW: {
 		type: TOTAL_DOORS
 		targetValue: 517
@@ -689,10 +623,6 @@ unlockPlan: {
 	SPEAR_CASTER: {
 		type: TOTAL_DOORS
 		targetValue: 247
-	}
-	SHIELD_SMALL: {
-		type: MONSTER_KILLS
-		targetValue: 29
 	}
 	SPEAR_PADDLE: {
 		type: DEEPEST_LEVEL
@@ -797,14 +727,6 @@ unlockPlan: {
 	CHATKCHA: {
 		type: TOTAL_STEPS
 		targetValue: 42242
-	}
-	KICK_SLASHER: {
-		type: MONSTER_KILLS
-		targetValue: 153
-	}
-	GLOVE_NAIL: {
-		type: MONSTER_KILLS
-		targetValue: 108
 	}
 }
 }

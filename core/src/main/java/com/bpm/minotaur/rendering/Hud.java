@@ -36,6 +36,7 @@ import java.util.List;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 
 public class Hud implements Disposable {
 
@@ -427,6 +428,17 @@ public class Hud implements Disposable {
         encounterWindow.setSize(1000, 800);
         encounterWindow.setPosition((viewport.getWorldWidth() - 1000) / 2f, (viewport.getWorldHeight() - 800) / 2f);
         stage.addActor(encounterWindow);
+
+        // --- Global Input Listener for EncounterWindow ---
+        stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
+                if (encounterWindow.isVisible()) {
+                    return encounterWindow.handleInput(keycode);
+                }
+                return false;
+            }
+        });
     }
 
     private void updatePortrait() {
@@ -474,9 +486,9 @@ public class Hud implements Disposable {
         updatePortrait();
 
         warStrengthValueLabel
-                .setText(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP()));
+                .setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
         spiritualStrengthValueLabel.setText(
-                String.format("%d / %d", player.getCurrentMP(), player.getMaxMP()));
+                checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));
 
         // Update Bars
         foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
@@ -516,9 +528,9 @@ public class Hud implements Disposable {
         // tempValueLabel.setText(String.format("%.1f",
         // player.getStats().getBodyTemperature())); // New
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
-        directionLabel.setText(player.getFacing().name().substring(0, 1));
-        dungeonLevelLabel.setText("DUNGEON LVL " + maze.getLevel());
-        treasureValueLabel.setText(String.format("%d", player.getTreasureScore()));
+        directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
+        dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel()));
+        treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
 
@@ -539,29 +551,30 @@ public class Hud implements Disposable {
         }
 
         if (itemInHand != null) {
-            heldItemLabel.setText(itemInHand.getDisplayName());
+            heldItemLabel.setText(checkScramble(itemInHand.getDisplayName()));
         } else {
-            heldItemLabel.setText("Empty");
+            heldItemLabel.setText(checkScramble("Empty"));
         }
 
         // Show combat information only if combat is active
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();
-            monsterStrengthLabel.setText("HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP());
+            monsterStrengthLabel
+                    .setText(checkScramble("HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP()));
             monsterStrengthLabel.setVisible(true);
             combatStatusLabel.setVisible(true);
 
             // Display different status messages based on whose turn it is
             switch (combatManager.getCurrentState()) {
                 case PLAYER_TURN:
-                    combatStatusLabel.setText("PLAYER TURN");
+                    combatStatusLabel.setText(checkScramble("PLAYER TURN"));
                     break;
                 case MONSTER_TURN:
-                    combatStatusLabel.setText("MONSTER ATTACKS!");
+                    combatStatusLabel.setText(checkScramble("MONSTER ATTACKS!"));
                     break;
                 default:
-                    combatStatusLabel.setText(combatManager.getCurrentState().toString());
+                    combatStatusLabel.setText(checkScramble(combatManager.getCurrentState().toString()));
                     break;
             }
         } else {
@@ -583,7 +596,7 @@ public class Hud implements Disposable {
             for (int i = 0; i < limit; i++) {
                 sb.append(messageEvents.get(i)).append("\n");
             }
-            logLabel.setText(sb.toString());
+            logLabel.setText(checkScramble(sb.toString()));
         } else {
             logLabel.setText("");
         }
@@ -1245,13 +1258,19 @@ public class Hud implements Disposable {
     }
 
     private void drawAutomap() {
-        if (maze == null)
+        if (maze == null || player == null || worldManager == null)
             return;
 
         // Configuration
         float maxMapSize = 300f; // Maximum dimension (width or height)
         float mapRightMargin = 20f;
         float mapTopMargin = 20f;
+
+        // Fetch Biome Data for Fog
+        GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+        Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
+        boolean hasFog = biome != null && biome.hasFogOfWar();
+        float fogDistance = (biome != null) ? biome.getFogDistance() : 100f;
 
         int mazeW = maze.getWidth();
         int mazeH = maze.getHeight();
@@ -1297,8 +1316,17 @@ public class Hud implements Disposable {
         for (int y = 0; y < mazeH; y++) {
             for (int x = 0; x < mazeW; x++) {
                 // VISIBILITY CHECK
-                if (!maze.isVisited(x, y)) {
+                boolean isOmniscient = player.getStatusManager().hasEffect(StatusEffectType.OMNISCIENT);
+                if (!maze.isVisited(x, y) && !isOmniscient) {
                     continue;
+                }
+
+                // Fog of War Check
+                if (hasFog && !isOmniscient) {
+                    float dist = Vector2.dst(player.getPosition().x, player.getPosition().y, x, y);
+                    if (dist > fogDistance) {
+                        continue;
+                    }
                 }
 
                 int mask = maze.getWallDataAt(x, y);
@@ -1335,8 +1363,17 @@ public class Hud implements Disposable {
 
         for (int y = 0; y < mazeH; y++) {
             for (int x = 0; x < mazeW; x++) {
-                if (!maze.isVisited(x, y))
+                boolean isOmniscient = player.getStatusManager().hasEffect(StatusEffectType.OMNISCIENT);
+                if (!maze.isVisited(x, y) && !isOmniscient)
                     continue;
+
+                // Fog of War Check
+                if (hasFog && !isOmniscient) {
+                    float dist = Vector2.dst(player.getPosition().x, player.getPosition().y, x, y);
+                    if (dist > fogDistance) {
+                        continue;
+                    }
+                }
 
                 Object obj = maze.getGameObjectAt(x, y);
                 float cx = startX + (x * cellSize);
@@ -1349,6 +1386,41 @@ public class Hud implements Disposable {
                     shapeRenderer.setColor(Color.BROWN);
                     shapeRenderer.rect(cx + cellSize * 0.3f, cy + cellSize * 0.3f, cellSize * 0.4f, cellSize * 0.4f);
                 }
+            }
+        }
+
+        // --- 3.5 Draw Scenery (Trees, Rocks) ---
+        shapeRenderer.setColor(Color.FOREST);
+        for (java.util.Map.Entry<GridPoint2, com.bpm.minotaur.gamedata.Scenery> entry : maze.getScenery().entrySet()) {
+            GridPoint2 pos = entry.getKey();
+            com.bpm.minotaur.gamedata.Scenery scenery = entry.getValue();
+
+            int x = pos.x;
+            int y = pos.y;
+
+            boolean isOmniscient = player.getStatusManager().hasEffect(StatusEffectType.OMNISCIENT);
+            if (!maze.isVisited(x, y) && !isOmniscient)
+                continue;
+
+            // Fog Check
+            if (hasFog && !isOmniscient) {
+                float dist = Vector2.dst(player.getPosition().x, player.getPosition().y, x, y);
+                if (dist > fogDistance)
+                    continue;
+            }
+
+            float cx = startX + (x * cellSize);
+            float cy = startY + (y * cellSize);
+
+            if (scenery.getType() == com.bpm.minotaur.gamedata.Scenery.SceneryType.TREE) {
+                shapeRenderer.setColor(Color.FOREST);
+                shapeRenderer.circle(cx + cellSize / 2, cy + cellSize / 2, cellSize * 0.4f);
+            } else if (scenery.getType() == com.bpm.minotaur.gamedata.Scenery.SceneryType.ROCK) {
+                shapeRenderer.setColor(Color.GRAY);
+                shapeRenderer.rect(cx + cellSize * 0.2f, cy + cellSize * 0.2f, cellSize * 0.6f, cellSize * 0.6f);
+            } else {
+                shapeRenderer.setColor(Color.OLIVE);
+                shapeRenderer.circle(cx + cellSize / 2, cy + cellSize / 2, cellSize * 0.2f);
             }
         }
 
@@ -1399,6 +1471,8 @@ public class Hud implements Disposable {
                 isVisible = true;
             } else if (monster.isTagged()) {
                 isVisible = true; // Always visible if tagged
+            } else if (player != null && player.getStatusManager().hasEffect(StatusEffectType.OMNISCIENT)) {
+                isVisible = true; // Super Vision
             } else if (dist <= 15) { // Check for new tags
                 if (checkhudLineOfSight(playerPosVal, mPos)) {
                     monster.setTagged(true); // Tag it!
@@ -1770,5 +1844,31 @@ public class Hud implements Disposable {
 
     public EncounterWindow getEncounterWindow() {
         return encounterWindow;
+    }
+
+    // --- NEW: Confusion Scrambling Helper ---
+    private String checkScramble(String text) {
+        if (text == null)
+            return null;
+        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.CONFUSED)) {
+            char[] chars = text.toCharArray();
+            if (chars.length > 1) {
+                // Swap random characters occasionally
+                if (MathUtils.randomBoolean(0.5f)) {
+                    int i = MathUtils.random(chars.length - 1);
+                    int j = MathUtils.random(chars.length - 1);
+                    char temp = chars[i];
+                    chars[i] = chars[j];
+                    chars[j] = temp;
+                }
+                // Randomly offset a character code
+                if (MathUtils.randomBoolean(0.3f)) {
+                    int k = MathUtils.random(chars.length - 1);
+                    chars[k] = (char) (chars[k] + MathUtils.random(-2, 2));
+                }
+            }
+            return new String(chars);
+        }
+        return text;
     }
 }

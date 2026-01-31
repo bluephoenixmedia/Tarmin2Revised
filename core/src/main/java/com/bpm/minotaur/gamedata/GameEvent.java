@@ -11,7 +11,8 @@ public class GameEvent {
         EFFECT_CURED, // For when an effect is removed (by potion, spell, or expiry)
         // --- END NEW ---
         PORTAL_ACTIVATED,
-        ENCOUNTER_TRIGGERED
+        ENCOUNTER_TRIGGERED,
+        PLAYER_DIED
     }
 
     // --- Fields ---

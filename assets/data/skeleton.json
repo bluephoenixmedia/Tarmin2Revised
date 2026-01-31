@@ -59,11 +59,11 @@
 	"torso": {
 		"x": {
 			"class": "java.lang.Float",
-			"value": 935
+			"value": 873
 		},
 		"y": {
 			"class": "java.lang.Float",
-			"value": 575
+			"value": 385
 		},
 		"z": {
 			"class": "java.lang.Integer",
@@ -73,11 +73,11 @@
 	"hand_off": {
 		"x": {
 			"class": "java.lang.Float",
-			"value": 1200
+			"value": 1011
 		},
 		"y": {
 			"class": "java.lang.Float",
-			"value": 646
+			"value": 272
 		},
 		"z": {
 			"class": "java.lang.Integer",
@@ -87,11 +87,11 @@
 	"hand_main": {
 		"x": {
 			"class": "java.lang.Float",
-			"value": 911
+			"value": 466
 		},
 		"y": {
 			"class": "java.lang.Float",
-			"value": 660
+			"value": 423
 		},
 		"z": {
 			"class": "java.lang.Integer",

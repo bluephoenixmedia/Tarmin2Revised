@@ -49,6 +49,29 @@ public class FragmentResolver {
             case "CHAIN_HAUBERK": // Explicitly handling user mention if needed, or rely on default
                 return "chain_hauberk"; // Default lower case works but being explicit helps debug
             default:
+                // Generalized Mapping for Weapons (Fallback when Template is missing)
+                String upper = itemName.toUpperCase();
+                if (upper.contains("SWORD") || upper.contains("BLADE") || upper.contains("SABRE")
+                        || upper.contains("SCIMITAR") || upper.contains("KATANA"))
+                    return "sword";
+                if (upper.contains("SPEAR") || upper.contains("LANCE") || upper.contains("PIKE")
+                        || upper.contains("HALBERD") || upper.contains("TRIDENT"))
+                    return "spear";
+                if (upper.contains("AXE"))
+                    return "axe"; // Or battle_axe
+                if (upper.contains("BOW") && !upper.contains("CROSSBOW"))
+                    return "bow";
+                if (upper.contains("CROSSBOW"))
+                    return "crossbow";
+                if (upper.contains("DAGGER") || upper.contains("KNIFE") || upper.contains("DIRK"))
+                    return "knife";
+                if (upper.contains("DART"))
+                    return "dart";
+                if (upper.contains("SCROLL"))
+                    return "scroll";
+                if (upper.contains("BOOK") || upper.contains("TOME"))
+                    return "book";
+
                 return itemName.toLowerCase();
         }
     }
@@ -61,7 +84,21 @@ public class FragmentResolver {
 
         ItemType itemType = item.getType();
         String name = itemType.name();
-        String regionName = getAtlasRegionName(name);
+
+        // Try to derive region name from template texture path first
+        String regionName = null;
+        if (item.getTemplate() != null && item.getTemplate().texturePath != null) {
+            String path = item.getTemplate().texturePath;
+            int lastSlash = path.lastIndexOf('/');
+            int lastDot = path.lastIndexOf('.');
+            if (lastDot > lastSlash) {
+                regionName = path.substring(lastSlash + 1, lastDot);
+            }
+        }
+
+        if (regionName == null) {
+            regionName = getAtlasRegionName(name);
+        }
 
         // Get Scale from Item
         float sX = 1f;
@@ -107,6 +144,7 @@ public class FragmentResolver {
                         socket = "hand_off";
                     DollFragment fragment = new DollFragment(weaponRegion, 70, socket, sX, sY);
                     fragment.localOffset.set(item.getOffsetX(), item.getOffsetY());
+                    fragment.rotation = item.getRotation(); // Pass rotation
                     fragments.add(fragment);
                     return fragments;
                 }
@@ -129,7 +167,7 @@ public class FragmentResolver {
                         zIndex = 60;
                         socket = "hand_main";
                     } else if (item.isBoots()) {
-                        zIndex = 20;
+                        zIndex = 35; // Render over legs (30)
                         socket = "feet";
                     } else if (item.isLegs()) {
                         zIndex = 30;

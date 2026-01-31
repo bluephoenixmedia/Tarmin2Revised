@@ -2,6 +2,7 @@ package com.bpm.minotaur.generation;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
@@ -422,14 +423,44 @@ public class ForestChunkGenerator implements IChunkGenerator {
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
                 switch (c) {
-                    case 'T':
-                        maze.addScenery(new Scenery(Scenery.SceneryType.TREE, x, y));
+                    case 'T': {
+                        Scenery s = new Scenery(Scenery.SceneryType.TREE, x, y);
+                        String path = "images/tree_pine.png";
+                        if (Gdx.files.internal(path).exists()) {
+                            if (!assetManager.isLoaded(path)) {
+                                assetManager.load(path, Texture.class);
+                                assetManager.finishLoading();
+                            }
+                            s.setTexture(assetManager.get(path, Texture.class));
+                        }
+                        maze.addScenery(s);
+                    }
                         break;
-                    case 'R':
-                        maze.addScenery(new Scenery(Scenery.SceneryType.ROCK, x, y));
+                    case 'R': {
+                        Scenery s = new Scenery(Scenery.SceneryType.ROCK, x, y);
+                        String path = "images/mossy_rock.png";
+                        if (Gdx.files.internal(path).exists()) {
+                            if (!assetManager.isLoaded(path)) {
+                                assetManager.load(path, Texture.class);
+                                assetManager.finishLoading();
+                            }
+                            s.setTexture(assetManager.get(path, Texture.class));
+                        }
+                        maze.addScenery(s);
+                    }
                         break;
-                    case 'B':
-                        maze.addScenery(new Scenery(Scenery.SceneryType.BUSH, x, y));
+                    case 'B': {
+                        Scenery s = new Scenery(Scenery.SceneryType.BUSH, x, y);
+                        String path = "images/bush.png";
+                        if (Gdx.files.internal(path).exists()) {
+                            if (!assetManager.isLoaded(path)) {
+                                assetManager.load(path, Texture.class);
+                                assetManager.finishLoading();
+                            }
+                            s.setTexture(assetManager.get(path, Texture.class));
+                        }
+                        maze.addScenery(s);
+                    }
                         break;
                     // Note: '#' is handled in the wall bitmasking loop below
                 }

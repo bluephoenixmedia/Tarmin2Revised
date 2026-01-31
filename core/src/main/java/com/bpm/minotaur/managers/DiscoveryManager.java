@@ -84,7 +84,6 @@ public class DiscoveryManager {
         wandTypes.add(ItemType.WAND_F);
         wandTypes.add(ItemType.WAND_G);
         wandTypes.add(ItemType.WAND_H);
-        wandTypes.add(ItemType.WAND_H);
         initializeWands(wandTypes);
 
         // 4. Initialize Rings

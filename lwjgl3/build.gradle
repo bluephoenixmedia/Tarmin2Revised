@@ -221,7 +221,7 @@ task runTexturePacker(type: JavaExec) {
     mainClass = 'com.bpm.minotaur.lwjgl3.PackTextures'
     classpath = sourceSets.main.runtimeClasspath
     standardOutput = System.out
-    workingDir = rootProject.file('assets')
+    workingDir = project.rootDir
     ignoreExitValue = true
 }
 

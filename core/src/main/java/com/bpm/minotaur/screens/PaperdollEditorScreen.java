@@ -60,7 +60,8 @@ public class PaperdollEditorScreen extends BaseScreen {
 
     private Slider offsetXSlider, offsetYSlider;
     private Slider scaleXSlider, scaleYSlider;
-    private Label offsetValueLabel, scaleValueLabel;
+    private Slider rotationSlider; // New
+    private Label offsetValueLabel, scaleValueLabel, rotationValueLabel; // New
 
     // Skeleton Controls
     private Slider socketXSlider, socketYSlider;
@@ -162,8 +163,9 @@ public class PaperdollEditorScreen extends BaseScreen {
         }
 
         TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
-        TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
-        fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
+
+        TextureAtlas weaponsAtlas = game.getAssetManager().get("packed/weapons.atlas", TextureAtlas.class);
+        fragmentResolver = new FragmentResolver(armorAtlas, weaponsAtlas);
 
         paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
         // Debug assets
@@ -283,6 +285,14 @@ public class PaperdollEditorScreen extends BaseScreen {
         scaleValueLabel = new Label("1.0, 1.0", skin);
         controls.add(scaleValueLabel).colspan(2).row();
 
+        // Rotation
+        controls.add(new Label("Rotation:", skin)).left();
+        rotationSlider = new Slider(0, 360, 1, false, skin);
+        controls.add(rotationSlider).width(200).row();
+
+        rotationValueLabel = new Label("0.0", skin);
+        controls.add(rotationValueLabel).colspan(2).row();
+
         // Listeners for sliders
         ChangeListener scaler = new ChangeListener() {
             @Override
@@ -294,6 +304,7 @@ public class PaperdollEditorScreen extends BaseScreen {
         offsetYSlider.addListener(scaler);
         scaleXSlider.addListener(scaler);
         scaleYSlider.addListener(scaler);
+        rotationSlider.addListener(scaler);
 
         // --- Socket Controls ---
         controls.add(new Label("--- Skeleton Sockets ---", skin, "default-font", Color.RED)).colspan(2).padTop(20)
@@ -365,12 +376,12 @@ public class PaperdollEditorScreen extends BaseScreen {
         });
         controls.add(saveHeadButton).colspan(2).fillX().height(40).padTop(20).row();
 
-        TextButton saveButton = new TextButton("SAVE ALL (Armor + Skeleton)", skin);
+        TextButton saveButton = new TextButton("SAVE ALL (Items + Skeleton)", skin);
         saveButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 saveSkeleton();
-                saveArmor();
+                saveArmor(); // Calls saveItemData internally
             }
         });
         controls.add(saveButton).colspan(2).fillX().height(50).padTop(10).row();
@@ -428,6 +439,7 @@ public class PaperdollEditorScreen extends BaseScreen {
             scaleYSlider.setValue(template.scaleY);
             offsetXSlider.setValue(template.offsetX);
             offsetYSlider.setValue(template.offsetY);
+            rotationSlider.setValue(template.rotation);
         } catch (Exception e) {
             Gdx.app.error("Editor", "Error equipping " + type, e);
         }
@@ -451,12 +463,14 @@ public class PaperdollEditorScreen extends BaseScreen {
             offsetYSlider.setValue(item.getOffsetY());
             scaleXSlider.setValue(item.getScale().x);
             scaleYSlider.setValue(item.getScale().y);
+            rotationSlider.setValue(item.getRotation());
         } else {
             // Reset sliders?
             offsetXSlider.setValue(0);
             offsetYSlider.setValue(0);
             scaleXSlider.setValue(1);
             scaleYSlider.setValue(1);
+            rotationSlider.setValue(0);
         }
     }
 
@@ -474,11 +488,13 @@ public class PaperdollEditorScreen extends BaseScreen {
         item.setOffsetX(offsetXSlider.getValue());
         item.setOffsetY(offsetYSlider.getValue());
         item.getScale().set(valX, valY);
+        item.setRotation(rotationSlider.getValue());
 
         refreshWidget();
 
         offsetValueLabel.setText((int) item.getOffsetX() + ", " + (int) item.getOffsetY());
         scaleValueLabel.setText(String.format("%.2f, %.2f", item.getScale().x, item.getScale().y));
+        rotationValueLabel.setText(String.format("%.0f", item.getRotation()));
     }
 
     private void updateSocketTransform() {
@@ -679,6 +695,10 @@ public class PaperdollEditorScreen extends BaseScreen {
     }
 
     private void saveArmor() {
+        saveItemData();
+    }
+
+    private void saveItemData() {
         Json json = new Json();
         json.setOutputType(JsonWriter.OutputType.json);
         json.setTypeName(null);
@@ -686,38 +706,51 @@ public class PaperdollEditorScreen extends BaseScreen {
         json.setIgnoreUnknownFields(true);
 
         try {
+            // --- Load Armor ---
             FileHandle armorFile = Gdx.files.local("assets/data/armor.json");
             @SuppressWarnings("unchecked")
             com.badlogic.gdx.utils.OrderedMap<String, ItemTemplate> armorMap = json
                     .fromJson(com.badlogic.gdx.utils.OrderedMap.class, ItemTemplate.class, armorFile);
 
-            boolean changed = false;
+            // --- Load Weapons ---
+            FileHandle weaponsFile = Gdx.files.local("assets/data/weapons.json");
+            @SuppressWarnings("unchecked")
+            com.badlogic.gdx.utils.OrderedMap<String, ItemTemplate> weaponsMap = json
+                    .fromJson(com.badlogic.gdx.utils.OrderedMap.class, ItemTemplate.class, weaponsFile);
+
+            boolean armorChanged = false;
+            boolean weaponsChanged = false;
+
             for (Item item : equippedItems.values()) {
                 if (item.getType().name().equals("SCROLL") || item.getType().name().equals("POTION"))
                     continue;
 
                 String key = item.getTypeName();
+
+                // Check Armor
                 ItemTemplate t = armorMap.get(key);
                 if (t != null) {
-                    t.offsetX = item.getOffsetX();
-                    t.offsetY = item.getOffsetY();
-                    t.scaleX = item.getScale().x;
-                    t.scaleY = item.getScale().y;
+                    updateTemplate(t, item);
+                    armorChanged = true;
+                    continue; // Done with this item
+                }
 
-                    if (t.scale == null) {
-                        t.scale = new ItemTemplate.Vector2Wrapper();
-                    }
-                    t.scale.x = t.scaleX;
-                    t.scale.y = t.scaleY;
-                    Gdx.app.log("Editor", String.format("Updated %s: Scale(%.2f, %.2f) Offset(%.2f, %.2f)",
-                            key, t.scaleX, t.scaleY, t.offsetX, t.offsetY));
-                    changed = true;
+                // Check Weapons
+                t = weaponsMap.get(key);
+                if (t != null) {
+                    updateTemplate(t, item);
+                    weaponsChanged = true;
                 }
             }
 
-            if (changed) {
+            if (armorChanged) {
                 armorFile.writeString(json.prettyPrint(armorMap), false);
                 Gdx.app.log("Editor", "Saved armor.json");
+            }
+
+            if (weaponsChanged) {
+                weaponsFile.writeString(json.prettyPrint(weaponsMap), false);
+                Gdx.app.log("Editor", "Saved weapons.json");
             }
 
             // Trigger Global Reload
@@ -725,8 +758,24 @@ public class PaperdollEditorScreen extends BaseScreen {
             Gdx.app.log("Editor", "Triggered global ItemDataManager reload.");
 
         } catch (Exception e) {
-            Gdx.app.error("Editor", "Failed to save armor JSON", e);
+            Gdx.app.error("Editor", "Failed to save item JSON", e);
         }
+    }
+
+    private void updateTemplate(ItemTemplate t, Item item) {
+        t.offsetX = item.getOffsetX();
+        t.offsetY = item.getOffsetY();
+        t.scaleX = item.getScale().x;
+        t.scaleY = item.getScale().y;
+        t.rotation = item.getRotation(); // Save Rotation
+
+        if (t.scale == null) {
+            t.scale = new ItemTemplate.Vector2Wrapper();
+        }
+        t.scale.x = t.scaleX;
+        t.scale.y = t.scaleY;
+        Gdx.app.log("Editor", String.format("Updated %s: Scale(%.2f, %.2f) Offset(%.2f, %.2f) Rot(%.0f)",
+                item.getTypeName(), t.scaleX, t.scaleY, t.offsetX, t.offsetY, t.rotation));
     }
 
     @Override

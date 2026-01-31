@@ -8,7 +8,7 @@ public class PlayerStats {
 
     private int currentHP;
     private int currentMP;
-    private int food;
+    // private int food; // REPLACED BY SATIETY
     private int arrows;
     private int dexterity;
     private int strength;
@@ -62,11 +62,62 @@ public class PlayerStats {
 
     private final float vulnerabilityMultiplier;
 
+    // --- Survival Stats ---
+    private float satiety = 80.0f; // 0-100, formerly 'food'
+    private float hydration = 80.0f; // 0-100
+    private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
+
+    public static final float MAX_SATIETY = 100.0f;
+    public static final float MAX_HYDRATION = 100.0f;
+    public static final float BODY_TEMP_NORMAL = 37.0f;
+    public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
+    public static final float BODY_TEMP_OVERHEAT = 41.0f; // Hyperthermia start
+
+    public int getSatiety() {
+        return (int) satiety;
+    }
+
+    public float getSatietyFloat() {
+        return satiety;
+    }
+
+    public void setSatiety(float v) {
+        this.satiety = Math.max(0, Math.min(MAX_SATIETY, v));
+    }
+
+    public void modifySatiety(float amount) {
+        setSatiety(this.satiety + amount);
+    }
+
+    public int getHydration() {
+        return (int) hydration;
+    }
+
+    public float getHydrationFloat() {
+        return hydration;
+    }
+
+    public void setHydration(float v) {
+        this.hydration = Math.max(0, Math.min(MAX_HYDRATION, v));
+    }
+
+    public void modifyHydration(float amount) {
+        setHydration(this.hydration + amount);
+    }
+
+    public float getBodyTemperature() {
+        return bodyTemperature;
+    }
+
+    public void setBodyTemperature(float v) {
+        this.bodyTemperature = v;
+    }
+
     public PlayerStats(Difficulty difficulty) {
         // Set stats based on difficulty
         this.currentHP = difficulty.startWarStrength; // Note: Difficulty field names might still be old
         this.currentMP = difficulty.startSpiritualStrength;
-        this.food = difficulty.startFood;
+        this.satiety = difficulty.startFood; // Map startFood to Satiety
         this.arrows = difficulty.startArrows;
         this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 
@@ -146,16 +197,18 @@ public class PlayerStats {
     }
 
     public void addFood(int amount) {
-        this.food += amount;
-        if (this.food > 99) {
-            this.food = 99; // Cap at 99 as per the manual
-        }
+        // Alias to modifySatiety
+        modifySatiety(amount);
     }
 
     public void decrementArrow() {
         if (this.arrows > 0) {
             this.arrows--;
         }
+    }
+
+    public void addHydration(int amount) {
+        modifyHydration(amount);
     }
 
     public void incrementTreasureScore(int amount) {
@@ -198,11 +251,11 @@ public class PlayerStats {
     }
 
     public int getFood() {
-        return food;
+        return (int) satiety;
     }
 
     public void setFood(int food) {
-        this.food = food;
+        this.satiety = food;
     }
 
     public int getArrows() {
@@ -247,6 +300,15 @@ public class PlayerStats {
 
     public void setMaxMP(int maxMP) {
         this.maxMP = maxMP;
+    }
+
+    public void restoreMP(int amount) {
+        if (amount <= 0)
+            return;
+        this.currentMP += amount;
+        if (this.currentMP > this.maxMP) {
+            this.currentMP = this.maxMP;
+        }
     }
 
     public float getVulnerabilityMultiplier() {

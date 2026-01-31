@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Scaling;
 import com.bpm.minotaur.gamedata.encounters.Encounter;
 import com.bpm.minotaur.gamedata.encounters.EncounterChoice;
 import com.bpm.minotaur.gamedata.encounters.EncounterManager;
@@ -31,7 +32,6 @@ public class EncounterWindow extends Table {
     private final Table choicesTable;
     private final TextButton.TextButtonStyle buttonStyle;
 
-    private Encounter currentEncounter;
     private Player player;
     private EncounterManager encounterManager;
     private GameEventManager eventManager;
@@ -86,7 +86,8 @@ public class EncounterWindow extends Table {
         this.add(titleLabel).growX().padBottom(20).row();
 
         eventImage = new Image();
-        this.add(eventImage).size(1013, 540).padBottom(20).row();
+        eventImage.setScaling(Scaling.fit);
+        this.add(eventImage).size(900, 400).padBottom(20).row();
 
         bodyLabel = new Label("", bodyStyle);
         bodyLabel.setWrap(true);
@@ -98,27 +99,34 @@ public class EncounterWindow extends Table {
 
         this.setVisible(false);
 
-        // --- Keyboard Listener ---
+        // --- Keyboard Listener (Local Focus Fallback) ---
         this.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if (!isVisible())
-                    return false;
-
-                if (keycode == com.badlogic.gdx.Input.Keys.UP || keycode == com.badlogic.gdx.Input.Keys.W) {
-                    moveSelection(-1);
-                    return true;
-                } else if (keycode == com.badlogic.gdx.Input.Keys.DOWN || keycode == com.badlogic.gdx.Input.Keys.S) {
-                    moveSelection(1);
-                    return true;
-                } else if (keycode == com.badlogic.gdx.Input.Keys.ENTER
-                        || keycode == com.badlogic.gdx.Input.Keys.SPACE) {
-                    triggerSelection();
-                    return true;
-                }
-                return false;
+                return handleInput(keycode);
             }
         });
+    }
+
+    public boolean handleInput(int keycode) {
+        if (!isVisible())
+            return false;
+
+        if (keycode == com.badlogic.gdx.Input.Keys.UP || keycode == com.badlogic.gdx.Input.Keys.W) {
+            moveSelection(-1);
+            return true;
+        } else if (keycode == com.badlogic.gdx.Input.Keys.DOWN || keycode == com.badlogic.gdx.Input.Keys.S) {
+            moveSelection(1);
+            return true;
+        } else if (keycode == com.badlogic.gdx.Input.Keys.ENTER
+                || keycode == com.badlogic.gdx.Input.Keys.SPACE) {
+            triggerSelection();
+            return true;
+        } else if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE) {
+            close(); // Emergency exit
+            return true;
+        }
+        return false;
     }
 
     private TextureRegionDrawable createBorderedDrawable(com.badlogic.gdx.graphics.Color fillColor,
@@ -159,7 +167,6 @@ public class EncounterWindow extends Table {
     public void show(Encounter encounter) {
         if (encounter == null)
             return;
-        this.currentEncounter = encounter;
 
         titleLabel.setText(encounter.title);
         bodyLabel.setText(encounter.text);
@@ -196,6 +203,9 @@ public class EncounterWindow extends Table {
                     btn.setText(choice.text + " [Cost: " + choice.cost.amount + " " + choice.cost.type + "]");
                 }
             }
+
+            Gdx.app.log("EncounterWindow", "Choice '" + choice.text + "' Disabled: " + btn.isDisabled() + " (Req: "
+                    + reqMet + ", Cost: " + costMet + ")");
 
             final int index = i;
             if (!btn.isDisabled()) {
@@ -241,6 +251,9 @@ public class EncounterWindow extends Table {
             getStage().setKeyboardFocus(this);
             getStage().setScrollFocus(this);
         }
+
+        // Unlock cursor for UI interaction
+        Gdx.input.setCursorCatched(false);
     }
 
     private void moveSelection(int delta) {
@@ -324,5 +337,8 @@ public class EncounterWindow extends Table {
         }
         if (onClose != null)
             onClose.run();
+
+        // Lock cursor back for gameplay
+        Gdx.input.setCursorCatched(true);
     }
 }

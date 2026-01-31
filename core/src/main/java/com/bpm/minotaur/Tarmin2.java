@@ -115,6 +115,8 @@ public class Tarmin2 extends Game {
         Gdx.app.log("Tarmin2", "SpawnTableData loaded.");
 
         // --- 3. Queue All Assets for Loading (Asynchronous) ---
+        // Queue portrait atlas
+        assetManager.load("packed/portrait.atlas", com.badlogic.gdx.graphics.g2d.TextureAtlas.class);
 
         // Queue music
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");

@@ -102,6 +102,8 @@ public class ItemDataManager {
             Gdx.app.log("ItemDataManager", "TESTING: Locked BOW with id 'item_bow'");
         }
 
+        initializeMissingTemplates();
+
         // --- Generate Randomized Templates (Scrolls/Wands) ---
         // If they don't exist in JSON, we create them from base templates.
 
@@ -192,7 +194,7 @@ public class ItemDataManager {
             }
         }
 
-        initializeMissingTemplates();
+        // initializeMissingTemplates(); // Moved to before procedural generation
 
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
@@ -227,9 +229,12 @@ public class ItemDataManager {
                 ItemType type = ItemType.valueOf(typeName);
                 ItemTemplate template = json.readValue(ItemTemplate.class, entry);
 
-                // FIX: Set default probability if missing to ensure they spawn
                 if (template.probability == 0) {
                     template.probability = 10;
+                }
+
+                if (template.rotation != 0) {
+                    Gdx.app.log("ItemDataManager", "Loaded weapon " + typeName + " with rotation " + template.rotation);
                 }
 
                 itemTemplates.put(type, template);
@@ -303,6 +308,8 @@ public class ItemDataManager {
         assetManager.load("packed/items.atlas", TextureAtlas.class);
         // Queue Armor Atlas
         assetManager.load("packed/armor.atlas", TextureAtlas.class);
+        // Queue Weapons Atlas
+        assetManager.load("packed/weapons.atlas", TextureAtlas.class);
 
         for (ItemTemplate template : itemTemplates.values()) {
             // Load 2D Texture
@@ -339,6 +346,17 @@ public class ItemDataManager {
             Gdx.app.log("ItemDataManager", "Converted generic SCROLL to " + type.name());
         }
         // -------------------------------------
+
+        // --- FIX: Randomize Generic WAND ---
+        if (type == ItemType.WAND) {
+            ItemType[] wands = {
+                    ItemType.WAND_A, ItemType.WAND_B, ItemType.WAND_C, ItemType.WAND_D,
+                    ItemType.WAND_E, ItemType.WAND_F, ItemType.WAND_G, ItemType.WAND_H
+            };
+            type = wands[random.nextInt(wands.length)];
+            Gdx.app.log("ItemDataManager", "Converted generic WAND to " + type.name());
+        }
+        // -----------------------------------
 
         ItemTemplate template = getTemplate(type);
 

@@ -550,8 +550,9 @@ public class GameScreen extends BaseScreen {
                 entityRenderer.render(shapeRenderer, player, maze, currentViewport,
                         firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
             } else {
-                entityRenderer.renderSingleMonster(shapeRenderer, player, combatManager.getMonster(), currentViewport,
-                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, maze, worldManager);
+                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
+                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager,
+                        combatManager.getMonster());
             }
 
             // --- FIX: Window Overlay Pass (Clips entities at window base/top) ---

@@ -3,7 +3,8 @@ package com.bpm.minotaur.gamedata.spells;
 public enum SpellType {
     MAGIC_ARROW("Magic Arrow", 4, true, "Shoots a magical bolt of energy."),
     HEAL("Heal", 8, false, "Restores health."),
-    TELEPORT("Teleport", 12, false, "Teleports you to a random location.");
+    TELEPORT("Teleport", 12, false, "Teleports you to a random location."),
+    IRON_SKIN("Iron Skin", 10, false, "Temporarily increases defense.");
 
     private final String displayName;
     private final int mpCost;

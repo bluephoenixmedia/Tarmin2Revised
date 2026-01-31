@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.gore;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -68,6 +69,7 @@ public class GoreManager {
             Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smears,
             com.badlogic.gdx.graphics.g2d.TextureRegion spatter,
             Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibs) {
+        Gdx.app.log("GoreManager", "setTextures called. Drops: " + drops.size + ", Smears: " + smears.size);
         this.dropTextures.clear();
         this.dropTextures.addAll(drops);
         this.smearTextures.clear();
@@ -82,6 +84,7 @@ public class GoreManager {
      * Includes variation logic for clots vs arterial spray.
      */
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
+        Gdx.app.log("GoreManager", "spawnBloodSpray called at " + origin + " with intensity " + intensity);
         int count = intensity * 36;
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -114,11 +117,14 @@ public class GoreManager {
             com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
             if (dropTextures.size > 0) {
                 tex = dropTextures.random();
+            } else {
+                Gdx.app.log("GoreManager", "No drop textures available!");
             }
 
             p.init(origin, vel, finalColor, life, size, tex);
             activeParticles.add(p);
         }
+        Gdx.app.log("GoreManager", "Active particles count: " + activeParticles.size);
     }
 
     /**

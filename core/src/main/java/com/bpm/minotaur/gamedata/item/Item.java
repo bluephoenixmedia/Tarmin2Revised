@@ -188,9 +188,14 @@ public class Item implements Renderable {
 
     private boolean isLocked;
     private int range; // Removed final
+    private int hydrationValue; // New
+    private int nutrition; // New
+    private float warmthBonus; // New
     private Vector2 scale; // Removed final
+
     private float offsetX = 0f;
     private float offsetY = 0f;
+    private float rotation = 0f;
     private List<Item> contents = new ArrayList<>();
 
     private PotionEffectType trueEffect; // For potions only
@@ -227,6 +232,26 @@ public class Item implements Renderable {
         this.offsetY = offsetY;
     }
 
+    public float getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(float rotation) {
+        this.rotation = rotation;
+    }
+
+    public int getHydrationValue() {
+        return hydrationValue;
+    }
+
+    public int getNutrition() {
+        return nutrition;
+    }
+
+    public float getWarmthBonus() {
+        return warmthBonus;
+    }
+
     public static Item fromTemplate(ItemType type, ItemTemplate template) {
         Item item = new Item();
         item.type = type;
@@ -259,11 +284,17 @@ public class Item implements Renderable {
         item.range = template.range;
         item.ringEffect = template.ringEffect;
 
+        item.hydrationValue = template.hydrationValue;
+        item.nutrition = template.nutrition;
+        item.warmthBonus = template.warmthBonus;
+
         item.scale = new Vector2(template.scaleX, template.scaleY);
         item.offsetX = template.offsetX;
         item.offsetY = template.offsetY;
+        item.rotation = template.rotation;
 
         // Variants logic...
+        item.template = template;
         return item;
     }
 

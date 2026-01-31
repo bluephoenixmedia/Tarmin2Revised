@@ -285,7 +285,8 @@ public class PaperDollWidget extends Group {
         float width = fragment.region.getRegionWidth();
         float height = fragment.region.getRegionHeight();
 
-        batch.draw(fragment.region, drawX, drawY, 0, 0, width, height, fragment.scaleX, fragment.scaleY, 0);
+        batch.draw(fragment.region, drawX, drawY, width / 2f, height / 2f, width, height, fragment.scaleX,
+                fragment.scaleY, fragment.rotation);
 
         // --- LOGGING ---
         // Identify fragment by region name if possible, or socket+offset

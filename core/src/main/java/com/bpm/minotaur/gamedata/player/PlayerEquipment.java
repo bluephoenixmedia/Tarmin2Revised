@@ -17,7 +17,8 @@ public class PlayerEquipment {
     private Item wornGauntlets = null; // Hands
     private Item wornLegs = null; // Legs (New)
     private Item wornBoots = null; // Feet (New)
-    private Item wornRing = null; // Ring
+    private Item wornRing = null; // Ring 1
+    private Item wornRing2 = null; // Ring 2
 
     private Item wornShield = null; // Kept for legacy compatibility / explicit shield slot logic
 
@@ -114,6 +115,15 @@ public class PlayerEquipment {
         if (wornRing != null) {
             totalDefense += wornRing.getArmorClassBonus();
         }
+        if (wornRing2 != null) {
+            totalDefense += wornRing2.getArmorClassBonus();
+        }
+
+        // Ring of Protection Effect (+2 AC)
+        if (hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.PROTECTION)) {
+            totalDefense += 2;
+        }
+
         totalDefense += getEquippedModifierSum(ModifierType.BONUS_AC);
         return totalDefense;
     }
@@ -217,6 +227,14 @@ public class PlayerEquipment {
         this.wornRing = item;
     }
 
+    public Item getWornRing2() {
+        return wornRing2;
+    }
+
+    public void setWornRing2(Item item) {
+        this.wornRing2 = item;
+    }
+
     public Item getWornShield() {
         return wornShield;
     }
@@ -247,6 +265,8 @@ public class PlayerEquipment {
             items.add(wornBoots);
         if (wornRing != null)
             items.add(wornRing);
+        if (wornRing2 != null)
+            items.add(wornRing2);
         if (wornShield != null)
             items.add(wornShield);
         return items;
@@ -254,6 +274,9 @@ public class PlayerEquipment {
 
     public boolean hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType type) {
         if (wornRing != null && wornRing.getRingEffect() == type) {
+            return true;
+        }
+        if (wornRing2 != null && wornRing2.getRingEffect() == type) {
             return true;
         }
         return false;

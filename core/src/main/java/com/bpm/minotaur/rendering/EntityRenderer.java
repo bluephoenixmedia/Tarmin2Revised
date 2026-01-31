@@ -93,6 +93,12 @@ public class EntityRenderer {
 
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
+        render(shapeRenderer, player, maze, viewport, depthBuffer, firstPersonRenderer, worldManager, null);
+    }
+
+    public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
+            float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager,
+            Monster activeMonsterOnly) {
 
         if (depthBuffer == null)
             return;
@@ -106,7 +112,11 @@ public class EntityRenderer {
 
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
-        entities.addAll(maze.getMonsters().values());
+        if (activeMonsterOnly != null) {
+            entities.add(activeMonsterOnly);
+        } else {
+            entities.addAll(maze.getMonsters().values());
+        }
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getProjectiles());
         entities.addAll(maze.getScenery().values());
@@ -170,9 +180,14 @@ public class EntityRenderer {
                     (entity instanceof Item
                             && (((Item) entity).getTexture() != null || ((Item) entity).getTextureRegion() != null))
                     ||
-                    (entity instanceof Ladder && canRenderLadderAsTexture((Ladder) entity));
+                    (entity instanceof Ladder && canRenderLadderAsTexture((Ladder) entity))
+                    ||
+                    (entity instanceof Scenery && ((Scenery) entity).getTexture() != null);
 
-            if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN && needsTexture) {
+            boolean forceTexture = (entity instanceof Monster
+                    && ((Monster) entity).getType() == Monster.MonsterType.GIANT_ANT);
+
+            if ((debugManager.getRenderMode() == DebugManager.RenderMode.MODERN || forceTexture) && needsTexture) {
                 if (isShapeRendererActive) {
                     shapeRenderer.end();
                     isShapeRendererActive = false;
@@ -191,6 +206,9 @@ public class EntityRenderer {
                             maze);
                 } else if (entity instanceof Ladder) {
                     drawLadderTexture(spriteBatch, (Ladder) entity, player, viewport, depthBuffer);
+                } else if (entity instanceof Scenery) {
+                    drawSceneryTexture(spriteBatch, player, (Scenery) entity, viewport, depthBuffer,
+                            firstPersonRenderer, maze);
                 }
 
             } else {
@@ -1244,6 +1262,89 @@ public class EntityRenderer {
                 return Color.TEAL;
             default:
                 return defaultColor;
+        }
+    }
+
+    private void drawSceneryTexture(PolygonSpriteBatch spriteBatch, Player player, Scenery scenery, Viewport viewport,
+            float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, Maze maze) {
+
+        float spriteX = scenery.getPosition().x - player.getPosition().x;
+        float spriteY = scenery.getPosition().y - player.getPosition().y;
+        float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y
+                - player.getDirectionVector().x * player.getCameraPlane().y);
+        float transformX = invDet
+                * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
+        float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
+
+        if (transformY > 0) {
+            float distanceToObstruction = firstPersonRenderer.checkLineOfSight(player, maze, scenery.getPosition());
+            float distanceToScenery = player.getPosition().dst(scenery.getPosition());
+
+            if (distanceToObstruction < distanceToScenery - 0.5f) {
+                return;
+            }
+
+            Camera camera = viewport.getCamera();
+            int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+
+            int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
+
+            int spriteHeight = (int) (baseSpriteHeight * scenery.getScale().y);
+            int spriteWidth = (int) (baseSpriteHeight * scenery.getScale().x);
+
+            float drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
+
+            // Adjust for tall trees to sit on ground?
+            // If tree is 4.0 high (scale.y=4), baseSpriteHeight is "1.0 unit high".
+            // We want the BOTTOM of the sprite to be at roughly the floor level.
+            // Floor level (center of floor line) is `viewportHeight/2`. (Horizon).
+            // Actually floor at the wall distance is `viewportHeight/2 -
+            // baseSpriteHeight/2`.
+
+            // For a tree (scale=4), spriteHeight = 4 * base.
+            // If we center it: `drawY = center - 2*base`.
+            // Bottom is `center - 2*base`.
+            // True floor is `center - 0.5*base`.
+            // So tree bottom is 1.5 units BELOW floor. (Which means it looks sunk).
+            // We want Bottom = True Floor.
+            // So we want `drawY = True Floor = center - 0.5*base`.
+            // Wait, LibGDX draws from bottom-left corner? Yes.
+            // So if we draw at `drawY`, that's the bottom of the sprite.
+            // We want `drawY = center - 0.5 * baseSpriteHeight`.
+
+            // Let's modify drawY logic for Scenery specifically.
+            // Monsters are centered (scale=1 usually, or floating).
+            // Trees are grounded.
+
+            // Correct logic for grounded objects:
+            // drawY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2.0f);
+            // This places the bottom of a 1.0-height object at the floor level?
+            // No. viewHeight/2 is Horizon.
+            // baseSpriteHeight is height of 1 world unit at that distance.
+            // The wall goes from `horizon - base/2` to `horizon + base/2`.
+            // So `horizon - base/2` is the FLOOR level on screen.
+            // We want the sprite bottom to be there.
+
+            drawY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2.0f);
+
+            // If we use standard centering logic:
+            // drawY = center - height/2 = center - (scale*base)/2.
+            // Difference = (-0.5*base) - (-0.5*scale*base) = 0.5*base*(scale-1).
+            // So we need to shift UP by that amount? No.
+
+            int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+            int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+
+            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
+                if (stripe >= 0 && stripe < depthBuffer.length) {
+                    if (transformY >= depthBuffer[stripe]) {
+                        continue;
+                    }
+                    float u = (float) (stripe - (screenX - spriteWidth / 2)) / (float) spriteWidth;
+                    spriteBatch.draw(scenery.getTexture(), stripe, drawY, 1, spriteHeight, u, 1,
+                            u + (1.0f / spriteWidth), 0);
+                }
+            }
         }
     }
 

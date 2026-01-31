@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PackTextures",
+            "request": "launch",
+            "mainClass": "com.bpm.minotaur.lwjgl3.PackTextures",
+            "projectName": "Tarmin2-lwjgl3"
+        },
+        {
+            "type": "java",
             "name": "Lwjgl3Launcher",
             "request": "launch",
             "mainClass": "com.bpm.minotaur.lwjgl3.Lwjgl3Launcher",

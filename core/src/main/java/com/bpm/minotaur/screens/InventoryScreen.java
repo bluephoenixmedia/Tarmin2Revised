@@ -266,9 +266,10 @@ public class InventoryScreen extends BaseScreen {
         }
 
         TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
-        TextureAtlas itemsAtlas = game.getAssetManager().get("packed/items.atlas", TextureAtlas.class);
 
-        fragmentResolver = new FragmentResolver(armorAtlas, itemsAtlas);
+        TextureAtlas weaponsAtlas = game.getAssetManager().get("packed/weapons.atlas", TextureAtlas.class);
+
+        fragmentResolver = new FragmentResolver(armorAtlas, weaponsAtlas);
         paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
 
         // Sync Inventory Items with freshly loaded Templates (from Editor, via
@@ -289,6 +290,7 @@ public class InventoryScreen extends BaseScreen {
                     com.bpm.minotaur.gamedata.item.ItemTemplate t = dm.getTemplate(item.getType());
                     item.setOffsetX(t.offsetX);
                     item.setOffsetY(t.offsetY);
+                    item.setRotation(t.rotation); // Sync rotation
                     if (item.getScale() != null)
                         item.getScale().set(t.scaleX, t.scaleY);
                 } catch (Exception e) {
@@ -361,7 +363,8 @@ public class InventoryScreen extends BaseScreen {
         // Rings / Accessories (Row 5 split?)
         // The screenshot shows two slots side-by-side or close at the bottom right?
         // Let's put Ring and Eyes (Diamond) there.
-        addSlotToGroup(paperDollGroup, "Ring", ItemType.RING, rightColX - slotSize - 10, row5Y);
+        addSlotToGroup(paperDollGroup, "Ring", ItemType.RING, (rightColX - slotSize - 10) - 70, row5Y);
+        addSlotToGroup(paperDollGroup, "Ring 2", ItemType.RING, rightColX - slotSize - 10, row5Y);
         addSlotToGroup(paperDollGroup, "Eyes", ItemType.EYES, rightColX + 10, row5Y);
 
         // Extra Slots
@@ -459,6 +462,23 @@ public class InventoryScreen extends BaseScreen {
 
         Table rightSide = new Table();
         rightSide.add(backpackTable).top().right().expand().fillX().row();
+
+        // --- Known Spells ---
+        Table spellsTable = new Table();
+        Label spellsLabel = new Label("Known Spells", new Label.LabelStyle(font, Color.CYAN));
+        spellsLabel.setAlignment(Align.right);
+        spellsTable.add(spellsLabel).padBottom(5).right().row();
+
+        if (player.getKnownSpells() == null || player.getKnownSpells().isEmpty()) {
+            spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).right();
+        } else {
+            for (com.bpm.minotaur.gamedata.spells.SpellType spell : player.getKnownSpells()) {
+                Label l = new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
+                        new Label.LabelStyle(font, Color.WHITE));
+                spellsTable.add(l).right().padRight(5).row();
+            }
+        }
+        rightSide.add(spellsTable).right().padTop(10).padBottom(10).row();
 
         // Alchemy Button
         TextButton alchemyBtn = new TextButton("Alchemy", new TextButton.TextButtonStyle(null, null, null, font));
@@ -597,6 +617,18 @@ public class InventoryScreen extends BaseScreen {
                 paperDollWidget.equip(equip.getWornBoots());
             if (equip.getWornGauntlets() != null)
                 paperDollWidget.equip(equip.getWornGauntlets());
+            if (equip.getWornArms() != null)
+                paperDollWidget.equip(equip.getWornArms());
+            if (equip.getWornBack() != null)
+                paperDollWidget.equip(equip.getWornBack());
+            if (equip.getWornEyes() != null)
+                paperDollWidget.equip(equip.getWornEyes());
+            if (equip.getWornNeck() != null)
+                paperDollWidget.equip(equip.getWornNeck());
+            if (equip.getWornRing() != null)
+                paperDollWidget.equip(equip.getWornRing());
+            if (equip.getWornRing2() != null)
+                paperDollWidget.equip(equip.getWornRing2());
 
             // Weapons
             if (inv.getRightHand() != null)
@@ -629,6 +661,8 @@ public class InventoryScreen extends BaseScreen {
                     slot.setItem(equip.getWornBoots());
                 else if ("Ring".equals(slot.name))
                     slot.setItem(equip.getWornRing());
+                else if ("Ring 2".equals(slot.name))
+                    slot.setItem(equip.getWornRing2());
                 else if ("L.Hand".equals(slot.name))
                     slot.setItem(inv.getLeftHand());
                 else if ("R.Hand".equals(slot.name))
@@ -754,6 +788,8 @@ public class InventoryScreen extends BaseScreen {
             eq.setWornBoots(null);
         else if ("Ring".equals(slotName))
             eq.setWornRing(null);
+        else if ("Ring 2".equals(slotName))
+            eq.setWornRing2(null);
         else if ("L.Hand".equals(slotName)) {
             inv.setLeftHand(null);
             // --- FIX: Sync shield status ---
@@ -786,6 +822,8 @@ public class InventoryScreen extends BaseScreen {
             eq.setWornBoots(item);
         else if ("Ring".equals(slotName))
             eq.setWornRing(item);
+        else if ("Ring 2".equals(slotName))
+            eq.setWornRing2(item);
         else if ("L.Hand".equals(slotName)) {
             inv.setLeftHand(item);
             // --- FIX: If this item is a shield, also set it in PlayerEquipment so armor
@@ -1095,7 +1133,7 @@ public class InventoryScreen extends BaseScreen {
                     return item.isLegs();
                 if ("Feet".equals(name))
                     return item.isBoots();
-                if ("Ring".equals(name)) {
+                if ("Ring".equals(name) || "Ring 2".equals(name)) {
                     return item.isRing();
                 }
 
