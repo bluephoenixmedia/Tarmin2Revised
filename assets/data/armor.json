@@ -1307,10 +1307,10 @@
 	"modelScale": 1,
 	"modelYOffset": 0,
 	"modelRotation": 0,
-	"scaleX": 1,
-	"scaleY": 1,
-	"offsetX": 0,
-	"offsetY": 0,
+	"scaleX": 0.55,
+	"scaleY": 0.5,
+	"offsetX": -216,
+	"offsetY": -181,
 	"rotation": 0,
 	"attackStartRotation": -60,
 	"attackEndRotation": 60,
@@ -1386,8 +1386,8 @@
 	"probability": 0,
 	"isImpassable": false,
 	"scale": {
-		"x": 1,
-		"y": 1
+		"x": 0.55,
+		"y": 0.5
 	},
 	"grantedDice": null,
 	"variants": [
@@ -6967,10 +6967,10 @@
 	"modelScale": 1,
 	"modelYOffset": 0,
 	"modelRotation": 0,
-	"scaleX": 1,
-	"scaleY": 1,
-	"offsetX": 0,
-	"offsetY": 0,
+	"scaleX": 0.6,
+	"scaleY": 0.6,
+	"offsetX": -93,
+	"offsetY": 75,
 	"rotation": 0,
 	"attackStartRotation": -60,
 	"attackEndRotation": 60,
@@ -7046,8 +7046,8 @@
 	"probability": 0,
 	"isImpassable": false,
 	"scale": {
-		"x": 1,
-		"y": 1
+		"x": 0.6,
+		"y": 0.6
 	},
 	"grantedDice": null,
 	"variants": [
@@ -8992,10 +8992,10 @@
 	"modelScale": 1,
 	"modelYOffset": 0,
 	"modelRotation": 0,
-	"scaleX": 1,
-	"scaleY": 1,
-	"offsetX": 0,
-	"offsetY": 0,
+	"scaleX": 0.75,
+	"scaleY": 0.55,
+	"offsetX": -74,
+	"offsetY": -242,
 	"rotation": 0,
 	"attackStartRotation": -60,
 	"attackEndRotation": 60,
@@ -9071,8 +9071,8 @@
 	"probability": 0,
 	"isImpassable": false,
 	"scale": {
-		"x": 1,
-		"y": 1
+		"x": 0.75,
+		"y": 0.55
 	},
 	"grantedDice": null,
 	"variants": [
@@ -9622,10 +9622,10 @@
 	"modelScale": 1,
 	"modelYOffset": 0,
 	"modelRotation": 0,
-	"scaleX": 1,
-	"scaleY": 1,
-	"offsetX": 0,
-	"offsetY": 0,
+	"scaleX": 0.5,
+	"scaleY": 0.5,
+	"offsetX": -107,
+	"offsetY": -62,
 	"rotation": 0,
 	"attackStartRotation": -60,
 	"attackEndRotation": 60,
@@ -9701,8 +9701,8 @@
 	"probability": 0,
 	"isImpassable": false,
 	"scale": {
-		"x": 1,
-		"y": 1
+		"x": 0.5,
+		"y": 0.5
 	},
 	"grantedDice": null,
 	"variants": [
@@ -10392,8 +10392,8 @@
 	"modelRotation": 0,
 	"scaleX": 0.8,
 	"scaleY": 0.6,
-	"offsetX": 30,
-	"offsetY": -43,
+	"offsetX": -22,
+	"offsetY": -300,
 	"rotation": 0,
 	"attackStartRotation": -60,
 	"attackEndRotation": 60,

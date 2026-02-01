@@ -29,7 +29,7 @@ public interface IChunkGenerator {
      */
     // [MODIFIED] Added theme and spawnTableData parameters
     Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
-            GameMode gameMode, RetroTheme.Theme theme,
+            GameMode gameMode, RetroTheme.Theme theme, RetroTheme.Theme mazeTheme,
             MonsterDataManager dataManager,
             ItemDataManager itemDataManager,
             AssetManager assetManager,

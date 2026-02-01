@@ -59,7 +59,7 @@
 	"torso": {
 		"x": {
 			"class": "java.lang.Float",
-			"value": 873
+			"value": 579
 		},
 		"y": {
 			"class": "java.lang.Float",

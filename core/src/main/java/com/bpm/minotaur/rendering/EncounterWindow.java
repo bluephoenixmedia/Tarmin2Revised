@@ -338,7 +338,9 @@ public class EncounterWindow extends Table {
         if (onClose != null)
             onClose.run();
 
-        // Lock cursor back for gameplay
-        Gdx.input.setCursorCatched(true);
+        // Lock cursor back for gameplay -> REMOVED because Tarmin2 uses
+        // click-to-move/interact/buttons
+        // and doesn't support mouse-look, so we need the cursor visible.
+        // Gdx.input.setCursorCatched(true);
     }
 }

@@ -240,6 +240,16 @@ public class Maze {
         return (this.theme != null) ? this.theme : RetroTheme.STANDARD_THEME;
     }
 
+    private RetroTheme.Theme secondaryTheme;
+
+    public void setSecondaryTheme(RetroTheme.Theme theme) {
+        this.secondaryTheme = theme;
+    }
+
+    public RetroTheme.Theme getSecondaryTheme() {
+        return (this.secondaryTheme != null) ? this.secondaryTheme : getTheme();
+    }
+
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
         int doorMask = wallMask << 1;

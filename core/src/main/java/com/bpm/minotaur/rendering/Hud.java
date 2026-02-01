@@ -1272,6 +1272,11 @@ public class Hud implements Disposable {
         boolean hasFog = biome != null && biome.hasFogOfWar();
         float fogDistance = (biome != null) ? biome.getFogDistance() : 100f;
 
+        // Fix: Clamp logic removed as per user request (Standard Minimap)
+        // if (biome == Biome.FOREST) {
+        // fogDistance = 2.0f;
+        // }
+
         int mazeW = maze.getWidth();
         int mazeH = maze.getHeight();
 
@@ -1458,6 +1463,15 @@ public class Hud implements Disposable {
             // Only strictly needed if outside audible range, but requirements say "Seen OR
             // Audible"
             boolean isVisible = false;
+
+            boolean isOmniscient = player.getStatusManager().hasEffect(StatusEffectType.OMNISCIENT);
+
+            // Fog Check
+            // if (hasFog && !isOmniscient) {
+            // if (dist > fogDistance) {
+            // continue; // Skip rendering if in fog
+            // }
+            // }
 
             // Optimization: Only check LOS if NOT audible (since audible is sufficient to
             // show)

@@ -139,7 +139,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
     @Override
     public Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
             GameMode gameMode,
-            RetroTheme.Theme theme,
+            RetroTheme.Theme theme, RetroTheme.Theme mazeTheme,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
             SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // New Argument

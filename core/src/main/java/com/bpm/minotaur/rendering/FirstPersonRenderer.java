@@ -53,6 +53,11 @@ public class FirstPersonRenderer {
     private static final int DOOR_SOUTH = 0b00100000;
     private static final int DOOR_NORTH = 0b10000000;
 
+    private static final int MAZE_WALL_WEST = 0b0000000100000000; // 256
+    private static final int MAZE_WALL_EAST = 0b0000001000000000; // 512
+    private static final int MAZE_WALL_SOUTH = 0b0000010000000000; // 1024
+    private static final int MAZE_WALL_NORTH = 0b0000100000000000; // 2048
+
     private enum WallType {
         WALL, DOOR, GATE
     }
@@ -212,6 +217,9 @@ public class FirstPersonRenderer {
         } else if (gameMode == GameMode.ADVANCED && biome.hasFogOfWar()) {
             fogEnabled = true;
             fogDistance = biome.getFogDistance();
+            if (biome == Biome.FOREST) {
+                fogDistance = 2.0f;
+            }
             fogColor.set(biome.getFogColor());
         }
 
@@ -316,35 +324,39 @@ public class FirstPersonRenderer {
                     depthBuffer[x] = Float.MAX_VALUE;
 
                     // Fix: If OOB/Sky, explicitly draw Skybox strip (to overwrite ceiling)
-                    Texture skyboxTexture;
-                    boolean isStormy = false;
-                    if (worldManager.getWeatherManager() != null) {
-                        isStormy = worldManager.getWeatherManager().isStormy();
-                    }
-                    switch (player.getFacing()) {
-                        case EAST:
-                            skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
-                            break;
-                        case WEST:
-                            skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
-                            break;
-                        case SOUTH:
-                            skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
-                            break;
-                        default:
-                            skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
-                            break;
-                    }
+                    // BUT only if we don't have a Biome Skybox (which is drawn full-screen)
+                    if (biome.getSkyboxTexturePath() == null) {
+                        Texture skyboxTexture;
+                        boolean isStormy = false;
+                        if (worldManager.getWeatherManager() != null) {
+                            isStormy = worldManager.getWeatherManager().isStormy();
+                        }
+                        switch (player.getFacing()) {
+                            case EAST:
+                                skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
+                                break;
+                            case WEST:
+                                skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
+                                break;
+                            case SOUTH:
+                                skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
+                                break;
+                            default:
+                                skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
+                                break;
+                        }
 
-                    // Mapping: x corresponds to texture coord
-                    int texWidth = skyboxTexture.getWidth();
-                    int texX = (int) ((x / (float) viewport.getWorldWidth()) * texWidth);
+                        // Mapping: x corresponds to texture coord
+                        int texWidth = skyboxTexture.getWidth();
+                        int texX = (int) ((x / (float) viewport.getWorldWidth()) * texWidth);
 
-                    // Draw Skybox Strip
-                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
-                    spriteBatch.draw(skyboxTexture, x, (viewport.getWorldHeight() / 2 - 160), 1,
-                            (viewport.getWorldHeight() / 2) + 160, texX, 0, 1, skyboxTexture.getHeight(), false, false);
-                    spriteBatch.setColor(Color.WHITE);
+                        // Draw Skybox Strip
+                        spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                        spriteBatch.draw(skyboxTexture, x, (viewport.getWorldHeight() / 2 - 160), 1,
+                                (viewport.getWorldHeight() / 2) + 160, texX, 0, 1, skyboxTexture.getHeight(), false,
+                                false);
+                        spriteBatch.setColor(Color.WHITE);
+                    }
                 }
             }
             spriteBatch.end();
@@ -465,12 +477,10 @@ public class FirstPersonRenderer {
 
         // --- Biome Floor Override ---
         Texture activeFloor = floorTexture;
-        if (worldManager != null) {
-            Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-            Texture overrideFloor = getTexture(biome.getFloorTexturePath());
-            if (overrideFloor != null) {
-                activeFloor = overrideFloor;
-            }
+        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+        Texture overrideFloor = getTexture(biome.getFloorTexturePath());
+        if (overrideFloor != null) {
+            activeFloor = overrideFloor;
         }
         // -----------------------------
 
@@ -807,7 +817,13 @@ public class FirstPersonRenderer {
                 spriteBatch.draw(blankTexture, screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
             }
         } else {
-            Color renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
+            Color renderColor;
+            if (result.collisionMask != 0) {
+                RetroTheme.Theme secTheme = maze.getSecondaryTheme();
+                renderColor = (result.side == 1) ? secTheme.wallDark : secTheme.wall;
+            } else {
+                renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
+            }
             Color finalColor = new Color(renderColor).mul(colorModifier);
             spriteBatch.setColor(applyTorchLighting(finalColor, result.distance, fogLerpColor));
             spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
@@ -1198,6 +1214,9 @@ public class FirstPersonRenderer {
         int side = 0;
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
         float maxDist = (biome.isSeamless()) ? biome.getFogDistance() + 2 : 50;
+        if (biome == Biome.FOREST) {
+            maxDist = 2.0f;
+        }
         int maxDistance = (int) maxDist;
         int distanceTraveled = 0;
         boolean hitDoorFrame = false;
@@ -1205,6 +1224,7 @@ public class FirstPersonRenderer {
         int doorFrameSide = -1;
         Door doorFrameObject = null;
         java.util.List<WindowHit> windowHits = new java.util.ArrayList<>();
+        int finalCollisionMask = 0;
 
         while (!hit && distanceTraveled < maxDistance) {
 
@@ -1332,6 +1352,24 @@ public class FirstPersonRenderer {
                             // Continue Ray (Transparent)
                         } else {
                             hit = true;
+                            // Check collisions for coloring
+                            if (side == 0) {
+                                if (stepX > 0) { // Moving East. Hit Prev East or Curr West
+                                    if ((prevWallData & MAZE_WALL_EAST) != 0 || (wallData & MAZE_WALL_WEST) != 0)
+                                        finalCollisionMask = 1;
+                                } else { // Moving West. Hit Prev West or Curr East
+                                    if ((prevWallData & MAZE_WALL_WEST) != 0 || (wallData & MAZE_WALL_EAST) != 0)
+                                        finalCollisionMask = 1;
+                                }
+                            } else {
+                                if (stepY > 0) { // Moving North. Hit Prev North or Curr South
+                                    if ((prevWallData & MAZE_WALL_NORTH) != 0 || (wallData & MAZE_WALL_SOUTH) != 0)
+                                        finalCollisionMask = 1;
+                                } else { // Moving South. Hit Prev South or Curr North
+                                    if ((prevWallData & MAZE_WALL_SOUTH) != 0 || (wallData & MAZE_WALL_NORTH) != 0)
+                                        finalCollisionMask = 1;
+                                }
+                            }
                         }
                     } else if (hasDoorCollision(wallData, prevWallData, side, stepX, stepY)) {
                         Object obj = maze.getGameObjectAt(mapX, mapY);
@@ -1372,7 +1410,7 @@ public class FirstPersonRenderer {
 
             if (hitsFrame) {
                 return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, null,
-                        frameWallX, doorFrameMapX, doorFrameMapY, windowHits);
+                        frameWallX, doorFrameMapX, doorFrameMapY, windowHits, 0);
             }
         }
 
@@ -1417,7 +1455,8 @@ public class FirstPersonRenderer {
                 }
             }
         }
-        return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX, mapX, mapY, windowHits);
+        return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX, mapX, mapY, windowHits,
+                finalCollisionMask);
     }
 
     private boolean isOutOfBounds(int x, int y, Maze maze) {
@@ -1624,9 +1663,10 @@ public class FirstPersonRenderer {
         final int mapX;
         final int mapY;
         final java.util.List<WindowHit> windowHits;
+        final int collisionMask; // New Field
 
         RaycastResult(float distance, int side, WallType wallType, Door door, Gate gate, float wallX, int mapX,
-                int mapY, java.util.List<WindowHit> windowHits) {
+                int mapY, java.util.List<WindowHit> windowHits, int collisionMask) {
             this.distance = distance;
             this.side = side;
             this.wallType = wallType;
@@ -1636,6 +1676,7 @@ public class FirstPersonRenderer {
             this.mapX = mapX;
             this.mapY = mapY;
             this.windowHits = windowHits;
+            this.collisionMask = collisionMask;
         }
     }
 

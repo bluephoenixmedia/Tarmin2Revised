@@ -398,6 +398,10 @@ public class GameScreen extends BaseScreen {
             combatManager.update(delta);
             if (combatDiceOverlay != null)
                 combatDiceOverlay.update(delta);
+
+            // --- SEAMLESS LOADING LOGIC (Proximity Only) ---
+            updateSeamlessChunkLoading(delta);
+
             animationManager.update(delta);
             if (maze != null)
                 maze.update(delta);
@@ -1096,13 +1100,38 @@ public class GameScreen extends BaseScreen {
                     hud.addMessage("You wait...");
                     playerTurnTakesAction();
                     return true;
-                case Input.Keys.UP:
+                case Input.Keys.UP: {
+                    Vector2 dir = player.getFacing().getVector();
+                    int tx = (int) Math.floor(player.getPosition().x + dir.x);
+                    int ty = (int) Math.floor(player.getPosition().y + dir.y);
+
+                    // DEBUG LOG
+                    // Gdx.app.log("Seamless", "Move Request: Cur(" + player.getPosition() + ") +
+                    // Dir(" + dir + ") -> TargetTile(" + tx + ", " + ty + ")");
+
+                    // Check for Seamless Transition (OOB)
+                    if (checkAndPerformSeamlessTransition(tx, ty)) {
+                        return true;
+                    }
+                }
                     player.moveForward(maze, eventManager, gameMode);
                     combatManager.checkForAdjacentMonsters();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
-                case Input.Keys.DOWN:
+                case Input.Keys.DOWN: {
+                    Vector2 dir = player.getFacing().getVector();
+                    int tx = (int) Math.floor(player.getPosition().x - dir.x);
+                    int ty = (int) Math.floor(player.getPosition().y - dir.y);
+
+                    // DEBUG LOG
+                    // Gdx.app.log("Seamless", "Move Request: Cur(" + player.getPosition() + ") -
+                    // Dir(" + dir + ") -> TargetTile(" + tx + ", " + ty + ")");
+
+                    if (checkAndPerformSeamlessTransition(tx, ty)) {
+                        return true;
+                    }
+                }
                     player.moveBackward(maze, eventManager, gameMode);
                     combatManager.checkForAdjacentMonsters();
                     playerTurnTakesAction();
@@ -1431,5 +1460,123 @@ public class GameScreen extends BaseScreen {
 
     public FirstPersonWeaponOverlay getWeaponOverlay() {
         return weaponOverlay;
+    }
+
+    private void updateSeamlessChunkLoading(float delta) {
+        if (worldManager == null || player == null || maze == null)
+            return;
+
+        GridPoint2 currentC = worldManager.getCurrentPlayerChunkId();
+        com.bpm.minotaur.generation.Biome currentBiome = worldManager.getBiomeManager().getBiome(currentC);
+
+        if (currentBiome == null || !currentBiome.isSeamless())
+            return;
+
+        float x = player.getPosition().x;
+        float y = player.getPosition().y;
+        int width = maze.getWidth();
+        int height = maze.getHeight();
+
+        // Proximity Pre-Load (3 tiles)
+        if (x < 3) {
+            preloadChunk(currentC.x - 1, currentC.y);
+        }
+        if (x > width - 3) {
+            preloadChunk(currentC.x + 1, currentC.y);
+        }
+        if (y < 3) {
+            preloadChunk(currentC.x, currentC.y - 1);
+        }
+        if (y > height - 3) {
+            preloadChunk(currentC.x, currentC.y + 1);
+        }
+    }
+
+    private void preloadChunk(int x, int y) {
+        GridPoint2 neighbor = new GridPoint2(x, y);
+        if (!worldManager.getLoadedChunkIds().contains(neighbor)) {
+            Gdx.app.log("Seamless", "Pre-loading neighbor chunk: " + neighbor);
+            worldManager.requestLoadChunk(neighbor);
+        }
+    }
+
+    /**
+     * Checks if the target coordinate is Out of Bounds (OOB) and if so,
+     * seamlessly transitions the player to the adjacent chunk.
+     * 
+     * @return true if a transition occurred.
+     */
+    private boolean checkAndPerformSeamlessTransition(int targetX, int targetY) {
+        if (worldManager == null || player == null || maze == null)
+            return false;
+
+        GridPoint2 currentC = worldManager.getCurrentPlayerChunkId();
+        com.bpm.minotaur.generation.Biome currentBiome = worldManager.getBiomeManager().getBiome(currentC);
+
+        if (currentBiome == null || !currentBiome.isSeamless())
+            return false; // Not seamless, treat as wall
+
+        int width = maze.getWidth();
+        int height = maze.getHeight();
+
+        // Check if actually OOB
+        if (targetX >= 0 && targetX < width && targetY >= 0 && targetY < height) {
+            return false; // Not OOB, let normal movement logic handle it
+        }
+
+        GridPoint2 newChunkId = null;
+        String directionLog = "";
+        float newPlayerX = targetX; // Temp, will be wrapped
+        float newPlayerY = targetY; // Temp, will be wrapped
+
+        if (targetX < 0) {
+            newChunkId = new GridPoint2(currentC.x - 1, currentC.y);
+            directionLog = "WEST";
+        } else if (targetX >= width) {
+            newChunkId = new GridPoint2(currentC.x + 1, currentC.y);
+            directionLog = "EAST";
+        } else if (targetY < 0) {
+            newChunkId = new GridPoint2(currentC.x, currentC.y - 1);
+            directionLog = "SOUTH";
+        } else if (targetY >= height) {
+            newChunkId = new GridPoint2(currentC.x, currentC.y + 1);
+            directionLog = "NORTH";
+        }
+
+        if (newChunkId != null) {
+            Maze neighbor = worldManager.getChunk(newChunkId);
+            if (neighbor == null)
+                neighbor = worldManager.requestLoadChunk(newChunkId);
+
+            if (neighbor != null) {
+                Gdx.app.log("Seamless", "Crossing border " + directionLog + " to chunk " + newChunkId);
+
+                if (directionLog.equals("WEST")) {
+                    newPlayerX = neighbor.getWidth() - 0.5f;
+                    // Keep Y relative? Yes, assuming aligned sizes.
+                    newPlayerY = player.getPosition().y;
+                } else if (directionLog.equals("EAST")) {
+                    newPlayerX = 0.5f;
+                    newPlayerY = player.getPosition().y;
+                } else if (directionLog.equals("SOUTH")) {
+                    newPlayerY = neighbor.getHeight() - 0.5f;
+                    newPlayerX = player.getPosition().x;
+                } else if (directionLog.equals("NORTH")) {
+                    newPlayerY = 0.5f;
+                    newPlayerX = player.getPosition().x;
+                }
+
+                worldManager.setCurrentChunk(newChunkId);
+                swapToChunk(neighbor);
+                player.getPosition().set(newPlayerX, newPlayerY);
+
+                // Important: Trigger action and ascii render update manually since we bypassed
+                // moveForward
+                playerTurnTakesAction();
+                needsAsciiRender = true;
+                return true;
+            }
+        }
+        return false;
     }
 }

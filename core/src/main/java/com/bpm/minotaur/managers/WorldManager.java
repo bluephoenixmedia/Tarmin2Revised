@@ -237,7 +237,7 @@ public class WorldManager {
             long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
             return generators.get(Biome.MAZE).generateChunk(chunkId, effectiveLevel, effectiveLevel, difficulty,
                     gameMode,
-                    RetroTheme.STANDARD_THEME,
+                    RetroTheme.STANDARD_THEME, RetroTheme.STANDARD_THEME,
                     this.dataManager, this.itemDataManager, this.assetManager, this.encounterManager,
                     this.spawnTableData, chunkSeed,
                     playerReference != null ? playerReference.getLuck() : 0);
@@ -300,7 +300,7 @@ public class WorldManager {
         // difficulty (spawns)
         long chunkSeed = getChunkSeed(effectiveLevel, chunkId.x, chunkId.y);
         Maze newMaze = generator.generateChunk(chunkId, currentLevel, effectiveLevel, difficulty, gameMode,
-                themeToGenerate,
+                themeToGenerate, this.currentLevelTheme,
                 this.dataManager, this.itemDataManager, this.assetManager, this.encounterManager, this.spawnTableData,
                 chunkSeed,
                 playerReference != null ? playerReference.getLuck() : 0);

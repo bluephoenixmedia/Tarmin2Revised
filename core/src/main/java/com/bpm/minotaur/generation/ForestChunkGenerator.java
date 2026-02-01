@@ -135,7 +135,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
     @Override
     public Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
             GameMode gameMode,
-            RetroTheme.Theme theme,
+            RetroTheme.Theme theme, RetroTheme.Theme mazeTheme,
             MonsterDataManager dataManager,
             ItemDataManager itemDataManager,
             AssetManager assetManager,
@@ -151,9 +151,88 @@ public class ForestChunkGenerator implements IChunkGenerator {
         int mapCols = 2;
         createForestFromArrayTiles(mapRows, mapCols);
 
+        // --- BORDER LOGIC ---
+        // Replace '#' with 'M' on borders adjacent to Key/Maze Chunks
+        boolean northIsMaze = isMaze(chunkId.x, chunkId.y + 1);
+        boolean southIsMaze = isMaze(chunkId.x, chunkId.y - 1);
+        boolean eastIsMaze = isMaze(chunkId.x + 1, chunkId.y);
+        boolean westIsMaze = isMaze(chunkId.x - 1, chunkId.y);
+
+        int height = this.finalLayout.length;
+        int width = this.finalLayout[0].length();
+
+        // North Border (Array Index 0)
+        if (northIsMaze) {
+            char[] row = this.finalLayout[0].toCharArray();
+            for (int x = 0; x < width; x++) {
+                if (row[x] == '#')
+                    row[x] = 'M';
+            }
+            this.finalLayout[0] = new String(row);
+        } else {
+            // Seamless neighbor: Clear obstacles
+            char[] row = this.finalLayout[0].toCharArray();
+            for (int x = 0; x < width; x++) {
+                if (row[x] == 'T' || row[x] == 'R' || row[x] == '#')
+                    row[x] = '.';
+            }
+            this.finalLayout[0] = new String(row);
+        }
+
+        // South Border (Array Index height-1)
+        if (southIsMaze) {
+            char[] row = this.finalLayout[height - 1].toCharArray();
+            for (int x = 0; x < width; x++) {
+                if (row[x] == '#')
+                    row[x] = 'M';
+            }
+            this.finalLayout[height - 1] = new String(row);
+        } else {
+            // Seamless neighbor
+            char[] row = this.finalLayout[height - 1].toCharArray();
+            for (int x = 0; x < width; x++) {
+                if (row[x] == 'T' || row[x] == 'R' || row[x] == '#')
+                    row[x] = '.';
+            }
+            this.finalLayout[height - 1] = new String(row);
+        }
+
+        // East/West Borders
+        for (int y = 0; y < height; y++) {
+            char[] row = this.finalLayout[y].toCharArray();
+            boolean changed = false;
+
+            // West Border (Index 0)
+            if (westIsMaze && row[0] == '#') {
+                row[0] = 'M';
+                changed = true;
+            } else if (!westIsMaze) {
+                if (row[0] == 'T' || row[0] == 'R' || row[0] == '#') {
+                    row[0] = '.';
+                    changed = true;
+                }
+            }
+
+            // East Border (Index width-1)
+            if (eastIsMaze && row[width - 1] == '#') {
+                row[width - 1] = 'M';
+                changed = true;
+            } else if (!eastIsMaze) {
+                if (row[width - 1] == 'T' || row[width - 1] == 'R' || row[width - 1] == '#') {
+                    row[width - 1] = '.';
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                this.finalLayout[y] = new String(row);
+            }
+        }
+
         // --- 2. Create Maze Object ---
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme); // Set the theme (e.g., FOREST_THEME)
+        maze.setSecondaryTheme(mazeTheme);
 
         // --- 3. Populate Maze ---
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
@@ -428,10 +507,14 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         String path = "images/tree_pine.png";
                         if (Gdx.files.internal(path).exists()) {
                             if (!assetManager.isLoaded(path)) {
+                                Gdx.app.log("ForestChunkGenerator", "Loading texture on demand: " + path);
                                 assetManager.load(path, Texture.class);
                                 assetManager.finishLoading();
                             }
                             s.setTexture(assetManager.get(path, Texture.class));
+                            Gdx.app.log("ForestChunkGenerator", "Assigned TREE texture: " + path);
+                        } else {
+                            Gdx.app.error("ForestChunkGenerator", "Texture NOT FOUND: " + path);
                         }
                         maze.addScenery(s);
                     }
@@ -441,10 +524,14 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         String path = "images/mossy_rock.png";
                         if (Gdx.files.internal(path).exists()) {
                             if (!assetManager.isLoaded(path)) {
+                                Gdx.app.log("ForestChunkGenerator", "Loading texture on demand: " + path);
                                 assetManager.load(path, Texture.class);
                                 assetManager.finishLoading();
                             }
                             s.setTexture(assetManager.get(path, Texture.class));
+                            Gdx.app.log("ForestChunkGenerator", "Assigned ROCK texture: " + path);
+                        } else {
+                            Gdx.app.error("ForestChunkGenerator", "Texture NOT FOUND: " + path);
                         }
                         maze.addScenery(s);
                     }
@@ -454,10 +541,14 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         String path = "images/bush.png";
                         if (Gdx.files.internal(path).exists()) {
                             if (!assetManager.isLoaded(path)) {
+                                Gdx.app.log("ForestChunkGenerator", "Loading texture on demand: " + path);
                                 assetManager.load(path, Texture.class);
                                 assetManager.finishLoading();
                             }
                             s.setTexture(assetManager.get(path, Texture.class));
+                            Gdx.app.log("ForestChunkGenerator", "Assigned BUSH texture: " + path);
+                        } else {
+                            Gdx.app.error("ForestChunkGenerator", "Texture NOT FOUND: " + path);
                         }
                         maze.addScenery(s);
                     }
@@ -471,21 +562,53 @@ public class ForestChunkGenerator implements IChunkGenerator {
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
-                if (layout[layoutY].charAt(x) != '#') { // If NOT a wall
+                if (!isWall(layout[layoutY].charAt(x))) { // If NOT a wall
                     int mask = 0;
-                    // Check neighbors. Only '#' counts as a wall.
-                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#')
-                        mask |= 0b01000000;
-                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#')
-                        mask |= 0b00000100;
-                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#')
-                        mask |= 0b00010000;
-                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#')
-                        mask |= 0b00000001;
+                    // Check neighbors. '#' and 'M' count as walls.
+                    if (y + 1 < height) {
+                        char n = layout[layoutY - 1].charAt(x);
+                        if (isWall(n)) {
+                            mask |= 0b01000000; // NORTH
+                            if (n == 'M')
+                                mask |= 2048; // MAZE_WALL_NORTH
+                        }
+                    }
+                    if (x + 1 < width) {
+                        char n = layout[layoutY].charAt(x + 1);
+                        if (isWall(n)) {
+                            mask |= 0b00000100; // EAST
+                            if (n == 'M')
+                                mask |= 512; // MAZE_WALL_EAST
+                        }
+                    }
+                    if (y > 0) {
+                        char n = layout[layoutY + 1].charAt(x);
+                        if (isWall(n)) {
+                            mask |= 0b00010000; // SOUTH
+                            if (n == 'M')
+                                mask |= 1024; // MAZE_WALL_SOUTH
+                        }
+                    }
+                    if (x > 0) {
+                        char n = layout[layoutY].charAt(x - 1);
+                        if (isWall(n)) {
+                            mask |= 0b00000001; // WEST
+                            if (n == 'M')
+                                mask |= 256; // MAZE_WALL_WEST
+                        }
+                    }
                     bitmaskedData[y][x] = mask;
                 }
             }
         }
         return maze;
+    }
+
+    private boolean isMaze(int x, int y) {
+        return Math.max(Math.abs(x), Math.abs(y)) <= WorldConstants.CENTRAL_MAZE_RADIUS;
+    }
+
+    private boolean isWall(char c) {
+        return c == '#' || c == 'M';
     }
 }

@@ -1345,6 +1345,12 @@ public class EntityRenderer {
                             u + (1.0f / spriteWidth), 0);
                 }
             }
+        } else {
+            // DEBUG LOGGING
+            // Gdx.app.log("EntityRenderer", "Skipping Scenery Render: transformY=" +
+            // transformY);
+            // BalanceLogger.getInstance().log("EntityRenderer: Skipping Scenery Render:
+            // transformY=" + transformY);
         }
     }
 
