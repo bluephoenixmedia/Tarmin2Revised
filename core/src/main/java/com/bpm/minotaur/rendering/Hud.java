@@ -1600,12 +1600,13 @@ public class Hud implements Disposable {
         private final Label rollLabel;
         private final Label useLabel;
         private final Label blockLabel;
+        private final Label cookLabel;
         private final Label[] options;
         private int selectedIndex = 0;
 
         public CombatMenu(BitmapFont font) {
             this.setBackground(bottomBarDrawable); // Use bottom bar bg
-            this.setSize(300, 180);
+            this.setSize(300, 210);
             this.setPosition(20, 160); // Bottom Left above message log
 
             Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
@@ -1616,14 +1617,16 @@ public class Hud implements Disposable {
             rollLabel = new Label("ROLL", style);
             useLabel = new Label("USE", style);
             blockLabel = new Label("BLOCK", style);
+            cookLabel = new Label("COOK", style);
 
-            options = new Label[] { attackLabel, castLabel, rollLabel, useLabel, blockLabel };
+            options = new Label[] { attackLabel, castLabel, rollLabel, useLabel, blockLabel, cookLabel };
 
             this.add(attackLabel).pad(5).left().row();
             this.add(castLabel).pad(5).left().row();
             this.add(rollLabel).pad(5).left().row();
             this.add(useLabel).pad(5).left().row();
             this.add(blockLabel).pad(5).left().row();
+            this.add(cookLabel).pad(5).left().row();
 
             updateSelection();
         }
@@ -1661,6 +1664,8 @@ public class Hud implements Disposable {
                     return "USE";
                 case 4:
                     return "BLOCK";
+                case 5:
+                    return "COOK";
                 default:
                     return "???";
             }

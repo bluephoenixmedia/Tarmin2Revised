@@ -124,7 +124,8 @@ public class MonsterAiManager {
         }
     }
 
-    private void handleHuntingBehavior(Monster monster, Maze maze, Player player, CombatManager combatManager) {
+    private void handleHuntingBehavior(Monster monster, Maze maze, Player player,
+            CombatManager combatManager) {
         // Ranged Attack Logic (Only if Hunting and generally active)
         if (monster.hasRangedAttack() && combatManager != null) {
             int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
@@ -178,42 +179,23 @@ public class MonsterAiManager {
         if (target == null)
             target = playerGridPos;
 
-        performSeekingMove(monster, target, maze, player);
+        performSeekingMove(monster, target, maze, player, combatManager);
     }
 
-    private void performSeekingMove(Monster monster, GridPoint2 targetPos, Maze maze, Player player) {
+    private void performSeekingMove(Monster monster, GridPoint2 targetPos, Maze maze, Player player,
+            CombatManager combatManager) {
         if (targetPos == null)
             return;
-
-        // If adjacent to target AND target contains player -> Attack (already handled
-        // by CombatManager?)
-        // This move logic moves TO adjacent square.
 
         List<GridPoint2> path = Pathfinder.findPath(maze, player, monsterGridPos, targetPos);
 
         if (path != null && !path.isEmpty()) {
             GridPoint2 step = path.get(0);
 
-            // Don't step ONTO the player (collision) unless we want to attack?
-            // Combat system works by bumping. If logic below moves onto player, is that an
-            // attack?
-            // "moveMonsterTo" updates position. If it sets pos to player pos -> Overlap.
-            // Usually we want to stop 1 tile away.
-
             if (step.x == playerGridPos.x && step.y == playerGridPos.y) {
-                // Attack!
-                // But wait, the CombatManager handles attacks initiated by Player.
-                // Does updating position 'onto' player trigger attack?
-                // No, usually "CombatManager.monsterAttack(monster, player)" is called.
-                // Existing code didn't show explicit "Attack" call in `performSeekingMove`.
-                // It just "return" if target == playerPos (dist==1).
-                // Ah, "if (dist == 1) return;" in original code.
-                // So monsters DO NOT bump attack actively? They wait for CombatManager?
-                // Wait, "updateMonster" calls "performMonsterRangedAttack".
-                // Detailed loop from request: "movemon() -> dochug()".
-                // If next to player, attack.
-                // Existing code: "if (dist == 1) return; // Already next to the player"
-                // So simply standing next to player is the goal.
+                if (combatManager != null) {
+                    combatManager.monsterMeleeStrike(monster);
+                }
                 return;
             }
 

@@ -216,6 +216,77 @@ public class CombatManager {
         }
     }
 
+    public void playerMeleeStrike(Monster target) {
+        if (currentState != CombatState.INACTIVE) return;
+
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null || weapon.isRanged()) {
+            eventManager.addEvent(new GameEvent("No melee weapon equipped.", 1.5f));
+            return;
+        }
+
+        this.monster = target;
+        this.currentCombatTurns = 0;
+        this.damageTakenInCombat = 0;
+        BalanceLogger.getInstance().logCombatStart(player, target);
+
+        if (target.getStatusManager() != null && eventManager != null)
+            target.getStatusManager().initialize(eventManager, target);
+
+        int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
+        int mx = (int) target.getPosition().x, my = (int) target.getPosition().y;
+        Direction dir = null;
+        if (mx > px) dir = Direction.EAST;
+        else if (mx < px) dir = Direction.WEST;
+        else if (my > py) dir = Direction.NORTH;
+        else if (my < py) dir = Direction.SOUTH;
+        if (dir != null && player.getFacing() != dir) player.setFacing(dir);
+
+        this.pendingWeapon = weapon;
+        soundManager.playWeaponSwing();
+        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.getWeaponOverlay().triggerAttack(weapon);
+            gs.getWeaponOverlay().jumpToImpact();
+        }
+
+        resolveAttack(DiceRoller.d20(), true);
+    }
+
+    public void monsterMeleeStrike(Monster attacker) {
+        soundManager.playMonsterAttackSound(attacker);
+
+        int attackBonus = 2;
+        MonsterTemplate t = attacker.getTemplate();
+        if (t != null) attackBonus += (t.maxHP / 10);
+
+        int d20Roll = DiceRoller.d20();
+        boolean isHit = (d20Roll + attackBonus) >= player.getArmorClass();
+
+        if (isHit) {
+            int baseDmg = DiceRoller.roll(attacker.getDamageDice());
+            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
+            int dmg = Math.max(1, (int) (baseDmg * doomScale));
+            if (playerCurrentBlock > 0) {
+                int blocked = Math.min(dmg, playerCurrentBlock);
+                dmg = Math.max(0, dmg - playerCurrentBlock);
+                eventManager.addEvent(new GameEvent("Blocked " + blocked + " dmg", 1f));
+            }
+            int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
+        } else {
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses!", 1f));
+        }
+
+        playerCurrentBlock = 0;
+
+        if (player.getCurrentHP() <= 0) {
+            this.monster = attacker;
+            currentState = CombatState.DEFEAT;
+        }
+    }
+
     public void openMenu() {
         if (currentState == CombatState.INACTIVE) {
             currentState = CombatState.PLAYER_MENU;
@@ -822,13 +893,17 @@ public class CombatManager {
     }
 
     private void resolveAttack(int d20Roll) {
+        resolveAttack(d20Roll, false);
+    }
+
+    private void resolveAttack(int d20Roll, boolean stateless) {
         if (pendingWeapon == null)
             return;
 
         currentCombatTurns++;
 
-        int attackBonus = player.getAttackModifier();
-        int attackRoll = d20Roll + attackBonus;
+        int toHitBonus = player.getToHitBonus();
+        int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
         boolean isCrit = (d20Roll == 20);
         boolean isHit = (attackRoll >= targetAC) || isCrit;
@@ -848,13 +923,13 @@ public class CombatManager {
 
         // Log Check
         Gdx.app.log("CombatManger",
-                "Player Attack: Roll " + d20Roll + " + " + attackBonus + " = " + attackRoll + " vs AC " + targetAC);
+                "Player Attack: Roll " + d20Roll + " + " + toHitBonus + " = " + attackRoll + " vs AC " + targetAC);
 
         if (isHit) {
-            // Roll Damage
+            // Roll Damage — weapon dice + STR-based bonus (not level; no double-dip)
             String damageDice = pendingWeapon.getDamageDice();
             int baseDamage = DiceRoller.roll(damageDice);
-            int damageBonus = player.getAttackModifier(); // Using same modifier for now
+            int damageBonus = player.getDamageBonus();
             int totalDamage = Math.max(1, baseDamage + damageBonus);
 
             if (isCrit) {
@@ -925,9 +1000,11 @@ public class CombatManager {
 
         if (monster.getCurrentHP() <= 0) {
             handleMonsterDeath();
+            // Always route through VICTORY state so at least one render frame
+            // shows the monster before removal (fixes "died before rendered" bug).
             currentState = CombatState.VICTORY;
             Gdx.app.log("COMBAT_FLOW", "State -> VICTORY (Monster Dead)");
-        } else {
+        } else if (!stateless) {
             currentState = CombatState.MONSTER_TURN;
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
 
@@ -939,6 +1016,7 @@ public class CombatManager {
 
             Gdx.app.log("COMBAT_FLOW", "State -> MONSTER_TURN (Attack Resolved)");
         }
+        // stateless && monster survived: stays INACTIVE, monster attacks via its own AI turn
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {
@@ -1020,14 +1098,18 @@ public class CombatManager {
                 boolean isCardinal = (Math.abs(playerX - monsterX) == 1 && playerY == monsterY)
                         || (Math.abs(playerY - monsterY) == 1 && playerX == monsterX);
                 if (isCardinal) {
-                    startCombat(m);
+                    if (m.isJustSpawned()) {
+                        m.clearJustSpawned(); // Grant one turn grace; attackable next turn
+                        return;
+                    }
+                    playerMeleeStrike(m);
                     return;
                 }
             }
         }
     }
 
-    private void showDamageText(int damage, GridPoint2 position) {
+    public void showDamageText(int damage, GridPoint2 position) {
         animationManager.addAnimation(
                 new Animation(Animation.AnimationType.DAMAGE_TEXT, position, String.valueOf(damage), 1.0f));
     }
@@ -1464,8 +1546,10 @@ public class CombatManager {
     }
     // --------------------------
 
+    public void setCurrentState(CombatState state) { this.currentState = state; }
+
     // Extracted death logic to reuse for Poison kills
-    private void handleMonsterDeath() {
+    public void handleMonsterDeath() {
         currentState = CombatState.VICTORY;
         Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
         eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));

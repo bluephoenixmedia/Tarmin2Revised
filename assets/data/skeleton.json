@@ -17,7 +17,7 @@
 	"feet": {
 		"x": {
 			"class": "java.lang.Float",
-			"value": 845
+			"value": 821
 		},
 		"y": {
 			"class": "java.lang.Float",

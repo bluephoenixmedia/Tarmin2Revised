@@ -200,9 +200,8 @@ public class SpawnManager {
 
         spawnMonsters((int) (budget.monsterBudget * globalMultiplier)); // 1.0x monsters
 
-        // Items were spamming (30+ on level 1). Reduced significantly.
-        // Budget usually ~4-5. 2.0x = ~10 items.
-        spawnItems((int) (budget.itemBudget * 2.0f * globalMultiplier));
+        // 1.2x keeps item density roughly 1:1 with monsters (Nethack-style scarcity).
+        spawnItems((int) (budget.itemBudget * 1.2f * globalMultiplier));
 
         spawnContainers((int) (budget.containerBudget * 0.5f * globalMultiplier));
 
@@ -518,8 +517,10 @@ public class SpawnManager {
     }
 
     private void attemptToModifyItem(Item item, ItemColor color) {
+        // Raised cursed chance to 20% (from 10%) to compensate for no identification
+        // gating — keeps risk/reward tension without relying on unidentified items.
         float bRoll = random.nextFloat();
-        if (bRoll < 0.10f) {
+        if (bRoll < 0.20f) {
             item.setBeatitude(Item.Beatitude.CURSED);
         } else if (bRoll > 0.90f) {
             item.setBeatitude(Item.Beatitude.BLESSED);

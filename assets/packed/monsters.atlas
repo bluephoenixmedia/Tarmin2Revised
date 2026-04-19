@@ -1,0 +1,375 @@
+
+monsters.png
+size: 8185, 8173
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+alligator
+  rotate: false
+  xy: 5579, 536
+  size: 2606, 1504
+  orig: 2816, 1536
+  offset: 105, 16
+  index: -1
+beholder
+  rotate: false
+  xy: 2818, 5837
+  size: 1824, 2336
+  orig: 1824, 2336
+  offset: 0, 0
+  index: -1
+flayer
+  rotate: false
+  xy: 2783, 0
+  size: 1123, 1267
+  orig: 1127, 1278
+  offset: 0, 5
+  index: -1
+ghast
+  rotate: false
+  xy: 4644, 5837
+  size: 1824, 2336
+  orig: 1824, 2336
+  offset: 0, 0
+  index: -1
+ghoul
+  rotate: false
+  xy: 3908, 35
+  size: 1362, 1232
+  orig: 1443, 1442
+  offset: 40, 105
+  index: -1
+giant_scorpion_e
+  rotate: false
+  xy: 7434, 4176
+  size: 307, 191
+  orig: 341, 215
+  offset: 19, 12
+  index: -1
+giant_scorpion_n
+  rotate: false
+  xy: 5272, 866
+  size: 271, 198
+  orig: 341, 215
+  offset: 25, 4
+  index: -1
+giant_scorpion_s
+  rotate: false
+  xy: 7434, 4369
+  size: 327, 188
+  orig: 341, 215
+  offset: 1, 16
+  index: -1
+giant_scorpion_w
+  rotate: false
+  xy: 5272, 1066
+  size: 272, 201
+  orig: 341, 215
+  offset: 21, 8
+  index: -1
+harpy
+  rotate: false
+  xy: 5614, 2042
+  size: 2349, 1491
+  orig: 2385, 1536
+  offset: 14, 23
+  index: -1
+helmet
+  rotate: false
+  xy: 7434, 5045
+  size: 607, 825
+  orig: 628, 844
+  offset: 6, 9
+  index: -1
+hydra
+  rotate: false
+  xy: 2818, 2773
+  size: 2794, 1524
+  orig: 2816, 1536
+  offset: 11, 6
+  index: -1
+iron_golem
+  rotate: false
+  xy: 0, 496
+  size: 2781, 1536
+  orig: 2816, 1536
+  offset: 17, 0
+  index: -1
+mummy
+  rotate: false
+  xy: 6470, 5872
+  size: 1366, 2301
+  orig: 1824, 2336
+  offset: 229, 18
+  index: -1
+owlbear
+  rotate: false
+  xy: 0, 6637
+  size: 2816, 1536
+  orig: 2816, 1536
+  offset: 0, 0
+  index: -1
+purple_worm
+  rotate: false
+  xy: 5636, 3535
+  size: 1796, 2300
+  orig: 1824, 2336
+  offset: 14, 18
+  index: -1
+shopkeeper
+  rotate: false
+  xy: 7434, 4559
+  size: 432, 484
+  orig: 640, 640
+  offset: 104, 78
+  index: -1
+troglodyte
+  rotate: false
+  xy: 0, 5099
+  size: 2816, 1536
+  orig: 2816, 1536
+  offset: 0, 0
+  index: -1
+troll
+  rotate: false
+  xy: 2818, 4299
+  size: 2816, 1536
+  orig: 2816, 1536
+  offset: 0, 0
+  index: -1
+u_hulk
+  rotate: false
+  xy: 0, 3561
+  size: 2816, 1536
+  orig: 2816, 1536
+  offset: 0, 0
+  index: -1
+wyvern
+  rotate: false
+  xy: 2795, 1269
+  size: 2782, 1502
+  orig: 2816, 1536
+  offset: 17, 17
+  index: -1
+zombie
+  rotate: false
+  xy: 0, 2034
+  size: 2793, 1525
+  orig: 2816, 1536
+  offset: 11, 6
+  index: -1
+
+monsters2.png
+size: 8155, 8183
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+basilisk
+  rotate: false
+  xy: 2772, 5173
+  size: 2770, 1502
+  orig: 2816, 1536
+  offset: 23, 17
+  index: -1
+chimera
+  rotate: false
+  xy: 0, 3652
+  size: 2769, 1524
+  orig: 2816, 1536
+  offset: 23, 6
+  index: -1
+dbeast
+  rotate: false
+  xy: 0, 5178
+  size: 2770, 1490
+  orig: 2816, 1536
+  offset: 23, 23
+  index: -1
+dragon
+  rotate: false
+  xy: 2771, 2158
+  size: 2722, 1502
+  orig: 2816, 1536
+  offset: 47, 17
+  index: -1
+dwarf
+  rotate: false
+  xy: 5495, 2267
+  size: 2136, 1503
+  orig: 2210, 1536
+  offset: 40, 17
+  index: -1
+gargoyle
+  rotate: false
+  xy: 7257, 1113
+  size: 898, 1152
+  orig: 912, 1168
+  offset: 7, 8
+  index: -1
+giant
+  rotate: false
+  xy: 7257, 13
+  size: 893, 1098
+  orig: 976, 1104
+  offset: 41, 3
+  index: -1
+giant_scorpion
+  rotate: false
+  xy: 2772, 6677
+  size: 2770, 1506
+  orig: 2816, 1536
+  offset: 23, 15
+  index: -1
+giant_snake
+  rotate: false
+  xy: 2771, 3662
+  size: 2722, 1509
+  orig: 2816, 1536
+  offset: 47, 14
+  index: -1
+hobgoblin
+  rotate: false
+  xy: 3672, 620
+  size: 1665, 1536
+  orig: 1671, 1536
+  offset: 3, 0
+  index: -1
+lich
+  rotate: false
+  xy: 5495, 0
+  size: 1760, 2265
+  orig: 1824, 2336
+  offset: 25, 62
+  index: -1
+medusa
+  rotate: false
+  xy: 5544, 3772
+  size: 2160, 1536
+  orig: 2187, 1536
+  offset: 22, 0
+  index: -1
+mimic
+  rotate: false
+  xy: 5544, 6824
+  size: 2582, 1359
+  orig: 2816, 1536
+  offset: 117, 89
+  index: -1
+tarmin
+  rotate: false
+  xy: 1837, 611
+  size: 1833, 1536
+  orig: 1833, 1536
+  offset: 0, 0
+  index: -1
+tarmin_god
+  rotate: false
+  xy: 0, 611
+  size: 1835, 1536
+  orig: 1835, 1536
+  offset: 0, 0
+  index: -1
+wererat
+  rotate: false
+  xy: 0, 6670
+  size: 2770, 1513
+  orig: 2816, 1536
+  offset: 23, 12
+  index: -1
+werewolf
+  rotate: false
+  xy: 5544, 5310
+  size: 2300, 1512
+  orig: 2331, 1536
+  offset: 22, 12
+  index: -1
+wraith
+  rotate: false
+  xy: 0, 2149
+  size: 2722, 1501
+  orig: 2816, 1536
+  offset: 47, 18
+  index: -1
+
+monsters3.png
+size: 8006, 4324
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+cube
+  rotate: false
+  xy: 1798, 2025
+  size: 1793, 2299
+  orig: 1824, 2336
+  offset: 15, 19
+  index: -1
+giant_ant
+  rotate: false
+  xy: 6392, 0
+  size: 1498, 1397
+  orig: 1499, 1536
+  offset: 0, 70
+  index: -1
+goblin
+  rotate: false
+  xy: 3408, 487
+  size: 1478, 1536
+  orig: 1545, 1536
+  offset: 33, 0
+  index: -1
+hooded_skeleton
+  rotate: false
+  xy: 6832, 2821
+  size: 1127, 1503
+  orig: 1193, 1536
+  offset: 33, 17
+  index: -1
+kobold
+  rotate: false
+  xy: 4888, 567
+  size: 1502, 1455
+  orig: 1541, 1536
+  offset: 19, 41
+  index: -1
+minotaur
+  rotate: false
+  xy: 3593, 2025
+  size: 1724, 2299
+  orig: 1824, 2336
+  offset: 50, 19
+  index: -1
+ogre
+  rotate: false
+  xy: 0, 509
+  size: 1902, 1513
+  orig: 1933, 1536
+  offset: 20, 12
+  index: -1
+orc
+  rotate: false
+  xy: 1904, 519
+  size: 1502, 1504
+  orig: 1564, 1536
+  offset: 40, 16
+  index: -1
+rust
+  rotate: false
+  xy: 0, 2024
+  size: 1796, 2300
+  orig: 1824, 2336
+  offset: 14, 18
+  index: -1
+skeleton
+  rotate: false
+  xy: 6832, 1399
+  size: 1174, 1420
+  orig: 1289, 1536
+  offset: 57, 58
+  index: -1
+vampire
+  rotate: false
+  xy: 5319, 2024
+  size: 1511, 2300
+  orig: 1824, 2336
+  offset: 156, 18
+  index: -1

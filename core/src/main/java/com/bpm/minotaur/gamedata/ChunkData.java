@@ -36,6 +36,7 @@ public class ChunkData {
     public List<GateData> gates = new ArrayList<>();
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
+    public List<EventData> events = new ArrayList<>();
 
     public ChunkData() {
     }
@@ -69,6 +70,10 @@ public class ChunkData {
 
         for (Map.Entry<GridPoint2, Ladder> entry : maze.getLadders().entrySet()) {
             this.ladders.add(new LadderData(entry.getValue()));
+        }
+
+        for (Map.Entry<GridPoint2, String> entry : maze.getEventTriggers().entrySet()) {
+            this.events.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
         }
     }
 
@@ -128,10 +133,31 @@ public class ChunkData {
             maze.addScenery(new Scenery(data.type, data.x, data.y));
         }
 
+        if (this.events != null) {
+            for (EventData data : events) {
+                maze.addEvent(data.x, data.y, data.eventId);
+            }
+        }
+
         return maze;
     }
 
     // --- Static classes remain unchanged ---
+    public static class EventData {
+        public int x;
+        public int y;
+        public String eventId;
+
+        public EventData() {
+        }
+
+        public EventData(int x, int y, String eventId) {
+            this.x = x;
+            this.y = y;
+            this.eventId = eventId;
+        }
+    }
+
     public static class SceneryData {
         public Scenery.SceneryType type;
         public int x;

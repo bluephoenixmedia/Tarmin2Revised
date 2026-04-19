@@ -94,6 +94,17 @@ public class MonsterTemplate {
 
     public List<MonsterVariant> variants;
 
+    // --- Directional / Animated Sprites ---
+    public static class DirectionTextures {
+        public String north;
+        public String east;
+        public String west;
+        public String[] southFrames; // Multiple frames = animated south
+        public float frameDuration = 0.15f;
+    }
+
+    public DirectionTextures directionTextures;
+
     // A no-argument constructor is required for the Json parser
     public MonsterTemplate() {
     }

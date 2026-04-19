@@ -239,6 +239,10 @@ public class EntityRenderer {
         if (spriteBatch.isDrawing())
             spriteBatch.end();
 
+        // --- Draw Monster Health Bars ---
+        renderMonsterHealthBars(shapeRenderer, player, maze, viewport, depthBuffer,
+                fogEnabled, fogDistance, activeMonsterOnly);
+
         // --- Draw Tooltip Overlay ---
         if (hoveredItem != null) {
             renderTooltip(spriteBatch, shapeRenderer, viewport);
@@ -716,6 +720,20 @@ public class EntityRenderer {
             int drawStartX = Math.max(0, screenX - spriteWidth / 2 + (int) pixelOffX);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2 + (int) pixelOffX);
 
+            monster.updateAnimation(Gdx.graphics.getDeltaTime());
+
+            Texture monsterTex;
+            if (monster.hasDirectionalTextures()) {
+                float angle = (float) Math.atan2(
+                        player.getPosition().y - monster.getPosition().y,
+                        player.getPosition().x - monster.getPosition().x);
+                monsterTex = monster.getTextureForPlayerAngle(angle);
+            } else {
+                monsterTex = monster.getTexture();
+            }
+
+            if (monsterTex == null) return;
+
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     // Fix: Check depth buffer to prevent monsters drawing through walls
@@ -724,7 +742,7 @@ public class EntityRenderer {
                     }
 
                     float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
-                    spriteBatch.draw(monster.getTexture(), stripe, drawY, 1, spriteHeight, u, 1,
+                    spriteBatch.draw(monsterTex, stripe, drawY, 1, spriteHeight, u, 1,
                             u + (1.0f / spriteWidth), 0);
                 }
             }
@@ -1352,6 +1370,64 @@ public class EntityRenderer {
             // BalanceLogger.getInstance().log("EntityRenderer: Skipping Scenery Render:
             // transformY=" + transformY);
         }
+    }
+
+    private void renderMonsterHealthBars(ShapeRenderer shapeRenderer, Player player, Maze maze,
+            Viewport viewport, float[] depthBuffer, boolean fogEnabled, float fogDistance,
+            Monster activeMonsterOnly) {
+        if (depthBuffer == null) return;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        java.util.Collection<Monster> monsters = (activeMonsterOnly != null)
+                ? java.util.Collections.singletonList(activeMonsterOnly)
+                : maze.getMonsters().values();
+
+        for (Monster m : monsters) {
+            float dist = player.getPosition().dst(m.getPosition());
+            if (fogEnabled && dist > fogDistance) continue;
+            if (dist > 12f) continue; // Only show bars for nearby monsters
+
+            float spriteX = m.getPosition().x - player.getPosition().x;
+            float spriteY = m.getPosition().y - player.getPosition().y;
+            float invDet = 1.0f / (player.getCameraPlane().x * player.getDirectionVector().y
+                    - player.getDirectionVector().x * player.getCameraPlane().y);
+            float transformX = invDet * (-player.getDirectionVector().y * spriteX + player.getDirectionVector().x * spriteY);
+            float transformY = invDet * (-player.getCameraPlane().y * spriteX + player.getCameraPlane().x * spriteY);
+
+            if (transformY <= 0) continue;
+
+            Camera camera = viewport.getCamera();
+            int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
+            if (screenX < 0 || screenX >= depthBuffer.length) continue;
+            if (transformY >= depthBuffer[screenX]) continue;
+
+            int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
+            int spriteHeight = (int) (baseSpriteHeight * m.scale.y);
+            int spriteWidth = (int) (baseSpriteHeight * m.scale.x);
+
+            float barWidth = Math.max(20, spriteWidth * 0.8f);
+            float barHeight = Math.max(4, baseSpriteHeight * 0.04f);
+            float barX = screenX - barWidth / 2f;
+            float barY = (camera.viewportHeight / 2f) + spriteHeight / 2f + barHeight + 2;
+
+            float hpRatio = (m.getMaxHP() > 0) ? (float) m.getCurrentHP() / m.getMaxHP() : 0f;
+
+            // Background (dark red)
+            shapeRenderer.setColor(0.3f, 0f, 0f, 0.85f);
+            shapeRenderer.rect(barX, barY, barWidth, barHeight);
+
+            // Filled portion
+            Color barColor = (hpRatio > 0.5f) ? Color.GREEN
+                    : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
+            shapeRenderer.setColor(barColor);
+            shapeRenderer.rect(barX, barY, barWidth * hpRatio, barHeight);
+        }
+
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     public void dispose() {

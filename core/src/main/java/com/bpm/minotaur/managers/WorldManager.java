@@ -39,6 +39,7 @@ public class WorldManager {
     private final WeatherManager weatherManager;
     private final SpawnTableData spawnTableData;
     private final com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager;
+    private final CookingManager cookingManager;
 
     private final SoundManager soundManager;
 
@@ -84,6 +85,7 @@ public class WorldManager {
         this.encounterManager = encounterManager;
         this.spawnTableData = spawnTableData;
         this.soundManager = soundManager;
+        this.cookingManager = new CookingManager();
 
         this.weatherManager = new WeatherManager(this);
 
@@ -109,6 +111,10 @@ public class WorldManager {
 
     public void setPlayerReference(Player player) {
         this.playerReference = player;
+    }
+
+    public CookingManager getCookingManager() {
+        return cookingManager;
     }
 
     public SoundManager getSoundManager() {

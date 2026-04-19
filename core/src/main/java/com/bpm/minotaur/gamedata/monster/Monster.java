@@ -77,6 +77,13 @@ public class Monster implements Renderable {
 
     private final String[] spriteData;
     private Texture texture = null;
+    private Texture texNorth = null;
+    private Texture texEast = null;
+    private Texture texWest = null;
+    private Texture[] southFrames = null;
+    private float frameDuration = 0.15f;
+    private float animTimer = 0f;
+    private int currentFrame = 0;
     public Vector2 scale;
     private MonsterFamily family;
 
@@ -108,6 +115,10 @@ public class Monster implements Renderable {
     }
 
     private MonsterState state = MonsterState.IDLE;
+
+    // Grace flag: true for the first turn after spawn so the auto-adjacent attack
+    // cannot one-shot a monster before it has been rendered even once.
+    private boolean justSpawned = true;
     private com.badlogic.gdx.math.GridPoint2 lastKnownTargetPos = null;
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
@@ -144,7 +155,20 @@ public class Monster implements Renderable {
             } else {
                 com.badlogic.gdx.Gdx.app.error("Monster",
                         "CRITICAL: Texture not loaded for " + type + "! Path: " + template.texturePath);
-                // Fallback to error texture or null
+            }
+        }
+
+        if (template.directionTextures != null) {
+            MonsterTemplate.DirectionTextures dt = template.directionTextures;
+            this.texNorth = loadTex(assetManager, dt.north);
+            this.texEast  = loadTex(assetManager, dt.east);
+            this.texWest  = loadTex(assetManager, dt.west);
+            this.frameDuration = dt.frameDuration;
+            if (dt.southFrames != null && dt.southFrames.length > 0) {
+                this.southFrames = new Texture[dt.southFrames.length];
+                for (int i = 0; i < dt.southFrames.length; i++) {
+                    this.southFrames[i] = loadTex(assetManager, dt.southFrames[i]);
+                }
             }
         }
 
@@ -153,7 +177,14 @@ public class Monster implements Renderable {
         this.hasRangedAttack = template.hasRangedAttack;
         this.attackRange = template.attackRange;
 
-        // --- NEW: Tarmin's Hunger Scaling (The Meat Grinder) ---
+        // Apply color-tier HP multiplier (elite/rare variants are proportionally tougher).
+        float colorMult = color.getStrengthMultiplier();
+        if (colorMult != 1.0f) {
+            this.maxHP = Math.max(1, (int) (this.maxHP * colorMult));
+            this.currentHP = this.maxHP;
+        }
+
+        // --- Tarmin's Hunger Scaling (The Meat Grinder) ---
         float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier();
         if (scaling > 1.0f) {
             this.maxHP = (int) (this.maxHP * scaling);
@@ -161,7 +192,7 @@ public class Monster implements Renderable {
             com.badlogic.gdx.Gdx.app.log("Monster", "Spawned " + type + " with Doom Scaling: x"
                     + String.format("%.2f", scaling) + " HP: " + this.maxHP);
         }
-        // -------------------------------------------------------
+        // --------------------------------------------------
 
         // --- AI Initialization ---
         this.aiType = template.aiType != null ? template.aiType : MonsterTemplate.AiType.AGGRESSIVE;
@@ -189,17 +220,58 @@ public class Monster implements Renderable {
     }
 
     public int takeDamage(int amount) {
-        // AC mitigation happens in combat calculation (hit/miss)
-        // Here we just take damage
-        this.currentHP -= amount;
+        // AC > 10 provides partial damage soak (every 2 AC above 10 = -1 damage).
+        // This keeps AC meaningful beyond just the to-hit gate.
+        int reduction = Math.max(0, (armorClass - 10) / 2);
+        int taken = Math.max(1, amount - reduction);
+        this.currentHP -= taken;
         if (this.currentHP < 0) {
             this.currentHP = 0;
         }
-        return amount;
+        return taken;
     }
 
     public String[] getSpriteData() {
         return spriteData;
+    }
+
+    private static Texture loadTex(AssetManager assetManager, String path) {
+        if (path == null || path.isEmpty()) return null;
+        if (assetManager.isLoaded(path, Texture.class)) return assetManager.get(path, Texture.class);
+        com.badlogic.gdx.Gdx.app.error("Monster", "Directional texture not loaded: " + path);
+        return null;
+    }
+
+    public void updateAnimation(float delta) {
+        if (southFrames == null || southFrames.length <= 1) return;
+        animTimer += delta;
+        if (animTimer >= frameDuration) {
+            animTimer -= frameDuration;
+            currentFrame = (currentFrame + 1) % southFrames.length;
+        }
+    }
+
+    /**
+     * Returns the texture to display based on the angle from this monster to the player.
+     * angle = atan2(player.y - monster.y, player.x - monster.x)
+     */
+    public Texture getTextureForPlayerAngle(float angle) {
+        // E: (-π/4, π/4), N: (π/4, 3π/4), W: outside those, S: (-3π/4, -π/4)
+        if (angle > -Math.PI / 4 && angle <= Math.PI / 4) {
+            return texEast != null ? texEast : texture;
+        } else if (angle > Math.PI / 4 && angle <= 3 * Math.PI / 4) {
+            return texNorth != null ? texNorth : texture;
+        } else if (angle > -3 * Math.PI / 4 && angle <= -Math.PI / 4) {
+            if (southFrames != null && southFrames.length > 0 && southFrames[currentFrame] != null)
+                return southFrames[currentFrame];
+            return texture;
+        } else {
+            return texWest != null ? texWest : texture;
+        }
+    }
+
+    public boolean hasDirectionalTextures() {
+        return texNorth != null || texEast != null || texWest != null || southFrames != null;
     }
 
     public Texture getTexture() {
@@ -315,6 +387,14 @@ public class Monster implements Renderable {
 
     public int getArmorClass() {
         return armorClass;
+    }
+
+    public boolean isJustSpawned() {
+        return justSpawned;
+    }
+
+    public void clearJustSpawned() {
+        this.justSpawned = false;
     }
 
     public com.bpm.minotaur.gamedata.Inventory getInventory() {

@@ -126,7 +126,7 @@ public class Item implements Renderable {
 
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
-        MONSTER_EYE,
+        MONSTER_EYE, MEAL,
 
         // Debris
         STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,
@@ -204,6 +204,27 @@ public class Item implements Renderable {
     private RingEffectType ringEffect;
 
     private boolean isIdentified = false;
+
+    // --- Cooking / Meal Properties ---
+    private List<com.bpm.minotaur.gamedata.monster.Monster.MonsterType> mealSources;
+    private List<com.bpm.minotaur.gamedata.effects.StatusEffectType> mealEffects;
+    private int mealEffectDuration;
+
+    public void addMealSource(com.bpm.minotaur.gamedata.monster.Monster.MonsterType source) {
+        if (this.mealSources == null) this.mealSources = new ArrayList<>();
+        this.mealSources.add(source);
+    }
+    public List<com.bpm.minotaur.gamedata.effects.StatusEffectType> getMealEffects() {
+        if (this.mealEffects == null) this.mealEffects = new ArrayList<>();
+        return this.mealEffects;
+    }
+    public void addMealEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType effect) {
+        if (this.mealEffects == null) this.mealEffects = new ArrayList<>();
+        this.mealEffects.add(effect);
+    }
+    public void setMealEffectDuration(int duration) {
+        this.mealEffectDuration = duration;
+    }
 
     private ItemTemplate template;
     private final ItemDataManager dataManager;

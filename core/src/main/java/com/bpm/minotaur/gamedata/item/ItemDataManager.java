@@ -128,9 +128,9 @@ public class ItemDataManager {
             }
         }
 
-        // Wands (Use Stick as base if Wand missing, or just assume Stick)
-        // Actually, let's assume STICK is a good base for Wands
-        ItemTemplate baseWand = itemTemplates.get(ItemType.STICK);
+        // Wands: use the WAND template from items.json as the base for WAND_A..H.
+        // STICK is not defined in items.json so it was never a valid base.
+        ItemTemplate baseWand = itemTemplates.get(ItemType.WAND);
         if (baseWand != null) {
             for (ItemType type : ItemType.values()) {
                 if (type.name().startsWith("WAND_") && !itemTemplates.containsKey(type)) {
@@ -138,7 +138,7 @@ public class ItemDataManager {
                     newTemplate.friendlyName = "Wand";
                     newTemplate.description = "A smooth stick with magical energy.";
                     newTemplate.texturePath = baseWand.texturePath;
-                    newTemplate.spriteData = baseWand.spriteData; // Reuse stick sprite
+                    newTemplate.spriteData = baseWand.spriteData;
                     newTemplate.baseValue = 100;
                     newTemplate.isUsable = true;
                     newTemplate.isWandAppearance = true;
@@ -146,20 +146,8 @@ public class ItemDataManager {
                     itemTemplates.put(type, newTemplate);
                 }
             }
-
-            // --- Generic WAND Template ---
-            if (!itemTemplates.containsKey(ItemType.WAND)) {
-                ItemTemplate newTemplate = new ItemTemplate();
-                newTemplate.friendlyName = "Wand";
-                newTemplate.description = "A smooth stick with magical energy.";
-                newTemplate.texturePath = baseWand.texturePath;
-                newTemplate.spriteData = baseWand.spriteData;
-                newTemplate.baseValue = 100;
-                newTemplate.isUsable = true;
-                newTemplate.isWandAppearance = true;
-                newTemplate.scale = baseWand.scale;
-                itemTemplates.put(ItemType.WAND, newTemplate);
-            }
+            // Ensure base WAND template is also marked usable (items.json may omit it)
+            baseWand.isUsable = true;
         }
 
         // Rings (Ensure they are marked as ring appearances)

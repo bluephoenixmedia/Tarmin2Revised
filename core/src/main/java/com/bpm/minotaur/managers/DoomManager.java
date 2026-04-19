@@ -54,11 +54,11 @@ public class DoomManager {
     }
 
     /**
-     * @return Multiplier for Enemy Stats (HP/Damage). Base is 1.0.
-     *         Formula: 1 + (0.05 * Deaths)
+     * @return Multiplier for Enemy Stats (HP/Damage). Base is 1.0, hard cap 1.5.
+     *         Without a cap this becomes a one-way ratchet toward unwinnable runs.
      */
     public float getEnemyScalingMultiplier() {
-        return 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount);
+        return Math.min(1.5f, 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount));
     }
 
     /**

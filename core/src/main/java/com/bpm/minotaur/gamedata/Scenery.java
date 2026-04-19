@@ -12,7 +12,9 @@ public class Scenery implements Renderable {
     public enum SceneryType {
         TREE,
         ROCK,
-        BUSH
+        BUSH,
+        CACTUS,
+        SANDSTONE_ROCK
     }
 
     private final SceneryType type;
@@ -36,10 +38,12 @@ public class Scenery implements Renderable {
         // Set impassable flag
         switch (type) {
             case TREE:
+            case CACTUS:
                 this.impassable = true;
                 this.scale.set(2.0f, 4.0f); // Taller and wider for billboard
                 break;
             case ROCK:
+            case SANDSTONE_ROCK:
                 this.impassable = true;
                 this.scale.set(1.0f, 0.8f); // <-- ADDED THIS (Slightly shorter)
                 break;
@@ -101,7 +105,10 @@ public class Scenery implements Renderable {
             case TREE:
                 // We'll use leaves color as the primary. The ASCII art handles the trunk.
                 return treeLeaves;
+            case CACTUS:
+                return bushColor;
             case ROCK:
+            case SANDSTONE_ROCK:
                 return rockColor;
             case BUSH:
                 return bushColor;

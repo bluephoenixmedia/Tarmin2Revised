@@ -9,8 +9,9 @@ public class Animation {
     public enum AnimationType {
         PROJECTILE_MONSTER,
         PROJECTILE_PLAYER,
-        PROJECTILE_SPELL, // NEW: For magic missiles with particle trails
-        DAMAGE_TEXT
+        PROJECTILE_SPELL,
+        DAMAGE_TEXT,
+        DRAIN_SPELL
     }
 
     private float elapsedTime; // Changed from final so it can be updated

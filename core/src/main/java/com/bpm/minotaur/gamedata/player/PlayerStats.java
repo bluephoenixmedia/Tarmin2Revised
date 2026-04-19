@@ -23,9 +23,10 @@ public class PlayerStats {
     private java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> artifacts = new java.util.ArrayList<>();
     private int stamina = 3; // Initial stamina for dice selection
 
-    // --- UPDATED: XP CONSTANTS FOR SLOWER PROGRESSION ---
-    private static final int BASE_XP_REQUIRED = 250; // Increased from 150
-    private static final double LOG_BASE = 1.6; // Changed from 1.5 to 1.6
+    // XP curve: BASE * LOG_BASE^(level-1). LOG_BASE 1.7 raises L2 wall to ~425,
+    // L3 to ~722, slowing the early snowball versus the previous 1.6 base.
+    private static final int BASE_XP_REQUIRED = 300;
+    private static final double LOG_BASE = 1.7;
 
     private int treasureScore = 0;
 
@@ -175,18 +176,32 @@ public class PlayerStats {
         this.maxHP += hpIncrease;
         this.maxMP += mpIncrease;
 
-        // Fully heal player on level up
-        this.currentHP = this.maxHP;
-        this.currentMP = this.maxMP;
+        // Partial heal (25% of new max) — rewarding but not HP-resetting.
+        // Full heals trivialized early floors by enabling HP-farming on weak mobs.
+        this.currentHP = Math.min(this.maxHP, this.currentHP + this.maxHP / 4);
+        this.currentMP = Math.min(this.maxMP, this.currentMP + this.maxMP / 4);
     }
 
     /**
-     * Attack modifier based on player level.
-     * 
-     * @return The bonus damage to add to attacks.
+     * To-hit bonus: half the player level, capped to prevent trivial hit-rates at low levels.
+     */
+    public int getToHitBonus() {
+        return Math.max(1, this.level / 2);
+    }
+
+    /**
+     * Damage bonus from STR (NetHack-style: (STR-10)/2, min 0).
+     */
+    public int getDamageBonus() {
+        return Math.max(0, (getEffectiveStrength() - 10) / 2);
+    }
+
+    /**
+     * Legacy: kept for UI display and backward compatibility. Do NOT use in combat calculations.
+     * Use getToHitBonus() and getDamageBonus() separately instead.
      */
     public int getAttackModifier() {
-        return this.level; // Simple: +1 damage per level.
+        return this.level;
     }
 
     public void addArrows(int amount) {
@@ -425,4 +440,24 @@ public class PlayerStats {
         if (this.luck < -13)
             this.luck = -13;
     }
+
+    // --- Cooking Stats ---
+    private int kindlingCount = 0;
+    private int cookingWaterCount = 0;
+    private int cookingSkill = 0;
+
+    public int getKindlingCount() { return kindlingCount; }
+    public void modifyKindlingCount(int amount) {
+        this.kindlingCount += amount;
+        if (this.kindlingCount < 0) this.kindlingCount = 0;
+    }
+
+    public int getCookingWaterCount() { return cookingWaterCount; }
+    public void modifyCookingWaterCount(int amount) {
+        this.cookingWaterCount += amount;
+        if (this.cookingWaterCount < 0) this.cookingWaterCount = 0;
+    }
+
+    public int getCookingSkill() { return cookingSkill; }
+    public void incrementCookingSkill() { this.cookingSkill++; }
 }

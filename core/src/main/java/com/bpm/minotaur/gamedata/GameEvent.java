@@ -12,7 +12,8 @@ public class GameEvent {
         // --- END NEW ---
         PORTAL_ACTIVATED,
         ENCOUNTER_TRIGGERED,
-        PLAYER_DIED
+        PLAYER_DIED,
+        SHOPKEEPER_INTERACTION
     }
 
     // --- Fields ---

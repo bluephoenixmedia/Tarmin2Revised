@@ -6,7 +6,7 @@
     "magicResistance": 0,
     "moveSpeed": 18,
     "alignment": "NEUTRAL",
-    "maxHP": 8,
+    "maxHP": 16,
     "maxMP": 8,
     "armorClass": 12,
     "baseExperience": 10,
@@ -85,7 +85,7 @@
     "magicResistance": 10,
     "moveSpeed": 11,
     "alignment": "LAWFUL",
-    "maxHP": 10,
+    "maxHP": 22,
     "maxMP": 10,
     "armorClass": 14,
     "baseExperience": 15,
@@ -150,7 +150,7 @@
     "magicResistance": 0,
     "moveSpeed": 12,
     "alignment": "CHAOTIC",
-    "maxHP": 10,
+    "maxHP": 22,
     "maxMP": 20,
     "armorClass": 13,
     "baseExperience": 20,
@@ -212,7 +212,7 @@
   "GIANT_SCORPION": {
     "baseLevel": 1,
     "frequency": 8,
-    "maxHP": 15,
+    "maxHP": 26,
     "maxMP": 20,
     "armorClass": 13,
     "baseExperience": 20,
@@ -249,6 +249,19 @@
       "x": 1.1,
       "y": 0.9
     },
+    "directionTextures": {
+      "north": "images/monsters/giant_scorpion_n.png",
+      "east": "images/monsters/giant_scorpion_e.png",
+      "west": "images/monsters/giant_scorpion_w.png",
+      "southFrames": [
+        "images/monsters/giant_scorpion_s_0.png",
+        "images/monsters/giant_scorpion_s_1.png",
+        "images/monsters/giant_scorpion_s_2.png",
+        "images/monsters/giant_scorpion_s_3.png",
+        "images/monsters/giant_scorpion_s_4.png"
+      ],
+      "frameDuration": 0.15
+    },
     "variants": [
       {
         "color": "BLUE",
@@ -273,7 +286,7 @@
   "GIANT_SNAKE": {
     "baseLevel": 1,
     "frequency": 8,
-    "maxHP": 12,
+    "maxHP": 22,
     "maxMP": 12,
     "armorClass": 12,
     "baseExperience": 35,
@@ -334,7 +347,7 @@
   "GHOUL": {
     "baseLevel": 2,
     "frequency": 6,
-    "maxHP": 20,
+    "maxHP": 35,
     "maxMP": 25,
     "armorClass": 12,
     "baseExperience": 20,
@@ -395,7 +408,7 @@
   "SKELETON": {
     "baseLevel": 1,
     "frequency": 10,
-    "maxHP": 15,
+    "maxHP": 26,
     "maxMP": 10,
     "armorClass": 12,
     "baseExperience": 18,
@@ -456,7 +469,7 @@
   "CLOAKED_SKELETON": {
     "baseLevel": 3,
     "frequency": 6,
-    "maxHP": 18,
+    "maxHP": 32,
     "maxMP": 15,
     "armorClass": 14,
     "baseExperience": 22,
@@ -517,7 +530,7 @@
   "ALLIGATOR": {
     "baseLevel": 4,
     "frequency": 5,
-    "maxHP": 30,
+    "maxHP": 50,
     "maxMP": 15,
     "armorClass": 13,
     "baseExperience": 35,
@@ -578,7 +591,7 @@
   "DRAGON": {
     "baseLevel": 10,
     "frequency": 1,
-    "maxHP": 40,
+    "maxHP": 80,
     "maxMP": 30,
     "armorClass": 18,
     "baseExperience": 50,
@@ -639,7 +652,7 @@
   "WRAITH": {
     "baseLevel": 5,
     "frequency": 3,
-    "maxHP": 25,
+    "maxHP": 42,
     "maxMP": 35,
     "armorClass": 13,
     "intelligence": 6,
@@ -700,7 +713,7 @@
   "GIANT": {
     "baseLevel": 6,
     "frequency": 4,
-    "maxHP": 35,
+    "maxHP": 60,
     "maxMP": 20,
     "armorClass": 13,
     "baseExperience": 45,
@@ -761,7 +774,7 @@
   "MINOTAUR": {
     "baseLevel": 15,
     "frequency": 1,
-    "maxHP": 50,
+    "maxHP": 100,
     "maxMP": 50,
     "armorClass": 14,
     "baseExperience": 100,
@@ -821,7 +834,7 @@
   },
   "SPIDER": {
     "baseLevel": 1,
-    "maxHP": 10,
+    "maxHP": 18,
     "maxMP": 10,
     "armorClass": 14,
     "baseExperience": 5,
@@ -855,7 +868,7 @@
   },
   "GHAST": {
     "baseLevel": 3,
-    "maxHP": 30,
+    "maxHP": 50,
     "maxMP": 30,
     "armorClass": 13,
     "baseExperience": 200,
@@ -916,7 +929,7 @@
   },
   "BEHOLDER": {
     "baseLevel": 12,
-    "maxHP": 15,
+    "maxHP": 45,
     "maxMP": 45,
     "armorClass": 18,
     "baseExperience": 250,
@@ -990,7 +1003,7 @@
   },
   "GELATINOUS_CUBE": {
     "baseLevel": 3,
-    "maxHP": 35,
+    "maxHP": 60,
     "maxMP": 0,
     "armorClass": 6,
     "baseExperience": 120,
@@ -1064,7 +1077,7 @@
   },
   "RUST_MONSTER": {
     "baseLevel": 3,
-    "maxHP": 25,
+    "maxHP": 40,
     "maxMP": 10,
     "armorClass": 14,
     "baseExperience": 90,
@@ -1130,7 +1143,7 @@
   },
   "LICH": {
     "baseLevel": 15,
-    "maxHP": 20,
+    "maxHP": 50,
     "maxMP": 60,
     "armorClass": 17,
     "baseExperience": 300,
@@ -1204,7 +1217,7 @@
   },
   "MIMIC": {
     "baseLevel": 3,
-    "maxHP": 30,
+    "maxHP": 50,
     "maxMP": 0,
     "armorClass": 12,
     "baseExperience": 150,
@@ -1278,7 +1291,7 @@
   },
   "MIND_FLAYER": {
     "baseLevel": 10,
-    "maxHP": 15,
+    "maxHP": 40,
     "maxMP": 50,
     "armorClass": 15,
     "baseExperience": 200,
@@ -1346,7 +1359,7 @@
   },
   "OWLBEAR": {
     "baseLevel": 5,
-    "maxHP": 45,
+    "maxHP": 75,
     "maxMP": 0,
     "armorClass": 13,
     "baseExperience": 180,
@@ -1414,7 +1427,7 @@
   },
   "DISPLACER_BEAST": {
     "baseLevel": 6,
-    "maxHP": 35,
+    "maxHP": 60,
     "maxMP": 20,
     "armorClass": 13,
     "baseExperience": 220,
@@ -1482,7 +1495,7 @@
   },
   "UMBER_HULK": {
     "baseLevel": 6,
-    "maxHP": 40,
+    "maxHP": 70,
     "maxMP": 15,
     "armorClass": 18,
     "baseExperience": 280,
@@ -1550,7 +1563,7 @@
   },
   "KOBOLD": {
     "baseLevel": 1,
-    "maxHP": 6,
+    "maxHP": 12,
     "maxMP": 4,
     "armorClass": 12,
     "baseExperience": 5,
@@ -1610,7 +1623,7 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "maxHP": 7,
+    "maxHP": 14,
     "maxMP": 5,
     "armorClass": 12,
     "baseExperience": 8,
@@ -1670,7 +1683,7 @@
   },
   "TROGLODYTE": {
     "baseLevel": 1,
-    "maxHP": 10,
+    "maxHP": 20,
     "maxMP": 6,
     "armorClass": 11,
     "baseExperience": 15,
@@ -1738,7 +1751,7 @@
   },
   "HOBGOBLIN": {
     "baseLevel": 2,
-    "maxHP": 14,
+    "maxHP": 26,
     "maxMP": 8,
     "armorClass": 18,
     "baseExperience": 25,
@@ -1798,7 +1811,7 @@
   },
   "ZOMBIE": {
     "baseLevel": 2,
-    "maxHP": 18,
+    "maxHP": 30,
     "maxMP": 2,
     "armorClass": 8,
     "baseExperience": 20,
@@ -1858,7 +1871,7 @@
   },
   "MUMMY": {
     "baseLevel": 5,
-    "maxHP": 25,
+    "maxHP": 42,
     "maxMP": 15,
     "armorClass": 11,
     "baseExperience": 60,
@@ -1926,7 +1939,7 @@
   },
   "HARPY": {
     "baseLevel": 4,
-    "maxHP": 15,
+    "maxHP": 28,
     "maxMP": 10,
     "armorClass": 11,
     "baseExperience": 40,
@@ -1986,7 +1999,7 @@
   },
   "GARGOYLE": {
     "baseLevel": 4,
-    "maxHP": 22,
+    "maxHP": 38,
     "maxMP": 5,
     "armorClass": 15,
     "baseExperience": 70,
@@ -2046,7 +2059,7 @@
   },
   "WERERAT": {
     "baseLevel": 3,
-    "maxHP": 16,
+    "maxHP": 28,
     "maxMP": 5,
     "armorClass": 12,
     "baseExperience": 35,
@@ -2114,7 +2127,7 @@
   },
   "WEREWOLF": {
     "baseLevel": 7,
-    "maxHP": 35,
+    "maxHP": 60,
     "maxMP": 10,
     "armorClass": 11,
     "baseExperience": 110,
@@ -2182,7 +2195,7 @@
   },
   "TROLL": {
     "baseLevel": 6,
-    "maxHP": 40,
+    "maxHP": 70,
     "maxMP": 5,
     "armorClass": 15,
     "baseExperience": 130,
@@ -2242,7 +2255,7 @@
   },
   "OGRE": {
     "baseLevel": 5,
-    "maxHP": 45,
+    "maxHP": 75,
     "maxMP": 5,
     "armorClass": 11,
     "baseExperience": 140,
@@ -2302,7 +2315,7 @@
   },
   "BASILISK": {
     "baseLevel": 8,
-    "maxHP": 35,
+    "maxHP": 60,
     "maxMP": 25,
     "armorClass": 15,
     "baseExperience": 160,
@@ -2370,7 +2383,7 @@
   },
   "MEDUSA": {
     "baseLevel": 8,
-    "maxHP": 20,
+    "maxHP": 45,
     "maxMP": 40,
     "armorClass": 15,
     "baseExperience": 200,
@@ -2438,7 +2451,7 @@
   },
   "WYVERN": {
     "baseLevel": 9,
-    "maxHP": 45,
+    "maxHP": 80,
     "maxMP": 10,
     "armorClass": 13,
     "baseExperience": 220,
@@ -2506,7 +2519,7 @@
   },
   "CHIMERA": {
     "baseLevel": 9,
-    "maxHP": 50,
+    "maxHP": 85,
     "maxMP": 25,
     "armorClass": 14,
     "baseExperience": 300,
@@ -2566,7 +2579,7 @@
   },
   "HYDRA": {
     "baseLevel": 12,
-    "maxHP": 55,
+    "maxHP": 110,
     "maxMP": 15,
     "armorClass": 15,
     "baseExperience": 350,
@@ -2626,7 +2639,7 @@
   },
   "VAMPIRE": {
     "baseLevel": 11,
-    "maxHP": 40,
+    "maxHP": 75,
     "maxMP": 50,
     "armorClass": 16,
     "baseExperience": 400,
@@ -2694,7 +2707,7 @@
   },
   "IRON_GOLEM": {
     "baseLevel": 15,
-    "maxHP": 60,
+    "maxHP": 120,
     "maxMP": 0,
     "armorClass": 20,
     "baseExperience": 500,
@@ -2754,7 +2767,7 @@
   },
   "PURPLE_WORM": {
     "baseLevel": 18,
-    "maxHP": 70,
+    "maxHP": 140,
     "maxMP": 10,
     "armorClass": 18,
     "baseExperience": 600,

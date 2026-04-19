@@ -47,31 +47,12 @@ public class MonsterFactory {
         // 2. Instantiate (Position will be set by caller)
         Monster monster = new Monster(type, 0, 0, color, monsterDataManager, assetManager);
 
-        // 3. Roll HP (Level Scaling)
-        // NetHack Logic: d(level, 8) for normal monsters
-        // Adjust for "strong" monsters or high level ones
-        int hitDice = level;
-        if (hitDice < 1)
-            hitDice = 1;
-
-        // If template has specific base level, maybe use that?
-        // Using provided level from caller (which is usually dungeon level or adjusted)
-        int hp = rng.d(hitDice, 8);
-
-        // Bonus HP based on difficulty
-        if (level > 10) {
-            hp += rng.d(level - 5, 4);
-        }
-
-        monster.setCurrentHP(hp);
-        // Note: maxHP is final in current Monster, need to fix that or rely on
-        // constructor initial scaling.
-        // The Monster constructor currently sets maxHP from template.
-        // We need a way to override it.
-        // Current Monster.scaleStats does: maxHP = (int) (maxHP * multiplier)
-
-        // Using existing scaleStats for now, but supplementing with Inventory
+        // 3. Scale stats by dungeon level, then spawn at full HP.
+        // The template already has balanced HP values from monsters.json.
+        // Rolling random HP on top of template maxHP caused monsters to spawn at
+        // ~25% health because scaleStats() skips the currentHP reset at level 1.
         monster.scaleStats(level);
+        monster.setCurrentHP(monster.getMaxHP());
 
         // 4. Generate Inventory
         generateInventory(monster, level, ctx);

@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.bpm.minotaur.gamedata.monster.Monster;
 
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -981,6 +982,10 @@ public class GameScreen extends BaseScreen {
                             case 4: // BLOCK
                                 combatManager.playerGuard();
                                 break;
+                            case 5: // COOK
+                                combatManager.endCombat();
+                                game.setScreen(new CookingScreen(game, this, player, worldManager));
+                                break;
                         }
                         return true;
                 }
@@ -1081,16 +1086,10 @@ public class GameScreen extends BaseScreen {
                 // And A can remain as Quick Slot / Ranged?
             }
 
-            if (keycode == Input.Keys.A) { // Removed SPACE check
-                // NEW: Priority - Use Active Quick Slot (Slot 0)
-                Item activeSlotItem = player.getInventory().getQuickSlots()[0];
-                // if (activeSlotItem != null && keycode == Input.Keys.SPACE) { ... } -> Removed
-                // SPACE check
-
-                // Fallback: Ranged Attack
+            if (keycode == Input.Keys.A) {
+                // Ranged Attack
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                     combatManager.playerAttackInstant();
-                    // playerTurnTakesAction(); // handled in CM
                     return true;
                 }
             }
@@ -1105,38 +1104,39 @@ public class GameScreen extends BaseScreen {
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
 
-                    // DEBUG LOG
-                    // Gdx.app.log("Seamless", "Move Request: Cur(" + player.getPosition() + ") +
-                    // Dir(" + dir + ") -> TargetTile(" + tx + ", " + ty + ")");
-
-                    // Check for Seamless Transition (OOB)
                     if (checkAndPerformSeamlessTransition(tx, ty)) {
                         return true;
                     }
-                }
-                    player.moveForward(maze, eventManager, gameMode);
-                    combatManager.checkForAdjacentMonsters();
+
+                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    if (bumpTarget != null) {
+                        combatManager.playerMeleeStrike(bumpTarget);
+                    } else {
+                        player.moveForward(maze, eventManager, gameMode);
+                    }
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
+                }
                 case Input.Keys.DOWN: {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x - dir.x);
                     int ty = (int) Math.floor(player.getPosition().y - dir.y);
 
-                    // DEBUG LOG
-                    // Gdx.app.log("Seamless", "Move Request: Cur(" + player.getPosition() + ") -
-                    // Dir(" + dir + ") -> TargetTile(" + tx + ", " + ty + ")");
-
                     if (checkAndPerformSeamlessTransition(tx, ty)) {
                         return true;
                     }
-                }
-                    player.moveBackward(maze, eventManager, gameMode);
-                    combatManager.checkForAdjacentMonsters();
+
+                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    if (bumpTarget != null) {
+                        combatManager.playerMeleeStrike(bumpTarget);
+                    } else {
+                        player.moveBackward(maze, eventManager, gameMode);
+                    }
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
+                }
                 case Input.Keys.LEFT:
                     player.turnLeft();
                     playerTurnTakesAction();

@@ -111,6 +111,10 @@ public class Maze {
         eventTriggers.remove(new GridPoint2(x, y));
     }
 
+    public Map<GridPoint2, String> getEventTriggers() {
+        return eventTriggers;
+    }
+
     public boolean isVisited(int x, int y) {
         if (x >= 0 && x < width && y >= 0 && y < height) {
             return explorationState[y][x] == VISIBILITY_SEEN;
@@ -294,6 +298,11 @@ public class Maze {
         // Check for impassable items (props)
         Item item = items.get(new GridPoint2(x, y));
         if (item != null && item.isImpassable()) {
+            return false;
+        }
+
+        // Monsters are impassable
+        if (monsters.containsKey(new GridPoint2(x, y))) {
             return false;
         }
 

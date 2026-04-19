@@ -1384,12 +1384,21 @@ public class Player {
         stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 
+    /** To-hit bonus: level/2 applied to the d20 attack roll. */
+    public int getToHitBonus() {
+        return stats.getToHitBonus();
+    }
+
+    /** Damage bonus: STR-based plus equipment BONUS_DAMAGE modifiers. */
+    public int getDamageBonus() {
+        return stats.getDamageBonus() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+    }
+
     /**
-     * UPDATED: Returns attack modifier including LEVEL BONUS and EQUIPMENT BONUSES.
-     * Use this for all combat calculations.
+     * Legacy: returns full level for UI display. Do NOT use in combat math.
+     * Use getToHitBonus() and getDamageBonus() separately.
      */
     public int getAttackModifier() {
-        // Level Bonus + All "BONUS_DAMAGE" on equipped items
         return stats.getAttackModifier() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
     }
 
