@@ -1,0 +1,240 @@
+Initialized native services in: C:\Users\denni\.gradle\native
+Initialized jansi services in: C:\Users\denni\.gradle\native
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon JVM discovery is an incubating feature.
+
+
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AReceived JVM installation metadata from 'C:\Program Files\Java\jdk-24': {JAVA_HOME=C:\Program Files\Java\jdk-24, JAVA_VERSION=24.0.1, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=24.0.1+9-30, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=24.0.1+9-30, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm7116755115007717373probe Command: C:\Program Files\Java\jre1.8.0_471\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe[0K
+Starting process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm6214954229321629987probe Command: C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Starting process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm6003694765872935789probe Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''
+Successfully started process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-21.0.7': {JAVA_HOME=C:\Users\denni\.jdks\ms-21.0.7, JAVA_VERSION=21.0.7, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.7+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.7+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Program Files\Java\jre1.8.0_471': {JAVA_HOME=C:\Program Files\Java\jre1.8.0_471, JAVA_VERSION=1.8.0_471, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=1.8.0_471-b09, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=25.471-b09, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+
+[0K
+[2A[1B[1m> Starting Daemon > Extracting toolchain metadata from 'C:\Users\denni\.jdks\ms[m[79D[1B[2AStarting process 'Gradle build daemon'. Working directory: C:\Users\denni\.gradle\daemon\8.14.3 Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xms512M -Xmx1G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\gradle-daemon-main-8.14.3.jar -javaagent:C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+Successfully started process 'Gradle build daemon'[0K
+
+[0K
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AAn attempt to start the daemon took 0.932 secs.
+[1B[0K
+[2A[0K[1B[1m> Starting Daemon > Connecting to Daemon[m[40D[1B[2AThe client will now receive all logging from the daemon (pid: 37828). The daemon log file: C:\Users\denni\.gradle\daemon\8.14.3\daemon-37828.out.log
+Daemon will be stopped at the end of the build [0K
+
+[0K
+[2A[1B> IDLE[6D[1B[2AUsing 32 worker leases.
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [101ms][m[39D[1B> IDLE[6D[1B[2AReceived JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [202ms][m[39D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [301ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [401ms][m[39D[2B[2AWatching the file system is configured to be enabled if available[0K
+Now considering [C:\Users\denni\Desktop\Tarmin2] as hierarchies to watch[0K
+File system watching is active
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [501ms][m[39D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [601ms][m[39D[1B[1m> Evaluating settings[m[21D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [702ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [802ms][m[39D[2B[2AStarting Build[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [902ms][m[39D[1B[1m> Evaluating settings[m[21D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[0K[36D[2B[1A[1m> Evaluating settings > Resolve dependencies of detachedConfiguration1[m[70D[1B[2AResolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0'][0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[0K[36D[1B[1m> Evaluating settings[m[21D[1B[1A[1m> Evaluating settings > Resolve files of configuration 'classpath'[m[66D[1B[2ASettings evaluated using settings file 'C:\Users\denni\Desktop\Tarmin2\settings.gradle'.[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% CONFIGURING [1s][m[0K[35D[1B> IDLE[6D[1B[2AProjects loaded. Root project using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.[0K
+Included projects: [root project 'Tarmin2', project ':core', project ':lwjgl3'][0K
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% CONFIGURING [1s][m[35D[1B[1m> root project[m[14D[1B[2A[1m<[0;1m-------------> 0% CONFIGURING [2s][m[35D[2B[2A[0K
+[1m> Configure project :[m[0K
+Evaluating root project 'Tarmin2' using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+
+[1m> Configure project :core[m
+Evaluating project ':core' using build file 'C:\Users\denni\Desktop\Tarmin2\core\build.gradle'.
+[0K
+[0K
+[2A[1m<[0;32;1m========[0;39;1m-----> 66% CONFIGURING [2s][m[36D[1B[1m> :lwjgl3[m[9D[1B[2A[1m<[0;32;1m========[0;39;1m-----> 66% CONFIGURING [3s][m[36D[2B[2A[0K
+[1m> Configure project :lwjgl3[m[0K
+Evaluating project ':lwjgl3' using build file 'C:\Users\denni\Desktop\Tarmin2\lwjgl3\build.gradle'.
+Resolved plugin [id: 'application']
+All projects evaluated.
+Task path 'core:compileJava' matched project ':core'
+Task name matched 'compileJava'
+Selected primary task 'compileJava' from project :core
+Tasks to be executed: [task ':core:compileJava']
+Tasks that were excluded: []
+Resolve mutations for :core:compileJava (Thread[Execution worker Thread 3,5,main]) started.
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% EXECUTING [3s][m[33D[1B> IDLE[6D[1B[2A:core:compileJava (Thread[included builds,5,main]) started.[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% EXECUTING [3s][m[33D[1B[1m> :core:compileJava[m[19D[1B[2A[1m<[0;1m-------------> 0% EXECUTING [4s][m[33D[2BC:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:5: error: package com.badlogic.gdx.backends.lwjgl3 does not exist
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+                                       ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:6: error: package com.badlogic.gdx.backends.lwjgl3 does not exist
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+                                       ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:19: error: package com.bpm.minotaur.world does not exist
+import com.bpm.minotaur.world.BiomeManager;
+                             ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:33: error: cannot find symbol
+        Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+        ^
+  symbol:   class Lwjgl3ApplicationConfiguration
+  location: class SpawnDistributionTest
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:33: error: cannot find symbol
+        Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+                                                    ^
+  symbol:   class Lwjgl3ApplicationConfiguration
+  location: class SpawnDistributionTest
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:38: error: cannot find symbol
+        new Lwjgl3Application(new SimulationListener(), config);
+            ^
+  symbol:   class Lwjgl3Application
+  location: class SpawnDistributionTest
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:120: error: constructor SpawnManager in class SpawnManager cannot be applied to given types;
+            SpawnManager spawnManager = new SpawnManager(monsterData, itemData, spawnTable, null); // WorldManager null
+                                        ^
+  required: MonsterDataManager,ItemDataManager,AssetManager,Maze,Difficulty,int,int,String[],SpawnTableData,long
+  found:    MonsterDataManager,ItemDataManager,SpawnTableData,<null>
+  reason: actual and formal argument lists differ in length
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:151: error: cannot find symbol
+                    counts.put(mock.getId(), counts.getOrDefault(mock.getId(), 0) + 1);
+                                                                     ^
+  symbol:   method getId()
+  location: variable mock of type Monster
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:151: error: cannot find symbol
+                    counts.put(mock.getId(), counts.getOrDefault(mock.getId(), 0) + 1);
+                                   ^
+  symbol:   method getId()
+  location: variable mock of type Monster
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:178: warning: [unchecked] unchecked cast
+                ObjectMap<String, Monster> map = (ObjectMap<String, Monster>) field.get(data);
+                                                                                       ^
+  required: ObjectMap<String,Monster>
+  found:    Object
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:193: error: cannot find symbol
+                    if (m.baseLevel <= level) {
+                         ^
+  symbol:   variable baseLevel
+  location: variable m of type Monster
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:195: error: cannot find symbol
+                        totalWeight += m.frequency;
+                                        ^
+  symbol:   variable frequency
+  location: variable m of type Monster
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:205: error: cannot find symbol
+                    current += m.frequency;
+                                ^
+  symbol:   variable frequency
+  location: variable m of type Monster
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:229: warning: [unchecked] unchecked cast
+                            .get(data);
+                                ^
+  required: ObjectMap<ItemType,ItemTemplate>
+  found:    Object
+12 errors
+2 warnings
+
+[31mFAILURE: [39m[31mBuild failed with an exception.[39m
+
+* What went wrong:
+Execution failed for task ':core:compileJava'.
+[33m> [39mCompilation failed; see the compiler output below.
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:120: error: constructor SpawnManager in class SpawnManager cannot be applied to given types;
+              SpawnManager spawnManager = new SpawnManager(monsterData, itemData, spawnTable, null); // WorldManager null
+                                          ^
+    required: MonsterDataManager,ItemDataManager,AssetManager,Maze,Difficulty,int,int,String[],SpawnTableData,long
+    found:    MonsterDataManager,ItemDataManager,SpawnTableData,<null>
+    reason: actual and formal argument lists differ in length
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:33: error: cannot find symbol
+          Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+          ^
+    symbol:   class Lwjgl3ApplicationConfiguration
+    location: class SpawnDistributionTest
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:33: error: cannot find symbol
+          Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+                                                      ^
+    symbol:   class Lwjgl3ApplicationConfiguration
+    location: class SpawnDistributionTest
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:38: error: cannot find symbol
+          new Lwjgl3Application(new SimulationListener(), config);
+              ^
+    symbol:   class Lwjgl3Application
+    location: class SpawnDistributionTest
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:193: error: cannot find symbol
+                      if (m.baseLevel <= level) {
+                           ^
+    symbol:   variable baseLevel
+    location: variable m of type Monster
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:195: error: cannot find symbol
+                          totalWeight += m.frequency;
+                                          ^
+    symbol:   variable frequency
+    location: variable m of type Monster
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:205: error: cannot find symbol
+                      current += m.frequency;
+                                  ^
+    symbol:   variable frequency
+    location: variable m of type Monster
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:178: warning: [unchecked] unchecked cast
+                  ObjectMap<String, Monster> map = (ObjectMap<String, Monster>) field.get(data);
+                                                                                         ^
+    required: ObjectMap<String,Monster>
+    found:    Object
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:229: warning: [unchecked] unchecked cast
+                              .get(data);
+                                  ^
+    required: ObjectMap<ItemType,ItemTemplate>
+    found:    Object
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:151: error: cannot find symbol
+                      counts.put(mock.getId(), counts.getOrDefault(mock.getId(), 0) + 1);
+                                                                       ^
+    symbol:   method getId()
+    location: variable mock of type Monster
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:151: error: cannot find symbol
+                      counts.put(mock.getId(), counts.getOrDefault(mock.getId(), 0) + 1);
+                                     ^
+    symbol:   method getId()
+    location: variable mock of type Monster
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:5: error: package com.badlogic.gdx.backends.lwjgl3 does not exist
+  import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+                                         ^
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:6: error: package com.badlogic.gdx.backends.lwjgl3 does not exist
+  import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+                                         ^
+  C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java:19: error: package com.bpm.minotaur.world does not exist
+  import com.b[2A[0K
+[31;1m> Task :core:compileJava[0;39m[31m FAILED[39m[0K
+Caching disabled for task ':core:compileJava' because:
+  Build cache is disabled
+Task ':core:compileJava' is not up-to-date because:
+  Input property 'stableSources' file C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\tests\SpawnDistributionTest.java has been added.
+Compilation mode: in-process compilation
+Created classpath snapshot for incremental compilation in 0.016 secs.
+Compiling with toolchain 'C:\Users\denni\.jdks\ms-17.0.15'.
+Compiling with JDK Java compiler API.
+Incremental compilation of 1 classes completed in 0.71 secs.
+
+[Incubating] Problems report is available at: file:///C:/Users/denni/Desktop/Tarmin2/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+1 actionable task: 1 executed
+Watched directory hierarchies: [C:\Users\denni\Desktop\Tarmin2]
+[0K
+[0K
+[2A[1m<[0;31;1m=============[0;39;1m> 100% EXECUTING [4s][m[35D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% WAITING[m[0K[26D[2Bpm.minotaur.world.BiomeManager;
+                               ^
+  12 errors
+  2 warnings
+
+* Try:
+[33m> [39mCheck your code and dependencies to fix the compilation error(s)
+[33m> [39mRun with [1m--scan[m to get full insights.
+
+[31;1mBUILD FAILED[0;39m in 6s
+[2A[2K[1B[2K[1A

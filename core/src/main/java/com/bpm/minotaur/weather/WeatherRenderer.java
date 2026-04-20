@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.graphics.GL20;
 
 import java.util.Iterator;
 
@@ -26,31 +27,31 @@ public class WeatherRenderer {
     private float tornadoSpeed = 30f;
 
     // --- RETRO SPRITE DATA ---
-    public static final String[] TORNADO_SPRITE = new String[]{
-        "########################",
-        "########################",
-        "########################",
-        ".######################.",
-        "..####################..",
-        "...##################...",
-        "....###############.....",
-        ".....#############......",
-        "......###########.......",
-        ".......#########........",
-        "........#######.........",
-        "........#######.........",
-        "........#######.........",
-        ".......#######..........",
-        "......#######...........",
-        ".....#######............",
-        "....#######.............",
-        "...#######..............",
-        "..#######...............",
-        "..#######...............",
-        "....#####...............",
-        ".....####...............",
-        "......###................",
-        ".......##................"
+    public static final String[] TORNADO_SPRITE = new String[] {
+            "########################",
+            "########################",
+            "########################",
+            ".######################.",
+            "..####################..",
+            "...##################...",
+            "....###############.....",
+            ".....#############......",
+            "......###########.......",
+            ".......#########........",
+            "........#######.........",
+            "........#######.........",
+            "........#######.........",
+            ".......#######..........",
+            "......#######...........",
+            ".....#######............",
+            "....#######.............",
+            "...#######..............",
+            "..#######...............",
+            "..#######...............",
+            "....#####...............",
+            ".....####...............",
+            "......###................",
+            ".......##................"
     };
 
     public WeatherRenderer(WeatherManager weatherManager) {
@@ -78,14 +79,18 @@ public class WeatherRenderer {
 
                 // Reset timer based on intensity
                 float divisor = 1.0f;
-                if (intensity == WeatherIntensity.MEDIUM) divisor = 2.0f;
-                if (intensity == WeatherIntensity.HEAVY) divisor = 5.0f;
-                if (intensity == WeatherIntensity.EXTREME) divisor = 15.0f;
+                if (intensity == WeatherIntensity.MEDIUM)
+                    divisor = 2.0f;
+                if (intensity == WeatherIntensity.HEAVY)
+                    divisor = 5.0f;
+                if (intensity == WeatherIntensity.EXTREME)
+                    divisor = 15.0f;
 
                 spawnTimer += (SPAWN_TIMER_RESET / divisor);
             }
         } else {
-            if (particles.size > 0) particles.clear();
+            if (particles.size > 0)
+                particles.clear();
         }
 
         // 3. Update existing particles
@@ -101,12 +106,13 @@ public class WeatherRenderer {
 
     private boolean isPrecipitation(WeatherType type) {
         return type == WeatherType.RAIN || type == WeatherType.STORM ||
-            type == WeatherType.SNOW || type == WeatherType.BLIZZARD ||
-            type == WeatherType.TORNADO;
+                type == WeatherType.SNOW || type == WeatherType.BLIZZARD ||
+                type == WeatherType.TORNADO;
     }
 
     private void spawnParticle(WeatherType type, WeatherIntensity intensity) {
-        if (particles.size >= MAX_PARTICLES) return;
+        if (particles.size >= MAX_PARTICLES)
+            return;
 
         float x = MathUtils.random(0, Gdx.graphics.getWidth());
         float y = Gdx.graphics.getHeight() + 20; // Start well above screen
@@ -121,9 +127,12 @@ public class WeatherRenderer {
 
         // Wind simulation
         float windX = 0;
-        if (type == WeatherType.STORM || type == WeatherType.BLIZZARD) windX = -200f;
-        if (intensity == WeatherIntensity.EXTREME) windX = -500f;
-        if (type == WeatherType.TORNADO) windX = -1500f;
+        if (type == WeatherType.STORM || type == WeatherType.BLIZZARD)
+            windX = -200f;
+        if (intensity == WeatherIntensity.EXTREME)
+            windX = -500f;
+        if (type == WeatherType.TORNADO)
+            windX = -1500f;
 
         particles.add(new WeatherParticle(x, y, windX, -speedBase * speedMod, type));
     }
@@ -132,9 +141,10 @@ public class WeatherRenderer {
      * Renders the Tornado sprite. Should be called BEFORE walls are drawn.
      */
     public void renderTornado(ShapeRenderer shapeRenderer, Viewport viewport) {
-        if (weatherManager.getCurrentWeather() != WeatherType.TORNADO) return;
+        if (weatherManager.getCurrentWeather() != WeatherType.TORNADO)
+            return;
 
-        Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         renderTornadoSprite(shapeRenderer, viewport);
         shapeRenderer.end();
@@ -144,9 +154,10 @@ public class WeatherRenderer {
      * Renders rain/snow particles. Should be called AFTER walls are drawn.
      */
     public void renderPrecipitation(ShapeRenderer shapeRenderer, Viewport viewport) {
-        if (particles.size == 0) return;
+        if (particles.size == 0)
+            return;
 
-        Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (WeatherParticle p : particles) {
@@ -162,7 +173,6 @@ public class WeatherRenderer {
                 shapeRenderer.rectLine(p.x, p.y, p.x + lean, p.y - 25, 1.5f);
             }
         }
-
         shapeRenderer.end();
     }
 
@@ -214,15 +224,18 @@ public class WeatherRenderer {
             currentLife += delta;
 
             // Screen Wrap X
-            if (x < -50) x = Gdx.graphics.getWidth() + 50;
-            if (x > Gdx.graphics.getWidth() + 50) x = -50;
+            if (x < -50)
+                x = Gdx.graphics.getWidth() + 50;
+            if (x > Gdx.graphics.getWidth() + 50)
+                x = -50;
 
             // Death condition
             if (y < -20 || currentLife > maxLife) {
                 isDead = true;
             }
 
-            // [FIX] Only fade out in the very last 10% of life, or if snow, maybe not at all?
+            // [FIX] Only fade out in the very last 10% of life, or if snow, maybe not at
+            // all?
             // Let's keep a slight fade but ensure it's visible at bottom.
             lifeRatio = 1.0f;
             if (currentLife > maxLife - 0.5f) {

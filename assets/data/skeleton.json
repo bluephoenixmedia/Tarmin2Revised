@@ -1,0 +1,130 @@
+{
+"sockets": {
+	"head": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 797
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 987
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 40
+		}
+	},
+	"feet": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 821
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 63
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 10
+		}
+	},
+	"face": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 1086
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 1215
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
+		}
+	},
+	"hips": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 925
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 219
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 20
+		}
+	},
+	"torso": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 579
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 385
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 30
+		}
+	},
+	"hand_off": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 1011
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 272
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
+		}
+	},
+	"hand_main": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 466
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 423
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
+		}
+	},
+	"backpack": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 0
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 0
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
+		}
+	},
+	"back": {
+		"x": {
+			"class": "java.lang.Float",
+			"value": 0
+		},
+		"y": {
+			"class": "java.lang.Float",
+			"value": 0
+		},
+		"z": {
+			"class": "java.lang.Integer",
+			"value": 0
+		}
+	}
+}
+}

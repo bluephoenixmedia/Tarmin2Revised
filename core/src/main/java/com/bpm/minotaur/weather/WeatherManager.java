@@ -44,7 +44,8 @@ public class WeatherManager {
 
         this.weatherTimer = 300f;
 
-        // Init defaults (These will be overwritten immediately by updateAtmosphereTargets, but good to have)
+        // Init defaults (These will be overwritten immediately by
+        // updateAtmosphereTargets, but good to have)
         this.targetFogDistance = 60f;
         this.targetFogColor = new Color(Color.WHITE);
         this.currentFogDistance = targetFogDistance;
@@ -84,7 +85,8 @@ public class WeatherManager {
         // 4. Decay Flash
         if (flashIntensity > 0) {
             flashIntensity -= delta * 2.0f;
-            if (flashIntensity < 0) flashIntensity = 0;
+            if (flashIntensity < 0)
+                flashIntensity = 0;
         }
 
         // 5. Handle Thunder Delay
@@ -155,32 +157,46 @@ public class WeatherManager {
             case MAZE:
             case FOREST:
             case PLAINS:
-                if (roll < 0.20f) return WeatherType.CLEAR;
-                if (roll < 0.30f) return WeatherType.FOG;
-                if (roll < 0.45f) return WeatherType.RAIN;
-                if (roll < 0.90f) return WeatherType.STORM;
+                if (roll < 0.20f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.30f)
+                    return WeatherType.FOG;
+                if (roll < 0.45f)
+                    return WeatherType.RAIN;
+                if (roll < 0.90f)
+                    return WeatherType.STORM;
                 return WeatherType.TORNADO;
             case MOUNTAINS:
-                if (roll < 0.20f) return WeatherType.CLEAR;
-                if (roll < 0.40f) return WeatherType.SNOW;
+                if (roll < 0.20f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.40f)
+                    return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
             case OCEAN:
-                if (roll < 0.10f) return WeatherType.CLEAR;
-                if (roll < 0.30f) return WeatherType.RAIN;
+                if (roll < 0.10f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.30f)
+                    return WeatherType.RAIN;
                 return WeatherType.STORM;
             case DESERT:
-                if (roll < 0.80f) return WeatherType.CLEAR;
+                if (roll < 0.80f)
+                    return WeatherType.CLEAR;
                 return WeatherType.TORNADO;
-            default: return WeatherType.CLEAR;
+            default:
+                return WeatherType.CLEAR;
         }
     }
 
     private WeatherIntensity pickIntensityForWeather(WeatherType type) {
-        if (type == WeatherType.CLEAR) return WeatherIntensity.LIGHT;
+        if (type == WeatherType.CLEAR)
+            return WeatherIntensity.LIGHT;
         float roll = MathUtils.random();
-        if (roll < 0.10f) return WeatherIntensity.LIGHT;
-        if (roll < 0.30f) return WeatherIntensity.MEDIUM;
-        if (roll < 0.60f) return WeatherIntensity.HEAVY;
+        if (roll < 0.10f)
+            return WeatherIntensity.LIGHT;
+        if (roll < 0.30f)
+            return WeatherIntensity.MEDIUM;
+        if (roll < 0.60f)
+            return WeatherIntensity.HEAVY;
         return WeatherIntensity.EXTREME;
     }
 
@@ -228,16 +244,29 @@ public class WeatherManager {
         return currentWeather != WeatherType.CLEAR && currentWeather != WeatherType.FOG;
     }
 
-    public WeatherType getCurrentWeather() { return currentWeather; }
-    public WeatherIntensity getCurrentIntensity() { return currentIntensity; }
-    public float getFogDistance() { return currentFogDistance; }
-    public Color getFogColor() { return currentFogColor; }
+    public WeatherType getCurrentWeather() {
+        return currentWeather;
+    }
+
+    public WeatherIntensity getCurrentIntensity() {
+        return currentIntensity;
+    }
+
+    public float getFogDistance() {
+        return currentFogDistance;
+    }
+
+    public Color getFogColor() {
+        return currentFogColor;
+    }
 
     public float getLightIntensity() {
         return Math.min(1.5f, globalLightDimmer + flashIntensity);
     }
 
-    public boolean isLightningFlashing() { return flashIntensity > 0.1f; }
+    public boolean isLightningFlashing() {
+        return flashIntensity > 0.1f;
+    }
 
     public void debugCycleWeather() {
         int nextOrdinal = (currentWeather.ordinal() + 1) % WeatherType.values().length;
@@ -270,5 +299,65 @@ public class WeatherManager {
             return 1.0f;
         }
         return 0.0f;
+    }
+
+    public float getAmbientTemperature(Biome biome) {
+        float baseTemp = 20.0f; // Default temperate
+
+        switch (biome) {
+            case MAZE:
+            case PLAINS:
+                baseTemp = 20.0f;
+                break;
+            case FOREST:
+                baseTemp = 15.0f;
+                break;
+            case MOUNTAINS:
+                baseTemp = 5.0f;
+                break;
+            case DESERT:
+                baseTemp = 35.0f;
+                break;
+            case OCEAN:
+                baseTemp = 18.0f;
+                break;
+            default:
+                baseTemp = 20.0f;
+                break;
+        }
+
+        // Weather modifiers
+        switch (currentWeather) {
+            case CLEAR:
+                // No change or slight heat in desert
+                if (biome == Biome.DESERT)
+                    baseTemp += 5.0f;
+                break;
+            case RAIN:
+                baseTemp -= 5.0f;
+                break;
+            case STORM:
+                baseTemp -= 8.0f;
+                break;
+            case FOG:
+                baseTemp -= 2.0f;
+                break;
+            case SNOW:
+                baseTemp -= 10.0f;
+                break;
+            case BLIZZARD:
+                baseTemp -= 20.0f; // Freezing!
+                break;
+            case TORNADO:
+                baseTemp -= 5.0f; // Wind chill
+                break;
+        }
+
+        // Intensity scaling
+        if (currentIntensity == WeatherIntensity.HEAVY || currentIntensity == WeatherIntensity.EXTREME) {
+            baseTemp -= 3.0f;
+        }
+
+        return baseTemp;
     }
 }

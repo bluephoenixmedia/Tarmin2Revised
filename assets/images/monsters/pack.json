@@ -1,0 +1,13 @@
+{
+  "maxWidth": 8192,
+  "maxHeight": 8192,
+  "pot": false,
+  "paddingX": 2,
+  "paddingY": 2,
+  "bleed": true,
+  "filterMin": "Nearest",
+  "filterMag": "Nearest",
+  "format": "RGBA8888",
+  "alias": true,
+  "duplicatePadding": false
+}

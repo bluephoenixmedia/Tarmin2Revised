@@ -1,86 +1,111 @@
-Tarmin2Revised
-Overview
-Tarmin2Revised is a dungeon-crawling adventure game built with the libGDX framework. The game is a modern tribute to the classic Intellivision game Treasure of Tarmin, featuring procedurally generated mazes, a retro-inspired visual style, and a focus on exploration, combat, and survival. The project is structured into a core module for the main game logic and an lwjgl3 module for the desktop launcher.
+# Tarmin2 (Minotaur)
 
-Key Features
-Procedural Tile-Based Mazes: Dungeons are built by randomly selecting, rotating, and stitching pre-designed room "tiles" together, creating unique layouts every game.
+A first-person 2.5D retro dungeon crawler built with LibGDX — a modern tribute to the classic Intellivision game *Treasure of Tarmin*. Procedurally generated mazes, deep survival mechanics, color-tiered loot, and brutal turn-based combat.
 
-First-Person Perspective: An immersive 3D view rendered with a raycasting algorithm, reminiscent of classic dungeon crawlers.
+---
 
-Dynamic Doors: Interactive doors that open with a smooth animation.
+## Getting Started
 
-Deep Item & Equipment System: Discover dozens of items across categories: War Weapons, Spiritual Weapons, Armor, Rings, Consumables, and Treasure.
+**Requirements:** JDK 17+
 
-Color-Coded Tiers: Items and monsters have colors (e.g., Tan, Orange, Blue) that signify their power, based on the dungeon level.
+```bash
+# Run
+gradlew.bat lwjgl3:run          # Windows
+./gradlew lwjgl3:run            # macOS / Linux
 
-Locked Containers: Find locked chests and boxes that require a key of the correct color to open.
+# Build JAR
+gradlew lwjgl3:jar              # Output: lwjgl3/build/libs/
+```
 
-Turn-Based Combat: Engage in classic turn-based combat against a variety of monsters.
+---
 
-Dual-Strength System: Manage both War Strength (health/melee) and Spiritual Strength (magic/defense), attacked by different monster types.
+## Key Features
 
-Player Leveling: Gain experience from victories to level up, increasing your stats and healing you.
+- **First-Person Raycasting** — DDA-based 2.5D renderer with depth-buffered entity occlusion, textured (MODERN) and flat-color (CLASSIC) modes
+- **Procedural Dungeons** — 12×12 room templates randomly selected, rotated, and stitched into fully navigable layouts each run
+- **Card/Dice Combat** — Turn-based combat resolved through a dice system with per-hand die selection and visual roll feedback *(active development)*
+- **Dual-Strength System** — War Strength (WS) for physical health/melee, Spiritual Strength (SS) for magic/defense
+- **Full Survival Model** — Satiety, Hydration, Body Temperature (32–41°C), and Toxicity all decay and interact
+- **Toxicity Glass-Cannon** — High toxicity grants +20% damage / −20% defense — a deliberate high-risk playstyle
+- **Deep Itemization** — 450+ item types across weapons, armor, rings, scrolls, wands, and consumables; color-coded by power tier
+- **Monster Ecosystem** — 37+ monster types with faction AI; monsters fight each other independent of the player
+- **Cooking & Alchemy** — Harvest monster gibs, combine with kindling and water to craft meals; brew potions from ingredients
+- **Gore & Gibs** — Pooled blood particles, persistent wall decals, and body-part drops per monster archetype
+- **Multiple Biomes** — Dungeon, Forest, Desert, and Castle environments with biome-specific generators
+- **Paperdoll System** — Verlet-physics cloth simulation for character appearance
+- **CRT Post-Processing** — Scanline shader with screen shake on hit
 
-Resource Management: Juggle Food (for resting) and Arrows (for ranged combat).
+---
 
-Debug Overlay: A toggleable debug screen (F1) that displays the maze layout, player position, and other technical info.
+## Runtime Keybindings
 
-Dual-Render Mode: Toggle (F2) between a modern, textured renderer and a "Classic" mode with solid, shaded colors.
+| Key | Action |
+|---|---|
+| `F1` | Toggle debug overlay (top-down map view) |
+| `F2` | Toggle MODERN / CLASSIC renderer |
 
-Getting Started
-To get the project up and running, you'll need to have a Java Development Kit (JDK) installed, version 17 or higher.
+---
 
-Building and Running
-This project uses Gradle to manage dependencies and build the application. You can use the included Gradle wrapper to run the game without having to install Gradle yourself.
+## Project Structure
 
-To run the game, open a terminal in the project's root directory and run the following command:
+```
+core/                           # Platform-independent game logic (~31,000 lines, 165+ classes)
+│   └── src/main/java/com/bpm/minotaur/
+│       ├── Tarmin2.java        # Main game class; bootstraps all managers
+│       ├── screens/            # All UI screens (GameScreen, InventoryScreen, etc.)
+│       ├── gamedata/           # Pure data objects (Player, Maze, Monster, Item)
+│       ├── managers/           # 21 singleton managers (Combat, AI, Spawn, Sound, etc.)
+│       ├── rendering/          # Raycasting renderer, HUD, overlays
+│       └── generation/         # Procedural dungeon generators, spawners
+lwjgl3/                         # Desktop launcher (LWJGL3 backend)
+assets/
+│   ├── data/                   # JSON config files (weapons, armor, monsters, items, etc.)
+│   ├── images/                 # Sprites, skyboxes, gore textures
+│   ├── sounds/                 # SFX and music
+│   └── packed/                 # Generated texture atlases (do not edit manually)
+```
 
-On Windows: gradlew.bat lwjgl3:run
+---
 
-On macOS/Linux: ./gradlew lwjgl3:run
+## Architecture Overview
 
-To build a runnable JAR file, use this command:
+The game uses a **Manager + Data Object** pattern (ECS-lite):
 
-gradlew lwjgl3:jar
+- **Data classes** (`Player`, `Maze`, `Monster`, `Item`) hold state only
+- **Manager singletons** own all logic and cross-cutting concerns
+- **Screens** compose managers and renderers for each view
 
-The JAR file will be located in the lwjgl3/build/libs/ directory.
+Two coordinate systems are in use — **`GridPoint2`** for maze tile lookups, **`Vector2`** for world/rendering math. The `Maze` stores entities in a dual map: `wallData[][]` for collision geometry and `Map<GridPoint2, Object>` for interactive objects.
 
-Project Structure
-The project is organized into two main modules:
+Full architecture, system, and API documentation is in the agent context files below.
 
-core: Contains the majority of the game's code, including game logic, rendering, and data management. This module is platform-independent.
+---
 
-lwjgl3: The desktop launcher for the game, responsible for creating the application window and starting the game.
+## Agent & Developer Documentation
 
-Key Files and Directories
-assets/: Contains all of the game's assets, such as fonts, images, sounds, and music.
+This project uses spec-driven agentic development. Read these files before touching any system:
 
-core/src/main/java/com/bpm/minotaur/: The main package for the game's source code.
+| File | Contents |
+|---|---|
+| [`AGENT.md`](AGENT.md) | **Start here** — role, rules, architecture invariants, conventions |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Full package map and all 165+ classes described |
+| [`SYSTEMS.md`](SYSTEMS.md) | All game systems — entry points, data flow, coupling |
+| [`COMBAT.md`](COMBAT.md) | Combat state machine, dice system, card-combat feature |
+| [`RENDERING.md`](RENDERING.md) | Rendering pipeline, viewport layout, depth buffer |
+| [`DATA.md`](DATA.md) | JSON data file schemas and loading patterns |
+| [`ROADMAP.md`](ROADMAP.md) | Feature status — done, in progress, planned |
+| [`spec.md`](spec.md) | Canonical product specification |
 
-gamedata/: Defines core game state classes: Player, Maze, Item, Monster.
+---
 
-managers/: Contains singletons and systems for managing combat, spawning, sound, music, and debug features.
+## Tech Stack
 
-rendering/: Contains the rendering classes, including the FirstPersonRenderer and EntityRenderer.
-
-screens/: Manages the different screens of the game, such as the MainMenuScreen and GameScreen.
-
-lwjgl3/src/main/java/com/bpm/minotaur/lwjgl3/: The source code for the desktop launcher.
-
-Design and Architecture
-Game Loop and Screens
-The game is built around a central Tarmin2 class that extends com.badlogic.gdx.Game. This class manages the game's screens, switching between the MainMenuScreen and the GameScreen as needed.
-
-MainMenuScreen: The first screen the player sees. It displays the game's title and waits for player input to start the game.
-
-GameScreen: The main screen for gameplay. It handles the rendering of the maze, player, and entities, as well as processing player input and managing game state updates.
-
-Rendering
-The game's 3D view is rendered using a raycasting algorithm in the FirstPersonRenderer class. This technique creates a 3D perspective from a 2D map.
-
-Depth Buffer: The FirstPersonRenderer also generates a depthBuffer, which is used by the EntityRenderer to correctly render items and monsters in the world so they appear behind walls when they should.
-
-Debug View: For development and testing, a DebugRenderer is included. It provides a top-down view of the maze, showing the player's position, direction, and the location of walls and doors.
-
-Maze Generation
-The game's dungeons are procedurally generated in GameScreen.java. The createMazeFromArrayTiles method implements an innovative approach by building a large map (e.g., 2x2) from a grid of smaller, pre-designed "tiles" (12x12). These tiles are randomly selected from a pool of 16 templates, rotated, and then "stitched" together using corridor templates to ensure connectivity. This creates complex, varied, and non-linear dungeon layouts for each level.
+| Component | Technology |
+|---|---|
+| Language | Java 17+ |
+| Framework | LibGDX |
+| Desktop backend | LWJGL3 |
+| Build | Gradle (multi-module) |
+| JSON | `com.badlogic.gdx.utils.Json` |
+| Physics | Bullet |
+| Video | JavaCV + FFmpeg |

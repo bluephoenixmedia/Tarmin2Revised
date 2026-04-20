@@ -1,116 +1,80 @@
 {
-  "BOW": {
-    "friendlyName": "Bow",
-    "texturePath": "images/items/bow.png",
-    "accuracyModifier": 2,
+  "LADDER": {
+    "friendlyName": "Ladder",
+    "description": "A ladder leading down.",
+    "texturePath": "images/items/ladder.png",
+    "isImpassable": true,
     "spriteData": [
       "........................",
       "........................",
       "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "...............##.......",
-      "..............###.......",
-      ".............##.........",
-      "............###.........",
-      "...........##...........",
-      "...........##...........",
-      "...........##...........",
-      "...........##...........",
-      "...........##...........",
-      "...........##...........",
-      "...........##...........",
-      "...........###..........",
-      ".............##.........",
-      ".............####.......",
-      "...............##.......",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
       "........................"
     ],
-    "baseValue": 10,
-    "warDamage": 2,
-    "range": 10,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
-  "CROSSBOW": {
-    "friendlyName": "Crossbow",
-    "texturePath": "images/items/bow.png",
+  "LADDER_UP": {
+    "friendlyName": "Ladder Up",
+    "description": "A ladder leading up.",
+    "texturePath": "images/items/ladder_up.png",
+    "isImpassable": true,
     "spriteData": [
       "........................",
       "........................",
       "........................",
-      "........................",
-      "........................",
-      ".........###............",
-      ".........###............",
-      "......###...............",
-      "......###...............",
-      "...###..................",
-      "...##################...",
-      "...##################...",
-      "...##################...",
-      "...###..................",
-      "......###...............",
-      "......###...............",
-      ".........###............",
-      ".........###............",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
       "........................"
     ],
-    "baseValue": 15,
-    "warDamage": 4,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "range": 10,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
-  "KNIFE": {
-    "friendlyName": "Knife",
-    "texturePath": "images/items/big_bolt.png",
+  "SCROLL": {
+    "friendlyName": "Scroll",
+    "description": "A scroll with strange writing.",
+    "texturePath": "images/items/scroll.png",
     "spriteData": [
       "........................",
       "........................",
@@ -119,192 +83,234 @@
       "........................",
       "........................",
       "........................",
-      ".....###................",
-      ".....###................",
-      ".......###..............",
-      ".......###..............",
-      ".........###.###........",
-      ".........###.###........",
-      "...........###..........",
-      "...........###..........",
-      ".........###.###........",
-      ".........###.###........",
       "........................",
       "........................",
-      "........................",
-      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      "........#.#..###........",
+      "........#.#...##........",
+      ".......##.#...##........",
+      ".......##.#...##........",
+      ".......##.....##........",
+      ".......##.....##........",
+      ".......########.........",
+      "........######..........",
+      ".........####...........",
       "........................",
       "........................",
       "........................"
     ],
-    "baseValue": 8,
-    "warDamage": 1,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": false,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
+    "baseValue": 50,
+    "isUsable": true,
+    "isScrollAppearance": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
-  "AXE": {
-    "friendlyName": "Axe",
-    "texturePath": "images/items/big_bolt.png",
+  "WAND": {
+    "friendlyName": "Wand",
+    "description": "A magical wand.",
+    "texturePath": "images/wand.png",
     "spriteData": [
       "........................",
       "........................",
       "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".....###................",
-      "...#######..............",
-      "...#######..............",
-      ".############...........",
-      ".##############.........",
-      "...#####..#######.......",
-      ".....###....#######.....",
-      "..............#######...",
-      "................#####...",
+      "......................##",
+      ".....................##.",
+      "....................##..",
       "...................##...",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
+      "..................##....",
+      ".................##.....",
+      "................##......",
+      "...............##.......",
+      "..............##........",
+      ".............##.........",
+      "............##..........",
+      "...........##...........",
+      "..........##............",
+      ".........##.............",
+      "........##..............",
+      ".......##...............",
+      "......##................",
+      ".....##.................",
       "........................",
       "........................",
       "........................"
     ],
-    "baseValue": 12,
-    "warDamage": 3,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": false,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
+    "baseValue": 100,
+    "isUsable": true,
+    "isWandAppearance": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
-  "DART": {
-    "friendlyName": "Dart",
-    "texturePath": "images/items/big_bolt.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "....#####...............",
-      "....#####...............",
-      "....#####...............",
-      "........###.............",
-      "........####............",
-      "..........###...........",
-      "...........###..........",
-      "............###.........",
-      ".............###........",
-      "..............###.......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
+  "GIB_FLESH": {
+    "friendlyName": "Flesh",
+    "description": "A chunk of raw flesh.",
+    "texturePath": "images/items/food.png",
+    "baseValue": 1,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_BONE": {
+    "friendlyName": "Bone",
+    "description": "A bone fragment.",
+    "texturePath": "images/items/bone.png",
+    "baseValue": 1,
+    "scale": {
+      "x": 0.25,
+      "y": 0.25
+    }
+  },
+  "GIB_ORGAN": {
+    "friendlyName": "Organ",
+    "description": "A visceral organ.",
+    "texturePath": "images/items/bat_guano.png",
+    "baseValue": 2,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "GIB_BILE": {
+    "friendlyName": "Bile",
+    "description": "A sac of bile.",
+    "texturePath": "images/items/potion_blue.png",
     "baseValue": 5,
-    "warDamage": 1,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
-  "SPEAR": {
-    "friendlyName": "Spear",
-    "texturePath": "images/items/big_bolt.png",
+  "GIB_GLAZE": {
+    "friendlyName": "Glaze",
+    "description": "Strange glowing residue.",
+    "texturePath": "images/items/glowing_lichen.png",
+    "baseValue": 10,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "POTION_FERAL_DRAUGHT": {
+    "friendlyName": "Minor Feral Draught",
+    "description": "A toxic brew that boosts strength.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 50,
+    "isPotion": true,
+    "isUsable": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "POTION_TITAN_SLUDGE": {
+    "friendlyName": "Titans Sludge",
+    "description": "Thick black ichor. Extremely toxic.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 200,
+    "isPotion": true,
+    "isUsable": true,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
+  "HOME_CHEST": {
+    "friendlyName": "Storage Chest",
+    "texturePath": "images/items/box.png",
+    "isImpassable": true,
     "spriteData": [
       "........................",
       "........................",
       "........................",
       "........................",
       "........................",
-      ".######.................",
-      ".######.................",
-      ".######.................",
-      ".......###..............",
-      ".......###..............",
-      "..........###...........",
-      "..........###...........",
-      ".............###........",
-      ".............###........",
-      "...............###......",
-      "...............###......",
-      "..................###...",
-      "..................###...",
-      ".....................###",
-      ".....................###",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "......########..........",
+      ".......#.######.........",
+      "......###.######........",
+      "......##.###.#####......",
+      ".......####.............",
+      ".......###########......",
+      ".......##.#######.......",
+      "........####..##........",
+      "........................",
+      "........................",
+      "........................",
       "........................",
       "........................",
       "........................",
       "........................"
     ],
-    "baseValue": 10,
-    "warDamage": 2,
-    "spiritDamage": 0,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": true,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "HOME_CRAFTING_BENCH": {
+    "friendlyName": "Crafting Bench",
+    "texturePath": "images/items/crafting_bench.png",
+    "isImpassable": true,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".....###########........",
+      ".....#.........#........",
+      ".....###########........",
+      ".....#.........#........",
+      ".....#.........#........",
+      ".....#.........#........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
     "isPotion": false,
@@ -314,19 +320,134 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "HOME_SLEEPING_BAG": {
+    "friendlyName": "Sleeping Bag",
+    "texturePath": "images/items/bedroll.png",
+    "isImpassable": true,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".......#########........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#.......#........",
+      ".......#########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "HOME_FIRE_POT": {
+    "friendlyName": "Cooking Fire",
+    "texturePath": "images/items/cookingpot.png",
+    "isImpassable": true,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........###............",
+      "........#####...........",
+      ".........###............",
+      "........#...#...........",
+      ".......#.....#..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "PROJECTILE": {
     "friendlyName": "Projectile",
-    "texturePath": "images/items/big_bolt.png",
+    "texturePath": "images/weapons/big_bolt.png",
     "spriteData": [
       "........................",
       "........................",
@@ -354,10 +475,9 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
+    "damageDice": 0,
     "range": 1,
-    "armorDefense": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -368,654 +488,22 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "SCROLL": {
-    "friendlyName": "Scroll",
-    "texturePath": "images/items/scroll.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..............###.......",
-      "............###.........",
-      "............#####...###.",
-      "........##########.####.",
-      "........#############...",
-      "......#############.....",
-      "..################......",
-      "..###..#########........",
-      "..........####..........",
-      "........#####...........",
-      "........###.............",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 3,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": true,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "BOOK": {
-    "friendlyName": "Book",
-    "texturePath": "images/items/book.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".........###............",
-      ".......#######..........",
-      "....#############.......",
-      "....#####..######.......",
-      "....###############.....",
-      "....########..#####.....",
-      ".....############.......",
-      "......########..###.....",
-      ".........########.......",
-      "...........###..........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 5,
-    "range": 1,
-    "armorDefense": 0,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "SMALL_FIREBALL": {
-    "friendlyName": "Small Fireball",
-    "texturePath": "images/items/firenball.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "....###....###..........",
-      "..#######..######.......",
-      "..##...##.....###.......",
-      ".......########.........",
-      "....#########...........",
-      "....#########..##.......",
-      "..###......######.......",
-      "..######....###.........",
-      ".....###....###.........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 4,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "LARGE_FIREBALL": {
-    "friendlyName": "Large Fireball",
-    "texturePath": "images/items/big_fireball.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "...............###......",
-      ".....########..###......",
-      ".....########.....###...",
-      "..###....#######..###...",
-      "..###..##############...",
-      ".......##############...",
-      "....##############......",
-      "....###..#######....###.",
-      "....###....############.",
-      "......####..#########...",
-      ".......###..............",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 8,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "SMALL_LIGHTNING": {
-    "friendlyName": "Small Lightning",
-    "texturePath": "images/items/lightning_bolt.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "...######...............",
-      "...###########..........",
-      "......########..........",
-      "...........#########....",
-      "...........#########....",
-      "...............###......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 6,
-    "armorDefense": 0,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "LARGE_LIGHTNING": {
-    "friendlyName": "Large Lightning",
-    "texturePath": "images/items/big_bolt.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".######.................",
-      ".######.................",
-      "....############........",
-      "....############........",
-      "..........##########....",
-      "..........#############.",
-      "................#######.",
-      "..................###...",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 12,
-    "range": 1,
-    "isWeapon": true,
-    "isRanged": true,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "SMALL_SHIELD": {
-    "friendlyName": "Small Shield",
-    "texturePath": "images/items/shield.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".....#############......",
-      ".......#########........",
-      ".......#########........",
-      ".......#########........",
-      ".........#####..........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "LARGE_SHIELD": {
-    "friendlyName": "Large Shield",
-    "texturePath": "images/items/shield.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "......###########.......",
-      "....###############.....",
-      "..###################...",
-      "..###################...",
-      "..###################...",
-      "..###################...",
-      "..###################...",
-      "..###################...",
-      "..###################...",
-      "....###############.....",
-      "......###########.......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 2,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "GAUNTLETS": {
-    "friendlyName": "Gauntlets",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "...#########............",
-      "...#########............",
-      ".........######.........",
-      ".........######.........",
-      "............######......",
-      "......###...######......",
-      "......###...######......",
-      ".........###########....",
-      ".........###########....",
-      "............########....",
-      "..............###.......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 25,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "HAUBERK": {
-    "friendlyName": "Hauberk",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "....######..########....",
-      "....###################.",
-      "....#########.#########.",
-      "......#################.",
-      "....###..##############.",
-      "....######..###########.",
-      ".#########..########....",
-      ".############...........",
-      ".#################......",
-      ".#################......",
-      "...############.........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 40,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 3,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "HELMET": {
-    "friendlyName": "Helmet",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..........###...........",
-      ".......#########........",
-      "....###############.....",
-      "....###############.....",
-      "....###############.....",
-      "..#########.#########...",
-      "..#########.#########...",
-      "..######.......######...",
-      ".....###.......###......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 1,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
-    ]
-  },
-  "BREASTPLATE": {
-    "friendlyName": "Breastplate",
-    "texturePath": "images/items/helmet.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..######........######..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      "..####################..",
-      ".....##############.....",
-      ".....##############.....",
-      "...##################...",
-      "...##################...",
-      "......############......",
-      "........########........",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 4,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": true,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
-    "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "BLUE", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "GRAY", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "SMALL_RING": {
     "friendlyName": "Small Ring",
-    "texturePath": "images/items/blue_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1043,9 +531,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1057,17 +544,47 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "LARGE_RING": {
     "friendlyName": "Large Ring",
-    "texturePath": "images/items/green_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1095,9 +612,8 @@
       "........................"
     ],
     "baseValue": 150,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1109,17 +625,47 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_BLUE": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/blue_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1147,9 +693,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1161,17 +706,47 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_PINK": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/pink_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1199,9 +774,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1213,17 +787,47 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_GREEN": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/green_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1251,9 +855,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1265,17 +868,47 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "RING_PURPLE": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/purple_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1303,9 +936,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1317,12 +949,93 @@
     "isContainer": false,
     "isRing": true,
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 7, "weight": 1 },
-      { "color": "WHITE_SPIRITUAL", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "PINK", "minLevel": 5, "maxLevel": 14, "weight": 1 },
-      { "color": "RED", "minLevel": 12, "maxLevel": 99, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 12, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
+    ]
+  },
+  "RING": {
+    "friendlyName": "Ring",
+    "texturePath": "images/items/ring.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........#####...........",
+      "........#...#...........",
+      "........#...#...........",
+      "........#...#...........",
+      "........#####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 100,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": true,
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "POTION_BLUE": {
@@ -1356,9 +1069,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1370,9 +1082,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_PINK": {
@@ -1406,9 +1156,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1420,9 +1169,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_GREEN": {
@@ -1456,9 +1243,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1470,9 +1256,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_GOLD": {
@@ -1506,9 +1330,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1520,9 +1343,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "POTION_SWIRLY": {
@@ -1556,9 +1417,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1570,9 +1430,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "POTION_BUBBLY": {
@@ -1606,9 +1474,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1620,9 +1487,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "KEY": {
@@ -1655,22 +1530,60 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
     "isPotion": false,
     "isFood": false,
     "isTreasure": false,
+    "locked": false,
     "isKey": true,
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.1,
+      "y": 0.1
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "QUIVER": {
@@ -1703,9 +1616,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1716,9 +1628,47 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "WAR_BOOK": {
@@ -1751,10 +1701,9 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
+    "damageDice": 0,
     "range": 1,
-    "armorDefense": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1765,9 +1714,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SPIRITUAL_BOOK": {
@@ -1801,9 +1788,8 @@
     ],
     "baseValue": 50,
     "range": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1814,9 +1800,47 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "SPECIAL_BOOK": {
@@ -1849,9 +1873,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1862,14 +1885,52 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 7,
+        "weight": 1
+      },
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 3,
+        "maxLevel": 7,
+        "weight": 3
+      },
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 5,
+        "maxLevel": 14,
+        "weight": 5
+      },
+      {
+        "color": "PINK",
+        "minLevel": 8,
+        "maxLevel": 14,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 13,
+        "maxLevel": 99,
+        "weight": 13
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 21,
+        "maxLevel": 99,
+        "weight": 21
+      }
     ]
   },
   "FLOUR_SACK": {
     "friendlyName": "Flour Sack",
-    "texturePath": "images/items/small_bag.png",
+    "texturePath": "images/items/flour_sack.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1897,9 +1958,8 @@
       "........................"
     ],
     "baseValue": 1,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1910,9 +1970,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "MONEY_BELT": {
@@ -1945,9 +2013,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -1958,7 +2025,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "SMALL_BAG": {
     "friendlyName": "Small Bag",
@@ -1990,9 +2060,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2003,7 +2072,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "BOX": {
     "friendlyName": "Box",
@@ -2035,9 +2107,8 @@
       "........................"
     ],
     "baseValue": 20,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2048,7 +2119,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "MEDIUM_PACK": {
     "friendlyName": "Medium Pack",
@@ -2080,9 +2154,8 @@
       "........................"
     ],
     "baseValue": 30,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2093,11 +2166,14 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "REGULAR_CHEST": {
     "friendlyName": "Regular Chest",
-    "texturePath": "images/items/pack.png",
+    "texturePath": "images/items/chest.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2125,9 +2201,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2138,7 +2213,10 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "LARGE_BAG": {
     "friendlyName": "Large Bag",
@@ -2170,9 +2248,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2183,11 +2260,14 @@
     "isUsable": false,
     "isContainer": true,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 }
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
   },
   "FOOD": {
     "friendlyName": "Food",
-    "texturePath": "images/items/coins.png",
+    "texturePath": "images/items/food.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2215,9 +2295,8 @@
       "........................"
     ],
     "baseValue": 5,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2228,9 +2307,17 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "COINS": {
@@ -2263,9 +2350,8 @@
       "........................"
     ],
     "baseValue": 10,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2276,9 +2362,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "CHALICE": {
@@ -2311,9 +2405,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2324,14 +2417,22 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "LAMP": {
     "friendlyName": "Lamp",
-    "texturePath": "images/items/chalice.png",
+    "texturePath": "images/items/lamp.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2359,9 +2460,8 @@
       "........................"
     ],
     "baseValue": 50,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2372,9 +2472,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "INGOT": {
@@ -2407,9 +2515,8 @@
       "........................"
     ],
     "baseValue": 100,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2420,9 +2527,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "NECKLACE": {
@@ -2455,9 +2570,8 @@
       "........................"
     ],
     "baseValue": 75,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2468,9 +2582,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "CROWN": {
@@ -2503,9 +2625,8 @@
       "........................"
     ],
     "baseValue": 150,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2516,14 +2637,22 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "TARMIN_TREASURE": {
     "friendlyName": "Tarmin's Treasure",
-    "texturePath": "images/items/box_.png",
+    "texturePath": "images/items/tarmin_treasure.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2551,9 +2680,8 @@
       "........................"
     ],
     "baseValue": 1000,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2564,9 +2692,17 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "UNKNOWN": {
@@ -2599,9 +2735,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2612,14 +2747,22 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": false,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
     "variants": [
-      { "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "LADDER": {
     "friendlyName": "Ladder",
-    "texturePath": "",
+    "texturePath": "images/items/ladder.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2647,9 +2790,8 @@
       "........................"
     ],
     "baseValue": 0,
-    "warDamage": 0,
-    "spiritDamage": 0,
-    "armorDefense": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
     "isWeapon": false,
     "isRanged": false,
     "isArmor": false,
@@ -2661,13 +2803,18 @@
     "isContainer": false,
     "isRing": false,
     "range": 0,
-    "scale": { "x": 1.0, "y": 1.0 },
+    "scale": {
+      "x": 3.0,
+      "y": 0.5
+    },
+    "offsetX": 0.0,
+    "offsetY": -0.9,
     "isPotionAppearance": false,
     "variants": []
   },
-  "STICK": {
-    "friendlyName": "Stick",
-    "description": "A dry stick. Burnable.",
+  "LADDER_UP": {
+    "friendlyName": "Ladder Up",
+    "texturePath": "images/items/ladder_up.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2675,17 +2822,17 @@
       "........................",
       "........................",
       "........................",
-      ".....#..................",
-      ".....#..................",
-      ".....##.................",
-      "......#.................",
-      "......##................",
-      ".......#................",
-      ".......#................",
-      ".......##...............",
-      "........#...............",
-      "........#...............",
-      "........#...............",
+      "........................",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".......############.....",
+      ".......############.....",
+      ".........########.......",
+      "........................",
       "........................",
       "........................",
       "........................",
@@ -2694,7 +2841,26 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "range": 0,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "isPotionAppearance": false,
+    "variants": []
   },
   "LEAVES": {
     "friendlyName": "Pile of Leaves",
@@ -2725,7 +2891,25 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }, { "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/leaves.png"
   },
   "SMALL_ROCK": {
     "friendlyName": "Small Rock",
@@ -2756,7 +2940,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/small_rock.png"
   },
   "LARGE_BOULDER": {
     "friendlyName": "Large Boulder",
@@ -2787,7 +2983,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/large_boulder.png"
   },
   "BROKEN_COLUMN": {
     "friendlyName": "Broken Column",
@@ -2818,7 +3026,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/broken_column.png"
   },
   "BROKEN_WALL": {
     "friendlyName": "Rubble",
@@ -2849,7 +3069,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/brokenwall.png"
   },
   "VINES": {
     "friendlyName": "Vines",
@@ -2880,7 +3112,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/vines.png"
   },
   "PUDDLE_WATER": {
     "friendlyName": "Puddle",
@@ -2911,7 +3155,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/puddle.png"
   },
   "STRANGE_METAL": {
     "friendlyName": "Strange Metal",
@@ -2942,7 +3198,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "PURPLE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/metal_scrap.png"
   },
   "BONES": {
     "friendlyName": "Bones",
@@ -2973,7 +3241,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/bones.png",
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "ANCIENT_FOSSIL": {
     "friendlyName": "Fossil",
@@ -3004,7 +3284,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/fossil.png"
   },
   "RUSTY_WEAPON": {
     "friendlyName": "Rusty Blade",
@@ -3035,7 +3327,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/weapons/rusty_weapon.png"
   },
   "RUSTY_ARMOR": {
     "friendlyName": "Rusted Plate",
@@ -3066,7 +3370,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/armor/rusty_armor.png"
   },
   "DIRTY_CLOTH": {
     "friendlyName": "Dirty Rag",
@@ -3097,7 +3413,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/dirty_cloth.png"
   },
   "METAL_SCRAP": {
     "friendlyName": "Metal Scrap",
@@ -3128,7 +3456,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/metal_scrap.png"
   },
   "BROKEN_GLASS": {
     "friendlyName": "Broken Glass",
@@ -3159,7 +3499,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/glass_shards.png"
   },
   "DEAD_PLANT_MATTER": {
     "friendlyName": "Dead Plant",
@@ -3190,7 +3542,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/vines.png"
   },
   "MUD": {
     "friendlyName": "Mud Pile",
@@ -3221,7 +3585,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/mud.png"
   },
   "CHARRED_WOOD": {
     "friendlyName": "Charred Wood",
@@ -3252,7 +3628,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/charred_wood.png"
   },
   "CERAMIC_SHARD": {
     "friendlyName": "Ceramic Shard",
@@ -3283,7 +3671,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/ceramic_shard.png"
   },
   "ROTTEN_ROPE": {
     "friendlyName": "Rotten Rope",
@@ -3314,7 +3714,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/rotten_rope.png"
   },
   "FUNGAL_SPORE": {
     "friendlyName": "Fungal Pod",
@@ -3345,7 +3757,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/fungal_spore.png"
   },
   "BAT_GUANO": {
     "friendlyName": "Guano",
@@ -3376,7 +3800,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/bat_guano.png"
   },
   "LOOSE_BRICK": {
     "friendlyName": "Loose Brick",
@@ -3407,7 +3843,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/loose_brick.png"
   },
   "TWISTED_ROOT": {
     "friendlyName": "Twisted Root",
@@ -3438,7 +3886,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/twisted_root.png"
   },
   "SLIME_RESIDUE": {
     "friendlyName": "Slime Residue",
@@ -3469,7 +3929,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/slime_residue.png"
   },
   "RAT_SKULL": {
     "friendlyName": "Rat Skull",
@@ -3500,7 +3972,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/rat_skull.png"
   },
   "RUSTED_CHAIN": {
     "friendlyName": "Rusted Chain",
@@ -3531,7 +4015,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/rusted_chain.png"
   },
   "MOSS_CLUMP": {
     "friendlyName": "Moss Clump",
@@ -3562,7 +4058,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/moss_clump.png"
   },
   "FLINT_SHARD": {
     "friendlyName": "Flint",
@@ -3593,7 +4101,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/flint_shard.png"
   },
   "HOLLOW_LOG": {
     "friendlyName": "Hollow Log",
@@ -3624,7 +4144,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/hollow_log.png"
   },
   "SPIDER_SILK": {
     "friendlyName": "Spider Silk",
@@ -3655,7 +4187,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/spider_web.png"
   },
   "BAT_WING": {
     "friendlyName": "Bat Wing",
@@ -3686,7 +4230,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/bat_wing.png"
   },
   "PARCHMENT_SCRAP": {
     "friendlyName": "Parchment",
@@ -3717,7 +4273,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/parchment_scrap.png"
   },
   "BROKEN_HILT": {
     "friendlyName": "Broken Hilt",
@@ -3748,7 +4316,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/broken_hilt.png"
   },
   "BENT_NAIL": {
     "friendlyName": "Bent Nail",
@@ -3779,7 +4359,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GRAY", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/bent_nail.png"
   },
   "STAGNANT_POOL": {
     "friendlyName": "Stagnant Pool",
@@ -3810,7 +4402,19 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/debris/slime_residue.png"
   },
   "GLOWING_LICHEN": {
     "friendlyName": "Glowing Lichen",
@@ -3841,6 +4445,525 @@
       "........................",
       "........................"
     ],
-    "variants": [{ "color": "GREEN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ],
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/glowing_lichen.png"
+  },
+  "COOKED_MEAT": {
+    "friendlyName": "Cooked Meat",
+    "description": "A piece of cooked meat. Smells delicious.",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........####..........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      "........########........",
+      "..........####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 10,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": true,
+    "isPotionAppearance": false,
+    "isFood": true,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": true,
+    "isContainer": false,
+    "isRing": false,
+    "texturePath": "images/items/cooked__meat.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    }
+  },
+  "TOOTH": {
+    "friendlyName": "Tooth",
+    "description": "A sharp tooth.",
+    "texturePath": "images/items/tooth.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "...........#............",
+      "..........###...........",
+      "..........###...........",
+      ".........#####..........",
+      ".........#####..........",
+      ".........#####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "CLAW": {
+    "friendlyName": "Claw",
+    "description": "A sharp claw.",
+    "texturePath": "images/items/tooth.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "BLOOD_VIAL": {
+    "friendlyName": "Blood Vial",
+    "description": "A vial of blood.",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/vial.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "MONSTER_EYE": {
+    "friendlyName": "Eye",
+    "description": "A small eye.",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "texturePath": "images/items/eye.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........####...........",
+      ".......########.........",
+      "......##########........",
+      "......##########........",
+      "......##########........",
+      ".......########.........",
+      ".........####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "BONE": {
+    "friendlyName": "Bone",
+    "description": "A dry bone.",
+    "texturePath": "images/items/bone.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 1,
+    "isFood": false,
+    "isTreasure": false,
+    "isUsable": false
+  },
+  "MYSTERIOUS_PORTAL": {
+    "friendlyName": "Mysterious Portal",
+    "description": "It hums with strange energy.",
+    "texturePath": "images/items/mysterious_portal.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      ".........######.........",
+      ".......##......##.......",
+      "......#..........#......",
+      ".....#............#.....",
+      ".....#............#.....",
+      "....#..............#....",
+      "....#..............#....",
+      "....#..............#....",
+      "....#..............#....",
+      "....#..............#....",
+      "....#..............#....",
+      "....#..............#....",
+      ".....#............#.....",
+      ".....#............#.....",
+      "......#..........#......",
+      ".......##......##.......",
+      ".........######.........",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "AMULET": {
+    "friendlyName": "Amulet",
+    "texturePath": "images/items/amulet.png",
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........######.........",
+      ".......##......##.......",
+      "......##........##......",
+      "......##........##......",
+      ".......##......##.......",
+      ".........######.........",
+      "..........####..........",
+      "...........##...........",
+      "..........####..........",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      "..........####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 100,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "variants": [
+      {
+        "color": "GOLD",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "RING_GOLD": {
+    "friendlyName": "Gold Ring",
+    "texturePath": "images/items/blue_ring.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........#####...........",
+      ".......#######..........",
+      ".......#.....#..........",
+      ".......#.....#..........",
+      ".......#######..........",
+      "........#####...........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 250,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": true,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": true,
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "variants": [
+      {
+        "color": "GOLD",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "LARGE_PACK": {
+    "friendlyName": "Large Pack",
+    "texturePath": "images/items/small_bag.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      "........########........",
+      ".........######.........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 50,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": true,
+    "isRing": false,
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "SKULL": {
+    "friendlyName": "Skull",
+    "texturePath": "images/items/skull.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##########.......",
+      ".......##..##..##.......",
+      ".......##########.......",
+      "........########........",
+      ".........######.........",
+      ".........######.........",
+      "..........####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 5,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   }
 }

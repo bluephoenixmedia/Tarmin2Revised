@@ -1,0 +1,56 @@
+Banded mail                                     200gp        35
+Brigandine                                      120gp        35
+Back-and-breast                                 80gp         20
+Barding
+     Chain                                      500gp        70
+     Full Plate                                 2,000gp      85
+     Full scale                                 1,000gp      75
+     Half brigandine                            500gp        45
+     Half Padded                                100gp        25
+     Half Scale                                 500gp        50
+     Leather or Padded                          150gp        60
+     Leather Scale                              75gp         50
+     Chain                                      500gp        100
+     Scale                                      350gp        80
+     Plate and chain                            750gp        130
+Basinet                                         8gp          5
+Bronze Plate                                    400gp        45
+Chain hauberk                                   75gp         35
+Chain-lamellar                                  125gp        35
+Chain mail                                      75gp         40
+Cord mail                                       15gp         15
+Field plate                                     2000gp       60
+Full plate                                      4000gp       70
+Gallic Armor                                    30gp         10
+Half-Plate                                      300gp        40
+Helmet                                                       -
+     Cap                                        4gp          3
+     Closed face                                20gp         10
+     Mail coif                                  10gp         5
+     Great Helm                                 30gp         80
+     Leather Helm                               1gp          2
+     Open faced                                 12gp         7
+Hide Armor                                      35gp         30
+Hoplite armor                                   160gp        40
+Improved mail                                   180gp        50
+Lamellar shirt                                  100gp        20
+Leather armor                                   5gp          15
+Light scale                                     80gp         25
+Lorica hamata                                   120gp        25
+Lorica segmenta                                 175gp        20
+Mail and Plate                                  150gp        45
+Metal Lamellar                                  250gp        35
+Padded Armor                                    4gp          10
+Plate mail                                      600gp        50
+Ring mail                                       100gp        30
+Scale armor                                     120gp        40
+Shield
+     Body                                       10gp         15
+     Buckler                                    1gp          3
+     Small                                      3gp          5
+     Medium                                     7gp          10
+     Large                                      10gp         15
+Splint mail                                     80gp         40
+Studded leather                                 20gp         25
+Three-quarter plate                             800gp        45
+Wood/bone armor                                 50gp         20

@@ -23,42 +23,39 @@ public class GameOverScreen extends BaseScreen {
      */
     private Texture reaperTexture;
 
-
     private Texture backgroundTexture;
-
 
     /**
      * ASCII-art data for the reaper sprite.
      * '#' represents a solid pixel, '.' is transparent.
      */
     private static final String[] REAPER_DATA = {
-        //123456789012345678901234
-        "........................",
-        ".###............###.....",
-        "..###..........###......",
-        "...##.........##........",
-        "...##.........##........",
-        "...#####...#####........",
-        ".....########...........",
-        "......##.##.#...........",
-        ".......##.##......####..",
-        ".###########.....##..##.",
-        ".#####.#...#....##..##..",
-        "..#####.##.....##..##...",
-        "..##.#######..##...#....",
-        ".##.##.########.........",
-        "##.##.#.#####...........",
-        ".###.#.#####............",
-        "###.#.########..........",
-        ".###.#########..........",
-        "..#.####.##.#...........",
-        ".####.###.##.#..........",
-        "..##.####.##.#..........",
-        ".##.##########..........",
-        "..##......##............",
-        "..##......##............",
+            // 123456789012345678901234
+            "........................",
+            ".###............###.....",
+            "..###..........###......",
+            "...##.........##........",
+            "...##.........##........",
+            "...#####...#####........",
+            ".....########...........",
+            "......##.##.#...........",
+            ".......##.##......####..",
+            ".###########.....##..##.",
+            ".#####.#...#....##..##..",
+            "..#####.##.....##..##...",
+            "..##.#######..##...#....",
+            ".##.##.########.........",
+            "##.##.#.#####...........",
+            ".###.#.#####............",
+            "###.#.########..........",
+            ".###.#########..........",
+            "..#.####.##.#...........",
+            ".####.###.##.#..........",
+            "..##.####.##.#..........",
+            ".##.##########..........",
+            "..##......##............",
+            "..##......##............",
     };
-
 
     public GameOverScreen(Tarmin2 game) {
         super(game);
@@ -66,15 +63,16 @@ public class GameOverScreen extends BaseScreen {
         this.font.setColor(Color.RED);
         this.font.getData().setScale(3);
 
-        // Note: The debugManager is null here, which may cause an issue in your SoundManager constructor.
-        // For this task, we will proceed, but you may need to address that.
+        // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers
+        // ---
+        this.debugManager = DebugManager.getInstance();
         this.soundManager = new SoundManager(debugManager);
         this.soundManager.stopAllSounds();
 
         this.soundManager.playPlayerDeathSound();
 
         try {
-            this.backgroundTexture = new Texture(Gdx.files.internal("images/retro_skybox_castle_storm.png"));
+            this.backgroundTexture = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.png"));
         } catch (Exception e) {
             Gdx.app.error("GameOverScreen", "Failed to load background texture", e);
             this.backgroundTexture = null;
@@ -83,8 +81,7 @@ public class GameOverScreen extends BaseScreen {
         // Create the reaper texture from our data, using a ghostly white color
         this.reaperTexture = createTextureFromData(REAPER_DATA, Color.MAGENTA);
 
-        clearWorldSaves();
-
+        // --- MOVED: clearWorldSaves() is now called in show() ---
     }
 
     /**
@@ -145,7 +142,8 @@ public class GameOverScreen extends BaseScreen {
     /**
      * Generates a Texture from a String[] sprite data template.
      *
-     * @param spriteData The String[] array, where '#' is a pixel and '.' is transparent.
+     * @param spriteData The String[] array, where '#' is a pixel and '.' is
+     *                   transparent.
      * @param color      The LibGDX Color to use for the pixels.
      * @return A new Texture.
      */
@@ -189,7 +187,13 @@ public class GameOverScreen extends BaseScreen {
 
     @Override
     public void show() {
-        // soundManager.playPlayerDeathSound(); // Already played in constructor
+        // --- NEW: Tarmin's Hunger Death Logic ---
+        com.bpm.minotaur.managers.DoomManager.getInstance().incrementDeaths();
+        // ----------------------------------------
+
+        // --- FIX: Execute deletion HERE, after GameScreen has hidden and saved ---
+        clearWorldSaves();
+
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
@@ -219,8 +223,8 @@ public class GameOverScreen extends BaseScreen {
 
             // Draw the texture to fill the entire viewport
             game.getBatch().draw(backgroundTexture,
-                0, 0, // Draw at the bottom-left corner
-                game.getViewport().getWorldWidth(), game.getViewport().getWorldHeight() // Scale to fit the screen
+                    0, 0, // Draw at the bottom-left corner
+                    game.getViewport().getWorldWidth(), game.getViewport().getWorldHeight() // Scale to fit the screen
             );
         }
 
@@ -241,8 +245,55 @@ public class GameOverScreen extends BaseScreen {
         // --- End Sprite ---
 
         // Draw text
-        font.draw(game.getBatch(), "GAME OVER", game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 + 50);
-        font.draw(game.getBatch(), "Press any key to return to the Main Menu", game.getViewport().getWorldWidth() / 2 - 450, game.getViewport().getWorldHeight() / 2 - 50);
+        // Draw text
+        com.bpm.minotaur.managers.DoomManager doom = com.bpm.minotaur.managers.DoomManager.getInstance();
+        boolean isApocalypse = doom.isApocalypse();
+
+        if (isApocalypse) {
+            font.setColor(Color.PURPLE);
+            font.draw(game.getBatch(), "THE BRIDGE IS COMPLETE", game.getViewport().getWorldWidth() / 2 - 230,
+                    game.getViewport().getWorldHeight() / 2 + 50);
+            font.draw(game.getBatch(), "TARMIN FEASTS...", game.getViewport().getWorldWidth() / 2 - 150,
+                    game.getViewport().getWorldHeight() / 2 - 20);
+        } else {
+            font.setColor(Color.RED);
+            font.draw(game.getBatch(), "GAME OVER", game.getViewport().getWorldWidth() / 2 - 150,
+                    game.getViewport().getWorldHeight() / 2 + 50);
+
+            font.setColor(Color.GRAY);
+            font.draw(game.getBatch(), "Death Count: " + doom.getDeathCount(),
+                    game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 - 20);
+            font.draw(game.getBatch(), "Integration: " + (int) doom.getBridgeIntegrity() + "%",
+                    game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 - 60);
+
+            font.setColor(Color.WHITE);
+        }
+        font.draw(game.getBatch(), "Press any key to return to the Main Menu",
+                game.getViewport().getWorldWidth() / 2 - 450, game.getViewport().getWorldHeight() / 2 - 120);
+
+        // --- NEW: Display Session Unlocks ---
+        java.util.List<String> unlocks = com.bpm.minotaur.managers.UnlockManager.getInstance().getSessionUnlocks();
+        if (!unlocks.isEmpty()) {
+            font.setColor(Color.GOLD);
+            font.getData().setScale(2);
+            font.draw(game.getBatch(), "NEW DISCOVERIES!", 50, game.getViewport().getWorldHeight() - 50);
+
+            font.setColor(Color.YELLOW);
+            float y = game.getViewport().getWorldHeight() - 100;
+            for (String unlockId : unlocks) {
+                // Formatting: "item_rusty_sword" -> "Rusty Sword"
+                String name = unlockId.replace("item_", "").replace("monster_", "");
+                name = name.replace("_", " ").toUpperCase();
+
+                font.draw(game.getBatch(), "- " + name, 50, y);
+                y -= 40;
+
+                if (y < 100)
+                    break; // Overflow protection
+            }
+            font.getData().setScale(3); // Reset
+        }
+        // ------------------------------------
 
         game.getBatch().end();
     }

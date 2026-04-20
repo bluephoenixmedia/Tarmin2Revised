@@ -3,14 +3,19 @@ package com.bpm.minotaur.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.bpm.minotaur.Tarmin2; // Your main game class
+import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.video.JavaCVVideoPlayer;
 
 /**
  * A simple screen that shows a "Loading..." message and loads all assets.
- * It switches to the MainMenuScreen when the AssetManager is finished.
+ * It also plays a stinger video and waits for it to finish.
+ * It switches to the MainMenuScreen when the AssetManager is finished AND the
+ * video is done.
  */
 public class LoadingScreen extends ScreenAdapter {
 
@@ -18,67 +23,125 @@ public class LoadingScreen extends ScreenAdapter {
     private final AssetManager assetManager;
     private final SpriteBatch batch;
 
-    // A simple font to draw the loading text.
-    // For a real game, you'd load this font *using* the AssetManager,
-    // but for a simple loading screen, a default one is fine.
     private BitmapFont font;
+    private JavaCVVideoPlayer videoPlayer;
+    private boolean videoFinished = false;
+    private boolean videoError = false;
 
     public LoadingScreen(Tarmin2 game) {
         this.game = game;
         this.assetManager = game.getAssetManager();
         this.batch = game.getBatch();
 
-        // Use a default font. Disposed in hide()
         this.font = new BitmapFont();
+
+        // Initialize VideoPlayer
+        try {
+            videoPlayer = new JavaCVVideoPlayer();
+
+            // Try internal handle first
+            FileHandle videoFile = Gdx.files.internal("video/stinger_studio.mp4");
+
+            if (videoFile.exists()) {
+                Gdx.app.log("LoadingScreen", "Found video file: " + videoFile.path());
+                try {
+                    videoPlayer.setOnCompletionListener(file -> videoFinished = true);
+                    videoPlayer.play(videoFile);
+                } catch (Exception e) {
+                    Gdx.app.error("LoadingScreen", "Playback error", e);
+                    videoError = true;
+                }
+            } else {
+                Gdx.app.error("LoadingScreen", "Video file not found: " + videoFile.path());
+                videoError = true;
+            }
+        } catch (Exception e) {
+            Gdx.app.error("LoadingScreen", "Error initializing video player: " + e.getMessage());
+            videoError = true;
+        }
     }
 
     @Override
     public void show() {
         Gdx.app.log("LoadingScreen", "Starting asset loading...");
-        // In the 'show' method, we ensure all assets are queued (which we did in Tarmin2.create())
     }
 
     @Override
     public void render(float delta) {
         // --- 1. Clear the Screen ---
-        Gdx.gl.glClearColor(0, 0, 0, 1); // Black background
+        Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // --- 2. Update the AssetManager ---
-        // This is the most important part.
-        // assetManager.update() loads a chunk of assets and returns true when done.
-        if (assetManager.update()) {
-            // --- 3. Loading is Finished ---
-            Gdx.app.log("LoadingScreen", "Asset loading complete!");
-            // Tell the main game class to switch to the main menu
+        // --- 2. Update Video Player ---
+        if (videoPlayer != null && !videoFinished && !videoError) {
+            try {
+                videoPlayer.update();
+            } catch (Exception e) {
+                Gdx.app.error("LoadingScreen", "Error updating video", e);
+                videoError = true;
+            }
+        }
+
+        // --- 3. Draw Video Frame ---
+        game.getViewport().apply();
+        batch.setProjectionMatrix(game.getViewport().getCamera().combined);
+        batch.begin();
+
+        if (videoPlayer != null && !videoError) {
+            Texture frame = videoPlayer.getTexture();
+            if (frame != null) {
+                // Draw video centered and scaled to fit the screen
+                float screenWidth = game.getViewport().getWorldWidth();
+                float screenHeight = game.getViewport().getWorldHeight();
+                float videoWidth = frame.getWidth();
+                float videoHeight = frame.getHeight();
+
+                // Simple scaling to fit width or height while maintaining aspect ratio
+                float scale = Math.min(screenWidth / videoWidth, screenHeight / videoHeight);
+                float drawWidth = videoWidth * scale;
+                float drawHeight = videoHeight * scale;
+                float x = (screenWidth - drawWidth) / 2f;
+                float y = (screenHeight - drawHeight) / 2f;
+
+                batch.draw(frame, x, y, drawWidth, drawHeight);
+            }
+        }
+
+        // --- 4. Draw Loading Text (Overlay) ---
+        float progress = assetManager.getProgress();
+        int progressPercent = (int) (progress * 100);
+        font.draw(batch, "Loading... " + progressPercent + "%",
+                game.getViewport().getWorldWidth() / 2 - 50,
+                20); // Draw near bottom
+
+        batch.end();
+
+        // --- 5. Asset Loading & Cleanup ---
+        boolean assetsLoaded = assetManager.update();
+
+        // Check if we can proceed
+        // Check if we can proceed
+        // Wait for videoFinished or videoError.
+        // Also safeguard against infinite hang if video never starts/ends (e.g. 10s
+        // timeout if assets loaded)
+        // Removed !videoPlayer.isPlaying() check because it races with thread startup
+        if (assetsLoaded && (videoFinished || videoError)) {
+            Gdx.app.log("LoadingScreen", "Asset loading and video complete!");
             game.proceedToMainMenu();
-        } else {
-            // --- 4. Loading is Still in Progress ---
-
-            // Get the loading progress (a float from 0.0 to 1.0)
-            float progress = assetManager.getProgress();
-            int progressPercent = (int) (progress * 100);
-
-            // Draw the loading text
-            game.getViewport().apply(); // Apply the viewport settings
-            batch.setProjectionMatrix(game.getViewport().getCamera().combined);
-
-            batch.begin();
-            font.draw(batch, "Loading... " + progressPercent + "%",
-                game.getViewport().getWorldWidth() / 2 - 50, // Center the text
-                game.getViewport().getWorldHeight() / 2);
-            batch.end();
         }
     }
 
     @Override
     public void hide() {
-        // Dispose of resources specific to this screen
         font.dispose();
+        if (videoPlayer != null) {
+            videoPlayer.dispose();
+            videoPlayer = null;
+        }
     }
 
     @Override
     public void dispose() {
-        // 'hide()' is called when switching screens, so we dispose there.
+        // hide is called on screen switch
     }
 }

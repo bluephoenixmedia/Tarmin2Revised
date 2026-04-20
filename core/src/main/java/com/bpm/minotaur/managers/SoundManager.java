@@ -36,6 +36,13 @@ public class SoundManager {
         loadModernSounds();
     }
 
+    // Protected constructor for Headless/Mocking
+    protected SoundManager() {
+        this.debugManager = null;
+        this.retroAudioDevice = null;
+        // Do not load sounds
+    }
+
     private void loadModernSounds() {
         loadSound("player_attack", "sounds/player_attack.wav");
         loadSound("player_bow_attack", "sounds/player_bow_attack.wav");
@@ -56,7 +63,16 @@ public class SoundManager {
         loadSound("thunder_3", "sounds/thunder_3.ogg");
         loadSound("lightning_crash_1", "sounds/lightning_crash_1.ogg");
         loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
+        loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
         loadSound("lightning_crash_3", "sounds/lightning_crash_3.ogg");
+
+        // --- NEW: Visceral Combat Sounds ---
+        loadSound("weapon_swing", "sounds/weapon_swing.wav"); // Defaults to a simple whoosh if file missing handled by
+                                                              // loadSound checks
+        loadSound("meat_hit", "sounds/meat_hit.wav");
+        loadSound("metal_hit", "sounds/metal_hit.wav");
+        loadSound("monster_grunt_light", "sounds/monster_grunt_light.wav");
+        loadSound("monster_roar_heavy", "sounds/monster_roar_heavy.wav");
     }
 
     private void loadSound(String name, String path) {
@@ -96,7 +112,8 @@ public class SoundManager {
 
     // --- NEW: Volume Dampening for Interiors ---
     public void setDampened(boolean dampened) {
-        if (this.isDampened == dampened) return;
+        if (this.isDampened == dampened)
+            return;
         this.isDampened = dampened;
 
         // Update currently playing loops immediately
@@ -113,18 +130,23 @@ public class SoundManager {
     }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
-        if (type == lastWeatherType) return;
+        if (type == lastWeatherType)
+            return;
         lastWeatherType = type;
 
-        if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) modernSounds.get("rain_loop").stop(currentRainId);
-        if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) modernSounds.get("wind_loop").stop(currentWindId);
+        if (currentRainId != -1 && modernSounds.containsKey("rain_loop"))
+            modernSounds.get("rain_loop").stop(currentRainId);
+        if (currentWindId != -1 && modernSounds.containsKey("wind_loop"))
+            modernSounds.get("wind_loop").stop(currentWindId);
 
         currentRainId = -1;
         currentWindId = -1;
 
         currentBaseVol = 0.5f;
-        if (intensity == WeatherIntensity.HEAVY) currentBaseVol = 0.8f;
-        if (intensity == WeatherIntensity.EXTREME) currentBaseVol = 1.0f;
+        if (intensity == WeatherIntensity.HEAVY)
+            currentBaseVol = 0.8f;
+        if (intensity == WeatherIntensity.EXTREME)
+            currentBaseVol = 1.0f;
 
         float modifier = isDampened ? 0.25f : 1.0f;
         float vol = currentBaseVol * modifier;
@@ -187,7 +209,7 @@ public class SoundManager {
             }
         } else {
             if (weapon != null && weapon.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
-                playRetroArpeggio(new int[]{523, 659, 784}, 0.04f);
+                playRetroArpeggio(new int[] { 523, 659, 784 }, 0.04f);
             } else {
                 playRetroSound(110, 0.15f, 0.8f);
             }
@@ -218,7 +240,53 @@ public class SoundManager {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             playSound("monster_roar");
         } else {
-            playSound("tarmin_roar");
+            // playSound("tarmin_roar");
+        }
+    }
+
+    // --- NEW: Visceral Combat Audio ---
+
+    public void playWeaponSwing() {
+        if (modernSounds.containsKey("weapon_swing")) {
+            long id = modernSounds.get("weapon_swing").play();
+            modernSounds.get("weapon_swing").setPitch(id, MathUtils.random(0.9f, 1.1f));
+        } else {
+            // Fallback existing
+            playSound("player_attack");
+        }
+    }
+
+    public void playWeaponImpact(boolean heavy) {
+        String sound = heavy ? "meat_hit" : "meat_hit"; // Can add metal_hit logic later if we know target armor
+        if (modernSounds.containsKey(sound)) {
+            long id = modernSounds.get(sound).play();
+            modernSounds.get(sound).setPitch(id, MathUtils.random(0.9f, 1.1f));
+        }
+    }
+
+    public void playMonsterReaction(Monster monster, float damageRatio) {
+        if (monster.getCurrentHP() <= 0) {
+            // Death sound (handled elsewhere usually, but good to have dedicated)
+            playSound("monster_roar");
+            return;
+        }
+
+        if (damageRatio > 0.25f) {
+            // Heavy Hit
+            if (modernSounds.containsKey("monster_roar_heavy")) {
+                long id = modernSounds.get("monster_roar_heavy").play();
+                modernSounds.get("monster_roar_heavy").setPitch(id, MathUtils.random(0.8f, 0.95f));
+            } else {
+                playSound("monster_roar");
+            }
+        } else {
+            // Light Hit
+            if (modernSounds.containsKey("monster_grunt_light")) {
+                long id = modernSounds.get("monster_grunt_light").play();
+                modernSounds.get("monster_grunt_light").setPitch(id, MathUtils.random(0.95f, 1.1f));
+            } else {
+                playSound("monster_attack"); // Re-use usually short sound
+            }
         }
     }
 
@@ -233,7 +301,8 @@ public class SoundManager {
         short[] samples = new short[numSamples];
         int wavelength = SAMPLE_RATE / frequency;
         for (int i = 0; i < numSamples; i++) {
-            samples[i] = (short) ((i % wavelength < wavelength / 2) ? (short)(Short.MAX_VALUE * volume) : (short)(-Short.MAX_VALUE * volume));
+            samples[i] = (short) ((i % wavelength < wavelength / 2) ? (Short.MAX_VALUE * volume)
+                    : (-Short.MAX_VALUE * volume));
         }
         retroAudioDevice.writeSamples(samples, 0, numSamples);
     }

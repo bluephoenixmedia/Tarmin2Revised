@@ -9,19 +9,20 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemCategory;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 
 public class DebugRenderer {
 
     private static final int WALL_NORTH = 0b01000000;
-    private static final int WALL_EAST  = 0b00000100;
+    private static final int WALL_EAST = 0b00000100;
     private static final int WALL_SOUTH = 0b00010000;
-    private static final int WALL_WEST  = 0b00000001;
+    private static final int WALL_WEST = 0b00000001;
     private static final int DOOR_NORTH = 0b10000000;
-    private static final int DOOR_EAST  = 0b00001000;
+    private static final int DOOR_EAST = 0b00001000;
     private static final int DOOR_SOUTH = 0b00100000;
-    private static final int DOOR_WEST  = 0b00000010;
+    private static final int DOOR_WEST = 0b00000010;
 
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport) {
 
@@ -41,10 +42,11 @@ public class DebugRenderer {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0f, 0f, 0f, 0.5f); // 50% transparent black
+        shapeRenderer.setColor(0f, 0f, 0f, 1f); // 100% opaque black
         // Add a small padding (e.g., 5 pixels) around the maze
         float padding = 5f;
-        shapeRenderer.rect(mazeStartX - padding, mazeStartY - padding, totalMazeWidth + padding * 2, totalMazeHeight + padding * 2);
+        shapeRenderer.rect(mazeStartX - padding, mazeStartY - padding, totalMazeWidth + padding * 2,
+                totalMazeHeight + padding * 2);
         shapeRenderer.end();
         // --- END NEW ---
 
@@ -57,16 +59,24 @@ public class DebugRenderer {
                 float cellY = mazeStartY + y * cellSize;
 
                 shapeRenderer.setColor(Color.WHITE);
-                if ((mask & WALL_NORTH) != 0) shapeRenderer.line(cellX, cellY + cellSize, cellX + cellSize, cellY + cellSize);
-                if ((mask & WALL_EAST)  != 0) shapeRenderer.line(cellX + cellSize, cellY, cellX + cellSize, cellY + cellSize);
-                if ((mask & WALL_SOUTH) != 0) shapeRenderer.line(cellX, cellY, cellX + cellSize, cellY);
-                if ((mask & WALL_WEST)  != 0) shapeRenderer.line(cellX, cellY, cellX, cellY + cellSize);
+                if ((mask & WALL_NORTH) != 0)
+                    shapeRenderer.line(cellX, cellY + cellSize, cellX + cellSize, cellY + cellSize);
+                if ((mask & WALL_EAST) != 0)
+                    shapeRenderer.line(cellX + cellSize, cellY, cellX + cellSize, cellY + cellSize);
+                if ((mask & WALL_SOUTH) != 0)
+                    shapeRenderer.line(cellX, cellY, cellX + cellSize, cellY);
+                if ((mask & WALL_WEST) != 0)
+                    shapeRenderer.line(cellX, cellY, cellX, cellY + cellSize);
 
                 shapeRenderer.setColor(Color.ORANGE);
-                if ((mask & DOOR_NORTH) != 0) shapeRenderer.line(cellX, cellY + cellSize, cellX + cellSize, cellY + cellSize);
-                if ((mask & DOOR_EAST)  != 0) shapeRenderer.line(cellX + cellSize, cellY, cellX + cellSize, cellY + cellSize);
-                if ((mask & DOOR_SOUTH) != 0) shapeRenderer.line(cellX, cellY, cellX + cellSize, cellY);
-                if ((mask & DOOR_WEST)  != 0) shapeRenderer.line(cellX, cellY, cellX, cellY + cellSize);
+                if ((mask & DOOR_NORTH) != 0)
+                    shapeRenderer.line(cellX, cellY + cellSize, cellX + cellSize, cellY + cellSize);
+                if ((mask & DOOR_EAST) != 0)
+                    shapeRenderer.line(cellX + cellSize, cellY, cellX + cellSize, cellY + cellSize);
+                if ((mask & DOOR_SOUTH) != 0)
+                    shapeRenderer.line(cellX, cellY, cellX + cellSize, cellY);
+                if ((mask & DOOR_WEST) != 0)
+                    shapeRenderer.line(cellX, cellY, cellX, cellY + cellSize);
             }
         }
 
@@ -77,7 +87,8 @@ public class DebugRenderer {
 
         shapeRenderer.setColor(Color.CYAN);
         Vector2 dir = player.getDirectionVector();
-        shapeRenderer.line(playerCenterX, playerCenterY, playerCenterX + dir.x * cellSize * 0.4f, playerCenterY + dir.y * cellSize * 0.4f);
+        shapeRenderer.line(playerCenterX, playerCenterY, playerCenterX + dir.x * cellSize * 0.4f,
+                playerCenterY + dir.y * cellSize * 0.4f);
 
         for (Monster monster : maze.getMonsters().values()) {
             shapeRenderer.setColor(Color.RED);
@@ -87,10 +98,40 @@ public class DebugRenderer {
         }
 
         for (Item item : maze.getItems().values()) {
-            shapeRenderer.setColor(Color.YELLOW);
-            float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
-            float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
-            shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
+            if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
+                shapeRenderer.setColor(Color.LIME); // Portal is Lime Green
+                float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+                float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+                // Draw a square for the portal to distinguish it from round items
+                shapeRenderer.rect(itemCenterX - cellSize * 0.25f, itemCenterY - cellSize * 0.25f, cellSize * 0.5f,
+                        cellSize * 0.5f);
+            } else if (item.getCategory() == ItemCategory.WAR_WEAPON
+                    || item.getCategory() == ItemCategory.SPIRITUAL_WEAPON) {
+                // Weapons: Orange
+                shapeRenderer.setColor(Color.ORANGE);
+                float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+                float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+                shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
+            } else if (item.isPotion()) {
+                // Potions: Pink
+                shapeRenderer.setColor(Color.PINK);
+                float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+                float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+                shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
+            } else if (item.getType().toString().contains("SCROLL")) {
+                // Scrolls: Cyan Square
+                shapeRenderer.setColor(Color.CYAN);
+                float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+                float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+                shapeRenderer.rect(itemCenterX - cellSize * 0.2f, itemCenterY - cellSize * 0.2f, cellSize * 0.4f,
+                        cellSize * 0.4f);
+            } else {
+                // Generic Items: Yellow
+                shapeRenderer.setColor(Color.YELLOW);
+                float itemCenterX = mazeStartX + (item.getPosition().x * cellSize);
+                float itemCenterY = mazeStartY + (item.getPosition().y * cellSize);
+                shapeRenderer.circle(itemCenterX, itemCenterY, cellSize * 0.25f, 12);
+            }
         }
 
         if (maze.getScenery() != null) {
@@ -99,6 +140,18 @@ public class DebugRenderer {
                 float sceneryCenterX = mazeStartX + (scenery.getPosition().x * cellSize);
                 float sceneryCenterY = mazeStartY + (scenery.getPosition().y * cellSize);
                 shapeRenderer.circle(sceneryCenterX, sceneryCenterY, cellSize * 0.25f, 12);
+            }
+        }
+
+        // --- VISUALIZE EVENTS ---
+        shapeRenderer.setColor(0.2f, 0.2f, 1.0f, 1.0f); // Bright Blue
+        for (int y = 0; y < mazeHeight; y++) {
+            for (int x = 0; x < mazeWidth; x++) {
+                if (maze.getEventAt(x, y) != null) {
+                    float eventCenterX = mazeStartX + (x * cellSize) + (cellSize * 0.5f);
+                    float eventCenterY = mazeStartY + (y * cellSize) + (cellSize * 0.5f);
+                    shapeRenderer.circle(eventCenterX, eventCenterY, cellSize * 0.3f, 12);
+                }
             }
         }
 
@@ -113,7 +166,7 @@ public class DebugRenderer {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (Ladder ladder : maze.getLadders().values()) {
-            shapeRenderer.setColor(Color.BROWN);
+            shapeRenderer.setColor(Color.WHITE); // Bright White for Ladders
             float ladderX = mazeStartX + (ladder.getPosition().x * cellSize) - (cellSize * 0.2f);
             float ladderY = mazeStartY + (ladder.getPosition().y * cellSize) - (cellSize * 0.2f);
             shapeRenderer.rect(ladderX, ladderY, cellSize * 0.4f, cellSize * 0.4f);
@@ -169,8 +222,7 @@ public class DebugRenderer {
                     midWall.append("I ");
                 } else if (maze.getLadders().containsKey(currentTile)) {
                     midWall.append("L ");
-                }
-                else {
+                } else {
                     midWall.append("  ");
                 }
             }
@@ -226,10 +278,14 @@ public class DebugRenderer {
                         boolean hasSouth = (wallData[y][x] & 0b00010000) != 0;
 
                         // Simple ASCII representation
-                        if (hasWest && hasSouth) rowBuilder.append("L. ");
-                        else if (hasWest) rowBuilder.append("|. ");
-                        else if (hasSouth) rowBuilder.append("_. ");
-                        else rowBuilder.append(".. "); // Open Floor
+                        if (hasWest && hasSouth)
+                            rowBuilder.append("L. ");
+                        else if (hasWest)
+                            rowBuilder.append("|. ");
+                        else if (hasSouth)
+                            rowBuilder.append("_. ");
+                        else
+                            rowBuilder.append(".. "); // Open Floor
                     }
                 }
             }

@@ -1,0 +1,86 @@
+{
+    "encounters": [
+        {
+            "id": "EVENT_WEEPING_STATUE",
+            "title": "The Weeping Statue",
+            "imagePath": "images/events/statue_cry.png",
+            "text": "You find a moss-covered statue of a knight. Tears of blood stream from its stone eyes, pooling in a basin below.",
+            "choices": [
+                {
+                    "text": "Drink from the basin.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.5,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 10,
+                        "text": "The metallic taste invigorates you."
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 5,
+                        "text": "The blood burns your throat. It is cursed!"
+                    }
+                },
+                {
+                    "text": "Inspect the statue (Requires: PERCEPTION > 10)",
+                    "requirement": {
+                        "stat": "PERCEPTION",
+                        "value": 10
+                    },
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "RUBY_EYE",
+                        "text": "You notice the eye is a loose gem. You pry it out."
+                    }
+                },
+                {
+                    "text": "Leave it alone.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_BROKEN_MIRROR",
+            "title": "The Broken Mirror",
+            "imagePath": "images/events/broken_mirror.png",
+            "text": "You gaze into the minor. The reflection moves on its own, offering you a trade.",
+            "choices": [
+                {
+                    "text": "Smash the mirror.",
+                    "type": "COMBAT",
+                    "monsterId": "DOPPELGANGER",
+                    "text": "The reflection shatters and steps out!"
+                },
+                {
+                    "text": "Offer your vitality (Lose 5 Max HP).",
+                    "type": "TRADE",
+                    "cost": {
+                        "type": "MAX_HP",
+                        "amount": 5
+                    },
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "SCROLL_CLONING",
+                        "text": "The mirror spits out a scroll."
+                    }
+                },
+                {
+                    "text": "Stare deeply (Requires: SPI > 15).",
+                    "requirement": {
+                        "stat": "SPIRITUAL_STRENGTH",
+                        "value": 15
+                    },
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 500,
+                        "text": "You understand the nature of the void."
+                    }
+                },
+                {
+                    "text": "Walk away.",
+                    "type": "LEAVE"
+                }
+            ]
+        }
+    ]
+}

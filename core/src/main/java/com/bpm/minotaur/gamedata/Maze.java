@@ -29,6 +29,7 @@ public class Maze {
     private final Map<GridPoint2, Ladder> ladders = new HashMap<>();
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
+    private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
     private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
@@ -36,16 +37,14 @@ public class Maze {
     // --- Debris Only ---
     private final List<CorpsePart> corpses = new ArrayList<>();
 
-    private final GoreManager goreManager; // New Manager
-    // Removed: List<BloodSpray> bloodSprays
-    // -------------------
+    private final GoreManager goreManager;
 
     private RetroTheme.Theme theme;
 
     public Maze(int level, int[][] wallData) {
         this.level = level;
         this.wallData = wallData;
-        this.goreManager = new GoreManager(); // Initialize
+        this.goreManager = new GoreManager();
         this.height = wallData.length;
         this.width = (height > 0) ? wallData[0].length : 0;
         this.explorationState = new byte[height][width];
@@ -75,21 +74,22 @@ public class Maze {
         this.homeTiles.clear();
         this.homeTiles.addAll(tiles);
     }
-    // Removed: getBloodSprays()
 
     public void addGate(Gate gate) {
-        gates.put(new GridPoint2((int)gate.getPosition().x, (int)gate.getPosition().y), gate);
+        gates.put(new GridPoint2((int) gate.getPosition().x, (int) gate.getPosition().y), gate);
     }
 
     public Map<GridPoint2, Gate> getGates() {
         return gates;
     }
+
     public int getLevel() {
         return level;
     }
 
     public int getWidth() {
-        if (wallData == null || wallData.length == 0) return 0;
+        if (wallData == null || wallData.length == 0)
+            return 0;
         return wallData[0].length;
     }
 
@@ -97,6 +97,22 @@ public class Maze {
         if (x >= 0 && x < width && y >= 0 && y < height) {
             explorationState[y][x] = VISIBILITY_SEEN;
         }
+    }
+
+    public void addEvent(int x, int y, String id) {
+        eventTriggers.put(new GridPoint2(x, y), id);
+    }
+
+    public String getEventAt(int x, int y) {
+        return eventTriggers.get(new GridPoint2(x, y));
+    }
+
+    public void removeEvent(int x, int y) {
+        eventTriggers.remove(new GridPoint2(x, y));
+    }
+
+    public Map<GridPoint2, String> getEventTriggers() {
+        return eventTriggers;
     }
 
     public boolean isVisited(int x, int y) {
@@ -130,8 +146,13 @@ public class Maze {
         return bloodMap;
     }
 
+    public int getBloodCount() {
+        return bloodMap.size();
+    }
+
     public int getHeight() {
-        if (wallData == null) return 0;
+        if (wallData == null)
+            return 0;
         return wallData.length;
     }
 
@@ -146,14 +167,29 @@ public class Maze {
         return wallData[y][x];
     }
 
+    public void setTile(int x, int y, int type) {
+        if (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) {
+            wallData[y][x] = type;
+        }
+    }
 
+    public void toggleDoorAt(int x, int y) {
+        Object obj = getGameObjectAt(x, y);
+        if (obj instanceof Door) {
+            Door door = (Door) obj;
+            if (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING) {
+                door.startOpening();
+            } else if (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING) {
+                door.startClosing();
+            }
+        }
+    }
 
     public Object getGameObjectAt(int x, int y) {
         GridPoint2 pos = new GridPoint2(x, y);
         Object obj = gameObjects.get(pos);
-        if (obj != null) {
+        if (obj != null)
             return obj;
-        }
         return gates.get(pos);
     }
 
@@ -173,7 +209,7 @@ public class Maze {
     }
 
     public void addItem(Item item) {
-        items.put(new GridPoint2((int)item.getPosition().x, (int)item.getPosition().y), item);
+        items.put(new GridPoint2((int) item.getPosition().x, (int) item.getPosition().y), item);
     }
 
     public Map<GridPoint2, Monster> getMonsters() {
@@ -181,7 +217,7 @@ public class Maze {
     }
 
     public void addMonster(Monster monster) {
-        monsters.put(new GridPoint2((int)monster.getPosition().x, (int)monster.getPosition().y), monster);
+        monsters.put(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), monster);
     }
 
     public Map<GridPoint2, Ladder> getLadders() {
@@ -189,7 +225,7 @@ public class Maze {
     }
 
     public void addLadder(Ladder ladder) {
-        ladders.put(new GridPoint2((int)ladder.getPosition().x, (int)ladder.getPosition().y), ladder);
+        ladders.put(new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y), ladder);
     }
 
     public List<Projectile> getProjectiles() {
@@ -208,18 +244,27 @@ public class Maze {
         return (this.theme != null) ? this.theme : RetroTheme.STANDARD_THEME;
     }
 
+    private RetroTheme.Theme secondaryTheme;
+
+    public void setSecondaryTheme(RetroTheme.Theme theme) {
+        this.secondaryTheme = theme;
+    }
+
+    public RetroTheme.Theme getSecondaryTheme() {
+        return (this.secondaryTheme != null) ? this.secondaryTheme : getTheme();
+    }
+
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int wallMask = direction.getWallMask();
         int doorMask = wallMask << 1;
         int currentCellData = getWallDataAt(x, y);
 
-        if ((currentCellData & wallMask) != 0) {
+        if ((currentCellData & wallMask) != 0)
             return true;
-        }
 
         if ((currentCellData & doorMask) != 0) {
-            int nextX = x + (int)direction.getVector().x;
-            int nextY = y + (int)direction.getVector().y;
+            int nextX = x + (int) direction.getVector().x;
+            int nextY = y + (int) direction.getVector().y;
 
             Object obj = getGameObjectAt(x, y);
             if (obj instanceof Door) {
@@ -240,15 +285,24 @@ public class Maze {
             return false;
         }
 
-        if (wallData[y][x] == 1) {
+        // --- BUG FIX: Removed this check ---
+        // if (wallData[y][x] == 1) return false;
+        // -----------------------------------
+
+        Object obj = getGameObjectAt(x, y);
+        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN)
+            return false;
+        if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN)
+            return false;
+
+        // Check for impassable items (props)
+        Item item = items.get(new GridPoint2(x, y));
+        if (item != null && item.isImpassable()) {
             return false;
         }
 
-        Object obj = getGameObjectAt(x, y);
-        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
-            return false;
-        }
-        if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN) {
+        // Monsters are impassable
+        if (monsters.containsKey(new GridPoint2(x, y))) {
             return false;
         }
 
@@ -270,35 +324,31 @@ public class Maze {
     }
 
     public void addScenery(Scenery s) {
-        if (s == null) return;
-        GridPoint2 pos = new GridPoint2((int)s.getPosition().x, (int)s.getPosition().y);
+        if (s == null)
+            return;
+        GridPoint2 pos = new GridPoint2((int) s.getPosition().x, (int) s.getPosition().y);
         scenery.put(pos, s);
     }
 
     public void update(float delta) {
         for (Object object : gameObjects.values()) {
-            if (object instanceof Door) {
+            if (object instanceof Door)
                 ((Door) object).update(delta);
-            }
         }
-
-        for (Gate gate : gates.values()) {
+        for (Gate gate : gates.values())
             gate.update(delta);
-        }
 
         projectiles.removeIf(projectile -> {
             projectile.update(delta);
             return !projectile.isAlive();
         });
 
-        // Update Corpses
-        for (CorpsePart part : corpses) {
+        for (CorpsePart part : corpses)
             part.update(delta);
-        }
-
-        goreManager.update(delta, this); // PASS 'this'
-        // Removed: Update Blood Sprays
+        goreManager.update(delta, this);
     }
-    public GoreManager getGoreManager() { return goreManager; } // Getter
 
+    public GoreManager getGoreManager() {
+        return goreManager;
+    }
 }

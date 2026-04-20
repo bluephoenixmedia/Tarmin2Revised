@@ -23,72 +23,158 @@ public class MazeChunkGenerator implements IChunkGenerator {
     private String[] finalLayout;
     private GridPoint2 playerSpawnPoint = new GridPoint2(1, 1);
 
+    // --- Forced Ladder Position ---
+    private GridPoint2 forcedUpLadderPos = null;
+
     private List<GridPoint2> currentChunkHomeTiles = new ArrayList<>();
 
-    // --- Maze Content Tile Definitions ---
-    String[] tile1 = new String[]{ "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###", ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....", "#####.######" };
-    String[] tile2 = new String[]{ "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "....D.D.....", "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######", "#####.######" };
-    String[] tile3 = new String[]{ "#####.######", "#..........#", "###D###D####", "............", "#.#D#..###.#", "..#.#..#.#..", "#.#.#..#.#.#", "#.#.#..#.D.#", "#.#.#..#.#.#", "#.#.#..#.#.#", "#.#.####.#.#", "#.#......#.#" };
-    String[] tile4 = new String[]{ "#####..#####", "#...#..#...#", "#...#..#...#", "#...D..#...#", "#...#..#...#", ".####D###D#.", "....D...D...", "###D#D######", "#...#..D...#", "#...#..#...#", "#...#..#...#", "#####..#####" };
-    String[] tile5 = new String[]{ "#####.###...", "#.##....#.##", "#D##D##D#.D.", "#.#...#.#.##", "#D#...#D#...", "........D...", "#D#...#D#...", "#.#...#.#...", "#D#...#D#.##", "#.##D##.#.D.", "####...##.##", "#####..##...." };
-    String[] tile6 = new String[]{ "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#", ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#", "#####..#####" };
-    String[] tile7 = new String[]{ "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#", ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#", "#####.######" };
-    String[] tile8 = new String[]{ "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###", "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#", "###....#####" };
-    String[] tile9 = new String[]{ ".####.#.....", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#", "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.", ".....#.####." };
-    String[] tile10 = new String[]{ "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#", "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.", "######.####." };
-    String[] tile11 = new String[]{ "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##", "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#", "#####.######" };
-    String[] tile12 = new String[]{ "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###", "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######", "............" };
-    String[] tile13 = new String[]{ "....#.######", "....D.D....#", "#D###.#....#", "#.#...#....#", "###.########", "....D.D.....", "#######.....", "....#....###", "....#....#.#", "....#.####D#", "....D.D....#", "....#.######" };
-    String[] tile14 = new String[]{ "############", "#...D.D..#.#", "#.#D#.##.D.#", "#D#.....##D#", "#...####...#", "....D..#....", "#...###....#", "#D#.....#D##", "#.D.....#..#", "#.###.#D#..#", "#...D.D....#", "############" };
-    String[] tile15 = new String[]{ "#####.######", "#...D.D....#", "#...#.#....#", "#...#.#....#", "##D##.##D###", "....D.......", "#####D######", "#...#.#....#", "#...D.D....#", "#...#.#....#", "#...#.#....#", "#####.######" };
-    String[] tile16 = new String[]{ "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#", "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#", "......#..#.#" };
+    // ... (Keep tiles 1-16 unchanged) ...
+    String[] tile1 = new String[] { "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###",
+            ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....",
+            "#####.######" };
+    String[] tile2 = new String[] { "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######",
+            "....D.D.....", "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######",
+            "#####.######" };
+    String[] tile3 = new String[] { "#####.######", "#..........#", "###D###D####", "............", "#.#D#..###.#",
+            "..#.#..#.#..", "#.#.#..#.#.#", "#.#.#..#.D.#", "#.#.#..#.#.#", "#.#.#..#.#.#", "#.#.####.#.#",
+            "#.#......#.#" };
+    String[] tile4 = new String[] { "#####..#####", "#...#..#...#", "#...#..#...#", "#...D..#...#", "#...#..#...#",
+            ".####D###D#.", "....D...D...", "###D#D######", "#...#..D...#", "#...#..#...#", "#...#..#...#",
+            "#####..#####" };
+    String[] tile5 = new String[] { "#####.###...", "#.##....#.##", "#D##D##D#.D.", "#.#...#.#.##", "#D#...#D#...",
+            "........D...", "#D#...#D#...", "#.#...#.#...", "#D#...#D#.##", "#.##D##.#.D.", "####...##.##",
+            "#####..##...." };
+    String[] tile6 = new String[] { "#####..#####", "#....#.#...#", "#....#.#...#", "#....#.#...#", "#....D.D...#",
+            ".#####.####.", "............", "######.#####", "#....D.D...#", "#....#.#...#", "#....#.#...#",
+            "#####..#####" };
+    String[] tile7 = new String[] { "#####.######", "#.#........#", "#.D.######.#", "###.#....#.#", "....#....#.#",
+            ".#D##D####..", "#...#......#", "#...#......#", "#...#..###D#", "#...#..#...#", "#...#..#...#",
+            "#####.######" };
+    String[] tile8 = new String[] { "###.#..#.###", "#.#D#..#D#.#", "#.#.#..#.#.#", "....#..#...#", "###D#..#D###",
+            "............", "######D#####", "#.#....#...#", "#.D....D...#", "#.#....#...#", "#.#....#...#",
+            "###....#####" };
+    String[] tile9 = new String[] { ".####.#.....", ".#..D.#..###", ".####.#..#.#", "......#..#.#", "##D####..#D#",
+            "....D.D.....", "....####D###", "#D#..#......", "#.#..#......", "#.#..#.####.", "###..#.D..#.",
+            ".....#.####." };
+    String[] tile10 = new String[] { "####........", "#..#.#D#####", "#..#.#..#..#", "#..#.#..#..#", "##D#######D#",
+            "...D.D......", "##D#####D###", "#....#......", "#....#......", "#....#.####.", "#....#.D..#.",
+            "######.####." };
+    String[] tile11 = new String[] { "#####.######", "#.#.D.D.#..#", "#.###.###..#", "#.#.D.D.#..#", "#D###.###D##",
+            "..D.D.#.#..#", "#D###.#D#..#", "#.#.D.D.##D#", "#.###.###..#", "#.#.D.D.D..#", "#.#.#.#.#..#",
+            "#####.######" };
+    String[] tile12 = new String[] { "############", "#...D.D....#", "#D###.####D#", "....#.#.....", "#D#.#.#..###",
+            "#.#.#.#..#.#", "###.#.#..#D#", "....#.#.....", "#D###.####D#", "#...D.D....#", "#####.######",
+            "............" };
+    String[] tile13 = new String[] { "....#.######", "....D.D....#", "#D###.#....#", "#.#...#....#", "###.########",
+            "....D.D.....", "#######.....", "....#....###", "....#....#.#", "....#.####D#", "....D.D....#",
+            "....#.######" };
+    String[] tile14 = new String[] { "############", "#...D.D..#.#", "#.#D#.##.D.#", "#D#.....##D#", "#...####...#",
+            "....D..#....", "#...###....#", "#D#.....#D##", "#.D.....#..#", "#.###.#D#..#", "#...D.D....#",
+            "############" };
+    String[] tile15 = new String[] { "#####.######", "#...D.D....#", "#...#.#....#", "#...#.#....#", "##D##.##D###",
+            "....D.......", "#####D######", "#...#.#....#", "#...D.D....#", "#...#.#....#", "#...#.#....#",
+            "#####.######" };
+    String[] tile16 = new String[] { "..##########", "..D........#", "..#####..###", "......D..#.#", "####D##..#.#",
+            "......#..D.#", "......#..#.#", "..###.#..#.#", "..D.#.#..#.#", "..###.#..#.#", "......#..#.#",
+            "......#..#.#" };
 
-    // --- Home Tile ---
-    String[] homeTile = new String[]{
-        "............",
-        "............",
-        "............",
-        "...##D###...",
-        "...#....#...",
-        "...#....#...",
-        "...#....#...",
-        "...######...",
-        "............",
-        "............",
-        "............",
-        "............",
+    // --- Home Tile with 3D Props ---
+    // Added 'W' for Window
+    String[] homeTile = new String[] {
+            "............",
+            "............",
+            "............",
+            "...##D###...",
+            "...#...C#...",
+            "...W...N#...",
+            "...#F.B.#...",
+            "...######...",
+            "............",
+            "............",
+            "............",
+            "............",
     };
     private static final int HOME_TILE_ID = -1;
 
-    // --- Corridor Tile Templates ---
-    String[] corridorUL = new String[]{ "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    String[] corridorT = new String[]{ "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx" };
-    String[] corridorUR = new String[]{ "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx" };
-    String[] corridorR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#" };
-    String[] corridorLL = new String[]{ "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........", "############" };
-    String[] corridorB = new String[]{ "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............", "############" };
-    String[] corridorLR = new String[]{ "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#", "############" };
+    // ... (Keep Corridor templates) ...
+    String[] corridorUL = new String[] { "############", "#...........", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx" };
+    String[] corridorT = new String[] { "############", "............", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx" };
+    String[] corridorUR = new String[] { "############", "...........#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#" };
+    String[] corridorL = new String[] { "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx" };
+    String[] corridorR = new String[] { "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#" };
+    String[] corridorLL = new String[] { "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx",
+            "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#.xxxxxxxxxx", "#...........",
+            "############" };
+    String[] corridorB = new String[] { "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "............",
+            "############" };
+    String[] corridorLR = new String[] { "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#",
+            "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "xxxxxxxxxx.#", "...........#",
+            "############" };
 
-    private static class TileInfo { int id; int rotation; TileInfo(int id, int rotation) { this.id = id; this.rotation = rotation; } }
+    private static class TileInfo {
+        int id;
+        int rotation;
 
-    public Maze generateChunk(GridPoint2 chunkId, int level, Difficulty difficulty, GameMode gameMode, RetroTheme.Theme theme,
-                              MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-                              SpawnTableData spawnTableData) {
+        TileInfo(int id, int rotation) {
+            this.id = id;
+            this.rotation = rotation;
+        }
+    }
+
+    public void setForcedUpLadderPos(GridPoint2 pos) {
+        this.forcedUpLadderPos = pos;
+    }
+
+    @Override
+    public Maze generateChunk(GridPoint2 chunkId, int layoutLevel, int spawnDifficulty, Difficulty difficulty,
+            GameMode gameMode,
+            RetroTheme.Theme theme, RetroTheme.Theme mazeTheme,
+            MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+            com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // New Argument
+
+        // Initialize Random with the deterministic seed
+        random.setSeed(chunkSeed);
+        Gdx.app.log("MazeChunkGenerator", "Generating Chunk " + chunkId + " with Seed: " + chunkSeed);
 
         int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
         int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
 
-        createMazeFromArrayTiles(mapRows, mapCols, chunkId);
+        int attempts = 0;
+        int maxAttempts = 50;
 
-        Maze maze = createMazeFromText(level, this.finalLayout, itemDataManager, assetManager);
+        do {
+            createMazeFromArrayTiles(mapRows, mapCols, chunkId, layoutLevel);
+            attempts++;
+        } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
+
+        if (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos)) {
+            Gdx.app.log("MazeChunkGenerator", "Forcing clear tile at " + forcedUpLadderPos + " after " + attempts
+                    + " failed generation attempts.");
+            forceClearTile(forcedUpLadderPos);
+        }
+
+        Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
         maze.setTheme(theme);
 
         if (!currentChunkHomeTiles.isEmpty()) {
             maze.setHomeTiles(new ArrayList<>(currentChunkHomeTiles));
         }
 
-        spawnEntities(maze, difficulty, level, this.finalLayout, dataManager, itemDataManager, assetManager, spawnTableData);
+        spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
+                spawnTableData, chunkSeed, playerLuck); // <-- Pass chunkSeed
+        spawnEncounters(maze, encounterManager);
         spawnLadder(maze, this.finalLayout);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -97,8 +183,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
             spawnTransitionGates(maze, this.finalLayout, chunkId);
         }
 
-        // [CHANGED] Always call findPlayerStart, which now handles priority logic internally
         findPlayerStart(this.finalLayout);
+
+        if (forcedUpLadderPos != null) {
+            playerSpawnPoint.set(forcedUpLadderPos.x, forcedUpLadderPos.y);
+            forcedUpLadderPos = null;
+        }
 
         return maze;
     }
@@ -108,13 +198,30 @@ public class MazeChunkGenerator implements IChunkGenerator {
         return playerSpawnPoint;
     }
 
+    // --- FIX: Smarter Player Start Logic ---
     private void findPlayerStart(String[] layout) {
-        // 1. Priority: Check if Home Tiles exist and spawn in the center
+        // 1. Priority: Spawn in Home Tile if available
         if (!currentChunkHomeTiles.isEmpty()) {
+            // Search for the first valid empty floor tile inside the home zone.
+            for (GridPoint2 homeTile : currentChunkHomeTiles) {
+                // We need to convert Game Coordinates back to Layout Coordinates
+                int height = layout.length;
+                int layoutY = height - 1 - homeTile.y;
+
+                if (layoutY >= 0 && layoutY < height && homeTile.x >= 0 && homeTile.x < layout[0].length()) {
+                    char c = layout[layoutY].charAt(homeTile.x);
+                    if (c == '.') {
+                        playerSpawnPoint.set(homeTile.x, homeTile.y);
+                        Gdx.app.log("ChunkGenerator", "findPlayerStart: Set spawn to safe Home Tile: " + homeTile);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: Just use the center and hope for the best
             int midIndex = currentChunkHomeTiles.size() / 2;
             GridPoint2 homeSpawn = currentChunkHomeTiles.get(midIndex);
             playerSpawnPoint.set(homeSpawn.x, homeSpawn.y);
-            Gdx.app.log("ChunkGenerator", "findPlayerStart: Set spawn to Home Tile center: " + homeSpawn);
             return;
         }
 
@@ -122,12 +229,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int height = layout.length;
         int width = layout[0].length();
 
-        // Default reset
         playerSpawnPoint.set(1, 1);
 
         char defaultTileChar = layout[height - 2].charAt(1);
         if (defaultTileChar != '#') {
-            // (1,1) is valid
             return;
         }
 
@@ -138,23 +243,25 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 char c = layout[layoutY].charAt(x);
                 if (c != '#') {
                     playerSpawnPoint.set(x, y);
-                    Gdx.app.log("ChunkGenerator", "Found fallback safe spawn at (" + x + ", " + y + ")");
                     return;
                 }
             }
         }
     }
 
+    // ... (Keep spawnEntities, spawnLadder, spawnClassicGate, spawnTransitionGates,
+    // getTileContent, etc.) ...
+
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
-                               MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-                               SpawnTableData spawnTableData) {
+            MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // <-- Pass chunkSeed
 
-        SpawnManager spawnManager = new SpawnManager(dataManager,
-            itemDataManager,
-            assetManager,
-            maze, difficulty, level, layout,
-            spawnTableData);
+        // Derive a stable seed for SpawnManager that is independent of maze generation
+        // RNG usage
+        long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
+        SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
+                level, level, playerLuck, layout, spawnTableData, spawnSeed); // Use level as proxy for playerLevel
         spawnManager.spawnEntities();
     }
 
@@ -163,56 +270,57 @@ public class MazeChunkGenerator implements IChunkGenerator {
         do {
             x = random.nextInt(maze.getWidth());
             y = random.nextInt(maze.getHeight());
-        } while (
-            layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
+        } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
                 maze.getItems().containsKey(new GridPoint2(x, y)) ||
                 maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
-                (currentChunkHomeTiles.contains(new GridPoint2(x, y)))
-        );
-        maze.addLadder(new Ladder(x, y));
+                (currentChunkHomeTiles.contains(new GridPoint2(x, y))) ||
+                (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y));
+        maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
+
+        if (forcedUpLadderPos != null) {
+            maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP));
+        }
     }
 
     private void spawnClassicGate(Maze maze, String[] layout) {
-        if (layout == null || layout.length <= 2) return;
-
+        if (layout == null || layout.length <= 2)
+            return;
         List<GridPoint2> validGateLocations = new ArrayList<>();
         int height = layout.length;
         int width = layout[0].length();
-
         for (int x = 1; x < width - 1; x++) {
-            if (layout[0].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, height - 1));
-            if (layout[height - 1].charAt(x) == '#') validGateLocations.add(new GridPoint2(x, 0));
+            if (layout[0].charAt(x) == '#')
+                validGateLocations.add(new GridPoint2(x, height - 1));
+            if (layout[height - 1].charAt(x) == '#')
+                validGateLocations.add(new GridPoint2(x, 0));
         }
         for (int y = 1; y < height - 1; y++) {
-            if (layout[y].charAt(0) == '#') validGateLocations.add(new GridPoint2(0, height - 1 - y));
-            if (layout[y].charAt(width - 1) == '#') validGateLocations.add(new GridPoint2(width - 1, height - 1 - y));
+            if (layout[y].charAt(0) == '#')
+                validGateLocations.add(new GridPoint2(0, height - 1 - y));
+            if (layout[y].charAt(width - 1) == '#')
+                validGateLocations.add(new GridPoint2(width - 1, height - 1 - y));
         }
-
-        if (validGateLocations.isEmpty()) return;
+        if (validGateLocations.isEmpty())
+            return;
         GridPoint2 gatePos = validGateLocations.get(random.nextInt(validGateLocations.size()));
-
         maze.addGate(new Gate(gatePos.x, gatePos.y));
     }
 
     private void spawnTransitionGates(Maze maze, String[] layout, GridPoint2 chunkId) {
         int height = layout.length;
         int width = layout[0].length();
-
         GridPoint2 northPos = new GridPoint2(width / 2, height - 1);
         GridPoint2 southPos = new GridPoint2(width / 2, 0);
         GridPoint2 eastPos = new GridPoint2(width - 1, height / 2);
         GridPoint2 westPos = new GridPoint2(0, height / 2);
-
         GridPoint2 northTargetChunk = new GridPoint2(chunkId.x, chunkId.y + 1);
         GridPoint2 southTargetChunk = new GridPoint2(chunkId.x, chunkId.y - 1);
         GridPoint2 eastTargetChunk = new GridPoint2(chunkId.x + 1, chunkId.y);
         GridPoint2 westTargetChunk = new GridPoint2(chunkId.x - 1, chunkId.y);
-
         GridPoint2 northTargetPlayer = new GridPoint2(width / 2, 1);
         GridPoint2 southTargetPlayer = new GridPoint2(width / 2, height - 2);
         GridPoint2 eastTargetPlayer = new GridPoint2(1, height / 2);
         GridPoint2 westTargetPlayer = new GridPoint2(width - 2, height / 2);
-
         maze.addGate(new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer));
         maze.addGate(new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer));
         maze.addGate(new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer));
@@ -220,28 +328,28 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private String[] getTileContent(List<String[]> allTiles, int id, int rotation) {
-        if (id == HOME_TILE_ID) return homeTile;
+        if (id == HOME_TILE_ID)
+            return homeTile;
         return rotateTile(allTiles.get(id), rotation);
     }
 
-    private void createMazeFromArrayTiles(int mapRows, int mapCols, GridPoint2 chunkId) {
+    private void createMazeFromArrayTiles(int mapRows, int mapCols, GridPoint2 chunkId, int level) {
         final int CONNECTOR_INDEX = 5;
         this.currentChunkHomeTiles.clear();
 
-        List<String[]> allTiles = List.of(tile1, tile2, tile3, tile4, tile5, tile6, tile7, tile8, tile9, tile10, tile11, tile12, tile13, tile14, tile15, tile16);
+        List<String[]> allTiles = List.of(tile1, tile2, tile3, tile4, tile5, tile6, tile7, tile8, tile9, tile10, tile11,
+                tile12, tile13, tile14, tile15, tile16);
         TileInfo[][] mapLayout = new TileInfo[mapRows][mapCols];
 
         int homeX = -1;
         int homeY = -1;
-        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0);
+        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0 && level == 1);
 
         if (isStartChunk) {
-            // Center the Home Tile if grid is 3x3
             if (mapRows >= 3 && mapCols >= 3) {
                 homeX = 1;
                 homeY = 1;
             } else {
-                // Fallback for Classic 2x2: Bottom-Left
                 homeX = 0;
                 homeY = mapRows - 1;
             }
@@ -250,51 +358,48 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         for (int mapY = 0; mapY < mapRows; mapY++) {
             for (int mapX = 0; mapX < mapCols; mapX++) {
-
                 if (isStartChunk && mapY == homeY && mapX == homeX) {
                     mapLayout[mapY][mapX] = new TileInfo(HOME_TILE_ID, 0);
                     continue;
                 }
-
                 List<Integer> tileIds = new ArrayList<>();
-                for (int i = 0; i < allTiles.size(); i++) tileIds.add(i);
+                for (int i = 0; i < allTiles.size(); i++)
+                    tileIds.add(i);
                 Collections.shuffle(tileIds, random);
                 List<Integer> rotations = new ArrayList<>(List.of(0, 1, 2, 3));
                 Collections.shuffle(rotations, random);
-
                 boolean tilePlaced = false;
                 for (int tileId : tileIds) {
                     for (int rotation : rotations) {
                         String[] candidateTile = rotateTile(allTiles.get(tileId), rotation);
                         boolean fits = true;
-
                         if (mapX > 0) {
                             TileInfo leftNeighborInfo = mapLayout[mapY][mapX - 1];
-                            String[] leftNeighborTile = getTileContent(allTiles, leftNeighborInfo.id, leftNeighborInfo.rotation);
-                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(candidateTile[CONNECTOR_INDEX].charAt(0))) {
+                            String[] leftNeighborTile = getTileContent(allTiles, leftNeighborInfo.id,
+                                    leftNeighborInfo.rotation);
+                            if (isWall(leftNeighborTile[CONNECTOR_INDEX].charAt(tile1[0].length() - 1)) != isWall(
+                                    candidateTile[CONNECTOR_INDEX].charAt(0)))
                                 fits = false;
-                            }
                         }
-
                         if (fits && mapY > 0) {
                             TileInfo topNeighborInfo = mapLayout[mapY - 1][mapX];
-                            String[] topNeighborTile = getTileContent(allTiles, topNeighborInfo.id, topNeighborInfo.rotation);
-                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(candidateTile[0].charAt(CONNECTOR_INDEX))) {
+                            String[] topNeighborTile = getTileContent(allTiles, topNeighborInfo.id,
+                                    topNeighborInfo.rotation);
+                            if (isWall(topNeighborTile[tile1.length - 1].charAt(CONNECTOR_INDEX)) != isWall(
+                                    candidateTile[0].charAt(CONNECTOR_INDEX)))
                                 fits = false;
-                            }
                         }
-
                         if (fits) {
                             mapLayout[mapY][mapX] = new TileInfo(tileId, rotation);
                             tilePlaced = true;
                             break;
                         }
                     }
-                    if (tilePlaced) break;
+                    if (tilePlaced)
+                        break;
                 }
-                if (!tilePlaced) {
+                if (!tilePlaced)
                     mapLayout[mapY][mapX] = new TileInfo(0, 0);
-                }
             }
         }
 
@@ -311,8 +416,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
                     if (info.id == HOME_TILE_ID) {
                         for (int tx = 0; tx < 12; tx++) {
-                            boolean isHomeWalkable = (tileY >= 4 && tileY <= 6 && tx >= 4 && tx <= 7);
-                            if (isHomeWalkable) {
+                            // --- FIX: Home Zone Logic ---
+                            // Include ALL home tiles (including props) in the list so
+                            // the game knows this is the "Home Zone" (Sheltered from weather).
+                            boolean isHomeZone = (tileY >= 4 && tileY <= 7 && tx >= 4 && tx <= 7);
+
+                            if (isHomeZone) {
                                 int gameX = mapX * 12 + tx;
                                 int gameY = finalHeight - 1 - (mapY * tileHeight + tileY);
                                 currentChunkHomeTiles.add(new GridPoint2(gameX, gameY));
@@ -327,7 +436,6 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 this.finalLayout[mapY * tileHeight + tileY] = rowBuilder.toString();
             }
         }
-
         cleanUpOrphanedDoors();
     }
 
@@ -346,23 +454,34 @@ public class MazeChunkGenerator implements IChunkGenerator {
         boolean isBottom = (y == rows - 1);
         boolean isLeft = (x == 0);
         boolean isRight = (x == cols - 1);
-
-        if (isTop && isLeft) return corridorUL;
-        if (isTop && isRight) return corridorUR;
-        if (isBottom && isLeft) return corridorLL;
-        if (isBottom && isRight) return corridorLR;
-        if (isTop) return corridorT;
-        if (isBottom) return corridorB;
-        if (isLeft) return corridorL;
-        if (isRight) return corridorR;
-
-        return new String[]{"xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx","xxxxxxxxxxxx"};
+        if (isTop && isLeft)
+            return corridorUL;
+        if (isTop && isRight)
+            return corridorUR;
+        if (isBottom && isLeft)
+            return corridorLL;
+        if (isBottom && isRight)
+            return corridorLR;
+        if (isTop)
+            return corridorT;
+        if (isBottom)
+            return corridorB;
+        if (isLeft)
+            return corridorL;
+        if (isRight)
+            return corridorR;
+        return new String[] { "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+                "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx", "xxxxxxxxxxxx",
+                "xxxxxxxxxxxx" };
     }
 
-    private boolean isWall(char c) { return c == '#'; }
+    private boolean isWall(char c) {
+        return c == '#';
+    }
 
     private String[] rotateTile(String[] tile, int rotation) {
-        if (rotation == 0) return tile;
+        if (rotation == 0)
+            return tile;
         String[] currentTile = tile;
         for (int i = 0; i < rotation; i++) {
             int height = currentTile.length;
@@ -374,7 +493,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 }
             }
             String[] rotated = new String[width];
-            for(int x = 0; x < width; x++){
+            for (int x = 0; x < width; x++) {
                 rotated[x] = new String(temp[x]);
             }
             currentTile = rotated;
@@ -382,67 +501,102 @@ public class MazeChunkGenerator implements IChunkGenerator {
         return currentTile;
     }
 
-    private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager, AssetManager assetManager) {
+    private Maze createMazeFromText(int level, String[] layout, ItemDataManager itemDataManager,
+            AssetManager assetManager) {
         Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText STARTING.");
-
         int height = layout.length;
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
         Maze maze = new Maze(level, bitmaskedData);
-
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
-                if (c == 'D') {
+                if (c == 'D')
                     maze.addGameObject(new Door(), x, y);
-                }
-                else if (c == 'S') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE, assetManager));
-                } else if (c == 'H') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED, assetManager));
-                }
+                else if (c == 'W')
+                    maze.addGameObject(new Window(x, y), x, y); // NEW: Window
+                else if (c == 'S' || c == 'H') {
+                    // --- NEW: Tarmin's Hunger Loot Decay ---
+                    if (random.nextFloat() < com.bpm.minotaur.managers.DoomManager.getInstance()
+                            .getLootChanceMultiplier()) {
+                        if (c == 'S')
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE,
+                                    assetManager));
+                        else
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_PINK, x, y, ItemColor.RED,
+                                    assetManager));
+                    }
+                    // ---------------------------------------
+                } else if (c == 'C')
+                    maze.addItem(
+                            itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.BLUE, assetManager));
+                else if (c == 'N')
+                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.BLUE,
+                            assetManager));
+                else if (c == 'B')
+                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.BLUE,
+                            assetManager));
+                else if (c == 'F')
+                    maze.addItem(
+                            itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.RED, assetManager));
             }
         }
-
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 if (layout[layoutY].charAt(x) != '#') {
                     int mask = 0;
-                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == '#') mask |= 0b01000000;
-                    else if (y + 1 < height && layout[layoutY - 1].charAt(x) == 'D') mask |= 0b10000000;
-                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == '#') mask |= 0b00000100;
-                    else if (x + 1 < width && layout[layoutY].charAt(x + 1) == 'D') mask |= 0b00001000;
-                    if (y > 0 && layout[layoutY + 1].charAt(x) == '#') mask |= 0b00010000;
-                    else if (y > 0 && layout[layoutY + 1].charAt(x) == 'D') mask |= 0b00100000;
-                    if (x > 0 && layout[layoutY].charAt(x - 1) == '#') mask |= 0b00000001;
-                    else if (x > 0 && layout[layoutY].charAt(x - 1) == 'D') mask |= 0b00000010;
+                    // Check neighbors for Walls (#), Doors (D), OR Windows (W)
+                    // We treat Windows as structure for bitmasking (so corners connect nicely)
+
+                    // North
+                    if (y + 1 < height && isStructure(layout[layoutY - 1].charAt(x)))
+                        mask |= 0b01000000;
+                    if (y + 1 < height && layout[layoutY - 1].charAt(x) == 'D')
+                        mask |= 0b10000000;
+                    // East
+                    if (x + 1 < width && isStructure(layout[layoutY].charAt(x + 1)))
+                        mask |= 0b00000100;
+                    if (x + 1 < width && layout[layoutY].charAt(x + 1) == 'D')
+                        mask |= 0b00001000;
+                    // South
+                    if (y > 0 && isStructure(layout[layoutY + 1].charAt(x)))
+                        mask |= 0b00010000;
+                    if (y > 0 && layout[layoutY + 1].charAt(x) == 'D')
+                        mask |= 0b00100000;
+                    // West
+                    if (x > 0 && isStructure(layout[layoutY].charAt(x - 1)))
+                        mask |= 0b00000001;
+                    if (x > 0 && layout[layoutY].charAt(x - 1) == 'D')
+                        mask |= 0b00000010;
+
                     bitmaskedData[y][x] = mask;
                 }
             }
         }
         Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText FINISHED.");
+        maze.setHomeTiles(currentChunkHomeTiles); // FIX: Actually set the home tiles on the maze!
         return maze;
     }
 
+    private boolean isStructure(char c) {
+        return c == '#' || c == 'W';
+    }
+
     private void cleanUpOrphanedDoors() {
-        if (finalLayout == null) return;
-
+        if (finalLayout == null)
+            return;
         int height = finalLayout.length;
-        if (height == 0) return;
+        if (height == 0)
+            return;
         int width = finalLayout[0].length();
-
         char[][] layoutChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
+        for (int y = 0; y < height; y++)
             layoutChars[y] = finalLayout[y].toCharArray();
-        }
-
         char[][] originalChars = new char[height][width];
-        for (int y = 0; y < height; y++) {
+        for (int y = 0; y < height; y++)
             originalChars[y] = finalLayout[y].toCharArray();
-        }
-
         for (int y = 1; y < height - 1; y++) {
             for (int x = 1; x < width - 1; x++) {
                 if (originalChars[y][x] == 'D') {
@@ -452,17 +606,85 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     boolean hasWallRight = (originalChars[y][x + 1] == '#');
                     boolean isVerticallyEnclosed = hasWallTop && hasWallBottom;
                     boolean isHorizontallyEnclosed = hasWallLeft && hasWallRight;
-
-                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed) {
-                        Gdx.app.log("ChunkGenerator", "Removing orphaned door at (" + x + ", " + (height - 1 - y) + ")");
+                    if (!isVerticallyEnclosed && !isHorizontallyEnclosed)
                         layoutChars[y][x] = '.';
-                    }
                 }
             }
         }
-
-        for (int y = 0; y < height; y++) {
+        for (int y = 0; y < height; y++)
             finalLayout[y] = new String(layoutChars[y]);
+    }
+
+    private boolean isValidSpawnPosition(GridPoint2 pos) {
+        if (finalLayout == null || finalLayout.length == 0)
+            return false;
+        int height = finalLayout.length;
+        int width = finalLayout[0].length();
+        if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height)
+            return false;
+        int layoutY = height - 1 - pos.y;
+        char c = finalLayout[layoutY].charAt(pos.x);
+        return c != '#' && c != 'D';
+    }
+
+    private void forceClearTile(GridPoint2 pos) {
+        if (finalLayout == null)
+            return;
+        int height = finalLayout.length;
+        int layoutY = height - 1 - pos.y;
+        if (layoutY >= 0 && layoutY < height) {
+            StringBuilder sb = new StringBuilder(finalLayout[layoutY]);
+            if (pos.x >= 0 && pos.x < sb.length()) {
+                sb.setCharAt(pos.x, '.');
+                finalLayout[layoutY] = sb.toString();
+            }
+        }
+    }
+
+    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager) {
+        if (encounterManager == null)
+            return;
+
+        int numEncounters = 1 + random.nextInt(3);
+        for (int i = 0; i < numEncounters; i++) {
+            int x, y;
+            int attempts = 0;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+                attempts++;
+
+                // Check accessibility: Must be a floor tile '.'
+                // finalLayout is stored top-down (index 0 is Y=Max)
+                boolean isFloor = false;
+                if (finalLayout != null) {
+                    int layoutY = maze.getHeight() - 1 - y;
+                    if (layoutY >= 0 && layoutY < finalLayout.length) {
+                        if (finalLayout[layoutY].charAt(x) == '.') {
+                            isFloor = true;
+                        }
+                    }
+                }
+
+                if (!isFloor)
+                    continue;
+
+            } while ((maze.getScenery().containsKey(new GridPoint2(x, y))
+                    || maze.getItems().containsKey(new GridPoint2(x, y))
+                    || maze.getMonsters().containsKey(new GridPoint2(x, y))
+                    || maze.getEventAt(x, y) != null
+            // Additional check: Ensure it's not a door or wall (which bitmask 0 check
+            // implies, but explicit floor check handles it)
+            )
+                    && attempts < 50);
+
+            if (attempts < 50) { // Found a valid spot
+                String encounterId = encounterManager.getRandomEncounterId();
+                if (encounterId != null) {
+                    maze.addEvent(x, y, encounterId);
+                    Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " at " + x + "," + y);
+                }
+            }
         }
     }
 }

@@ -1,0 +1,210 @@
+
+weapons.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+big_bolt
+  rotate: false
+  xy: 3320, 1307
+  size: 684, 665
+  orig: 707, 682
+  offset: 8, 10
+  index: -1
+big_fireball
+  rotate: false
+  xy: 3320, 788
+  size: 635, 517
+  orig: 658, 536
+  offset: 9, 9
+  index: -1
+bow
+  rotate: false
+  xy: 0, 1038
+  size: 2677, 1481
+  orig: 2816, 1536
+  offset: 22, 45
+  index: -1
+crossbow
+  rotate: false
+  xy: 0, 2521
+  size: 2702, 1480
+  orig: 2816, 1536
+  offset: 57, 28
+  index: -1
+dart
+  rotate: false
+  xy: 2049, 26
+  size: 1668, 284
+  orig: 1892, 426
+  offset: 112, 71
+  index: -1
+empty_weapon
+  rotate: false
+  xy: 3671, 4000
+  size: 1, 1
+  orig: 32, 32
+  offset: 31, 0
+  index: -1
+firenball
+  rotate: false
+  xy: 2704, 2964
+  size: 965, 1037
+  orig: 1063, 1131
+  offset: 49, 47
+  index: -1
+lightning_bolt
+  rotate: false
+  xy: 2679, 1075
+  size: 639, 897
+  orig: 874, 1029
+  offset: 117, 66
+  index: -1
+rusty_weapon
+  rotate: false
+  xy: 2049, 312
+  size: 1764, 474
+  orig: 2048, 684
+  offset: 142, 105
+  index: -1
+scroll
+  rotate: false
+  xy: 0, 0
+  size: 2047, 1036
+  orig: 2154, 1143
+  offset: 53, 54
+  index: -1
+sword
+  rotate: false
+  xy: 2704, 1974
+  size: 923, 988
+  orig: 1024, 1024
+  offset: 50, 18
+  index: -1
+
+weapons2.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+axe
+  rotate: false
+  xy: 0, 288
+  size: 2468, 1456
+  orig: 2544, 1536
+  offset: 38, 40
+  index: -1
+book
+  rotate: false
+  xy: 2470, 496
+  size: 1459, 1248
+  orig: 1522, 1536
+  offset: 31, 144
+  index: -1
+knife
+  rotate: false
+  xy: 0, 1746
+  size: 2727, 1409
+  orig: 2816, 1536
+  offset: 44, 64
+  index: -1
+spear
+  rotate: false
+  xy: 0, 0
+  size: 2446, 286
+  orig: 2562, 666
+  offset: 58, 190
+  index: -1
+
+weapons3.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+baghnakh
+  rotate: false
+  xy: 0, 1441
+  size: 2674, 1449
+  orig: 2816, 1536
+  offset: 71, 32
+  index: -1
+battle_axe
+  rotate: false
+  xy: 0, 0
+  size: 2672, 1439
+  orig: 2816, 1536
+  offset: 72, 43
+  index: -1
+
+weapons4.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+assegai
+  rotate: false
+  xy: 0, 1419
+  size: 2674, 1406
+  orig: 2816, 1536
+  offset: 71, 59
+  index: -1
+flightarrow
+  rotate: false
+  xy: 0, 0
+  size: 2662, 1417
+  orig: 2816, 1536
+  offset: 71, 59
+  index: -1
+
+weapons5.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+Arquebus
+  rotate: false
+  xy: 0, 1443
+  size: 2651, 1406
+  orig: 2816, 1536
+  offset: 71, 59
+  index: -1
+bardfriend
+  rotate: false
+  xy: 0, 0
+  size: 2521, 1441
+  orig: 2816, 1536
+  offset: 247, 47
+  index: -1
+
+weapons6.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+Alhulak
+  rotate: false
+  xy: 0, 1397
+  size: 2533, 1420
+  orig: 2816, 1536
+  offset: 118, 47
+  index: -1
+ankuselephantgoad
+  rotate: false
+  xy: 0, 0
+  size: 2533, 1395
+  orig: 2816, 1536
+  offset: 118, 71
+  index: -1
+
+weapons7.png
+size: 4096, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+basiliard
+  rotate: false
+  xy: 0, 0
+  size: 2474, 1300
+  orig: 2816, 1536
+  offset: 189, 177
+  index: -1

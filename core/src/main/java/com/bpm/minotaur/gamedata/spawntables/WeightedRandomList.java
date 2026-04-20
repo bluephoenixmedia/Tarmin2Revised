@@ -13,10 +13,12 @@ public class WeightedRandomList<T extends SpawnTableEntry> {
     private int totalWeight = 0;
     private final Random random = new Random();
 
-    public WeightedRandomList() {}
+    public WeightedRandomList() {
+    }
 
     /**
      * Adds a spawn entry to this list and updates the total weight.
+     * 
      * @param entry The entry to add.
      */
     public void add(T entry) {
@@ -28,6 +30,7 @@ public class WeightedRandomList<T extends SpawnTableEntry> {
 
     /**
      * Checks if this list is empty (i.e., no valid entries were added).
+     * 
      * @return True if empty, false otherwise.
      */
     public boolean isEmpty() {
@@ -36,6 +39,7 @@ public class WeightedRandomList<T extends SpawnTableEntry> {
 
     /**
      * Gets a random entry from the list, respecting the weights of all entries.
+     * 
      * @return A randomly selected entry, or null if the list is empty.
      */
     public T getRandomEntry() {
@@ -54,6 +58,31 @@ public class WeightedRandomList<T extends SpawnTableEntry> {
         }
 
         // Fallback (should never be hit if totalWeight is correct, but safe)
+        return entries.get(0);
+    }
+
+    /**
+     * Gets a random entry from the list using the provided Random instance.
+     * 
+     * @param rng The Random instance to use.
+     * @return A randomly selected entry, or null if the list is empty.
+     */
+    public T getRandomEntry(Random rng) {
+        if (isEmpty()) {
+            return null;
+        }
+
+        int randomWeight = rng.nextInt(totalWeight);
+        int currentWeight = 0;
+
+        for (T entry : entries) {
+            currentWeight += entry.weight;
+            if (randomWeight < currentWeight) {
+                return entry;
+            }
+        }
+
+        // Fallback
         return entries.get(0);
     }
 }

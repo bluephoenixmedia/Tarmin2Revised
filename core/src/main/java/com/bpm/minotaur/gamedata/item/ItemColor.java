@@ -11,6 +11,7 @@ public enum ItemColor {
     YELLOW("Yellow", "High", Color.YELLOW, 1.5f),
     WHITE("White", "Super", Color.WHITE, 2.0f),
     GREEN("Green", "Regular", Color.GREEN, 1.0f), // <--- Added Green
+    GOLD("Gold", "Precious", new Color(1f, 0.84f, 0f, 1f), 1.5f),
 
     // Spiritual Weapons & Rings Colors
     BLUE("Blue", "Regular", Color.BLUE, 1.0f),
@@ -25,7 +26,6 @@ public enum ItemColor {
     CONTAINER_ORANGE("Orange", "Good Quality", new Color(1f, 0.5f, 0f, 1f), 1.5f),
     CONTAINER_BLUE("Blue", "Best Quality", Color.BLUE, 2.0f);
 
-
     private final String name;
     private final String powerLevel;
     private final Color color;
@@ -37,8 +37,6 @@ public enum ItemColor {
         this.color = color;
         this.multiplier = multiplier;
     }
-
-
 
     public String getName() {
         return name;

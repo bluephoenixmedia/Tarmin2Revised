@@ -14,5 +14,6 @@ public enum DamageType {
     DISEASE,
     DARK,
     LIGHT,
-    SORCERY
+    SORCERY,
+    MAGICAL         // Added to support new monsters (Lich, Vampire, etc.)
 }

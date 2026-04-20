@@ -18,18 +18,19 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.bullet.collision.*;
 import com.badlogic.gdx.physics.bullet.dynamics.*;
 import com.badlogic.gdx.physics.bullet.linearmath.btMotionState;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.bpm.minotaur.gamedata.dice.Die;
+import com.bpm.minotaur.gamedata.dice.DieFace;
+import com.bpm.minotaur.gamedata.dice.DieResult;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class StochasticManager implements Disposable {
@@ -53,14 +54,17 @@ public class StochasticManager implements Disposable {
     private final Array<btCollisionShape> shapes = new Array<>();
 
     // --- Dice Tracking ---
+    // Map RigidBody to the logical Die object to resolve results
+    private final Map<btRigidBody, Die> bodyToDieMap = new HashMap<>();
     private final Array<btRigidBody> activeDice = new Array<>();
+
     private final Array<ModelInstance> dieInstances = new Array<>();
-    private final Array<Model> dieModels = new Array<>();
+    private final Array<Model> dieModels = new Array<>(); // We need unique models per die if textures differ
     private final Array<btCollisionShape> dieShapes = new Array<>();
     private final Array<btMotionState> dieMotionStates = new Array<>();
 
     // --- Textures ---
-    private final Map<Integer, Texture> pipTextures = new HashMap<>();
+    private final Array<Texture> generatedTextures = new Array<>();
 
     // --- Camera Control ---
     private final Vector3 camStartPos = new Vector3(0, 25f, 1f);
@@ -95,55 +99,76 @@ public class StochasticManager implements Disposable {
         camera.far = 300f;
         camera.update();
 
-        // 4. Generate Pip Textures (1-6)
-        generatePipTextures();
-
         createTray();
     }
 
-    private void generatePipTextures() {
-        for (int i = 1; i <= 6; i++) {
-            pipTextures.put(i, createPipTexture(i));
-        }
-    }
-
-    private Texture createPipTexture(int number) {
+    private Texture createFaceTexture(DieFace face, Color dieColor) {
         int size = 128;
         Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
 
-        // Background (Dice Color - Whiteish)
-        pixmap.setColor(0.9f, 0.9f, 0.9f, 1f);
+        // Diffuse Color (Die Color)
+        pixmap.setColor(dieColor);
         pixmap.fill();
 
         // Border
-        pixmap.setColor(0.7f, 0.7f, 0.7f, 1f);
+        pixmap.setColor(new Color(dieColor).mul(0.8f)); // Darker
         pixmap.drawRectangle(0, 0, size, size);
+        pixmap.drawRectangle(1, 1, size - 2, size - 2);
 
-        // Pips (Black)
-        pixmap.setColor(Color.BLACK);
-        int r = 12; // Radius
+        // Symbol / Text
+        pixmap.setColor(Color.WHITE);
+        if (face.getColorOverride() != null) {
+            pixmap.setColor(face.getColorOverride());
+        }
+
         int c = size / 2;
-        int q1 = size / 4;
-        int q3 = size * 3 / 4;
 
-        // Logic for standard dice pips
-        if (number % 2 != 0) pixmap.fillCircle(c, c, r); // Center dot for 1, 3, 5
-        if (number > 1) {
-            pixmap.fillCircle(q3, q1, r); // Top Right
-            pixmap.fillCircle(q1, q3, r); // Bottom Left
-        }
-        if (number > 3) {
-            pixmap.fillCircle(q1, q1, r); // Top Left
-            pixmap.fillCircle(q3, q3, r); // Bottom Right
-        }
-        if (number == 6) {
-            pixmap.fillCircle(q1, c, r); // Middle Left
-            pixmap.fillCircle(q3, c, r); // Middle Right
+        switch (face.getType()) {
+            case SWORD:
+                // Draw a line/cross
+                pixmap.fillRectangle(c - 5, 20, 10, size - 40);
+                pixmap.fillRectangle(c - 20, c - 10, 40, 10); // Hilt
+                break;
+            case SHIELD:
+                pixmap.fillCircle(c, c, 35);
+                pixmap.setColor(dieColor);
+                pixmap.fillCircle(c, c, 25); // Ring
+                break;
+            case SKULL:
+                pixmap.setColor(Color.BLACK);
+                pixmap.fillCircle(c, c - 10, 20);
+                pixmap.fillRectangle(c - 10, c + 15, 20, 15);
+                break;
+            case FIRE:
+                pixmap.setColor(Color.ORANGE);
+                pixmap.fillTriangle(c, 20, c - 20, size - 30, c + 20, size - 30);
+                break;
+            case HEART:
+                pixmap.setColor(Color.RED);
+                pixmap.fillCircle(c - 15, c, 15);
+                pixmap.fillCircle(c + 15, c, 15);
+                pixmap.fillTriangle(c - 30, c + 5, c + 30, c + 5, c, size - 20);
+                break;
+            case LIGHTNING:
+                pixmap.setColor(Color.YELLOW);
+                pixmap.drawLine(c + 10, 20, c - 10, c);
+                pixmap.drawLine(c - 10, c, c + 10, size - 20);
+                break;
+            case BLANK:
+            default:
+                // Dot for value if simple
+                if (face.getValue() > 0) {
+                    pixmap.setColor(Color.BLACK);
+                    pixmap.fillCircle(c, c, 10);
+                }
+                break;
         }
 
         Texture tex = new Texture(pixmap);
         tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         pixmap.dispose();
+
+        generatedTextures.add(tex); // Track for disposal
         return tex;
     }
 
@@ -152,8 +177,8 @@ public class StochasticManager implements Disposable {
 
         // Floor
         Model groundModel = mb.createBox(20f, 1f, 20f,
-            new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY)),
-            VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+                new Material(ColorAttribute.createDiffuse(Color.DARK_GRAY)),
+                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
         models.add(groundModel);
         ModelInstance groundInstance = new ModelInstance(groundModel);
         instances.add(groundInstance);
@@ -161,7 +186,8 @@ public class StochasticManager implements Disposable {
         btCollisionShape groundShape = new btBoxShape(new Vector3(10f, 0.5f, 10f));
         shapes.add(groundShape);
 
-        btRigidBody.btRigidBodyConstructionInfo groundInfo = new btRigidBody.btRigidBodyConstructionInfo(0, null, groundShape, Vector3.Zero);
+        btRigidBody.btRigidBodyConstructionInfo groundInfo = new btRigidBody.btRigidBodyConstructionInfo(0, null,
+                groundShape, Vector3.Zero);
         btRigidBody groundBody = new btRigidBody(groundInfo);
         groundBody.setFriction(0.8f);
         bodies.add(groundBody);
@@ -175,13 +201,17 @@ public class StochasticManager implements Disposable {
         float wallY = 0.5f + (wallHeight / 2f);
         Color wallColor = Color.GRAY;
 
-        Model wallNSModel = mb.createBox(wallLength, wallHeight, wallThickness, new Material(ColorAttribute.createDiffuse(wallColor)), VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
-        Model wallEWModel = mb.createBox(wallThickness, wallHeight, wallLength, new Material(ColorAttribute.createDiffuse(wallColor)), VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+        Model wallNSModel = mb.createBox(wallLength, wallHeight, wallThickness,
+                new Material(ColorAttribute.createDiffuse(wallColor)),
+                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
+        Model wallEWModel = mb.createBox(wallThickness, wallHeight, wallLength,
+                new Material(ColorAttribute.createDiffuse(wallColor)),
+                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
         models.add(wallNSModel);
         models.add(wallEWModel);
 
-        btBoxShape shapeNS = new btBoxShape(new Vector3(wallLength/2, wallHeight/2, wallThickness/2));
-        btBoxShape shapeEW = new btBoxShape(new Vector3(wallThickness/2, wallHeight/2, wallLength/2));
+        btBoxShape shapeNS = new btBoxShape(new Vector3(wallLength / 2, wallHeight / 2, wallThickness / 2));
+        btBoxShape shapeEW = new btBoxShape(new Vector3(wallThickness / 2, wallHeight / 2, wallLength / 2));
         shapes.add(shapeNS);
         shapes.add(shapeEW);
 
@@ -196,7 +226,8 @@ public class StochasticManager implements Disposable {
         instance.transform.setToTranslation(x, y, z);
         instances.add(instance);
 
-        btRigidBody.btRigidBodyConstructionInfo info = new btRigidBody.btRigidBodyConstructionInfo(0, null, shape, Vector3.Zero);
+        btRigidBody.btRigidBodyConstructionInfo info = new btRigidBody.btRigidBodyConstructionInfo(0, null, shape,
+                Vector3.Zero);
         btRigidBody body = new btRigidBody(info);
         body.setWorldTransform(instance.transform);
         body.setFriction(0.5f);
@@ -207,131 +238,136 @@ public class StochasticManager implements Disposable {
         info.dispose();
     }
 
-    public void spawnDie(int damagePotential, float impulsePower) {
+    public void spawnDice(List<Die> diceHand) {
         clearDice();
         isZooming = false;
         camera.position.set(camStartPos);
-        camera.lookAt(0,0,0);
+        camera.lookAt(0, 0, 0);
         camera.update();
 
-        int sides = 6; // Focusing on D6 for stability and visuals
+        int diceCount = diceHand.size();
+        float startX = -(diceCount * 1.0f);
 
-        // 1. Create Visual Model with Pips
-        Model visualModel = createD6Model();
-        dieModels.add(visualModel);
+        for (int i = 0; i < diceCount; i++) {
+            Die die = diceHand.get(i);
 
-        ModelInstance dieInstance = new ModelInstance(visualModel);
-        dieInstance.transform.setToTranslation(0, 12f, 0);
+            // Generate Visuals for this specific die
+            Model visualModel = createCustomDieModel(die);
+            dieModels.add(visualModel);
 
-        instances.add(dieInstance);
-        dieInstances.add(dieInstance);
+            ModelInstance dieInstance = new ModelInstance(visualModel);
+            // Stagger spawn positions
+            dieInstance.transform.setToTranslation(startX + (i * 2.5f), 10f + (i * 1.5f),
+                    (float) (Math.random() - 0.5f) * 2f);
 
-        // 2. Physics Shape (Cube)
-        btBoxShape boxShape = new btBoxShape(new Vector3(1.5f, 1.5f, 1.5f)); // Half-extents for 3x3x3 box
-        dieShapes.add(boxShape);
+            instances.add(dieInstance);
+            dieInstances.add(dieInstance);
 
-        Vector3 localInertia = new Vector3();
-        boxShape.calculateLocalInertia(1f, localInertia);
+            // Physics Shape
+            btBoxShape boxShape = new btBoxShape(new Vector3(1.5f, 1.5f, 1.5f));
+            dieShapes.add(boxShape);
 
-        MyMotionState motionState = new MyMotionState(dieInstance.transform);
-        dieMotionStates.add(motionState);
+            Vector3 localInertia = new Vector3();
+            boxShape.calculateLocalInertia(1f, localInertia);
 
-        btRigidBody.btRigidBodyConstructionInfo dieInfo = new btRigidBody.btRigidBodyConstructionInfo(1f, motionState, boxShape, localInertia);
-        btRigidBody dieBody = new btRigidBody(dieInfo);
-        dieInfo.dispose();
+            MyMotionState motionState = new MyMotionState(dieInstance.transform);
+            dieMotionStates.add(motionState);
 
-        // Physics Tweaks
-        dieBody.setFriction(0.6f);
-        dieBody.setRestitution(0.3f);
-        dieBody.setDamping(0.05f, 0.05f);
-        dieBody.setCcdMotionThreshold(1e-7f);
-        dieBody.setCcdSweptSphereRadius(0.5f);
+            btRigidBody.btRigidBodyConstructionInfo dieInfo = new btRigidBody.btRigidBodyConstructionInfo(1f,
+                    motionState, boxShape, localInertia);
+            btRigidBody dieBody = new btRigidBody(dieInfo);
+            dieInfo.dispose();
 
-        bodies.add(dieBody);
-        activeDice.add(dieBody);
-        dynamicsWorld.addRigidBody(dieBody);
+            dieBody.setFriction(0.6f);
+            dieBody.setRestitution(0.3f);
 
-        // Throw
-        dieBody.setAngularVelocity(new Vector3((float)Math.random()*15, (float)Math.random()*15, (float)Math.random()*15));
-        dieBody.applyCentralImpulse(new Vector3((float)(Math.random()-0.5)*impulsePower, -impulsePower * 1.2f, (float)(Math.random()-0.5)*impulsePower));
-        dieBody.activate();
+            bodies.add(dieBody);
+            activeDice.add(dieBody);
+            dynamicsWorld.addRigidBody(dieBody);
+
+            bodyToDieMap.put(dieBody, die);
+
+            // Throw
+            float impulsePower = 20f;
+            dieBody.setAngularVelocity(
+                    new Vector3((float) Math.random() * 20, (float) Math.random() * 20, (float) Math.random() * 20));
+            dieBody.applyCentralImpulse(new Vector3((float) (Math.random() - 0.5) * impulsePower, -impulsePower * 1.2f,
+                    (float) (Math.random() - 0.5) * impulsePower));
+            dieBody.activate();
+        }
     }
 
-    /**
-     * Builds a Cube using 6 separate rectangles, each with a specific Pip Texture.
-     */
-    private Model createD6Model() {
+    private Model createCustomDieModel(Die die) {
         ModelBuilder mb = new ModelBuilder();
         mb.begin();
 
-        long attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates;
-        float s = 1.5f; // half size
+        long attr = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+                | VertexAttributes.Usage.TextureCoordinates;
+        float s = 1.5f;
 
-        // Face 1 (Top, Y+)
-        mp(mb, 1, attr).rect(-s, s, s, s, s, s, s, s, -s, -s, s, -s, 0, 1, 0);
-
-        // Face 6 (Bottom, Y-)
-        mp(mb, 6, attr).rect(-s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s, 0, -1, 0);
-
-        // Face 2 (Front, Z+)
-        mp(mb, 2, attr).rect(-s, s, s, -s, -s, s, s, -s, s, s, s, s, 0, 0, 1);
-
-        // Face 5 (Back, Z-)
-        mp(mb, 5, attr).rect(s, s, -s, s, -s, -s, -s, -s, -s, -s, s, -s, 0, 0, -1);
-
-        // Face 3 (Right, X+)
-        mp(mb, 3, attr).rect(s, s, s, s, -s, s, s, -s, -s, s, s, -s, 1, 0, 0);
-
-        // Face 4 (Left, X-)
-        mp(mb, 4, attr).rect(-s, s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -1, 0, 0);
+        mp(mb, die.getFace(0), die.getDieColor(), attr).rect(-s, s, s, s, s, s, s, s, -s, -s, s, -s, 0, 1, 0); // Top
+        mp(mb, die.getFace(5), die.getDieColor(), attr).rect(-s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s, 0, -1, 0); // Bottom
+        mp(mb, die.getFace(1), die.getDieColor(), attr).rect(-s, s, s, -s, -s, s, s, -s, s, s, s, s, 0, 0, 1); // Front
+        mp(mb, die.getFace(4), die.getDieColor(), attr).rect(s, s, -s, s, -s, -s, -s, -s, -s, -s, s, -s, 0, 0, -1); // Back
+        mp(mb, die.getFace(2), die.getDieColor(), attr).rect(s, s, s, s, -s, s, s, -s, -s, s, s, -s, 1, 0, 0); // Right
+        mp(mb, die.getFace(3), die.getDieColor(), attr).rect(-s, s, -s, -s, -s, -s, -s, -s, s, -s, s, s, -1, 0, 0); // Left
 
         return mb.end();
     }
 
-    private MeshPartBuilder mp(ModelBuilder mb, int number, long attr) {
-        Material mat = new Material(TextureAttribute.createDiffuse(pipTextures.get(number)));
-        return mb.part("face"+number, GL20.GL_TRIANGLES, attr, mat);
+    private MeshPartBuilder mp(ModelBuilder mb, DieFace face, Color dieColor, long attr) {
+        Texture faceTex = createFaceTexture(face, dieColor);
+        Material mat = new Material(TextureAttribute.createDiffuse(faceTex));
+        return mb.part("face", GL20.GL_TRIANGLES, attr, mat);
     }
 
-    public int getRolledResult() {
-        if (activeDice.size == 0) return 1;
+    public List<DieResult> getRolledResults() {
+        List<DieResult> results = new ArrayList<>();
 
-        // Get Rotation Matrix
-        btRigidBody die = activeDice.get(0);
-        Matrix4 transform = die.getWorldTransform();
-
-        // Local Normals for faces 1 to 6
-        Vector3[] normals = {
-            new Vector3(0, 1, 0),  // 1
-            new Vector3(0, 0, 1),  // 2
-            new Vector3(1, 0, 0),  // 3
-            new Vector3(-1, 0, 0), // 4
-            new Vector3(0, 0, -1), // 5
-            new Vector3(0, -1, 0)  // 6
-        };
-        int[] values = { 1, 2, 3, 4, 5, 6 };
-
-        // Find which local normal is pointing closest to World Up (0, 1, 0)
-        float maxDot = -Float.MAX_VALUE;
-        int result = 1;
+        if (activeDice.size == 0)
+            return results;
 
         Vector3 worldUp = new Vector3(0, 1, 0);
         Vector3 rotatedNormal = new Vector3();
 
-        for(int i=0; i<6; i++) {
-            rotatedNormal.set(normals[i]).rot(transform);
-            float dot = rotatedNormal.dot(worldUp);
-            if (dot > maxDot) {
-                maxDot = dot;
-                result = values[i];
+        Vector3[] normals = {
+                new Vector3(0, 1, 0), // Face 0
+                new Vector3(0, 0, 1), // Face 1
+                new Vector3(1, 0, 0), // Face 2
+                new Vector3(-1, 0, 0), // Face 3
+                new Vector3(0, 0, -1), // Face 4
+                new Vector3(0, -1, 0) // Face 5
+        };
+
+        for (btRigidBody dieBody : activeDice) {
+            Die die = bodyToDieMap.get(dieBody);
+            if (die == null)
+                continue;
+
+            Matrix4 transform = dieBody.getWorldTransform();
+
+            float maxDot = -Float.MAX_VALUE;
+            int faceIndex = 0;
+
+            for (int i = 0; i < 6; i++) {
+                rotatedNormal.set(normals[i]).rot(transform);
+                float dot = rotatedNormal.dot(worldUp);
+                if (dot > maxDot) {
+                    maxDot = dot;
+                    faceIndex = i;
+                }
             }
+
+            DieFace rolledFace = die.getFace(faceIndex);
+            results.add(new DieResult(die, rolledFace));
         }
 
-        return result;
+        return results;
     }
 
     public boolean areDiceSettled() {
-        if (activeDice.size == 0) return false;
+        if (activeDice.size == 0)
+            return false;
         boolean allSleeping = true;
         for (btRigidBody body : activeDice) {
             if (body.getLinearVelocity().len2() > 0.01f || body.getAngularVelocity().len2() > 0.01f) {
@@ -343,13 +379,12 @@ public class StochasticManager implements Disposable {
     }
 
     public void update(float delta) {
-        dynamicsWorld.stepSimulation(delta, 5, 1f/60f);
+        dynamicsWorld.stepSimulation(delta, 5, 1f / 60f);
 
         // Emergency Reset
         for (btRigidBody body : activeDice) {
             Vector3 pos = body.getCenterOfMassPosition();
             if (pos.y < -5) {
-                Gdx.app.error("Physics", "DIE FELL OUT OF WORLD! Resetting...");
                 Matrix4 resetTrans = new Matrix4().setToTranslation(0, 10, 0);
                 body.setWorldTransform(resetTrans);
                 body.setLinearVelocity(Vector3.Zero);
@@ -362,15 +397,13 @@ public class StochasticManager implements Disposable {
         if (areDiceSettled() && activeDice.size > 0) {
             isZooming = true;
             Vector3 diePos = activeDice.get(0).getCenterOfMassPosition();
-            // Target: Above the die, slightly offset
             camTargetPos.set(diePos.x, diePos.y + 8f, diePos.z + 1f);
         }
 
         if (isZooming && activeDice.size > 0) {
-            // Speed up the zoom!
             camera.position.lerp(camTargetPos, 8f * delta);
             Vector3 diePos = activeDice.get(0).getCenterOfMassPosition();
-            camera.lookAt(diePos); // Always look at die
+            camera.lookAt(diePos);
             camera.update();
         }
     }
@@ -383,7 +416,6 @@ public class StochasticManager implements Disposable {
     }
 
     public void clearDice() {
-        // Stop zooming so we don't access empty list
         isZooming = false;
 
         for (btRigidBody body : activeDice) {
@@ -392,14 +424,26 @@ public class StochasticManager implements Disposable {
             body.dispose();
         }
         activeDice.clear();
+        bodyToDieMap.clear();
+
         instances.removeAll(dieInstances, true);
         dieInstances.clear();
-        for (Model m : dieModels) m.dispose();
+
+        for (Model m : dieModels)
+            m.dispose();
         dieModels.clear();
-        for (btCollisionShape s : dieShapes) s.dispose();
+
+        for (btCollisionShape s : dieShapes)
+            s.dispose();
         dieShapes.clear();
-        for (btMotionState ms : dieMotionStates) ms.dispose();
+
+        for (btMotionState ms : dieMotionStates)
+            ms.dispose();
         dieMotionStates.clear();
+
+        for (Texture t : generatedTextures)
+            t.dispose();
+        generatedTextures.clear();
     }
 
     @Override
@@ -409,9 +453,10 @@ public class StochasticManager implements Disposable {
             dynamicsWorld.removeRigidBody(body);
             body.dispose();
         }
-        for (btCollisionShape shape : shapes) shape.dispose();
-        for (Model model : models) model.dispose();
-        for (Texture t : pipTextures.values()) t.dispose();
+        for (btCollisionShape shape : shapes)
+            shape.dispose();
+        for (Model model : models)
+            model.dispose();
 
         dynamicsWorld.dispose();
         solver.dispose();
@@ -423,13 +468,16 @@ public class StochasticManager implements Disposable {
 
     static class MyMotionState extends btMotionState {
         private final com.badlogic.gdx.math.Matrix4 transform;
+
         public MyMotionState(com.badlogic.gdx.math.Matrix4 transform) {
             this.transform = transform;
         }
+
         @Override
         public void getWorldTransform(com.badlogic.gdx.math.Matrix4 worldTrans) {
             worldTrans.set(transform);
         }
+
         @Override
         public void setWorldTransform(com.badlogic.gdx.math.Matrix4 worldTrans) {
             transform.set(worldTrans);

@@ -31,7 +31,10 @@ if (JavaVersion.current().isJava9Compatible()) {
 dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-  implementation "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop" // <--- ADD THIS LINE
+  implementation "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"
+  implementation "org.bytedeco:ffmpeg-platform:6.1.1-1.5.10" // FFmpeg binaries
+  implementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion" // <--- ADD THIS LINE
+  implementation "com.badlogicgames.gdx:gdx-tools:$gdxVersion" // For TexturePacker
   implementation project(':core')
 
   if(enableGraalNative == 'true') {
@@ -180,4 +183,54 @@ startScripts.classpath = project.tasks.jar.outputs.files
 
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
+}
+
+task runSpawnTest(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Spawn Distribution Test"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SpawnDistributionTest'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runSpritePreviewer(type: JavaExec) {
+    group = "debug"
+    description = "Runs the Sprite Previewer Tool"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SpritePreviewerLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runHeadlessSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Headless Game Simulation"
+    mainClass = 'com.bpm.minotaur.lwjgl3.HeadlessSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runTexturePacker(type: JavaExec) {
+    group = "tools"
+    description = "Runs the Texture Packer"
+    mainClass = 'com.bpm.minotaur.lwjgl3.PackTextures'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = project.rootDir
+    ignoreExitValue = true
+}
+
+task runUnlockSimulation(type: JavaExec) {
+    group = "verification"
+    description = "Runs the Unlock System Simulation"
+    mainClass = 'com.bpm.minotaur.lwjgl3.UnlockSimulationLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
 }

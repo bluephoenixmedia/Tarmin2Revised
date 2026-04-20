@@ -9,11 +9,11 @@ public enum ModifierType {
     /** +N to base damage (War & Spiritual) */
     BONUS_DAMAGE,
     /** +N to base armor (Armor & Rings) */
-    BONUS_DEFENSE,
-    /** +N to player's max War Strength */
-    BONUS_WAR_STRENGTH,
-    /** +N to player's max Spiritual Strength */
-    BONUS_SPIRITUAL_STRENGTH,
+    BONUS_AC,
+    /** +N to player's max HP */
+    BONUS_MAX_HP,
+    /** +N to player's max MP */
+    BONUS_MAX_MP,
 
     // --- Elemental/Effect Damage (Weapons) ---
     ADD_FIRE_DAMAGE,
@@ -49,5 +49,8 @@ public enum ModifierType {
     BANE_UNDEAD,
     BANE_MYTHICAL,
     BANE_ANIMAL, // Kept separate from BEAST for things like snakes/spiders
-    BANE_HUMAN,  // Kept separate from HUMANOID for... humans
+    BANE_HUMAN, // Kept separate from HUMANOID for... humans
+
+    // --- Special ---
+    GRANT_INTRINSIC; // Value = StatusEffectType.ordinal()
 }

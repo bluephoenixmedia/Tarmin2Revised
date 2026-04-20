@@ -1,0 +1,453 @@
+Initialized native services in: C:\Users\denni\.gradle\native
+Initialized jansi services in: C:\Users\denni\.gradle\native
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon JVM discovery is an incubating feature.
+
+
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AReceived JVM installation metadata from 'C:\Program Files\Java\jdk-24': {JAVA_HOME=C:\Program Files\Java\jdk-24, JAVA_VERSION=24.0.1, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=24.0.1+9-30, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=24.0.1+9-30, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Starting process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm12649540992204236948probe Command: C:\Program Files\Java\jre1.8.0_471\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe[0K
+Starting process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm3538889298095594949probe Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe''
+Successfully started process 'command 'C:\Program Files\Java\jre1.8.0_471\bin\java.exe''
+
+[0K
+[2A[1B[1m> Starting Daemon > Extracting toolchain metadata from 'C:\Users\denni\.jdks\ms[m[79D[1B[2AReceived JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+Received JVM installation metadata from 'C:\Program Files\Java\jre1.8.0_471': {JAVA_HOME=C:\Program Files\Java\jre1.8.0_471, JAVA_VERSION=1.8.0_471, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=1.8.0_471-b09, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=25.471-b09, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}[0K
+Starting process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''. Working directory: C:\Users\denni\.gradle\.tmp\tmp-jvm15489300558492561012probe Command: C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe -Xmx32m -Xms32m -cp . JavaProbe
+Successfully started process 'command 'C:\Users\denni\.jdks\ms-21.0.7\bin\java.exe''
+Received JVM installation metadata from 'C:\Users\denni\.jdks\ms-21.0.7': {JAVA_HOME=C:\Users\denni\.jdks\ms-21.0.7, JAVA_VERSION=21.0.7, JAVA_VENDOR=Microsoft, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.7+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.7+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}
+
+[0K
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AStarting process 'Gradle build daemon'. Working directory: C:\Users\denni\.gradle\daemon\8.14.3 Command: C:\Users\denni\.jdks\ms-17.0.15\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -Xms512M -Xmx1G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\gradle-daemon-main-8.14.3.jar -javaagent:C:\Users\denni\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+Successfully started process 'Gradle build daemon'[0K
+
+[0K
+[2A[1B[1m> Starting Daemon[m[17D[1B[2AAn attempt to start the daemon took 1.052 secs.
+[1B[0K
+[2A[0K[1B[1m> Starting Daemon > Connecting to Daemon[m[40D[1B[2AThe client will now receive all logging from the daemon (pid: 21840). The daemon log file: C:\Users\denni\.gradle\daemon\8.14.3\daemon-21840.out.log
+Daemon will be stopped at the end of the build [0K
+
+[0K
+[2A[1B> IDLE[6D[1B[2AUsing 32 worker leases.
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [74ms][m[38D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [175ms][m[39D[2B[2AReceived JVM installation metadata from 'C:\Users\denni\.jdks\ms-17.0.15': {JAVA_HOME=C:\Users\denni\.jdks\ms-17.0.15, JAVA_VERSION=17.0.15, JAVA_VENDOR=Microsoft, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=17.0.15+6-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.15+6-LTS, VM_VENDOR=Microsoft, OS_ARCH=amd64}[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [274ms][m[39D[1B> IDLE[6D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [374ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [474ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [575ms][m[39D[2B[2AWatching the file system is configured to be enabled if available[0K
+Now considering [C:\Users\denni\Desktop\Tarmin2] as hierarchies to watch[0K
+File system watching is active
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [674ms][m[39D[1B[1m> Evaluating settings[m[21D[1B[2A[1m<[0;1m-------------> 0% INITIALIZING [774ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [874ms][m[39D[2B[2A[1m<[0;1m-------------> 0% INITIALIZING [976ms][m[39D[2B[2AStarting Build[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[36D[1B[1m> Evaluating settings[m[21D[1B[1A[1m> Evaluating settings > Resolve dependencies of detachedConfiguration1[m[70D[1B[2AResolved plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0'][0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [1s][m[0K[36D[1B[1m> Evaluating settings[m[21D[1B[1A[1m> Evaluating settings > Resolve files of configuration 'classpath'[m[66D[1B[2ASettings evaluated using settings file 'C:\Users\denni\Desktop\Tarmin2\settings.gradle'.[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% INITIALIZING [2s][m[0K[36D[1B> IDLE[6D[1B[2AProjects loaded. Root project using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.[0K
+Included projects: [root project 'Tarmin2', project ':core', project ':lwjgl3'][0K
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% CONFIGURING [2s][m[35D[1B> IDLE[6D[1B[1A[1m> root project[m[14D[1B[2A[1m<[0;1m-------------> 0% CONFIGURING [3s][m[35D[2B[2A[0K
+[1m> Configure project :[m[0K
+Evaluating root project 'Tarmin2' using build file 'C:\Users\denni\Desktop\Tarmin2\build.gradle'.
+
+[1m> Configure project :core[m
+Evaluating project ':core' using build file 'C:\Users\denni\Desktop\Tarmin2\core\build.gradle'.
+[0K
+[0K
+[2A[1m<[0;32;1m========[0;39;1m-----> 66% CONFIGURING [3s][m[36D[1B[1m> :lwjgl3[m[9D[1B[1A[1m> :lwjgl3 > Resolve files of configuration ':lwjgl3:runtimeClasspath'[m[69D[1B[2A[0K
+[1m> Configure project :lwjgl3[m[0K
+Evaluating project ':lwjgl3' using build file 'C:\Users\denni\Desktop\Tarmin2\lwjgl3\build.gradle'.
+Resolved plugin [id: 'application']
+All projects evaluated.
+Task name matched 'clean'
+[0K
+[0K
+[2A[1m<[0;32;1m=============[0;39;1m> 100% CONFIGURING [3s][m[37D[1B> IDLE[6D[1B[2ATask name matched 'compileJava'[0K
+Selected primary task 'clean' from project :[0K
+Selected primary task 'compileJava' from project :
+Tasks to be executed: [task ':core:clean', task ':lwjgl3:clean', task ':core:compileJava', task ':lwjgl3:compileJava']
+Tasks that were excluded: []
+Resolve mutations for :core:clean (Thread[Execution worker Thread 8,5,main]) started.
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% EXECUTING [4s][m[33D[1B> IDLE[6D[1B[2A:core:clean (Thread[included builds,5,main]) started.[0K
+[1B[0K
+[2A[1m<[0;1m-------------> 0% EXECUTING [4s][m[33D[1B[1m> :core:clean[m[13D[1B[2A[0K
+[1m> Task :core:clean[m[0K
+Caching disabled for task ':core:clean' because:
+  Build cache is disabled
+Task ':core:clean' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Resolve mutations for :lwjgl3:clean (Thread[included builds,5,main]) started.
+:lwjgl3:clean (Thread[included builds,5,main]) started.
+destroyer locations for task group 0 (Thread[Execution worker Thread 3,5,main]) started.
+
+[1m> Task :lwjgl3:clean[m
+Caching disabled for task ':lwjgl3:clean' because:
+  Build cache is disabled
+Task ':lwjgl3:clean' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Resolve mutations for :core:compileJava (Thread[Execution worker Thread 3,5,main]) started.
+:core:compileJava (Thread[Execution worker Thread 3,5,main]) started.
+[0K
+[0K
+[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [4s][m[34D[1B[1m> :core:compileJava[m[19D[1B[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [5s][m[34D[2B[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [6s][m[34D[2BC:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\managers\SoundManager.java:236: warning: [cast] redundant cast to short
+            samples[i] = (short) ((i % wavelength < wavelength / 2) ? (short)(Short.MAX_VALUE * volume) : (short)(-Short.MAX_VALUE * volume));
+                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:936: warning: [cast] redundant cast to float
+        float xi = (float)(x - i);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:937: warning: [cast] redundant cast to float
+        float yi = (float)(y - j);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:940: warning: [cast] redundant cast to float
+        float x0 = (float)(xi - t);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:941: warning: [cast] redundant cast to float
+        float y0 = (float)(yi - t);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:955: warning: [cast] redundant cast to float
+        float c = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a);
+                  ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:955: warning: [cast] redundant cast to float
+        float c = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a);
+                                                                  ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:959: warning: [cast] redundant cast to float
+            float x2 = x0 + (2 * (float)G2 - 1);
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:960: warning: [cast] redundant cast to float
+            float y2 = y0 + (2 * (float)G2 - 1);
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:966: warning: [cast] redundant cast to float
+            float x1 = x0 + (float)G2;
+                            ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:967: warning: [cast] redundant cast to float
+            float y1 = y0 + ((float)G2 - 1);
+                             ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:977: warning: [cast] redundant cast to float
+            float x1 = x0 + ((float)G2 - 1);
+                             ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:978: warning: [cast] redundant cast to float
+            float y1 = y0 + (float)G2;
+                            ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1004: warning: [cast] redundant cast to float
+        float x0 = (float)(x - i);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1005: warning: [cast] redundant cast to float
+        float y0 = (float)(y - j);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1006: warning: [cast] redundant cast to float
+        float z0 = (float)(z - k);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1103: warning: [cast] redundant cast to float
+        float xi = (float)(x - i);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1104: warning: [cast] redundant cast to float
+        float yi = (float)(y - j);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1111: warning: [cast] redundant cast to float
+        float t = (xi + yi) * (float)G2;
+                              ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1118: warning: [cast] redundant cast to float
+        float a1 = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a0);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1118: warning: [cast] redundant cast to float
+        float a1 = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a0);
+                                                                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1119: warning: [cast] redundant cast to float
+        float x1 = x0 - (float)(1 - 2 * G2);
+                        ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1120: warning: [cast] redundant cast to float
+        float y1 = y0 - (float)(1 - 2 * G2);
+                        ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1129: warning: [cast] redundant cast to float
+                float x2 = x0 + (float)(3 * G2 - 2);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1130: warning: [cast] redundant cast to float
+                float y2 = y0 + (float)(3 * G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1139: warning: [cast] redundant cast to float
+                float x2 = x0 + (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1140: warning: [cast] redundant cast to float
+                float y2 = y0 + (float)(G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1150: warning: [cast] redundant cast to float
+                float x3 = x0 + (float)(3 * G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1151: warning: [cast] redundant cast to float
+                float y3 = y0 + (float)(3 * G2 - 2);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1160: warning: [cast] redundant cast to float
+                float x3 = x0 + (float)(G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1161: warning: [cast] redundant cast to float
+                float y3 = y0 + (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1173: warning: [cast] redundant cast to float
+                float x2 = x0 + (float)(1 - G2);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1174: warning: [cast] redundant cast to float
+                float y2 = y0 - (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1183: warning: [cast] redundant cast to float
+                float x2 = x0 + (float)(G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1184: warning: [cast] redundant cast to float
+                float y2 = y0 + (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1194: warning: [cast] redundant cast to float
+                float x2 = x0 - (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1195: warning: [cast] redundant cast to float
+                float y2 = y0 - (float)(G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1204: warning: [cast] redundant cast to float
+                float x2 = x0 + (float)G2;
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1205: warning: [cast] redundant cast to float
+                float y2 = y0 + (float)(G2 - 1);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1231: warning: [cast] redundant cast to float
+        float xi = (float)(x - i);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1232: warning: [cast] redundant cast to float
+        float yi = (float)(y - j);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1233: warning: [cast] redundant cast to float
+        float zi = (float)(z - k);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1440: warning: [cast] redundant cast to float
+                        float vecX = (float)(xi - x) + RandVecs2D[idx] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1441: warning: [cast] redundant cast to float
+                        float vecY = (float)(yi - y) + RandVecs2D[idx | 1] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1466: warning: [cast] redundant cast to float
+                        float vecX = (float)(xi - x) + RandVecs2D[idx] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1467: warning: [cast] redundant cast to float
+                        float vecY = (float)(yi - y) + RandVecs2D[idx | 1] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1492: warning: [cast] redundant cast to float
+                        float vecX = (float)(xi - x) + RandVecs2D[idx] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1493: warning: [cast] redundant cast to float
+                        float vecY = (float)(yi - y) + RandVecs2D[idx | 1] * cellularJitter;
+                                     ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1574: warning: [cast] redundant cast to float
+                            float vecX = (float)(xi - x) + RandVecs3D[idx] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1575: warning: [cast] redundant cast to float
+                            float vecY = (float)(yi - y) + RandVecs3D[idx | 1] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1576: warning: [cast] redundant cast to float
+                            float vecZ = (float)(zi - z) + RandVecs3D[idx | 2] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1607: warning: [cast] redundant cast to float
+                            float vecX = (float)(xi - x) + RandVecs3D[idx] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1608: warning: [cast] redundant cast to float
+                            float vecY = (float)(yi - y) + RandVecs3D[idx | 1] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1609: warning: [cast] redundant cast to float
+                            float vecZ = (float)(zi - z) + RandVecs3D[idx | 2] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1640: warning: [cast] redundant cast to float
+                            float vecX = (float)(xi - x) + RandVecs3D[idx] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1641: warning: [cast] redundant cast to float
+                            float vecY = (float)(yi - y) + RandVecs3D[idx | 1] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1642: warning: [cast] redundant cast to float
+                            float vecZ = (float)(zi - z) + RandVecs3D[idx | 2] * cellularJitter;
+                                         ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1702: warning: [cast] redundant cast to float
+        float xd0 = (float)(x - x0);
+                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1703: warning: [cast] redundant cast to float
+        float yd0 = (float)(y - y0);
+                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1727: warning: [cast] redundant cast to float
+        float xd0 = (float)(x - x0);
+                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1728: warning: [cast] redundant cast to float
+        float yd0 = (float)(y - y0);
+                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1729: warning: [cast] redundant cast to float
+        float zd0 = (float)(z - z0);
+                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1764: warning: [cast] redundant cast to float
+        float xs = (float)(x - x1);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1765: warning: [cast] redundant cast to float
+        float ys = (float)(y - y1);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1794: warning: [cast] redundant cast to float
+        float xs = (float)(x - x1);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1795: warning: [cast] redundant cast to float
+        float ys = (float)(y - y1);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1796: warning: [cast] redundant cast to float
+        float zs = (float)(z - z1);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1849: warning: [cast] redundant cast to float
+        float xs = InterpHermite((float)(x - x0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1850: warning: [cast] redundant cast to float
+        float ys = InterpHermite((float)(y - y0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1869: warning: [cast] redundant cast to float
+        float xs = InterpHermite((float)(x - x0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1870: warning: [cast] redundant cast to float
+        float ys = InterpHermite((float)(y - y0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:1871: warning: [cast] redundant cast to float
+        float zs = InterpHermite((float)(z - z0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2189: warning: [cast] redundant cast to float
+        float xs = InterpHermite((float)(xf - x0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2190: warning: [cast] redundant cast to float
+        float ys = InterpHermite((float)(yf - y0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2223: warning: [cast] redundant cast to float
+        float xs = InterpHermite((float)(xf - x0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2224: warning: [cast] redundant cast to float
+        float ys = InterpHermite((float)(yf - y0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2225: warning: [cast] redundant cast to float
+        float zs = InterpHermite((float)(zf - z0));
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2290: warning: [cast] redundant cast to float
+        float xi = (float)(x - i);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2291: warning: [cast] redundant cast to float
+        float yi = (float)(y - j);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2294: warning: [cast] redundant cast to float
+        float x0 = (float)(xi - t);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2295: warning: [cast] redundant cast to float
+        float y0 = (float)(yi - t);
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2331: warning: [cast] redundant cast to float
+        float c = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a);
+                  ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2331: warning: [cast] redundant cast to float
+        float c = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t + ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a);
+                                                                  ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2334: warning: [cast] redundant cast to float
+            float x2 = x0 + (2 * (float)G2 - 1);
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2335: warning: [cast] redundant cast to float
+            float y2 = y0 + (2 * (float)G2 - 1);
+                                 ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2363: warning: [cast] redundant cast to float
+            float x1 = x0 + (float)G2;
+                            ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2364: warning: [cast] redundant cast to float
+            float y1 = y0 + ((float)G2 - 1);
+                             ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2395: warning: [cast] redundant cast to float
+            float x1 = x0 + ((float)G2 - 1);
+                             ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2396: warning: [cast] redundant cast to float
+            float y1 = y0 + (float)G2;
+                            ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2446: warning: [cast] redundant cast to float
+        float x0 = (float)x - i;
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2447: warning: [cast] redundant cast to float
+        float y0 = (float)y - j;
+                   ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\generation\FastNoiseLite.java:2448: warning: [cast] redundant cast to float
+        float z0 = (float)z - k;
+            [2A[0K
+[1m> Task :core:compileJava[m[0K
+Caching disabled for task ':core:compileJava' because:
+  Build cache is disabled
+Task ':core:compileJava' is not up-to-date because:
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\core\build\classes\java\main has been removed.
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\core\build\classes\java\main\com has been removed.
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\core\build\classes\java\main\com\bpm has been removed.
+  and more...
+The input changes require a full rebuild for incremental task ':core:compileJava'.
+Compilation mode: in-process compilation
+Full recompilation is required because no incremental change information is available. This is usually caused by clean builds or changing compiler arguments.
+Compiling with toolchain 'C:\Users\denni\.jdks\ms-17.0.15'.
+Compiling with JDK Java compiler API.
+[0K
+[0K
+[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [6s][m[34D[1B[1m> :core:compileJava[m[19D[1B       ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:463: warning: [cast] redundant cast to int
+            int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+                                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:534: warning: [cast] redundant cast to int
+            int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+                                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:635: warning: [cast] redundant cast to int
+            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+                                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:699: warning: [cast] redundant cast to int
+            int drawEndX = Math.min((int)viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+                                    ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\EntityRenderer.java:751: warning: [cast] redundant cast to int
+        int drawEndX = Math.min((int) viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+                                ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\rendering\FirstPersonRenderer.java:155: warning: [cast] redundant cast to int
+            depthBuffer = new float[(int)viewport.getScreenWidth()];
+                                    ^
+[2AClass dependency analysis for incremental compilation took 0.13 secs.[0K
+[1B[0K
+[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [6s][m[34D[1B[1m> :core:compileJava[m[19D[1B[2ACreated classpath snapshot for incremental compilation in 0.029 secs.[0K
+[1B[0K
+[2A[1m<[0;32;1m======[0;39;1m-------> 50% EXECUTING [6s][m[34D[1B[1m> :core:compileJava[m[19D[1B[2Awork action resolve main (project :core) (Thread[Execution worker Thread 9,5,main]) started.[0K
+Resolve mutations for :lwjgl3:compileJava (Thread[Execution worker Thread 9,5,main]) started.[0K
+:lwjgl3:compileJava (Thread[Execution worker Thread 9,5,main]) started.
+[0K
+[0K
+[2A[1m<[0;32;1m=========[0;39;1m----> 75% EXECUTING [7s][m[34D[1B[1m> :lwjgl3:compileJava[m[21D[1B[2A[0K
+[1m> Task :lwjgl3:compileJava[m[0K
+Caching disabled for task ':lwjgl3:compileJava' because:
+  Build cache is disabled
+Task ':lwjgl3:compileJava' is not up-to-date because:
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\lwjgl3\build\classes\java\main has been removed.
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\lwjgl3\build\classes\java\main\com has been removed.
+  Output property 'destinationDirectory' file C:\Users\denni\Desktop\Tarmin2\lwjgl3\build\classes\java\main\com\bpm has been removed.
+  and more...
+The input changes require a full rebuild for incremental task ':lwjgl3:compileJava'.
+Compilation mode: in-process compilation
+Full recompilation is required because no incremental change information is available. This is usually caused by clean builds or changing compiler arguments.
+Compiling with toolchain 'C:\Users\denni\.jdks\ms-17.0.15'.
+Compiling with JDK Java compiler API.
+Class dependency analysis for incremental compilation took 0.002 secs.
+Created classpath snapshot for incremental compilation in 0.012 secs.
+[0K
+[0K
+[2A[1m<[0;32;1m=============[0;39;1m> 100% EXECUTING [7s][m[35D[1B> IDLE[6D[1B[2A[0K
+[Incubating] Problems report is available at: file:///C:/Users/denni/Desktop/Tarmin2/build/reports/problems/problems-report.html[0K
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+[32;1mBUILD SUCCESSFUL[0;39m in 9s
+4 actionable tasks: 4 executed
+Watched directory hierarchies: [C:\Users\denni\Desktop\Tarmin2]
+[0K
+[0K
+[2A[1m<[0;1m-------------> 0% WAITING[m[26D[1B> IDLE[6D[1BC:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\weather\WeatherRenderer.java:137: warning: [static] static variable should be qualified by type name, GL20, instead of by an expression
+        Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
+                              ^
+C:\Users\denni\Desktop\Tarmin2\core\src\main\java\com\bpm\minotaur\weather\WeatherRenderer.java:149: warning: [static] static variable should be qualified by type name, GL20, instead of by an expression
+        Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
+                              ^
+100 warnings
+[2A[2K[1B[2K[1A

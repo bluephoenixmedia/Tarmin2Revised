@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.gore;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -7,8 +8,10 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.Maze;
+import com.badlogic.gdx.graphics.g2d.PolygonRegion;
 import java.util.HashMap;
 import java.util.Map;
+import com.bpm.minotaur.utils.ShatterUtils;
 
 public class GoreManager {
 
@@ -53,14 +56,36 @@ public class GoreManager {
         }
     };
 
-    public GoreManager() {}
+    public GoreManager() {
+    }
+
+    // --- Modern Textures ---
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> dropTextures = new Array<>();
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smearTextures = new Array<>();
+    private final Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibTextures = new Array<>();
+    private com.badlogic.gdx.graphics.g2d.TextureRegion spatterTexture;
+
+    public void setTextures(Array<com.badlogic.gdx.graphics.g2d.TextureRegion> drops,
+            Array<com.badlogic.gdx.graphics.g2d.TextureRegion> smears,
+            com.badlogic.gdx.graphics.g2d.TextureRegion spatter,
+            Array<com.badlogic.gdx.graphics.g2d.TextureRegion> gibs) {
+        Gdx.app.log("GoreManager", "setTextures called. Drops: " + drops.size + ", Smears: " + smears.size);
+        this.dropTextures.clear();
+        this.dropTextures.addAll(drops);
+        this.smearTextures.clear();
+        this.smearTextures.addAll(smears);
+        this.spatterTexture = spatter;
+        this.gibTextures.clear();
+        this.gibTextures.addAll(gibs);
+    }
 
     /**
      * Spawns blood particles using the global UNIFIED_BLOOD_COLOR.
      * Includes variation logic for clots vs arterial spray.
      */
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
-        int count = intensity * 12;
+        Gdx.app.log("GoreManager", "spawnBloodSpray called at " + origin + " with intensity " + intensity);
+        int count = intensity * 36;
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
             float spreadX = MathUtils.random(-0.4f, 0.4f);
@@ -88,32 +113,158 @@ public class GoreManager {
 
             float size = MathUtils.random(0.03f, 0.07f);
             float life = MathUtils.random(1.0f, 3.0f);
-            p.init(origin, vel, finalColor, life, size);
+
+            com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+            if (dropTextures.size > 0) {
+                tex = dropTextures.random();
+            } else {
+                Gdx.app.log("GoreManager", "No drop textures available!");
+            }
+
+            p.init(origin, vel, finalColor, life, size, tex);
             activeParticles.add(p);
         }
+        Gdx.app.log("GoreManager", "Active particles count: " + activeParticles.size);
     }
 
     /**
      * Spawns gibs using the global UNIFIED_BLOOD_COLOR.
      */
     public void spawnGibExplosion(Vector3 origin) {
-        int meatCount = MathUtils.random(3, 6);
-        int boneCount = MathUtils.random(2, 4);
+        // Modern Mode: Texture Gibs
+        if (gibTextures.size > 0) {
+            int count = MathUtils.random(4, 7);
+            for (int i = 0; i < count; i++) {
+                Gib g = gibPool.obtain();
+                com.badlogic.gdx.graphics.g2d.TextureRegion tex = gibTextures.random();
 
-        // Use unified color for meat chunks
-        for(int i=0; i<meatCount; i++) spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+                // Explosive velocity: Up and out
+                float angle = MathUtils.random(0, 360) * MathUtils.degreesToRadians;
+                float speed = MathUtils.random(2.0f, 6.0f);
+                float up = MathUtils.random(3.0f, 8.0f);
 
-        // Bones, ribs, intestines, etc usually have their own default tint or use the unified color if we choose
-        for(int i=0; i<boneCount; i++) spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean()) spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
-        if(MathUtils.randomBoolean(0.3f)) spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
+                Vector3 vel = new Vector3(MathUtils.cos(angle) * speed, up, MathUtils.sin(angle) * speed);
+
+                g.init(origin, vel, tex);
+                activeGibs.add(g);
+            }
+        } else {
+            // Fallback or just ignore if no textures
+        }
+
+        /*
+         * int meatCount = MathUtils.random(3, 6);
+         * int boneCount = MathUtils.random(2, 4);
+         * 
+         * // Use unified color for meat chunks
+         * for (int i = 0; i < meatCount; i++)
+         * spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
+         * 
+         * // Bones, ribs, intestines, etc usually have their own default tint or use
+         * the
+         * // unified color if we choose
+         * for (int i = 0; i < boneCount; i++)
+         * spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean())
+         * spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean())
+         * spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
+         * if (MathUtils.randomBoolean(0.3f))
+         * spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
+         */
     }
 
     private void spawnGib(Vector3 origin, GibType type, Color color) {
         Gib g = gibPool.obtain();
-        Vector3 vel = new Vector3(MathUtils.random(-1f, 1f), MathUtils.random(2f, 6f), MathUtils.random(-1f, 1f)).nor().scl(MathUtils.random(3f, 8f));
+        Vector3 vel = new Vector3(MathUtils.random(-1f, 1f), MathUtils.random(2f, 6f), MathUtils.random(-1f, 1f)).nor()
+                .scl(MathUtils.random(3f, 8f));
         g.init(origin, vel, type, color);
+        activeGibs.add(g);
+    }
+
+    public void spawnTextureGibs(Vector3 origin, com.badlogic.gdx.graphics.Texture texture) {
+        if (texture == null)
+            return;
+
+        // Create a TextureRegion for the whole texture
+        com.badlogic.gdx.graphics.g2d.TextureRegion fullRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
+                texture);
+
+        // Generate Voronoi-like shards (triangles)
+        // 10 internal points results in roughly 20-30 shards
+        Array<ShatterUtils.Shard> shards = ShatterUtils.shatter(fullRegion, 10);
+
+        for (ShatterUtils.Shard shard : shards) {
+            Gib g = gibPool.obtain();
+            // Random explosion velocity
+            Vector3 vel = new Vector3(
+                    MathUtils.random(-0.8f, 0.8f),
+                    MathUtils.random(2f, 5f),
+                    MathUtils.random(-0.8f, 0.8f)).nor().scl(MathUtils.random(2f, 5f));
+
+            g.init(origin, vel, shard);
+            activeGibs.add(g);
+        }
+    }
+
+    public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {
+        if (spriteData == null || spriteData.length == 0)
+            return;
+
+        int rows = spriteData.length;
+        int cols = spriteData[0].length();
+        int halfRows = rows / 2;
+        int halfCols = cols / 2;
+
+        // Top-Left
+        spawnQuadrantGib(origin, spriteData, 0, 0, halfCols, halfRows, color);
+        // Top-Right
+        spawnQuadrantGib(origin, spriteData, halfCols, 0, cols, halfRows, color);
+        // Bottom-Left
+        spawnQuadrantGib(origin, spriteData, 0, halfRows, halfCols, rows, color);
+        // Bottom-Right
+        spawnQuadrantGib(origin, spriteData, halfCols, halfRows, cols, rows, color);
+    }
+
+    private void spawnQuadrantGib(Vector3 origin, String[] fullSprite, int startCol, int startRow, int endCol,
+            int endRow, Color color) {
+        int height = endRow - startRow;
+        String[] chunk = new String[height];
+        boolean isEmpty = true;
+
+        for (int i = 0; i < height; i++) {
+            if (startRow + i < fullSprite.length) {
+                String row = fullSprite[startRow + i];
+                // Ensure we don't go out of bounds if row is short
+                int actualStart = Math.max(0, Math.min(row.length(), startCol));
+                int actualEnd = Math.max(0, Math.min(row.length(), endCol));
+                chunk[i] = row.substring(actualStart, actualEnd);
+
+                // Check if this chunk actually has pixels
+                for (char c : chunk[i].toCharArray()) {
+                    if (c != '.') {
+                        isEmpty = false;
+                    }
+                }
+            } else {
+                chunk[i] = "";
+            }
+        }
+
+        if (isEmpty)
+            return;
+
+        Gib g = gibPool.obtain();
+        // Burst outwards
+        float spreadX = (startCol < endCol / 2) ? -1f : 1f; // Rough heuristic
+        float spreadZ = MathUtils.random(-0.5f, 0.5f);
+
+        Vector3 vel = new Vector3(
+                MathUtils.random(-1f, 1f),
+                MathUtils.random(3f, 6f),
+                MathUtils.random(-1f, 1f)).nor().scl(MathUtils.random(3f, 7f));
+
+        g.init(origin, vel, chunk, color);
         activeGibs.add(g);
     }
 
@@ -124,7 +275,15 @@ public class GoreManager {
         }
         float splatRadius = radius * MathUtils.random(1.5f, 3.0f);
         WallDecal wd = wallDecalPool.obtain();
-        wd.init(x, y, side, wallX, height, splatRadius, color);
+
+        com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+        if (spatterTexture != null && MathUtils.randomBoolean(0.3f)) {
+            tex = spatterTexture;
+        } else if (smearTextures.size > 0) {
+            tex = smearTextures.random();
+        }
+
+        wd.init(x, y, side, wallX, height, splatRadius, color, tex);
         wallDecals.get(key).add(wd);
     }
 
@@ -141,10 +300,10 @@ public class GoreManager {
             p.update(delta);
 
             // --- THIN WALL COLLISION LOGIC ---
-            int currGridX = (int)p.position.x;
-            int currGridY = (int)p.position.z;
-            int prevGridX = (int)prevX;
-            int prevGridY = (int)prevZ;
+            int currGridX = (int) p.position.x;
+            int currGridY = (int) p.position.z;
+            int prevGridX = (int) prevX;
+            int prevGridY = (int) prevZ;
 
             boolean hitWall = false;
             int hitX = currGridX;
@@ -160,7 +319,7 @@ public class GoreManager {
                     side = 0;
                     hitX = prevGridX;
                     hitY = prevGridY;
-                    wallX = p.position.z - (int)p.position.z;
+                    wallX = p.position.z - (int) p.position.z;
                 }
             }
 
@@ -170,7 +329,7 @@ public class GoreManager {
                 if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
                     hitWall = true;
                     side = 1;
-                    wallX = p.position.x - (int)p.position.x;
+                    wallX = p.position.x - (int) p.position.x;
                     hitX = prevGridX;
                     hitY = prevGridY;
                 }
@@ -222,11 +381,27 @@ public class GoreManager {
             decalPool.free(old);
         }
         SurfaceDecal d = decalPool.obtain();
-        d.init(pos, color, originalSize * 2.5f);
+
+        com.badlogic.gdx.graphics.g2d.TextureRegion tex = null;
+        if (smearTextures.size > 0) {
+            tex = smearTextures.random();
+        } else if (spatterTexture != null) {
+            tex = spatterTexture;
+        }
+
+        d.init(pos, color, originalSize * 2.5f, tex);
         activeDecals.add(d);
     }
 
-    public Array<BloodParticle> getActiveParticles() { return activeParticles; }
-    public Array<SurfaceDecal> getActiveDecals() { return activeDecals; }
-    public Array<Gib> getActiveGibs() { return activeGibs; }
+    public Array<BloodParticle> getActiveParticles() {
+        return activeParticles;
+    }
+
+    public Array<SurfaceDecal> getActiveDecals() {
+        return activeDecals;
+    }
+
+    public Array<Gib> getActiveGibs() {
+        return activeGibs;
+    }
 }

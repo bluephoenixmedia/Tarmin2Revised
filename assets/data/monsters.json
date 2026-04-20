@@ -1,8 +1,14 @@
 {
   "GIANT_ANT": {
-    "warStrength": 5,
-    "spiritualStrength": 15,
-    "armor": 1,
+    "baseLevel": 1,
+    "frequency": 10,
+    "baseAC": 7,
+    "magicResistance": 0,
+    "moveSpeed": 18,
+    "alignment": "NEUTRAL",
+    "maxHP": 16,
+    "maxMP": 8,
+    "armorClass": 12,
     "baseExperience": 10,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_ant.png",
@@ -13,20 +19,20 @@
       "........................",
       "........................",
       "........................",
-      ".............#......#...",
-      ".............#......#...",
-      "............#......#....",
-      "............#......#....",
-      ".....#####...######.....",
-      "...###########.##.##....",
-      ".###################....",
-      ".###########.###.###....",
-      "..#######.##.##...##....",
-      "..#...##...##.##.##.....",
-      ".##..##....##.......##..",
-      ".##..##....##.......##..",
-      "..##.##....##.......##..",
-      ".......##....##...##....",
+      ".............C......C...",
+      ".............C......C...",
+      "............C......C....",
+      "............C......C....",
+      ".....BBBBB...CCCCCC.....",
+      "...BBBBBBBBBBBRBBRBB....",
+      ".BBBBBBBBBBBBBBBBBBB....",
+      ".BBBBBBBBBBB.BBB.BBB....",
+      "..BBBBBBB.BB.BB...BB....",
+      "..B...BB...BB.BB.BB.....",
+      ".CC..CC....CC.K..K..CC..",
+      ".CC..CC....CC.......CC..",
+      "..CC.CC....CC.K.....CC..",
+      ".......CC....CC...CC....",
       "........................",
       "........................",
       "........................",
@@ -36,8 +42,7 @@
       "x": 1.2,
       "y": 0.8
     },
-    "warDamage": 1,
-    "spiritDamage": 0,
+    "damageDice": 1,
     "damageType": "PHYSICAL",
     "intelligence": 0,
     "dexterity": 12,
@@ -48,47 +53,68 @@
         "type": "POISONED",
         "duration": 10,
         "potency": 1,
-        "stackable": false,
+        "stackable": true,
         "chance": 0.5
       }
     ],
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 49,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 3,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 5,
+        "maxLevel": 99,
+        "weight": 5
+      }
     ]
   },
   "DWARF": {
-    "warStrength": 10,
-    "spiritualStrength": 10,
-    "armor": 1,
+    "baseLevel": 4,
+    "frequency": 4,
+    "baseAC": 6,
+    "magicResistance": 10,
+    "moveSpeed": 11,
+    "alignment": "LAWFUL",
+    "maxHP": 22,
+    "maxMP": 10,
+    "armorClass": 14,
     "baseExperience": 15,
     "intelligence": 3,
     "family": "HUMANOID",
     "texturePath": "images/monsters/dwarf.png",
     "spriteData": [
       "........................",
+      ".........W..W..W........",
+      "........KKKKKKKK........",
+      "........YKKKKKKY........",
+      "........K.R..R.K........",
+      "........WWWWWWWW........",
+      ".......WWWWWWWWWW.......",
+      "......KKKKKKKKKKKK......",
+      ".....KKKK######KKKK.....",
+      ".....KKKK######KKKK.....",
+      ".....KKK########KKK.....",
+      ".....K.K########K.K.....",
+      "....W..K########K..W....",
+      "...WW..KKKKKKKKKK..WW...",
+      "..WWW..KKK....KKK..WWW..",
+      "...WW..KKK....KKK..WW...",
+      "....O..KKK....KKK...O...",
+      "....O.KKKK....KKKK..O...",
+      "......BBBB....BBBB......",
       "........................",
       "........................",
       "........................",
-      "........................",
-      ".........#####..........",
-      "........#######.........",
-      "........#######.........",
-      ".........#####..........",
-      "......###########.......",
-      ".....#############......",
-      "....###.#######.###.....",
-      "...###.#########.###....",
-      "...##.###########.##....",
-      "...###.#########.###....",
-      "....##.#########.##.....",
-      ".......#########........",
-      ".......#########........",
-      ".......#########........",
-      ".......####.####........",
-      "........###.###.........",
-      "......#####.#####.......",
       "........................",
       "........................"
     ],
@@ -97,15 +123,98 @@
       "y": 0.9
     },
     "variants": [
-      { "color": "YELLOW", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "TAN", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "TAN",
+        "minLevel": 2,
+        "maxLevel": 9,
+        "weight": 2
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 5,
+        "maxLevel": 99,
+        "weight": 5
+      }
+    ]
+  },
+  "ORC": {
+    "baseLevel": 3,
+    "frequency": 6,
+    "baseAC": 9,
+    "magicResistance": 0,
+    "moveSpeed": 12,
+    "alignment": "CHAOTIC",
+    "maxHP": 22,
+    "maxMP": 20,
+    "armorClass": 13,
+    "baseExperience": 20,
+    "family": "BEAST",
+    "texturePath": "images/monsters/orc.png",
+    "intelligence": 5,
+    "spriteData": [
+      "........W.....W.........",
+      ".......WWW...WWW........",
+      "........CCCCCCC.........",
+      "........CGRKRKGC........",
+      "........GGGGGGGG........",
+      ".........GG..GG.........",
+      ".....CCCC.CCCC.CCCC.....",
+      "....W..CCCCCCCCCCCC.W...",
+      "...W.CCCCCC.CCCCC.CCC...",
+      "..W.CC.CCCC.CCCCC.CCCCC.",
+      ".W.CC.CCC.C.CC.CC.CCCCC.",
+      ".W.CC.CC.C.CC.CCC.CCCCC.",
+      ".W.CCCCCCCCCCCCCC.CCCCC.",
+      "..W.CCCCCCCCCCC.C.CCCCC.",
+      "...WWW.CCCCCCC.CC.CCCCC.",
+      "......WWWWWWWW.C...WWW..",
+      "......CCCCCCCCCWC...W...",
+      "......C.CCC.CCCCC.......",
+      "......C.CCC.CCCCC.......",
+      "......C.CCC.CCCC........",
+      "......C.CCC.CCCC........",
+      "......C.CCC.CCCC........",
+      ".....C.CCCC.CCCCC.......",
+      "....C.CCCC...CCCCC......",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.1,
+      "y": 0.9
+    },
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 2,
+        "maxLevel": 9,
+        "weight": 5
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 3,
+        "maxLevel": 99,
+        "weight": 10
+      }
     ]
   },
   "GIANT_SCORPION": {
-    "warStrength": 8,
-    "spiritualStrength": 20,
-    "armor": 3,
+    "baseLevel": 1,
+    "frequency": 8,
+    "maxHP": 26,
+    "maxMP": 20,
+    "armorClass": 13,
     "baseExperience": 20,
     "family": "BEAST",
     "texturePath": "images/monsters/giant_scorpion.png",
@@ -125,7 +234,7 @@
       ".........#####..........",
       ".........#####..........",
       ".....##.#######.##......",
-      "....#..##.##.###..#.....",
+      "....#..##R##R###..#.....",
       "...#....#######....#....",
       "...#..#........#...#....",
       "...#..#.##..##.#...#....",
@@ -140,16 +249,46 @@
       "x": 1.1,
       "y": 0.9
     },
+    "directionTextures": {
+      "north": "images/monsters/giant_scorpion_n.png",
+      "east": "images/monsters/giant_scorpion_e.png",
+      "west": "images/monsters/giant_scorpion_w.png",
+      "southFrames": [
+        "images/monsters/giant_scorpion_s_0.png",
+        "images/monsters/giant_scorpion_s_1.png",
+        "images/monsters/giant_scorpion_s_2.png",
+        "images/monsters/giant_scorpion_s_3.png",
+        "images/monsters/giant_scorpion_s_4.png"
+      ],
+      "frameDuration": 0.15
+    },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 2,
+        "maxLevel": 9,
+        "weight": 5
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 3,
+        "maxLevel": 99,
+        "weight": 10
+      }
     ]
   },
   "GIANT_SNAKE": {
-    "warStrength": 12,
-    "spiritualStrength": 12,
-    "armor": 2,
+    "baseLevel": 1,
+    "frequency": 8,
+    "maxHP": 22,
+    "maxMP": 12,
+    "armorClass": 12,
     "baseExperience": 35,
     "family": "BEAST",
     "intelligence": 1,
@@ -160,14 +299,14 @@
       "........................",
       "........................",
       "...............##.......",
-      ".............######.....",
+      ".............###R##.....",
       "...........###....#.....",
       "...........######.......",
       "...........###..##......",
       "............###.........",
       ".............###........",
       ".......##....###........",
-      "......######...##.......",
+      ".....######...##........",
       "...####..########..#....",
       ".###........#####...##..",
       ".###..........###...##..",
@@ -185,15 +324,32 @@
       "y": 0.6
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "GHOUL": {
-    "warStrength": 20,
-    "spiritualStrength": 5,
-    "armor": 3,
+    "baseLevel": 2,
+    "frequency": 6,
+    "maxHP": 35,
+    "maxMP": 25,
+    "armorClass": 12,
     "baseExperience": 20,
     "intelligence": 5,
     "family": "UNDEAD",
@@ -229,15 +385,32 @@
       "y": 1.1
     },
     "variants": [
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "SKELETON": {
-    "warStrength": 15,
-    "spiritualStrength": 0,
-    "armor": 3,
+    "baseLevel": 1,
+    "frequency": 10,
+    "maxHP": 26,
+    "maxMP": 10,
+    "armorClass": 12,
     "baseExperience": 18,
     "intelligence": 3,
     "family": "UNDEAD",
@@ -273,15 +446,32 @@
       "y": 1.1
     },
     "variants": [
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "CLOAKED_SKELETON": {
-    "warStrength": 18,
-    "spiritualStrength": 5,
-    "armor": 4,
+    "baseLevel": 3,
+    "frequency": 6,
+    "maxHP": 32,
+    "maxMP": 15,
+    "armorClass": 14,
     "baseExperience": 22,
     "intelligence": 5,
     "family": "UNDEAD",
@@ -317,15 +507,32 @@
       "y": 1.1
     },
     "variants": [
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "GRAY", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "GRAY",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "ALLIGATOR": {
-    "warStrength": 30,
-    "spiritualStrength": 15,
-    "armor": 6,
+    "baseLevel": 4,
+    "frequency": 5,
+    "maxHP": 50,
+    "maxMP": 15,
+    "armorClass": 13,
     "baseExperience": 35,
     "intelligence": 3,
     "family": "BEAST",
@@ -335,25 +542,25 @@
       "........................",
       "........................",
       "........................",
-      "........................",
-      "........................",
-      "........................",
-      "..........##............",
-      ".......#######..........",
-      "......#########.........",
-      "......######..###.......",
-      ".....######..##.........",
-      "....#######.#####.......",
-      "...###############......",
-      "..#############.###.....",
-      "..##############.###....",
-      ".###.############.###...",
-      "......#############.#...",
-      ".......#########..###...",
-      ".......###.....##.......",
-      "......###.......###.....",
-      "........................",
-      "........................",
+      "..........GGGGGG........",
+      "........GGG....GG.......",
+      ".......GG.......GG......",
+      "......GG...OO...GG......",
+      ".....GG...OKKO...GG.....",
+      "....GGG...OKKO...GGG....",
+      "...GGGG....OO....GGGG...",
+      "..GGGGGG........GGGGGG..",
+      "..G.GGGGG......GGGGG.G..",
+      "......GGGGGGGGGGGG......",
+      "......GG.GGGGGG.GG......",
+      "......G..........G......",
+      "......G..........G......",
+      ".....G..W..WW..W..G.....",
+      "....G..WW.WWWW.WW..G....",
+      "....G.WWWWWWWWWWWW.G....",
+      "....GGWWWWWWWWWWWWGG....",
+      ".....GGGGWWWWWWGGGG.....",
+      ".......GGGGGGGGGG.......",
       "........................"
     ],
     "scale": {
@@ -361,15 +568,32 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "DRAGON": {
-    "warStrength": 40,
-    "spiritualStrength": 30,
-    "armor": 8,
+    "baseLevel": 10,
+    "frequency": 1,
+    "maxHP": 80,
+    "maxMP": 30,
+    "armorClass": 18,
     "baseExperience": 50,
     "intelligence": 10,
     "family": "MYTHICAL",
@@ -383,7 +607,7 @@
       "........................",
       "........................",
       ".....###........####....",
-      "....##.##......#######..",
+      "....##.##......###W###..",
       "...####.##....#####.....",
       "...###.#.##...###..##...",
       "....#.#.#.##...###......",
@@ -405,15 +629,32 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "WRAITH": {
-    "warStrength": 25,
-    "spiritualStrength": 35,
-    "armor": 5,
+    "baseLevel": 5,
+    "frequency": 3,
+    "maxHP": 42,
+    "maxMP": 35,
+    "armorClass": 13,
     "intelligence": 6,
     "baseExperience": 40,
     "family": "UNDEAD",
@@ -449,15 +690,32 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "PINK", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "PURPLE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "PINK",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "GIANT": {
-    "warStrength": 35,
-    "spiritualStrength": 10,
-    "armor": 7,
+    "baseLevel": 6,
+    "frequency": 4,
+    "maxHP": 60,
+    "maxMP": 20,
+    "armorClass": 13,
     "baseExperience": 45,
     "intelligence": 6,
     "family": "HUMANOID",
@@ -493,27 +751,44 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "YELLOW", "minLevel": 1, "maxLevel": 4, "weight": 1 },
-      { "color": "TAN", "minLevel": 3, "maxLevel": 9, "weight": 1 },
-      { "color": "ORANGE", "minLevel": 8, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 4,
+        "weight": 1
+      },
+      {
+        "color": "TAN",
+        "minLevel": 3,
+        "maxLevel": 9,
+        "weight": 1
+      },
+      {
+        "color": "ORANGE",
+        "minLevel": 8,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "MINOTAUR": {
-    "warStrength": 50,
-    "spiritualStrength": 25,
-    "armor": 10,
+    "baseLevel": 15,
+    "frequency": 1,
+    "maxHP": 100,
+    "maxMP": 50,
+    "armorClass": 14,
     "baseExperience": 100,
     "intelligence": 20,
     "family": "MYTHICAL",
     "texturePath": "images/monsters/minotaur.png",
     "spriteData": [
-      ".........#....#.........",
-      "..........####..........",
-      ".........#.##.#.........",
+      ".......WW#....#WW.......",
+      "........WW####WW........",
+      ".........#R##R#.........",
       ".........#.##.#.........",
       ".........######.........",
-      "..........#..#..........",
-      "..........#..#..........",
+      ".........PW..WP.........",
+      ".........PW..WP.........",
       "........######.##.......",
       ".......######.####......",
       "......##.###.######.....",
@@ -537,15 +812,31 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
   "SPIDER": {
-    "warStrength": 10,
-    "spiritualStrength": 10,
-    "armor": 2,
+    "baseLevel": 1,
+    "maxHP": 18,
+    "maxMP": 10,
+    "armorClass": 14,
     "baseExperience": 5,
     "family": "NONE",
     "texturePath": "",
@@ -555,27 +846,1991 @@
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   },
-  "ORC": {
-    "warStrength": 10,
-    "spiritualStrength": 10,
-    "armor": 2,
-    "baseExperience": 5,
-    "family": "NONE",
-    "texturePath": "",
-    "spriteData": [],
+  "GHAST": {
+    "baseLevel": 3,
+    "maxHP": 50,
+    "maxMP": 30,
+    "armorClass": 13,
+    "baseExperience": 200,
+    "intelligence": 20,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/ghast.jpg",
+    "spriteData": [
+      "........#########.......",
+      ".......#..#..#...#......",
+      "......#.#########.#.....",
+      ".....#.##..###..##.#....",
+      "....#.#.#..###..#.#.#...",
+      "...#.##.####.###.###.#..",
+      "....#..#.#######.####...",
+      "..#######.#.#.#.######..",
+      ".#########.#.#.########.",
+      "..####################..",
+      "...##.####.###.###.##...",
+      "...##.####.###.###.##...",
+      "...###.##.###.###.###...",
+      "...###.##.###.###.###...",
+      "....#.##.###.###.####...",
+      "...##.##.###.###.##.#...",
+      "....###.###.###.###.#...",
+      "...####.###.###.##.##...",
+      "....##.###.###.###.##...",
+      "...###.###.###.####.#...",
+      "....#.###.###.###.#.#...",
+      "...##.###.###.###.###...",
+      "....#..#...#...#...#....",
+      "...#..#.....#.#....#....",
+      "..#..#.....#...#....#..."
+    ],
     "scale": {
       "x": 1.0,
       "y": 1.0
     },
     "variants": [
-      { "color": "BLUE", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "YELLOW", "minLevel": 1, "maxLevel": 99, "weight": 1 },
-      { "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "BEHOLDER": {
+    "baseLevel": 12,
+    "maxHP": 45,
+    "maxMP": 45,
+    "armorClass": 18,
+    "baseExperience": 250,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/beholder.jpg",
+    "spriteData": [
+      "......#.....#.....#.....",
+      ".......#...#.#...#......",
+      "........#.#...#.#.......",
+      "......#############.....",
+      ".....###############....",
+      "....#################...",
+      "....######WWWWW######...",
+      "....#####WWKKKWW#####...",
+      "....######WWWWW######...",
+      "....#################...",
+      "....#################...",
+      "....#####WW...WW#####...",
+      ".....###WKKKKKKW###.....",
+      ".....###WKRRRRKW###.....",
+      "......###WWWWWWW###.....",
+      ".......###########......",
+      ".........#######........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.1,
+      "y": 1.1
+    },
+    "damageDice": 5,
+    "damageType": "PHYSICAL",
+    "intelligence": 18,
+    "dexterity": 8,
+    "hasRangedAttack": true,
+    "attackRange": 8,
+    "onHitEffects": [
+      {
+        "type": "CONFUSION",
+        "duration": 5,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "GELATINOUS_CUBE": {
+    "baseLevel": 3,
+    "maxHP": 60,
+    "maxMP": 0,
+    "armorClass": 6,
+    "baseExperience": 120,
+    "family": "BEAST",
+    "texturePath": "images/monsters/cube.png",
+    "spriteData": [
+      "........................",
+      ".....GGGGGGGGGGGGGG.....",
+      "....GGGGGGGGGGGGGGGG....",
+      "....G..G..G..G..G..G....",
+      "....G.W......K.....G....",
+      "....G.W.....KKK....G....",
+      "....G.W......K.....G....",
+      "....G.W............G....",
+      "....G.W...G..G..G..G....",
+      "....G..G...........G....",
+      "....G.......###....G....",
+      "....G.......###....G....",
+      "....G.......###....G....",
+      "....GGGGGGGGGGGGGGGG....",
+      ".....GGGGGGGGGGGGGG.....",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.2,
+      "y": 1.2
+    },
+    "damageDice": 10,
+    "damageType": "PHYSICAL",
+    "intelligence": 0,
+    "dexterity": 2,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 15,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "RUST_MONSTER": {
+    "baseLevel": 3,
+    "maxHP": 40,
+    "maxMP": 10,
+    "armorClass": 14,
+    "baseExperience": 90,
+    "family": "BEAST",
+    "texturePath": "images/monsters/rust.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........O...O.........",
+      ".........O.O.O.O........",
+      "........O..O.O..O.......",
+      ".......O...O.O...O......",
+      ".......O...O.O...O......",
+      ".......O...O.O...O......",
+      ".......O...O.O...O......",
+      "........O.O...O.O.......",
+      ".........RRRRRRR........",
+      "........RRRRRRRRR.......",
+      ".......RRRRRRRRRRR......",
+      "......RRRRRRRRRRRRR.....",
+      ".....RRRRRRRRRRRRRRR....",
+      "....RRRRRRRRRRRRRRRRR...",
+      "....RR...RR...RR...RR...",
+      "....R....R.....R....R...",
+      "....R....R.....R....R...",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 0.8
+    },
+    "damageDice": 8,
+    "damageType": "PHYSICAL",
+    "intelligence": 3,
+    "dexterity": 16,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "LICH": {
+    "baseLevel": 15,
+    "maxHP": 50,
+    "maxMP": 60,
+    "armorClass": 17,
+    "baseExperience": 300,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/lich.png",
+    "spriteData": [
+      ".........C....C.........",
+      ".......C..WWWW..C.......",
+      "......C..WWWWWW..C......",
+      "......C.WWRWWRWW.C......",
+      ".......C.WWWWWW.C.......",
+      "......KKKKKKKKKKKK......",
+      ".....KKKKKKKKKKKKKK.....",
+      "....WKKKKKKKKKKKKKKW....",
+      "...WWKKKKKKKKKKKKKKWW...",
+      "..C.WKKKKKKKKKKKKKKW.C..",
+      "....KKKKKKKKKKKKKKKK....",
+      "....KKKKKKKKKKKKKKKK....",
+      "....KKK...KKKK...KKK....",
+      "....KKK...KKKK...KKK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....KKKK....KK....",
+      "....KK....K..K....KK....",
+      ".....K............K.....",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 1.1
+    },
+    "damageDice": 5,
+    "damageType": "PHYSICAL",
+    "intelligence": 25,
+    "dexterity": 10,
+    "hasRangedAttack": true,
+    "attackRange": 7,
+    "onHitEffects": [
+      {
+        "type": "WEAKENED",
+        "duration": 10,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "MIMIC": {
+    "baseLevel": 3,
+    "maxHP": 50,
+    "maxMP": 0,
+    "armorClass": 12,
+    "baseExperience": 150,
+    "family": "BEAST",
+    "texturePath": "images/monsters/mimic.png",
+    "spriteData": [
+      "........................",
+      "..........OOOOOO........",
+      ".........OYYYYYO........",
+      "........OYOOOOOY........",
+      ".......OYO....OY........",
+      ".......OY.WWWW.Y........",
+      "......OOY......YOO......",
+      ".....OYYYWWWWWWYYYO.....",
+      "....OYYYRRRRRRRRYYYO....",
+      "...OYYYRR......RRYYYO...",
+      "...OYYR..........RRYO...",
+      "..OYYR............RYYO..",
+      "..OYY..............YYO..",
+      "..OYY..............YYO..",
+      "..OYY..............YYO..",
+      "..OYY..............YYO..",
+      "...OYYYYYYYYYYYYYYYYO...",
+      "....OOOOOOOOOOOOOOOO....",
+      ".....R............R.....",
+      "....R..............R....",
+      "...R................R...",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 0.9
+    },
+    "damageDice": 15,
+    "damageType": "PHYSICAL",
+    "intelligence": 5,
+    "dexterity": 8,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "SLOWED",
+        "duration": 5,
+        "potency": 1,
+        "stackable": false,
+        "chance": 1.0
+      }
+    ],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      },
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "MIND_FLAYER": {
+    "baseLevel": 10,
+    "maxHP": 40,
+    "maxMP": 50,
+    "armorClass": 15,
+    "baseExperience": 200,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/flayer.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........##.##.##........",
+      "........########........",
+      ".........######.........",
+      ".........#.#.#..........",
+      ".........#.#.#..........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##..######..##.....",
+      ".....##..######..##.....",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      "........########........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      "......############......",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 1.1
+    },
+    "damageDice": 5,
+    "damageType": "PHYSICAL",
+    "intelligence": 22,
+    "dexterity": 12,
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "onHitEffects": [
+      {
+        "type": "CONFUSION",
+        "duration": 8,
+        "potency": 2,
+        "stackable": false,
+        "chance": 0.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 9,
+        "maxLevel": 99,
+        "weight": 5
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 2
+      }
+    ]
+  },
+  "OWLBEAR": {
+    "baseLevel": 5,
+    "maxHP": 75,
+    "maxMP": 0,
+    "armorClass": 13,
+    "baseExperience": 180,
+    "family": "BEAST",
+    "texturePath": "images/monsters/owlbear.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      ".........######.........",
+      ".......##########.......",
+      "......##...##...##......",
+      "......#..O.##.O..#......",
+      "......#....vv....#......",
+      "......##...vv...##......",
+      ".......##########.......",
+      ".....##############.....",
+      "....################....",
+      "...##################...",
+      "...##################...",
+      "..###...########...###..",
+      "..###...########...###..",
+      "..###...########...###..",
+      "..###...########...###..",
+      "...##...########...##...",
+      "........########........",
+      ".......###....###.......",
+      "......###......###......",
+      ".....###........###.....",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.1,
+      "y": 1.0
+    },
+    "damageDice": 18,
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 14,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "BLEEDING",
+        "duration": 5,
+        "potency": 3,
+        "stackable": true,
+        "chance": 0.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 9,
+        "maxLevel": 99,
+        "weight": 5
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 2
+      }
+    ]
+  },
+  "DISPLACER_BEAST": {
+    "baseLevel": 6,
+    "maxHP": 60,
+    "maxMP": 20,
+    "armorClass": 13,
+    "baseExperience": 220,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/dbeast.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      ".....#............#.....",
+      "....#..............#....",
+      "...#................#...",
+      "...#................#...",
+      "...#.......##.......#...",
+      "....#.....####.....#....",
+      ".....#...######...#.....",
+      "......##########........",
+      ".....############.......",
+      "....##############......",
+      "...################.....",
+      "...################.....",
+      "...################.....",
+      "...##...##...##...##....",
+      "...##...##...##...##....",
+      "...##...##...##...##....",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.3,
+      "y": 0.9
+    },
+    "damageDice": 14,
+    "damageType": "PHYSICAL",
+    "intelligence": 6,
+    "dexterity": 22,
+    "hasRangedAttack": true,
+    "attackRange": 2,
+    "onHitEffects": [
+      {
+        "type": "WEAKENED",
+        "duration": 6,
+        "potency": 1,
+        "stackable": false,
+        "chance": 0.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 9,
+        "maxLevel": 99,
+        "weight": 5
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 2
+      }
+    ]
+  },
+  "UMBER_HULK": {
+    "baseLevel": 6,
+    "maxHP": 70,
+    "maxMP": 15,
+    "armorClass": 18,
+    "baseExperience": 280,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/u_hulk.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      ".........######.........",
+      ".......##########.......",
+      "......############......",
+      "......##.##..##.##......",
+      "......#O.##..##.O#......",
+      "......#O.##..##.O#......",
+      "......############......",
+      ".......#..vv..#.........",
+      ".....################...",
+      "....##################..",
+      "...###.############.###.",
+      "..###..############..###",
+      "..##...############...##",
+      ".......############.....",
+      ".......############.....",
+      ".......############.....",
+      "......##############....",
+      "......##...####...##....",
+      "......##....##....##....",
+      ".....##.....##.....##...",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.2,
+      "y": 1.1
+    },
+    "damageDice": 20,
+    "damageType": "PHYSICAL",
+    "intelligence": 8,
+    "dexterity": 10,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "CONFUSION",
+        "duration": 10,
+        "potency": 2,
+        "stackable": false,
+        "chance": 0.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 9,
+        "maxLevel": 99,
+        "weight": 5
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 2
+      }
+    ]
+  },
+  "KOBOLD": {
+    "baseLevel": 1,
+    "maxHP": 12,
+    "maxMP": 4,
+    "armorClass": 12,
+    "baseExperience": 5,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/kobold.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      "........#O..O#..........",
+      "........#.##.#..........",
+      ".........####...........",
+      ".........####...........",
+      "......##########........",
+      ".....############.......",
+      ".....##..####..##.......",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........##..##..........",
+      ".......##....##.........",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.7,
+      "y": 0.7
+    },
+    "damageDice": 2,
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 10,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "BROWN",
+        "minLevel": 1,
+        "maxLevel": 5,
+        "weight": 10
+      },
+      {
+        "color": "RED",
+        "minLevel": 3,
+        "maxLevel": 10,
+        "weight": 2
+      }
+    ]
+  },
+  "GOBLIN": {
+    "baseLevel": 1,
+    "maxHP": 14,
+    "maxMP": 5,
+    "armorClass": 12,
+    "baseExperience": 8,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/goblin.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".......#......#.........",
+      "......##......##........",
+      ".....###..##..###.......",
+      "....####.####.####......",
+      "....###.######.###......",
+      "....##..######..##......",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      ".....##..####..##.......",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........##..##..........",
+      ".......##....##.........",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.8,
+      "y": 0.8
+    },
+    "damageDice": 3,
+    "damageType": "PHYSICAL",
+    "intelligence": 3,
+    "dexterity": 12,
+    "hasRangedAttack": true,
+    "attackRange": 4,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 1,
+        "maxLevel": 8,
+        "weight": 10
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 4,
+        "maxLevel": 12,
+        "weight": 3
+      }
+    ]
+  },
+  "TROGLODYTE": {
+    "baseLevel": 1,
+    "maxHP": 20,
+    "maxMP": 6,
+    "armorClass": 11,
+    "baseExperience": 15,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/troglodyte.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "..........##............",
+      ".........####...........",
+      "........######..........",
+      "........#O..O#..........",
+      "........######..........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      ".....############.......",
+      ".....############.......",
+      ".....##..####..##.......",
+      ".....#...####...#.......",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........##..##..........",
+      ".......##....##.........",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 0.9
+    },
+    "damageDice": 4,
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 8,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 5,
+        "potency": 1,
+        "stackable": true,
+        "chance": 0.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 2,
+        "maxLevel": 10,
+        "weight": 8
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 15,
+        "weight": 3
+      }
+    ]
+  },
+  "HOBGOBLIN": {
+    "baseLevel": 2,
+    "maxHP": 26,
+    "maxMP": 8,
+    "armorClass": 18,
+    "baseExperience": 25,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/hobgoblin.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      "........#O..O#..........",
+      "........#.##.#..........",
+      "........######..........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "....##############......",
+      "....####.####.####......",
+      "....###..####..###......",
+      "....##...####...##......",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........##..##..........",
+      ".......##....##.........",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "damageDice": 6,
+    "damageType": "PHYSICAL",
+    "intelligence": 5,
+    "dexterity": 10,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 3,
+        "maxLevel": 15,
+        "weight": 10
+      },
+      {
+        "color": "RED",
+        "minLevel": 6,
+        "maxLevel": 20,
+        "weight": 4
+      }
+    ]
+  },
+  "ZOMBIE": {
+    "baseLevel": 2,
+    "maxHP": 30,
+    "maxMP": 2,
+    "armorClass": 8,
+    "baseExperience": 20,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/zombie.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........##O..O##........",
+      "........#......#........",
+      ".........######.........",
+      "..........####..........",
+      ".......##########.......",
+      "......###.####.###......",
+      ".....###..####..###.....",
+      ".....##...####...##.....",
+      ".....#....####....#.....",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      ".........##..##.........",
+      "........##....##........",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 1.0
+    },
+    "damageDice": 5,
+    "damageType": "PHYSICAL",
+    "intelligence": 1,
+    "dexterity": 4,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 2,
+        "maxLevel": 12,
+        "weight": 10
+      },
+      {
+        "color": "GREEN",
+        "minLevel": 5,
+        "maxLevel": 15,
+        "weight": 3
+      }
+    ]
+  },
+  "MUMMY": {
+    "baseLevel": 5,
+    "maxHP": 42,
+    "maxMP": 15,
+    "armorClass": 11,
+    "baseExperience": 60,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/mummy.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      "........########........",
+      ".........######.........",
+      "..........####..........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "damageDice": 8,
+    "damageType": "PHYSICAL",
+    "intelligence": 4,
+    "dexterity": 5,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 10,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 6,
+        "maxLevel": 25,
+        "weight": 8
+      },
+      {
+        "color": "YELLOW",
+        "minLevel": 10,
+        "maxLevel": 30,
+        "weight": 4
+      }
+    ]
+  },
+  "HARPY": {
+    "baseLevel": 4,
+    "maxHP": 28,
+    "maxMP": 10,
+    "armorClass": 11,
+    "baseExperience": 40,
+    "family": "BEAST",
+    "texturePath": "images/monsters/harpy.png",
+    "spriteData": [
+      "........................",
+      "...........##...........",
+      "..........####..........",
+      ".........######.........",
+      "........##O..O##........",
+      ".........######.........",
+      ".....##...####...##.....",
+      "....####.######.####....",
+      "...#####.######.#####...",
+      "..######.######.######..",
+      ".#######.######.#######.",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      "........##....##........",
+      ".......##......##.......",
+      "......###......###......",
+      ".....####......####.....",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 0.9
+    },
+    "damageDice": 6,
+    "damageType": "PHYSICAL",
+    "intelligence": 4,
+    "dexterity": 18,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "BLUE",
+        "minLevel": 5,
+        "maxLevel": 20,
+        "weight": 8
+      },
+      {
+        "color": "RED",
+        "minLevel": 8,
+        "maxLevel": 25,
+        "weight": 3
+      }
+    ]
+  },
+  "GARGOYLE": {
+    "baseLevel": 4,
+    "maxHP": 38,
+    "maxMP": 5,
+    "armorClass": 15,
+    "baseExperience": 70,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/gargoyle.png",
+    "spriteData": [
+      "........................",
+      "......#..........#......",
+      "......##........##......",
+      ".....###..####..###.....",
+      "....####.######.####....",
+      "....####.######.####....",
+      "....####.######.####....",
+      "....####..####..####....",
+      "....###############.....",
+      ".....#############......",
+      "......###########.......",
+      "......###########.......",
+      "......###########.......",
+      ".....#############......",
+      ".....##..#####..##......",
+      ".....##..#####..##......",
+      ".........#####..........",
+      ".........#####..........",
+      "........#######.........",
+      ".......##.....##........",
+      "......##.......##.......",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "damageDice": 9,
+    "damageType": "PHYSICAL",
+    "intelligence": 3,
+    "dexterity": 8,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 7,
+        "maxLevel": 30,
+        "weight": 10
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 12,
+        "maxLevel": 40,
+        "weight": 3
+      }
+    ]
+  },
+  "WERERAT": {
+    "baseLevel": 3,
+    "maxHP": 28,
+    "maxMP": 5,
+    "armorClass": 12,
+    "baseExperience": 35,
+    "family": "BEAST",
+    "texturePath": "images/monsters/wererat.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      ".......##O..O###........",
+      "......####..####........",
+      ".......########.........",
+      "......##########........",
+      ".....############.......",
+      "....##############......",
+      "....####.####.####......",
+      "....###..####..###......",
+      "....##...####...##......",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      ".........####...........",
+      "........##..##..........",
+      ".......##....##.........",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 0.9,
+      "y": 0.9
+    },
+    "damageDice": 5,
+    "damageType": "PHYSICAL",
+    "intelligence": 5,
+    "dexterity": 16,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 8,
+        "potency": 1,
+        "stackable": true,
+        "chance": 0.4
+      }
+    ],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 4,
+        "maxLevel": 15,
+        "weight": 8
+      },
+      {
+        "color": "BROWN",
+        "minLevel": 6,
+        "maxLevel": 20,
+        "weight": 4
+      }
+    ]
+  },
+  "WEREWOLF": {
+    "baseLevel": 7,
+    "maxHP": 60,
+    "maxMP": 10,
+    "armorClass": 11,
+    "baseExperience": 110,
+    "family": "BEAST",
+    "texturePath": "images/monsters/werewolf.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "...........##...........",
+      "..........####..........",
+      ".........######.........",
+      "........##O..O##........",
+      "........###..###........",
+      ".........######.........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##############.....",
+      ".....####.####.####.....",
+      ".....###..####..###.....",
+      ".....##...####...##.....",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      ".........##..##.........",
+      "........##....##........",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.1,
+      "y": 1.1
+    },
+    "damageDice": 12,
+    "damageType": "PHYSICAL",
+    "intelligence": 6,
+    "dexterity": 18,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "BLEEDING",
+        "duration": 6,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 9,
+        "maxLevel": 40,
+        "weight": 8
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 15,
+        "maxLevel": 50,
+        "weight": 4
+      }
+    ]
+  },
+  "TROLL": {
+    "baseLevel": 6,
+    "maxHP": 70,
+    "maxMP": 5,
+    "armorClass": 15,
+    "baseExperience": 130,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/troll.png",
+    "spriteData": [
+      "........................",
+      "...........##...........",
+      "..........####..........",
+      ".........######.........",
+      "........##O..O##........",
+      "........###VV###........",
+      ".........######.........",
+      "..........####..........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....####.####.####.....",
+      ".....###..####..###.....",
+      ".....##...####...##.....",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      ".........##..##.........",
+      "........##....##........",
+      ".......##......##.......",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.2,
+      "y": 1.3
+    },
+    "damageDice": 14,
+    "damageType": "PHYSICAL",
+    "intelligence": 3,
+    "dexterity": 8,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 10,
+        "maxLevel": 45,
+        "weight": 8
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 15,
+        "maxLevel": 55,
+        "weight": 3
+      }
+    ]
+  },
+  "OGRE": {
+    "baseLevel": 5,
+    "maxHP": 75,
+    "maxMP": 5,
+    "armorClass": 11,
+    "baseExperience": 140,
+    "family": "HUMANOID",
+    "texturePath": "images/monsters/ogre.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      ".........######.........",
+      ".......##########.......",
+      "......############......",
+      ".......##.O..O.##.......",
+      ".......##......##.......",
+      "........########........",
+      "......############......",
+      ".....##############.....",
+      "....################....",
+      "....################....",
+      "....####..####..####....",
+      "....###...####...###....",
+      "....##....####....##....",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      "..........####..........",
+      ".........##..##.........",
+      "........##....##........",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.3,
+      "y": 1.2
+    },
+    "damageDice": 18,
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 6,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 11,
+        "maxLevel": 50,
+        "weight": 8
+      },
+      {
+        "color": "BROWN",
+        "minLevel": 16,
+        "maxLevel": 60,
+        "weight": 3
+      }
+    ]
+  },
+  "BASILISK": {
+    "baseLevel": 8,
+    "maxHP": 60,
+    "maxMP": 25,
+    "armorClass": 15,
+    "baseExperience": 160,
+    "family": "BEAST",
+    "texturePath": "images/monsters/basilisk.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "...........##...........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      "....################....",
+      "...##################...",
+      "..####################..",
+      ".######################.",
+      "######.##########.######",
+      "######.##########.######",
+      ".####..##########..####.",
+      ".......##########.......",
+      ".......###....###.......",
+      "......###......###......",
+      ".....###........###....."
+    ],
+    "scale": {
+      "x": 1.2,
+      "y": 0.8
+    },
+    "damageDice": 10,
+    "damageType": "PHYSICAL",
+    "intelligence": 2,
+    "dexterity": 8,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "SLOWED",
+        "duration": 5,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.3
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 12,
+        "maxLevel": 60,
+        "weight": 5
+      },
+      {
+        "color": "BROWN",
+        "minLevel": 15,
+        "maxLevel": 70,
+        "weight": 2
+      }
+    ]
+  },
+  "MEDUSA": {
+    "baseLevel": 8,
+    "maxHP": 45,
+    "maxMP": 40,
+    "armorClass": 15,
+    "baseExperience": 200,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/medusa.png",
+    "spriteData": [
+      "..........#..#..........",
+      ".........#....#.........",
+      "........#..##..#........",
+      ".......#..####..#.......",
+      "........########........",
+      "........##O..O##........",
+      "........###..###........",
+      ".........######.........",
+      "..........####..........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      "......############......",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 1.1
+    },
+    "damageDice": 6,
+    "damageType": "MAGICAL",
+    "intelligence": 15,
+    "dexterity": 12,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "onHitEffects": [
+      {
+        "type": "SLOWED",
+        "duration": 8,
+        "potency": 3,
+        "stackable": false,
+        "chance": 0.5
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 14,
+        "maxLevel": 70,
+        "weight": 5
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 18,
+        "maxLevel": 80,
+        "weight": 2
+      }
+    ]
+  },
+  "WYVERN": {
+    "baseLevel": 9,
+    "maxHP": 80,
+    "maxMP": 10,
+    "armorClass": 13,
+    "baseExperience": 220,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/wyvern.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "...........##...........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      "....################....",
+      "...##################...",
+      "..####################..",
+      ".######################.",
+      "########################",
+      ".##...############...##.",
+      "......############......",
+      "......####....####......",
+      "......###......###......",
+      "......##........##......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.4,
+      "y": 1.0
+    },
+    "damageDice": 15,
+    "damageType": "PHYSICAL",
+    "intelligence": 5,
+    "dexterity": 14,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 10,
+        "potency": 3,
+        "stackable": true,
+        "chance": 0.6
+      }
+    ],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 15,
+        "maxLevel": 80,
+        "weight": 5
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 20,
+        "maxLevel": 90,
+        "weight": 2
+      }
+    ]
+  },
+  "CHIMERA": {
+    "baseLevel": 9,
+    "maxHP": 85,
+    "maxMP": 25,
+    "armorClass": 14,
+    "baseExperience": 300,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/chimera.png",
+    "spriteData": [
+      "........................",
+      ".....##....##....##.....",
+      "....####..####..####....",
+      "...######.####.######...",
+      "..####################..",
+      "..####################..",
+      "...##################...",
+      "....################....",
+      ".....##############.....",
+      "....################....",
+      "...##################...",
+      "..####################..",
+      ".######################.",
+      "########################",
+      ".##...############...##.",
+      "......############......",
+      "......####....####......",
+      "......###......###......",
+      "......##........##......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.3,
+      "y": 1.2
+    },
+    "damageDice": 20,
+    "damageType": "PHYSICAL",
+    "intelligence": 8,
+    "dexterity": 10,
+    "hasRangedAttack": true,
+    "attackRange": 4,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "ORANGE",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "RED",
+        "minLevel": 22,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "HYDRA": {
+    "baseLevel": 12,
+    "maxHP": 110,
+    "maxMP": 15,
+    "armorClass": 15,
+    "baseExperience": 350,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/hydra.png",
+    "spriteData": [
+      "........................",
+      "..##...##...##...##...##",
+      ".####.####.####.####.###",
+      ".####.####.####.####.###",
+      "..##...##...##...##...##",
+      "...##..##...##...##..##.",
+      "....####....##....####..",
+      ".....####...##...####...",
+      "......####..##..####....",
+      ".......############.....",
+      "......##############....",
+      ".....################...",
+      "....##################..",
+      "...####################.",
+      "..######################",
+      ".#######################",
+      "########################",
+      ".##...############...##.",
+      "......############......",
+      "......####....####......",
+      "......###......###......",
+      "......##........##......",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.5,
+      "y": 1.2
+    },
+    "damageDice": 25,
+    "damageType": "PHYSICAL",
+    "intelligence": 4,
+    "dexterity": 6,
+    "hasRangedAttack": false,
+    "attackRange": 2,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GREEN",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "BLUE",
+        "minLevel": 25,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "VAMPIRE": {
+    "baseLevel": 11,
+    "maxHP": 75,
+    "maxMP": 50,
+    "armorClass": 16,
+    "baseExperience": 400,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/vampire.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........##O..O##........",
+      "........###..###........",
+      ".........######.........",
+      ".......###.##.###.......",
+      "......####.##.####......",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      ".....#####.##.#####.....",
+      "......####....####......",
+      ".......##......##.......",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.0,
+      "y": 1.1
+    },
+    "damageDice": 15,
+    "damageType": "MAGICAL",
+    "intelligence": 20,
+    "dexterity": 14,
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "onHitEffects": [
+      {
+        "type": "WEAKENED",
+        "duration": 15,
+        "potency": 2,
+        "stackable": true,
+        "chance": 0.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "BLACK",
+        "minLevel": 20,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "RED",
+        "minLevel": 25,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "IRON_GOLEM": {
+    "baseLevel": 15,
+    "maxHP": 120,
+    "maxMP": 0,
+    "armorClass": 20,
+    "baseExperience": 500,
+    "family": "MYTHICAL",
+    "texturePath": "images/monsters/iron_golem.png",
+    "spriteData": [
+      "........................",
+      ".........######.........",
+      "........########........",
+      "........########........",
+      ".........######.........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      ".....##############.....",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.2,
+      "y": 1.4
+    },
+    "damageDice": 30,
+    "damageType": "PHYSICAL",
+    "intelligence": 0,
+    "dexterity": 4,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "onHitEffects": [],
+    "variants": [
+      {
+        "color": "GRAY",
+        "minLevel": 22,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 28,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "PURPLE_WORM": {
+    "baseLevel": 18,
+    "maxHP": 140,
+    "maxMP": 10,
+    "armorClass": 18,
+    "baseExperience": 600,
+    "family": "BEAST",
+    "texturePath": "images/monsters/purple_worm.png",
+    "spriteData": [
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      "....################....",
+      "...##################...",
+      "..####################..",
+      ".######################.",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "########################",
+      "........................",
+      "........................"
+    ],
+    "scale": {
+      "x": 1.5,
+      "y": 1.5
+    },
+    "damageDice": 40,
+    "damageType": "PHYSICAL",
+    "intelligence": 1,
+    "dexterity": 6,
+    "hasRangedAttack": false,
+    "attackRange": 2,
+    "onHitEffects": [
+      {
+        "type": "POISONED",
+        "duration": 20,
+        "potency": 4,
+        "stackable": true,
+        "chance": 0.8
+      }
+    ],
+    "variants": [
+      {
+        "color": "PURPLE",
+        "minLevel": 25,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "BLACK",
+        "minLevel": 30,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ]
   }
 }

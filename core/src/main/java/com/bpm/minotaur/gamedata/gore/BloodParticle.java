@@ -13,11 +13,14 @@ public class BloodParticle implements Pool.Poolable {
     public float size;
     public boolean onGround;
 
+    public com.badlogic.gdx.graphics.g2d.TextureRegion textureRegion; // For Modern Mode
+
     public BloodParticle() {
         // Empty for pooling
     }
 
-    public void init(Vector3 startPos, Vector3 startVel, Color color, float life, float size) {
+    public void init(Vector3 startPos, Vector3 startVel, Color color, float life, float size,
+            com.badlogic.gdx.graphics.g2d.TextureRegion texture) {
         this.position.set(startPos);
         this.velocity.set(startVel);
         this.color.set(color);
@@ -25,6 +28,7 @@ public class BloodParticle implements Pool.Poolable {
         this.lifeTimer = life;
         this.size = size;
         this.onGround = false;
+        this.textureRegion = texture;
     }
 
     @Override
@@ -37,7 +41,8 @@ public class BloodParticle implements Pool.Poolable {
     }
 
     public void update(float delta) {
-        if (onGround) return;
+        if (onGround)
+            return;
 
         // Gravity (Heavy for visceral feel)
         velocity.y -= 18.0f * delta;

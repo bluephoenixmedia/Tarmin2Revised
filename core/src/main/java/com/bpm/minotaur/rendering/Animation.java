@@ -9,7 +9,9 @@ public class Animation {
     public enum AnimationType {
         PROJECTILE_MONSTER,
         PROJECTILE_PLAYER,
-        DAMAGE_TEXT
+        PROJECTILE_SPELL,
+        DAMAGE_TEXT,
+        DRAIN_SPELL
     }
 
     private float elapsedTime; // Changed from final so it can be updated
@@ -26,7 +28,8 @@ public class Animation {
     private GridPoint2 textPosition;
 
     // Existing constructor for projectiles
-    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration, String[] spriteData) {
+    public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration,
+            String[] spriteData) {
         this.type = type;
         this.startPosition = startPosition.cpy();
         this.endPosition = endPosition.cpy();

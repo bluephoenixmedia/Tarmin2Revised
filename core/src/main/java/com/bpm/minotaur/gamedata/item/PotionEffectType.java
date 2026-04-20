@@ -15,7 +15,11 @@ public enum PotionEffectType {
     GAIN_STRENGTH(true, "Gain Strength", "You feel stronger!", "You feel stronger!"),
     BLINDNESS(true, "Blindness", "You can't see!", "You are blinded!"),
     CONFUSION(true, "Confusion", "You feel confused...", "You feel confused..."),
-    LEVITATION(false, "Levitation", "You float in the air!", "You begin to float!"); // Example of non-self-identifying
+    LEVITATION(false, "Levitation", "You float in the air!", "You begin to float!"),
+    BERZERK(true, "Berzerk", "You see red!", "Rage consumes you!"),
+    RESTORE_ENERGY(true, "Energy", "You feel energized!", "You feel revitalized!"),
+    SUPER_VISION(true, "Vision", "Your senses expand!", "You see everything!"),
+    SLEEP(true, "Sleeping", "You feel very tired...", "You yawn uncontrollably...");
     // ... we can add more effects from the NetHack list later.
 
     private final boolean selfIdentifies;
@@ -30,14 +34,26 @@ public enum PotionEffectType {
         this.consumeMessage = consumeMessage;
     }
 
-    public String getBaseName() { return baseName; }
-    public String getDescription() { return description; }
-    public String getConsumeMessage() { return consumeMessage; }
-    public boolean doesSelfIdentify() { return selfIdentifies; }
+    public String getBaseName() {
+        return baseName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getConsumeMessage() {
+        return consumeMessage;
+    }
+
+    public boolean doesSelfIdentify() {
+        return selfIdentifies;
+    }
 
     /**
      * Applies the potion's effect to the player.
-     * @param player The player consuming the potion.
+     * 
+     * @param player        The player consuming the potion.
      * @param statusManager A reference to the game's StatusManager.
      */
     public void applyEffect(Player player, StatusManager statusManager) {
@@ -47,7 +63,7 @@ public enum PotionEffectType {
         switch (this) {
             case HEALING:
                 // Heal for 25% of max HP (War Strength), or a flat 10, whichever is greater
-                int healAmount = Math.max(10, stats.getMaxWarStrength() / 4);
+                int healAmount = Math.max(10, stats.getMaxHP() / 4);
                 stats.heal(healAmount); // We added this method to PlayerStats in M1
                 break;
             case POISON:
@@ -56,18 +72,29 @@ public enum PotionEffectType {
                 break;
             case GAIN_STRENGTH:
                 // Permanently increase max War Strength
-                stats.modifyBaseWarStrength(1); // We added this method to PlayerStats in M1
+                stats.modifyBaseHP(1); // We added this method to PlayerStats in M1
                 break;
             case BLINDNESS:
                 // Apply BLIND status for 20 turns
-                // We'll need to add BLIND to StatusEffectType enum
-                // statusManager.addEffect(StatusEffectType.BLIND, 20, 1, false);
+                statusManager.addEffect(StatusEffectType.BLIND, 20, 1, false);
                 break;
             case CONFUSION:
                 statusManager.addEffect(StatusEffectType.CONFUSED, 15, 1, false);
                 break;
             case LEVITATION:
                 statusManager.addEffect(StatusEffectType.FLOATING, 30, 1, false);
+                break;
+            case BERZERK:
+                statusManager.addEffect(StatusEffectType.BERZERK, 30, 1, false);
+                break;
+            case RESTORE_ENERGY:
+                stats.restoreMP(10 * stats.getLevel());
+                break;
+            case SUPER_VISION:
+                statusManager.addEffect(StatusEffectType.OMNISCIENT, 30, 1, false);
+                break;
+            case SLEEP:
+                statusManager.addEffect(StatusEffectType.SLEEP, 20, 1, false);
                 break;
         }
     }

@@ -1,0 +1,144 @@
+
+debris.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+brokenwall
+  rotate: false
+  xy: 1973, 2357
+  size: 1682, 1723
+  orig: 2048, 2048
+  offset: 183, 163
+  index: -1
+ceramic_shard
+  rotate: false
+  xy: 0, 1655
+  size: 1929, 1314
+  orig: 2048, 1398
+  offset: 59, 42
+  index: -1
+charred_wood
+  rotate: false
+  xy: 1931, 1287
+  size: 1929, 1068
+  orig: 2048, 1238
+  offset: 59, 85
+  index: -1
+flint_shard
+  rotate: false
+  xy: 1001, 294
+  size: 852, 535
+  orig: 1024, 725
+  offset: 86, 95
+  index: -1
+hollow_log
+  rotate: false
+  xy: 0, 142
+  size: 999, 687
+  orig: 1024, 782
+  offset: 12, 48
+  index: -1
+mud
+  rotate: false
+  xy: 0, 831
+  size: 1908, 822
+  orig: 2048, 974
+  offset: 70, 76
+  index: -1
+puddle
+  rotate: false
+  xy: 0, 2971
+  size: 1971, 1109
+  orig: 2048, 1202
+  offset: 38, 47
+  index: -1
+slime_residue
+  rotate: false
+  xy: 1910, 0
+  size: 1768, 1285
+  orig: 2048, 1398
+  offset: 140, 57
+  index: -1
+
+debris2.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+bones
+  rotate: false
+  xy: 0, 0
+  size: 1805, 1170
+  orig: 2048, 1304
+  offset: 121, 67
+  index: -1
+broken_column
+  rotate: false
+  xy: 0, 2487
+  size: 1907, 1578
+  orig: 2048, 2048
+  offset: 70, 235
+  index: -1
+broken_hilt
+  rotate: false
+  xy: 1883, 404
+  size: 1740, 1255
+  orig: 2048, 1562
+  offset: 154, 154
+  index: -1
+metal_scrap
+  rotate: false
+  xy: 1909, 2629
+  size: 1754, 1436
+  orig: 2048, 1490
+  offset: 147, 27
+  index: -1
+parchment_scrap
+  rotate: false
+  xy: 0, 1172
+  size: 1881, 1313
+  orig: 2048, 1534
+  offset: 83, 111
+  index: -1
+rotten_rope
+  rotate: false
+  xy: 1909, 1661
+  size: 1846, 966
+  orig: 2048, 1110
+  offset: 101, 72
+  index: -1
+
+debris3.png
+size: 4096, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+glass_shards
+  rotate: false
+  xy: 1430, 206
+  size: 1182, 670
+  orig: 1452, 938
+  offset: 135, 134
+  index: -1
+loose_brick
+  rotate: false
+  xy: 1685, 878
+  size: 1367, 1085
+  orig: 1546, 1424
+  offset: 89, 170
+  index: -1
+moss_clump
+  rotate: false
+  xy: 0, 1059
+  size: 1683, 904
+  orig: 2048, 996
+  offset: 182, 46
+  index: -1
+twisted_root
+  rotate: false
+  xy: 0, 0
+  size: 1428, 1057
+  orig: 1650, 1494
+  offset: 111, 219
+  index: -1
