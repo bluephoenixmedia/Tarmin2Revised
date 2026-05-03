@@ -85,7 +85,7 @@ public class SpawnDistributionTest {
 
         SpawnManager manager = new SpawnManager(monsterData, itemData, assetManager, maze, Difficulty.MEDIUM, level,
                 level,
-                0, layout, spawnTableData, 12345L);
+                0, layout, spawnTableData, 12345L, null);
 
         // printPool(manager, "monsterPool", "Monsters");
         // printPool(manager, "itemPool", "Items");

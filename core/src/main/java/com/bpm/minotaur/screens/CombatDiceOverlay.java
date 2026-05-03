@@ -98,7 +98,7 @@ public class CombatDiceOverlay {
                                 "Deselected: " + toggledDie.getName());
                     } else {
                         // Check stamina
-                        if (selectedHand.size() < player.getStats().getStamina()) {
+                        if (selectedHand.size() < player.getEffectiveStamina()) {
                             selectedHand.add(toggledDie);
                             com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_DEBUG",
                                     "Selected: " + toggledDie.getName());
@@ -166,7 +166,7 @@ public class CombatDiceOverlay {
         Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         batch.begin();
 
-        font.draw(batch, "SELECT YOUR FATE (Stamina: " + player.getStats().getStamina() + ")", centerX - 100,
+        font.draw(batch, "SELECT YOUR FATE (Stamina: " + player.getEffectiveStamina() + ")", centerX - 100,
                 centerY + 200);
 
         // Draw Dice Pool

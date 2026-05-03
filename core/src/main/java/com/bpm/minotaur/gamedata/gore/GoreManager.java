@@ -85,7 +85,7 @@ public class GoreManager {
      */
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
         Gdx.app.log("GoreManager", "spawnBloodSpray called at " + origin + " with intensity " + intensity);
-        int count = intensity * 36;
+        int count = intensity * 10;
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
             float spreadX = MathUtils.random(-0.4f, 0.4f);

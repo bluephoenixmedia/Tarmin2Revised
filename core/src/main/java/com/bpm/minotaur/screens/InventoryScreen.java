@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.Inventory;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
@@ -56,6 +57,12 @@ public class InventoryScreen extends BaseScreen {
 
     private Label tooltipLabel;
     private Label statsLabel;
+    private BitmapFont smallFont;
+    private Table statsTable;
+    private Table leftStatsCol;
+    private Table rightStatsCol;
+    private Table resistancesRow;
+    private Table statusFxRow;
 
     private DragAndDrop dragAndDrop;
 
@@ -72,6 +79,7 @@ public class InventoryScreen extends BaseScreen {
     private List<InventorySlot> allSlots = new ArrayList<>();
 
     private boolean hasLoggedCoordinates = false;
+    private DebugManager.RenderMode renderMode;
 
     public enum InventoryMode {
         NORMAL, QUAFF, READ, ZAP, APPLY, WIELD, WEAR, TAKEOFF, CRAFT, COOK
@@ -192,12 +200,16 @@ public class InventoryScreen extends BaseScreen {
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
 
-        // Load Paper Doll
+        renderMode = DebugManager.getInstance().getRenderMode();
+
+        // Load background texture (retro uses its own inventory PNG)
+        String dollPath = (renderMode == DebugManager.RenderMode.RETRO)
+                ? "images/ui/retro_inventory.png"
+                : "images/inventory_paper_doll.png";
         try {
-            paperDollTexture = new Texture(Gdx.files.internal("images/inventory_paper_doll.png"));
+            paperDollTexture = new Texture(Gdx.files.internal(dollPath));
         } catch (Exception e) {
             Gdx.app.error("Inventory", "Could not load paper doll image", e);
-            // Fallback to a simple color if missing, to prevent crash
             Pixmap p = new Pixmap(400, 600, Pixmap.Format.RGBA8888);
             p.setColor(Color.DARK_GRAY);
             p.fill();
@@ -210,11 +222,19 @@ public class InventoryScreen extends BaseScreen {
         pixmap.fill();
         whitePixel = new Texture(pixmap);
 
-        Pixmap slotPix = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-        slotPix.setColor(0.2f, 0.2f, 0.2f, 0.8f);
-        slotPix.fill();
-        slotPix.setColor(0.5f, 0.5f, 0.5f, 1f);
-        slotPix.drawRectangle(0, 0, 64, 64);
+        // Retro: transparent slot bg – the PNG already draws the slot boxes
+        Pixmap slotPix;
+        if (renderMode == DebugManager.RenderMode.RETRO) {
+            slotPix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+            slotPix.setColor(0f, 0f, 0f, 0f);
+            slotPix.fill();
+        } else {
+            slotPix = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+            slotPix.setColor(0.2f, 0.2f, 0.2f, 0.8f);
+            slotPix.fill();
+            slotPix.setColor(0.5f, 0.5f, 0.5f, 1f);
+            slotPix.drawRectangle(0, 0, 64, 64);
+        }
         slotBg = new Texture(slotPix);
 
         pixmap.dispose();
@@ -223,6 +243,9 @@ public class InventoryScreen extends BaseScreen {
         font = new BitmapFont();
         font.getData().setScale(1.5f);
 
+        smallFont = new BitmapFont();
+        smallFont.getData().setScale(1.0f);
+
         dragAndDrop = new DragAndDrop();
         dragAndDrop.setTapSquareSize(5);
         dragAndDrop.setDragTime(0);
@@ -230,7 +253,206 @@ public class InventoryScreen extends BaseScreen {
         buildUI();
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // RETRO INVENTORY UI
+    // ─────────────────────────────────────────────────────────────────
+
+    /** Adds a transparent, drag-and-drop-enabled equipment slot to a Group. */
+    private void addSlotRetro(Group group, String name, Item.ItemType type, float x, float y, float sz) {
+        InventorySlot slot = createEquipSlot(name, type);
+        slot.setSize(sz, sz);
+        slot.setPosition(x, y);
+        group.addActor(slot);
+    }
+
+    private void buildRetroUI() {
+        rootTable = new Table();
+        rootTable.setFillParent(true);
+        rootTable.pad(50);
+
+        // Scale the retro inventory image to fit the left panel
+        float targetWidth = 900f;
+        float stageScale  = targetWidth / paperDollTexture.getWidth();
+        float scaledHeight = paperDollTexture.getHeight() * stageScale;
+        if (scaledHeight > 900f) {
+            scaledHeight  = 900f;
+            stageScale    = scaledHeight / paperDollTexture.getHeight();
+            targetWidth   = paperDollTexture.getWidth() * stageScale;
+        }
+
+        // Slot layout is derived from the Python generator constants:
+        //   LW=342, LH=256, SCALE=7, S=36, G=4
+        // Each logical unit maps to (7 * stageScale) stage pixels.
+        float ps     = 7f * stageScale;   // one Python-logical-pixel in stage coords
+        float slotSz = 36f * ps;          // slot size in stage coords (~95 px)
+
+        // Column X positions (left-to-right in stage coords)
+        float lx1 = 11f  * ps;   // left col, single/first slot
+        float lx2 = 51f  * ps;   // left col, second slot (gloves row 2, boots row 2)
+        float rx1 = 255f * ps;   // right col, first slot
+        float rx2 = 295f * ps;   // right col, second slot
+
+        // Row Y positions (LibGDX: 0 = bottom, flip from image top-origin)
+        float ry1 = scaledHeight - 12f  * ps - slotSz;
+        float ry2 = scaledHeight - 52f  * ps - slotSz;
+        float ry3 = scaledHeight - 92f  * ps - slotSz;
+        float ry4 = scaledHeight - 132f * ps - slotSz;
+        float ry5 = scaledHeight - 172f * ps - slotSz;
+
+        // Background image + slot group
+        Group retroGroup = new Group();
+        retroGroup.setSize(targetWidth, scaledHeight);
+        Image bgImage = new Image(paperDollTexture);
+        bgImage.setSize(targetWidth, scaledHeight);
+        retroGroup.addActor(bgImage);
+
+        // ── Left column – armour ──────────────────────────────────────
+        addSlotRetro(retroGroup, "Head",  Item.ItemType.HELMET,    lx1, ry1, slotSz);
+        addSlotRetro(retroGroup, "Chest", Item.ItemType.HAUBERK,   lx1, ry2, slotSz);
+        addSlotRetro(retroGroup, "Hands", Item.ItemType.GAUNTLETS, lx1, ry3, slotSz);
+        addSlotRetro(retroGroup, "Arms",  Item.ItemType.ARMS,      lx2, ry3, slotSz);
+        addSlotRetro(retroGroup, "Legs",  Item.ItemType.LEGS,      lx1, ry4, slotSz);
+        addSlotRetro(retroGroup, "Feet",  Item.ItemType.BOOTS,     lx1, ry5, slotSz);
+        addSlotRetro(retroGroup, null,    Item.ItemType.BOOTS,     lx2, ry5, slotSz); // decorative
+
+        // ── Right column – accessories ────────────────────────────────
+        addSlotRetro(retroGroup, "Neck",     Item.ItemType.AMULET,   rx2, ry1, slotSz);
+        addSlotRetro(retroGroup, "Backpack", Item.ItemType.BACKPACK, rx1, ry2, slotSz);
+        addSlotRetro(retroGroup, "Back",     Item.ItemType.CLOAK,    rx2, ry2, slotSz);
+        addSlotRetro(retroGroup, "R.Hand",   Item.ItemType.SWORD,    rx1, ry3, slotSz);
+        addSlotRetro(retroGroup, "L.Hand",   Item.ItemType.SHIELD,   rx2, ry3, slotSz);
+        addSlotRetro(retroGroup, "Ring",     Item.ItemType.RING,     rx1, ry4, slotSz);
+        addSlotRetro(retroGroup, "Ring 2",   Item.ItemType.RING,     rx2, ry4, slotSz);
+        addSlotRetro(retroGroup, "Eyes",     Item.ItemType.EYES,     rx1, ry5, slotSz);
+        addSlotRetro(retroGroup, null,       Item.ItemType.EYES,     rx2, ry5, slotSz); // decorative
+
+        // Stats label at bottom of group
+        statsLabel = new Label("", new Label.LabelStyle(font, Color.GOLD));
+        statsLabel.setAlignment(Align.center);
+        statsLabel.setPosition(targetWidth / 2f - 50f, 5f);
+        retroGroup.addActor(statsLabel);
+
+        Container<Group> dollContainer = new Container<>(retroGroup);
+
+        // ── Right panel – backpack / quick slots / spells / alchemy ──
+        backpackTable = new Table();
+        backpackTable.top().right();
+        String title      = "Backpack Storage (Right-Click to Drop)";
+        Color  titleColor = Color.GOLD;
+        if (mode != InventoryMode.NORMAL) {
+            title      = "SELECT ITEM TO " + mode.name() + " (Click to select)";
+            titleColor = Color.GREEN;
+        }
+        Label packLabel = new Label(title, new Label.LabelStyle(font, titleColor));
+        packLabel.setAlignment(Align.right);
+        backpackTable.add(packLabel).padBottom(20).right().row();
+
+        if (mode == InventoryMode.CRAFT) {
+            Table recipeList = new Table();
+            if (craftingManager != null) {
+                for (final Recipe recipe : craftingManager.getAllRecipes()) {
+                    boolean canCraft = craftingManager.canCraft(player.getInventory(), recipe);
+                    Color c = canCraft ? Color.GREEN : Color.GRAY;
+                    StringBuilder sb = new StringBuilder("Requires: ");
+                    java.util.Map<Item.ItemType, Integer> counts = new java.util.HashMap<>();
+                    for (Item.ItemType t : recipe.inputs)
+                        counts.put(t, counts.getOrDefault(t, 0) + 1);
+                    int i = 0;
+                    for (java.util.Map.Entry<Item.ItemType, Integer> entry : counts.entrySet()) {
+                        if (i++ > 0) sb.append(", ");
+                        sb.append(entry.getKey().name()).append(" x").append(entry.getValue());
+                    }
+                    Label l = new Label(recipe.description + " [" + sb + "]", new Label.LabelStyle(font, c));
+                    l.addListener(new ClickListener() {
+                        @Override public void clicked(InputEvent event, float x, float y) { craftItem(recipe); }
+                    });
+                    recipeList.add(l).right().pad(10).row();
+                }
+            } else {
+                recipeList.add(new Label("No Crafting Manager Linked", new Label.LabelStyle(font, Color.RED)));
+            }
+            backpackTable.add(recipeList).right();
+        } else {
+            Table grid = new Table();
+            for (int i = 0; i < 30; i++) {
+                grid.add(createBackpackSlot(i)).size(64, 64).pad(5);
+                if ((i + 1) % 5 == 0) grid.row();
+            }
+            backpackTable.add(grid).right();
+        }
+
+        quickSlotTable = new Table();
+        quickSlotTable.add(new Label("Quick Slots (HUD)", new Label.LabelStyle(font, Color.CYAN)))
+                .padBottom(10).right().row();
+        Table quickGrid = new Table();
+        for (int i = 0; i < 6; i++)
+            quickGrid.add(createQuickSlot(i)).size(64, 64).pad(10);
+        quickSlotTable.add(quickGrid).right();
+
+        // Spells + alchemy — left side below the doll
+        Table spellsTable = new Table();
+        spellsTable.add(new Label("Known Spells", new Label.LabelStyle(font, Color.CYAN))).padBottom(5).left().row();
+        if (player.getKnownSpells() == null || player.getKnownSpells().isEmpty()) {
+            spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).left();
+        } else {
+            for (com.bpm.minotaur.gamedata.spells.SpellType spell : player.getKnownSpells()) {
+                spellsTable.add(new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
+                        new Label.LabelStyle(font, Color.WHITE))).left().padRight(5).row();
+            }
+        }
+
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+        btnStyle.font      = font;
+        btnStyle.up        = new TextureRegionDrawable(whitePixel).tint(new Color(0.15f, 0.12f, 0.05f, 0.9f));
+        btnStyle.fontColor = Color.GOLD;
+        TextButton alchemyBtn = new TextButton("Alchemy", btnStyle);
+        alchemyBtn.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new AlchemyScreen(game, InventoryScreen.this.parentScreen, player));
+                dispose();
+            }
+        });
+
+        Table leftSide = new Table();
+        leftSide.add(dollContainer).top().expandY().fillY().row();
+        leftSide.add(spellsTable).bottom().left().fillX().padTop(5).row();
+        leftSide.add(alchemyBtn).bottom().left().pad(5);
+
+        Table rightSide = new Table();
+        rightSide.add(backpackTable).top().right().expandX().fillX().row();
+        rightSide.add(quickSlotTable).right().fillX().padTop(5).row();
+        rightSide.add(buildStatsTable()).bottom().fillX().padTop(5);
+
+        Table mainSplit = new Table();
+        mainSplit.add(leftSide).left().expandY().fillY().padRight(10);
+        mainSplit.add(rightSide).expand().fill().right();
+
+        rootTable.add(mainSplit).expand().fill();
+        stage.addActor(rootTable);
+
+        // Tooltip layer
+        Table tooltipTable = new Table();
+        tooltipTable.setFillParent(true);
+        tooltipTable.bottom();
+        tooltipTable.setTouchable(Touchable.disabled);
+        tooltipLabel = new Label("", new Label.LabelStyle(font, Color.WHITE));
+        tooltipLabel.setAlignment(Align.center);
+        tooltipTable.add(tooltipLabel).padBottom(20);
+        stage.addActor(tooltipTable);
+
+        refreshSlots();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // MODERN INVENTORY UI
+    // ─────────────────────────────────────────────────────────────────
+
     private void buildUI() {
+        if (renderMode == DebugManager.RenderMode.RETRO) {
+            buildRetroUI();
+            return;
+        }
+
         rootTable = new Table();
         rootTable.setFillParent(true);
         rootTable.pad(50);
@@ -457,50 +679,25 @@ public class InventoryScreen extends BaseScreen {
         quickSlotTable.add(quickGrid).right();
 
         // --- Assembly ---
-        Table mainSplit = new Table();
-        mainSplit.add(dollContainer).left().expandY().fillY().padRight(50); // Left align doll
-
-        Table rightSide = new Table();
-        rightSide.add(backpackTable).top().right().expand().fillX().row();
-
-        // --- Known Spells ---
+        // Spells + alchemy move to left side below the doll
         Table spellsTable = new Table();
         Label spellsLabel = new Label("Known Spells", new Label.LabelStyle(font, Color.CYAN));
-        spellsLabel.setAlignment(Align.right);
-        spellsTable.add(spellsLabel).padBottom(5).right().row();
-
+        spellsLabel.setAlignment(Align.left);
+        spellsTable.add(spellsLabel).padBottom(5).left().row();
         if (player.getKnownSpells() == null || player.getKnownSpells().isEmpty()) {
-            spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).right();
+            spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).left();
         } else {
             for (com.bpm.minotaur.gamedata.spells.SpellType spell : player.getKnownSpells()) {
-                Label l = new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
-                        new Label.LabelStyle(font, Color.WHITE));
-                spellsTable.add(l).right().padRight(5).row();
+                spellsTable.add(new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
+                        new Label.LabelStyle(font, Color.WHITE))).left().padRight(5).row();
             }
         }
-        rightSide.add(spellsTable).right().padTop(10).padBottom(10).row();
-
-        // Alchemy Button
-        TextButton alchemyBtn = new TextButton("Alchemy", new TextButton.TextButtonStyle(null, null, null, font));
-        // Simple style reuse or create new one if needed, InventoryScreen likely has
-        // basic styles?
-        // Actually InventoryScreen uses buildUI and likely has styles/fonts setup.
-        // But here I'm using `game.getSkin()` in previous failed attempt?
-        // InventoryScreen doesn't seem to have a global skin variable.
-        // It constructs things manually?
-        // Let's check how other buttons are made or just use a basic one.
-        // The previous code utilized `game.getSkin()` which was wrong.
-        // Let's make a style using the exiting font/textures in InventoryScreen if
-        // possible.
-        // "whitePixel" and "font" are available fields in InventoryScreen? Yes.
 
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = font;
-        btnStyle.up = new TextureRegionDrawable(new TextureRegionDrawable(slotBg)); // Reuse slotBg
+        btnStyle.up = new TextureRegionDrawable(new TextureRegionDrawable(slotBg));
         btnStyle.fontColor = Color.GREEN;
-
-        alchemyBtn.setStyle(btnStyle);
-
+        TextButton alchemyBtn = new TextButton("Alchemy", btnStyle);
         alchemyBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -508,11 +705,20 @@ public class InventoryScreen extends BaseScreen {
                 dispose();
             }
         });
-        rightSide.add(alchemyBtn).right().pad(5).row();
 
-        rightSide.add(quickSlotTable).bottom().right().height(150).fillX();
+        Table leftSide = new Table();
+        leftSide.add(dollContainer).top().expandY().fillY().row();
+        leftSide.add(spellsTable).bottom().left().fillX().padTop(5).row();
+        leftSide.add(alchemyBtn).bottom().left().pad(5);
 
-        mainSplit.add(rightSide).expand().fill().right(); // Right align right side
+        Table rightSide = new Table();
+        rightSide.add(backpackTable).top().right().expandX().fillX().row();
+        rightSide.add(quickSlotTable).right().fillX().padTop(5).row();
+        rightSide.add(buildStatsTable()).bottom().fillX().padTop(5);
+
+        Table mainSplit = new Table();
+        mainSplit.add(leftSide).left().expandY().fillY().padRight(10);
+        mainSplit.add(rightSide).expand().fill().right();
 
         rootTable.add(mainSplit).expand().fill();
         stage.addActor(rootTable);
@@ -679,20 +885,158 @@ public class InventoryScreen extends BaseScreen {
         }
 
         updateStatsLabel();
+        refreshStatsTable();
     }
 
     private void updateStatsLabel() {
-        // This triggers the new debug logging in PlayerEquipment
-        int armor = player.getArmorClass();
-        int war = player.getCurrentHP();
-        int spirit = player.getCurrentMP();
-        int gold = player.getTreasureScore();
-
         statsLabel.setText(
-                "Armor Class: " + armor + "\n" +
-                        "Current HP: " + war + "\n" +
-                        "Current MP: " + spirit + "\n" +
-                        "Treasure: " + gold);
+            "HP: " + player.getCurrentHP() + "/" + player.getEffectiveMaxHP() +
+            "  MP: " + player.getCurrentMP() + "/" + player.getEffectiveMaxMP());
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // STATS PANEL
+    // ─────────────────────────────────────────────────────────────────
+
+    private Table buildStatsTable() {
+        leftStatsCol   = new Table();
+        rightStatsCol  = new Table();
+        resistancesRow = new Table();
+        statusFxRow    = new Table();
+
+        Table twoCol = new Table();
+        twoCol.add(leftStatsCol).top().left().expandX().fillX().padRight(20);
+        twoCol.add(rightStatsCol).top().left().expandX().fillX();
+
+        statsTable = new Table();
+        statsTable.top().left();
+        statsTable.add(twoCol).fillX().row();
+        statsTable.add(resistancesRow).fillX().padTop(4).row();
+        statsTable.add(statusFxRow).fillX().padTop(4);
+        return statsTable;
+    }
+
+    private void refreshStatsTable() {
+        if (leftStatsCol == null) return;
+        leftStatsCol.clear();
+        rightStatsCol.clear();
+        resistancesRow.clear();
+        statusFxRow.clear();
+
+        // ── LEFT COLUMN ──────────────────────────────────────────────
+        sRow(leftStatsCol, "Level", String.valueOf(player.getLevel()), Color.WHITE);
+        sRow(leftStatsCol, "Exp", player.getExperience() + " / " + player.getExperienceToNextLevel(), Color.WHITE);
+
+        int bonusAC = player.getEquipment().getEquippedModifierSum(com.bpm.minotaur.gamedata.ModifierType.BONUS_AC);
+        sRowDelta(leftStatsCol, "Armor Class", player.getArmorClass() - bonusAC, bonusAC);
+        sRow(leftStatsCol, "Absorb",       String.valueOf(player.getAbsorb()),           Color.WHITE);
+        sRow(leftStatsCol, "Spiritual Def",String.valueOf(player.getSpiritualDefense()), Color.WHITE);
+
+        int currentHP = player.getCurrentHP();
+        int baseMaxHP = player.getStats().getMaxHP();
+        int bonusHP   = player.getEquipment().getEquippedModifierSum(com.bpm.minotaur.gamedata.ModifierType.BONUS_MAX_HP);
+        int effectiveMaxHP = baseMaxHP + bonusHP;
+        Color hpCol = currentHP < effectiveMaxHP * 0.3f ? Color.RED : currentHP < effectiveMaxHP * 0.6f ? Color.YELLOW : Color.WHITE;
+        String hpVal = currentHP + " / " + effectiveMaxHP + (bonusHP != 0 ? "  (+" + bonusHP + " bonus)" : "");
+        sRow(leftStatsCol, "HP", hpVal, hpCol);
+
+        int currentMP = player.getCurrentMP();
+        int baseMaxMP = player.getStats().getMaxMP();
+        int bonusMP   = player.getEquipment().getEquippedModifierSum(com.bpm.minotaur.gamedata.ModifierType.BONUS_MAX_MP);
+        Color mpCol = currentMP < 2 ? Color.RED : Color.WHITE;
+        String mpVal = currentMP + " / " + (baseMaxMP + bonusMP) + (bonusMP != 0 ? "  (+" + bonusMP + " bonus)" : "");
+        sRow(leftStatsCol, "MP", mpVal, mpCol);
+
+        int bonusStr = player.getEquipment().getEquippedModifierSum(com.bpm.minotaur.gamedata.ModifierType.BONUS_STRENGTH);
+        sRowDelta(leftStatsCol, "Strength",  player.getStats().getStrength(), bonusStr);
+        sRow(leftStatsCol, "Dexterity", String.valueOf(player.getEffectiveDexterity()), Color.WHITE);
+        sRow(leftStatsCol, "Luck",      String.valueOf(player.getLuck()), Color.WHITE);
+
+        int tox   = player.getStats().getToxicity();
+        int shift = player.getToxicityThresholdShift();
+        String toxTier; Color toxCol;
+        if      (tox >= 76 + shift) { toxTier = " [CRITICAL]"; toxCol = Color.RED;    }
+        else if (tox >= 26 + shift) { toxTier = " [MEDIUM]";   toxCol = Color.ORANGE; }
+        else                        { toxTier = " [CLEAN]";    toxCol = Color.GREEN;  }
+        sRow(leftStatsCol, "Toxicity", tox + "%" + toxTier, toxCol);
+
+        sRow(leftStatsCol, "Stamina",    player.getEffectiveStamina() + " dice",                        Color.WHITE);
+        sRow(leftStatsCol, "Speed",      String.valueOf(player.getEffectiveSpeed()),                     Color.WHITE);
+        sRow(leftStatsCol, "Crit Chance",Math.round(player.getCritChance() * 100) + "%",                Color.WHITE);
+        sRow(leftStatsCol, "Crit Damage",String.format("%.1f×", player.getCritMultiplier()),       Color.WHITE);
+        sRow(leftStatsCol, "Dodge",      Math.round(player.getDodgeChance() * 100) + "%",               Color.WHITE);
+        sRow(leftStatsCol, "Spell Power","+" + player.getSpellPower(),                                   Color.WHITE);
+
+        // ── RIGHT COLUMN ─────────────────────────────────────────────
+        int sat = player.getStats().getSatiety();
+        sRow(rightStatsCol, "Satiety",   sat + "%",
+             sat < 20 ? Color.RED : sat < 50 ? Color.YELLOW : Color.WHITE);
+
+        float temp = player.getStats().getBodyTemperature();
+        sRow(rightStatsCol, "Body Temp", String.format("%.1f°C", temp),
+             (temp < 33f || temp > 41f) ? Color.RED : (temp < 35f || temp > 39f) ? Color.YELLOW : Color.WHITE);
+
+        int hyd = player.getStats().getHydration();
+        sRow(rightStatsCol, "Hydration", hyd + "%",
+             hyd < 20 ? Color.RED : hyd < 50 ? Color.YELLOW : Color.WHITE);
+
+        sRow(rightStatsCol, "Arrows",       String.valueOf(player.getArrows()),               Color.WHITE);
+        sRow(rightStatsCol, "Treasure",     String.valueOf(player.getTreasureScore()),         Color.GOLD);
+        sRow(rightStatsCol, "Cooking Skill",String.valueOf(player.getStats().getCookingSkill()),Color.WHITE);
+        sRow(rightStatsCol, "Agility",      String.valueOf(player.getEffectiveAgility()),      Color.WHITE);
+        sRow(rightStatsCol, "Intelligence", String.valueOf(player.getEffectiveIntelligence()), Color.WHITE);
+        sRow(rightStatsCol, "Wisdom",       String.valueOf(player.getEffectiveWisdom()),       Color.WHITE);
+        sRow(rightStatsCol, "Constitution", String.valueOf(player.getEffectiveConstitution()), Color.WHITE);
+        sRow(rightStatsCol, "Charisma",     String.valueOf(player.getEffectiveCharisma()),     Color.WHITE);
+
+        // ── RESISTANCES (horizontal row) ─────────────────────────────
+        resistancesRow.add(new Label("Resist:", new Label.LabelStyle(smallFont, Color.GOLD))).left().padRight(6);
+        DamageType[] resTypes = { DamageType.FIRE, DamageType.ICE, DamageType.POISON, DamageType.BLEED,
+                                  DamageType.DISEASE, DamageType.DARK, DamageType.LIGHT, DamageType.SORCERY };
+        String[]     resNames = { "Fire", "Ice", "Poison", "Bleed", "Disease", "Dark", "Light", "Sorcery" };
+        for (int i = 0; i < resTypes.length; i++) {
+            int v = player.getElementalResistance(resTypes[i]);
+            Color c = v > 0 ? Color.CYAN : Color.DARK_GRAY;
+            resistancesRow.add(new Label(resNames[i] + ": " + (v > 0 ? "+" : "") + v,
+                    new Label.LabelStyle(smallFont, c))).left().padRight(10);
+        }
+
+        // ── STATUS EFFECTS (horizontal row) ──────────────────────────
+        statusFxRow.add(new Label("Status:", new Label.LabelStyle(smallFont, Color.GOLD))).left().padRight(6);
+        java.util.List<com.bpm.minotaur.gamedata.effects.ActiveStatusEffect> fxList = new java.util.ArrayList<>();
+        for (com.bpm.minotaur.gamedata.effects.ActiveStatusEffect fx : player.getStatusManager().getActiveEffects()) {
+            fxList.add(fx);
+        }
+        if (fxList.isEmpty()) {
+            statusFxRow.add(new Label("None", new Label.LabelStyle(smallFont, Color.DARK_GRAY))).left();
+        } else {
+            int focusedOrdinal = com.bpm.minotaur.gamedata.effects.StatusEffectType.FOCUSED.ordinal();
+            for (com.bpm.minotaur.gamedata.effects.ActiveStatusEffect fx : fxList) {
+                boolean isDebuff = fx.getType().ordinal() < focusedOrdinal;
+                Color fxCol = isDebuff ? Color.ORANGE : Color.CYAN;
+                String dur  = fx.getDuration() == -1 ? "perm" : fx.getDuration() + "t";
+                statusFxRow.add(new Label(fx.getType().name().replace('_', ' ') + " (" + dur + ")",
+                        new Label.LabelStyle(smallFont, fxCol))).left().padRight(8);
+            }
+        }
+    }
+
+    private void sRow(Table col, String label, String value, Color valueColor) {
+        col.add(new Label(label + ":", new Label.LabelStyle(smallFont, Color.LIGHT_GRAY))).left().padBottom(1);
+        col.add(new Label(value, new Label.LabelStyle(smallFont, valueColor))).right().padLeft(6).padBottom(1).row();
+    }
+
+    private void sRowDelta(Table col, String label, int base, int bonus) {
+        col.add(new Label(label + ":", new Label.LabelStyle(smallFont, Color.LIGHT_GRAY))).left().padBottom(1);
+        if (bonus != 0) {
+            Color bc = bonus > 0 ? Color.CYAN : Color.RED;
+            Table inline = new Table();
+            inline.add(new Label(String.valueOf(base), new Label.LabelStyle(smallFont, Color.WHITE)));
+            inline.add(new Label((bonus > 0 ? " +" : " ") + bonus, new Label.LabelStyle(smallFont, bc)));
+            col.add(inline).right().padLeft(6).padBottom(1).row();
+        } else {
+            col.add(new Label(String.valueOf(base), new Label.LabelStyle(smallFont, Color.WHITE))).right().padLeft(6).padBottom(1).row();
+        }
     }
 
     private void dropItem(InventorySlot slot) {
@@ -1035,6 +1379,8 @@ public class InventoryScreen extends BaseScreen {
             slotBg.dispose();
         if (font != null)
             font.dispose();
+        if (smallFont != null)
+            smallFont.dispose();
         if (paperDollTexture != null)
             paperDollTexture.dispose();
     }

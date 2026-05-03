@@ -71,6 +71,7 @@ public class Hud implements Disposable {
     private final Label logLabel; // Replaces messageLabel for the log area
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
+    private final Label divinitiesLabel;
     private Label heldItemLabel;
     private Label rightHandStatsLabel;
 
@@ -273,6 +274,7 @@ public class Hud implements Disposable {
 
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
+        divinitiesLabel = new Label("", labelStyle);
         dungeonLevelLabel = new Label("", labelStyle);
         directionLabel = new Label("", directionLabelStyle); // Compass
 
@@ -323,6 +325,11 @@ public class Hud implements Disposable {
         statsTable.add(new Label("EXP:", headerStyle)).left();
         statsTable.add(xpLabel).left().padLeft(10);
         statsTable.add(dungeonLevelLabel).colspan(2).left().padLeft(20);
+        statsTable.row().padTop(10);
+
+        // Row 4: Divinities
+        statsTable.add(new Label("DIV:", headerStyle)).left();
+        statsTable.add(divinitiesLabel).left().padLeft(10);
         statsTable.row().padTop(10);
 
         // Compass (Bottom of Left Panel)
@@ -533,6 +540,9 @@ public class Hud implements Disposable {
         treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
+        DivinityManager dm = DivinityManager.getInstance();
+        divinitiesLabel.setText(String.valueOf(dm.getCurrentDivinities()));
+        divinitiesLabel.setColor(dm.hasLostDivinities() ? Color.GOLD : Color.WHITE);
 
         Item rightHandItem = player.getInventory().getRightHand();
 
@@ -656,8 +666,8 @@ public class Hud implements Disposable {
             shapeRenderer.rect(720, 400, 260, 650);
 
             // Right Column Background (World/Items/Minimap)
-            // Spanning width to include minimap area
-            shapeRenderer.rect(1000, 400, 300, 650);
+            // Width spans to x=1520 to cover the minimap at x=1450
+            shapeRenderer.rect(1000, 400, 520, 650);
             shapeRenderer.end();
 
             // --- 3. Draw all debug text ---
@@ -1441,6 +1451,17 @@ public class Hud implements Disposable {
             Vector2 dir = player.getDirectionVector();
             shapeRenderer.setColor(Color.LIME);
             shapeRenderer.rectLine(px, py, px + (dir.x * cellSize * 0.6f), py + (dir.y * cellSize * 0.6f), 2f);
+        }
+
+        // --- 3.7 Draw Lost Divinities Tile (Gold Diamond) ---
+        GridPoint2 lostTile = DivinityManager.getInstance().getLostDivinityTile();
+        if (lostTile != null) {
+            float ltx = startX + (lostTile.x * cellSize) + cellSize * 0.5f;
+            float lty = startY + (lostTile.y * cellSize) + cellSize * 0.5f;
+            float r = cellSize * 0.4f;
+            shapeRenderer.setColor(Color.GOLD);
+            shapeRenderer.triangle(ltx, lty + r, ltx + r, lty, ltx, lty - r);
+            shapeRenderer.triangle(ltx, lty + r, ltx - r, lty, ltx, lty - r);
         }
 
         shapeRenderer.end();

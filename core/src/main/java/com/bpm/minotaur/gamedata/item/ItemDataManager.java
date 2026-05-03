@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
+import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.managers.DiscoveryManager;
 import com.bpm.minotaur.managers.UnlockManager;
 
@@ -158,7 +159,17 @@ public class ItemDataManager {
             ringTypes.add(ItemType.LARGE_RING);
             ringTypes.add(ItemType.RING_BLUE);
             ringTypes.add(ItemType.RING_PINK);
+            ringTypes.add(ItemType.RING_GREEN);
             ringTypes.add(ItemType.RING_PURPLE);
+            ringTypes.add(ItemType.RING_GOLD);
+            ringTypes.add(ItemType.RING_RED);
+            ringTypes.add(ItemType.RING_YELLOW);
+            ringTypes.add(ItemType.RING_WHITE);
+            ringTypes.add(ItemType.RING_BLACK);
+            ringTypes.add(ItemType.RING_ORANGE);
+            ringTypes.add(ItemType.RING_SILVER);
+            ringTypes.add(ItemType.RING_BRONZE);
+            ringTypes.add(ItemType.RING_IVORY);
 
             for (ItemType type : ringTypes) {
                 ItemTemplate t = itemTemplates.get(type);
@@ -516,13 +527,71 @@ public class ItemDataManager {
             }
         }
 
-        // --- NEW: Apply Modifiers based on Item Color/Rarity ---
-        // REMOVED: Modifiers are now handled by SpawnManager to ensure
-        // level-appropriate loot.
-        // We do NOT want to force modifiers based on color here, as it overrides the
-        // LootTable logic.
+        // Named build items: apply guaranteed modifiers and auto-identify
+        applyNamedItemModifiers(type, item);
 
         return item;
+    }
+
+    private void applyNamedItemModifiers(ItemType type, Item item) {
+        switch (type) {
+            case BELT_OF_GIANT_STRENGTH:
+                item.setName("Belt of Giant Strength"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_STRENGTH, 4, "of Giant Strength"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_MAX_HP, 5, "Vigorous"));
+                break;
+            case BERSERKERS_GAUNTLETS:
+                item.setName("Berserker's Gauntlets"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_STRENGTH, 2, "Strong"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_ABSORB, 2, "Iron"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_STAMINA, 1, "Vigorous"));
+                break;
+            case BOOTS_OF_SWIFTNESS:
+                item.setName("Boots of Swiftness"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_AGILITY, 4, "of Shadows"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_DODGE, 5, "Ghostly"));
+                break;
+            case CLOAK_OF_SHADOWS:
+                item.setName("Cloak of Shadows"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_AGILITY, 2, "Swift"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_DODGE, 3, "Evasive"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_DEXTERITY, 2, "Nimble"));
+                break;
+            case HOOD_OF_CLARITY:
+                item.setName("Hood of Clarity"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_INTELLIGENCE, 4, "of Insight"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_MAX_MP, 5, "of Spirit"));
+                break;
+            case AMULET_OF_INSIGHT:
+                item.setName("Amulet of Insight"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_INTELLIGENCE, 2, "Brilliant"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_WISDOM, 2, "Sage"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_SPELL_POWER, 2, "Arcane"));
+                break;
+            case AMULET_OF_DIVINE_FAVOR:
+                item.setName("Amulet of Divine Favor"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_WISDOM, 4, "of the Oracle"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_MAX_MP, 3, "of Spirit"));
+                break;
+            case HOLY_GAUNTLETS:
+                item.setName("Holy Gauntlets"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_WISDOM, 2, "Sage"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_STRENGTH, 2, "Strong"));
+                break;
+            case ALCHEMISTS_BELT:
+                item.setName("Alchemist's Belt"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_TOXICITY_THRESHOLD, 20, "Venomwoven"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_CONSTITUTION, 4, "of Endurance"));
+                break;
+            case TOXIC_VEIL:
+                item.setName("Toxic Veil"); item.setIdentified(true);
+                item.addModifier(new ItemModifier(ModifierType.BONUS_TOXICITY_THRESHOLD, 10, "Alchemical"));
+                item.addModifier(new ItemModifier(ModifierType.RESIST_POISON, 8, "Antidotal"));
+                item.addModifier(new ItemModifier(ModifierType.BONUS_CONSTITUTION, 2, "Hardy"));
+                break;
+            default:
+                break;
+        }
     }
 
     /**

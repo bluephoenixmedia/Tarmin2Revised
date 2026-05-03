@@ -57,6 +57,14 @@ public class TurnManager {
         if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SEARCHING)) {
             // Placeholder for Searching
         }
+
+        // WIS passive MP regeneration: each WIS modifier point = 10% chance per turn to restore 1 MP
+        int wisModifier = Math.max(0, (player.getEffectiveWisdom() - 10) / 2);
+        if (wisModifier > 0 && player.getCurrentMP() < player.getEffectiveMaxMP()) {
+            if (Math.random() < wisModifier * 0.10) {
+                player.getStats().restoreMP(1);
+            }
+        }
         // -----------------------------------
 
         // 2. Distribute Energy to Monsters

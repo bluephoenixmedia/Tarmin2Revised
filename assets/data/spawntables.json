@@ -2598,7 +2598,17 @@
       "minLevel": 1,
       "maxLevel": 99,
       "weight": 5
-    }
+    },
+    { "type": "BELT_OF_GIANT_STRENGTH",  "minLevel": 5, "maxLevel": 99, "weight": 2 },
+    { "type": "BERSERKERS_GAUNTLETS",    "minLevel": 5, "maxLevel": 99, "weight": 2 },
+    { "type": "BOOTS_OF_SWIFTNESS",      "minLevel": 5, "maxLevel": 99, "weight": 2 },
+    { "type": "CLOAK_OF_SHADOWS",        "minLevel": 5, "maxLevel": 99, "weight": 2 },
+    { "type": "HOOD_OF_CLARITY",         "minLevel": 6, "maxLevel": 99, "weight": 2 },
+    { "type": "AMULET_OF_INSIGHT",       "minLevel": 6, "maxLevel": 99, "weight": 2 },
+    { "type": "AMULET_OF_DIVINE_FAVOR",  "minLevel": 7, "maxLevel": 99, "weight": 2 },
+    { "type": "HOLY_GAUNTLETS",          "minLevel": 7, "maxLevel": 99, "weight": 2 },
+    { "type": "ALCHEMISTS_BELT",         "minLevel": 6, "maxLevel": 99, "weight": 2 },
+    { "type": "TOXIC_VEIL",             "minLevel": 6, "maxLevel": 99, "weight": 2 }
   ],
   "containerSpawnTable": [
     {

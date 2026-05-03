@@ -144,10 +144,15 @@ public class DebugRenderer {
         }
 
         // --- VISUALIZE EVENTS ---
-        shapeRenderer.setColor(0.2f, 0.2f, 1.0f, 1.0f); // Bright Blue
         for (int y = 0; y < mazeHeight; y++) {
             for (int x = 0; x < mazeWidth; x++) {
-                if (maze.getEventAt(x, y) != null) {
+                String eventId = maze.getEventAt(x, y);
+                if (eventId != null) {
+                    if (eventId.contains("STATUE")) {
+                        shapeRenderer.setColor(0.0f, 1.0f, 0.2f, 1.0f); // Neon Green (statue)
+                    } else {
+                        shapeRenderer.setColor(0.2f, 0.2f, 1.0f, 1.0f); // Bright Blue (other events)
+                    }
                     float eventCenterX = mazeStartX + (x * cellSize) + (cellSize * 0.5f);
                     float eventCenterY = mazeStartY + (y * cellSize) + (cellSize * 0.5f);
                     shapeRenderer.circle(eventCenterX, eventCenterY, cellSize * 0.3f, 12);

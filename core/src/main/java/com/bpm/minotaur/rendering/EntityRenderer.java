@@ -53,6 +53,13 @@ public class EntityRenderer {
     private float hoveredScreenX = 0;
     private float hoveredScreenY = 0;
 
+    // --- RETRO mode render diagnostics ---
+    private float retroLogTimer = 0f;
+    private int retroMonsterCount = 0;
+    private int retroItemCount = 0;
+    private int retroSceneryCount = 0;
+    private int retroMissingSpriteFallbacks = 0;
+
     public EntityRenderer(ItemDataManager itemDataManager, AssetManager assetManager) {
         this.spriteBatch = new PolygonSpriteBatch();
         this.itemDataManager = itemDataManager;
@@ -103,8 +110,12 @@ public class EntityRenderer {
         if (depthBuffer == null)
             return;
 
-        // Reset tooltip for this frame
+        // Reset tooltip and RETRO diagnostics for this frame
         hoveredItem = null;
+        retroMonsterCount = 0;
+        retroItemCount = 0;
+        retroSceneryCount = 0;
+        retroMissingSpriteFallbacks = 0;
 
         Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
         boolean fogEnabled = biome.hasFogOfWar();
@@ -184,8 +195,9 @@ public class EntityRenderer {
                     ||
                     (entity instanceof Scenery && ((Scenery) entity).getTexture() != null);
 
-            boolean forceTexture = (entity instanceof Monster
-                    && ((Monster) entity).getType() == Monster.MonsterType.GIANT_ANT);
+            boolean forceTexture = debugManager.getRenderMode() == DebugManager.RenderMode.MODERN
+                    && entity instanceof Monster
+                    && ((Monster) entity).getType() == Monster.MonsterType.GIANT_ANT;
 
             if ((debugManager.getRenderMode() == DebugManager.RenderMode.MODERN || forceTexture) && needsTexture) {
                 if (isShapeRendererActive) {
@@ -231,6 +243,22 @@ public class EntityRenderer {
         if (isSpriteBatchActive) {
             spriteBatch.end();
             isSpriteBatchActive = false;
+        }
+
+        // Log a RETRO render summary once per second to help diagnose mode issues
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            retroLogTimer += Gdx.graphics.getDeltaTime();
+            if (retroLogTimer >= 1f) {
+                retroLogTimer = 0f;
+                Gdx.app.log("EntityRenderer [RETRO]",
+                        "Frame summary — monsters=" + retroMonsterCount
+                        + " items/ladders=" + retroItemCount
+                        + " scenery=" + retroSceneryCount
+                        + " missingSpriteFallbacks=" + retroMissingSpriteFallbacks
+                        + " fps=" + Gdx.graphics.getFramesPerSecond());
+            }
+        } else {
+            retroLogTimer = 0f;
         }
 
         renderCorpses(shapeRenderer, maze, viewport.getCamera(), player, depthBuffer);
@@ -312,12 +340,12 @@ public class EntityRenderer {
             Player player, float[] depthBuffer) {
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             renderDecals(shapeRenderer, maze, camera, player, depthBuffer);
             renderAsciiGibs(shapeRenderer, maze, camera, player, depthBuffer);
             renderParticles(shapeRenderer, maze, camera, player, depthBuffer);
             shapeRenderer.end();
         } else {
-            shapeRenderer.end();
             spriteBatch.setProjectionMatrix(camera.combined);
             spriteBatch.begin();
             renderDecals(spriteBatch, maze, camera, player, depthBuffer);
@@ -907,16 +935,20 @@ public class EntityRenderer {
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
             if (entity instanceof Monster) {
+                retroMonsterCount++;
                 drawMonsterSprite(shapeRenderer, (Monster) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Item) {
+                retroItemCount++;
                 drawItemSprite(shapeRenderer, player, (Item) entity, screenX, transformY, camera, viewport, depthBuffer,
                         atFeet);
             } else if (entity instanceof Ladder) {
+                retroItemCount++;
                 drawLadderSprite(shapeRenderer, (Ladder) entity, screenX, transformY, camera, viewport, depthBuffer,
                         atFeet);
             } else if (entity instanceof Projectile) {
                 drawProjectile(shapeRenderer, (Projectile) entity, screenX, transformY, camera, viewport, depthBuffer);
             } else if (entity instanceof Scenery) {
+                retroSceneryCount++;
                 drawScenerySprite(shapeRenderer, (Scenery) entity, screenX, transformY, camera, viewport, depthBuffer);
             }
         }
@@ -968,6 +1000,10 @@ public class EntityRenderer {
             drawAsciiSprite(shapeRenderer, monster, monster.getSpriteData(), screenX, transformY, camera, viewport,
                     depthBuffer, spriteWidth, spriteHeight, drawY);
         } else {
+            retroMissingSpriteFallbacks++;
+            Gdx.app.log("EntityRenderer [RETRO]",
+                    "Monster has no sprite data — rendering solid rect fallback. type=" + monster.getType()
+                    + " screenX=" + screenX + " dist=" + String.format("%.2f", transformY));
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
@@ -1037,6 +1073,10 @@ public class EntityRenderer {
             drawAsciiSprite(shapeRenderer, item, item.getSpriteData(), screenX, transformY, camera, viewport,
                     depthBuffer, spriteWidth, spriteHeight, drawY);
         } else {
+            retroMissingSpriteFallbacks++;
+            Gdx.app.log("EntityRenderer [RETRO]",
+                    "Item has no sprite data — rendering solid rect fallback. type=" + item.getType()
+                    + " modified=" + item.isModified() + " screenX=" + screenX);
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {

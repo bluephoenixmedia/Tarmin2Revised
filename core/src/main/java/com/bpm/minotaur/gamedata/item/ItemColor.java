@@ -20,6 +20,7 @@ public enum ItemColor {
     PINK("Pink", "High", Color.PINK, 1.6f),
     RED("Red", "High", Color.RED, 1.8f),
     PURPLE("Purple", "Super", Color.PURPLE, 2.2f),
+    DARK_SPIRITUAL("Dark", "Ominous", new Color(0.2f, 0.0f, 0.3f, 1f), 1.9f),
     // Container & Key Colors
 
     CONTAINER_TAN("Tan", "Mild Quality", new Color(0.82f, 0.71f, 0.55f, 1f), 1.0f),

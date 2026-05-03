@@ -91,6 +91,11 @@ public class FirstPersonRenderer {
     // Blank texture for Retro rendering
     private final Texture blankTexture;
 
+    // --- RETRO diagnostic counters ---
+    private float retroLogTimer = 0f;
+    private int retroWallsRendered = 0;
+    private int retroSkyColumns = 0;
+
     private ShaderProgram floorShader;
     private ShaderProgram retroFloorShader;
 
@@ -112,7 +117,7 @@ public class FirstPersonRenderer {
         retroSkyboxEast = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east.jpg"));
         retroSkyboxSouth = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south.jpg"));
         retroSkyboxWest = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west.jpg"));
-        retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.jpg"));
+        retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.png"));
         retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east_storm.jpg"));
         retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south_storm.jpg"));
         retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west_storm.jpg"));
@@ -323,8 +328,8 @@ public class FirstPersonRenderer {
                     // HIT IS FALSE (SKY/OOB) - Render Skybox Strip
                     depthBuffer[x] = Float.MAX_VALUE;
 
-                    // Fix: If OOB/Sky, explicitly draw Skybox strip (to overwrite ceiling)
-                    // BUT only if we don't have a Biome Skybox (which is drawn full-screen)
+                    // Draw a per-column sky strip to overwrite the ceiling background.
+                    // Skip if the biome already drew a full-screen skybox texture.
                     if (biome.getSkyboxTexturePath() == null) {
                         Texture skyboxTexture;
                         boolean isStormy = false;
@@ -333,24 +338,22 @@ public class FirstPersonRenderer {
                         }
                         switch (player.getFacing()) {
                             case EAST:
-                                skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
+                                skyboxTexture = skyboxEast;
                                 break;
                             case WEST:
-                                skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
+                                skyboxTexture = skyboxWest;
                                 break;
                             case SOUTH:
-                                skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
+                                skyboxTexture = skyboxSouth;
                                 break;
                             default:
-                                skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
+                                skyboxTexture = skyboxNorth;
                                 break;
                         }
 
-                        // Mapping: x corresponds to texture coord
                         int texWidth = skyboxTexture.getWidth();
                         int texX = (int) ((x / (float) viewport.getWorldWidth()) * texWidth);
 
-                        // Draw Skybox Strip
                         spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
                         spriteBatch.draw(skyboxTexture, x, (viewport.getWorldHeight() / 2 - 160), 1,
                                 (viewport.getWorldHeight() / 2) + 160, texX, 0, 1, skyboxTexture.getHeight(), false,
@@ -365,6 +368,8 @@ public class FirstPersonRenderer {
 
         {
             // Retro Path
+            retroWallsRendered = 0;
+            retroSkyColumns = 0;
             spriteBatch.setShader(null);
             spriteBatch.begin();
 
@@ -372,6 +377,7 @@ public class FirstPersonRenderer {
                 RaycastResult result = castRay(player, maze, x, viewport, worldManager);
 
                 if (result != null) {
+                    retroWallsRendered++;
                     maze.markVisited(result.mapX, result.mapY);
                     renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
                             lightIntensity, maze);
@@ -388,15 +394,28 @@ public class FirstPersonRenderer {
 
                     depthBuffer[x] = result.distance;
                 } else {
+                    retroSkyColumns++;
                     depthBuffer[x] = Float.MAX_VALUE;
-                    if (fogEnabled) {
-                        Color wallFog = new Color(fogColor).mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-                        spriteBatch.setColor(wallFog);
-                        spriteBatch.draw(blankTexture, x, 0, 1, viewport.getWorldHeight());
-                    }
+                    // No per-column draw needed: the retro skybox texture was already painted
+                    // as a full-screen background in renderSkyboxCeiling, and renderRetroFloor
+                    // handles the floor half via its shader. Drawing a fog column here was
+                    // overwriting the skybox and issuing ~1920 individual draw calls per frame
+                    // in open biomes like FOREST, destroying performance.
                 }
             }
             spriteBatch.end();
+
+            retroLogTimer += Gdx.graphics.getDeltaTime();
+            if (retroLogTimer >= 1f) {
+                retroLogTimer = 0f;
+                Gdx.app.log("FirstPersonRenderer [RETRO]",
+                        "Wall render summary — wallColumns=" + retroWallsRendered
+                        + " skyColumns=" + retroSkyColumns
+                        + " wallColor=" + currentWallColor
+                        + " fog=" + fogEnabled
+                        + " indoors=" + isIndoors
+                        + " fps=" + Gdx.graphics.getFramesPerSecond());
+            }
         }
 
         // --- RENDER PRECIPITATION (Foreground) ---
@@ -413,38 +432,44 @@ public class FirstPersonRenderer {
     private void renderSkyboxCeiling(SpriteBatch spriteBatch, Player player, Viewport viewport, float lightIntensity,
             WorldManager worldManager) {
 
-        // --- Biome Override ---
-        Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
-        Texture overrideSkybox = getTexture(biome.getSkyboxTexturePath());
-        if (overrideSkybox != null) {
-            spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
-            // Draw full skybox (simple stretch for now, or maybe scrolling?)
-            // Assuming simple background for forest
-            spriteBatch.draw(overrideSkybox, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(),
-                    (viewport.getWorldHeight() / 2) + 160);
-            spriteBatch.setColor(Color.WHITE);
-            return;
+        // Biome override applies only in MODERN mode — RETRO mode always uses the
+        // dedicated retro skybox textures so they match the pixel-art aesthetic.
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
+            Texture overrideSkybox = getTexture(biome.getSkyboxTexturePath());
+            if (overrideSkybox != null) {
+                spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                spriteBatch.draw(overrideSkybox, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(),
+                        (viewport.getWorldHeight() / 2) + 160);
+                spriteBatch.setColor(Color.WHITE);
+                return;
+            }
         }
-        // -----------------------
 
-        Texture skyboxTexture;
         boolean isStormy = false;
         if (worldManager.getWeatherManager() != null) {
             isStormy = worldManager.getWeatherManager().isStormy();
         }
-        switch (player.getFacing()) {
-            case EAST:
-                skyboxTexture = isStormy ? retroSkyboxEastStorm : retroSkyboxEast;
-                break;
-            case WEST:
-                skyboxTexture = isStormy ? retroSkyboxWestStorm : retroSkyboxWest;
-                break;
-            case SOUTH:
-                skyboxTexture = isStormy ? retroSkyboxSouthStorm : retroSkyboxSouth;
-                break;
-            default:
-                skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth;
-                break;
+
+        Texture skyboxTexture;
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+            // RETRO mode: only the approved five files are used.
+            // East/South/West have no storm variant — always use the base image.
+            // North/castle uses retro_skybox_castle_storm.png when stormy.
+            switch (player.getFacing()) {
+                case EAST:  skyboxTexture = retroSkyboxEast;  break;
+                case WEST:  skyboxTexture = retroSkyboxWest;  break;
+                case SOUTH: skyboxTexture = retroSkyboxSouth; break;
+                default:    skyboxTexture = isStormy ? retroSkyboxNorthStorm : retroSkyboxNorth; break;
+            }
+        } else {
+            // MODERN mode (no biome override): use the modern direction skyboxes.
+            switch (player.getFacing()) {
+                case EAST:  skyboxTexture = skyboxEast;  break;
+                case WEST:  skyboxTexture = skyboxWest;  break;
+                case SOUTH: skyboxTexture = skyboxSouth; break;
+                default:    skyboxTexture = skyboxNorth; break;
+            }
         }
         spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
         spriteBatch.draw(skyboxTexture, 0, (viewport.getWorldHeight() / 2 - 160), viewport.getWorldWidth(),
@@ -1141,21 +1166,31 @@ public class FirstPersonRenderer {
 
         spriteBatch.setColor(finalFrameColor);
 
-        // Draw Wall Segments (Frame)
-        // 1. If we are in the left or right margin, draw the full vertical strip
-        if (!isHoleX) {
-            spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
-        } else {
-            // 2. If we are in the center X column, only draw the Top and Bottom segments
-            // Top Segment
-            float topHeight = drawEnd - holeYEnd;
-            if (topHeight > 0) {
-                spriteBatch.draw(blankTexture, screenX, holeYEnd, 1, topHeight);
+        if (hit.door != null) {
+            // Open door: draw only the lintel (wall above the door opening)
+            float doorHeight = height * DOOR_HEIGHT_RATIO;
+            float doorHoleTop = drawStart + doorHeight;
+            float lintelHeight = drawEnd - doorHoleTop;
+            if (lintelHeight > 0) {
+                spriteBatch.draw(blankTexture, screenX, doorHoleTop, 1, lintelHeight);
             }
-            // Bottom Segment
-            float bottomHeight = holeYStart - drawStart;
-            if (bottomHeight > 0) {
-                spriteBatch.draw(blankTexture, screenX, drawStart, 1, bottomHeight);
+        } else {
+            // Draw Wall Segments (Frame)
+            // 1. If we are in the left or right margin, draw the full vertical strip
+            if (!isHoleX) {
+                spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
+            } else {
+                // 2. If we are in the center X column, only draw the Top and Bottom segments
+                // Top Segment
+                float topHeight = drawEnd - holeYEnd;
+                if (topHeight > 0) {
+                    spriteBatch.draw(blankTexture, screenX, holeYEnd, 1, topHeight);
+                }
+                // Bottom Segment
+                float bottomHeight = holeYStart - drawStart;
+                if (bottomHeight > 0) {
+                    spriteBatch.draw(blankTexture, screenX, drawStart, 1, bottomHeight);
+                }
             }
         }
         spriteBatch.setColor(Color.WHITE);

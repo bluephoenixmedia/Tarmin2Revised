@@ -111,5 +111,66 @@ public class LootTable {
             new ModInfo(ModifierType.MATERIAL_PLATINUM, 18, 99, 1, 1, "Platinum", ItemCategory.WAR_WEAPON),
 
             // Top-tier Bane
-            new ModInfo(ModifierType.BANE_MYTHICAL, 15, 99, 8, 15, "Godslayer", ItemCategory.WAR_WEAPON));
+            new ModInfo(ModifierType.BANE_MYTHICAL, 15, 99, 8, 15, "Godslayer", ItemCategory.WAR_WEAPON),
+
+            // --- PRIMARY ATTRIBUTE BONUSES ---
+            // Tier 1: +2 to stat (= +1 modifier)
+            new ModInfo(ModifierType.BONUS_STRENGTH,     1, 10, 2, 2, "Strong",      ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_DEXTERITY,    1, 10, 2, 2, "Nimble",      ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_CONSTITUTION, 1, 10, 2, 2, "Hardy",       ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_INTELLIGENCE, 1, 10, 2, 2, "Brilliant",   ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_WISDOM,       1, 10, 2, 2, "Sage",        ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AGILITY,      1, 10, 2, 2, "Swift",       ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_LUCK,         1, 99, 1, 1, "Lucky",       ItemCategory.RING),
+            // Tier 2: +4 to stat (= +2 modifier)
+            new ModInfo(ModifierType.BONUS_STRENGTH,     6, 15, 4, 4, "of Giants",    ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_DEXTERITY,    6, 15, 4, 4, "of Precision", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_CONSTITUTION, 6, 15, 4, 4, "of the Ox",    ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_INTELLIGENCE, 6, 15, 4, 4, "of Insight",   ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_WISDOM,       6, 15, 4, 4, "of the Seer",  ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AGILITY,      6, 15, 4, 4, "of Shadows",   ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_LUCK,         6, 15, 2, 2, "Charmed",      ItemCategory.RING),
+            // Tier 3: +6 to stat (= +3 modifier)
+            new ModInfo(ModifierType.BONUS_STRENGTH,     13, 99, 6, 6, "of Titans",    ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_DEXTERITY,    13, 99, 6, 6, "of the Blade", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_CONSTITUTION, 13, 99, 6, 6, "of Endurance", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_INTELLIGENCE, 13, 99, 6, 6, "of Mastery",   ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_WISDOM,       13, 99, 6, 6, "of the Oracle",ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_AGILITY,      13, 99, 6, 6, "of Swiftness", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_LUCK,         13, 99, 3, 3, "Blessed",      ItemCategory.RING),
+
+            // --- ABSORB (flat damage mitigation on physical hits) ---
+            new ModInfo(ModifierType.BONUS_ABSORB,  3, 10, 1, 1, "Iron",   ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_ABSORB,  8, 15, 2, 2, "Steel",  ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_ABSORB, 14, 99, 3, 3, "Titan",  ItemCategory.ARMOR),
+
+            // --- CRIT CHANCE (integer percentage points added to crit roll) ---
+            new ModInfo(ModifierType.BONUS_CRIT_CHANCE,  6, 14, 3, 3, "Precise", ItemCategory.WAR_WEAPON),
+            new ModInfo(ModifierType.BONUS_CRIT_CHANCE, 13, 99, 5, 5, "Lethal",  ItemCategory.WAR_WEAPON),
+
+            // --- CRIT MULTIPLIER (tenths: 2 = +0.2x, 5 = +0.5x) ---
+            new ModInfo(ModifierType.BONUS_CRIT_MULTIPLIER,  8, 15, 2, 2, "Keen",   ItemCategory.WAR_WEAPON),
+            new ModInfo(ModifierType.BONUS_CRIT_MULTIPLIER, 14, 99, 5, 5, "Savage", ItemCategory.WAR_WEAPON),
+
+            // --- DODGE (integer percentage points added to dodge roll) ---
+            new ModInfo(ModifierType.BONUS_DODGE,  5, 13, 3, 3, "Evasive", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_DODGE, 12, 99, 5, 5, "Ghostly", ItemCategory.ARMOR),
+
+            // --- SPELL POWER (flat addition to offensive spell damage) ---
+            new ModInfo(ModifierType.BONUS_SPELL_POWER,  1, 10, 1, 1, "Arcane",  ItemCategory.SPIRITUAL_WEAPON),
+            new ModInfo(ModifierType.BONUS_SPELL_POWER,  1, 10, 1, 1, "Arcane",  ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_SPELL_POWER,  6, 15, 2, 2, "Potent",  ItemCategory.SPIRITUAL_WEAPON),
+            new ModInfo(ModifierType.BONUS_SPELL_POWER,  6, 15, 2, 2, "Potent",  ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.SPIRITUAL_WEAPON),
+            new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.RING),
+
+            // --- STAMINA (extra dice selectable per combat round) ---
+            new ModInfo(ModifierType.BONUS_STAMINA,  5, 14, 1, 1, "Vigorous", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_STAMINA, 13, 99, 2, 2, "Tireless", ItemCategory.ARMOR),
+
+            // --- TOXICITY THRESHOLD (shifts poison tier boundaries upward) ---
+            new ModInfo(ModifierType.BONUS_TOXICITY_THRESHOLD,  6, 14, 10, 10, "Alchemical", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_TOXICITY_THRESHOLD,  6, 14, 10, 10, "Alchemical", ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_TOXICITY_THRESHOLD, 13, 99, 20, 20, "Venomwoven", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_TOXICITY_THRESHOLD, 13, 99, 20, 20, "Venomwoven", ItemCategory.RING));
 }
