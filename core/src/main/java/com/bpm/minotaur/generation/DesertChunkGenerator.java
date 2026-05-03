@@ -310,7 +310,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
             SpawnTableData spawnTableData, long chunkSeed, int playerLuck) {
         long spawnSeed = chunkSeed ^ 0xFEEDFACECAFEBABEL;
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager,
-                maze, difficulty, level, level, playerLuck, layout, spawnTableData, spawnSeed);
+                maze, difficulty, level, level, playerLuck, layout, spawnTableData, spawnSeed, null);
         spawnManager.spawnEntities();
     }
 

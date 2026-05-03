@@ -5,15 +5,42 @@ package com.bpm.minotaur.gamedata;
  * This is used by combat and player systems to query for bonuses.
  */
 public enum ModifierType {
+    // --- Primary Attributes (raise the base stat, feeding all downstream formulas) ---
+    BONUS_STRENGTH,
+    BONUS_DEXTERITY,
+    BONUS_CONSTITUTION,
+    BONUS_INTELLIGENCE,
+    BONUS_WISDOM,
+    BONUS_AGILITY,
+    BONUS_CHARISMA,
+
     // --- Basic Stats ---
     /** +N to base damage (War & Spiritual) */
     BONUS_DAMAGE,
     /** +N to base armor (Armor & Rings) */
     BONUS_AC,
+    /** +N flat damage absorbed after AC hit check (heavy-armor mitigation) */
+    BONUS_ABSORB,
     /** +N to player's max HP */
     BONUS_MAX_HP,
     /** +N to player's max MP */
     BONUS_MAX_MP,
+    /** +N flat spell damage added to all offensive spells */
+    BONUS_SPELL_POWER,
+    /** +N to stamina (max dice selectable per combat round) */
+    BONUS_STAMINA,
+    /** +N luck points (stacks, clamped to ±13) */
+    BONUS_LUCK,
+
+    // --- Combat Secondary Stats ---
+    /** +N percentage points of crit chance (e.g. 5 = +5%) */
+    BONUS_CRIT_CHANCE,
+    /** +N tenths of crit multiplier (e.g. 5 = +0.5x, making base 2x → 2.5x) */
+    BONUS_CRIT_MULTIPLIER,
+    /** +N percentage points of dodge chance (e.g. 8 = +8%) */
+    BONUS_DODGE,
+    /** +N to toxicity tier thresholds (delays medium/critical tier onset) */
+    BONUS_TOXICITY_THRESHOLD,
 
     // --- Elemental/Effect Damage (Weapons) ---
     ADD_FIRE_DAMAGE,

@@ -7,6 +7,9 @@ public class ItemModifier {
     public int value;
     public String displayName; // e.g., "of Brawn", "Sharp"
 
+    public ItemModifier() {
+    }
+
     public ItemModifier(ModifierType type, int value, String displayName) {
         this.type = type;
         this.value = value;

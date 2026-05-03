@@ -12,6 +12,11 @@ public class PlayerStats {
     private int arrows;
     private int dexterity;
     private int strength;
+    private int constitution;
+    private int intelligence;
+    private int wisdom;
+    private int agility;
+    private int charisma;
 
     // --- Experience and Leveling Fields ---
     private int level;
@@ -127,6 +132,11 @@ public class PlayerStats {
 
         this.dexterity = 10;
         this.strength = 10;
+        this.constitution = 10;
+        this.intelligence = 10;
+        this.wisdom = 10;
+        this.agility = 10;
+        this.charisma = 10;
 
         // --- Initialize Leveling Stats ---
         this.level = 1;
@@ -169,9 +179,9 @@ public class PlayerStats {
         this.level++;
         this.experienceToNextLevel = calculateXpForLevel(this.level + 1);
 
-        // --- UPDATED: Increased Stat Growth ---
-        int hpIncrease = 3 + new Random().nextInt(3);
-        int mpIncrease = 3 + new Random().nextInt(3);
+        // HP scales with CON, MP scales with INT. Base 3 ± 1, minimum 1.
+        int hpIncrease = Math.max(1, 2 + getConModifier() + new Random().nextInt(3));
+        int mpIncrease = Math.max(1, 2 + getIntModifier() + new Random().nextInt(3));
 
         this.maxHP += hpIncrease;
         this.maxMP += mpIncrease;
@@ -183,10 +193,11 @@ public class PlayerStats {
     }
 
     /**
-     * To-hit bonus: half the player level, capped to prevent trivial hit-rates at low levels.
+     * To-hit bonus: quarter level + DEX modifier. DEX 10 = no change from base.
+     * DEX 16 gives +3 to-hit on top of level contribution.
      */
     public int getToHitBonus() {
-        return Math.max(1, this.level / 2);
+        return Math.max(1, this.level / 4 + getDexModifier());
     }
 
     /**
@@ -374,30 +385,82 @@ public class PlayerStats {
         this.strength = strength;
     }
 
+    public int getConstitution() { return constitution; }
+    public void setConstitution(int v) { this.constitution = v; }
+    public void modifyConstitution(int amount) { this.constitution += amount; }
+
+    public int getIntelligence() { return intelligence; }
+    public void setIntelligence(int v) { this.intelligence = v; }
+    public void modifyIntelligence(int amount) { this.intelligence += amount; }
+
+    public int getWisdom() { return wisdom; }
+    public void setWisdom(int v) { this.wisdom = v; }
+    public void modifyWisdom(int amount) { this.wisdom += amount; }
+
+    public int getAgility() { return agility; }
+    public void setAgility(int v) { this.agility = v; }
+    public void modifyAgility(int amount) { this.agility += amount; }
+
+    public int getCharisma() { return charisma; }
+    public void setCharisma(int v) { this.charisma = v; }
+    public void modifyCharisma(int amount) { this.charisma += amount; }
+
+    // --- Primary Attribute Modifiers (NetHack-style: (stat-10)/2) ---
+    public int getStrModifier() { return (strength - 10) / 2; }
+    public int getDexModifier() { return (dexterity - 10) / 2; }
+    public int getConModifier() { return (constitution - 10) / 2; }
+    public int getIntModifier() { return (intelligence - 10) / 2; }
+    public int getWisModifier() { return (wisdom - 10) / 2; }
+    public int getAgiModifier() { return (agility - 10) / 2; }
+
+    /** Base stamina before CON and equipment bonuses. */
+    public int getBaseStamina() { return stamina; }
+
+    /** Base crit chance constant. All stat-dependent contributions are added in Player.getCritChance(). */
+    public float getBaseCritChance() {
+        return 0.05f;
+    }
+
     // --- Effective Stats (Toxicity Modifiers) ---
+
+    /** Effective strength using raw thresholds (no equipment shift). */
     public int getEffectiveStrength() {
+        return getEffectiveStrength(0);
+    }
+
+    /**
+     * Effective strength with a toxicity threshold shift applied.
+     * Pass player.getToxicityThresholdShift() to include equipment and ring bonuses.
+     */
+    public int getEffectiveStrength(int thresholdShift) {
         int eff = strength;
-        // Med Toxicity (26-75%): +10% Strength
-        if (toxicity >= 26 && toxicity <= 75) {
+        int medLow  = 26 + thresholdShift;
+        int medHigh = 75 + thresholdShift;
+        int critLow = 76 + thresholdShift;
+        if (toxicity >= medLow && toxicity <= medHigh) {
             eff += Math.max(1, (int) (strength * 0.1f));
         }
-        // Critical Toxicity (>75%): +20% Strength? (User said Double Damage, handled
-        // elsewhere, but let's boost STR too)
-        if (toxicity >= 76) {
+        if (toxicity >= critLow) {
             eff += Math.max(2, (int) (strength * 0.2f));
         }
         return eff;
     }
 
+    /** Defense multiplier using raw thresholds. */
     public float getDefenseMultiplier() {
-        // Med Toxicity: -10% Defense
-        if (toxicity >= 26 && toxicity <= 75) {
-            return 0.9f;
-        }
-        // Crit Toxicity: -20% Defense? (Glass Cannon)
-        if (toxicity >= 76) {
-            return 0.8f;
-        }
+        return getDefenseMultiplier(0);
+    }
+
+    /**
+     * Defense multiplier with a toxicity threshold shift applied.
+     * Pass player.getToxicityThresholdShift() to include equipment and ring bonuses.
+     */
+    public float getDefenseMultiplier(int thresholdShift) {
+        int medLow  = 26 + thresholdShift;
+        int medHigh = 75 + thresholdShift;
+        int critLow = 76 + thresholdShift;
+        if (toxicity >= medLow && toxicity <= medHigh) return 0.9f;
+        if (toxicity >= critLow) return 0.8f;
         return 1.0f;
     }
 

@@ -473,8 +473,7 @@ public class WorldManager {
         if (turnCount > 0 && turnCount % 300 == 0) {
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
                     loadedChunks.get(currentPlayerChunkId), difficulty, currentLevel, player.getLevel(),
-                    player.getLuck(), null, spawnTableData, System.nanoTime()); // Use System time for runtime
-                                                                                // randomness
+                    player.getLuck(), null, spawnTableData, System.nanoTime(), null); // null = no reachability filter for periodic respawns
 
             sm.spawnPeriodicMonster(player);
             Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount);

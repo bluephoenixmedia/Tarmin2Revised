@@ -305,9 +305,72 @@ public class GameScreen extends BaseScreen {
             firstPersonRenderer.setTheme(RetroTheme.STANDARD_THEME);
         }
         DebugRenderer.printMazeToConsole(maze);
+        onChunkEntered();
 
         // Input setup moved to show()
     }
+
+    // ---- Divinity helpers ----
+
+    private void onChunkEntered() {
+        if (hud == null || maze == null) return;
+        DivinityManager dm = DivinityManager.getInstance();
+        int level = worldManager.getCurrentLevel();
+        GridPoint2 cid = worldManager.getCurrentPlayerChunkId();
+        String key = DivinityManager.buildChunkKey(level, cid.x, cid.y);
+
+        int gained = dm.tryAwardChunkDivinities(key, level);
+        if (gained > 0) {
+            hud.addMessage("+" + gained + " " + DivinityManager.DIVINITY_NAME + " (new area)");
+        }
+
+        int lostAmount = dm.checkForLostDivinities(key);
+        if (lostAmount > 0) {
+            hud.addMessage("You sense " + lostAmount + " lost " + DivinityManager.DIVINITY_NAME + " nearby...");
+            GridPoint2 tile = findRandomPassableTile();
+            if (tile != null) {
+                dm.setLostDivinityTile(tile);
+                maze.getItems().put(tile, new Item(Item.ItemType.LOST_DIVINITIES, tile.x, tile.y,
+                        com.bpm.minotaur.gamedata.item.ItemColor.GOLD,
+                        game.getItemDataManager(), game.getAssetManager()));
+            }
+        }
+    }
+
+    private void checkLostDivinitiesPickup() {
+        DivinityManager dm = DivinityManager.getInstance();
+        GridPoint2 lostTile = dm.getLostDivinityTile();
+        if (lostTile == null || maze == null || player == null) return;
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        if (px == lostTile.x && py == lostTile.y) {
+            Item item = maze.getItems().get(lostTile);
+            if (item != null && item.getType() == Item.ItemType.LOST_DIVINITIES) {
+                maze.getItems().remove(lostTile);
+                int amount = dm.collectLostDivinities();
+                hud.addMessage("Reclaimed " + amount + " lost " + DivinityManager.DIVINITY_NAME + "!");
+                eventManager.addEvent(new GameEvent("Reclaimed " + amount + " lost " + DivinityManager.DIVINITY_NAME + "!", 3f));
+            }
+        }
+    }
+
+    private GridPoint2 findRandomPassableTile() {
+        if (maze == null) return null;
+        java.util.List<GridPoint2> candidates = new java.util.ArrayList<>();
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                if (maze.isPassable(x, y)
+                        && maze.getMonsters().get(new GridPoint2(x, y)) == null
+                        && maze.getItems().get(new GridPoint2(x, y)) == null) {
+                    candidates.add(new GridPoint2(x, y));
+                }
+            }
+        }
+        if (candidates.isEmpty()) return null;
+        return candidates.get(new java.util.Random().nextInt(candidates.size()));
+    }
+
+    // ---- End Divinity helpers ----
 
     private void resetPlayerPosition() {
         GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
@@ -429,7 +492,11 @@ public class GameScreen extends BaseScreen {
 
             // Update Overlay Animation
             weaponOverlay.update(delta);
+            DivinityOrbManager.getInstance().update(delta);
         }
+
+        // Advance render mode transition every frame, regardless of game state
+        debugManager.update(delta);
 
         if (useCrtFilter) {
             fbo.begin();
@@ -581,9 +648,14 @@ public class GameScreen extends BaseScreen {
             game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
 
             if (weaponOverlay.isActive()) {
-                game.getBatch().begin();
-                weaponOverlay.render(game.getBatch(), game.getViewport());
-                game.getBatch().end();
+                if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+                    shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+                    weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
+                } else {
+                    game.getBatch().begin();
+                    weaponOverlay.render(game.getBatch(), game.getViewport());
+                    game.getBatch().end();
+                }
             }
 
             if (debugManager.isDebugOverlayVisible()) {
@@ -625,6 +697,14 @@ public class GameScreen extends BaseScreen {
             game.getViewport().apply();
         }
 
+        // --- RENDER MODE TRANSITION OVERLAY (over world, under HUD) ---
+        if (debugManager.isTransitioning()) {
+            renderModeTransitionOverlay(
+                    debugManager.getTransitionOverlayAlpha(),
+                    debugManager.getTransitionPeakFactor(),
+                    debugManager.isModernToRetroTransition());
+        }
+
         if (hud != null) {
             // --- NEW: Sync Combat Menu Visibility ---
             if (combatManager != null && hud.combatMenu != null) {
@@ -632,6 +712,8 @@ public class GameScreen extends BaseScreen {
             }
             hud.render();
         }
+
+        DivinityOrbManager.getInstance().render(shapeRenderer, game.getViewport());
 
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
         game.getBatch().begin();
@@ -688,6 +770,51 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /**
+     * Draws a full-screen CRT-style transition overlay over the game viewport
+     * (not the HUD). The overlay fades through black with horizontal scanlines to
+     * give a distinctive retro monitor power-cycle feel.
+     *
+     * @param blackAlpha  0–1 opacity of the black base layer
+     * @param peakFactor  0–1 how close we are to the transition midpoint (drives scanline intensity)
+     * @param toRetro     true when transitioning MODERN→RETRO
+     */
+    private void renderModeTransitionOverlay(float blackAlpha, float peakFactor, boolean toRetro) {
+        Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA,
+                com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+
+        // Base black overlay covers only the game area (above the HUD strip)
+        shapeRenderer.setColor(0f, 0f, 0f, blackAlpha);
+        shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+
+        // Horizontal scanlines appear as the screen darkens — simulates a CRT powering
+        // off / on. Each second line is slightly darker, with intensity tied to peakFactor.
+        if (peakFactor > 0.05f) {
+            int lineCount = 60;
+            float lineH = (float) GAME_HEIGHT / lineCount;
+            float scanAlpha = peakFactor * 0.55f;
+            shapeRenderer.setColor(0f, 0f, 0f, scanAlpha);
+            for (int i = 0; i < lineCount; i += 2) {
+                shapeRenderer.rect(0, HUD_HEIGHT + i * lineH, VIRTUAL_WIDTH, lineH * 0.6f);
+            }
+        }
+
+        // When transitioning to RETRO, add a faint amber tint near the midpoint to
+        // evoke an old phosphor monitor warming up.
+        if (toRetro && peakFactor > 0.6f) {
+            float tintAlpha = (peakFactor - 0.6f) / 0.4f * 0.18f; // 0→0.18
+            shapeRenderer.setColor(0.9f, 0.55f, 0.05f, tintAlpha);
+            shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+        }
+
+        shapeRenderer.end();
+        Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+    }
+
     private void checkForProactiveChunkLoading() {
         if (player == null || worldManager == null || maze == null)
             return;
@@ -742,6 +869,7 @@ public class GameScreen extends BaseScreen {
         // --- NEW: Portal Reset Handling ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
             Gdx.app.log("GameScreen", "PORTAL_ACTIVATED detected. Resetting world.");
+            DivinityManager.getInstance().onRunReset();
 
             // 1. Reset World Data
             worldManager.resetWorldKeepDifficulty();
@@ -760,6 +888,10 @@ public class GameScreen extends BaseScreen {
 
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
             Gdx.app.log("GameScreen", "PLAYER_DIED event received.");
+            GridPoint2 deathChunk = worldManager.getCurrentPlayerChunkId();
+            String deathKey = DivinityManager.buildChunkKey(
+                    worldManager.getCurrentLevel(), deathChunk.x, deathChunk.y);
+            DivinityManager.getInstance().onPlayerDeath(deathKey);
             game.setScreen(new GameOverScreen(game));
             return;
         }
@@ -787,6 +919,7 @@ public class GameScreen extends BaseScreen {
             turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
         }
         combatManager.checkForAdjacentMonsters();
+        checkLostDivinitiesPickup();
 
         // --- Periodic Spawning Hook ---
         turnCount++;
@@ -808,6 +941,7 @@ public class GameScreen extends BaseScreen {
                 transitionGate.getTargetPlayerPos().y + 0.5f);
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
         swapToChunk(newMaze);
+        onChunkEntered();
     }
 
     @Override

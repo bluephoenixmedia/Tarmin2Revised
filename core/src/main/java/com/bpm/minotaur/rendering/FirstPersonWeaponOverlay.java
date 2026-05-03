@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.assets.AssetManager;
@@ -15,6 +16,10 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 public class FirstPersonWeaponOverlay {
 
     private TextureRegion weaponTexture;
+    // RETRO mode sprite data, populated alongside the texture in triggerAttack
+    private String[] weaponSpriteData;
+    private Color weaponSpriteColor = Color.WHITE;
+
     private boolean active = false;
     private float timer = 0f;
     private float duration = 0.6f; // Slower swipe for better visibility
@@ -43,12 +48,13 @@ public class FirstPersonWeaponOverlay {
 
         // Default or Null check
         if (weapon == null) {
-            // Fists? Or just don't show overlay?
-            // Let's assume no overlay for fists for now, or use a default hand texture if
-            // we had one.
             this.active = false;
             return;
         }
+
+        // Cache RETRO sprite data from the weapon — used by renderRetro()
+        this.weaponSpriteData = weapon.getSpriteData();
+        this.weaponSpriteColor = (weapon.getColor() != null) ? weapon.getColor().cpy() : Color.WHITE;
 
         // Resolve texture
         if (weapon.getTemplate() != null) {
@@ -266,5 +272,58 @@ public class FirstPersonWeaponOverlay {
                 finalWidth, finalHeight,
                 1f, 1f, // Scale is already applied to W/H
                 currentRotation);
+    }
+
+    /**
+     * RETRO render path: draws the weapon's ASCII sprite data using ShapeRenderer
+     * instead of a texture. The sweep animation position is identical to the MODERN
+     * path but rotation is omitted (pixel blocks don't rotate gracefully).
+     */
+    public void renderRetro(ShapeRenderer shapeRenderer, Viewport viewport) {
+        if (!active) return;
+
+        float progress = timer / duration;
+        float t = progress;
+
+        float startX = viewport.getWorldWidth() * startXRel;
+        float endX   = viewport.getWorldWidth() * endXRel;
+        float startY = viewport.getWorldHeight() * startYRel;
+        float endY   = viewport.getWorldHeight() * endYRel;
+        float arcHeight = viewport.getWorldHeight() * 0.1f;
+        float yOffset   = MathUtils.sin(progress * MathUtils.PI) * arcHeight;
+
+        float currentX = MathUtils.lerp(startX, endX, t);
+        float currentY = MathUtils.lerp(startY, endY, t) + yOffset + 200f;
+
+        float targetHeight = viewport.getWorldHeight() * 0.55f;
+
+        if (weaponSpriteData != null && weaponSpriteData.length > 0) {
+            int rows = weaponSpriteData.length;
+            int cols = weaponSpriteData[0].length();
+            float pixelW = (targetHeight / 2f) / cols;
+            float pixelH = targetHeight / rows;
+
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(weaponSpriteColor);
+            for (int py = 0; py < rows; py++) {
+                String row = weaponSpriteData[py];
+                for (int px = 0; px < cols && px < row.length(); px++) {
+                    if (row.charAt(px) == '#') {
+                        float drawX = currentX + px * pixelW;
+                        float drawY = currentY + (rows - 1 - py) * pixelH;
+                        shapeRenderer.rect(drawX, drawY, pixelW, pixelH);
+                    }
+                }
+            }
+            shapeRenderer.end();
+        } else {
+            // No sprite data — draw a plain coloured block as fallback
+            float blockW = 60f;
+            float blockH = 160f;
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(weaponSpriteColor);
+            shapeRenderer.rect(currentX, currentY, blockW, blockH);
+            shapeRenderer.end();
+        }
     }
 }

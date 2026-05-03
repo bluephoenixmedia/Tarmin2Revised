@@ -36,6 +36,16 @@ public class Item implements Renderable {
         // NEW TYPES FOR DICE INTEGRATION
         SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD, RUSTY_SWORD,
 
+        // Additional ring appearances (to cover all 15 RingEffectType values)
+        RING_RED, RING_YELLOW, RING_WHITE, RING_BLACK, RING_ORANGE, RING_SILVER, RING_BRONZE, RING_IVORY,
+
+        // Named build items — guaranteed modifiers applied in ItemDataManager
+        BELT_OF_GIANT_STRENGTH, BERSERKERS_GAUNTLETS,   // Berserker (STR/CON)
+        BOOTS_OF_SWIFTNESS, CLOAK_OF_SHADOWS,            // Shadow (DEX/AGI)
+        HOOD_OF_CLARITY, AMULET_OF_INSIGHT,              // Arcane Scholar (INT/WIS)
+        AMULET_OF_DIVINE_FAVOR, HOLY_GAUNTLETS,          // Divine Paladin (STR/WIS)
+        ALCHEMISTS_BELT, TOXIC_VEIL,                     // Toxic Communion (CON/TOX)
+
         // NEW: Toxic Communion Gibs
         GIB_FLESH, GIB_BONE, GIB_ORGAN, GIB_BILE, GIB_GLAZE,
         // NEW: Alchemy Potions
@@ -127,6 +137,9 @@ public class Item implements Renderable {
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
         MONSTER_EYE, MEAL,
+
+        // Divinities
+        LOST_DIVINITIES,
 
         // Debris
         STICK, LEAVES, SMALL_ROCK, LARGE_BOULDER, BROKEN_COLUMN, BROKEN_WALL, VINES,

@@ -12,10 +12,16 @@ import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 
+import com.bpm.minotaur.gamedata.Direction;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 
 public class MazeChunkGenerator implements IChunkGenerator {
 
@@ -172,10 +178,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
             maze.setHomeTiles(new ArrayList<>(currentChunkHomeTiles));
         }
 
+        Set<GridPoint2> reachable = computeReachableTiles(maze);
+
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
-                spawnTableData, chunkSeed, playerLuck); // <-- Pass chunkSeed
-        spawnEncounters(maze, encounterManager);
-        spawnLadder(maze, this.finalLayout);
+                spawnTableData, chunkSeed, playerLuck, reachable);
+        spawnEncounters(maze, encounterManager, reachable);
+        spawnLadder(maze, this.finalLayout, reachable);
 
         if (gameMode == GameMode.CLASSIC) {
             spawnClassicGate(maze, this.finalLayout);
@@ -254,28 +262,49 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
-            SpawnTableData spawnTableData, long chunkSeed, int playerLuck) { // <-- Pass chunkSeed
+            SpawnTableData spawnTableData, long chunkSeed, int playerLuck, Set<GridPoint2> reachable) {
 
-        // Derive a stable seed for SpawnManager that is independent of maze generation
-        // RNG usage
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
-                level, level, playerLuck, layout, spawnTableData, spawnSeed); // Use level as proxy for playerLevel
+                level, level, playerLuck, layout, spawnTableData, spawnSeed, reachable);
         spawnManager.spawnEntities();
     }
 
-    private void spawnLadder(Maze maze, String[] layout) {
-        int x, y;
-        do {
-            x = random.nextInt(maze.getWidth());
-            y = random.nextInt(maze.getHeight());
-        } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
-                maze.getItems().containsKey(new GridPoint2(x, y)) ||
-                maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
-                (currentChunkHomeTiles.contains(new GridPoint2(x, y))) ||
-                (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y));
-        maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
+    private void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
+        List<GridPoint2> candidates = new ArrayList<>();
+        int height = maze.getHeight();
+        for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y;
+            for (int x = 0; x < maze.getWidth(); x++) {
+                if (layout[layoutY].charAt(x) != '.') continue;
+                GridPoint2 pos = new GridPoint2(x, y);
+                if (!reachable.contains(pos)) continue;
+                if (currentChunkHomeTiles.contains(pos)) continue;
+                if (maze.getItems().containsKey(pos)) continue;
+                if (maze.getMonsters().containsKey(pos)) continue;
+                if (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y) continue;
+                candidates.add(pos);
+            }
+        }
+
+        if (!candidates.isEmpty()) {
+            GridPoint2 chosen = candidates.get(random.nextInt(candidates.size()));
+            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN));
+        } else {
+            // Fallback: original unbounded loop (guards against pathological layouts)
+            int x, y;
+            do {
+                x = random.nextInt(maze.getWidth());
+                y = random.nextInt(maze.getHeight());
+            } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
+                    maze.getItems().containsKey(new GridPoint2(x, y)) ||
+                    maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
+                    currentChunkHomeTiles.contains(new GridPoint2(x, y)) ||
+                    (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y));
+            Gdx.app.log("MazeChunkGenerator", "WARN: No reachable ladder candidate, using fallback at " + x + "," + y);
+            maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
+        }
 
         if (forcedUpLadderPos != null) {
             maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP));
@@ -641,49 +670,88 @@ public class MazeChunkGenerator implements IChunkGenerator {
         }
     }
 
-    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager) {
-        if (encounterManager == null)
-            return;
+    /**
+     * BFS flood-fill from the first '.' tile to discover every tile the player
+     * can reach by walking (doors count as open — they can always be unlocked).
+     * Wall bits in wallData block traversal; '#' characters are hard stops.
+     */
+    private Set<GridPoint2> computeReachableTiles(Maze maze) {
+        GridPoint2 seed = findFirstFloorTile(maze);
+        if (seed == null) return Collections.emptySet();
+
+        Set<GridPoint2> reachable = new HashSet<>();
+        Queue<GridPoint2> queue = new LinkedList<>();
+        reachable.add(seed);
+        queue.add(seed);
+
+        while (!queue.isEmpty()) {
+            GridPoint2 cur = queue.poll();
+            for (Direction dir : Direction.values()) {
+                // Solid wall bit set on current tile → can't leave this side
+                if ((maze.getWallDataAt(cur.x, cur.y) & dir.getWallMask()) != 0) continue;
+
+                int nx = cur.x + (int) dir.getVector().x;
+                int ny = cur.y + (int) dir.getVector().y;
+                if (nx < 0 || nx >= maze.getWidth() || ny < 0 || ny >= maze.getHeight()) continue;
+
+                GridPoint2 next = new GridPoint2(nx, ny);
+                if (reachable.contains(next)) continue;
+
+                // Target must not be a solid wall character
+                int layoutY = maze.getHeight() - 1 - ny;
+                if (finalLayout[layoutY].charAt(nx) == '#') continue;
+
+                reachable.add(next);
+                queue.add(next);
+            }
+        }
+
+        Gdx.app.log("MazeChunkGenerator", "Reachability: " + reachable.size() + " tiles reachable from " + seed);
+        return reachable;
+    }
+
+    private GridPoint2 findFirstFloorTile(Maze maze) {
+        int height = maze.getHeight();
+        int width = maze.getWidth();
+        for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y;
+            for (int x = 0; x < width; x++) {
+                if (finalLayout[layoutY].charAt(x) == '.') {
+                    return new GridPoint2(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
+            Set<GridPoint2> reachable) {
+        if (encounterManager == null) return;
+
+        // Build a shuffled pool of reachable, unoccupied floor tiles
+        List<GridPoint2> candidates = new ArrayList<>();
+        int height = maze.getHeight();
+        for (GridPoint2 tile : reachable) {
+            int layoutY = height - 1 - tile.y;
+            if (layoutY < 0 || layoutY >= finalLayout.length) continue;
+            if (finalLayout[layoutY].charAt(tile.x) != '.') continue;
+            if (maze.getScenery().containsKey(tile)) continue;
+            if (maze.getItems().containsKey(tile)) continue;
+            if (maze.getMonsters().containsKey(tile)) continue;
+            if (maze.getEventAt(tile.x, tile.y) != null) continue;
+            candidates.add(tile);
+        }
+        Collections.shuffle(candidates, random);
 
         int numEncounters = 1 + random.nextInt(3);
-        for (int i = 0; i < numEncounters; i++) {
-            int x, y;
-            int attempts = 0;
-            do {
-                x = random.nextInt(maze.getWidth());
-                y = random.nextInt(maze.getHeight());
-                attempts++;
-
-                // Check accessibility: Must be a floor tile '.'
-                // finalLayout is stored top-down (index 0 is Y=Max)
-                boolean isFloor = false;
-                if (finalLayout != null) {
-                    int layoutY = maze.getHeight() - 1 - y;
-                    if (layoutY >= 0 && layoutY < finalLayout.length) {
-                        if (finalLayout[layoutY].charAt(x) == '.') {
-                            isFloor = true;
-                        }
-                    }
-                }
-
-                if (!isFloor)
-                    continue;
-
-            } while ((maze.getScenery().containsKey(new GridPoint2(x, y))
-                    || maze.getItems().containsKey(new GridPoint2(x, y))
-                    || maze.getMonsters().containsKey(new GridPoint2(x, y))
-                    || maze.getEventAt(x, y) != null
-            // Additional check: Ensure it's not a door or wall (which bitmask 0 check
-            // implies, but explicit floor check handles it)
-            )
-                    && attempts < 50);
-
-            if (attempts < 50) { // Found a valid spot
-                String encounterId = encounterManager.getRandomEncounterId();
-                if (encounterId != null) {
-                    maze.addEvent(x, y, encounterId);
-                    Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " at " + x + "," + y);
-                }
+        int placed = 0;
+        for (int i = 0; i < candidates.size() && placed < numEncounters; i++) {
+            GridPoint2 pos = candidates.get(i);
+            String encounterId = encounterManager.getRandomEncounterId();
+            if (encounterId != null) {
+                maze.addEvent(pos.x, pos.y, encounterId);
+                Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " at " + pos.x + "," + pos.y);
+                placed++;
             }
         }
     }

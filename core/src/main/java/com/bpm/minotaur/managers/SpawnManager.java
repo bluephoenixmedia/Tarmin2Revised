@@ -51,6 +51,7 @@ public class SpawnManager {
     private final ItemDataManager itemDataManager;
     private final AssetManager assetManager;
     private final SpawnTableData spawnTableData;
+    private final Set<GridPoint2> reachableTiles;
 
     // --- Data-Driven Fields ---
     private final LevelBudget budget;
@@ -81,7 +82,7 @@ public class SpawnManager {
 
     public SpawnManager(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             Maze maze, Difficulty difficulty, int level, int playerLevel, int playerLuck, String[] layout,
-            SpawnTableData spawnTableData, long seed) {
+            SpawnTableData spawnTableData, long seed, Set<GridPoint2> reachableTiles) {
         this.maze = maze;
         this.playerLevel = playerLevel;
         this.playerLuck = playerLuck;
@@ -92,6 +93,7 @@ public class SpawnManager {
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
         this.spawnTableData = spawnTableData;
+        this.reachableTiles = reachableTiles;
 
         // Initialize UnlockManager with Data Manager for planning
         UnlockManager.getInstance().setItemDataManager(itemDataManager);
@@ -185,9 +187,11 @@ public class SpawnManager {
             for (int x = 0; x < maze.getWidth(); x++) {
                 boolean isFloor = layout[maze.getHeight() - 1 - y].charAt(x) == '.';
                 boolean isSafeHomeTile = maze.isHomeTile(x, y);
+                GridPoint2 pos = new GridPoint2(x, y);
+                boolean isReachable = (reachableTiles == null || reachableTiles.contains(pos));
 
-                if (isFloor && !isSafeHomeTile) {
-                    validSpawnPoints.add(new GridPoint2(x, y));
+                if (isFloor && !isSafeHomeTile && isReachable) {
+                    validSpawnPoints.add(pos);
                 }
             }
         }
@@ -538,14 +542,17 @@ public class SpawnManager {
             }
         }
 
-        float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS);
+        // Luck shifts modifier probability: each luck point = ±1% base modifier chance.
+        // Max luck (13) = +13%, min luck (-13) = -13%. Negative luck makes good items rarer.
+        float luckBonus = playerLuck * 0.01f;
+        float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS) + luckBonus;
         if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance)
             return;
 
         addRandomModifier(item);
-        if (random.nextFloat() < SECOND_MODIFIER_CHANCE)
+        if (random.nextFloat() < SECOND_MODIFIER_CHANCE + luckBonus)
             addRandomModifier(item);
-        if (random.nextFloat() < THIRD_MODIFIER_CHANCE)
+        if (random.nextFloat() < THIRD_MODIFIER_CHANCE + luckBonus)
             addRandomModifier(item);
     }
 

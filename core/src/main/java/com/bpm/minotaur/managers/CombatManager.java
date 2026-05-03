@@ -316,8 +316,8 @@ public class CombatManager {
             Gdx.app.log("CombatManager", "Player took " + damage + " poison damage.");
         }
 
-        // NEW: Critical Toxicity DoT
-        if (player.getStats().getToxicity() >= 76) {
+        // NEW: Critical Toxicity DoT (threshold shifted by Fortitude)
+        if (player.getStats().getToxicity() >= 76 + player.getToxicityThresholdShift()) {
             int dot = 2 + random.nextInt(3);
             player.takeStatusEffectDamage(dot, DamageType.POISON);
             eventManager.addEvent(new GameEvent("Toxicity burns! (-" + dot + " HP)", 2f));
@@ -451,7 +451,7 @@ public class CombatManager {
                     new String[] { "*" }));
 
             if (targetMonster != null) {
-                int magicDamage = 5 + (player.getLevel());
+                int magicDamage = 5 + player.getLevel() + player.getSpellPower();
                 int actualDamage = targetMonster.takeDamage(magicDamage);
 
                 showDamageText(actualDamage,
@@ -485,6 +485,11 @@ public class CombatManager {
         maze.getMonsters().remove(new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
         player.getStats().addExperience(m.getBaseExperience());
         eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
+        com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
+        if (remoteTemplate != null) {
+            DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
+        }
+        DivinityOrbManager.getInstance().spawnOrb();
     }
 
     private void closeMenuOrPassTurn() {
@@ -550,6 +555,21 @@ public class CombatManager {
         Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
 
         resolveAttack(d20Roll);
+
+        // AGI Flurry: at AGI 14+ the player has a chance at a bonus instant attack this turn.
+        // Stateless so it doesn't re-trigger MONSTER_TURN or turn processing.
+        if (monster != null && monster.getCurrentHP() > 0 && currentState != CombatState.VICTORY) {
+            int agi = player.getEffectiveAgility();
+            float flurryChance = agi >= 18 ? 0.35f : agi >= 14 ? 0.20f : 0f;
+            if (flurryChance > 0f && random.nextFloat() < flurryChance) {
+                Item flurryWeapon = player.getInventory().getRightHand();
+                if (flurryWeapon != null) {
+                    pendingWeapon = flurryWeapon;
+                    eventManager.addEvent(new GameEvent("Flurry!", 0.8f));
+                    resolveAttack(DiceRoller.d20(), true);
+                }
+            }
+        }
     }
 
     private void resolveRangedAttackAgainst(Monster target) {
@@ -806,9 +826,8 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Poisoned Monster!", 1f));
         }
 
-        // 3. Damage
-        int strBonus = Math.max(0, player.getStats().getEffectiveStrength() - 10);
-        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getStats().getAttackModifier() + strBonus;
+        // 3. Damage — unified formula: same STR+equipment bonus as instant combat
+        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getDamageBonus();
 
         // --- NEW: Berzerk Bonus ---
         if (player.getStatusManager().hasEffect(StatusEffectType.BERZERK)) {
@@ -833,8 +852,8 @@ public class CombatManager {
             // Optionally log or show effect?
         }
 
-        // Toxic Communion: Critical Toxicity Double Damage
-        if (player.getStats().getToxicity() >= 76) {
+        // Toxic Communion: Critical Toxicity Double Damage (threshold shifted by Fortitude)
+        if (player.getStats().getToxicity() >= 76 + player.getToxicityThresholdShift()) {
             totalAttack *= 2;
         }
 
@@ -905,7 +924,7 @@ public class CombatManager {
         int toHitBonus = player.getToHitBonus();
         int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
-        boolean isCrit = (d20Roll == 20);
+        boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());
         boolean isHit = (attackRoll >= targetAC) || isCrit;
 
         // --- CONFUSION LOGIC (Instant) ---
@@ -933,7 +952,7 @@ public class CombatManager {
             int totalDamage = Math.max(1, baseDamage + damageBonus);
 
             if (isCrit) {
-                totalDamage *= 2;
+                totalDamage = (int) (totalDamage * player.getCritMultiplier());
                 eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
             }
 
@@ -1560,6 +1579,13 @@ public class CombatManager {
         int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
         eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
         player.addExperience(totalExp, eventManager);
+
+        com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();
+        if (killTemplate != null) {
+            int divAmount = DivinityManager.getInstance().awardKillDivinities(killTemplate.baseLevel, maze.getLevel());
+            eventManager.addEvent(new GameEvent("+" + divAmount + " " + DivinityManager.DIVINITY_NAME, 2f));
+        }
+
         maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
 
         // --- GIB ANIMATION ---
@@ -1583,5 +1609,6 @@ public class CombatManager {
         }
 
         spawnCorpseEffects(monster);
+        DivinityOrbManager.getInstance().spawnOrb();
     }
 }

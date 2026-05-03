@@ -32,6 +32,8 @@ public class Player {
 
     public int getEffectiveSpeed() {
         int speed = moveSpeed; // 12
+        // AGI modifier shifts base speed
+        speed += (stats.getAgility() - 10) / 2;
         // Check for HASTE / SLOW effects
         if (statusManager.hasEffect(StatusEffectType.SLOWED) || statusManager.hasEffect(StatusEffectType.SLOW)) {
             speed /= 2;
@@ -43,8 +45,10 @@ public class Player {
         return Math.max(1, speed);
     }
 
+    /** Effective luck: base stat + equipment BONUS_LUCK, clamped to ±13. */
     public int getLuck() {
-        return stats.getLuck();
+        int effective = stats.getLuck() + equipment.getEquippedModifierSum(ModifierType.BONUS_LUCK);
+        return Math.max(-13, Math.min(13, effective));
     }
 
     private final StatusManager statusManager;
@@ -932,25 +936,27 @@ public class Player {
     }
 
     public int takeDamage(int amount, DamageType type) {
+        // Dodge check: AGI-based chance to avoid a connected hit entirely.
+        // 4% per AGI point above 10, plus equipment BONUS_DODGE, plus Ring of Evasion.
+        int agiMod = Math.max(0, (stats.getAgility() - 10) / 2);
+        float dodgeChance = agiMod * 0.04f + equipment.getEquippedModifierSum(ModifierType.BONUS_DODGE) / 100f;
+        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION)) dodgeChance += 0.12f;
+        if (dodgeChance > 0f && new java.util.Random().nextFloat() < dodgeChance) {
+            com.badlogic.gdx.Gdx.app.log("Player", "Dodged! (dodge chance: " + dodgeChance + ")");
+            return 0;
+        }
+
         if (type == DamageType.PHYSICAL) {
-            int defense = getArmorDefense();
-            amount = Math.max(0, amount - defense);
+            // AC bonus = evasion threshold used in the to-hit roll, not a damage absorber.
+            // BONUS_ABSORB is the separate flat mitigation on connected hits.
+            int absorb = equipment.getEquippedModifierSum(ModifierType.BONUS_ABSORB);
+            amount = Math.max(0, amount - absorb);
         }
 
-        // --- CHIP DAMAGE FIX: Always take at least 1 damage ---
-        int minDamage = 1;
-        // Strict enforcement: If initial amount was > 0 (it was an attack), ensure at
-        // least 1 dmg
-        if (amount < minDamage) {
-            amount = minDamage;
-        }
-        // ----------------------------------------------------
+        // Chip damage: always take at least 1 on a connected, non-dodged hit.
+        if (amount < 1) amount = 1;
 
-        int finalDamage = Math.max(0, (int) (amount * stats.getVulnerabilityMultiplier()));
-
-        // Final Safety: Ensure we don't heal from damage
-        if (finalDamage < 1)
-            finalDamage = 1;
+        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier()));
 
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
@@ -962,15 +968,13 @@ public class Player {
     public void takeSpiritualDamage(int amount, DamageType type) {
         int damageReduction = equipment.getRingDefense();
         int resistance = getResistance(type);
+        // WIS modifier reduces spiritual damage taken (positive WIS only).
+        int wisReduction = Math.max(0, (getEffectiveWisdom() - 10) / 2);
 
         int finalDamage = (int) (amount * stats.getVulnerabilityMultiplier());
-        finalDamage = Math.max(0, finalDamage - damageReduction - resistance);
+        finalDamage = Math.max(0, finalDamage - damageReduction - resistance - wisReduction);
 
-        stats.setSpiritualStrength(stats.getSpiritualStrength() - finalDamage);
-
-        if (stats.getSpiritualStrength() < 0) {
-            stats.setSpiritualStrength(0);
-        }
+        stats.setSpiritualStrength(Math.max(0, stats.getSpiritualStrength() - finalDamage));
     }
 
     public Item getWornRing() {
@@ -1378,20 +1382,137 @@ public class Player {
         }
     }
 
+    /** Dodge chance as float (0.0–1.0), same formula as takeDamage(), exposed for UI display. */
+    public float getDodgeChance() {
+        int agiMod = Math.max(0, (stats.getAgility() - 10) / 2);
+        float chance = agiMod * 0.04f + equipment.getEquippedModifierSum(ModifierType.BONUS_DODGE) / 100f;
+        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION)) chance += 0.12f;
+        return chance;
+    }
+
+    /** Flat physical damage absorbed on a connected hit (BONUS_ABSORB from equipment). */
+    public int getAbsorb() {
+        return equipment.getEquippedModifierSum(ModifierType.BONUS_ABSORB);
+    }
+
+    /** Total spiritual damage reduction: ring defense + positive WIS modifier. */
+    public int getSpiritualDefense() {
+        return equipment.getRingDefense() + Math.max(0, (getEffectiveWisdom() - 10) / 2);
+    }
+
+    /** Elemental resistance for a given damage type, for UI display. */
+    public int getElementalResistance(DamageType type) {
+        return getResistance(type);
+    }
+
     public void takeTrueDamage(int amount) {
         if (amount <= 0)
             return;
         stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 
-    /** To-hit bonus: level/2 applied to the d20 attack roll. */
+    /** To-hit bonus: quarter level + DEX modifier, delegated to PlayerStats. */
     public int getToHitBonus() {
         return stats.getToHitBonus();
     }
 
-    /** Damage bonus: STR-based plus equipment BONUS_DAMAGE modifiers. */
+    // --- Equipment-adjusted primary attributes ---
+
+    /** Strength including toxicity bonus (threshold-shifted by Fortitude), plus equipment BONUS_STRENGTH. */
+    public int getEffectiveStrength() {
+        return stats.getEffectiveStrength(getToxicityThresholdShift())
+                + equipment.getEquippedModifierSum(ModifierType.BONUS_STRENGTH);
+    }
+
+    /** Dexterity including equipment BONUS_DEXTERITY and Ring of Dexterity. */
+    public int getEffectiveDexterity() {
+        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) ? 5 : 0;
+        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus;
+    }
+
+    /** Constitution including equipment BONUS_CONSTITUTION and Ring of Constitution. */
+    public int getEffectiveConstitution() {
+        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CONSTITUTION) ? 5 : 0;
+        return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus;
+    }
+
+    /** Intelligence including equipment BONUS_INTELLIGENCE and Ring of Intelligence. */
+    public int getEffectiveIntelligence() {
+        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INTELLIGENCE) ? 5 : 0;
+        return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus;
+    }
+
+    /** Wisdom including equipment BONUS_WISDOM and Ring of Wisdom. */
+    public int getEffectiveWisdom() {
+        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WISDOM) ? 5 : 0;
+        return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus;
+    }
+
+    /** Agility including equipment BONUS_AGILITY and Ring of Agility. */
+    public int getEffectiveAgility() {
+        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.AGILITY) ? 5 : 0;
+        return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus;
+    }
+
+    public int getEffectiveCharisma() {
+        return stats.getCharisma() + equipment.getEquippedModifierSum(ModifierType.BONUS_CHARISMA);
+    }
+
+    /**
+     * How many points to shift toxicity tier thresholds upward.
+     * Sources: BONUS_TOXICITY_THRESHOLD from equipment + Ring of Fortitude (+15).
+     * A shift of 15 means medium tier activates at 41+ instead of 26+.
+     */
+    public int getToxicityThresholdShift() {
+        int shift = equipment.getEquippedModifierSum(ModifierType.BONUS_TOXICITY_THRESHOLD);
+        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.FORTITUDE)) shift += 15;
+        return shift;
+    }
+
+    /**
+     * Damage bonus: (effectiveStr - 10) / 2 plus flat BONUS_DAMAGE from equipment.
+     * Uses player-level effective strength so BONUS_STRENGTH items flow through.
+     */
     public int getDamageBonus() {
-        return stats.getDamageBonus() + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+        int strDmg = Math.max(0, (getEffectiveStrength() - 10) / 2);
+        return strDmg + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+    }
+
+    /** Flat spell damage bonus: INT modifier + equipment BONUS_SPELL_POWER + Ring of Spell Mastery. */
+    public int getSpellPower() {
+        int intMod = (getEffectiveIntelligence() - 10) / 2;
+        int ringBonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SPELL_MASTERY) ? 6 : 0;
+        return intMod + equipment.getEquippedModifierSum(ModifierType.BONUS_SPELL_POWER) + ringBonus;
+    }
+
+    /**
+     * Effective stamina (max dice selectable): base + CON bonus + equipment BONUS_STAMINA.
+     * Minimum 1.
+     */
+    public int getEffectiveStamina() {
+        int conBonus = Math.max(0, (getEffectiveConstitution() - 10) / 2);
+        int equipBonus = equipment.getEquippedModifierSum(ModifierType.BONUS_STAMINA);
+        return Math.max(1, stats.getBaseStamina() + conBonus + equipBonus);
+    }
+
+    /**
+     * Crit chance as a float (0.0–1.0).
+     * Base 5% + DEX + luck + BONUS_CRIT_CHANCE + Ring of Critical Edge (+10%).
+     */
+    public float getCritChance() {
+        float chance = stats.getBaseCritChance(); // 5% base
+        chance += Math.max(0, (getEffectiveDexterity() - 10) / 2) * 0.02f; // effective DEX
+        chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
+        chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
+        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
+        return Math.min(0.95f, chance);
+    }
+
+    /**
+     * Crit damage multiplier. Base 2.0×, each BONUS_CRIT_MULTIPLIER point adds 0.1×.
+     */
+    public float getCritMultiplier() {
+        return 2.0f + equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_MULTIPLIER) * 0.1f;
     }
 
     /**
