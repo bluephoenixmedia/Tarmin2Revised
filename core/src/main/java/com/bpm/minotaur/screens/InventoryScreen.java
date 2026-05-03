@@ -40,6 +40,7 @@ import java.util.List;
 import com.bpm.minotaur.managers.CraftingManager;
 import com.bpm.minotaur.managers.CraftingManager.Recipe;
 import com.bpm.minotaur.paperdoll.PaperDollWidget;
+import com.bpm.minotaur.screens.inventory.ModernInventoryUI;
 
 import com.bpm.minotaur.paperdoll.data.FragmentResolver;
 import com.bpm.minotaur.paperdoll.data.SkeletonData;
@@ -80,6 +81,9 @@ public class InventoryScreen extends BaseScreen {
 
     private boolean hasLoggedCoordinates = false;
     private DebugManager.RenderMode renderMode;
+
+    // Modern inventory UI (replaces buildUI() when not in RETRO mode)
+    private ModernInventoryUI modernUI;
 
     public enum InventoryMode {
         NORMAL, QUAFF, READ, ZAP, APPLY, WIELD, WEAR, TAKEOFF, CRAFT, COOK
@@ -201,6 +205,19 @@ public class InventoryScreen extends BaseScreen {
         Gdx.input.setInputProcessor(multiplexer);
 
         renderMode = DebugManager.getInstance().getRenderMode();
+
+        // ── MODERN mode: delegate entirely to the new UI system ────────────────
+        if (renderMode != DebugManager.RenderMode.RETRO) {
+            // Initialise a dummy tooltipLabel so legacy methods don't NPE if called
+            font = new BitmapFont();
+            tooltipLabel = new Label("", new Label.LabelStyle(font, Color.WHITE));
+
+            modernUI = new ModernInventoryUI(
+                    player, maze, game.getAssetManager(), game.getItemDataManager());
+            modernUI.addToStage(stage);
+            modernUI.refresh();
+            return;
+        }
 
         // Load background texture (retro uses its own inventory PNG)
         String dollPath = (renderMode == DebugManager.RenderMode.RETRO)
@@ -1373,16 +1390,15 @@ public class InventoryScreen extends BaseScreen {
     @Override
     public void dispose() {
         stage.dispose();
-        if (whitePixel != null)
-            whitePixel.dispose();
-        if (slotBg != null)
-            slotBg.dispose();
-        if (font != null)
-            font.dispose();
-        if (smallFont != null)
-            smallFont.dispose();
-        if (paperDollTexture != null)
-            paperDollTexture.dispose();
+        if (modernUI != null) {
+            modernUI.dispose();
+            modernUI = null;
+        }
+        if (whitePixel != null)       whitePixel.dispose();
+        if (slotBg != null)           slotBg.dispose();
+        if (font != null)             font.dispose();
+        if (smallFont != null)        smallFont.dispose();
+        if (paperDollTexture != null) paperDollTexture.dispose();
     }
 
     private enum SlotType {
