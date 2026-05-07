@@ -1,8 +1,10 @@
 package com.bpm.minotaur.screens.inventory;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -30,17 +32,20 @@ public class CoreStatsPanel extends Table implements InventoryEventBus.Listener 
         mpVal   = new Label("", valStyle);
         goldVal = new Label("", new Label.LabelStyle(skin.getFontBody(), Color.GOLD));
 
-        row(this, "🛡 Armor Class:", acVal,   keyStyle);
-        row(this, "❤ HP:",               hpVal,   keyStyle);
-        row(this, "🔵 MP:",         mpVal,   keyStyle);
-        row(this, "💰 Treasure:",   goldVal, keyStyle);
+        iconRow(this, skin.getIconGray(),  "Armor Class:", acVal,   keyStyle);
+        iconRow(this, skin.getIconRed(),   "HP:",          hpVal,   keyStyle);
+        iconRow(this, skin.getIconBlue(),  "MP:",          mpVal,   keyStyle);
+        iconRow(this, skin.getIconGold(),  "Treasure:",    goldVal, keyStyle);
 
         refresh();
     }
 
-    private void row(Table t, String key, Label val, Label.LabelStyle ks) {
-        t.add(new Label(key, ks)).left().padRight(8).padBottom(3);
-        t.add(val).right().padBottom(3).row();
+    private void iconRow(Table t, Drawable icon, String key, Label val, Label.LabelStyle ks) {
+        Table keyCell = new Table();
+        keyCell.add(new Image(icon)).size(12, 12).padRight(4);
+        keyCell.add(new Label(key, ks)).left();
+        t.add(keyCell).left().padRight(8).padBottom(4);
+        t.add(val).right().padBottom(4).row();
     }
 
     public void refresh() {

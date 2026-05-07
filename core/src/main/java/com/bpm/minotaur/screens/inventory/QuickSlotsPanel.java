@@ -1,50 +1,53 @@
 package com.bpm.minotaur.screens.inventory;
 
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 
-public class QuickSlotsPanel extends Table implements InventoryEventBus.Listener {
+public class QuickSlotsPanel extends WidgetGroup implements InventoryEventBus.Listener {
 
-    private static final int   SLOT_COUNT = 6;
+    private static final int   SLOT_COUNT = 6;  // number of quick slots
+
+    /** Visual size of each slot icon in stage pixels. */
     private static final float SLOT_SIZE  = 56f;
 
+    // ── Spacing — edit this to adjust how far apart the slots are ────
+    // CELL_W is the centre-to-centre horizontal distance between adjacent slots.
+    // Tuned to match the quick-slot row spacing in new_inventory.png
+    // (image 2676×1568 scaled to 1920×1080 stage → ~85 px between centres).
+    private static final float CELL_W   = 85f;   // increase → slots spread further apart
+
+    // Derived values — do not edit; change CELL_W instead.
+    private static final float SLOT_PAD = (CELL_W - SLOT_SIZE) / 2f; // 14.5 px padding each side
+    private static final float PREF_W   = SLOT_COUNT * CELL_W;        // total row width = 510
+    private static final float PREF_H   = SLOT_SIZE + SLOT_PAD * 2f; // total row height = 85
+
     private final InventorySlot[] slots;
-    private final Item[]          quickSlots; // reference into Inventory.getQuickSlots()
+    private final Item[]          quickSlots;
 
     public QuickSlotsPanel(Item[] quickSlots, InventorySkin skin,
                            ItemDataManager idm, InventoryDragDropHandler dnd) {
         this.quickSlots = quickSlots;
         this.slots      = new InventorySlot[SLOT_COUNT];
 
-        Label title = new Label("Quick Slots:",
-                new Label.LabelStyle(skin.getFontBody(), InventorySkin.COL_TEXT_HEADER));
-        title.setAlignment(Align.left);
-        add(title).left().padBottom(5).row();
-
-        Table row = new Table();
         for (int i = 0; i < SLOT_COUNT; i++) {
             InventorySlot slot = new InventorySlot(
                     InventorySlot.SlotCategory.QUICK_SLOT, i, null, null, skin, idm);
             slots[i] = slot;
             dnd.register(slot);
 
-            Table cell = new Table();
-            cell.add(slot).size(SLOT_SIZE, SLOT_SIZE).row();
-
-            Label num = new Label("[" + (i + 1) + "]",
-                    new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
-            num.setAlignment(Align.center);
-            cell.add(num).center().padTop(2);
-
-            row.add(cell).padRight(5);
+            slot.setPosition(i * CELL_W + SLOT_PAD, SLOT_PAD);
+            slot.setSize(SLOT_SIZE, SLOT_SIZE);
+            addActor(slot);
         }
-        add(row).left();
+
+        setSize(PREF_W, PREF_H);
     }
 
     // ── Public ────────────────────────────────────────────────────────
+
+    @Override public float getPrefWidth()  { return PREF_W; }
+    @Override public float getPrefHeight() { return PREF_H; }
 
     public void refresh() {
         for (int i = 0; i < SLOT_COUNT; i++) {
@@ -54,7 +57,7 @@ public class QuickSlotsPanel extends Table implements InventoryEventBus.Listener
 
     // ── EventBus listener ─────────────────────────────────────────────
 
-    @Override public void onStatsChanged()                               { refresh(); }
+    @Override public void onStatsChanged()                                    { refresh(); }
     @Override public void onItemMoved(InventorySlot f, InventorySlot t, Item i) { refresh(); }
-    @Override public void onItemDropped(Item i)                          { refresh(); }
+    @Override public void onItemDropped(Item i)                               { refresh(); }
 }
