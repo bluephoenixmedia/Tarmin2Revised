@@ -173,3 +173,11 @@ saves/profile.json
 ## Texture Packer Source Assets
 /assets/images/debris/
 /assets/images/gore/
+
+## Temporary / local files
+temp_weapons/
+inventory_layout.txt
+gradlew_build.log
+replay_pid*.log
+run_log*.txt
+.claude/
