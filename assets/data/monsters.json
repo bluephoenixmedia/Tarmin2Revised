@@ -2832,5 +2832,168 @@
         "weight": 1
       }
     ]
+  },
+  "DEMON_SLIME": {
+    "baseLevel": 10,
+    "frequency": 2,
+    "baseAC": 14,
+    "magicResistance": 15,
+    "moveSpeed": 10,
+    "alignment": "CHAOTIC",
+    "maxHP": 90,
+    "maxMP": 30,
+    "armorClass": 15,
+    "baseExperience": 250,
+    "family": "DEMON",
+    "texturePath": "images/monsters/boss_demon_slime_FREE_v1.0/spritesheets/demon_slime_FREE_v1.0_288x160_spritesheet.png",
+    "isSpriteSheet": true,
+    "spriteCols": 9,
+    "spriteRows": 1,
+    "spriteFrameDuration": 0.1,
+    "intelligence": 8,
+    "dexterity": 12,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "damageDice": "2d8",
+    "damageType": "PHYSICAL",
+    "scale": {
+      "x": 1.3,
+      "y": 1.3
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 8,
+        "maxLevel": 20,
+        "weight": 3
+      },
+      {
+        "color": "RED",
+        "minLevel": 12,
+        "maxLevel": 30,
+        "weight": 2
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 16,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "BRINGER_OF_DEATH": {
+    "baseLevel": 18,
+    "frequency": 1,
+    "baseAC": 18,
+    "magicResistance": 30,
+    "moveSpeed": 9,
+    "alignment": "CHAOTIC",
+    "maxHP": 140,
+    "maxMP": 60,
+    "armorClass": 18,
+    "baseExperience": 500,
+    "family": "UNDEAD",
+    "texturePath": "images/monsters/Bringer-of-Death-SpritSheet_no-Effect.png",
+    "isSpriteSheet": true,
+    "spriteCols": 6,
+    "spriteRows": 1,
+    "spriteFrameDuration": 0.12,
+    "intelligence": 14,
+    "dexterity": 14,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "damageDice": "3d8",
+    "damageType": "PHYSICAL",
+    "scale": {
+      "x": 2.2,
+      "y": 2.2
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 15,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 22,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "FALL_ANGEL": {
+    "baseLevel": 14,
+    "frequency": 1,
+    "baseAC": 17,
+    "magicResistance": 25,
+    "moveSpeed": 11,
+    "alignment": "CHAOTIC",
+    "maxHP": 110,
+    "maxMP": 80,
+    "armorClass": 17,
+    "baseExperience": 380,
+    "family": "DEMON",
+    "texturePath": "images/monsters/fall_angel.png",
+    "isSpriteSheet": true,
+    "spriteCols": 5,
+    "spriteRows": 1,
+    "spriteFrameDuration": 0.14,
+    "intelligence": 16,
+    "dexterity": 15,
+    "hasRangedAttack": false,
+    "attackRange": 1,
+    "damageDice": "2d10",
+    "damageType": "PHYSICAL",
+    "scale": {
+      "x": 1.4,
+      "y": 1.4
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 12,
+        "maxLevel": 99,
+        "weight": 3
+      },
+      {
+        "color": "PURPLE",
+        "minLevel": 18,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "AGIS": {
+    "baseLevel": 3,
+    "frequency": 6,
+    "baseAC": 9,
+    "magicResistance": 0,
+    "moveSpeed": 12,
+    "alignment": "CHAOTIC",
+    "maxHP": 22,
+    "maxMP": 20,
+    "armorClass": 13,
+    "baseExperience": 20,
+    "family": "BEAST",
+    "texturePath": "images/monsters/Agis/Agis.png",
+    "isSpriteSheet": true,
+    "spriteCols": 15,
+    "spriteRows": 1,
+    "spriteFrameDuration": 0.15,
+    "intelligence": 5,
+    "scale": {
+      "x": 1.1,
+      "y": 0.9
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   }
 }

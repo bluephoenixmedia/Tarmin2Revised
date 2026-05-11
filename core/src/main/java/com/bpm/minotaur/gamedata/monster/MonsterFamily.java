@@ -9,6 +9,7 @@ public enum MonsterFamily {
     HUMANOID,       // e.g., Dwarf, Giant, Orc
     UNDEAD,         // e.g., Ghoul, Skeleton, Cloaked Skeleton, Wraith
     MYTHICAL,
-    MAGICAL,// e.g., Dragon, Minotaur
+    MAGICAL,        // e.g., Dragon, Minotaur
+    DEMON,          // e.g., Demon Slime
     NONE            // Default for any unclassified monster
 }

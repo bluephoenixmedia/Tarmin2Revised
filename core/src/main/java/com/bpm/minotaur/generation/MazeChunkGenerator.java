@@ -198,6 +198,39 @@ public class MazeChunkGenerator implements IChunkGenerator {
             forcedUpLadderPos = null;
         }
 
+        // --- DEBUG: Force animated test monsters on level 1 ---
+        if (chunkId.x == 0 && chunkId.y == 0 && layoutLevel == 1) {
+            List<GridPoint2> available = new ArrayList<>();
+            for (GridPoint2 pos : reachable) {
+                if (pos.equals(playerSpawnPoint)) continue;
+                if (currentChunkHomeTiles.contains(pos)) continue;
+                if (maze.getMonsters().containsKey(pos)) continue;
+                if (maze.getItems().containsKey(pos)) continue;
+                available.add(pos);
+            }
+            Collections.shuffle(available, random);
+            com.bpm.minotaur.gamedata.monster.Monster.MonsterType[] testTypes = {
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.AGIS,
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.DEMON_SLIME,
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.BRINGER_OF_DEATH,
+                com.bpm.minotaur.gamedata.monster.Monster.MonsterType.FALL_ANGEL
+            };
+            for (int i = 0; i < testTypes.length && i < available.size(); i++) {
+                GridPoint2 pos = available.get(i);
+                try {
+                    com.bpm.minotaur.gamedata.monster.Monster m = new com.bpm.minotaur.gamedata.monster.Monster(
+                        testTypes[i], pos.x, pos.y,
+                        com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE,
+                        dataManager, assetManager);
+                    maze.addMonster(m);
+                    Gdx.app.log("MazeChunkGenerator", "DEBUG: Spawned " + testTypes[i] + " at " + pos);
+                } catch (Exception e) {
+                    Gdx.app.error("MazeChunkGenerator", "Failed to spawn " + testTypes[i], e);
+                }
+            }
+        }
+        // -------------------------------------------------------
+
         return maze;
     }
 

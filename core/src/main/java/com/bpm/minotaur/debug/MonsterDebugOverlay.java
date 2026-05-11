@@ -1,6 +1,5 @@
 package com.bpm.minotaur.debug;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
@@ -28,23 +27,29 @@ import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 
-public class SpritePreviewer extends ApplicationAdapter {
+/**
+ * In-game monster sprite debugger. Toggle with F12.
+ * Lets you inspect any monster's spritesheet, tweak cols/rows, animation speed,
+ * scale, and offset — then print a JSON snippet ready to paste into monsters.json.
+ */
+public class MonsterDebugOverlay {
 
     private static final int PANEL_WIDTH = 310;
 
-    // Core systems
-    private Stage stage;
-    private Skin skin;
-    private MonsterDataManager monsterDataManager;
-    private AssetManager assetManager;
-    private SpriteBatch batch;
-    private ShapeRenderer shapes;
+    private boolean visible = false;
 
-    // Current monster data
+    private final Stage stage;
+    private final Skin skin;
+    private final SpriteBatch batch;
+    private final ShapeRenderer shapes;
+    private final MonsterDataManager monsterDataManager;
+    private final AssetManager assetManager;
+
+    // Current monster state
     private Monster.MonsterType currentType;
     private MonsterTemplate currentTemplate;
-    private Texture currentTexture;
-    private TextureRegion[][] frames; // [row][col] from TextureRegion.split
+    private Texture currentTexture;     // obtained from AssetManager — not disposed by us
+    private TextureRegion[][] frames;   // [row][col]
 
     // Live-tweak params
     private int tweakCols = 1;
@@ -62,355 +67,41 @@ public class SpritePreviewer extends ApplicationAdapter {
     private float animTimer = 0f;
     private int currentFrame = 0;
 
-    // Status labels (updated each frame)
+    // Status labels
     private Label statusLabel;
     private Label texInfoLabel;
 
-    // Slider widgets (synced when loading a new monster)
+    // Slider refs for syncing on monster load
     private Slider colsSlider, rowsSlider, durSlider;
     private Slider sxSlider, sySlider, oxSlider, oySlider, zoomSlider;
     private Label colsVal, rowsVal, durVal, sxVal, syVal, oxVal, oyVal, zoomVal;
 
     // -------------------------------------------------------------------------
 
-    @Override
-    public void create() {
-        batch = new SpriteBatch();
-        shapes = new ShapeRenderer();
-        assetManager = new AssetManager();
-
-        monsterDataManager = new MonsterDataManager();
-        monsterDataManager.load();
-        monsterDataManager.queueAssets(assetManager);
-        assetManager.finishLoading();
-
-        stage = new Stage(new ScreenViewport());
-        Gdx.input.setInputProcessor(stage);
-
+    public MonsterDebugOverlay(MonsterDataManager monsterDataManager, AssetManager assetManager) {
+        this.monsterDataManager = monsterDataManager;
+        this.assetManager = assetManager;
+        this.batch = new SpriteBatch();
+        this.shapes = new ShapeRenderer();
+        this.stage = new Stage(new ScreenViewport());
+        this.skin = new Skin();
         buildSkin();
         buildUI();
     }
 
     // =========================================================================
-    // UI Construction
+    // Public API
     // =========================================================================
 
-    private void buildUI() {
-        Table root = new Table();
-        root.setFillParent(true);
-        stage.addActor(root);
+    public boolean isVisible() { return visible; }
 
-        Table panel = new Table(skin);
-        panel.top().left().pad(8);
+    public void toggle() { visible = !visible; }
 
-        addTitle(panel);
-        addMonsterPicker(panel);
-        addSpritesheetSection(panel);
-        addAnimationSection(panel);
-        addScaleSection(panel);
-        addOffsetSection(panel);
-        addViewSection(panel);
-        addStatusSection(panel);
-        addActionButtons(panel);
+    /** Returns the Stage so GameScreen can add it to the InputMultiplexer. */
+    public Stage getStage() { return stage; }
 
-        ScrollPane scroll = new ScrollPane(panel, skin);
-        scroll.setFadeScrollBars(false);
-        scroll.setScrollingDisabled(true, false);
-
-        root.add(scroll).width(PANEL_WIDTH).fillY().top().left();
-        root.add().expandX().fillY();
-
-        loadMonster(Monster.MonsterType.AGIS);
-    }
-
-    private void addTitle(Table panel) {
-        panel.add(label("Monster Debug Tool", "title")).colspan(2).left().padBottom(8).row();
-    }
-
-    private void addMonsterPicker(Table panel) {
-        panel.add(label("Monster:", "default")).left().padRight(4);
-        final SelectBox<Monster.MonsterType> picker = new SelectBox<Monster.MonsterType>(skin);
-        picker.setItems(Monster.MonsterType.values());
-        picker.setSelected(Monster.MonsterType.AGIS);
-        picker.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                loadMonster(picker.getSelected());
-            }
-        });
-        panel.add(picker).fillX().padBottom(10).row();
-    }
-
-    private void addSpritesheetSection(Table panel) {
-        panel.add(label("─ Spritesheet ─", "section")).colspan(2).left().padBottom(2).row();
-
-        panel.add(label("Cols:", "default")).left().padRight(4);
-        colsSlider = new Slider(1, 32, 1, false, skin);
-        colsVal = label("1", "val");
-        colsSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakCols = (int) colsSlider.getValue();
-                colsVal.setText(String.valueOf(tweakCols));
-                rebuildFrames();
-            }
-        });
-        panel.add(sliderRow(colsSlider, colsVal)).left().padBottom(3).row();
-
-        panel.add(label("Rows:", "default")).left().padRight(4);
-        rowsSlider = new Slider(1, 16, 1, false, skin);
-        rowsVal = label("1", "val");
-        rowsSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakRows = (int) rowsSlider.getValue();
-                rowsVal.setText(String.valueOf(tweakRows));
-                rebuildFrames();
-            }
-        });
-        panel.add(sliderRow(rowsSlider, rowsVal)).left().padBottom(6).row();
-    }
-
-    private void addAnimationSection(Table panel) {
-        panel.add(label("─ Animation ─", "section")).colspan(2).left().padBottom(2).row();
-
-        panel.add(label("Frame (s):", "default")).left().padRight(4);
-        durSlider = new Slider(0.02f, 2.0f, 0.01f, false, skin);
-        durSlider.setValue(0.15f);
-        durVal = label("0.15", "val");
-        durSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakFrameDuration = durSlider.getValue();
-                durVal.setText(String.format("%.2f", tweakFrameDuration));
-            }
-        });
-        panel.add(sliderRow(durSlider, durVal)).left().padBottom(3).row();
-
-        panel.add(label("", "default"));
-        final TextButton pauseBtn = new TextButton("Pause", skin);
-        pauseBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                animPaused = !animPaused;
-                pauseBtn.setText(animPaused ? "Resume" : "Pause");
-            }
-        });
-        panel.add(pauseBtn).left().padBottom(6).row();
-    }
-
-    private void addScaleSection(Table panel) {
-        panel.add(label("─ Scale ─", "section")).colspan(2).left().padBottom(2).row();
-
-        panel.add(label("Scale X:", "default")).left().padRight(4);
-        sxSlider = new Slider(0.1f, 5.0f, 0.05f, false, skin);
-        sxSlider.setValue(1.0f);
-        sxVal = label("1.00", "val");
-        sxSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakScaleX = sxSlider.getValue();
-                sxVal.setText(String.format("%.2f", tweakScaleX));
-            }
-        });
-        panel.add(sliderRow(sxSlider, sxVal)).left().padBottom(3).row();
-
-        panel.add(label("Scale Y:", "default")).left().padRight(4);
-        sySlider = new Slider(0.1f, 5.0f, 0.05f, false, skin);
-        sySlider.setValue(1.0f);
-        syVal = label("1.00", "val");
-        sySlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakScaleY = sySlider.getValue();
-                syVal.setText(String.format("%.2f", tweakScaleY));
-            }
-        });
-        panel.add(sliderRow(sySlider, syVal)).left().padBottom(6).row();
-    }
-
-    private void addOffsetSection(Table panel) {
-        panel.add(label("─ Offset ─", "section")).colspan(2).left().padBottom(2).row();
-
-        panel.add(label("Offset X:", "default")).left().padRight(4);
-        oxSlider = new Slider(-1.0f, 1.0f, 0.01f, false, skin);
-        oxSlider.setValue(0.0f);
-        oxVal = label("0.00", "val");
-        oxSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakOffsetX = oxSlider.getValue();
-                oxVal.setText(String.format("%.2f", tweakOffsetX));
-            }
-        });
-        panel.add(sliderRow(oxSlider, oxVal)).left().padBottom(3).row();
-
-        panel.add(label("Offset Y:", "default")).left().padRight(4);
-        oySlider = new Slider(-1.0f, 1.0f, 0.01f, false, skin);
-        oySlider.setValue(0.0f);
-        oyVal = label("0.00", "val");
-        oySlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakOffsetY = oySlider.getValue();
-                oyVal.setText(String.format("%.2f", tweakOffsetY));
-            }
-        });
-        panel.add(sliderRow(oySlider, oyVal)).left().padBottom(6).row();
-    }
-
-    private void addViewSection(Table panel) {
-        panel.add(label("─ View ─", "section")).colspan(2).left().padBottom(2).row();
-
-        panel.add(label("Zoom:", "default")).left().padRight(4);
-        zoomSlider = new Slider(0.25f, 8.0f, 0.25f, false, skin);
-        zoomSlider.setValue(2.0f);
-        zoomVal = label("2.00", "val");
-        zoomSlider.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                tweakZoom = zoomSlider.getValue();
-                zoomVal.setText(String.format("%.2f", tweakZoom));
-            }
-        });
-        panel.add(sliderRow(zoomSlider, zoomVal)).left().padBottom(3).row();
-
-        panel.add(label("Grid:", "default")).left();
-        CheckBox gridBox = new CheckBox(" Show", skin);
-        gridBox.setChecked(true);
-        gridBox.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                showGrid = gridBox.isChecked();
-            }
-        });
-        panel.add(gridBox).left().padBottom(8).row();
-    }
-
-    private void addStatusSection(Table panel) {
-        panel.add(label("─ Info ─", "section")).colspan(2).left().padBottom(2).row();
-        statusLabel = label("Frame: -/-", "default");
-        texInfoLabel = label("Tex: none", "dim");
-        panel.add(statusLabel).colspan(2).left().row();
-        panel.add(texInfoLabel).colspan(2).left().padBottom(8).row();
-    }
-
-    private void addActionButtons(Table panel) {
-        TextButton jsonBtn = new TextButton("Copy JSON to Console", skin);
-        jsonBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                printJson();
-            }
-        });
-        panel.add(jsonBtn).colspan(2).fillX().padBottom(4).row();
-
-        TextButton resetBtn = new TextButton("Reset to Template Values", skin);
-        resetBtn.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent e, Actor a) {
-                loadMonster(currentType);
-            }
-        });
-        panel.add(resetBtn).colspan(2).fillX().row();
-    }
-
-    // =========================================================================
-    // Monster Loading & Animation
-    // =========================================================================
-
-    private void loadMonster(Monster.MonsterType type) {
-        currentType = type;
-        currentTemplate = monsterDataManager.getTemplate(type);
-
-        if (currentTexture != null) {
-            currentTexture.dispose();
-            currentTexture = null;
-        }
-        frames = null;
-        currentFrame = 0;
-        animTimer = 0;
-
-        if (currentTemplate == null) {
-            syncSlidersToTweaks();
-            updateStatus();
-            return;
-        }
-
-        if (currentTemplate.texturePath != null) {
-            try {
-                currentTexture = new Texture(Gdx.files.internal(currentTemplate.texturePath));
-                currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-            } catch (Exception e) {
-                Gdx.app.log("SpritePreviewer", "Could not load: " + currentTemplate.texturePath);
-            }
-        }
-
-        tweakCols = currentTemplate.isSpriteSheet ? Math.max(1, currentTemplate.spriteCols) : 1;
-        tweakRows = currentTemplate.isSpriteSheet ? Math.max(1, currentTemplate.spriteRows) : 1;
-        tweakFrameDuration = Math.max(0.02f, currentTemplate.spriteFrameDuration);
-        tweakScaleX = (currentTemplate.scale != null) ? currentTemplate.scale.x : 1.0f;
-        tweakScaleY = (currentTemplate.scale != null) ? currentTemplate.scale.y : 1.0f;
-        tweakOffsetX = currentTemplate.offsetX;
-        tweakOffsetY = currentTemplate.offsetY;
-
-        rebuildFrames();
-        syncSlidersToTweaks();
-        updateStatus();
-    }
-
-    private void rebuildFrames() {
-        frames = null;
-        if (currentTexture == null) return;
-        int fw = currentTexture.getWidth() / Math.max(1, tweakCols);
-        int fh = currentTexture.getHeight() / Math.max(1, tweakRows);
-        if (fw <= 0 || fh <= 0) return;
-        frames = TextureRegion.split(currentTexture, fw, fh);
-        currentFrame = 0;
-        animTimer = 0;
-        updateStatus();
-    }
-
-    private void syncSlidersToTweaks() {
-        if (colsSlider == null) return;
-        colsSlider.setValue(tweakCols);      colsVal.setText(String.valueOf(tweakCols));
-        rowsSlider.setValue(tweakRows);      rowsVal.setText(String.valueOf(tweakRows));
-        durSlider.setValue(tweakFrameDuration);  durVal.setText(String.format("%.2f", tweakFrameDuration));
-        sxSlider.setValue(tweakScaleX);      sxVal.setText(String.format("%.2f", tweakScaleX));
-        sySlider.setValue(tweakScaleY);      syVal.setText(String.format("%.2f", tweakScaleY));
-        oxSlider.setValue(tweakOffsetX);     oxVal.setText(String.format("%.2f", tweakOffsetX));
-        oySlider.setValue(tweakOffsetY);     oyVal.setText(String.format("%.2f", tweakOffsetY));
-    }
-
-    private void updateStatus() {
-        if (statusLabel == null) return;
-        int total = tweakCols * tweakRows;
-        String pauseTag = animPaused ? " [PAUSED]" : "";
-        statusLabel.setText("Frame: " + (currentFrame + 1) + "/" + total + pauseTag
-                + "  " + Gdx.graphics.getFramesPerSecond() + " fps");
-
-        if (currentTexture != null) {
-            int fw = currentTexture.getWidth() / Math.max(1, tweakCols);
-            int fh = currentTexture.getHeight() / Math.max(1, tweakRows);
-            texInfoLabel.setText("Sheet: " + currentTexture.getWidth() + "x" + currentTexture.getHeight()
-                    + "  Frame: " + fw + "x" + fh + " px");
-        } else if (currentTemplate != null && currentTemplate.spriteData != null) {
-            texInfoLabel.setText("ASCII sprite (24x24 chars)");
-        } else {
-            texInfoLabel.setText("No texture or sprite data");
-        }
-    }
-
-    // =========================================================================
-    // Render
-    // =========================================================================
-
-    @Override
-    public void render() {
-        Gdx.gl.glClearColor(0.07f, 0.07f, 0.09f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        float delta = Gdx.graphics.getDeltaTime();
+    public void render(float delta) {
+        if (!visible) return;
 
         // Advance animation
         int totalFrames = tweakCols * tweakRows;
@@ -429,6 +120,15 @@ public class SpritePreviewer extends ApplicationAdapter {
         float previewW = Gdx.graphics.getWidth() - PANEL_WIDTH;
         float previewH = Gdx.graphics.getHeight();
 
+        // Dim the game behind the overlay
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0f, 0f, 0f, 0.75f);
+        shapes.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
         drawPanelBg(0, 0, PANEL_WIDTH, previewH);
         drawCheckerboard(previewX, 0, previewW, previewH);
         drawPreview(previewX, 0, previewW, previewH);
@@ -439,9 +139,283 @@ public class SpritePreviewer extends ApplicationAdapter {
         stage.draw();
     }
 
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+    }
+
+    public void dispose() {
+        batch.dispose();
+        shapes.dispose();
+        stage.dispose();
+        skin.dispose();
+        // currentTexture is owned by AssetManager — do not dispose it here
+    }
+
+    // =========================================================================
+    // UI
+    // =========================================================================
+
+    private void buildUI() {
+        Table root = new Table();
+        root.setFillParent(true);
+        stage.addActor(root);
+
+        Table panel = new Table(skin);
+        panel.top().left().pad(8);
+
+        // Title + close hint
+        panel.add(label("Monster Debug  [F12 to close]", "title")).colspan(2).left().padBottom(8).row();
+
+        // Monster dropdown
+        panel.add(label("Monster:", "default")).left().padRight(4);
+        final SelectBox<Monster.MonsterType> picker = new SelectBox<Monster.MonsterType>(skin);
+        picker.setItems(Monster.MonsterType.values());
+        picker.setSelected(Monster.MonsterType.AGIS);
+        picker.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) { loadMonster(picker.getSelected()); }
+        });
+        panel.add(picker).fillX().padBottom(10).row();
+
+        // ─ Spritesheet ─
+        panel.add(label("─ Spritesheet ─", "section")).colspan(2).left().padBottom(2).row();
+
+        panel.add(label("Cols:", "default")).left().padRight(4);
+        colsSlider = new Slider(1, 32, 1, false, skin);
+        colsVal = label("1", "val");
+        colsSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakCols = (int) colsSlider.getValue();
+                colsVal.setText(String.valueOf(tweakCols));
+                rebuildFrames();
+            }
+        });
+        panel.add(sliderRow(colsSlider, colsVal)).left().padBottom(3).row();
+
+        panel.add(label("Rows:", "default")).left().padRight(4);
+        rowsSlider = new Slider(1, 16, 1, false, skin);
+        rowsVal = label("1", "val");
+        rowsSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakRows = (int) rowsSlider.getValue();
+                rowsVal.setText(String.valueOf(tweakRows));
+                rebuildFrames();
+            }
+        });
+        panel.add(sliderRow(rowsSlider, rowsVal)).left().padBottom(6).row();
+
+        // ─ Animation ─
+        panel.add(label("─ Animation ─", "section")).colspan(2).left().padBottom(2).row();
+
+        panel.add(label("Frame (s):", "default")).left().padRight(4);
+        durSlider = new Slider(0.02f, 2.0f, 0.01f, false, skin);
+        durSlider.setValue(0.15f);
+        durVal = label("0.15", "val");
+        durSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakFrameDuration = durSlider.getValue();
+                durVal.setText(String.format("%.2f", tweakFrameDuration));
+            }
+        });
+        panel.add(sliderRow(durSlider, durVal)).left().padBottom(3).row();
+
+        panel.add(label("", "default"));
+        final TextButton pauseBtn = new TextButton("Pause", skin);
+        pauseBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                animPaused = !animPaused;
+                pauseBtn.setText(animPaused ? "Resume" : "Pause");
+            }
+        });
+        panel.add(pauseBtn).left().padBottom(6).row();
+
+        // ─ Scale ─
+        panel.add(label("─ Scale ─", "section")).colspan(2).left().padBottom(2).row();
+
+        panel.add(label("Scale X:", "default")).left().padRight(4);
+        sxSlider = new Slider(0.1f, 5.0f, 0.05f, false, skin);
+        sxSlider.setValue(1.0f);
+        sxVal = label("1.00", "val");
+        sxSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakScaleX = sxSlider.getValue();
+                sxVal.setText(String.format("%.2f", tweakScaleX));
+            }
+        });
+        panel.add(sliderRow(sxSlider, sxVal)).left().padBottom(3).row();
+
+        panel.add(label("Scale Y:", "default")).left().padRight(4);
+        sySlider = new Slider(0.1f, 5.0f, 0.05f, false, skin);
+        sySlider.setValue(1.0f);
+        syVal = label("1.00", "val");
+        sySlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakScaleY = sySlider.getValue();
+                syVal.setText(String.format("%.2f", tweakScaleY));
+            }
+        });
+        panel.add(sliderRow(sySlider, syVal)).left().padBottom(6).row();
+
+        // ─ Offset ─
+        panel.add(label("─ Offset ─", "section")).colspan(2).left().padBottom(2).row();
+
+        panel.add(label("Offset X:", "default")).left().padRight(4);
+        oxSlider = new Slider(-1.0f, 1.0f, 0.01f, false, skin);
+        oxSlider.setValue(0.0f);
+        oxVal = label("0.00", "val");
+        oxSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakOffsetX = oxSlider.getValue();
+                oxVal.setText(String.format("%.2f", tweakOffsetX));
+            }
+        });
+        panel.add(sliderRow(oxSlider, oxVal)).left().padBottom(3).row();
+
+        panel.add(label("Offset Y:", "default")).left().padRight(4);
+        oySlider = new Slider(-1.0f, 1.0f, 0.01f, false, skin);
+        oySlider.setValue(0.0f);
+        oyVal = label("0.00", "val");
+        oySlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakOffsetY = oySlider.getValue();
+                oyVal.setText(String.format("%.2f", tweakOffsetY));
+            }
+        });
+        panel.add(sliderRow(oySlider, oyVal)).left().padBottom(6).row();
+
+        // ─ View ─
+        panel.add(label("─ View ─", "section")).colspan(2).left().padBottom(2).row();
+
+        panel.add(label("Zoom:", "default")).left().padRight(4);
+        zoomSlider = new Slider(0.25f, 8.0f, 0.25f, false, skin);
+        zoomSlider.setValue(2.0f);
+        zoomVal = label("2.00", "val");
+        zoomSlider.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) {
+                tweakZoom = zoomSlider.getValue();
+                zoomVal.setText(String.format("%.2f", tweakZoom));
+            }
+        });
+        panel.add(sliderRow(zoomSlider, zoomVal)).left().padBottom(3).row();
+
+        panel.add(label("Grid:", "default")).left();
+        CheckBox gridBox = new CheckBox(" Show", skin);
+        gridBox.setChecked(true);
+        gridBox.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) { showGrid = gridBox.isChecked(); }
+        });
+        panel.add(gridBox).left().padBottom(8).row();
+
+        // Status
+        panel.add(label("─ Info ─", "section")).colspan(2).left().padBottom(2).row();
+        statusLabel = label("Frame: -/-", "default");
+        texInfoLabel = label("Tex: none", "dim");
+        panel.add(statusLabel).colspan(2).left().row();
+        panel.add(texInfoLabel).colspan(2).left().padBottom(8).row();
+
+        // Buttons
+        TextButton jsonBtn = new TextButton("Copy JSON to Console", skin);
+        jsonBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) { printJson(); }
+        });
+        panel.add(jsonBtn).colspan(2).fillX().padBottom(4).row();
+
+        TextButton resetBtn = new TextButton("Reset to Template Values", skin);
+        resetBtn.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent e, Actor a) { loadMonster(currentType); }
+        });
+        panel.add(resetBtn).colspan(2).fillX().row();
+
+        ScrollPane scroll = new ScrollPane(panel, skin);
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+
+        root.add(scroll).width(PANEL_WIDTH).fillY().top().left();
+        root.add().expandX().fillY();
+
+        // Default to AGIS
+        loadMonster(Monster.MonsterType.AGIS);
+    }
+
+    // =========================================================================
+    // Monster Loading
+    // =========================================================================
+
+    private void loadMonster(Monster.MonsterType type) {
+        currentType = type;
+        currentTemplate = monsterDataManager.getTemplate(type);
+        frames = null;
+        currentFrame = 0;
+        animTimer = 0;
+        currentTexture = null;
+
+        if (currentTemplate == null) { updateStatus(); return; }
+
+        if (currentTemplate.texturePath != null
+                && assetManager.isLoaded(currentTemplate.texturePath, Texture.class)) {
+            currentTexture = assetManager.get(currentTemplate.texturePath, Texture.class);
+        }
+
+        tweakCols = currentTemplate.isSpriteSheet ? Math.max(1, currentTemplate.spriteCols) : 1;
+        tweakRows = currentTemplate.isSpriteSheet ? Math.max(1, currentTemplate.spriteRows) : 1;
+        tweakFrameDuration = Math.max(0.02f, currentTemplate.spriteFrameDuration);
+        tweakScaleX = (currentTemplate.scale != null) ? currentTemplate.scale.x : 1.0f;
+        tweakScaleY = (currentTemplate.scale != null) ? currentTemplate.scale.y : 1.0f;
+        tweakOffsetX = currentTemplate.offsetX;
+        tweakOffsetY = currentTemplate.offsetY;
+
+        rebuildFrames();
+        syncSliders();
+        updateStatus();
+    }
+
+    private void rebuildFrames() {
+        frames = null;
+        if (currentTexture == null) return;
+        int fw = currentTexture.getWidth() / Math.max(1, tweakCols);
+        int fh = currentTexture.getHeight() / Math.max(1, tweakRows);
+        if (fw <= 0 || fh <= 0) return;
+        frames = TextureRegion.split(currentTexture, fw, fh);
+        currentFrame = 0;
+        animTimer = 0;
+    }
+
+    private void syncSliders() {
+        if (colsSlider == null) return;
+        colsSlider.setValue(tweakCols);      colsVal.setText(String.valueOf(tweakCols));
+        rowsSlider.setValue(tweakRows);      rowsVal.setText(String.valueOf(tweakRows));
+        durSlider.setValue(tweakFrameDuration);  durVal.setText(String.format("%.2f", tweakFrameDuration));
+        sxSlider.setValue(tweakScaleX);      sxVal.setText(String.format("%.2f", tweakScaleX));
+        sySlider.setValue(tweakScaleY);      syVal.setText(String.format("%.2f", tweakScaleY));
+        oxSlider.setValue(tweakOffsetX);     oxVal.setText(String.format("%.2f", tweakOffsetX));
+        oySlider.setValue(tweakOffsetY);     oyVal.setText(String.format("%.2f", tweakOffsetY));
+    }
+
+    private void updateStatus() {
+        if (statusLabel == null) return;
+        int total = tweakCols * tweakRows;
+        statusLabel.setText("Frame: " + (currentFrame + 1) + "/" + total
+                + (animPaused ? " [PAUSED]" : "")
+                + "  " + Gdx.graphics.getFramesPerSecond() + " fps");
+
+        if (currentTexture != null) {
+            int fw = currentTexture.getWidth() / Math.max(1, tweakCols);
+            int fh = currentTexture.getHeight() / Math.max(1, tweakRows);
+            texInfoLabel.setText("Sheet: " + currentTexture.getWidth() + "x" + currentTexture.getHeight()
+                    + "  Frame: " + fw + "x" + fh + " px");
+        } else if (currentTemplate != null && currentTemplate.spriteData != null) {
+            texInfoLabel.setText("ASCII sprite (24x24)");
+        } else {
+            texInfoLabel.setText("No texture loaded");
+        }
+    }
+
+    // =========================================================================
+    // Drawing
+    // =========================================================================
+
     private void drawPanelBg(float x, float y, float w, float h) {
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(0.12f, 0.12f, 0.15f, 1f);
+        shapes.setColor(0.10f, 0.10f, 0.13f, 1f);
         shapes.rect(x, y, w, h);
         shapes.end();
     }
@@ -452,8 +426,8 @@ public class SpritePreviewer extends ApplicationAdapter {
         for (int cy = 0; cy < (int) ph; cy += cs) {
             for (int cx = 0; cx < (int) pw; cx += cs) {
                 boolean even = ((cx / cs) + (cy / cs)) % 2 == 0;
-                if (even) shapes.setColor(0.22f, 0.22f, 0.22f, 1f);
-                else       shapes.setColor(0.27f, 0.27f, 0.27f, 1f);
+                if (even) shapes.setColor(0.20f, 0.20f, 0.20f, 1f);
+                else       shapes.setColor(0.25f, 0.25f, 0.25f, 1f);
                 shapes.rect(px + cx, py + cy,
                         Math.min(cs, pw - cx), Math.min(cs, ph - cy));
             }
@@ -466,8 +440,6 @@ public class SpritePreviewer extends ApplicationAdapter {
             drawTexturePreview(px, py, pw, ph);
         } else if (currentTemplate != null && currentTemplate.spriteData != null) {
             drawAsciiPreview(px, py, pw, ph);
-        } else {
-            drawNoDataHint(px, py, pw, ph);
         }
     }
 
@@ -475,7 +447,6 @@ public class SpritePreviewer extends ApplicationAdapter {
         float texW = currentTexture.getWidth();
         float texH = currentTexture.getHeight();
 
-        // Fit the full sheet into 80% of the preview area, then apply zoom
         float fitScale = Math.min((pw * 0.8f) / texW, (ph * 0.8f) / texH);
         float sheetW = texW * fitScale * tweakZoom * tweakScaleX;
         float sheetH = texH * fitScale * tweakZoom * tweakScaleY;
@@ -489,51 +460,41 @@ public class SpritePreviewer extends ApplicationAdapter {
         float frameH = sheetH / tweakRows;
         boolean isAnimated = tweakCols * tweakRows > 1;
 
-        // Draw full sheet (faint when animated, to show context)
+        // Full sheet (faint when animated)
         batch.begin();
         batch.setColor(1f, 1f, 1f, isAnimated ? 0.25f : 1f);
-        // Use src coords to get correct orientation (flipY=false with srcY from top)
         batch.draw(currentTexture, drawX, drawY, sheetW, sheetH,
                 0, 0, (int) texW, (int) texH, false, true);
-        batch.end();
 
-        // Draw current frame brightly, centered in preview
+        // Current frame bright and centered
         if (frames != null && isAnimated) {
             int fr = currentFrame / tweakCols;
             int fc = currentFrame % tweakCols;
             if (fr < frames.length && fc < frames[fr].length) {
-                TextureRegion region = frames[fr][fc];
-                float fX = centerX - frameW / 2f + tweakOffsetX * sheetW;
-                float fY = centerY - frameH / 2f + tweakOffsetY * sheetH;
-                batch.begin();
                 batch.setColor(Color.WHITE);
-                batch.draw(region, fX, fY, frameW, frameH);
-                batch.end();
-
-                // Frame label
-                drawFrameLabel(px, py, pw, ph, fr, fc, frameW, frameH);
+                batch.draw(frames[fr][fc],
+                        centerX - frameW / 2f + tweakOffsetX * sheetW,
+                        centerY - frameH / 2f + tweakOffsetY * sheetH,
+                        frameW, frameH);
             }
         }
+        batch.end();
 
-        // Grid overlay
         if (showGrid) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-            // Highlight active frame cell on the sheet
+            // Highlight active cell
             if (frames != null && isAnimated) {
                 int fr = currentFrame / tweakCols;
                 int fc = currentFrame % tweakCols;
-                float hlX = drawX + fc * frameW;
-                // Sheet row 0 of frames[] = top of texture = top of screen rect
-                float hlY = drawY + (tweakRows - 1 - fr) * frameH;
                 shapes.begin(ShapeRenderer.ShapeType.Filled);
-                shapes.setColor(1f, 0.45f, 0.1f, 0.45f);
-                shapes.rect(hlX, hlY, frameW, frameH);
+                shapes.setColor(1f, 0.45f, 0.1f, 0.4f);
+                shapes.rect(drawX + fc * frameW, drawY + (tweakRows - 1 - fr) * frameH, frameW, frameH);
                 shapes.end();
             }
 
-            // Grid lines over sheet
+            // Grid lines
             shapes.begin(ShapeRenderer.ShapeType.Line);
             shapes.setColor(1f, 1f, 0f, 0.9f);
             for (int c = 0; c <= tweakCols; c++) {
@@ -544,35 +505,12 @@ public class SpritePreviewer extends ApplicationAdapter {
                 float ly = drawY + r * frameH;
                 shapes.line(drawX, ly, drawX + sheetW, ly);
             }
-            // Sheet border (thicker visual)
             shapes.setColor(0f, 1f, 1f, 0.7f);
             shapes.rect(drawX, drawY, sheetW, sheetH);
             shapes.end();
 
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
-
-        // Scale ratio indicator (bottom-right corner of preview)
-        drawScaleIndicator(px, py, pw, ph);
-    }
-
-    private void drawFrameLabel(float px, float py, float pw, float ph,
-            int fr, int fc, float frameW, float frameH) {
-        // Drawn via Scene2D status label, nothing to do here
-        // (status label is updated in updateStatus() each frame)
-    }
-
-    private void drawScaleIndicator(float px, float py, float pw, float ph) {
-        // Small rectangle showing scale.x vs scale.y ratio in corner
-        float refSize = 28f;
-        float rx = px + pw - 50;
-        float ry = py + 12;
-        shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(0.4f, 0.4f, 0.4f, 1f);
-        shapes.rect(rx, ry, refSize, refSize); // 1:1 square reference
-        shapes.setColor(0.3f, 0.9f, 0.3f, 1f);
-        shapes.rect(rx, ry, refSize * Math.min(tweakScaleX, 3f), refSize * Math.min(tweakScaleY, 3f));
-        shapes.end();
     }
 
     private void drawAsciiPreview(float px, float py, float pw, float ph) {
@@ -589,17 +527,11 @@ public class SpritePreviewer extends ApplicationAdapter {
                 char c = data[row].charAt(col);
                 if (c != '.') {
                     shapes.setColor(asciiColor(c));
-                    shapes.rect(startX + col * ps,
-                            startY + (rows - 1 - row) * ps,
-                            ps, ps);
+                    shapes.rect(startX + col * ps, startY + (rows - 1 - row) * ps, ps, ps);
                 }
             }
         }
         shapes.end();
-    }
-
-    private void drawNoDataHint(float px, float py, float pw, float ph) {
-        // Nothing to draw — status label will say "No texture or sprite data"
     }
 
     // =========================================================================
@@ -607,7 +539,7 @@ public class SpritePreviewer extends ApplicationAdapter {
     // =========================================================================
 
     private void printJson() {
-        String snippet = "\n// ── " + currentType + " ── paste into monsters.json ──\n"
+        String s = "\n// ── " + currentType + " ── paste into monsters.json ──\n"
                 + "\"isSpriteSheet\": " + (tweakCols * tweakRows > 1) + ",\n"
                 + "\"spriteCols\": " + tweakCols + ",\n"
                 + "\"spriteRows\": " + tweakRows + ",\n"
@@ -617,8 +549,8 @@ public class SpritePreviewer extends ApplicationAdapter {
                 + "\"offsetX\": " + String.format("%.2f", tweakOffsetX) + ",\n"
                 + "\"offsetY\": " + String.format("%.2f", tweakOffsetY) + "\n"
                 + "// ─────────────────────────────────────────────────";
-        Gdx.app.log("SpritePreviewer", snippet);
-        System.out.println(snippet);
+        Gdx.app.log("MonsterDebug", s);
+        System.out.println(s);
     }
 
     // =========================================================================
@@ -626,10 +558,8 @@ public class SpritePreviewer extends ApplicationAdapter {
     // =========================================================================
 
     private void buildSkin() {
-        skin = new Skin();
         BitmapFont font = new BitmapFont();
 
-        // Label styles
         skin.add("default", new Label.LabelStyle(font, Color.WHITE));
         skin.add("title",   new Label.LabelStyle(font, new Color(1f, 0.8f, 0.2f, 1f)));
         skin.add("section", new Label.LabelStyle(font, new Color(0.45f, 0.8f, 1f, 1f)));
@@ -642,15 +572,15 @@ public class SpritePreviewer extends ApplicationAdapter {
         listStyle.font = font;
         listStyle.fontColorSelected = Color.WHITE;
         listStyle.fontColorUnselected = new Color(0.75f, 0.75f, 0.75f, 1f);
-        listStyle.selection = drawable(new Color(0.2f, 0.4f, 0.65f, 1f));
-        listStyle.background = drawable(new Color(0.08f, 0.08f, 0.12f, 1f));
+        listStyle.selection = dr(new Color(0.2f, 0.4f, 0.65f, 1f));
+        listStyle.background = dr(new Color(0.08f, 0.08f, 0.12f, 1f));
 
         SelectBox.SelectBoxStyle sbStyle = new SelectBox.SelectBoxStyle();
         sbStyle.font = font;
         sbStyle.fontColor = Color.WHITE;
-        sbStyle.background = drawable(new Color(0.18f, 0.18f, 0.22f, 1f));
+        sbStyle.background = dr(new Color(0.18f, 0.18f, 0.22f, 1f));
         sbStyle.listStyle = listStyle;
-        sbStyle.scrollStyle = new ScrollPane.ScrollPaneStyle();
+        sbStyle.scrollStyle = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane.ScrollPaneStyle();
         skin.add("default", sbStyle);
 
         // Slider
@@ -660,28 +590,27 @@ public class SpritePreviewer extends ApplicationAdapter {
         Slider.SliderStyle sliderStyle = new Slider.SliderStyle();
         sliderStyle.background = new TextureRegionDrawable(new TextureRegion(new Texture(trackPix)));
         trackPix.dispose();
-        sliderStyle.knob = drawable(new Color(0.3f, 0.7f, 1.0f, 1f), 12, 12);
+        sliderStyle.knob = dr(new Color(0.3f, 0.7f, 1.0f, 1f), 12, 12);
         skin.add("default-horizontal", sliderStyle);
 
         // TextButton
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = font;
         btnStyle.fontColor = Color.WHITE;
-        btnStyle.up   = drawable(new Color(0.16f, 0.38f, 0.20f, 1f));
-        btnStyle.over = drawable(new Color(0.22f, 0.52f, 0.28f, 1f));
-        btnStyle.down = drawable(new Color(0.12f, 0.28f, 0.15f, 1f));
+        btnStyle.up   = dr(new Color(0.16f, 0.38f, 0.20f, 1f));
+        btnStyle.over = dr(new Color(0.22f, 0.52f, 0.28f, 1f));
+        btnStyle.down = dr(new Color(0.12f, 0.28f, 0.15f, 1f));
         skin.add("default", btnStyle);
 
         // CheckBox
         CheckBox.CheckBoxStyle cbStyle = new CheckBox.CheckBoxStyle();
         cbStyle.font = font;
         cbStyle.fontColor = Color.WHITE;
-        cbStyle.checkboxOff = drawable(new Color(0.28f, 0.28f, 0.33f, 1f), 13, 13);
-        cbStyle.checkboxOn  = drawable(new Color(0.3f, 0.7f, 1.0f, 1f), 13, 13);
+        cbStyle.checkboxOff = dr(new Color(0.28f, 0.28f, 0.33f, 1f), 13, 13);
+        cbStyle.checkboxOn  = dr(new Color(0.3f, 0.7f, 1.0f, 1f), 13, 13);
         skin.add("default", cbStyle);
 
-        // ScrollPane (minimal – no scrollbar styling needed for vertical only)
-        skin.add("default", new ScrollPane.ScrollPaneStyle());
+        skin.add("default", new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane.ScrollPaneStyle());
     }
 
     // =========================================================================
@@ -695,18 +624,13 @@ public class SpritePreviewer extends ApplicationAdapter {
         return t;
     }
 
-    private Label label(String text, String style) {
-        return new Label(text, skin, style);
-    }
+    private Label label(String text, String style) { return new Label(text, skin, style); }
 
-    private TextureRegionDrawable drawable(Color c) {
-        return drawable(c, 1, 1);
-    }
+    private TextureRegionDrawable dr(Color c) { return dr(c, 1, 1); }
 
-    private TextureRegionDrawable drawable(Color c, int w, int h) {
+    private TextureRegionDrawable dr(Color c, int w, int h) {
         Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
-        p.setColor(c);
-        p.fill();
+        p.setColor(c); p.fill();
         TextureRegionDrawable d = new TextureRegionDrawable(new TextureRegion(new Texture(p)));
         p.dispose();
         return d;
@@ -714,36 +638,11 @@ public class SpritePreviewer extends ApplicationAdapter {
 
     private Color asciiColor(char c) {
         switch (c) {
-            case 'R': return Color.RED;
-            case 'G': return Color.GREEN;
-            case 'L': return Color.LIME;
-            case 'B': return Color.BLUE;
-            case 'Y': return Color.YELLOW;
-            case 'W': return Color.WHITE;
-            case 'K': return Color.BLACK;
-            case 'O': return Color.ORANGE;
-            case 'P': return Color.PURPLE;
-            case 'M': return Color.MAGENTA;
-            case 'C': return Color.CYAN;
-            case 'S': return Color.GRAY;
-            case 'D': return Color.GOLD;
-            case 'T': return Color.TEAL;
-            default:  return Color.GRAY;
+            case 'R': return Color.RED;    case 'G': return Color.GREEN;  case 'L': return Color.LIME;
+            case 'B': return Color.BLUE;   case 'Y': return Color.YELLOW; case 'W': return Color.WHITE;
+            case 'K': return Color.BLACK;  case 'O': return Color.ORANGE; case 'P': return Color.PURPLE;
+            case 'M': return Color.MAGENTA;case 'C': return Color.CYAN;   case 'S': return Color.GRAY;
+            case 'D': return Color.GOLD;   case 'T': return Color.TEAL;   default:  return Color.GRAY;
         }
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void dispose() {
-        batch.dispose();
-        shapes.dispose();
-        stage.dispose();
-        skin.dispose();
-        assetManager.dispose();
-        if (currentTexture != null) currentTexture.dispose();
     }
 }

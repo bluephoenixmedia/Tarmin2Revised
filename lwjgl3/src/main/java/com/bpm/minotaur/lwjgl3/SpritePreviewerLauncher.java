@@ -18,10 +18,10 @@ public class SpritePreviewerLauncher {
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("Tarmin 2 - Sprite Previewer");
+        configuration.setTitle("Tarmin 2 - Monster Debug Tool");
         configuration.useVsync(true);
         configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate);
-        configuration.setWindowedMode(800, 600);
+        configuration.setWindowedMode(1280, 720);
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
         return configuration;
     }

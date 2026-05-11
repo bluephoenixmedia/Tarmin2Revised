@@ -64,6 +64,12 @@ public class MonsterTemplate {
     public int baseExperience;
     public MonsterFamily family; // libGDX Json automatically converts "BEAST" string to MonsterFamily.BEAST
     public String texturePath;
+    public boolean isSpriteSheet = false;
+    public int spriteCols = 1;
+    public int spriteRows = 1;
+    public float spriteFrameDuration = 0.15f;
+    public int animStartFrame = 0;   // First frame of the looping animation (inclusive)
+    public int animEndFrame = -1;    // Last frame inclusive; -1 = last frame of sheet
     public String[] spriteData;
     public ScaleData scale;
     public String damageDice = "1d6";

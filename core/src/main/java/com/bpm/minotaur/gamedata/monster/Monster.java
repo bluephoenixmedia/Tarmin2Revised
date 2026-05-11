@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata.monster;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.assets.AssetManager;
 import com.bpm.minotaur.gamedata.Renderable;
@@ -59,7 +60,11 @@ public class Monster implements Renderable {
         HYDRA,
         VAMPIRE,
         IRON_GOLEM,
-        PURPLE_WORM
+        PURPLE_WORM,
+        AGIS,
+        DEMON_SLIME,
+        BRINGER_OF_DEATH,
+        FALL_ANGEL
     }
 
     private final MonsterType type;
@@ -84,6 +89,12 @@ public class Monster implements Renderable {
     private float frameDuration = 0.15f;
     private float animTimer = 0f;
     private int currentFrame = 0;
+    
+    private boolean isSpriteSheet = false;
+    private TextureRegion[] animationFrames = null;
+    private int animStartFrame = 0;
+    private int animEndFrame = 0;
+
     public Vector2 scale;
     private MonsterFamily family;
 
@@ -152,6 +163,25 @@ public class Monster implements Renderable {
         if (template.texturePath != null && !template.texturePath.isEmpty()) {
             if (assetManager.isLoaded(template.texturePath, Texture.class)) {
                 this.texture = assetManager.get(template.texturePath, Texture.class);
+                if (template.isSpriteSheet) {
+                    this.isSpriteSheet = true;
+                    this.frameDuration = template.spriteFrameDuration;
+                    int frameWidth = this.texture.getWidth() / template.spriteCols;
+                    int frameHeight = this.texture.getHeight() / template.spriteRows;
+                    TextureRegion[][] tmp = TextureRegion.split(this.texture, frameWidth, frameHeight);
+                    this.animationFrames = new TextureRegion[template.spriteCols * template.spriteRows];
+                    int index = 0;
+                    for (int r = 0; r < template.spriteRows; r++) {
+                        for (int c = 0; c < template.spriteCols; c++) {
+                            this.animationFrames[index++] = tmp[r][c];
+                        }
+                    }
+                    this.animStartFrame = Math.max(0, template.animStartFrame);
+                    this.animEndFrame = (template.animEndFrame >= 0)
+                            ? Math.min(template.animEndFrame, this.animationFrames.length - 1)
+                            : this.animationFrames.length - 1;
+                    this.currentFrame = this.animStartFrame;
+                }
             } else {
                 com.badlogic.gdx.Gdx.app.error("Monster",
                         "CRITICAL: Texture not loaded for " + type + "! Path: " + template.texturePath);
@@ -243,6 +273,16 @@ public class Monster implements Renderable {
     }
 
     public void updateAnimation(float delta) {
+        if (isSpriteSheet && animationFrames != null && animationFrames.length > 0) {
+            animTimer += delta;
+            if (animTimer >= frameDuration) {
+                animTimer -= frameDuration;
+                currentFrame++;
+                if (currentFrame > animEndFrame) currentFrame = animStartFrame;
+            }
+            return;
+        }
+
         if (southFrames == null || southFrames.length <= 1) return;
         animTimer += delta;
         if (animTimer >= frameDuration) {
@@ -276,6 +316,14 @@ public class Monster implements Renderable {
 
     public Texture getTexture() {
         return texture;
+    }
+
+    public TextureRegion getTextureRegion() {
+        if (isSpriteSheet && animationFrames != null && animationFrames.length > 0) {
+            int f = Math.min(Math.max(currentFrame, animStartFrame), animEndFrame);
+            return animationFrames[f];
+        }
+        return null;
     }
 
     public Vector2 getScale() {

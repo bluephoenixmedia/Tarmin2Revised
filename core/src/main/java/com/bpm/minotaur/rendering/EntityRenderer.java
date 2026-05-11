@@ -751,7 +751,10 @@ public class EntityRenderer {
             monster.updateAnimation(Gdx.graphics.getDeltaTime());
 
             Texture monsterTex;
-            if (monster.hasDirectionalTextures()) {
+            com.badlogic.gdx.graphics.g2d.TextureRegion region = monster.getTextureRegion();
+            if (region != null) {
+                monsterTex = region.getTexture();
+            } else if (monster.hasDirectionalTextures()) {
                 float angle = (float) Math.atan2(
                         player.getPosition().y - monster.getPosition().y,
                         player.getPosition().x - monster.getPosition().x);
@@ -769,9 +772,17 @@ public class EntityRenderer {
                         continue;
                     }
 
-                    float u = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
-                    spriteBatch.draw(monsterTex, stripe, drawY, 1, spriteHeight, u, 1,
-                            u + (1.0f / spriteWidth), 0);
+                    float normalizedU = (float) (stripe - (screenX - spriteWidth / 2 + pixelOffX)) / (float) spriteWidth;
+                    
+                    if (region != null) {
+                        float u = region.getU() + normalizedU * (region.getU2() - region.getU());
+                        float u2 = region.getU() + (normalizedU + (1.0f / spriteWidth)) * (region.getU2() - region.getU());
+                        spriteBatch.draw(monsterTex, stripe, drawY, 1, spriteHeight, u, region.getV2(), u2, region.getV());
+                    } else {
+                        float u = normalizedU;
+                        spriteBatch.draw(monsterTex, stripe, drawY, 1, spriteHeight, u, 1,
+                                u + (1.0f / spriteWidth), 0);
+                    }
                 }
             }
         }

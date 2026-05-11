@@ -111,6 +111,7 @@ public class GameScreen extends BaseScreen {
 
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
+    private com.bpm.minotaur.debug.MonsterDebugOverlay monsterDebugOverlay;
     private com.badlogic.gdx.InputMultiplexer inputMultiplexer;
 
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
@@ -205,6 +206,12 @@ public class GameScreen extends BaseScreen {
             if (debugSpawnOverlay.getStage() == null) {
                 hud.stage.addActor(debugSpawnOverlay);
             }
+        }
+
+        // --- Init Monster Debug Overlay (F12) ---
+        if (monsterDebugOverlay == null) {
+            monsterDebugOverlay = new com.bpm.minotaur.debug.MonsterDebugOverlay(
+                    game.getMonsterDataManager(), game.getAssetManager());
         }
 
         // --- Setup Input Multiplexer (CRITICAL for resuming from Inventory) ---
@@ -724,6 +731,10 @@ public class GameScreen extends BaseScreen {
         game.getBatch().end();
 
         renderCombatOverlay();
+
+        if (monsterDebugOverlay != null) {
+            monsterDebugOverlay.render(delta);
+        }
     }
 
     private void renderCombatOverlay() {
@@ -951,6 +962,9 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             // Fix: Always resize HUD to window size for correct input mapping
             hud.resize(width, height);
+        }
+        if (monsterDebugOverlay != null) {
+            monsterDebugOverlay.resize(width, height);
         }
     }
 
@@ -1452,11 +1466,12 @@ public class GameScreen extends BaseScreen {
                 eventManager.addEvent(new GameEvent("Exploration Dumped to Console", 2f));
                 return true;
             case Input.Keys.F12:
-                if (debugSpawnOverlay != null) {
-                    boolean isVisible = !debugSpawnOverlay.isVisible();
-                    debugSpawnOverlay.setVisible(isVisible); // Toggle
-                    if (isVisible) {
-                        debugSpawnOverlay.toFront();
+                if (monsterDebugOverlay != null) {
+                    monsterDebugOverlay.toggle();
+                    if (monsterDebugOverlay.isVisible()) {
+                        inputMultiplexer.addProcessor(0, monsterDebugOverlay.getStage());
+                    } else {
+                        inputMultiplexer.removeProcessor(monsterDebugOverlay.getStage());
                     }
                 }
                 return true;
@@ -1581,6 +1596,9 @@ public class GameScreen extends BaseScreen {
         if (stochasticManager != null)
             stochasticManager.dispose();
         postProcessBatch.dispose();
+        if (monsterDebugOverlay != null) {
+            monsterDebugOverlay.dispose();
+        }
     }
 
     // --- NEW: Visceral API ---
