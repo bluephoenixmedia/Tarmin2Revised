@@ -1,0 +1,119 @@
+.........
+..###....
+.##D#....
+.PDI#....
+.####....
+.........
+
+ladder in enclosed room
+.........
+..###....
+.PDL#....
+..###....
+.........
+
+Dedicated HUD text box that lists current weapon, modifiers, etc (random name?)
+
+Damage to enemy should show up like RPG (white text for a 1 second) - done
+update text to match color based on modifiers - todo
+
+Add shops
+I would like to introduce a random NPC who is a traveling shopkeep. This NPC should spawn randomly in a biome / maze chunk, have a sprite that is appropriate to the game's theme and existing aesthetic used in monster textures /  designs, move about randomly on it's own throughout the biome / maze, be able to engage in combat if it encounters an enemy (using same logic as the player including auto combat) and be interactable with the player if they encounter each other, triggering a new shopkeeper event where the player can talk to the NPC, buy and sell items and be able to display a new shopkeeper inventory whic hthe player can use to purchase weapons, armor, potions, special items etc)
+
+
+Maze levels change color and resistance as you go down - dnoe
+
+overhaul weapons and items to mimic nethack in progress - IN PROGRESS
+
+character creation / classes
+
+refactor  gamedata package, add sub packages - DONE
+
+xp for exploring that contributes to level up / skill tree
+
+monsters move during a turn, ai pathing logic, ability for player to wait - done
+
+potions - done
+
+add dark background to map  - done
+
+introduce objects into the maze (statues, shrines, fountains (liquid can vary), monster nest, etc)
+
+player bones from other deaths
+
+camp to level up, cooking, monster parts, plants?
+
+ranged attacks - done
+
+balanced combat
+
+Player / inventory view screen - started
+
+Make debug maze permanent but implement "memory" / slowly revealing the maze via exploration (still need to be able to disable for debug mode) - done
+
+Starting shelter, a 4 x 4 grid, with bed, fire, chest. Always start in it. Explore from there, gather materials, go back to save. Needs above maze permanence to be able to get back.
+Need to respawn new monsters but not items when heading up, simulating monsters traveling through the maze, keep old corpses - started
+
+Event system
+
+improved combat research (parrying, arkham style multi monster attacks, shining force concept)
+
+wild magic system
+flesh out spells
+
+Improve combat animations
+
+retire option that turns into cozy farm sim
+
+Add shrines that have statues from original tarmin game as gods that grant abilities
+
+
+
+# --- CONFIGURATION ---
+$fuzzValue = "20%"          # Increased from 20% to catch more green blend
+$erodeType = "Diamond:2"    # Changed from Disk:1 to Diamond:2 (Try Square:1 for very blocky look)
+# ---------------------
+
+New-Item -ItemType Directory -Force -Path transparent
+
+Get-ChildItem * -Include *.png, *.jpg, *.jpeg, *.bmp | ForEach-Object {
+    
+    # 1. Sample the color at 5,5
+    $color = magick $_.FullName -format "%[pixel:p{5,5}]" info:
+    
+    # 2. Setup output name
+    $newName = [io.path]::ChangeExtension($_.Name, "png")
+    $outputPath = Join-Path "transparent" $newName
+    
+    # 3. Process
+    magick $_.FullName -fuzz $fuzzValue -transparent $color -channel A -morphology Erode $erodeType +channel $outputPath
+
+    Write-Host "Processed: $($_.Name) | Color: $color | Fuzz: $fuzzValue | Erode: $erodeType"
+}
+
+
+
+shader gore that splatters walls, floors, disappears over long time - started
+
+debris in maze / biomes (stone, wood, vine) - baseline for camping / crafting - done
+
+Spells like force powers, pull blood out of monsters from  distance, force push against a wall to splatter enemy
+
+
+Bugs / tech debt
+Need to transition weather patterns better
+Tornado extreme effect does not stop when moving underground
+item scales weird when at feet
+fix general scaling of all items
+refactor scenary into scenary.json
+level up broken - fixed
+exploded gor and bones should become debris - done
+chunk state not deleting upon death - done
+player should be able to get swarmed by monsters
+Bug:Player is taking practically no damage during combat
+Bug: Doors are not rendering correctly in their OPEN state while in RETRO mode
+Bug: Player was at 0 health but the game didn't end in RETRO mode
+feat:Need retro inventory screen
+
+I just did a test run and wasable to see items rendering even though they were behind a wall. The items were also render completing in the opposite vertical plane of view. This happened specifically when looking south where a ladder was technically behind a wall to the southeast but it rendered as visible in the southwest. Look at latest logs to see positioning of where the player was and what the map layout was. I closed the game in the exact position where the incorrect rendering was happening so you should be able to use logs to research.
+

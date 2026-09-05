@@ -29,39 +29,6 @@ configure(subprojects) {
   apply plugin: 'java-library'
   sourceCompatibility = 17
 
-  // From https://lyze.dev/2021/04/29/libGDX-Internal-Assets-List/
-  // The article can be helpful when using assets.txt in your project.
-  tasks.register('generateAssetList') {
-    File assetsFolder = new File("${project.rootDir}/assets/")
-    File assetsFile = new File(assetsFolder, "assets.txt")
-
-    inputs.files(fileTree(assetsFolder) { exclude "assets.txt" })
-    outputs.file(assetsFile)
-
-    doLast {
-      def lines = fileTree(assetsFolder) { exclude "assets.txt" }
-        .collect { assetsFolder.relativePath(it) }
-        .sort()
-      byte[] content = (lines.join("\n") + "\n").getBytes("UTF-8")
-
-      // Single NIO write avoids Windows file-lock races from antivirus/watchers
-      Exception lastEx = null
-      for (int i = 0; i < 5; i++) {
-        try {
-          java.nio.file.Files.write(assetsFile.toPath(), content)
-          lastEx = null
-          break
-        } catch (IOException e) {
-          lastEx = e
-          Thread.sleep(300)
-        }
-      }
-      if (lastEx != null) throw lastEx
-    }
-  }
-
-  processResources.dependsOn 'generateAssetList'
-
   compileJava {
     options.incremental = true
     options.compilerArgs << "-Xlint:all"
@@ -83,4 +50,3 @@ subprojects {
   }
 }
 
-eclipse.project.name = 'Tarmin2' + '-parent'

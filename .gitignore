@@ -181,3 +181,14 @@ gradlew_build.log
 replay_pid*.log
 run_log*.txt
 .claude/
+*.blend
+*.xcf
+*.zip
+fbx_parts/
+assets/models/
+monsters/
+assets/images/monsters/Super Pixel Effects*/
+assets/images/monsters/Kenney Game Assets*/
+assets/images/monsters/Free Characters with Animations*/
+assets/images/monsters/BearFX Explosions/
+assets/images/monsters/Sci-Fi SFX Pack/

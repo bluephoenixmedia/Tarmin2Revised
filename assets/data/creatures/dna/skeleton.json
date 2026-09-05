@@ -1,0 +1,19 @@
+{
+  "id": "skeleton",
+  "torsoModel": "models/creatures/torsos/torso_hulk.g3db",
+  "attachmentPoints": [
+    { "socket": "HEAD",  "bone": "socket_head",  "scale": 0.9,  "optional": false },
+    { "socket": "ARM_L", "bone": "socket_arm_l", "scale": 0.75, "optional": false },
+    { "socket": "ARM_R", "bone": "socket_arm_r", "scale": 0.75, "optional": false },
+    { "socket": "LEG_L", "bone": "socket_leg_l", "scale": 0.85, "optional": false },
+    { "socket": "LEG_R", "bone": "socket_leg_r", "scale": 0.85, "optional": false }
+  ],
+  "partWeights": {
+    "HEAD":  ["head_skulled:100"],
+    "ARM_L": ["arm_claw_light:60", "arm_club:40"],
+    "ARM_R": ["arm_claw_light:60", "arm_club:40"],
+    "LEG_L": ["leg_plantigrade:100"],
+    "LEG_R": ["leg_plantigrade:100"]
+  },
+  "biomeModifiers": {}
+}

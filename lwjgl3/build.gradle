@@ -19,9 +19,40 @@ apply plugin: 'io.github.fourlastor.construo'
 import io.github.fourlastor.construo.Target
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+
+tasks.register('generateAssetList') {
+  File assetsFolder = new File("${project.rootDir}/assets/")
+  File assetsFile = new File(assetsFolder, "assets.txt")
+
+  inputs.files(fileTree(assetsFolder) { exclude "assets.txt" })
+  outputs.file(assetsFile)
+
+  doLast {
+    def lines = fileTree(assetsFolder) { exclude "assets.txt" }
+      .collect { assetsFolder.relativePath(it) }
+      .sort()
+    byte[] content = (lines.join("\n") + "\n").getBytes("UTF-8")
+
+    // Single NIO write avoids Windows file-lock races from antivirus/watchers
+    Exception lastEx = null
+    for (int i = 0; i < 5; i++) {
+      try {
+        java.nio.file.Files.write(assetsFile.toPath(), content)
+        lastEx = null
+        break
+      } catch (IOException e) {
+        lastEx = e
+        Thread.sleep(300)
+      }
+    }
+    if (lastEx != null) throw lastEx
+  }
+}
+
+processResources.dependsOn 'generateAssetList'
+
 mainClassName = 'com.bpm.minotaur.lwjgl3.Lwjgl3Launcher'
 application.setMainClass(mainClassName)
-eclipse.project.name = appName + '-lwjgl3'
 java.sourceCompatibility = 17
 java.targetCompatibility = 17
 if (JavaVersion.current().isJava9Compatible()) {

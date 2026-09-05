@@ -41727,3 +41727,2123 @@
 [22:49:42] [GameOverScreen]   > DELETED: discovery_state.json
 [22:49:42] [GameOverScreen] Clear saves complete. Deleted 2/2 files.
 [22:49:42] [Lifecycle] Post-Runnable: Disposing old GameScreen.
+--- NEW SESSION: 2026-05-11 18:23:53 ---
+[18:23:53] [SESSION] Engine Start. Initializing systems...
+[18:23:53] [DoomManager] Loaded Doom State. Deaths: 7
+[18:23:53] [MonsterDataManager] Loaded 48 monster templates.
+[18:23:53] [ItemDataManager] Live Reloading items.json from source.
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AXE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: DART
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOOK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_FIREBALL
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_FIREBALL
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_LIGHTNING
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_LIGHTNING
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_SHIELD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_SHIELD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: GAUNTLETS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: HAUBERK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BREASTPLATE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: HELMET
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEGS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARMS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: EYES
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BACKPACK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BELT_OF_GIANT_STRENGTH
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BERSERKERS_GAUNTLETS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS_OF_SWIFTNESS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK_OF_SHADOWS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOOD_OF_CLARITY
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET_OF_INSIGHT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET_OF_DIVINE_FAVOR
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOLY_GAUNTLETS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ALCHEMISTS_BELT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: TOXIC_VEIL
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ALHULAK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ANKUS_ELEPHANT_GOAD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARQUEBUS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_DAIKYU
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FLIGHT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FORGET
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_GIANT_KIN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_KENYAN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_MAIL_PIERCER
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SHEAF
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SLEEP
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_STONE_FLIGHT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_WAR
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: ASSEGAI
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_BATTLE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_FOREARM
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_HAND_THROWING
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_TWO_HANDED_BATTLE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BAGH_NAKH_TIGER_CLAWS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BARDS_FRIEND
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BASILARD
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BELAYING_PIN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_BARBED_DART
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_NEEDLE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BLUNDERBUS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BO_STICK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOLA
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_LONG
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_SHORT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_ELVEN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_FOLDING_SHORT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_GIANT_KIN_LONG
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_KENYAN_LONG
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_LONG
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_PIXIE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_SHORT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER_SPIKED
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CAHULAKS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CALTROP
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CARRIKAL
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CAVILER
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CESTUS
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAKRAM
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHATKCHA
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DATCHI
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DWARVEN_WAR
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_GREAT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_RIM
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DISK
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DOUBLED
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HAND
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HEAVY
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_LIGHT
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_BONE
+[18:23:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_CLIMBING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_GIANT_KIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_PARRYING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_STONE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DAIKYU
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DART_BARBED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA_CESTUS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DIRK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DISK_CROSSBOW
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: DRAGONS_PAW
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_BLADEBACK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_CHAIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_FOOTMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_GRAIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_HORSEMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FLINDBAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GADA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_ATTACHED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_HELD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_FOOTMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_HORSEMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GLOVE_NAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GOUGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET_HAWK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HORA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: IMPALER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: IUAK_SNOW_BLADE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: JAMBIYA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KATAR_PUNCH_DAGGER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KICK_SLASHER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_BONE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_HARNESS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_STONE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_THROWING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_WIDOWS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KNOBKERRIE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KORA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: KUKRI
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_FLIGHT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_HEAVY_HORSE1
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_JOUSTING1
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_LIGHT_HORSE1
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_MEDIUM_HORSE1
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LASSO
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LOTULIS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_BLADEBACK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS_WHISTLING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GIANT_KIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GREAT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS_WHISTLING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MACHETE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MADU
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MAIN_GAUCHE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MANCATCHER2
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR_DOUBLE_BALL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MUSKET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: NET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: NUNCHAKU
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: NYEK_PLE_NEN_TOH
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PATA1
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PESHKABZ
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_FOOTMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_HORSEMANS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_ICE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PIKE_WEIGHTED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PISTOL_STARWHEEL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_AWL_PIKE3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BARDICHE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BEC_DE_CORBIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BILL_GUISARME
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_CRUSHER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD_FORK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GIANT_KIN_HALBERD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE_GUISARME4
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE4
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME_VOULGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GYTHKA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HALBERD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HOOK_FAUCHARD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_LUCERN_HAMMER3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_MILITARY_FORK4
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_NAGINATA3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_PARTISAN3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_QUAD_FAUCHARD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_RANSEUR3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_SPETUM3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TETSUBO
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TRIKAL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_VOULGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PUCHIK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PUNCH_CUTTER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: QUABONE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HAND
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HEAVY
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_LIGHT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: QUARTERSTAFF
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: RAZOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: RITIIK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SAI
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SAP
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SCOURGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SCYTHE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SPIKE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHOKA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHOTEL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHURIKEN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SICKLE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SLING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_BULLET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_STONE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_CASTER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_DOUBLE_BLADED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HOOK_TAILED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_TWO_HANDED3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_PADDLE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_THROWING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_TWO_HANDED3
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_ELBOW
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_HEAD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_KNEE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKES_BODY
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING_STINKPOT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HAMANUS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HORNHEAD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STICK_GOBLIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STICKS_SINGING
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STILETTO
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BROAD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CLAYMORE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CUTLASS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DRUSUS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DWARVEN_CLAYMORE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FALCHION
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FLAMBERGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GIANT_KIN_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GREAT_SCIMITAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_HOOK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHOPESH
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_LONG
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MANDIBLE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MARINERS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIERCER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIXIE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_RAPIER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SABRE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SCIMITAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SHORT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TALWAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_WAKIZASHI
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SWORDLET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TALID
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TORTOISE_BLADES
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_ONE_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_TWO_HANDED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_HELD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_THROWN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: TUFENK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WARHAMMER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_CHAIN
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_MASTERS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WRIST_RAZOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: ZAGHNAL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BANDED_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRIGANDINE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BACK_AND_BREAST
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BASINET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HAUBERK
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LAMELLAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CORD_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CAP
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CLOSED_FACE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_COIF
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GREAT_HELM
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_HELM
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: OPEN_FACED
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: IMPROVED_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LAMELLAR_SHIRT
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_SEGMENTA
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_AND_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: METAL_LAMELLAR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SMALL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_MEDIUM
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_LARGE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: THREE_QUARTER_PLATE
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_MAIL_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_SHIELD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SHIELD
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_ARMOR
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_BOOTS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_GAUNTLETS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_LEGGINGS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY_2
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_HELMET
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMS
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: MEAL
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: LOST_DIVINITIES
+[18:23:54] [ERROR] [ItemDataManager] No JSON data found for item type: STICK
+[18:23:54] [ItemDataManager] Loaded 130 item templates.
+[18:23:54] [EncounterManager] Loaded 2 encounters.
+[18:23:54] [ItemDataManager] Live Reloading weapons.json from source.
+[18:23:54] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: BARD_S_FRIEND
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: DRAGON_S_PAW
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_FOOTMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: STAFF_HAMANU_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: SWORD_MARINER_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: WHIP_MASTER_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_FOOTMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_HORSEMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_FOOTMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_HORSEMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: KNIFE_WIDOW_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S_WHISTLING
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S_WHISTLING
+[18:23:54] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_HORSEMAN_S
+[18:23:54] [ItemDataManager] Loaded 249 new weapons.
+[18:23:54] [ItemDataManager] Live Reloading armor.json from source.
+[18:23:54] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:23:54] [ItemDataManager] Loaded 117 new armor items.
+[18:23:54] [Tarmin2] Loading SpawnTableData...
+[18:23:54] [Tarmin2] SpawnTableData loaded.
+[18:23:54] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:23:54] [LoadingScreen] Starting asset loading...
+[18:24:13] [LoadingScreen] Asset loading and video complete!
+--- NEW SESSION: 2026-05-11 18:25:52 ---
+[18:25:52] [SESSION] Engine Start. Initializing systems...
+[18:25:52] [DoomManager] Loaded Doom State. Deaths: 7
+[18:25:52] [MonsterDataManager] Loaded 48 monster templates.
+[18:25:52] [ItemDataManager] Live Reloading items.json from source.
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AXE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: DART
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOOK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_FIREBALL
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_FIREBALL
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_LIGHTNING
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_LIGHTNING
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SMALL_SHIELD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: LARGE_SHIELD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: GAUNTLETS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: HAUBERK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BREASTPLATE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: HELMET
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: LEGS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARMS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: EYES
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BACKPACK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: TWO_HANDED_SWORD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BELT_OF_GIANT_STRENGTH
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BERSERKERS_GAUNTLETS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOOTS_OF_SWIFTNESS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CLOAK_OF_SHADOWS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: HOOD_OF_CLARITY
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET_OF_INSIGHT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AMULET_OF_DIVINE_FAVOR
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: HOLY_GAUNTLETS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ALCHEMISTS_BELT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: TOXIC_VEIL
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ALHULAK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ANKUS_ELEPHANT_GOAD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARQUEBUS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_DAIKYU
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FLIGHT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_FORGET
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_GIANT_KIN
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_KENYAN
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_MAIL_PIERCER
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SHEAF
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_SLEEP
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_STONE_FLIGHT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ARROW_WAR
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: ASSEGAI
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_BATTLE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_FOREARM
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_HAND_THROWING
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: AXE_TWO_HANDED_BATTLE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BAGH_NAKH_TIGER_CLAWS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BARDS_FRIEND
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BASILARD
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BELAYING_PIN
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_BARBED_DART
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BLOWGUN_NEEDLE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BLUNDERBUS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BO_STICK
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOLA
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_LONG
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_COMPOSITE_SHORT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_ELVEN
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_FOLDING_SHORT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_GIANT_KIN_LONG
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_KENYAN_LONG
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_LONG
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_PIXIE
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BOW_SHORT
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER_SPIKED
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CAHULAKS
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CALTROP
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CARRIKAL
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CAVILER
+[18:25:52] [ERROR] [ItemDataManager] No JSON data found for item type: CESTUS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAKRAM
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHATKCHA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DATCHI
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_DWARVEN_WAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_GREAT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLUB_RIM
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DISK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_DOUBLED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HAND
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_HEAVY
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CROSSBOW_LIGHT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_BONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_CLIMBING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_GIANT_KIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_PARRYING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAGGER_STONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DAIKYU
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DART_BARBED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DEJADA_CESTUS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DIRK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DISK_CROSSBOW
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: DRAGONS_PAW
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_BLADEBACK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_CHAIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_FOOTMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_GRAIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLAIL_HORSEMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FLINDBAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GADA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_ATTACHED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GAFF_HOOK_HELD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_FOOTMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GLADIATORS_FRIEND_HORSEMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GLOVE_NAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GOUGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HARPOON_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HATCHET_HAWK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HORA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: IMPALER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: IUAK_SNOW_BLADE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: JAMBIYA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_STONE_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: JAVELIN_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KATAR_PUNCH_DAGGER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KICK_SLASHER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_BONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_HARNESS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_STONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_THROWING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNIFE_WIDOWS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KNOBKERRIE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KORA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: KUKRI
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_FLIGHT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_HEAVY_HORSE1
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_JOUSTING1
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_LIGHT_HORSE1
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LANCE_MEDIUM_HORSE1
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LASSO
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LOTULIS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_BLADEBACK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_FOOTMANS_WHISTLING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GIANT_KIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_GREAT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACE_HORSEMANS_WHISTLING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MACHETE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MADU
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MAIN_GAUCHE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MANCATCHER2
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MORNING_STAR_DOUBLE_BALL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MUSKET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: NET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: NUNCHAKU
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: NYEK_PLE_NEN_TOH
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PATA1
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PESHKABZ
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_FOOTMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_HORSEMANS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PICK_ICE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PIKE_WEIGHTED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PISTOL_STARWHEEL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_AWL_PIKE3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BARDICHE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BEC_DE_CORBIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_BILL_GUISARME
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_CRUSHER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_FAUCHARD_FORK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GIANT_KIN_HALBERD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE_GUISARME4
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GLAIVE4
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GUISARME_VOULGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_GYTHKA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HALBERD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_HOOK_FAUCHARD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_LUCERN_HAMMER3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_MILITARY_FORK4
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_NAGINATA3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_PARTISAN3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_QUAD_FAUCHARD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_RANSEUR3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_SPETUM3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TETSUBO
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_TRIKAL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: POLEARM_VOULGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PUCHIK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PUNCH_CUTTER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: QUABONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HAND
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_HEAVY
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: QUARREL_LIGHT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: QUARTERSTAFF
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: RAZOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: RITIIK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SAI
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SAP
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SCOURGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SCYTHE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SPIKE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHOKA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHOTEL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHURIKEN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SICKLE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SLING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_BULLET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SLING_STONE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_CASTER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_DOUBLE_BLADED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HEAVY_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_HOOK_TAILED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_LONG_TWO_HANDED3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_PADDLE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_STONE_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_THROWING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPEAR_TWO_HANDED3
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_ELBOW
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_HEAD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKE_KNEE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPIKES_BODY
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_SLING_STINKPOT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HAMANUS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STAFF_HORNHEAD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STICK_GOBLIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STICKS_SINGING
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STILETTO
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BASTARD_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_BROAD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CLAYMORE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_CUTLASS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DRUSUS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_DWARVEN_CLAYMORE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FALCHION
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_FLAMBERGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GIANT_KIN_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_GREAT_SCIMITAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_HOOK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KATANA_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHANDAR_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_KHOPESH
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_LONG
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MANDIBLE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_MARINERS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIERCER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_PIXIE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_RAPIER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SABRE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SCIMITAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_SHORT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TALWAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORD_WAKIZASHI
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SWORDLET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TALID
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TORTOISE_BLADES
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_ONE_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TRIDENT_TWO_HANDED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_HELD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TROMBASH_THROWN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: TUFENK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WARHAMMER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_CHAIN
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WHIP_MASTERS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WRIST_RAZOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: ZAGHNAL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BANDED_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRIGANDINE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BACK_AND_BREAST
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BASINET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HAUBERK
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LAMELLAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CORD_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CAP
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CLOSED_FACE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_COIF
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GREAT_HELM
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_HELM
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: OPEN_FACED
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: IMPROVED_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LAMELLAR_SHIRT
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_SEGMENTA
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MAIL_AND_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: METAL_LAMELLAR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BUCKLER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_SMALL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_MEDIUM
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_LARGE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: THREE_QUARTER_PLATE
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SCALE_MAIL_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: RING_MAIL_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PLATE_MAIL_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HIDE_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LEATHER_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FIELD_PLATE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: PADDED_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: BRONZE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAINMAIL_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: CHAIN_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: FULL_PLATE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: GALLIC_SHIELD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HALF_PLATE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SHIELD
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: HOPLITE_SILVER_ARMOR
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_BOOTS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_GAUNTLETS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LIGHT_SCALE_LEGGINGS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LORICA_HAMATA_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SHIELD_BODY_2
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: SPLINT_MAIL_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STUDDED_LEATHER_HELMET
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: WOOD_BONE_ARMS
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: MEAL
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: LOST_DIVINITIES
+[18:25:53] [ERROR] [ItemDataManager] No JSON data found for item type: STICK
+[18:25:53] [ItemDataManager] Loaded 130 item templates.
+[18:25:53] [EncounterManager] Loaded 2 encounters.
+[18:25:53] [ItemDataManager] Live Reloading weapons.json from source.
+[18:25:53] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: BARD_S_FRIEND
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: DRAGON_S_PAW
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_FOOTMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: STAFF_HAMANU_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: SWORD_MARINER_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: WHIP_MASTER_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_FOOTMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: FLAIL_HORSEMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_FOOTMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: GLADIATOR_S_FRIEND_HORSEMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: KNIFE_WIDOW_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_FOOTMAN_S_WHISTLING
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: MACE_HORSEMAN_S_WHISTLING
+[18:25:53] [ERROR] [ItemDataManager] Skipping unknown weapon type in JSON: PICK_HORSEMAN_S
+[18:25:53] [ItemDataManager] Loaded 249 new weapons.
+[18:25:53] [ItemDataManager] Live Reloading armor.json from source.
+[18:25:53] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:25:53] [ItemDataManager] Loaded 117 new armor items.
+[18:25:53] [Tarmin2] Loading SpawnTableData...
+[18:25:53] [Tarmin2] SpawnTableData loaded.
+[18:25:53] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:25:53] [LoadingScreen] Starting asset loading...
+[18:26:11] [LoadingScreen] Asset loading and video complete!
+[18:26:14] [MainMenuScreen] Starting game in mode: ADVANCED
+[18:26:15] [WorldManager] World Initialized with Seed: 5320476841208508332
+[18:26:15] [CookingManager] Randomized gib effects for 48 monsters.
+[18:26:15] [CookingManager] Initialized 9 cooking recipes.
+[18:26:15] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:26:15] [DiscoveryManager] Initializing new game discovery state...
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> LEVITATION
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_BLUE -> POISON
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_PINK -> GAIN_STRENGTH
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_GOLD -> SLEEP
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_GREEN -> SUPER_VISION
+[18:26:15] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> HEALING
+[18:26:15] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 7900495130204234901
+[18:26:15] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[18:26:15] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[18:26:15] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[18:26:15] [MazeChunkGenerator] Reachability: 763 tiles reachable from (1, 1)
+[18:26:15] [UnlockManager] Profile loaded successfully.
+[18:26:15] [Monster] Spawned KOBOLD with Doom Scaling: x1.17 HP: 15
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: TROMBASH_HELD
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: CHAIN_HELMET
+[18:26:15] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.17 HP: 18
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHOPESH
+[18:26:15] [Monster] Spawned SKELETON with Doom Scaling: x1.17 HP: 30
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHOPESH
+[18:26:15] [Monster] Spawned SKELETON with Doom Scaling: x1.17 HP: 30
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: LANCE_MEDIUM_HORSE1
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for LANCE_MEDIUM_HORSE1
+[18:26:15] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[18:26:15] [Monster] Spawned TROGLODYTE with Doom Scaling: x1.17 HP: 23
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SPEAR_TWO_HANDED3
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HIDE_ARMOR
+[18:26:15] [Monster] Spawned GIANT_SCORPION with Doom Scaling: x1.17 HP: 30
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: LANCE_MEDIUM_HORSE1
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for LANCE_MEDIUM_HORSE1
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_HELMET
+[18:26:15] [Monster] Spawned GIANT_SCORPION with Doom Scaling: x1.17 HP: 30
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_ONE_HANDED
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SPLINT_MAIL_LEGGINGS
+[18:26:15] [Monster] Spawned GIANT_SCORPION with Doom Scaling: x1.17 HP: 30
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHANDAR_TWO_HANDED
+[18:26:15] [Monster] Spawned GOBLIN with Doom Scaling: x1.17 HP: 17
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: POLEARM_TETSUBO
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for POLEARM_TETSUBO
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SPLINT_MAIL_HELMET
+[18:26:15] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.17 HP: 18
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: ARROW_FORGET
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for ARROW_FORGET
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: LEATHER_HELM
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[18:26:15] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:15] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: GAIN_STRENGTH
+[18:26:15] [ItemDataManager [DEBUG]] Setting trueEffect (GAIN_STRENGTH) and identified (false) on item.
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: CHAIN_MAIL
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[18:26:15] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:26:15] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: LASSO
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for LASSO
+[18:26:15] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: POTION_GOLD
+[18:26:15] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:15] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: SLEEP
+[18:26:15] [ItemDataManager [DEBUG]] Setting trueEffect (SLEEP) and identified (false) on item.
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: HIDE_HELMET
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: DAGGER_CLIMBING
+[18:26:15] [ERROR] [Item] Could not find region 'bow' in items.atlas for DAGGER_CLIMBING
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: SCROLL
+[18:26:15] [ItemDataManager] Converted generic SCROLL to SCROLL_G
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: COINS
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: ROTTEN_ROPE
+[18:26:15] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: TWISTED_ROOT
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: BAT_GUANO
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: BROKEN_GLASS
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: MUD
+[18:26:15] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 18,27
+[18:26:15] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 16,18
+[18:26:15] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[18:26:15] [Monster] Spawned AGIS with Doom Scaling: x1.17 HP: 25
+[18:26:15] [MazeChunkGenerator] DEBUG: Spawned AGIS at (23, 1)
+[18:26:15] [Monster] Spawned DEMON_SLIME with Doom Scaling: x1.17 HP: 105
+[18:26:15] [MazeChunkGenerator] DEBUG: Spawned DEMON_SLIME at (27, 19)
+[18:26:15] [Monster] Spawned BRINGER_OF_DEATH with Doom Scaling: x1.17 HP: 164
+[18:26:15] [MazeChunkGenerator] DEBUG: Spawned BRINGER_OF_DEATH at (34, 17)
+[18:26:15] [Monster] Spawned FALL_ANGEL with Doom Scaling: x1.17 HP: 129
+[18:26:15] [MazeChunkGenerator] DEBUG: Spawned FALL_ANGEL at (20, 14)
+[18:26:15] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:26:15] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[18:26:15] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Hide Helmet (ARMOR) | Val: 25 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Lasso (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Dagger, Climbing (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Chain mail (ARMOR) | Val: 75 | Rarity: Common/Tan
+[18:26:15] [LOOT_SPAWN] Lvl 1 | Item: Gold Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:15] [Player [DEBUG]] Constructor: Creating starting items...
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:26:15] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:26:15] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:26:15] [Player [DEBUG]] Constructor: Finished creating items.
+[18:26:16] [GoreManager] setTextures called. Drops: 4, Smears: 3
+[18:26:16] [FirstPersonRenderer [RETRO]] Wall render summary — wallColumns=1920 skyColumns=0 wallColor=fea05aff fog=true indoors=true fps=121
+[18:26:16] [EntityRenderer [RETRO]] Frame summary — monsters=0 items/ladders=0 scenery=0 missingSpriteFallbacks=0 fps=121
+[18:26:17] [DebugManager [RETRO]] Render mode transition started: RETRO ? MODERN
+[18:26:17] [FirstPersonRenderer [RETRO]] Wall render summary — wallColumns=1920 skyColumns=0 wallColor=fea05aff fog=true indoors=true fps=212
+[18:26:17] [EntityRenderer [RETRO]] Frame summary — monsters=0 items/ladders=0 scenery=0 missingSpriteFallbacks=0 fps=212
+[18:26:17] [DebugManager [RETRO]] Render mode switched at transition midpoint: RETRO ? MODERN
+[18:26:17] [DebugManager [RETRO]] MODERN mode is now active. All entities will render via texture atlases.
+[18:26:18] [DebugManager [RETRO]] Render mode transition complete. Active mode: MODERN
+[18:26:20] [AI] DEMON_SLIME heard player! State -> HUNTING
+[18:26:20] [AI] FALL_ANGEL heard player! State -> HUNTING
+[18:26:20] [AI] BRINGER_OF_DEATH heard player! State -> HUNTING
+[18:26:26] [AI] GOBLIN heard player! State -> HUNTING
+[18:26:31] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 42 | Delta: -233 (DEADLY)
+[18:26:31] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:31] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 17
+[18:26:31] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:31] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:31] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 17
+[18:26:31] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:31] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:31] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:26:31] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 36 | Delta: -239 (DEADLY)
+[18:26:31] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:31] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 17
+[18:26:32] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 39 | Delta: -236 (DEADLY)
+[18:26:32] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:32] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 17
+[18:26:32] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 42 | Delta: -233 (DEADLY)
+[18:26:32] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:32] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:26:33] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 36 | Delta: -239 (DEADLY)
+[18:26:33] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:33] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 17
+[18:26:33] [GoreManager] spawnBloodSpray called at (19.5,0.5,21.5) with intensity 1
+[18:26:33] [GoreManager] Active particles count: 10
+[18:26:33] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 39 | Delta: -236 (DEADLY)
+[18:26:33] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:33] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 17
+[18:26:33] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 42 | Delta: -233 (DEADLY)
+[18:26:33] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:33] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 17
+[18:26:33] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:33] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:33] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 17
+[18:26:33] [GoreManager] spawnBloodSpray called at (19.5,0.5,21.5) with intensity 1
+[18:26:33] [GoreManager] Active particles count: 13
+[18:26:33] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:33] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:33] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:26:33] [GoreManager] spawnBloodSpray called at (19.5,0.5,21.5) with intensity 1
+[18:26:33] [GoreManager] Active particles count: 16
+[18:26:34] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 36 | Delta: -239 (DEADLY)
+[18:26:34] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:34] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 17
+[18:26:34] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[18:26:34] [COMBAT_START] Vs GOBLIN (MCR: 85) | Player PPS: 42 | Delta: -43 (DEADLY)
+[18:26:34] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:34] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:26:34] [GoreManager] spawnBloodSpray called at (18.5,0.5,22.5) with intensity 4
+[18:26:34] [GoreManager] Active particles count: 42
+[18:26:35] [COMBAT_START] Vs GOBLIN (MCR: 85) | Player PPS: 45 | Delta: -40 (DEADLY)
+[18:26:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:35] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[18:26:35] [GoreManager] spawnBloodSpray called at (18.5,0.5,22.5) with intensity 4
+[18:26:35] [GoreManager] Active particles count: 40
+[18:26:35] [Player] Taken Damage: 2 (Adj. Amount: 4)
+[18:26:35] [COMBAT_START] Vs GOBLIN (MCR: 85) | Player PPS: 42 | Delta: -43 (DEADLY)
+[18:26:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:35] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:26:35] [GoreManager] spawnBloodSpray called at (18.5,0.5,22.5) with intensity 1
+[18:26:35] [GoreManager] Active particles count: 50
+[18:26:35] [COMBAT_START] Vs GOBLIN (MCR: 85) | Player PPS: 39 | Delta: -46 (DEADLY)
+[18:26:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:35] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[18:26:35] [GoreManager] spawnBloodSpray called at (18.5,0.5,22.5) with intensity 4
+[18:26:35] [GoreManager] Active particles count: 54
+[18:26:35] [Player] Taken Damage: 8 (Adj. Amount: 16)
+[18:26:35] [COMBAT_START] Vs GOBLIN (MCR: 85) | Player PPS: 45 | Delta: -40 (DEADLY)
+[18:26:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:35] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:26:35] [GoreManager] spawnBloodSpray called at (18.5,0.5,22.5) with intensity 8
+[18:26:35] [GoreManager] Active particles count: 134
+[18:26:35] [CombatManager] You have defeated GOBLIN
+[18:26:35] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[18:26:35] [LOOT_DROP] Dropped Goblin Flesh
+[18:26:35] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:26:35] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:26:35] [CombatManager] Combat ended.
+[18:26:38] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[18:26:38] [Player] Taken Damage: 8 (Adj. Amount: 17)
+[18:26:38] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:38] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 17
+[18:26:39] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:39] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 17
+[18:26:39] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 42 | Delta: -233 (DEADLY)
+[18:26:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:39] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:26:39] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 39 | Delta: -236 (DEADLY)
+[18:26:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:39] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 17
+[18:26:39] [COMBAT_START] Vs FALL_ANGEL (MCR: 275) | Player PPS: 33 | Delta: -242 (DEADLY)
+[18:26:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:39] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 17
+[18:26:39] [Player] Taken Damage: 4 (Adj. Amount: 9)
+[18:26:39] [Player] Taken Damage: 5 (Adj. Amount: 11)
+[18:26:39] [COMBAT_END] Result: DEFEAT | Turns: 1 | Total Dmg Taken: 0
+[18:26:40] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:26:40] [DiscoveryManager] Saved discovery state.
+[18:26:40] [DoomManager] Saved Doom State.
+[18:26:40] [DoomManager] Death Count increased to: 8
+[18:26:40] [DOOM_UPDATE] Deaths: 8 | Bridge: 16.0%
+[18:26:40] [GameOverScreen] Attempting to clear world saves...
+[18:26:40] [GameOverScreen] Found 2 files to delete...
+[18:26:40] [GameOverScreen]   > DELETED: chunk_L1_0_0.json
+[18:26:40] [GameOverScreen]   > DELETED: discovery_state.json
+[18:26:40] [GameOverScreen] Clear saves complete. Deleted 2/2 files.
+[18:26:40] [Lifecycle] Post-Runnable: Disposing old GameScreen.
+[18:26:42] [MainMenuScreen] Starting game in mode: ADVANCED
+[18:26:43] [WorldManager] World Initialized with Seed: -2154829667645742470
+[18:26:43] [CookingManager] Randomized gib effects for 48 monsters.
+[18:26:43] [CookingManager] Initialized 9 cooking recipes.
+[18:26:43] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:26:43] [DiscoveryManager] Initializing new game discovery state...
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> SUPER_VISION
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_GREEN -> BLINDNESS
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> RESTORE_ENERGY
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_BLUE -> CONFUSION
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_PINK -> HEALING
+[18:26:43] [DiscoveryManager] Mapped Potion: POTION_GOLD -> POISON
+[18:26:43] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 138747674925700871
+[18:26:43] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[18:26:43] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[18:26:43] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[18:26:43] [MazeChunkGenerator] Reachability: 765 tiles reachable from (1, 1)
+[18:26:43] [Monster] Spawned SPIDER with Doom Scaling: x1.20 HP: 21
+[18:26:43] [Monster] Spawned GIANT_SCORPION with Doom Scaling: x1.20 HP: 31
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: DART
+[18:26:43] [Monster] Spawned SKELETON with Doom Scaling: x1.20 HP: 31
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SPIKE_HEAD
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: LIGHT_SCALE_GAUNTLETS
+[18:26:43] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[18:26:43] [Monster] Spawned TROGLODYTE with Doom Scaling: x1.20 HP: 24
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: POLEARM_GLAIVE_GUISARME4
+[18:26:43] [Monster] Spawned SPIDER with Doom Scaling: x1.20 HP: 21
+[18:26:43] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.20 HP: 19
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: DAGGER_BONE
+[18:26:43] [ERROR] [Item] Could not find region 'bow' in items.atlas for DAGGER_BONE
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: CLOAK
+[18:26:43] [Monster] Spawned SKELETON with Doom Scaling: x1.20 HP: 31
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SPEAR_HEAVY_TWO_HANDED
+[18:26:43] [Monster] Spawned SKELETON with Doom Scaling: x1.20 HP: 31
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: MORNING_STAR_DOUBLE_BALL
+[18:26:43] [ERROR] [Item] Could not find region 'bow' in items.atlas for MORNING_STAR_DOUBLE_BALL
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: AMULET_OF_DIVINE_FAVOR
+[18:26:43] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.20 HP: 19
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SWORD_BASTARD_TWO_HANDED
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: FULL_PLATE_LEGGINGS
+[18:26:43] [Monster] Spawned GOBLIN with Doom Scaling: x1.20 HP: 18
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SWORD_PIXIE
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_LEGGINGS
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: CROSSBOW_HEAVY
+[18:26:43] [ERROR] [Item] Could not find region 'bow' in items.atlas for CROSSBOW_HEAVY
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: POLEARM_HALBERD
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: POLEARM_BEC_DE_CORBIN
+[18:26:43] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: MACA
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[18:26:43] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:43] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: HEALING
+[18:26:43] [ItemDataManager [DEBUG]] Setting trueEffect (HEALING) and identified (false) on item.
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: ARROW_STONE_FLIGHT
+[18:26:43] [ERROR] [Item] Could not find region 'bow' in items.atlas for ARROW_STONE_FLIGHT
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SPIKE_KNEE
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: POTION_SWIRLY
+[18:26:43] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:43] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: SUPER_VISION
+[18:26:43] [ItemDataManager [DEBUG]] Setting trueEffect (SUPER_VISION) and identified (false) on item.
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:26:43] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:26:43] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:43] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: ROTTEN_ROPE
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: ROTTEN_ROPE
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: BAT_WING
+[18:26:43] [ItemDataManager [DEBUG]] createItem called for: LOOSE_BRICK
+[18:26:43] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 19,11
+[18:26:43] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[18:26:43] [Monster] Spawned AGIS with Doom Scaling: x1.20 HP: 26
+[18:26:43] [MazeChunkGenerator] DEBUG: Spawned AGIS at (20, 8)
+[18:26:43] [Monster] Spawned DEMON_SLIME with Doom Scaling: x1.20 HP: 108
+[18:26:43] [MazeChunkGenerator] DEBUG: Spawned DEMON_SLIME at (9, 14)
+[18:26:43] [Monster] Spawned BRINGER_OF_DEATH with Doom Scaling: x1.20 HP: 168
+[18:26:43] [MazeChunkGenerator] DEBUG: Spawned BRINGER_OF_DEATH at (33, 26)
+[18:26:43] [Monster] Spawned FALL_ANGEL with Doom Scaling: x1.20 HP: 132
+[18:26:43] [MazeChunkGenerator] DEBUG: Spawned FALL_ANGEL at (11, 17)
+[18:26:43] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:26:43] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[18:26:43] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Crossbow, Heavy (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Arrow, Stone Flight (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Spike, Knee (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Swirly Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Polearm, Halberd (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Maca +1 (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:43] [LOOT_SPAWN] Lvl 1 | Item: Polearm, Bec De Corbin (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:44] [Player [DEBUG]] Constructor: Creating starting items...
+[18:26:44] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:26:44] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:26:44] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:26:44] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:26:44] [Player [DEBUG]] Constructor: Finished creating items.
+[18:26:44] [GoreManager] setTextures called. Drops: 4, Smears: 3
+[18:26:44] [AI] GOBLIN saw player! State -> HUNTING
+[18:26:44] [AI] SKELETON heard player! State -> HUNTING
+[18:26:44] [AI] DEMON_SLIME heard player! State -> HUNTING
+[18:26:44] [AI] FALL_ANGEL heard player! State -> HUNTING
+[18:26:47] [COMBAT_ROUND] MONSTER Ranged | Roll: -1 | Dmg: 0 | Target HP: 16
+[18:26:49] [COMBAT_START] Vs GOBLIN (MCR: 86) | Player PPS: 45 | Delta: -41 (DEADLY)
+[18:26:49] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:49] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[18:26:49] [COMBAT_START] Vs GOBLIN (MCR: 86) | Player PPS: 33 | Delta: -53 (DEADLY)
+[18:26:49] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:49] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:26:49] [Player] Taken Damage: 9 (Adj. Amount: 19)
+[18:26:49] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 42 | Delta: -236 (DEADLY)
+[18:26:49] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:49] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 17
+[18:26:49] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 33 | Delta: -245 (DEADLY)
+[18:26:49] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:49] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 17
+[18:26:49] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 36 | Delta: -242 (DEADLY)
+[18:26:49] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:49] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 17
+[18:26:49] [GoreManager] spawnBloodSpray called at (14.5,0.5,20.5) with intensity 1
+[18:26:49] [GoreManager] Active particles count: 10
+[18:26:50] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 33 | Delta: -245 (DEADLY)
+[18:26:50] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:50] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 17
+[18:26:50] [GoreManager] spawnBloodSpray called at (14.5,0.5,20.5) with intensity 1
+[18:26:50] [GoreManager] Active particles count: 17
+[18:26:50] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 42 | Delta: -236 (DEADLY)
+[18:26:50] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:50] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 17
+[18:26:50] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 39 | Delta: -239 (DEADLY)
+[18:26:50] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:50] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:26:50] [GoreManager] spawnBloodSpray called at (14.5,0.5,20.5) with intensity 1
+[18:26:50] [GoreManager] Active particles count: 17
+[18:26:50] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[18:26:50] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 39 | Delta: -239 (DEADLY)
+[18:26:50] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:50] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:26:51] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 36 | Delta: -242 (DEADLY)
+[18:26:51] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:51] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:26:51] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 45 | Delta: -233 (DEADLY)
+[18:26:51] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:51] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 17
+[18:26:52] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 36 | Delta: -242 (DEADLY)
+[18:26:52] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:52] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 17
+[18:26:52] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 42 | Delta: -236 (DEADLY)
+[18:26:52] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:52] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 17
+[18:26:53] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 45 | Delta: -233 (DEADLY)
+[18:26:53] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:53] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 17
+[18:26:53] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 45 | Delta: -233 (DEADLY)
+[18:26:53] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:53] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 17
+[18:26:53] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 45 | Delta: -233 (DEADLY)
+[18:26:53] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:53] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 17
+[18:26:54] [COMBAT_START] Vs FALL_ANGEL (MCR: 278) | Player PPS: 42 | Delta: -236 (DEADLY)
+[18:26:54] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:54] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 17
+[18:26:54] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:26:54] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:54] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[18:26:54] [GoreManager] spawnBloodSpray called at (15.5,0.5,21.5) with intensity 4
+[18:26:54] [GoreManager] Active particles count: 40
+[18:26:54] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 45 | Delta: -32 (DEADLY)
+[18:26:54] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:54] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 12
+[18:26:54] [GoreManager] spawnBloodSpray called at (15.5,0.5,21.5) with intensity 1
+[18:26:54] [GoreManager] Active particles count: 13
+[18:26:54] [Player] Taken Damage: 4 (Adj. Amount: 9)
+[18:26:54] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[18:26:54] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 42 | Delta: -35 (DEADLY)
+[18:26:54] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:54] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 12
+[18:26:54] [GoreManager] spawnBloodSpray called at (15.5,0.5,21.5) with intensity 1
+[18:26:54] [GoreManager] Active particles count: 23
+[18:26:55] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:26:55] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:55] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:26:55] [GoreManager] spawnBloodSpray called at (15.5,0.5,21.5) with intensity 4
+[18:26:55] [GoreManager] Active particles count: 50
+[18:26:55] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:26:55] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:55] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 12
+[18:26:55] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:26:55] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:26:55] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[18:26:55] [Player] Taken Damage: 5 (Adj. Amount: 10)
+[18:26:55] [Player] Taken Damage: 1 (Adj. Amount: 3)
+[18:26:55] [COMBAT_END] Result: DEFEAT | Turns: 1 | Total Dmg Taken: 0
+[18:26:55] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:26:55] [DiscoveryManager] Saved discovery state.
+[18:26:55] [DoomManager] Saved Doom State.
+[18:26:55] [DoomManager] Death Count increased to: 9
+[18:26:55] [DOOM_UPDATE] Deaths: 9 | Bridge: 18.0%
+[18:26:55] [GameOverScreen] Attempting to clear world saves...
+[18:26:55] [GameOverScreen] Found 2 files to delete...
+[18:26:55] [GameOverScreen]   > DELETED: chunk_L1_0_0.json
+[18:26:55] [GameOverScreen]   > DELETED: discovery_state.json
+[18:26:55] [GameOverScreen] Clear saves complete. Deleted 2/2 files.
+[18:26:55] [Lifecycle] Post-Runnable: Disposing old GameScreen.
+[18:26:57] [MainMenuScreen] Starting game in mode: ADVANCED
+[18:26:58] [WorldManager] World Initialized with Seed: 8395377948107460852
+[18:26:58] [CookingManager] Randomized gib effects for 48 monsters.
+[18:26:58] [CookingManager] Initialized 9 cooking recipes.
+[18:26:58] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:26:58] [DiscoveryManager] Initializing new game discovery state...
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_BLUE -> GAIN_STRENGTH
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_GREEN -> SUPER_VISION
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_PINK -> BLINDNESS
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> LEVITATION
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_GOLD -> CONFUSION
+[18:26:58] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> HEALING
+[18:26:58] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 5748300715265433165
+[18:26:58] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[18:26:58] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[18:26:58] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[18:26:58] [MazeChunkGenerator] Reachability: 753 tiles reachable from (1, 1)
+[18:26:58] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.23 HP: 19
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_STONE_TWO_HANDED
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for JAVELIN_STONE_TWO_HANDED
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: FULL_PLATE_GAUNTLETS
+[18:26:58] [Monster] Spawned GIANT_SNAKE with Doom Scaling: x1.23 HP: 26
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: POLEARM_NAGINATA3
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for POLEARM_NAGINATA3
+[18:26:58] [Monster] Spawned KOBOLD with Doom Scaling: x1.23 HP: 15
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SWORD
+[18:26:58] [Monster] Spawned KOBOLD with Doom Scaling: x1.23 HP: 15
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: TRIDENT_TWO_HANDED
+[18:26:58] [Monster] Spawned GOBLIN with Doom Scaling: x1.23 HP: 18
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: LANCE_FLIGHT
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for LANCE_FLIGHT
+[18:26:58] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.23 HP: 19
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: POLEARM_NAGINATA3
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for POLEARM_NAGINATA3
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: WOOD_BONE_HELMET
+[18:26:58] [Monster] Spawned GIANT_SCORPION with Doom Scaling: x1.23 HP: 31
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: NUNCHAKU
+[18:26:58] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.23 HP: 19
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: ARROW_DAIKYU
+[18:26:58] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[18:26:58] [Monster] Spawned TROGLODYTE with Doom Scaling: x1.23 HP: 24
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: PIKE_WEIGHTED
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HALF_PLATE_BOOTS
+[18:26:58] [Monster] Spawned SKELETON with Doom Scaling: x1.23 HP: 31
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SPIKE_KNEE
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: ARROW_GIANT_KIN
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for ARROW_GIANT_KIN
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HARPOON_TWO_HANDED
+[18:26:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for HARPOON_TWO_HANDED
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: FIELD_PLATE_BOOTS
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[18:26:58] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:58] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[18:26:58] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHOPESH
+[18:26:58] [ERROR] [ItemDataManager] No 'variants' defined for item type: HALF_PLATE_ARMS
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:26:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[18:26:58] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:26:58] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[18:26:58] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: HELMET
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:26:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: COINS
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[18:26:58] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[18:26:58] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:26:58] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:26:58] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 10,1
+[18:26:58] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 30,10
+[18:26:58] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[18:26:58] [Monster] Spawned AGIS with Doom Scaling: x1.23 HP: 26
+[18:26:58] [MazeChunkGenerator] DEBUG: Spawned AGIS at (1, 29)
+[18:26:58] [Monster] Spawned DEMON_SLIME with Doom Scaling: x1.23 HP: 110
+[18:26:58] [MazeChunkGenerator] DEBUG: Spawned DEMON_SLIME at (16, 28)
+[18:26:58] [Monster] Spawned BRINGER_OF_DEATH with Doom Scaling: x1.23 HP: 171
+[18:26:58] [MazeChunkGenerator] DEBUG: Spawned BRINGER_OF_DEATH at (27, 8)
+[18:26:58] [Monster] Spawned FALL_ANGEL with Doom Scaling: x1.23 HP: 134
+[18:26:58] [MazeChunkGenerator] DEBUG: Spawned FALL_ANGEL at (23, 1)
+[18:26:58] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:26:58] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[18:26:58] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Field plate boots (ARMOR) | Val: 2000 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Harpoon, Two-Handed (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Arrow, Giant-kin (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Helmet (ARMOR) | Val: 20 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Sword, Khopesh (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:26:58] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[18:26:58] [Player [DEBUG]] Constructor: Creating starting items...
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:26:58] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:26:58] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:26:58] [Player [DEBUG]] Constructor: Finished creating items.
+[18:26:58] [GoreManager] setTextures called. Drops: 4, Smears: 3
+[18:27:00] [AI] DEMON_SLIME heard player! State -> HUNTING
+[18:27:01] [AI] GIANT_SCORPION heard player! State -> HUNTING
+[18:27:02] [AI] BRINGER_OF_DEATH heard player! State -> HUNTING
+[18:27:03] [Player [DEBUG]] Move blocked by WALL MASK from (16,18) facing WEST
+[18:27:03] [AI] KOBOLD heard player! State -> HUNTING
+[18:27:10] [Player] Taken Damage: 3 (Adj. Amount: 7)
+[18:27:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:10] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:10] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 13
+[18:27:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:10] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:10] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 13
+[18:27:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:10] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:10] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 13
+[18:27:10] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:10] [GoreManager] Active particles count: 40
+[18:27:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:11] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 13
+[18:27:11] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:11] [GoreManager] Active particles count: 31
+[18:27:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:11] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[18:27:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:11] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 13
+[18:27:11] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:11] [GoreManager] Active particles count: 50
+[18:27:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:11] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 13
+[18:27:11] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:11] [GoreManager] Active particles count: 60
+[18:27:12] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:12] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:12] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 13
+[18:27:12] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:12] [GoreManager] Active particles count: 65
+[18:27:12] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:12] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:12] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 13
+[18:27:12] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:12] [GoreManager] Active particles count: 75
+[18:27:12] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:12] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:12] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[18:27:12] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:12] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:12] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 13
+[18:27:12] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:12] [GoreManager] Active particles count: 41
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 13
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 13
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 13
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 13
+[18:27:13] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:13] [GoreManager] Active particles count: 10
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 13
+[18:27:13] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:13] [GoreManager] Active particles count: 16
+[18:27:13] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:13] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 13
+[18:27:14] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:14] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 13
+[18:27:14] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:14] [GoreManager] Active particles count: 49
+[18:27:14] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:14] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 13
+[18:27:14] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:14] [GoreManager] Active particles count: 59
+[18:27:14] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:14] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 13
+[18:27:14] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:14] [GoreManager] Active particles count: 69
+[18:27:14] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:14] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 13
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 13
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 13
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 13
+[18:27:15] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:15] [GoreManager] Active particles count: 10
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 13
+[18:27:15] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:15] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 13
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 13
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 13
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 13
+[18:27:16] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 1
+[18:27:16] [GoreManager] Active particles count: 10
+[18:27:16] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:16] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 13
+[18:27:17] [COMBAT_START] Vs GIANT_SCORPION (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:17] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:17] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 13
+[18:27:17] [GoreManager] spawnBloodSpray called at (18.5,0.5,21.5) with intensity 4
+[18:27:17] [GoreManager] Active particles count: 43
+[18:27:17] [CombatManager] You have defeated GIANT_SCORPION
+[18:27:17] [ItemDataManager [DEBUG]] createItem called for: GIB_BILE
+[18:27:17] [LOOT_DROP] Dropped Giant scorpion Bile
+[18:27:17] [ItemDataManager [DEBUG]] createItem called for: GIB_BILE
+[18:27:17] [LOOT_DROP] Dropped Giant scorpion Bile
+[18:27:17] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:27:17] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:27:17] [CombatManager] Combat ended.
+[18:27:19] [Player] Attempting pickup at (18, 21). Items before: 20
+[18:27:19] [Player] Items after: 20
+[18:27:19] [ECONOMY] PICKUP: Giant scorpion Bile (Val/Amt: 5)
+[18:27:23] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 45 | Delta: -20 (Hard Fight)
+[18:27:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:23] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 12
+[18:27:23] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 42 | Delta: -23 (Hard Fight)
+[18:27:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:23] [CombatManger] Player Attack: Roll 20 + 1 = 21 vs AC 12
+[18:27:23] [GoreManager] spawnBloodSpray called at (13.5,0.5,20.5) with intensity 4
+[18:27:23] [GoreManager] Active particles count: 40
+[18:27:23] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 39 | Delta: -26 (Hard Fight)
+[18:27:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:23] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:27:23] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 33 | Delta: -32 (DEADLY)
+[18:27:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:23] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 12
+[18:27:23] [GoreManager] spawnBloodSpray called at (13.5,0.5,20.5) with intensity 8
+[18:27:23] [GoreManager] Active particles count: 120
+[18:27:24] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 39 | Delta: -26 (Hard Fight)
+[18:27:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:24] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[18:27:24] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 45 | Delta: -20 (Hard Fight)
+[18:27:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:24] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[18:27:24] [GoreManager] spawnBloodSpray called at (13.5,0.5,20.5) with intensity 4
+[18:27:24] [GoreManager] Active particles count: 43
+[18:27:24] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 33 | Delta: -32 (DEADLY)
+[18:27:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:24] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[18:27:24] [GoreManager] spawnBloodSpray called at (13.5,0.5,20.5) with intensity 8
+[18:27:24] [GoreManager] Active particles count: 94
+[18:27:24] [COMBAT_START] Vs KOBOLD (MCR: 65) | Player PPS: 36 | Delta: -29 (Hard Fight)
+[18:27:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:24] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[18:27:24] [GoreManager] spawnBloodSpray called at (13.5,0.5,20.5) with intensity 8
+[18:27:24] [GoreManager] Active particles count: 174
+[18:27:24] [CombatManager] You have defeated KOBOLD
+[18:27:24] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[18:27:24] [LOOT_DROP] Dropped Kobold Flesh
+[18:27:24] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[18:27:24] [LOOT_DROP] Dropped Kobold Bone
+[18:27:24] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:27:24] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:27:24] [CombatManager] Combat ended.
+[18:27:26] [Player] Attempting pickup at (13, 20). Items before: 22
+[18:27:26] [Player] Items after: 22
+[18:27:26] [ECONOMY] PICKUP: Kobold Flesh (Val/Amt: 1)
+[18:27:35] [AI] GIANT_ANT saw player! State -> HUNTING
+[18:27:35] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[18:27:35] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[18:27:35] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:35] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 12
+[18:27:35] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 4
+[18:27:35] [GoreManager] Active particles count: 40
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[18:27:36] [AI] FALL_ANGEL heard player! State -> HUNTING
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 12
+[18:27:36] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 4
+[18:27:36] [GoreManager] Active particles count: 53
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 12
+[18:27:36] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 1
+[18:27:36] [GoreManager] Active particles count: 55
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 20 + 1 = 21 vs AC 12
+[18:27:36] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 8
+[18:27:36] [GoreManager] Active particles count: 135
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 12
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 12
+[18:27:36] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 1
+[18:27:36] [GoreManager] Active particles count: 107
+[18:27:36] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:36] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 39 | Delta: -51 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 12
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 36 | Delta: -54 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 12
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 12
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[18:27:37] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 4
+[18:27:37] [GoreManager] Active particles count: 44
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 12
+[18:27:37] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 33 | Delta: -57 (DEADLY)
+[18:27:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:37] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[18:27:37] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 4
+[18:27:37] [GoreManager] Active particles count: 77
+[18:27:38] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 45 | Delta: -45 (DEADLY)
+[18:27:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:38] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[18:27:38] [COMBAT_START] Vs GIANT_ANT (MCR: 90) | Player PPS: 42 | Delta: -48 (DEADLY)
+[18:27:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:27:38] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 12
+[18:27:38] [GoreManager] spawnBloodSpray called at (23.5,0.5,15.5) with intensity 4
+[18:27:38] [GoreManager] Active particles count: 73
+[18:27:38] [CombatManager] You have defeated GIANT_ANT
+[18:27:38] [ItemDataManager [DEBUG]] createItem called for: GIB_ORGAN
+[18:27:38] [LOOT_DROP] Dropped Giant ant Organ
+[18:27:38] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:27:38] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:27:38] [CombatManager] Combat ended.
+[18:27:42] [Player] Attempting pickup at (26, 15). Items before: 23
+[18:27:42] [Player] Items after: 23
+[18:27:42] [ECONOMY] PICKUP: Food (Val/Amt: 5)
+[18:27:45] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:27:45] [DiscoveryManager] Saved discovery state.
+[18:27:45] [SkeletonData] Loaded 9 sockets from assets/data/skeleton.json
+[18:27:46] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:27:46] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:27:50] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:27:50] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:27:50] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:27:50] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:27:54] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:27:54] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:27:54] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:27:54] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:28:01] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:28:09] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:28:09] [ECONOMY] RES_GAIN: Food (Item) (Val/Amt: 5)
+[18:28:12] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:28:12] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:28:12] [DiscoveryManager] Saved discovery state.
+[18:28:12] [SkeletonData] Loaded 9 sockets from assets/data/skeleton.json
+[18:28:13] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:28:13] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:28:19] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:28:25] [AI] GOBLIN heard player! State -> HUNTING
+[18:28:26] [Player [DEBUG]] Move blocked by WALL MASK from (32,15) facing EAST
+[18:28:33] [AI] SKELETON saw player! State -> HUNTING
+[18:28:35] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[18:28:35] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 42 | Delta: -35 (DEADLY)
+[18:28:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:35] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[18:28:35] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 33 | Delta: -44 (DEADLY)
+[18:28:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:35] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:28:35] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:35] [GoreManager] Active particles count: 10
+[18:28:35] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 42 | Delta: -35 (DEADLY)
+[18:28:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:35] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:28:35] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:35] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:35] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[18:28:36] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 33 | Delta: -44 (DEADLY)
+[18:28:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:36] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[18:28:36] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:36] [GoreManager] Active particles count: 10
+[18:28:36] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:36] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:28:36] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:36] [GoreManager] Active particles count: 20
+[18:28:36] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[18:28:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:36] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[18:28:36] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:36] [GoreManager] Active particles count: 10
+[18:28:36] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 45 | Delta: -32 (DEADLY)
+[18:28:36] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:36] [CombatManger] Player Attack: Roll 20 + 1 = 21 vs AC 12
+[18:28:36] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 8
+[18:28:36] [GoreManager] Active particles count: 90
+[18:28:37] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:37] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[18:28:37] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 4
+[18:28:37] [GoreManager] Active particles count: 40
+[18:28:37] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 45 | Delta: -32 (DEADLY)
+[18:28:37] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:37] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:28:37] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:37] [GoreManager] Active particles count: 50
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 12
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 45 | Delta: -32 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 12
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 45 | Delta: -32 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 12
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 12
+[18:28:38] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:38] [GoreManager] Active particles count: 10
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 33 | Delta: -44 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 12
+[18:28:38] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 4
+[18:28:38] [GoreManager] Active particles count: 40
+[18:28:38] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 33 | Delta: -44 (DEADLY)
+[18:28:38] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:38] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[18:28:39] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:39] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 12
+[18:28:39] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:39] [GoreManager] Active particles count: 10
+[18:28:39] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 36 | Delta: -41 (DEADLY)
+[18:28:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:39] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[18:28:39] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:39] [GoreManager] Active particles count: 20
+[18:28:39] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[18:28:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:39] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[18:28:39] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 4
+[18:28:39] [GoreManager] Active particles count: 41
+[18:28:39] [COMBAT_START] Vs SKELETON (MCR: 77) | Player PPS: 33 | Delta: -44 (DEADLY)
+[18:28:39] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:28:39] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[18:28:39] [GoreManager] spawnBloodSpray called at (34.5,0.5,34.5) with intensity 1
+[18:28:39] [GoreManager] Active particles count: 51
+[18:28:39] [CombatManager] You have defeated SKELETON
+[18:28:39] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[18:28:39] [LOOT_DROP] Dropped Skeleton Bone
+[18:28:39] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:28:39] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:28:39] [CombatManager] Combat ended.
+[18:28:41] [Player [DEBUG]] Move blocked by WALL MASK from (34,34) facing NORTH
+[18:28:44] [Player] Attempting pickup at (28, 34). Items before: 23
+[18:28:44] [Player] Items after: 23
+[18:28:44] [ECONOMY] PICKUP: Field plate boots (Val/Amt: 2000)
+[18:28:44] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:28:44] [DiscoveryManager] Saved discovery state.
+[18:28:44] [SkeletonData] Loaded 9 sockets from assets/data/skeleton.json
+[18:28:44] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:28:44] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:28:52] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:28:52] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:28:52] [FR_DEBUG] BOOTS Boots=true Helm=false
+[18:28:52] [FragmentResolver]    -> Assigned Socket: feet Z: 35
+[18:29:07] [AI] AGIS heard player! State -> HUNTING
+[18:29:09] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:09] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:09] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:09] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:09] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:09] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:11] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:11] [CombatManger] Player Attack: Roll 20 + 1 = 21 vs AC 17
+[18:29:11] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:11] [GoreManager] Active particles count: 10
+[18:29:11] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:11] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:11] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 17
+[18:29:13] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:13] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 17
+[18:29:13] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:13] [GoreManager] Active particles count: 10
+[18:29:13] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 36 | Delta: -244 (DEADLY)
+[18:29:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:13] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 17
+[18:29:13] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:13] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:29:13] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:13] [GoreManager] Active particles count: 10
+[18:29:13] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:13] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:13] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:14] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:14] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 17
+[18:29:14] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:14] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:14] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:29:14] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:14] [GoreManager] Active particles count: 10
+[18:29:15] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 36 | Delta: -244 (DEADLY)
+[18:29:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:15] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 17
+[18:29:15] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:15] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:15] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 17
+[18:29:16] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:16] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 17
+[18:29:16] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:16] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 17
+[18:29:16] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:16] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 17
+[18:29:16] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:16] [GoreManager] Active particles count: 10
+[18:29:16] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:16] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:16] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 17
+[18:29:17] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:17] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:17] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:17] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:17] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:17] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 17
+[18:29:18] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:18] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:18] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 17
+[18:29:18] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:18] [GoreManager] Active particles count: 10
+[18:29:18] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:18] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:18] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:18] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:18] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:18] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 17
+[18:29:18] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:18] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:18] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 17
+[18:29:18] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:18] [GoreManager] Active particles count: 10
+[18:29:19] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:19] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:19] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:29:19] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:19] [GoreManager] Active particles count: 10
+[18:29:19] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:19] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:19] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 17
+[18:29:21] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 36 | Delta: -244 (DEADLY)
+[18:29:21] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:21] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 17
+[18:29:21] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 36 | Delta: -244 (DEADLY)
+[18:29:21] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:21] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 17
+[18:29:21] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:21] [GoreManager] Active particles count: 10
+[18:29:21] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:21] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:21] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 17
+[18:29:21] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:21] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:21] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 17
+[18:29:22] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:22] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:22] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:29:22] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 42 | Delta: -238 (DEADLY)
+[18:29:22] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:22] [CombatManger] Player Attack: Roll 1 + 1 = 2 vs AC 17
+[18:29:22] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:22] [GoreManager] Active particles count: 10
+[18:29:22] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:22] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:22] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:29:22] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:22] [GoreManager] Active particles count: 11
+[18:29:22] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:22] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:22] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 17
+[18:29:22] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:22] [GoreManager] Active particles count: 21
+[18:29:23] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:23] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 17
+[18:29:23] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:23] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 17
+[18:29:23] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:23] [CombatManger] Player Attack: Roll 16 + 1 = 17 vs AC 17
+[18:29:23] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:23] [GoreManager] Active particles count: 10
+[18:29:23] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 36 | Delta: -244 (DEADLY)
+[18:29:23] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:23] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 17
+[18:29:23] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:23] [GoreManager] Active particles count: 20
+[18:29:24] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:24] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 17
+[18:29:24] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 33 | Delta: -247 (DEADLY)
+[18:29:24] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:24] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 17
+[18:29:24] [GoreManager] spawnBloodSpray called at (6.5,0.5,34.5) with intensity 1
+[18:29:24] [GoreManager] Active particles count: 10
+[18:29:25] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:25] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:25] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 17
+[18:29:25] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:25] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:25] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 17
+[18:29:25] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 39 | Delta: -241 (DEADLY)
+[18:29:25] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:25] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 17
+[18:29:25] [COMBAT_START] Vs FALL_ANGEL (MCR: 280) | Player PPS: 45 | Delta: -235 (DEADLY)
+[18:29:25] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:29:25] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 17
+[18:29:25] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:29:26] [Player] Taken Damage: 7 (Adj. Amount: 14)
+[18:29:26] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 7 | Target HP: 3
+[18:29:26] [COMBAT_FLOW] State -> PLAYER_MENU (Turn End)
+[18:29:28] [Player] Taken Damage: 10 (Adj. Amount: 20)
+[18:29:28] [COMBAT_ROUND] MONSTER Melee | Roll: -1 | Dmg: 10 | Target HP: -7
+[18:29:28] [COMBAT_END] Result: DEFEAT | Turns: 1 | Total Dmg Taken: 17
+[18:29:28] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:29:28] [DiscoveryManager] Saved discovery state.
+[18:29:28] [DoomManager] Saved Doom State.
+[18:29:28] [DoomManager] Death Count increased to: 10
+[18:29:28] [DOOM_UPDATE] Deaths: 10 | Bridge: 20.0%
+[18:29:28] [GameOverScreen] Attempting to clear world saves...
+[18:29:28] [GameOverScreen] Found 2 files to delete...
+[18:29:28] [GameOverScreen]   > DELETED: chunk_L1_0_0.json
+[18:29:28] [GameOverScreen]   > DELETED: discovery_state.json
+[18:29:28] [GameOverScreen] Clear saves complete. Deleted 2/2 files.
+[18:29:28] [Lifecycle] Post-Runnable: Disposing old GameScreen.
+[18:29:30] [MainMenuScreen] Starting game in mode: ADVANCED
+[18:29:31] [WorldManager] World Initialized with Seed: 6152970031317842067
+[18:29:31] [CookingManager] Randomized gib effects for 48 monsters.
+[18:29:31] [CookingManager] Initialized 9 cooking recipes.
+[18:29:31] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:29:31] [DiscoveryManager] Initializing new game discovery state...
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_GREEN -> LEVITATION
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_PINK -> BERZERK
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_GOLD -> HEALING
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> POISON
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> CONFUSION
+[18:29:31] [DiscoveryManager] Mapped Potion: POTION_BLUE -> BLINDNESS
+[18:29:31] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: -2165657461981389234
+[18:29:31] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[18:29:31] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[18:29:31] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[18:29:31] [MazeChunkGenerator] Reachability: 734 tiles reachable from (1, 1)
+[18:29:31] [Monster] Spawned GIANT_SNAKE with Doom Scaling: x1.25 HP: 27
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: IUAK_SNOW_BLADE
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_BOOTS
+[18:29:31] [Monster] Spawned GIANT_SNAKE with Doom Scaling: x1.25 HP: 27
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: ARROW_GIANT_KIN
+[18:29:31] [ERROR] [Item] Could not find region 'bow' in items.atlas for ARROW_GIANT_KIN
+[18:29:31] [Monster] Spawned GOBLIN with Doom Scaling: x1.25 HP: 18
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: KNIFE
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_ARMOR
+[18:29:31] [Monster] Spawned SPIDER with Doom Scaling: x1.25 HP: 22
+[18:29:31] [Monster] Spawned SKELETON with Doom Scaling: x1.25 HP: 32
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: WHIP
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: FIELD_PLATE_HELMET
+[18:29:31] [Monster] Spawned GIANT_SNAKE with Doom Scaling: x1.25 HP: 27
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: SWORD_DWARVEN_CLAYMORE
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: HALF_PLATE_GAUNTLETS
+[18:29:31] [Monster] Spawned GIANT_ANT with Doom Scaling: x1.25 HP: 20
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: ALHULAK
+[18:29:31] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[18:29:31] [Monster] Spawned TROGLODYTE with Doom Scaling: x1.25 HP: 25
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHANDAR_TWO_HANDED
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: LEATHER_LEGGINGS
+[18:29:31] [Monster] Spawned GIANT_SNAKE with Doom Scaling: x1.25 HP: 27
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHOPESH
+[18:29:31] [Monster] Spawned SPIDER with Doom Scaling: x1.25 HP: 22
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: POLEARM_AWL_PIKE3
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[18:29:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: PADDED_HELMET
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: CORD_MAIL
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[18:29:31] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:29:31] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: MACHETE
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: COINS
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: SCROLL
+[18:29:31] [ItemDataManager] Converted generic SCROLL to SCROLL_G
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: BAT_GUANO
+[18:29:31] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:29:31] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: CHARRED_WOOD
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: LEAVES
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: LOOSE_BRICK
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: LOOSE_BRICK
+[18:29:31] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 20,4
+[18:29:31] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 22,34
+[18:29:31] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (16, 19)
+[18:29:31] [Monster] Spawned AGIS with Doom Scaling: x1.25 HP: 27
+[18:29:31] [MazeChunkGenerator] DEBUG: Spawned AGIS at (1, 30)
+[18:29:31] [Monster] Spawned DEMON_SLIME with Doom Scaling: x1.25 HP: 112
+[18:29:31] [MazeChunkGenerator] DEBUG: Spawned DEMON_SLIME at (29, 21)
+[18:29:31] [Monster] Spawned BRINGER_OF_DEATH with Doom Scaling: x1.25 HP: 175
+[18:29:31] [MazeChunkGenerator] DEBUG: Spawned BRINGER_OF_DEATH at (13, 1)
+[18:29:31] [Monster] Spawned FALL_ANGEL with Doom Scaling: x1.25 HP: 137
+[18:29:31] [MazeChunkGenerator] DEBUG: Spawned FALL_ANGEL at (19, 25)
+[18:29:31] [WorldManager] Saved chunk state to saves/world/chunk_L1_0_0.json
+[18:29:31] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[18:29:31] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Machete (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Cord mail (ARMOR) | Val: 15 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Iron Polearm, Awl Pike3 (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:29:31] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:29:31] [Player [DEBUG]] Constructor: Creating starting items...
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:29:31] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:29:31] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:29:31] [Player [DEBUG]] Constructor: Finished creating items.
+[18:29:31] [GoreManager] setTextures called. Drops: 4, Smears: 3

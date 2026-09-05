@@ -1,0 +1,30 @@
+{
+  "id": "troll",
+  "torsoModel": "models/creatures/torsos/torso_hulk.g3db",
+  "attachmentPoints": [
+    { "socket": "HEAD",  "bone": "socket_head",  "scale": 1.0,  "optional": false },
+    { "socket": "ARM_L", "bone": "socket_arm_l", "scale": 0.95, "optional": false },
+    { "socket": "ARM_R", "bone": "socket_arm_r", "scale": 0.95, "optional": false },
+    { "socket": "LEG_L", "bone": "socket_leg_l", "scale": 1.0,  "optional": false },
+    { "socket": "LEG_R", "bone": "socket_leg_r", "scale": 1.0,  "optional": false },
+    { "socket": "TAIL",  "bone": "socket_tail",  "scale": 0.8,  "optional": true  }
+  ],
+  "partWeights": {
+    "HEAD":  ["head_horned:60", "head_tusked:40"],
+    "ARM_L": ["arm_claw_heavy:55", "arm_club:30", "arm_tentacle:15"],
+    "ARM_R": ["arm_claw_heavy:55", "arm_club:30", "arm_tentacle:15"],
+    "LEG_L": ["leg_hoof:50", "leg_plantigrade:50"],
+    "LEG_R": ["leg_hoof:50", "leg_plantigrade:50"],
+    "TAIL":  ["tail_spike:70", "tail_barbed:30"]
+  },
+  "biomeModifiers": {
+    "wet": {
+      "ARM_L": ["arm_tentacle:80", "arm_claw_heavy:20"],
+      "ARM_R": ["arm_tentacle:80", "arm_claw_heavy:20"]
+    },
+    "cold": {
+      "HEAD":  ["head_horned:80", "head_tusked:20"],
+      "TAIL":  ["tail_barbed:100"]
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "parts": [
+    {
+      "id": "torso_deer",
+      "model": "models/creatures/deer/torso_deer.g3db",
+      "socket": "TORSO",
+      "unitScale": 0.01
+    },
+    {
+      "id": "head_deer",
+      "model": "models/creatures/deer/head_deer.g3db",
+      "socket": "HEAD",
+      "unitScale": 0.01
+    },
+    {
+      "id": "arm_deer_front_L",
+      "model": "models/creatures/deer/arm_deer_front_L.g3db",
+      "socket": "ARM_L",
+      "unitScale": 0.01
+    },
+    {
+      "id": "arm_deer_front_R",
+      "model": "models/creatures/deer/arm_deer_front_R.g3db",
+      "socket": "ARM_R",
+      "unitScale": 0.01
+    },
+    {
+      "id": "leg_deer_hind_L",
+      "model": "models/creatures/deer/leg_deer_hind_L.g3db",
+      "socket": "LEG_L",
+      "unitScale": 0.01
+    },
+    {
+      "id": "leg_deer_hind_R",
+      "model": "models/creatures/deer/leg_deer_hind_R.g3db",
+      "socket": "LEG_R",
+      "unitScale": 0.01
+    },
+    {
+      "id": "tail_deer",
+      "model": "models/creatures/deer/tail_deer.g3db",
+      "socket": "TAIL",
+      "unitScale": 0.01
+    },
+    { "id": "torso_chicken",        "model": "models/creatures/chicken/torso_chicken.g3db",        "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_chicken",         "model": "models/creatures/chicken/head_chicken.g3db",         "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_chicken_front_L",  "model": "models/creatures/chicken/arm_chicken_front_L.g3db",  "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_chicken_front_R",  "model": "models/creatures/chicken/arm_chicken_front_R.g3db",  "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_chicken_hind_L",   "model": "models/creatures/chicken/leg_chicken_hind_L.g3db",   "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_chicken_hind_R",   "model": "models/creatures/chicken/leg_chicken_hind_R.g3db",   "socket": "LEG_R", "unitScale": 0.01 },
+    { "id": "torso_dog",            "model": "models/creatures/dog/torso_dog.g3db",                "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_dog",             "model": "models/creatures/dog/head_dog.g3db",                 "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_dog_front_L",      "model": "models/creatures/dog/arm_dog_front_L.g3db",          "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_dog_front_R",      "model": "models/creatures/dog/arm_dog_front_R.g3db",          "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_dog_hind_L",       "model": "models/creatures/dog/leg_dog_hind_L.g3db",           "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_dog_hind_R",       "model": "models/creatures/dog/leg_dog_hind_R.g3db",           "socket": "LEG_R", "unitScale": 0.01 },
+    { "id": "torso_horse",          "model": "models/creatures/horse/torso_horse.g3db",            "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_horse",           "model": "models/creatures/horse/head_horse.g3db",             "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_horse_front_L",    "model": "models/creatures/horse/arm_horse_front_L.g3db",      "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_horse_front_R",    "model": "models/creatures/horse/arm_horse_front_R.g3db",      "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_horse_hind_L",     "model": "models/creatures/horse/leg_horse_hind_L.g3db",       "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_horse_hind_R",     "model": "models/creatures/horse/leg_horse_hind_R.g3db",       "socket": "LEG_R", "unitScale": 0.01 },
+    { "id": "torso_kitty",          "model": "models/creatures/kitty/torso_kitty.g3db",            "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_kitty",           "model": "models/creatures/kitty/head_kitty.g3db",             "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_kitty_front_L",    "model": "models/creatures/kitty/arm_kitty_front_L.g3db",      "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_kitty_front_R",    "model": "models/creatures/kitty/arm_kitty_front_R.g3db",      "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_kitty_hind_L",     "model": "models/creatures/kitty/leg_kitty_hind_L.g3db",       "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_kitty_hind_R",     "model": "models/creatures/kitty/leg_kitty_hind_R.g3db",       "socket": "LEG_R", "unitScale": 0.01 },
+    { "id": "torso_pinguin",        "model": "models/creatures/pinguin/torso_pinguin.g3db",        "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_pinguin",         "model": "models/creatures/pinguin/head_pinguin.g3db",         "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_pinguin_front_L",  "model": "models/creatures/pinguin/arm_pinguin_front_L.g3db",  "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_pinguin_front_R",  "model": "models/creatures/pinguin/arm_pinguin_front_R.g3db",  "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_pinguin_hind_L",   "model": "models/creatures/pinguin/leg_pinguin_hind_L.g3db",   "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_pinguin_hind_R",   "model": "models/creatures/pinguin/leg_pinguin_hind_R.g3db",   "socket": "LEG_R", "unitScale": 0.01 },
+    { "id": "torso_tiger",        "model": "models/creatures/tiger/torso_tiger.g3db",          "socket": "TORSO", "unitScale": 0.01 },
+    { "id": "head_tiger",         "model": "models/creatures/tiger/head_tiger.g3db",           "socket": "HEAD",  "unitScale": 0.01 },
+    { "id": "arm_tiger_front_L",  "model": "models/creatures/tiger/arm_tiger_front_L.g3db",    "socket": "ARM_L", "unitScale": 0.01 },
+    { "id": "arm_tiger_front_R",  "model": "models/creatures/tiger/arm_tiger_front_R.g3db",    "socket": "ARM_R", "unitScale": 0.01 },
+    { "id": "leg_tiger_hind_L",   "model": "models/creatures/tiger/leg_tiger_hind_L.g3db",     "socket": "LEG_L", "unitScale": 0.01 },
+    { "id": "leg_tiger_hind_R",   "model": "models/creatures/tiger/leg_tiger_hind_R.g3db",     "socket": "LEG_R", "unitScale": 0.01 }
+  ]
+}

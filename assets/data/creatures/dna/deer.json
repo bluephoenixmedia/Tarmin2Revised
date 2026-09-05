@@ -1,0 +1,21 @@
+{
+  "id": "deer",
+  "torsoModel": "models/creatures/deer/torso_deer.g3db",
+  "attachmentPoints": [
+    { "socket": "HEAD",  "bone": "socket_head",  "scale": 1.0, "optional": false },
+    { "socket": "ARM_L", "bone": "socket_arm_l", "scale": 1.0, "optional": false },
+    { "socket": "ARM_R", "bone": "socket_arm_r", "scale": 1.0, "optional": false },
+    { "socket": "LEG_L", "bone": "socket_leg_l", "scale": 1.0, "optional": false },
+    { "socket": "LEG_R", "bone": "socket_leg_r", "scale": 1.0, "optional": false },
+    { "socket": "TAIL",  "bone": "socket_tail",  "scale": 1.0, "optional": true  }
+  ],
+  "partWeights": {
+    "HEAD":  ["head_deer:100"],
+    "ARM_L": ["arm_deer_front_L:100"],
+    "ARM_R": ["arm_deer_front_R:100"],
+    "LEG_L": ["leg_deer_hind_L:100"],
+    "LEG_R": ["leg_deer_hind_R:100"],
+    "TAIL":  ["tail_deer:100"]
+  },
+  "biomeModifiers": {}
+}
