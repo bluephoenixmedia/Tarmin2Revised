@@ -13,9 +13,12 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.paperdoll.PaperDollWidget;
@@ -53,8 +56,10 @@ public class ModernInventoryUI {
     private final BackpackPanel backpack;
     private final QuickSlotsPanel quickSlots;
     private final AttributesPanel attributes;
+    private final ItemInspectorPanel inspector;
 
     private final Table root;
+    private Table rightBottomContainer;
     private final Label tooltipLabel;
 
     // Owned by us — dispose on close
@@ -103,6 +108,12 @@ public class ModernInventoryUI {
         backpack = new BackpackPanel(player.getInventory(), skin, idm, dnd);
         quickSlots = new QuickSlotsPanel(player.getInventory().getQuickSlots(), skin, idm, dnd);
         attributes = new AttributesPanel(player, skin);
+        inspector = new ItemInspectorPanel(player, skin);
+
+        // ── Connect slots to event bus for hover/click inspection ─────
+        backpack.setBus(bus);
+        quickSlots.setBus(bus);
+        paperDoll.setBus(bus);
 
         // ── Event subscriptions ───────────────────────────────────────
         bus.subscribe(paperDoll);
@@ -173,10 +184,64 @@ public class ModernInventoryUI {
                                config.getY(InventoryLayoutConfig.QUICKSLOTS));
         root.addActor(quickSlots);
 
-        attributes.pack();
-        attributes.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
-                               config.getY(InventoryLayoutConfig.ATTRIBUTES));
-        root.addActor(attributes);
+        // ── Right page: lower box (Tabbed Attributes / Item Details) ──
+        rightBottomContainer = new Table();
+        rightBottomContainer.top().left();
+        rightBottomContainer.setSize(608f, 335f);
+        rightBottomContainer.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
+                                         config.getY(InventoryLayoutConfig.ATTRIBUTES));
+
+        Table tabBar = new Table();
+        Label tabAttributes = new Label("[ Character Attributes ]",
+                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_BORDER_DARK));
+        Label tabInspect = new Label("[ Item Details ]",
+                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
+        tabAttributes.setTouchable(Touchable.enabled);
+        tabInspect.setTouchable(Touchable.enabled);
+        tabBar.add(tabAttributes).padRight(18);
+        tabBar.add(tabInspect);
+        rightBottomContainer.add(tabBar).top().left().padLeft(14).padBottom(4).row();
+
+        Stack panelStack = new Stack();
+        panelStack.add(attributes);
+        panelStack.add(inspector);
+        inspector.setVisible(false);
+
+        rightBottomContainer.add(panelStack).expand().fill();
+        root.addActor(rightBottomContainer);
+
+        tabAttributes.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                attributes.setVisible(true);
+                inspector.setVisible(false);
+                tabAttributes.setColor(InventorySkin.COL_BORDER_DARK);
+                tabInspect.setColor(InventorySkin.COL_TEXT_MUTED);
+            }
+        });
+        tabInspect.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                attributes.setVisible(false);
+                inspector.setVisible(true);
+                tabInspect.setColor(InventorySkin.COL_BORDER_DARK);
+                tabAttributes.setColor(InventorySkin.COL_TEXT_MUTED);
+            }
+        });
+
+        // EventBus listener for live slot inspection
+        bus.subscribe(new InventoryEventBus.Listener() {
+            @Override
+            public void onItemInspected(Item item) {
+                if (item != null) {
+                    inspector.inspect(item);
+                    attributes.setVisible(false);
+                    inspector.setVisible(true);
+                    tabInspect.setColor(InventorySkin.COL_BORDER_DARK);
+                    tabAttributes.setColor(InventorySkin.COL_TEXT_MUTED);
+                }
+            }
+        });
 
         coreStats.pack();
         coreStats.setPosition(config.getX(InventoryLayoutConfig.CORESTATS),
@@ -194,19 +259,11 @@ public class ModernInventoryUI {
         root.addActor(alchemy);
 
         // ── Debug overlay (hidden by default — press F3 to show) ─────
-        // Each color identifies a different panel at a glance:
-        // CYAN = PaperDollPanel equipment slots (no bounding box — it is full-screen)
-        // GREEN = BackpackPanel
-        // ORANGE = QuickSlotsPanel
-        // MAGENTA = AttributesPanel
-        // YELLOW = CoreStatsPanel
-        // SKY = SpellbookPanel
-        // RED = AlchemyPanel
         debugOverlay = new InventoryDebugOverlay(skin.getFontSmall());
         debugOverlay.track(paperDoll, "PaperDollPanel", Color.CYAN, false); // full-screen; show slots only
         debugOverlay.track(backpack, "BackpackPanel", Color.GREEN);
         debugOverlay.track(quickSlots, "QuickSlotsPanel", Color.ORANGE);
-        debugOverlay.track(attributes, "AttributesPanel", Color.MAGENTA);
+        debugOverlay.track(rightBottomContainer, "Attributes/Inspect", Color.MAGENTA);
         debugOverlay.track(coreStats, "CoreStatsPanel", Color.YELLOW);
         debugOverlay.track(spellbook, "SpellbookPanel", new Color(0.4f, 0.8f, 1f, 1f));
         debugOverlay.track(alchemy, "AlchemyPanel", Color.RED);
@@ -218,7 +275,7 @@ public class ModernInventoryUI {
         debugOverlay.setSaveCallback(() -> {
             config.set(InventoryLayoutConfig.BACKPACK,   backpack.getX(),   backpack.getY());
             config.set(InventoryLayoutConfig.QUICKSLOTS, quickSlots.getX(), quickSlots.getY());
-            config.set(InventoryLayoutConfig.ATTRIBUTES, attributes.getX(), attributes.getY());
+            config.set(InventoryLayoutConfig.ATTRIBUTES, rightBottomContainer.getX(), rightBottomContainer.getY());
             config.set(InventoryLayoutConfig.CORESTATS,  coreStats.getX(),  coreStats.getY());
             config.set(InventoryLayoutConfig.SPELLBOOK,  spellbook.getX(),  spellbook.getY());
             config.set(InventoryLayoutConfig.ALCHEMY,    alchemy.getX(),    alchemy.getY());

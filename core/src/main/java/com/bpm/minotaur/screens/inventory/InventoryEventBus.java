@@ -11,6 +11,7 @@ public class InventoryEventBus {
         default void onItemDropped(Item item) {}
         default void onStatsChanged() {}
         default void onSpellbookChanged() {}
+        default void onItemInspected(Item item) {}
     }
 
     private final List<Listener> listeners = new ArrayList<>();
@@ -32,5 +33,9 @@ public class InventoryEventBus {
 
     public void fireSpellbookChanged() {
         for (Listener l : listeners) l.onSpellbookChanged();
+    }
+
+    public void fireItemInspected(Item item) {
+        for (Listener l : listeners) l.onItemInspected(item);
     }
 }

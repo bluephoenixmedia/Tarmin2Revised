@@ -69,6 +69,12 @@ public class BackpackPanel extends WidgetGroup implements InventoryEventBus.List
         setSize(GRID_W, PREF_H);
     }
 
+    public void setBus(InventoryEventBus bus) {
+        for (InventorySlot s : slots) {
+            if (s != null) s.setBus(bus);
+        }
+    }
+
     // ── Public ────────────────────────────────────────────────────────
 
     @Override public float getPrefWidth()  { return GRID_W; }

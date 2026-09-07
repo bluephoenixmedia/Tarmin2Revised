@@ -17,9 +17,8 @@ public class AlchemyPanel extends Table {
     private final InventorySlot   outputSlot;
 
     public AlchemyPanel(InventorySkin skin, ItemDataManager idm, InventoryDragDropHandler dnd) {
-        Label header = new Label("Alchemy Crafting:",
-                new Label.LabelStyle(skin.getFontBody(), InventorySkin.COL_TEXT_HEADER));
-        add(header).left().padBottom(5).colspan(3).row();
+        // Header "Alchemy Crafting:" is already baked into new_inventory.png
+        padTop(18);
 
         // 3×3 input grid
         Table grid = new Table();

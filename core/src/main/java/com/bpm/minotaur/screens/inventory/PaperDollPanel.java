@@ -337,4 +337,10 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     public void onItemDropped(Item i) {
         refresh();
     }
+
+    public void setBus(InventoryEventBus bus) {
+        for (InventorySlot s : allEquip) {
+            if (s != null) s.setBus(bus);
+        }
+    }
 }

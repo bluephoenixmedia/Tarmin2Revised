@@ -571,6 +571,16 @@ public class Item implements Renderable {
         return this.isUsable;
     }
 
+    public boolean isConsumableOrTool() {
+        if (isPotion || isFood) return true;
+        if (type != null) {
+            String name = type.name();
+            if (name.contains("POTION") || name.contains("SCROLL") || name.contains("FOOD") || name.contains("MEAT")) return true;
+            if (name.equals("LAMP") || name.startsWith("WAND_")) return true;
+        }
+        return isUsable && !isWeapon && !isArmor && !isRing && !isContainer && !isTreasure;
+    }
+
     public boolean isContainer() {
         return this.isContainer;
     }

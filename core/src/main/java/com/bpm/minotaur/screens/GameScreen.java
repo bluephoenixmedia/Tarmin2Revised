@@ -219,6 +219,8 @@ public class GameScreen extends BaseScreen {
 
         // --- Setup Input Multiplexer (CRITICAL for resuming from Inventory) ---
         if (hud != null) {
+            hud.setDiscoveryManager(this.discoveryManager);
+            player.setItemPickupListener(item -> hud.showPickupToast(item));
             inputMultiplexer.clear();
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
@@ -307,6 +309,8 @@ public class GameScreen extends BaseScreen {
 
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
+        hud.setDiscoveryManager(this.discoveryManager);
+        player.setItemPickupListener(item -> hud.showPickupToast(item));
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         if (this.gameMode == GameMode.ADVANCED && levelNumber == 1) {
@@ -1014,6 +1018,8 @@ public class GameScreen extends BaseScreen {
         // ---------------------------------------------------
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
+        hud.setDiscoveryManager(this.discoveryManager);
+        player.setItemPickupListener(item -> hud.showPickupToast(item));
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);
         DebugRenderer.printMazeToConsole(maze);
@@ -1232,6 +1238,30 @@ public class GameScreen extends BaseScreen {
                                 break;
                         }
                         return true;
+                    case Input.Keys.NUM_1:
+                    case Input.Keys.NUMPAD_1:
+                        combatManager.playerUseItem(0, discoveryManager);
+                        return true;
+                    case Input.Keys.NUM_2:
+                    case Input.Keys.NUMPAD_2:
+                        combatManager.playerUseItem(1, discoveryManager);
+                        return true;
+                    case Input.Keys.NUM_3:
+                    case Input.Keys.NUMPAD_3:
+                        combatManager.playerUseItem(2, discoveryManager);
+                        return true;
+                    case Input.Keys.NUM_4:
+                    case Input.Keys.NUMPAD_4:
+                        combatManager.playerUseItem(3, discoveryManager);
+                        return true;
+                    case Input.Keys.NUM_5:
+                    case Input.Keys.NUMPAD_5:
+                        combatManager.playerUseItem(4, discoveryManager);
+                        return true;
+                    case Input.Keys.NUM_6:
+                    case Input.Keys.NUMPAD_6:
+                        combatManager.playerUseItem(5, discoveryManager);
+                        return true;
                 }
             }
             // Block all other input during menu (except maybe Debug keys?)
@@ -1272,6 +1302,12 @@ public class GameScreen extends BaseScreen {
                         combatManager.passTurnToMonster();
                     return true;
                 case Input.Keys.E:
+                    if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                        if (player.quickEquipOrConsumeGroundItem(maze, eventManager, this.discoveryManager, soundManager)) {
+                            playerTurnTakesAction();
+                            return true;
+                        }
+                    }
                     player.getInventory().swapWithPack();
                     if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)
                         combatManager.passTurnToMonster();
@@ -1293,6 +1329,31 @@ public class GameScreen extends BaseScreen {
             // --- NEW: NUM_7 = Dice Roll Attack ---
             if (keycode == Input.Keys.NUM_7) {
                 combatManager.playerAttackWithDice();
+                return true;
+            }
+            // --- Quick Slots 1-6 in Combat Turn ---
+            if (keycode == Input.Keys.NUM_1 || keycode == Input.Keys.NUMPAD_1) {
+                combatManager.playerUseItem(0, discoveryManager);
+                return true;
+            }
+            if (keycode == Input.Keys.NUM_2 || keycode == Input.Keys.NUMPAD_2) {
+                combatManager.playerUseItem(1, discoveryManager);
+                return true;
+            }
+            if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
+                combatManager.playerUseItem(2, discoveryManager);
+                return true;
+            }
+            if (keycode == Input.Keys.NUM_4 || keycode == Input.Keys.NUMPAD_4) {
+                combatManager.playerUseItem(3, discoveryManager);
+                return true;
+            }
+            if (keycode == Input.Keys.NUM_5 || keycode == Input.Keys.NUMPAD_5) {
+                combatManager.playerUseItem(4, discoveryManager);
+                return true;
+            }
+            if (keycode == Input.Keys.NUM_6 || keycode == Input.Keys.NUMPAD_6) {
+                combatManager.playerUseItem(5, discoveryManager);
                 return true;
             }
         }
@@ -1452,6 +1513,42 @@ public class GameScreen extends BaseScreen {
                 case Input.Keys.U:
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
                     playerTurnTakesAction();
+                    return true;
+                case Input.Keys.NUM_1:
+                case Input.Keys.NUMPAD_1:
+                    if (player.useQuickSlot(0, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.NUM_2:
+                case Input.Keys.NUMPAD_2:
+                    if (player.useQuickSlot(1, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.NUM_3:
+                case Input.Keys.NUMPAD_3:
+                    if (player.useQuickSlot(2, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.NUM_4:
+                case Input.Keys.NUMPAD_4:
+                    if (player.useQuickSlot(3, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.NUM_5:
+                case Input.Keys.NUMPAD_5:
+                    if (player.useQuickSlot(4, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.NUM_6:
+                case Input.Keys.NUMPAD_6:
+                    if (player.useQuickSlot(5, eventManager, this.discoveryManager, maze)) {
+                        playerTurnTakesAction();
+                    }
                     return true;
                 case Input.Keys.I:
                     InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,

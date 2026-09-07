@@ -137,6 +137,15 @@ public class Player {
         knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
     }
 
+    public interface ItemPickupListener {
+        void onItemPickedUp(Item item);
+    }
+    private ItemPickupListener itemPickupListener;
+
+    public void setItemPickupListener(ItemPickupListener listener) {
+        this.itemPickupListener = listener;
+    }
+
     public void setPosition(GridPoint2 newPos) {
         this.position.set(newPos.x + 0.5f, newPos.y + 0.5f);
     }
@@ -144,12 +153,155 @@ public class Player {
     public boolean pickupItem(Item item) {
         // Food is now picked up normally
         boolean pickedUp = inventory.pickup(item);
-        if (pickedUp && item.getGrantedDie() != null) {
-            stats.getDicePool().add(item.getGrantedDie());
-            BalanceLogger.getInstance().log("DICE_DEBUG",
-                    "Picked up " + item.getFriendlyName() + " -> Added " + item.getGrantedDie().getName());
+        if (pickedUp) {
+            if (item.getGrantedDie() != null) {
+                stats.getDicePool().add(item.getGrantedDie());
+                BalanceLogger.getInstance().log("DICE_DEBUG",
+                        "Picked up " + item.getFriendlyName() + " -> Added " + item.getGrantedDie().getName());
+            }
+            if (itemPickupListener != null) {
+                itemPickupListener.onItemPickedUp(item);
+            }
         }
         return pickedUp;
+    }
+
+    public boolean useQuickSlot(int slotIndex, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze) {
+        if (slotIndex < 0 || slotIndex >= inventory.getQuickSlots().length) return false;
+        Item item = inventory.getQuickSlots()[slotIndex];
+        if (item == null) {
+            eventManager.addEvent(new GameEvent("Quick slot " + (slotIndex + 1) + " is empty.", 1.5f));
+            return false;
+        }
+
+        if (item.isWeapon()) {
+            Item oldWeapon = inventory.getRightHand();
+            if (oldWeapon != null && oldWeapon.getGrantedDie() != null) {
+                stats.getDicePool().remove(oldWeapon.getGrantedDie());
+            }
+            if (item.getGrantedDie() != null) {
+                stats.getDicePool().add(item.getGrantedDie());
+            }
+            inventory.setRightHand(item);
+            inventory.getQuickSlots()[slotIndex] = oldWeapon;
+            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Right Hand.", 2.0f));
+            soundManager.playPickupItemSound();
+            return true;
+        }
+
+        if (item.isShield()) {
+            Item oldShield = inventory.getLeftHand();
+            if (oldShield != null && oldShield.getGrantedDie() != null) {
+                stats.getDicePool().remove(oldShield.getGrantedDie());
+            }
+            if (item.getGrantedDie() != null) {
+                stats.getDicePool().add(item.getGrantedDie());
+            }
+            inventory.setLeftHand(item);
+            inventory.getQuickSlots()[slotIndex] = oldShield;
+            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Left Hand.", 2.0f));
+            soundManager.playPickupItemSound();
+            return true;
+        }
+
+        useItem(item, eventManager, discoveryManager, maze);
+        return true;
+    }
+
+    public boolean quickEquipOrConsumeGroundItem(Maze maze, GameEventManager eventManager, DiscoveryManager discoveryManager, SoundManager soundManager) {
+        int px = (int) position.x;
+        int py = (int) position.y;
+        GridPoint2 feetPos = new GridPoint2(px, py);
+        GridPoint2 targetTile = feetPos;
+        Item item = maze.getItems().get(feetPos);
+
+        if (item == null) {
+            GridPoint2 frontPos = new GridPoint2(
+                (int) (position.x + facing.getVector().x),
+                (int) (position.y + facing.getVector().y));
+            item = maze.getItems().get(frontPos);
+            targetTile = frontPos;
+        }
+
+        if (item == null || item.isImpassable()) return false;
+
+        if (item.isWeapon()) {
+            maze.getItems().remove(targetTile);
+            Item oldWeapon = inventory.getRightHand();
+            if (oldWeapon != null && oldWeapon.getGrantedDie() != null) {
+                stats.getDicePool().remove(oldWeapon.getGrantedDie());
+            }
+            if (item.getGrantedDie() != null) {
+                stats.getDicePool().add(item.getGrantedDie());
+            }
+            inventory.setRightHand(item);
+            if (oldWeapon != null) {
+                inventory.pickup(oldWeapon);
+            }
+            eventManager.addEvent(new GameEvent("Equipped " + item.getDisplayName() + " in Right Hand.", 2.0f));
+            soundManager.playPickupItemSound();
+            return true;
+        }
+
+        if (item.isShield()) {
+            maze.getItems().remove(targetTile);
+            Item oldShield = inventory.getLeftHand();
+            if (oldShield != null && oldShield.getGrantedDie() != null) {
+                stats.getDicePool().remove(oldShield.getGrantedDie());
+            }
+            if (item.getGrantedDie() != null) {
+                stats.getDicePool().add(item.getGrantedDie());
+            }
+            inventory.setLeftHand(item);
+            if (oldShield != null) {
+                inventory.pickup(oldShield);
+            }
+            eventManager.addEvent(new GameEvent("Equipped " + item.getDisplayName() + " in Left Hand.", 2.0f));
+            soundManager.playPickupItemSound();
+            return true;
+        }
+
+        if (item.isArmor()) {
+            maze.getItems().remove(targetTile);
+            Item oldArmor = null;
+            if (item.isHelmet()) {
+                oldArmor = equipment.getWornHelmet();
+                equipment.setWornHelmet(item);
+            } else if (item.isGauntlets()) {
+                oldArmor = equipment.getWornGauntlets();
+                equipment.setWornGauntlets(item);
+            } else if (item.isBoots()) {
+                oldArmor = equipment.getWornBoots();
+                equipment.setWornBoots(item);
+            } else if (item.isLegs()) {
+                oldArmor = equipment.getWornLegs();
+                equipment.setWornLegs(item);
+            } else if (item.isArms()) {
+                oldArmor = equipment.getWornArms();
+                equipment.setWornArms(item);
+            } else if (item.isCloak()) {
+                oldArmor = equipment.getWornBack();
+                equipment.setWornBack(item);
+            } else if (item.isTorso()) {
+                oldArmor = equipment.getWornChest();
+                equipment.setWornChest(item);
+            }
+            if (oldArmor != null) {
+                inventory.pickup(oldArmor);
+            }
+            eventManager.addEvent(new GameEvent("Equipped " + item.getDisplayName() + ".", 2.0f));
+            soundManager.playPickupItemSound();
+            return true;
+        }
+
+        if (item.isConsumableOrTool()) {
+            maze.getItems().remove(targetTile);
+            useItem(item, eventManager, discoveryManager, maze);
+            return true;
+        }
+
+        interactWithItem(maze, eventManager, soundManager);
+        return true;
     }
 
     public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {

@@ -22,12 +22,9 @@ public class SpellbookPanel extends Table implements InventoryEventBus.Listener 
         this.player = player;
         this.skin   = skin;
 
-        Label header = new Label("Spellbook:",
-                new Label.LabelStyle(skin.getFontBody(), InventorySkin.COL_TEXT_HEADER));
-        add(header).left().padBottom(5).row();
-
+        // Header "Spellbook:" is already baked into new_inventory.png
         list = new Table();
-        add(list).expandX().fillX().left();
+        add(list).expandX().fillX().left().padTop(18);
 
         refresh();
     }

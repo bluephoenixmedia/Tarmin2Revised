@@ -32,6 +32,7 @@ public class InventorySlot extends Table {
     private Item     item;
     private final InventorySkin      skin;
     private final ItemDataManager    idm;
+    private InventoryEventBus        bus;
 
     private final Drawable normalBg;
     private final Drawable validBg;
@@ -63,6 +64,27 @@ public class InventorySlot extends Table {
             lbl.setAlignment(Align.center);
             add(lbl).top().center().expandX().padTop(2).row();
         }
+
+        addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public void enter(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                if (pointer == -1 && item != null && bus != null) {
+                    bus.fireItemInspected(item);
+                }
+            }
+
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                if (item != null && bus != null) {
+                    bus.fireItemInspected(item);
+                }
+                return false; // allow DnD to continue handling dragging
+            }
+        });
+    }
+
+    public void setBus(InventoryEventBus bus) {
+        this.bus = bus;
     }
 
     // ── Public API ────────────────────────────────────────────────────

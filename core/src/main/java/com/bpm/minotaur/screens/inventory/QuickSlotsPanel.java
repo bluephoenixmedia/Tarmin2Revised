@@ -55,6 +55,12 @@ public class QuickSlotsPanel extends WidgetGroup implements InventoryEventBus.Li
         }
     }
 
+    public void setBus(InventoryEventBus bus) {
+        for (InventorySlot s : slots) {
+            if (s != null) s.setBus(bus);
+        }
+    }
+
     // ── EventBus listener ─────────────────────────────────────────────
 
     @Override public void onStatsChanged()                                    { refresh(); }

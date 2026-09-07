@@ -638,21 +638,27 @@ public class CombatManager {
     }
 
     public void playerUseItem(DiscoveryManager discoveryManager) {
+        playerUseItem(0, discoveryManager);
+    }
+
+    public void playerUseItem(int slotIndex, DiscoveryManager discoveryManager) {
         if (currentState != CombatState.PLAYER_MENU && currentState != CombatState.PLAYER_TURN)
             return;
 
-        // Use Active Slot (Index 0 - Top Left)
         Item[] quickSlots = player.getInventory().getQuickSlots();
-        Item itemToUse = quickSlots[0];
+        if (slotIndex < 0 || slotIndex >= quickSlots.length) return;
+        Item itemToUse = quickSlots[slotIndex];
 
         if (itemToUse != null) {
-            // Attempt use
-            player.useItem(itemToUse, eventManager, discoveryManager, maze);
-            // We assume using an item takes a turn
-            closeMenuOrPassTurn();
+            if (itemToUse.isWeapon() || itemToUse.isShield()) {
+                player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze);
+                closeMenuOrPassTurn();
+            } else {
+                player.useItem(itemToUse, eventManager, discoveryManager, maze);
+                closeMenuOrPassTurn();
+            }
         } else {
-            eventManager.addEvent(new GameEvent("Active slot (Top-Left) is empty!", 1.5f));
-            // Do not pass turn
+            eventManager.addEvent(new GameEvent("Quick slot " + (slotIndex + 1) + " is empty!", 1.5f));
         }
     }
 

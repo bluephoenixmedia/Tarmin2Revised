@@ -22,13 +22,32 @@ public class Inventory {
      * If both full, returns false.
      */
     public boolean pickup(Item item) {
-        // 1. Try Main Inventory (Backpack) - CHANGED: Prioritize Backpack
+        if (item == null)
+            return false;
+
+        // 1. Consumables and usable tools automatically route into empty Quick Slots first
+        if (item.isConsumableOrTool()) {
+            for (int i = 0; i < quickSlots.length; i++) {
+                if (quickSlots[i] == null) {
+                    quickSlots[i] = item;
+                    return true;
+                }
+            }
+            // If quick slots are full, spill over to main backpack
+            if (mainInventory.size() < MAX_BACKPACK_SIZE) {
+                mainInventory.add(item);
+                return true;
+            }
+            return false;
+        }
+
+        // 2. Equipment and general loot prioritize Main Inventory (Backpack)
         if (mainInventory.size() < MAX_BACKPACK_SIZE) {
             mainInventory.add(item);
             return true;
         }
 
-        // 2. Try Quick Slots (HUD)
+        // 3. Fallback: if backpack is full, place in empty quick slot
         for (int i = 0; i < quickSlots.length; i++) {
             if (quickSlots[i] == null) {
                 quickSlots[i] = item;

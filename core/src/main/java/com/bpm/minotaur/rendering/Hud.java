@@ -17,8 +17,10 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -82,6 +84,20 @@ public class Hud implements Disposable {
 
     // Combat Menu
     public CombatMenu combatMenu;
+
+    private DiscoveryManager discoveryManager;
+    private Item toastItem = null;
+    private float toastTimer = 0f;
+
+    public void setDiscoveryManager(DiscoveryManager discoveryManager) {
+        this.discoveryManager = discoveryManager;
+    }
+
+    public void showPickupToast(Item item) {
+        if (item == null) return;
+        this.toastItem = item;
+        this.toastTimer = 2.5f;
+    }
 
     // Portrait
     private TextureAtlas portraitAtlas;
@@ -353,7 +369,19 @@ public class Hud implements Disposable {
 
         // Init Actors
         for (int i = 0; i < 6; i++) {
+            final int slotIdx = i;
             backpackSlots[i] = new Actor();
+            backpackSlots[i].addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
+                            || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
+                        combatManager.playerUseItem(slotIdx, discoveryManager);
+                    } else {
+                        player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze);
+                    }
+                }
+            });
         }
         leftHandSlot = new Actor();
         rightHandSlot = new Actor();
@@ -668,6 +696,9 @@ public class Hud implements Disposable {
 
         // Draw the 2D inventory items AFTER stage to appear on top
         drawInventory();
+
+        drawGroundItemPrompt();
+        drawPickupToast();
 
         if (isDebug) {
 
@@ -1100,6 +1131,19 @@ public class Hud implements Disposable {
         }
 
         shapeRenderer.end();
+
+        // Draw slot number badges [1]..[6]
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.getData().setScale(0.6f);
+        font.setColor(new Color(0.85f, 0.8f, 0.65f, 0.75f));
+        for (int i = 0; i < 6; i++) {
+            Actor slot = backpackSlots[i];
+            Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
+            font.draw(spriteBatch, String.valueOf(i + 1), pos.x + 3, pos.y + slot.getHeight() - 3);
+        }
+        font.getData().setScale(1.0f);
+        spriteBatch.end();
     }
 
     private void renderModernInventory() {
@@ -1125,10 +1169,16 @@ public class Hud implements Disposable {
                 spriteBatch.begin();
             }
 
+            Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
             if (item != null) {
-                Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 drawModernItem(item, pos.x, pos.y, slot.getWidth(), slot.getHeight());
             }
+
+            // Draw slot hotkey number badge [1]..[6]
+            font.getData().setScale(0.6f);
+            font.setColor(new Color(0.85f, 0.8f, 0.65f, 0.75f));
+            font.draw(spriteBatch, String.valueOf(i + 1), pos.x + 3, pos.y + slot.getHeight() - 3);
+            font.getData().setScale(1.0f);
         }
 
         // Draw left hand item
@@ -1210,6 +1260,120 @@ public class Hud implements Disposable {
             // possible,
             // or just ignore it to avoid breaking the batch.
         }
+    }
+
+    private void drawGroundItemPrompt() {
+        if (debugManager.isDebugOverlayVisible()) return;
+        if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) return;
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        GridPoint2 feetPos = new GridPoint2(px, py);
+        Item groundItem = maze.getItems().get(feetPos);
+        boolean atFeet = true;
+        if (groundItem == null) {
+            GridPoint2 frontPos = new GridPoint2(
+                    (int) (player.getPosition().x + player.getFacing().getVector().x),
+                    (int) (player.getPosition().y + player.getFacing().getVector().y));
+            groundItem = maze.getItems().get(frontPos);
+            atFeet = false;
+        }
+
+        if (groundItem == null || groundItem.isImpassable()) return;
+
+        String loc = atFeet ? "Ground (Feet)" : "Ground (Ahead)";
+        String name = groundItem.getDisplayName();
+        String statInfo = "";
+        if (groundItem.isWeapon()) {
+            statInfo = " (" + (groundItem.getDamageDice() != null ? groundItem.getDamageDice() : "1d6") + " Dmg)";
+        } else if (groundItem.isArmor()) {
+            statInfo = " (+" + groundItem.getArmorClassBonus() + " AC)";
+        } else if (groundItem.isFood()) {
+            statInfo = " (+" + (groundItem.getNutrition() > 0 ? groundItem.getNutrition() : 5) + " Food)";
+        } else if (groundItem.isPotion()) {
+            statInfo = groundItem.isIdentified() && groundItem.getTrueEffect() != null
+                    ? " (" + groundItem.getTrueEffect().getBaseName() + ")"
+                    : " (Unknown Potion)";
+        }
+
+        String actions = "[P] Pick Up";
+        if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
+            actions += "  |  [E] Quick Equip";
+        } else if (groundItem.isConsumableOrTool()) {
+            actions += "  |  [E/U] Consume";
+        }
+
+        String fullText = loc + ": " + name + statInfo + "   " + actions;
+
+        GlyphLayout layout = new GlyphLayout(font, fullText);
+        float boxW = layout.width + 40;
+        float boxH = 44;
+        float boxX = (viewport.getWorldWidth() - boxW) / 2f;
+        float boxY = 195f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.08f, 0.06f, 0.04f, 0.88f);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.GOLD);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.setColor(Color.WHITE);
+        font.draw(spriteBatch, fullText, boxX + 20, boxY + boxH - 12);
+        spriteBatch.end();
+    }
+
+    private void drawPickupToast() {
+        if (toastTimer <= 0f || toastItem == null) return;
+        toastTimer -= Gdx.graphics.getDeltaTime();
+
+        float alpha = Math.min(1.0f, toastTimer * 2f);
+        String name = toastItem.getDisplayName();
+        String cat = toastItem.getCategory() != null ? "[" + toastItem.getCategory().name().replace('_', ' ') + "]" : "";
+        String detail = "";
+        if (toastItem.isWeapon()) {
+            detail = " (" + (toastItem.getDamageDice() != null ? toastItem.getDamageDice() : "1d6") + " Dmg)";
+        } else if (toastItem.isArmor()) {
+            detail = " (+" + toastItem.getArmorClassBonus() + " AC)";
+        } else if (toastItem.isFood()) {
+            detail = " (+" + (toastItem.getNutrition() > 0 ? toastItem.getNutrition() : 5) + " Food)";
+        } else if (toastItem.isPotion()) {
+            detail = toastItem.isIdentified() && toastItem.getTrueEffect() != null
+                    ? " (" + toastItem.getTrueEffect().getBaseName() + ")"
+                    : " (Unknown Potion)";
+        }
+
+        String text = "Acquired: " + name + " " + cat + detail;
+        GlyphLayout layout = new GlyphLayout(font, text);
+        float boxW = layout.width + 50;
+        float boxH = 48;
+        float boxX = (viewport.getWorldWidth() - boxW) / 2f;
+        float boxY = 1000f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.06f, 0.08f, 0.12f, 0.90f * alpha);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.2f, 0.85f, 0.45f, alpha);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.setColor(1f, 1f, 1f, alpha);
+        font.draw(spriteBatch, text, boxX + 25, boxY + boxH - 14);
+        spriteBatch.end();
     }
 
     private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y,
@@ -1720,7 +1884,9 @@ public class Hud implements Disposable {
                 case 2:
                     return "ROLL";
                 case 3:
-                    return "USE";
+                    Item active = player.getInventory().getQuickSlots()[0];
+                    String activeName = active != null ? active.getDisplayName() : "Empty";
+                    return "USE [1-6] (" + activeName + ")";
                 case 4:
                     return "BLOCK";
                 case 5:

@@ -1,21 +1,15 @@
 package com.bpm.minotaur.screens.inventory;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.utils.Align;
 import com.bpm.minotaur.gamedata.ModifierType;
 import com.bpm.minotaur.gamedata.player.Player;
 
 /**
- * Dense three-column attributes panel shown in the bottom-right of the right
- * page.
- * Matches the "Player Attribute" section from the mockup.
- *
- * Rows are rebuilt on every {@link #refresh()} call — label objects are not
- * cached because column widths need to re-measure after stat changes.
+ * Three-column attributes panel formatted cleanly for the lower-right box.
+ * Categorized into Combat Core, Primary Attributes, and Survival & Economy
+ * with crisp, legible typography on parchment.
  */
 public class AttributesPanel extends Table implements InventoryEventBus.Listener {
 
@@ -26,27 +20,27 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private final Table col2 = new Table();
     private final Table col3 = new Table();
 
+    private static final Color COL_HEADER = Color.valueOf("4A2E10FF");
+    private static final Color COL_KEY    = Color.valueOf("2C1A08FF");
+    private static final Color COL_VAL    = Color.valueOf("111111FF");
+    private static final Color COL_GREEN  = Color.valueOf("1E7E34FF");
+    private static final Color COL_RED    = Color.valueOf("BD2130FF");
+    private static final Color COL_BLUE   = Color.valueOf("1B4F72FF");
+    private static final Color COL_GOLD   = Color.valueOf("8A6D05FF");
+
     public AttributesPanel(Player player, InventorySkin skin) {
         this.player = player;
         this.skin = skin;
 
         top().left();
-        setBackground(skin.getPanelBoxDrawable());
-        pad(10, 10, 10, 10);
+        pad(6, 10, 6, 10);
 
-        Label title = new Label("Player Attribute",
-                new Label.LabelStyle(skin.getFontBody(), InventorySkin.COL_TEXT_HEADER));
-        title.setAlignment(Align.center);
-        add(title).colspan(3).center().padBottom(8).row();
-
-        add(col1).top().left().expandY().padRight(14);
-        add(col2).top().left().expandY().padRight(14);
+        add(col1).top().left().expandY().padRight(12);
+        add(col2).top().left().expandY().padRight(12);
         add(col3).top().left().expandY();
 
         buildRows();
     }
-
-    // ── Row population ────────────────────────────────────────────────
 
     private void buildRows() {
         col1.clear();
@@ -56,51 +50,53 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         int bonusHP = player.getEquipment().getEquippedModifierSum(ModifierType.BONUS_MAX_HP);
         int bonusMP = player.getEquipment().getEquippedModifierSum(ModifierType.BONUS_MAX_MP);
 
-        // ── Column 1 ────────────────────────────────────────────────
-        stat(col1, skin.getIconGold(), "Level", String.valueOf(player.getLevel()), Color.WHITE);
-        stat(col1, skin.getIconGray(), "Exp", String.valueOf(player.getExperience()), Color.WHITE);
-        stat(col1, skin.getIconGray(), "Armor Class", String.valueOf(player.getArmorClass()), Color.WHITE);
-        stat(col1, skin.getIconRed(), "HP", player.getCurrentHP() + " / " + (player.getStats().getMaxHP() + bonusHP),
-                hpColor());
-        stat(col1, skin.getIconBlue(), "MP", player.getCurrentMP() + " / " + (player.getStats().getMaxMP() + bonusMP),
-                Color.WHITE);
-        stat(col1, skin.getIconOrange(), "Strength", String.valueOf(player.getStats().getStrength()), Color.WHITE);
-        stat(col1, skin.getIconGray(), "Dexterity", String.valueOf(player.getEffectiveDexterity()), Color.WHITE);
-        stat(col1, skin.getIconGreen(), "Luck", String.valueOf(player.getLuck()), Color.WHITE);
-        stat(col1, skin.getIconOrange(), "Toxicity", player.getStats().getToxicity() + "%", toxColor());
-        stat(col1, skin.getIconGray(), "Stamina", player.getEffectiveStamina() + " dice", Color.WHITE);
+        // ── Column 1: Combat Core ──────────────────────────────────
+        addSectionHeader(col1, "COMBAT CORE");
+        stat(col1, "Level", String.valueOf(player.getLevel()), COL_VAL);
+        stat(col1, "Exp", String.valueOf(player.getExperience()), COL_VAL);
+        stat(col1, "HP", player.getCurrentHP() + " / " + (player.getStats().getMaxHP() + bonusHP), hpColor());
+        stat(col1, "MP", player.getCurrentMP() + " / " + (player.getStats().getMaxMP() + bonusMP), COL_BLUE);
+        stat(col1, "Armor Class", String.valueOf(player.getArmorClass()), COL_VAL);
+        stat(col1, "Attack Spd", String.valueOf(player.getEffectiveSpeed()), COL_VAL);
+        stat(col1, "Crit Chance", Math.round(player.getCritChance() * 100) + "%", COL_VAL);
+        stat(col1, "Crit Dmg", String.format("%.1f×", player.getCritMultiplier()), COL_VAL);
+        stat(col1, "Dodge", Math.round(player.getDodgeChance() * 100) + "%", COL_VAL);
+        stat(col1, "Spell Power", "+" + player.getSpellPower(), COL_BLUE);
 
-        // ── Column 2 ────────────────────────────────────────────────
-        stat(col2, skin.getIconGreen(), "Satiety", player.getStats().getSatiety() + "%", satColor());
-        stat(col2, skin.getIconBlue(), "Hydration", player.getStats().getHydration() + "%", hydColor());
-        stat(col2, skin.getIconGray(), "Stamina", String.valueOf(player.getEffectiveStamina()), Color.WHITE);
-        stat(col2, skin.getIconGray(), "Attack Spd", String.valueOf(player.getEffectiveSpeed()), Color.WHITE);
-        stat(col2, skin.getIconRed(), "Crit chance", Math.round(player.getCritChance() * 100) + "%", Color.WHITE);
-        stat(col2, skin.getIconRed(), "Crit damage", String.format("%.1f×", player.getCritMultiplier()), Color.WHITE);
-        stat(col2, skin.getIconGreen(), "Dodge", Math.round(player.getDodgeChance() * 100) + "%", Color.WHITE);
-        stat(col2, skin.getIconPurple(), "Spell Power", "+" + player.getSpellPower(), Color.WHITE);
+        // ── Column 2: Attributes ───────────────────────────────────
+        addSectionHeader(col2, "ATTRIBUTES");
+        stat(col2, "Strength", String.valueOf(player.getStats().getStrength()), COL_VAL);
+        stat(col2, "Dexterity", String.valueOf(player.getEffectiveDexterity()), COL_VAL);
+        stat(col2, "Agility", String.valueOf(player.getEffectiveAgility()), COL_VAL);
+        stat(col2, "Constitution", String.valueOf(player.getEffectiveConstitution()), COL_VAL);
+        stat(col2, "Intellect", String.valueOf(player.getEffectiveIntelligence()), COL_VAL);
+        stat(col2, "Wisdom", String.valueOf(player.getEffectiveWisdom()), COL_VAL);
+        stat(col2, "Charisma", String.valueOf(player.getEffectiveCharisma()), COL_VAL);
+        stat(col2, "Luck", String.valueOf(player.getLuck()), COL_VAL);
 
-        // ── Column 3 ────────────────────────────────────────────────
+        // ── Column 3: Survival & Economy ───────────────────────────
+        addSectionHeader(col3, "SURVIVAL & RES");
+        stat(col3, "Satiety", player.getStats().getSatiety() + "%", satColor());
+        stat(col3, "Hydration", player.getStats().getHydration() + "%", hydColor());
+        stat(col3, "Toxicity", player.getStats().getToxicity() + "%", toxColor());
         float temp = player.getStats().getBodyTemperature();
-        stat(col3, skin.getIconOrange(), "Body Temp", String.format("%.0f", temp), tempColor(temp));
-        stat(col3, skin.getIconGray(), "Arrows", String.valueOf(player.getArrows()), Color.WHITE);
-        stat(col3, skin.getIconGold(), "Treasure", String.valueOf(player.getTreasureScore()), Color.GOLD);
-        stat(col3, skin.getIconGreen(), "Cook Skill", String.valueOf(player.getStats().getCookingSkill()), Color.WHITE);
-        stat(col3, skin.getIconGreen(), "Agility", String.valueOf(player.getEffectiveAgility()), Color.WHITE);
-        stat(col3, skin.getIconBlue(), "Intellect", String.valueOf(player.getEffectiveIntelligence()), Color.WHITE);
-        stat(col3, skin.getIconBlue(), "Wisdom", String.valueOf(player.getEffectiveWisdom()), Color.WHITE);
-        stat(col3, skin.getIconOrange(), "Const.", String.valueOf(player.getEffectiveConstitution()), Color.WHITE);
-        stat(col3, skin.getIconGold(), "Charisma", String.valueOf(player.getEffectiveCharisma()), Color.WHITE);
+        stat(col3, "Body Temp", String.format("%.0f°C", temp), tempColor(temp));
+        stat(col3, "Stamina Pool", player.getEffectiveStamina() + " Dice", COL_VAL);
+        stat(col3, "Arrows", String.valueOf(player.getArrows()), COL_VAL);
+        stat(col3, "Treasure", String.valueOf(player.getTreasureScore()), COL_GOLD);
+        stat(col3, "Cook Skill", String.valueOf(player.getStats().getCookingSkill()), COL_VAL);
     }
 
-    private void stat(Table col, Drawable icon, String key, String value, Color valueColor) {
-        Table keyCell = new Table();
-        keyCell.add(new Image(icon)).size(10, 10).padRight(3);
-        keyCell.add(new Label(key + ":", new Label.LabelStyle(skin.getFontAttributes(), InventorySkin.COL_TEXT_BODY)))
-                .left();
-        col.add(keyCell).left().padBottom(3).padRight(4);
-        col.add(new Label(value, new Label.LabelStyle(skin.getFontAttributes(), valueColor))).right().padBottom(1)
-                .row();
+    private void addSectionHeader(Table col, String headerText) {
+        Label header = new Label(headerText, new Label.LabelStyle(skin.getFontSmall(), COL_HEADER));
+        col.add(header).colspan(2).left().padBottom(4).row();
+    }
+
+    private void stat(Table col, String key, String value, Color valueColor) {
+        Label k = new Label(key + ":", new Label.LabelStyle(skin.getFontSmall(), COL_KEY));
+        Label v = new Label(value, new Label.LabelStyle(skin.getFontSmall(), valueColor));
+        col.add(k).left().padRight(4).padBottom(1);
+        col.add(v).right().padBottom(1).row();
     }
 
     // ── Colour helpers ────────────────────────────────────────────────
@@ -108,26 +104,26 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private Color hpColor() {
         int cur = player.getCurrentHP();
         int max = player.getStats().getMaxHP();
-        return cur < max * 0.3f ? Color.RED : cur < max * 0.6f ? Color.YELLOW : Color.WHITE;
+        return cur < max * 0.3f ? COL_RED : cur < max * 0.6f ? Color.ORANGE : COL_GREEN;
     }
 
     private Color toxColor() {
         int t = player.getStats().getToxicity();
-        return t >= 76 ? Color.RED : t >= 26 ? Color.ORANGE : Color.GREEN;
+        return t >= 76 ? COL_RED : t >= 26 ? Color.ORANGE : COL_GREEN;
     }
 
     private Color satColor() {
         int s = player.getStats().getSatiety();
-        return s < 20 ? Color.RED : s < 50 ? Color.YELLOW : Color.WHITE;
+        return s < 20 ? COL_RED : s < 50 ? Color.ORANGE : COL_GREEN;
     }
 
     private Color hydColor() {
         int h = player.getStats().getHydration();
-        return h < 20 ? Color.RED : h < 50 ? Color.YELLOW : Color.WHITE;
+        return h < 20 ? COL_RED : h < 50 ? Color.ORANGE : COL_GREEN;
     }
 
     private Color tempColor(float t) {
-        return (t < 33f || t > 41f) ? Color.RED : (t < 35f || t > 39f) ? Color.YELLOW : Color.WHITE;
+        return (t < 33f || t > 41f) ? COL_RED : (t < 35f || t > 39f) ? Color.ORANGE : COL_GREEN;
     }
 
     // ── Public / EventBus ─────────────────────────────────────────────
