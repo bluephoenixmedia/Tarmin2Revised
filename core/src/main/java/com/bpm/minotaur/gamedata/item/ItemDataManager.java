@@ -61,6 +61,7 @@ public class ItemDataManager {
         // If map exists, clear it instead of newing
         itemTemplates.clear();
         Json json = new Json();
+        json.setIgnoreUnknownFields(true);
 
         // Live Reload: Check for source file first
         FileHandle file = Gdx.files.local("assets/data/items.json");

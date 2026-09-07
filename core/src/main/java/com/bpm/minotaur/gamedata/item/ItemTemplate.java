@@ -79,6 +79,8 @@ public class ItemTemplate {
     public int hydrationValue = 0; // New
     public float warmthBonus = 0.0f; // New
     public int probability = 0; // Relative spawn weight
+    public float critChanceBonus = 0.0f;
+    public int fireDamage = 0;
 
     // --- Collision Logic ---
     public boolean isImpassable = false; // New Flag

@@ -475,8 +475,9 @@
       "........................",
       "........................"
     ],
+    "description": "A sturdy brass lantern. Casts steady golden illumination and wards off deep shadows.",
     "baseValue": 50,
-    "damageDice": 3,
+    "damageDice": "1d3+1",
     "armorClassBonus": 0,
     "isWeapon": true,
     "isRanged": false,

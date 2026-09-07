@@ -101,4 +101,26 @@ public class InventoryOverhaulTest {
         inventory.removeItem(pot);
         assertNull(inventory.getQuickSlots()[0]);
     }
+
+    @Test
+    public void testBrassLanternSerialization() throws Exception {
+        java.io.File file = new java.io.File("assets/data/items.json");
+        if (!file.exists()) {
+            file = new java.io.File("../assets/data/items.json");
+        }
+        assertTrue("items.json must exist", file.exists());
+        com.badlogic.gdx.utils.JsonReader reader = new com.badlogic.gdx.utils.JsonReader();
+        com.badlogic.gdx.utils.JsonValue root = reader.parse(new java.io.FileReader(file));
+        com.badlogic.gdx.utils.Json json = new com.badlogic.gdx.utils.Json();
+        json.setIgnoreUnknownFields(true);
+
+        com.badlogic.gdx.utils.JsonValue lanternEntry = root.get("BRASS_LANTERN");
+        assertNotNull("BRASS_LANTERN must be in items.json", lanternEntry);
+
+        ItemTemplate template = json.readValue(ItemTemplate.class, lanternEntry);
+        assertNotNull(template);
+        assertEquals("Brass Lantern", template.friendlyName);
+        assertEquals("1d3+1", template.damageDice);
+        assertEquals(0.10f, template.critChanceBonus, 0.001f);
+    }
 }
