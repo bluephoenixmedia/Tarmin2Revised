@@ -118,6 +118,13 @@ public class StatusManager {
     }
 
     /**
+     * Clears all active status effects without triggering negative expiration effects.
+     */
+    public void clearEffects() {
+        activeEffects.clear();
+    }
+
+    /**
      * Returns all active effects, e.g., for the HUD to draw.
      */
     public ObjectMap.Values<ActiveStatusEffect> getActiveEffects() {

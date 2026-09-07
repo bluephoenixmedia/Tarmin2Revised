@@ -93,14 +93,18 @@ public class DivinityManager {
      * Any previously uncollected lost divinities are overwritten (lost forever).
      */
     public void onPlayerDeath(String deathChunkKey) {
+        onPlayerDeath(deathChunkKey, null);
+    }
+
+    public void onPlayerDeath(String deathChunkKey, GridPoint2 deathTile) {
         lostDivinityAmount = currentDivinities;
         lostDivinityChunkKey = deathChunkKey;
-        lostDivinityTile = null;
+        this.lostDivinityTile = deathTile;
         currentDivinities = 0;
         visitedChunksThisRun.clear();
         save();
         Gdx.app.log("DivinityManager", "Player died with " + lostDivinityAmount
-                + " Divinities. Stored at chunk: " + deathChunkKey);
+                + " Divinities. Stored at chunk: " + deathChunkKey + " at tile: " + deathTile);
     }
 
     /**
@@ -139,7 +143,7 @@ public class DivinityManager {
 
     // ---- Persistence ----
 
-    private void save() {
+    public void save() {
         try {
             FileHandle dir = Gdx.files.local("saves/");
             if (!dir.exists()) dir.mkdirs();
@@ -149,6 +153,7 @@ public class DivinityManager {
             SaveData data = new SaveData();
             data.lostDivinityAmount = lostDivinityAmount;
             data.lostDivinityChunkKey = lostDivinityChunkKey;
+            data.lostDivinityTile = lostDivinityTile;
             file.writeString(json.toJson(data), false);
         } catch (Exception e) {
             Gdx.app.error("DivinityManager", "Failed to save: " + e.getMessage());
@@ -165,9 +170,11 @@ public class DivinityManager {
                 if (data != null) {
                     lostDivinityAmount = data.lostDivinityAmount;
                     lostDivinityChunkKey = data.lostDivinityChunkKey;
+                    lostDivinityTile = data.lostDivinityTile;
                     if (lostDivinityAmount > 0) {
                         Gdx.app.log("DivinityManager", "Loaded lost Divinities: "
-                                + lostDivinityAmount + " at " + lostDivinityChunkKey);
+                                + lostDivinityAmount + " at " + lostDivinityChunkKey
+                                + " tile " + lostDivinityTile);
                     }
                 }
             }
@@ -179,5 +186,6 @@ public class DivinityManager {
     public static class SaveData {
         public int lostDivinityAmount = 0;
         public String lostDivinityChunkKey = null;
+        public GridPoint2 lostDivinityTile = null;
     }
 }

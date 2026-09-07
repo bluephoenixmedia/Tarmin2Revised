@@ -29,6 +29,8 @@ import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemColor;
+import com.bpm.minotaur.gamedata.item.ShelterChest;
 
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
@@ -39,6 +41,7 @@ import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -334,12 +337,17 @@ public class GameScreen extends BaseScreen {
         int lostAmount = dm.checkForLostDivinities(key);
         if (lostAmount > 0) {
             hud.addMessage("You sense " + lostAmount + " lost " + DivinityManager.DIVINITY_NAME + " nearby...");
-            GridPoint2 tile = findRandomPassableTile();
+            GridPoint2 tile = dm.getLostDivinityTile();
+            if (tile == null) {
+                tile = findRandomPassableTile();
+            }
             if (tile != null) {
                 dm.setLostDivinityTile(tile);
-                maze.getItems().put(tile, new Item(Item.ItemType.LOST_DIVINITIES, tile.x, tile.y,
-                        com.bpm.minotaur.gamedata.item.ItemColor.GOLD,
-                        game.getItemDataManager(), game.getAssetManager()));
+                if (!maze.getItems().containsKey(tile) || maze.getItems().get(tile).getType() != Item.ItemType.LOST_DIVINITIES) {
+                    maze.getItems().put(tile, new Item(Item.ItemType.LOST_DIVINITIES, tile.x, tile.y,
+                            com.bpm.minotaur.gamedata.item.ItemColor.GOLD,
+                            game.getItemDataManager(), game.getAssetManager()));
+                }
             }
         }
     }
@@ -899,11 +907,96 @@ public class GameScreen extends BaseScreen {
 
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
             Gdx.app.log("GameScreen", "PLAYER_DIED event received.");
+
+            // 1. Advance Doom Clock ("Tarmin's Hunger")
+            DoomManager.getInstance().incrementDeaths();
+            int deaths = DoomManager.getInstance().getDeathCount();
+            float bridge = DoomManager.getInstance().getBridgeIntegrity();
+            Gdx.app.log("GameScreen", "Doom updated on death. Count: " + deaths + " (" + (int) bridge + "%)");
+
+            // 2. Check for Apocalypse Wipe (50 deaths reached)
+            if (DoomManager.getInstance().isApocalypse()) {
+                Gdx.app.log("GameScreen", "Apocalypse condition met! Triggering GameOverScreen.");
+                game.setScreen(new GameOverScreen(game));
+                return;
+            }
+
+            // 3. Record Death Location & Lost Divinities
             GridPoint2 deathChunk = worldManager.getCurrentPlayerChunkId();
-            String deathKey = DivinityManager.buildChunkKey(
-                    worldManager.getCurrentLevel(), deathChunk.x, deathChunk.y);
-            DivinityManager.getInstance().onPlayerDeath(deathKey);
-            game.setScreen(new GameOverScreen(game));
+            int deathLevel = worldManager.getCurrentLevel();
+            GridPoint2 deathTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+            String deathKey = DivinityManager.buildChunkKey(deathLevel, deathChunk.x, deathChunk.y);
+            DivinityManager.getInstance().onPlayerDeath(deathKey, deathTile);
+
+            // 4. Create Corpse Container at deathTile containing carried items
+            if (maze != null) {
+                Item corpse = game.getItemDataManager().createItem(Item.ItemType.CORPSE, deathTile.x, deathTile.y,
+                        ItemColor.GRAY, game.getAssetManager());
+                List<Item> lostItems = new ArrayList<>();
+                // Collect backpack items
+                lostItems.addAll(player.getInventory().getMainInventory());
+                player.getInventory().getMainInventory().clear();
+                // Collect quickslot items
+                Item[] quickSlots = player.getInventory().getQuickSlots();
+                for (int i = 0; i < quickSlots.length; i++) {
+                    if (quickSlots[i] != null) {
+                        lostItems.add(quickSlots[i]);
+                        quickSlots[i] = null;
+                    }
+                }
+                // Collect hands if any
+                if (player.getInventory().getRightHand() != null) {
+                    lostItems.add(player.getInventory().getRightHand());
+                    player.getInventory().setRightHand(null);
+                }
+                if (player.getInventory().getLeftHand() != null) {
+                    lostItems.add(player.getInventory().getLeftHand());
+                    player.getInventory().setLeftHand(null);
+                }
+                // Add bone drop
+                Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, deathTile.x, deathTile.y,
+                        ItemColor.WHITE, game.getAssetManager());
+                lostItems.add(bone);
+
+                corpse.setContents(lostItems);
+                maze.addItem(corpse);
+
+                // Save current chunk with the corpse
+                worldManager.saveCurrentChunk(maze);
+            }
+
+            // 5. Restore Player & Grant starter weapon
+            player.getStats().setCurrentHP(player.getStats().getMaxHP());
+            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            player.getStatusManager().clearEffects();
+            Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().setRightHand(starterWeapon);
+
+            // 6. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
+            worldManager.setCurrentLevel(1);
+            worldManager.setCurrentChunk(new GridPoint2(0, 0));
+            Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+            swapToChunk(shelterMaze);
+
+            // Position player at bed / safe start point in shelter
+            GridPoint2 bedPos = null;
+            for (Item item : shelterMaze.getItems().values()) {
+                if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                    bedPos = new GridPoint2((int) item.getPosition().x, (int) item.getPosition().y);
+                    break;
+                }
+            }
+            if (bedPos == null) {
+                bedPos = worldManager.getInitialPlayerStartPos();
+            }
+            player.setPosition(bedPos);
+            worldManager.saveCurrentChunk(shelterMaze);
+
+            // 7. Feedback
+            hud.addMessage("You died! Returned to Shelter Bed.");
+            hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
+            eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
+            soundManager.playDoorOpenSound();
             return;
         }
     }
@@ -1303,6 +1396,28 @@ public class GameScreen extends BaseScreen {
                             (int) (player.getPosition().y + v.y));
 
                     Item itemInFront = maze.getItems().get(target);
+
+                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
+                        ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, ShelterChest.getInstance());
+                        game.setScreen(chestScreen);
+                        return true;
+                    }
+
+                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                        player.getStats().setCurrentHP(player.getStats().getMaxHP());
+                        player.getStats().setCurrentMP(player.getStats().getMaxMP());
+                        player.getStatusManager().clearEffects();
+                        worldManager.saveCurrentChunk(maze);
+                        ShelterChest.getInstance().save();
+                        DoomManager.getInstance().save();
+                        DivinityManager.getInstance().save();
+                        soundManager.playDoorOpenSound();
+                        eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
+                        hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+                        playerTurnTakesAction();
+                        needsAsciiRender = true;
+                        return true;
+                    }
 
                     if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
                         try {

@@ -1157,6 +1157,11 @@ public class Player {
 
         // 3. Handle Containers (Keep existing logic)
         Item itemInFront = maze.getItems().get(targetTile);
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
+            // Home chest is persistent and handled by GameScreen / ShelterChestScreen
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             String containerName = itemInFront.getDisplayName();
 
@@ -1196,8 +1201,32 @@ public class Player {
             return;
         }
 
-        // 4. Handle Corpses (Butchering)
+        // 4. Handle Corpses (Recovery or Butchering)
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.CORPSE) {
+            // Check if this corpse holds stored player items (death marker)
+            if (itemInFront.getContents() != null && !itemInFront.getContents().isEmpty()) {
+                eventManager.addEvent(new GameEvent("You search your remains and recover your lost gear!", 3f));
+                List<Item> stored = new ArrayList<>(itemInFront.getContents());
+                List<Item> unrecovered = new ArrayList<>();
+                int recoveredCount = 0;
+                for (Item it : stored) {
+                    if (inventory.pickup(it)) {
+                        recoveredCount++;
+                    } else {
+                        unrecovered.add(it);
+                    }
+                }
+                itemInFront.getContents().clear();
+                if (unrecovered.isEmpty()) {
+                    maze.getItems().remove(targetTile);
+                    eventManager.addEvent(new GameEvent("Recovered all " + recoveredCount + " items from remains.", 2f));
+                } else {
+                    itemInFront.getContents().addAll(unrecovered);
+                    eventManager.addEvent(new GameEvent("Pack full! " + unrecovered.size() + " items remain in your corpse.", 2f));
+                }
+                return;
+            }
+
             if (hasButcheringTool()) {
                 eventManager.addEvent(new GameEvent("You butcher the corpse.", 2f));
                 maze.getItems().remove(targetTile);

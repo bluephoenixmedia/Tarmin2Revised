@@ -220,8 +220,8 @@ public class CombatManager {
         if (currentState != CombatState.INACTIVE) return;
 
         Item weapon = player.getInventory().getRightHand();
-        if (weapon == null || weapon.isRanged()) {
-            eventManager.addEvent(new GameEvent("No melee weapon equipped.", 1.5f));
+        if (weapon != null && weapon.isRanged()) {
+            eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon.", 1.5f));
             return;
         }
 
@@ -244,7 +244,7 @@ public class CombatManager {
 
         this.pendingWeapon = weapon;
         soundManager.playWeaponSwing();
-        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+        if (weapon != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(weapon);
             gs.getWeaponOverlay().jumpToImpact();
@@ -283,7 +283,8 @@ public class CombatManager {
 
         if (player.getCurrentHP() <= 0) {
             this.monster = attacker;
-            currentState = CombatState.DEFEAT;
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            endCombat();
         }
     }
 
@@ -916,7 +917,7 @@ public class CombatManager {
     }
 
     private void resolveAttack(int d20Roll, boolean stateless) {
-        if (pendingWeapon == null)
+        if (monster == null)
             return;
 
         currentCombatTurns++;
@@ -945,65 +946,81 @@ public class CombatManager {
                 "Player Attack: Roll " + d20Roll + " + " + toHitBonus + " = " + attackRoll + " vs AC " + targetAC);
 
         if (isHit) {
-            // Roll Damage — weapon dice + STR-based bonus (not level; no double-dip)
-            String damageDice = pendingWeapon.getDamageDice();
-            int baseDamage = DiceRoller.roll(damageDice);
-            int damageBonus = player.getDamageBonus();
-            int totalDamage = Math.max(1, baseDamage + damageBonus);
-
-            if (isCrit) {
-                totalDamage = (int) (totalDamage * player.getCritMultiplier());
-                eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
+            DamageType dmgType = DamageType.PHYSICAL;
+            String damageDice = "1d2";
+            if (pendingWeapon != null) {
+                damageDice = pendingWeapon.getDamageDice();
+                if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
+                if (pendingWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
+                    dmgType = DamageType.SPIRITUAL;
+                }
             }
 
-            int actualDamage = monster.takeDamage(totalDamage);
-            showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
-            lastDamageDealt = actualDamage;
-
-            // --- VISCERAL: Feedback ---
-            float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
-            boolean isHeavy = damageRatio > 0.2f;
-
-            // 1. Audio
-            soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
-            soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
-
-            // 2. Screen Shake & Hit Pause
-            if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
-                com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-
-                // Shake
-                float trauma = isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f);
-                gs.addTrauma(trauma);
-
-                // Pause (Freeze frame)
-                float pauseDur = isCrit ? 0.15f : 0.05f;
-                gs.triggerHitPause(pauseDur);
-            }
-
-            // 3. Blood (Scaling)
-            if (damageRatio < 0.1f) {
-                // Chip damage (puff)
-                maze.getGoreManager().spawnBloodSpray(
-                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                        1);
-            } else if (damageRatio < 0.3f) {
-                // Solid Hit
-                maze.getGoreManager().spawnBloodSpray(
-                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                        4);
-                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
+            if (Monster.isImmuneToType(monster.getType(), dmgType)) {
+                String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
+                eventManager.addEvent(new GameEvent(monster.getType() + " is immune to " + attackCategory + " attacks!", 1.5f));
+                showDamageText(0, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+                lastDamageDealt = 0;
+                soundManager.playWeaponImpact(false);
             } else {
-                // Massive/Gib
-                maze.getGoreManager().spawnBloodSpray(
-                        new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                        new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                        8);
-                maze.getGoreManager()
-                        .spawnGibExplosion(new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y));
-                maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
+                int baseDamage = DiceRoller.roll(damageDice);
+                int damageBonus = player.getDamageBonus();
+                int totalDamage = Math.max(1, baseDamage + damageBonus);
+
+                if (isCrit) {
+                    totalDamage = (int) (totalDamage * player.getCritMultiplier());
+                    eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
+                }
+
+                int actualDamage = monster.takeDamage(totalDamage, dmgType);
+                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+                lastDamageDealt = actualDamage;
+
+                // --- VISCERAL: Feedback ---
+                float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
+                boolean isHeavy = damageRatio > 0.2f;
+
+                // 1. Audio
+                soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
+                soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
+
+                // 2. Screen Shake & Hit Pause
+                if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                    com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+
+                    // Shake
+                    float trauma = isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f);
+                    gs.addTrauma(trauma);
+
+                    // Pause (Freeze frame)
+                    float pauseDur = isCrit ? 0.15f : 0.05f;
+                    gs.triggerHitPause(pauseDur);
+                }
+
+                // 3. Blood (Scaling)
+                if (damageRatio < 0.1f) {
+                    // Chip damage (puff)
+                    maze.getGoreManager().spawnBloodSpray(
+                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                            1);
+                } else if (damageRatio < 0.3f) {
+                    // Solid Hit
+                    maze.getGoreManager().spawnBloodSpray(
+                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                            4);
+                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
+                } else {
+                    // Massive/Gib
+                    maze.getGoreManager().spawnBloodSpray(
+                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
+                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
+                            8);
+                    maze.getGoreManager()
+                            .spawnGibExplosion(new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y));
+                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
+                }
             }
 
         } else {
@@ -1119,10 +1136,7 @@ public class CombatManager {
                 if (isCardinal) {
                     if (m.isJustSpawned()) {
                         m.clearJustSpawned(); // Grant one turn grace; attackable next turn
-                        return;
                     }
-                    playerMeleeStrike(m);
-                    return;
                 }
             }
         }
@@ -1171,27 +1185,8 @@ public class CombatManager {
         } else if (currentState == CombatState.DEFEAT) {
             // Log Defeat
             BalanceLogger.getInstance().logCombatEnd("DEFEAT", currentCombatTurns, damageTakenInCombat);
-
-            if (game != null) {
-                // --- CRITICAL FIX: Safe Disposal of Old GameScreen ---
-                final Screen oldScreen = game.getScreen(); // Capture current screen (GameScreen)
-                game.setScreen(new GameOverScreen(game)); // Switch screens (calls hide() on oldScreen)
-
-                if (oldScreen != null) {
-                    // Defer disposal until AFTER this update cycle completes to avoid native
-                    // crashes
-                    // while render() might still be on the stack.
-                    Gdx.app.postRunnable(new Runnable() {
-                        @Override
-                        public void run() {
-                            Gdx.app.log("Lifecycle", "Post-Runnable: Disposing old GameScreen.");
-                            oldScreen.dispose();
-                        }
-                    });
-                }
-            } else {
-                Gdx.app.log("CombatManager", "Headless Mode: Player Defeated. Skipping GameOverScreen.");
-            }
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            endCombat();
         }
     }
 

@@ -72,6 +72,7 @@ public class Hud implements Disposable {
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
     private final Label divinitiesLabel;
+    private final Label doomLabel;
     private Label heldItemLabel;
     private Label rightHandStatsLabel;
 
@@ -275,6 +276,8 @@ public class Hud implements Disposable {
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("", labelStyle);
+        doomLabel = new Label("", labelStyle);
+
         dungeonLevelLabel = new Label("", labelStyle);
         directionLabel = new Label("", directionLabelStyle); // Compass
 
@@ -327,9 +330,11 @@ public class Hud implements Disposable {
         statsTable.add(dungeonLevelLabel).colspan(2).left().padLeft(20);
         statsTable.row().padTop(10);
 
-        // Row 4: Divinities
+        // Row 4: Divinities & Doom
         statsTable.add(new Label("DIV:", headerStyle)).left();
         statsTable.add(divinitiesLabel).left().padLeft(10);
+        statsTable.add(new Label("DOOM:", headerStyle)).left().padLeft(20);
+        statsTable.add(doomLabel).left().padLeft(10);
         statsTable.row().padTop(10);
 
         // Compass (Bottom of Left Panel)
@@ -543,6 +548,18 @@ public class Hud implements Disposable {
         DivinityManager dm = DivinityManager.getInstance();
         divinitiesLabel.setText(String.valueOf(dm.getCurrentDivinities()));
         divinitiesLabel.setColor(dm.hasLostDivinities() ? Color.GOLD : Color.WHITE);
+
+        DoomManager doom = DoomManager.getInstance();
+        int deaths = doom.getDeathCount();
+        float bridge = doom.getBridgeIntegrity();
+        doomLabel.setText(String.format("%d (%.0f%%)", deaths, bridge));
+        if (bridge >= 75f) {
+            doomLabel.setColor(Color.RED);
+        } else if (bridge >= 40f) {
+            doomLabel.setColor(Color.ORANGE);
+        } else {
+            doomLabel.setColor(Color.LIGHT_GRAY);
+        }
 
         Item rightHandItem = player.getInventory().getRightHand();
 

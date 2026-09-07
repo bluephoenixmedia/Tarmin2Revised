@@ -302,6 +302,9 @@ public class MonsterAiManager {
     private boolean isTileAvailableForAI(Maze maze, Player player, int x, int y) {
         tempPos.set(x, y);
 
+        if (maze.isHomeTile(x, y))
+            return false;
+
         if (!maze.isPassable(x, y))
             return false;
 

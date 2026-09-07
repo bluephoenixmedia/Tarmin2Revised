@@ -7,64 +7,85 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.assets.AssetManager;
 import com.bpm.minotaur.gamedata.Renderable;
 import com.bpm.minotaur.managers.StatusManager;
+import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 
 public class Monster implements Renderable {
 
+    public enum Category {
+        BAD,
+        NASTY,
+        HORRIBLE
+    }
+
     public enum MonsterType {
-        // Bad Monsters
-        GIANT_ANT,
-        DWARF,
-        GIANT_SCORPION,
-        GIANT_SNAKE,
-        KOBOLD,
-        GOBLIN,
-        TROGLODYTE,
-        HOBGOBLIN,
+        // Bad Monsters (Immune to War / PHYSICAL, vulnerable to SPIRITUAL)
+        GIANT_ANT(Category.BAD),
+        DWARF(Category.BAD),
+        GIANT_SCORPION(Category.BAD),
+        GIANT_SNAKE(Category.BAD),
+        KOBOLD(Category.BAD),
+        GOBLIN(Category.BAD),
+        TROGLODYTE(Category.BAD),
+        HOBGOBLIN(Category.BAD),
 
-        // Nasty Monsters
-        GHOUL,
-        SKELETON,
-        CLOAKED_SKELETON,
-        ZOMBIE,
-        MUMMY,
-        HARPY,
-        GARGOYLE,
-        WERERAT,
+        // Nasty Monsters (Immune to SPIRITUAL, vulnerable to War / PHYSICAL)
+        GHOUL(Category.NASTY),
+        SKELETON(Category.NASTY),
+        CLOAKED_SKELETON(Category.NASTY),
+        ZOMBIE(Category.NASTY),
+        MUMMY(Category.NASTY),
+        HARPY(Category.NASTY),
+        GARGOYLE(Category.NASTY),
+        WERERAT(Category.NASTY),
 
-        // Horrible Monsters
-        ALLIGATOR,
-        DRAGON,
-        WRAITH,
-        GIANT,
-        MINOTAUR,
-        GHAST,
-        BEHOLDER,
-        GELATINOUS_CUBE,
-        RUST_MONSTER,
-        LICH,
-        MIMIC,
-        MIND_FLAYER,
-        OWLBEAR,
-        DISPLACER_BEAST,
-        UMBER_HULK,
-        SPIDER,
-        ORC,
-        WEREWOLF,
-        TROLL,
-        OGRE,
-        BASILISK,
-        MEDUSA,
-        WYVERN,
-        CHIMERA,
-        HYDRA,
-        VAMPIRE,
-        IRON_GOLEM,
-        PURPLE_WORM,
-        AGIS,
-        DEMON_SLIME,
-        BRINGER_OF_DEATH,
-        FALL_ANGEL
+        // Horrible Monsters (Vulnerable to both War and Spiritual)
+        ALLIGATOR(Category.HORRIBLE),
+        DRAGON(Category.HORRIBLE),
+        WRAITH(Category.HORRIBLE),
+        GIANT(Category.HORRIBLE),
+        MINOTAUR(Category.HORRIBLE),
+        GHAST(Category.HORRIBLE),
+        BEHOLDER(Category.HORRIBLE),
+        GELATINOUS_CUBE(Category.HORRIBLE),
+        RUST_MONSTER(Category.HORRIBLE),
+        LICH(Category.HORRIBLE),
+        MIMIC(Category.HORRIBLE),
+        MIND_FLAYER(Category.HORRIBLE),
+        OWLBEAR(Category.HORRIBLE),
+        DISPLACER_BEAST(Category.HORRIBLE),
+        UMBER_HULK(Category.HORRIBLE),
+        SPIDER(Category.HORRIBLE),
+        ORC(Category.HORRIBLE),
+        WEREWOLF(Category.HORRIBLE),
+        TROLL(Category.HORRIBLE),
+        OGRE(Category.HORRIBLE),
+        BASILISK(Category.HORRIBLE),
+        MEDUSA(Category.HORRIBLE),
+        WYVERN(Category.HORRIBLE),
+        CHIMERA(Category.HORRIBLE),
+        HYDRA(Category.HORRIBLE),
+        VAMPIRE(Category.HORRIBLE),
+        IRON_GOLEM(Category.HORRIBLE),
+        PURPLE_WORM(Category.HORRIBLE),
+        AGIS(Category.HORRIBLE),
+        DEMON_SLIME(Category.HORRIBLE),
+        BRINGER_OF_DEATH(Category.HORRIBLE),
+        FALL_ANGEL(Category.HORRIBLE);
+
+        private final Category category;
+
+        MonsterType(Category category) {
+            this.category = category;
+        }
+
+        MonsterType() {
+            this(Category.HORRIBLE);
+        }
+
+        public Category getCategory() {
+            return category;
+        }
     }
 
     private final MonsterType type;
@@ -247,6 +268,29 @@ public class Monster implements Renderable {
 
     public int getMaxHP() {
         return maxHP;
+    }
+
+    public static boolean isImmuneToType(MonsterType type, DamageType damageType) {
+        if (type == null || damageType == null) return false;
+        Category cat = type.getCategory();
+        if (cat == Category.BAD && damageType == DamageType.PHYSICAL) {
+            return true;
+        }
+        if (cat == Category.NASTY && damageType == DamageType.SPIRITUAL) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isImmuneToType(DamageType damageType) {
+        return isImmuneToType(this.type, damageType);
+    }
+
+    public int takeDamage(int amount, DamageType damageType) {
+        if (isImmuneToType(damageType)) {
+            return 0;
+        }
+        return takeDamage(amount);
     }
 
     public int takeDamage(int amount) {

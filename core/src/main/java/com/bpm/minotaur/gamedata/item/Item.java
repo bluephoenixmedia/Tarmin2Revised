@@ -449,7 +449,7 @@ public class Item implements Renderable {
         }
 
         if (this.isContainer) {
-            if (type == ItemType.BOX || type == ItemType.REGULAR_CHEST || type == ItemType.HOME_CHEST) {
+            if (type == ItemType.BOX || type == ItemType.REGULAR_CHEST) {
                 this.isLocked = true;
             } else {
                 this.isLocked = false;
