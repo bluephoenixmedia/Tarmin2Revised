@@ -17,30 +17,27 @@ uniform vec3 u_fogColor;
 uniform float u_lightIntensity;
 uniform float u_fogEnabled; // 1.0 for true, 0.0 for false
 
+// Dynamic Multi-Point Lights
+uniform vec2 u_lightPos[4];
+uniform vec3 u_lightColor[4];
+uniform float u_lightRadius[4];
+uniform float u_lightIntensityArr[4];
+uniform int u_lightCount;
+uniform vec3 u_ambientColor;
+
 // Pseudo-random function
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
 
 void main() {
-    // Current pixel coordinates
-    // gl_FragCoord.y is 0 at bottom, increasing upwards.
-    // In our Java loop, y went from height/2 down to 0. 
-    // So we are rendering the bottom half of the screen.
-    
     float y = gl_FragCoord.y;
     float horizon = u_screenHeight * 0.5;
     
-    // If we are above the horizon, discard (or handle skybox elsewhere)
     if (y > horizon) {
         discard;
     }
 
-    // Calculate row distance
-    // Matches: int p_down = (int) (viewport.getWorldHeight() / 2) - y;
-    //          float posZ = 0.5f * viewport.getWorldHeight();
-    //          float rowDistance = posZ / p_down;
-    
     float p_down = horizon - y;
     if (p_down <= 0.0) p_down = 0.001; // Avoid divide by zero
     
@@ -48,7 +45,6 @@ void main() {
     float rowDistance = posZ / p_down;
 
     // Calculate ray direction for this pixel's X
-    // cameraX goes from -1 (left) to 1 (right)
     float cameraX = 2.0 * (gl_FragCoord.x / u_screenWidth) - 1.0;
     
     float rayDirX = u_dir.x + u_plane.x * cameraX;
@@ -63,7 +59,6 @@ void main() {
     vec2 uv = fract(vec2(floorX, floorY));
     
     float rnd = random(tilePos);
-    // 0..1 -> 0,1,2,3
     float orientation = floor(rnd * 4.0);
     
     if (orientation == 1.0) {
@@ -73,31 +68,36 @@ void main() {
     } else if (orientation == 3.0) {
         uv = vec2(1.0 - uv.y, uv.x);
     }
-    // else 0: keep as is
 
     // Sample texture
     vec4 texColor = texture2D(u_texture, uv);
 
+    // --- Dynamic Multi-Light Accumulation ---
+    vec3 lightAccum = u_ambientColor;
+    vec2 worldPos = vec2(floorX, floorY);
+
+    for (int i = 0; i < 4; i++) {
+        if (i >= u_lightCount) break;
+        float d = distance(worldPos, u_lightPos[i]);
+        float r = u_lightRadius[i];
+        if (d < r) {
+            float norm = d / r;
+            float atten = (1.0 - norm) * (1.0 - norm) * u_lightIntensityArr[i];
+            lightAccum += u_lightColor[i] * atten;
+        }
+    }
+    lightAccum = min(lightAccum, vec3(1.3)) * u_lightIntensity;
+
+    vec3 finalColor = texColor.rgb * lightAccum;
+
     // Apply Fog
     if (u_fogEnabled > 0.5) {
-        // float fogAmount = Math.max(0, Math.min(1f, (rowDistance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
         float FOG_FADE_RATIO = 0.5;
         float start = u_fogDist * (1.0 - FOG_FADE_RATIO);
-        float end = u_fogDist; // The calculation in Java slightly differs, adapting approximation
-        
-        // Java: (rowDistance - (fogDistance * 0.5)) / (fogDistance * 0.5)
         float fogAmount = (rowDistance - start) / (u_fogDist * FOG_FADE_RATIO);
         fogAmount = clamp(fogAmount, 0.0, 1.0);
-        
-        texColor.rgb = mix(texColor.rgb, u_fogColor, fogAmount);
+        finalColor = mix(finalColor, u_fogColor, fogAmount);
     }
-
-    // Apply Light Intensity + Distance Fade
-    // float brightness = Math.max(0.2f, Math.min(1.0f, 1.0f - rowDistance / 20.0f));
-    float distBrightness = 1.0 - (rowDistance / 20.0);
-    distBrightness = clamp(distBrightness, 0.2, 1.0);
-    
-    vec3 finalColor = texColor.rgb * distBrightness * u_lightIntensity;
 
     gl_FragColor = vec4(finalColor, 1.0);
 }

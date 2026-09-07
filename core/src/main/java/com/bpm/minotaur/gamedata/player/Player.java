@@ -19,6 +19,8 @@ import com.bpm.minotaur.gamedata.item.ItemModifier; // NEW
 import com.bpm.minotaur.gamedata.ModifierType; // NEW
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
+import com.bpm.minotaur.lighting.LightSource;
+import com.bpm.minotaur.lighting.LightingManager;
 
 public class Player {
 
@@ -89,6 +91,19 @@ public class Player {
     private final MonsterDataManager monsterDataManager; // NEW
     private final AssetManager assetManager;
 
+    public Player(float startX, float startY) {
+        this.position = new Vector2(startX + 0.5f, startY + 0.5f);
+        this.facing = Direction.NORTH;
+        this.directionVector = new Vector2(0, 1);
+        this.cameraPlane = new Vector2(0.66f, 0);
+        this.soundManager = null;
+        this.itemDataManager = null;
+        this.monsterDataManager = null;
+        this.assetManager = null;
+        this.stats = new PlayerStats(Difficulty.MEDIUM);
+        this.statusManager = new StatusManager();
+    }
+
     public Player(float startX, float startY, Difficulty difficulty,
             ItemDataManager itemDataManager, MonsterDataManager monsterDataManager, AssetManager assetManager) {
 
@@ -148,6 +163,14 @@ public class Player {
 
     public void setPosition(GridPoint2 newPos) {
         this.position.set(newPos.x + 0.5f, newPos.y + 0.5f);
+    }
+
+    public void setPosition(Vector2 pos) {
+        this.position.set(pos);
+    }
+
+    public void setPosition(float x, float y) {
+        this.position.set(x, y);
     }
 
     public boolean pickupItem(Item item) {
@@ -400,6 +423,9 @@ public class Player {
 
             if (pickupItem(itemInFront)) {
                 maze.getItems().remove(targetTile);
+                if (itemInFront.getType() == ItemType.BRASS_LANTERN) {
+                    maze.removeLightAt(targetTile.x + 0.5f, targetTile.y + 0.5f);
+                }
                 soundManager.playPickupItemSound();
                 eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
 
@@ -421,6 +447,12 @@ public class Player {
                 Item itemInHand = inventory.getRightHand();
                 itemInHand.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
                 maze.addItem(itemInHand);
+                if (itemInHand.getType() == ItemType.BRASS_LANTERN) {
+                    maze.addLight(new LightSource("shelter_lantern_" + playerTile.x + "_" + playerTile.y,
+                            playerTile.x + 0.5f, playerTile.y + 0.5f,
+                            LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                            LightSource.FlickerProfile.LANTERN_BREATH));
+                }
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getDisplayName(), 2f));
             } else {
@@ -1693,7 +1725,12 @@ public class Player {
         chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
         chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
+        if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) chance += 0.10f;
         return Math.min(0.95f, chance);
+    }
+
+    public Item getEquippedLeft() {
+        return inventory.getLeftHand();
     }
 
     /**
@@ -1785,6 +1822,12 @@ public class Player {
         if (!maze.getItems().containsKey(playerTile)) {
             item.getPosition().set(playerTile.x + 0.5f, playerTile.y + 0.5f);
             maze.addItem(item);
+            if (item.getType() == ItemType.BRASS_LANTERN) {
+                maze.addLight(new LightSource("shelter_lantern_" + playerTile.x + "_" + playerTile.y,
+                        playerTile.x + 0.5f, playerTile.y + 0.5f,
+                        LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                        LightSource.FlickerProfile.LANTERN_BREATH));
+            }
             return true;
         }
 
@@ -1798,6 +1841,12 @@ public class Player {
                 && !maze.getItems().containsKey(frontTile)) {
             item.getPosition().set(frontTile.x + 0.5f, frontTile.y + 0.5f);
             maze.addItem(item);
+            if (item.getType() == ItemType.BRASS_LANTERN) {
+                maze.addLight(new LightSource("shelter_lantern_" + frontTile.x + "_" + frontTile.y,
+                        frontTile.x + 0.5f, frontTile.y + 0.5f,
+                        LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                        LightSource.FlickerProfile.LANTERN_BREATH));
+            }
             return true;
         }
 
@@ -1814,6 +1863,12 @@ public class Player {
                 if (!maze.getItems().containsKey(neighborTile)) {
                     item.getPosition().set(neighborTile.x + 0.5f, neighborTile.y + 0.5f);
                     maze.addItem(item);
+                    if (item.getType() == ItemType.BRASS_LANTERN) {
+                        maze.addLight(new LightSource("shelter_lantern_" + neighborTile.x + "_" + neighborTile.y,
+                                neighborTile.x + 0.5f, neighborTile.y + 0.5f,
+                                LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                                LightSource.FlickerProfile.LANTERN_BREATH));
+                    }
                     return true;
                 }
             }

@@ -16,6 +16,8 @@ import com.bpm.minotaur.gamedata.gore.WallDecal;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.WorldConstants;
+import com.bpm.minotaur.lighting.LightSource;
+import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherRenderer;
@@ -98,6 +100,9 @@ public class FirstPersonRenderer {
 
     private ShaderProgram floorShader;
     private ShaderProgram retroFloorShader;
+
+    private final Color dynamicLightScratch = new Color();
+    private final Array<LightSource> nearestLights = new Array<>(false, 4);
 
     private WeatherRenderer weatherRenderer;
     private final Skybox3DRenderer skybox3DRenderer;
@@ -291,7 +296,7 @@ public class FirstPersonRenderer {
                 }
             } else {
                 // Render Flat Ceiling for Indoors (Home OR Dungeon)
-                Color ceilColor = applyTorchLighting(currentCeilingColor, WorldConstants.TORCH_FADE_END, new Color());
+                Color ceilColor = applyDynamicLighting(currentCeilingColor, player.getPosition().x, player.getPosition().y, maze, worldManager, new Color(), isIndoors);
                 spriteBatch.setColor(ceilColor);
                 spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(),
                         viewport.getWorldHeight() / 2);
@@ -322,7 +327,7 @@ public class FirstPersonRenderer {
                     // Result indicates a HIT (Wall/Door/Window-Termination)
                     maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
-                            lightIntensity, maze);
+                            lightIntensity, maze, worldManager);
 
                     if (result.windowHits != null && !result.windowHits.isEmpty()) {
                         // Render window immediately (for depth writing)
@@ -393,7 +398,7 @@ public class FirstPersonRenderer {
                     retroWallsRendered++;
                     maze.markVisited(result.mapX, result.mapY);
                     renderRetroWallSlice(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
-                            lightIntensity, maze);
+                            lightIntensity, maze, worldManager);
 
                     // Render Windows (Front to Back or Back to Front? Back to Front usually, but
                     // here distinct)
@@ -514,6 +519,7 @@ public class FirstPersonRenderer {
         float floorLight = (!isIndoors && wetness > 0.05f) ? lightIntensity * (1.0f - wetness * 0.28f) : lightIntensity;
         floorShader.setUniformf("u_lightIntensity", floorLight);
         floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+        uploadFloorLightingUniforms(floorShader, player, worldManager, isIndoors);
 
         spriteBatch.setColor(Color.WHITE);
 
@@ -557,6 +563,7 @@ public class FirstPersonRenderer {
         float floorLight = (!isIndoors && wetness > 0.05f) ? lightIntensity * (1.0f - wetness * 0.28f) : lightIntensity;
         retroFloorShader.setUniformf("u_lightIntensity", floorLight);
         retroFloorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
+        uploadFloorLightingUniforms(retroFloorShader, player, worldManager, isIndoors);
 
         // Pass Floor Color (Theme color)
         retroFloorShader.setUniformf("u_floorColor", currentFloorColor.r, currentFloorColor.g, currentFloorColor.b);
@@ -567,8 +574,56 @@ public class FirstPersonRenderer {
         spriteBatch.setShader(null);
     }
 
+    private void uploadFloorLightingUniforms(ShaderProgram shader, Player player, WorldManager worldManager, boolean isIndoors) {
+        LightingManager lm = (worldManager != null) ? worldManager.getLightingManager() : null;
+        if (lm != null) {
+            lm.getNearestLights(player.getPosition(), 4, nearestLights);
+            int count = nearestLights.size;
+            shader.setUniformi("u_lightCount", count);
+            for (int i = 0; i < 4; i++) {
+                if (i < count) {
+                    LightSource l = nearestLights.get(i);
+                    shader.setUniformf("u_lightPos[" + i + "]", l.getPosition().x, l.getPosition().y);
+                    Color c = l.getCurrentColor();
+                    shader.setUniformf("u_lightColor[" + i + "]", c.r, c.g, c.b);
+                    shader.setUniformf("u_lightRadius[" + i + "]", l.getCurrentRadius());
+                    shader.setUniformf("u_lightIntensityArr[" + i + "]", l.getCurrentIntensity());
+                } else {
+                    shader.setUniformf("u_lightPos[" + i + "]", 0f, 0f);
+                    shader.setUniformf("u_lightColor[" + i + "]", 0f, 0f, 0f);
+                    shader.setUniformf("u_lightRadius[" + i + "]", 0.001f);
+                    shader.setUniformf("u_lightIntensityArr[" + i + "]", 0f);
+                }
+            }
+            float baseAmbient = (isIndoors) ? 0.04f : ((worldManager != null && worldManager.getDayNightManager() != null) ? worldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            Color voidCol = LightingManager.COLOR_COLD_VOID;
+            shader.setUniformf("u_ambientColor", voidCol.r * baseAmbient, voidCol.g * baseAmbient, voidCol.b * baseAmbient);
+        } else {
+            shader.setUniformi("u_lightCount", 0);
+            shader.setUniformf("u_ambientColor", 0.5f, 0.5f, 0.5f);
+        }
+    }
+
+    public Color applyDynamicLighting(Color originalColor, float worldX, float worldY, Maze maze, WorldManager worldManager, Color outputColor, boolean isIndoors) {
+        LightingManager lm = (worldManager != null) ? worldManager.getLightingManager() : null;
+        if (lm != null) {
+            float baseAmbient = (isIndoors) ? 0.04f : ((worldManager != null && worldManager.getDayNightManager() != null) ? worldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            lm.calculateLightAt(worldX, worldY, maze, dynamicLightScratch, baseAmbient);
+            outputColor.set(
+                    originalColor.r * dynamicLightScratch.r,
+                    originalColor.g * dynamicLightScratch.g,
+                    originalColor.b * dynamicLightScratch.b,
+                    originalColor.a
+            );
+            return outputColor;
+        } else {
+            outputColor.set(originalColor);
+            return outputColor;
+        }
+    }
+
     private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
                 : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -591,28 +646,15 @@ public class FirstPersonRenderer {
             if (isFramePart) {
                 // RENDER FRAME (Wall Texture)
                 int texX = (int) (result.wallX * wallTexture.getWidth());
-                // Wall texture doesn't need torch lighting usually? Or does it?
-                // Wait, the original code applied torch to retro but not modern?
-                // Modern code usually relies on shader or just tint.
-                // Original modern code:
-                // fogLerpColor.set(Color.WHITE).lerp(fogColor,
-                // fogAmount).mul(lightIntensity...);
-                // spriteBatch.setColor(fogLerpColor);
-                // Let's stick to the specific fog logic from original method for Modern mode to
-                // be consistent.
-
-                // Re-creating the specific color logic from original Modern method to avoid
-                // regressions:
+                applyDynamicLighting(Color.WHITE, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
                 if (fogEnabled) {
                     float fogAmount = Math.max(0, Math.min(1f,
                             (result.distance - (fogDistance * (1f - FOG_FADE_RATIO)))
                                     / (fogDistance * FOG_FADE_RATIO)));
-                    fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-                    fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-                    spriteBatch.setColor(fogLerpColor);
-                } else {
-                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    fogLerpColor.lerp(fogColor, fogAmount);
                 }
+                fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                spriteBatch.setColor(fogLerpColor);
 
                 spriteBatch.draw(wallTexture, screenX, drawStart, 1, height, texX, 0, 1, wallTexture.getHeight(),
                         false, false);
@@ -628,16 +670,15 @@ public class FirstPersonRenderer {
                 float doorDrawEnd = drawStart + doorHeight;
 
                 // Set color for wall/frame
+                applyDynamicLighting(Color.WHITE, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
                 if (fogEnabled) {
                     float fogAmount = Math.max(0, Math.min(1f,
                             (result.distance - (fogDistance * (1f - FOG_FADE_RATIO)))
                                     / (fogDistance * FOG_FADE_RATIO)));
-                    fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-                    fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-                    spriteBatch.setColor(fogLerpColor);
-                } else {
-                    spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                    fogLerpColor.lerp(fogColor, fogAmount);
                 }
+                fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+                spriteBatch.setColor(fogLerpColor);
 
                 // Draw Lintel (Area above door)
                 if (drawEnd > doorDrawEnd) {
@@ -772,15 +813,14 @@ public class FirstPersonRenderer {
         } else {
             // STANDARD WALL
             Texture texture = wallTexture; // Always wall for non-doors
+            applyDynamicLighting(Color.WHITE, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
             if (fogEnabled) {
                 float fogAmount = Math.max(0, Math.min(1f,
                         (result.distance - (fogDistance * (1f - FOG_FADE_RATIO))) / (fogDistance * FOG_FADE_RATIO)));
-                fogLerpColor.set(Color.WHITE).lerp(fogColor, fogAmount);
-                fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
-                spriteBatch.setColor(fogLerpColor);
-            } else {
-                spriteBatch.setColor(lightIntensity, lightIntensity, lightIntensity, 1f);
+                fogLerpColor.lerp(fogColor, fogAmount);
             }
+            fogLerpColor.mul(lightIntensity, lightIntensity, lightIntensity, 1f);
+            spriteBatch.setColor(fogLerpColor);
 
             int texX = (int) (result.wallX * texture.getWidth());
             spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(),
@@ -791,7 +831,7 @@ public class FirstPersonRenderer {
     }
 
     private void renderRetroWallSlice(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
                 : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -813,7 +853,8 @@ public class FirstPersonRenderer {
             if (isFramePart) {
                 Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
                 Color finalColor = new Color(frameColor).mul(colorModifier);
-                spriteBatch.setColor(applyTorchLighting(finalColor, result.distance, fogLerpColor));
+                Color litColor = applyDynamicLighting(finalColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+                spriteBatch.setColor(litColor);
                 spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
             } else {
                 float doorHeight = height * DOOR_HEIGHT_RATIO;
@@ -823,7 +864,8 @@ public class FirstPersonRenderer {
                 if (drawEnd > doorDrawEnd) {
                     Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
                     Color finalFrameColor = new Color(frameColor).mul(colorModifier);
-                    spriteBatch.setColor(applyTorchLighting(finalFrameColor, result.distance, fogLerpColor));
+                    Color litColor = applyDynamicLighting(finalFrameColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+                    spriteBatch.setColor(litColor);
                     spriteBatch.draw(blankTexture, screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
                 }
 
@@ -835,7 +877,8 @@ public class FirstPersonRenderer {
                 if (doorDrawEnd > doorDrawStart) {
                     Color doorRenderColor = (result.side == 1) ? currentDoorDarkColor : currentDoorColor;
                     Color finalDoorColor = new Color(doorRenderColor).mul(colorModifier);
-                    spriteBatch.setColor(applyTorchLighting(finalDoorColor, result.distance, fogLerpColor));
+                    Color litColor = applyDynamicLighting(finalDoorColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+                    spriteBatch.setColor(litColor);
                     spriteBatch.draw(blankTexture, screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
                 }
             }
@@ -846,7 +889,8 @@ public class FirstPersonRenderer {
 
             Color frameColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
             Color finalFrameColor = new Color(frameColor).mul(colorModifier);
-            spriteBatch.setColor(applyTorchLighting(finalFrameColor, result.distance, fogLerpColor));
+            Color litFrame = applyDynamicLighting(finalFrameColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+            spriteBatch.setColor(litFrame);
 
             if (drawEnd > doorDrawEnd) {
                 spriteBatch.draw(blankTexture, screenX, doorDrawEnd, 1, drawEnd - doorDrawEnd);
@@ -859,7 +903,8 @@ public class FirstPersonRenderer {
 
             if (result.gate.getState() != Gate.GateState.OPEN && doorDrawEnd > doorDrawStart) {
                 Color gateColor = new Color(Color.CYAN).mul(colorModifier);
-                spriteBatch.setColor(applyTorchLighting(gateColor, result.distance, fogLerpColor));
+                Color litGate = applyDynamicLighting(gateColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+                spriteBatch.setColor(litGate);
                 spriteBatch.draw(blankTexture, screenX, doorDrawStart, 1, doorDrawEnd - doorDrawStart);
             }
         } else {
@@ -871,7 +916,8 @@ public class FirstPersonRenderer {
                 renderColor = (result.side == 1) ? currentWallDarkColor : currentWallColor;
             }
             Color finalColor = new Color(renderColor).mul(colorModifier);
-            spriteBatch.setColor(applyTorchLighting(finalColor, result.distance, fogLerpColor));
+            Color litColor = applyDynamicLighting(finalColor, result.hitX, result.hitY, maze, worldManager, fogLerpColor, maze.isIndoors(result.mapX, result.mapY));
+            spriteBatch.setColor(litColor);
             spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
         }
 
@@ -1465,8 +1511,10 @@ public class FirstPersonRenderer {
             boolean hitsFrame = frameWallX < doorEdgeMargin || frameWallX > 1.0f - doorEdgeMargin;
 
             if (hitsFrame) {
+                float frameHitX = renderPosition.x + actualFrameDistance * rayDir.x;
+                float frameHitY = renderPosition.y + actualFrameDistance * rayDir.y;
                 return new RaycastResult(actualFrameDistance, doorFrameSide, WallType.DOOR, doorFrameObject, null,
-                        frameWallX, doorFrameMapX, doorFrameMapY, windowHits, 0);
+                        frameWallX, doorFrameMapX, doorFrameMapY, windowHits, 0, frameHitX, frameHitY);
             }
         }
 
@@ -1511,8 +1559,10 @@ public class FirstPersonRenderer {
                 }
             }
         }
+        float hitX = renderPosition.x + perpWallDist * rayDir.x;
+        float hitY = renderPosition.y + perpWallDist * rayDir.y;
         return new RaycastResult(perpWallDist, side, wallType, hitDoor, hitGate, wallX, mapX, mapY, windowHits,
-                finalCollisionMask);
+                finalCollisionMask, hitX, hitY);
     }
 
     private boolean isOutOfBounds(int x, int y, Maze maze) {
@@ -1720,9 +1770,11 @@ public class FirstPersonRenderer {
         final int mapY;
         final java.util.List<WindowHit> windowHits;
         final int collisionMask; // New Field
+        final float hitX;
+        final float hitY;
 
         RaycastResult(float distance, int side, WallType wallType, Door door, Gate gate, float wallX, int mapX,
-                int mapY, java.util.List<WindowHit> windowHits, int collisionMask) {
+                int mapY, java.util.List<WindowHit> windowHits, int collisionMask, float hitX, float hitY) {
             this.distance = distance;
             this.side = side;
             this.wallType = wallType;
@@ -1733,6 +1785,8 @@ public class FirstPersonRenderer {
             this.mapY = mapY;
             this.windowHits = windowHits;
             this.collisionMask = collisionMask;
+            this.hitX = hitX;
+            this.hitY = hitY;
         }
     }
 

@@ -445,6 +445,64 @@
       }
     ]
   },
+  "BRASS_LANTERN": {
+    "friendlyName": "Brass Lantern",
+    "texturePath": "images/items/brass_lantern.png",
+    "isImpassable": false,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........######.........",
+      "........#......#........",
+      "........#..##..#........",
+      "........#.####.#........",
+      "........#.####.#........",
+      "........#..##..#........",
+      "........#......#........",
+      ".........######.........",
+      ".........######.........",
+      "........########........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 50,
+    "damageDice": 3,
+    "armorClassBonus": 0,
+    "isWeapon": true,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": true,
+    "isContainer": false,
+    "isRing": false,
+    "critChanceBonus": 0.10,
+    "fireDamage": 1,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
   "PROJECTILE": {
     "friendlyName": "Projectile",
     "texturePath": "images/weapons/big_bolt.png",

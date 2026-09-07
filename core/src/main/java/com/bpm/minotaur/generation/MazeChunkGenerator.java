@@ -9,6 +9,8 @@ import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
+import com.bpm.minotaur.lighting.LightSource;
+import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 
@@ -91,9 +93,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "............",
             "...##D###...",
-            "...#...C#...",
+            "...#L..C#...",
             "...W...N#...",
-            "...#F.B.#...",
+            "...#F.BL#...",
             "...######...",
             "............",
             "............",
@@ -566,9 +568,19 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 else if (c == 'B')
                     maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.BLUE,
                             assetManager));
-                else if (c == 'F')
+                else if (c == 'F') {
                     maze.addItem(
                             itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.RED, assetManager));
+                    maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
+                            LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                            LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                } else if (c == 'L') {
+                    maze.addItem(
+                            itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.YELLOW, assetManager));
+                    maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
+                            LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                            LightSource.FlickerProfile.LANTERN_BREATH));
+                }
             }
         }
         for (int y = 0; y < height; y++) {

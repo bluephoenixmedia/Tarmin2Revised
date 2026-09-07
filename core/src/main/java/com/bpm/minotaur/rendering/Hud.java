@@ -1418,6 +1418,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.BRASS_LANTERN) {
+                worldInteractionCard.show(
+                        "[SHELTER HAVEN]",
+                        "[BRASS LANTERN]",
+                        "Mounted Brass Lantern",
+                        "Casts a steady, warm 5.5m golden light. Equip in off-hand to pierce dungeon darkness and spot enemy weak points (+10% Crit).",
+                        "[ P ] Take Lantern",
+                        "[ O ] Toggle Flame",
+                        () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
+                );
+                return;
+            }
         }
 
         // 2. Check Doors in front

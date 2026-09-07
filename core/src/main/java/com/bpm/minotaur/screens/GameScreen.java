@@ -1906,6 +1906,25 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.BRASS_LANTERN) {
+            com.bpm.minotaur.lighting.LightSource foundLight = null;
+            for (com.bpm.minotaur.lighting.LightSource ls : maze.getLights()) {
+                if (Math.abs(ls.getPosition().x - (target.x + 0.5f)) < 0.6f && Math.abs(ls.getPosition().y - (target.y + 0.5f)) < 0.6f) {
+                    foundLight = ls;
+                    break;
+                }
+            }
+            if (foundLight != null) {
+                foundLight.setActive(!foundLight.isActive());
+                soundManager.playDoorOpenSound();
+                eventManager.addEvent(new GameEvent("Lantern flame " + (foundLight.isActive() ? "kindled." : "snuffed out."), 2f));
+                hud.addMessage("Lantern flame " + (foundLight.isActive() ? "kindled." : "snuffed out."));
+            }
+            playerTurnTakesAction();
+            needsAsciiRender = true;
+            return;
+        }
+
         player.interact(maze, eventManager, soundManager, gameMode, worldManager);
         playerTurnTakesAction();
         needsAsciiRender = true;

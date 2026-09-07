@@ -45,11 +45,11 @@ public class WorldConstants {
      */
     public static final float MOUNTAIN_THRESHOLD = 0.6f;
 
-    // lighting off
-    public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 1.0f; // Distance where lighting is at 100%
-    public static final float TORCH_FADE_START = 20.0f; // Distance where dimming starts
-    public static final float TORCH_FADE_END = 20.0f; // Distance where it's completely dark
-    public static final float TORCH_MIN_BRIGHTNESS = 1.00f; // Minimum brightness (never completely black)
+    // Authentic Dynamic Dungeon Lighting Constants
+    public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 1.8f; // Distance where lighting is at 100%
+    public static final float TORCH_FADE_START = 3.5f;             // Distance where torch begins fading
+    public static final float TORCH_FADE_END = 5.5f;               // Outer bound of torch light pool
+    public static final float TORCH_MIN_BRIGHTNESS = 0.04f;        // Pitch darkness ambient void floor
 
     // public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 2.0f; // Distance
     // where lighting is at 100%

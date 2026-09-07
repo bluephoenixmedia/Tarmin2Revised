@@ -163,6 +163,16 @@ public class DayNightManager {
         return out;
     }
 
+    /** Returns normalized ambient daylight intensity [0.15 (night) to 1.0 (noon)]. */
+    public float getAmbientLight() {
+        float sunElevation = MathUtils.sin((timeOfDay - 0.25f) * 2.0f * MathUtils.PI);
+        if (sunElevation > 0.05f) {
+            return MathUtils.clamp(0.35f + sunElevation * 0.65f, 0.35f, 1.0f);
+        } else {
+            return 0.15f;
+        }
+    }
+
     // --- Private helpers ---
 
     private void recomputeSkyTint() {

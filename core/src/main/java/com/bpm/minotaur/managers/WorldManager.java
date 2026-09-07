@@ -15,6 +15,8 @@ import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
+import com.bpm.minotaur.lighting.LightSource;
+import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 import com.bpm.minotaur.weather.WeatherManager;
 
@@ -38,6 +40,7 @@ public class WorldManager {
 
     private final WeatherManager weatherManager;
     private final DayNightManager dayNightManager;
+    private final LightingManager lightingManager;
     private final SpawnTableData spawnTableData;
     private final com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager;
     private final CookingManager cookingManager;
@@ -91,6 +94,7 @@ public class WorldManager {
 
         this.weatherManager = new WeatherManager(this);
         this.dayNightManager = new DayNightManager();
+        this.lightingManager = new LightingManager();
 
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
@@ -125,7 +129,9 @@ public class WorldManager {
     }
 
     public Maze getInitialMaze() {
-        return loadChunk(new GridPoint2(0, 0));
+        Maze maze = loadChunk(new GridPoint2(0, 0));
+        syncLightsForChunk(maze);
+        return maze;
     }
 
     public void disableSaving() {
@@ -196,6 +202,7 @@ public class WorldManager {
 
         // Clear cache so we don't see old level chunks
         loadedChunks.clear();
+        syncLightsForChunk(null);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
 
         // Update Deepest Level Tracking
@@ -223,6 +230,7 @@ public class WorldManager {
         this.pendingUpLadderPos = null; // No forced generation needed, we load previous state
 
         loadedChunks.clear();
+        syncLightsForChunk(null);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
 
         Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel);
@@ -397,12 +405,19 @@ public class WorldManager {
             dayNightManager.update(delta);
         }
 
+        Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
+        if (lightingManager != null) {
+            if (currentMaze != null && (lightingManager.getWorldLights().size != currentMaze.getLights().size)) {
+                syncLightsForChunk(currentMaze);
+            }
+            lightingManager.update(delta, playerReference, currentMaze);
+        }
+
         if (currentLevel == 1) {
             weatherManager.update(delta);
 
             // Audio Dampening Check
             if (playerReference != null) {
-                Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
                 if (currentMaze != null) {
                     boolean insideHome = currentMaze.isHomeTile((int) playerReference.getPosition().x,
                             (int) playerReference.getPosition().y);
@@ -455,6 +470,7 @@ public class WorldManager {
         this.currentPlayerChunkId = newChunkId;
         player.setMaze(newMaze);
         player.setPosition(newPlayerPos);
+        syncLightsForChunk(newMaze);
     }
 
     public GridPoint2 getAdjacentChunkId(Direction direction) {
@@ -490,5 +506,15 @@ public class WorldManager {
             sm.spawnPeriodicMonster(player);
             Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount);
         }
+    }
+
+    public void syncLightsForChunk(Maze maze) {
+        if (lightingManager != null) {
+            lightingManager.setWorldLights(maze != null ? maze.getLights() : null);
+        }
+    }
+
+    public LightingManager getLightingManager() {
+        return lightingManager;
     }
 }

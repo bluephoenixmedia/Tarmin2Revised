@@ -18,6 +18,9 @@ import com.bpm.minotaur.gamedata.gore.BloodParticle;
 import com.bpm.minotaur.gamedata.gore.Gib;
 import com.bpm.minotaur.gamedata.gore.GibType;
 import com.bpm.minotaur.gamedata.gore.SurfaceDecal;
+import com.bpm.minotaur.lighting.LightSource;
+import com.bpm.minotaur.lighting.LightingManager;
+import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
@@ -60,15 +63,38 @@ public class EntityRenderer {
     private int retroSceneryCount = 0;
     private int retroMissingSpriteFallbacks = 0;
 
+    private WorldManager currentWorldManager;
+    private Maze currentMaze;
+    private final Color dynamicLightScratch = new Color();
+    private final Texture blankTexture;
+
     public EntityRenderer(ItemDataManager itemDataManager, AssetManager assetManager) {
         this.spriteBatch = new PolygonSpriteBatch();
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
 
+        com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        this.blankTexture = new Texture(pixmap);
+        pixmap.dispose();
+
         // Create a default font for tooltips
         this.font = new BitmapFont();
         this.font.getData().setScale(1.2f);
         this.font.setUseIntegerPositions(false);
+    }
+
+    public Color getMonsterEyeColor(Monster monster) {
+        if (monster == null || monster.getType() == null) return Color.RED;
+        String name = monster.getType().name();
+        if (name.contains("SKELETON") || name.contains("WRAITH") || name.contains("GHOST") || name.contains("UNDEAD") || name.contains("SPIRIT")) {
+            return new Color(0.75f, 0.30f, 1.0f, 1.0f); // Ethereal Violet
+        } else if (name.contains("TROGLODYTE") || name.contains("SPIDER") || name.contains("SNAKE") || name.contains("SLIME")) {
+            return new Color(0.15f, 1.0f, 0.25f, 1.0f); // Venom Green
+        } else {
+            return new Color(1.0f, 0.15f, 0.15f, 1.0f); // Ruby Red (Beasts, Minotaur, Orcs, Ants)
+        }
     }
 
     private Color applyTorchLighting(Color originalColor, float distance, Color outputColor) {
@@ -109,6 +135,9 @@ public class EntityRenderer {
 
         if (depthBuffer == null)
             return;
+
+        this.currentWorldManager = worldManager;
+        this.currentMaze = maze;
 
         // Reset tooltip and RETRO diagnostics for this frame
         hoveredItem = null;
@@ -765,6 +794,23 @@ public class EntityRenderer {
 
             if (monsterTex == null) return;
 
+            Color monsterLight = new Color(1f, 1f, 1f, 1f);
+            LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+            boolean isIndoors = maze != null && maze.isIndoors((int) monster.getPosition().x, (int) monster.getPosition().y);
+            float baseAmbient = isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            if (lm != null) {
+                lm.calculateLightAt(monster.getPosition().x, monster.getPosition().y, maze, monsterLight, baseAmbient);
+            }
+
+            float maxBright = Math.max(monsterLight.r, Math.max(monsterLight.g, monsterLight.b));
+            boolean inPitchDarkness = maxBright < 0.12f;
+
+            if (inPitchDarkness) {
+                spriteBatch.setColor(Math.max(0.04f, monsterLight.r * 0.4f), Math.max(0.04f, monsterLight.g * 0.4f), Math.max(0.05f, monsterLight.b * 0.4f), 1f);
+            } else {
+                spriteBatch.setColor(monsterLight);
+            }
+
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     // Fix: Check depth buffer to prevent monsters drawing through walls
@@ -785,6 +831,25 @@ public class EntityRenderer {
                     }
                 }
             }
+
+            // Glistening Emissive Eyes in Pitch Darkness
+            if (inPitchDarkness) {
+                Color eyeColor = getMonsterEyeColor(monster);
+                spriteBatch.setColor(eyeColor);
+                float eyeY = drawY + spriteHeight * 0.65f;
+                int eyeSpan = Math.max(2, (int)(spriteWidth * 0.12f));
+                int leftEyeX = screenX - eyeSpan;
+                int rightEyeX = screenX + eyeSpan;
+                int eyeSize = Math.max(2, (int)(spriteHeight * 0.035f));
+
+                if (leftEyeX >= 0 && leftEyeX < depthBuffer.length && transformY < depthBuffer[leftEyeX]) {
+                    spriteBatch.draw(blankTexture, leftEyeX, eyeY, eyeSize, eyeSize);
+                }
+                if (rightEyeX >= 0 && rightEyeX < depthBuffer.length && transformY < depthBuffer[rightEyeX]) {
+                    spriteBatch.draw(blankTexture, rightEyeX, eyeY, eyeSize, eyeSize);
+                }
+            }
+            spriteBatch.setColor(Color.WHITE);
         }
     }
 
@@ -876,6 +941,15 @@ public class EntityRenderer {
             int drawStartX = Math.max(0, screenX - spriteWidth / 2 + (int) pixelOffX);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2 + (int) pixelOffX);
 
+            Color itemLight = new Color(1f, 1f, 1f, 1f);
+            LightingManager itemLm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+            boolean itemIndoors = maze != null && maze.isIndoors((int) item.getPosition().x, (int) item.getPosition().y);
+            float itemBaseAmbient = itemIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            if (itemLm != null) {
+                itemLm.calculateLightAt(item.getPosition().x, item.getPosition().y, maze, itemLight, itemBaseAmbient);
+            }
+            spriteBatch.setColor(itemLight);
+
             for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
                 if (stripe >= 0 && stripe < depthBuffer.length) {
                     // Fix: Check depth buffer to prevent drawing through walls
@@ -914,6 +988,7 @@ public class EntityRenderer {
                             vEnd);
                 }
             }
+            spriteBatch.setColor(Color.WHITE);
         }
     }
 
@@ -1286,9 +1361,34 @@ public class EntityRenderer {
                             && texX < spriteData[texY].length()) {
                         char pixelChar = spriteData[texY].charAt(texX);
                         if (pixelChar != '.') {
-                            Color pixelColor = getPixelColor(pixelChar, entity.getColor());
-                            shapeRenderer.setColor(
-                                    applyTorchLighting(pixelColor, WorldConstants.TORCH_FADE_END, new Color()));
+                            Color dynamicLight = new Color(1f, 1f, 1f, 1f);
+                            LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+                            boolean isIndoors = currentMaze != null && currentMaze.isIndoors((int) entity.getPosition().x, (int) entity.getPosition().y);
+                            float baseAmbient = isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+                            if (lm != null) {
+                                lm.calculateLightAt(entity.getPosition().x, entity.getPosition().y, currentMaze, dynamicLight, baseAmbient);
+                            }
+                            float maxBright = Math.max(dynamicLight.r, Math.max(dynamicLight.g, dynamicLight.b));
+                            boolean isMonster = entity instanceof Monster;
+                            boolean inPitchDarkness = isMonster && maxBright < 0.12f;
+
+                            if (inPitchDarkness) {
+                                boolean isEyePixel = (texY >= 5 && texY <= 8 && (texX == 9 || texX == 10 || texX == 13 || texX == 14 || pixelChar == 'R' || pixelChar == 'Y' || pixelChar == 'G' || pixelChar == 'W'));
+                                if (isEyePixel) {
+                                    shapeRenderer.setColor(getMonsterEyeColor((Monster) entity));
+                                } else {
+                                    shapeRenderer.setColor(0.04f, 0.04f, 0.06f, 1f);
+                                }
+                            } else {
+                                Color pixelColor = getPixelColor(pixelChar, entity.getColor());
+                                dynamicLightScratch.set(
+                                        pixelColor.r * dynamicLight.r,
+                                        pixelColor.g * dynamicLight.g,
+                                        pixelColor.b * dynamicLight.b,
+                                        1f
+                                );
+                                shapeRenderer.setColor(dynamicLightScratch);
+                            }
                             shapeRenderer.rect(stripe, screenY, 1, 1);
                         }
                     }
@@ -1484,5 +1584,8 @@ public class EntityRenderer {
     public void dispose() {
         spriteBatch.dispose();
         font.dispose();
+        if (blankTexture != null) {
+            blankTexture.dispose();
+        }
     }
 }

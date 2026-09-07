@@ -240,6 +240,35 @@ public class Maze {
         projectiles.add(projectile);
     }
 
+    private final com.badlogic.gdx.utils.Array<com.bpm.minotaur.lighting.LightSource> lights = new com.badlogic.gdx.utils.Array<>(false, 16);
+
+    public com.badlogic.gdx.utils.Array<com.bpm.minotaur.lighting.LightSource> getLights() {
+        return lights;
+    }
+
+    public void addLight(com.bpm.minotaur.lighting.LightSource light) {
+        if (light == null) return;
+        removeLight(light.getId());
+        lights.add(light);
+    }
+
+    public void removeLight(String id) {
+        for (int i = lights.size - 1; i >= 0; i--) {
+            if (lights.get(i).getId().equals(id)) {
+                lights.removeIndex(i);
+            }
+        }
+    }
+
+    public void removeLightAt(float x, float y) {
+        for (int i = lights.size - 1; i >= 0; i--) {
+            com.bpm.minotaur.lighting.LightSource l = lights.get(i);
+            if (Math.abs(l.getPosition().x - x) < 0.6f && Math.abs(l.getPosition().y - y) < 0.6f) {
+                lights.removeIndex(i);
+            }
+        }
+    }
+
     public void setTheme(RetroTheme.Theme theme) {
         this.theme = theme;
     }
