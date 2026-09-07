@@ -27,6 +27,8 @@ public class SkyboxAssetsTest {
                 "storm_clouds_upper.mtl",
                 "storm_clouds_lower.obj",
                 "storm_clouds_lower.mtl",
+                "celestial_dome.obj",
+                "celestial_dome.mtl",
                 "skybox_landmarks.blend"
         };
 
@@ -45,7 +47,9 @@ public class SkyboxAssetsTest {
     public void testShadersExist() {
         String[] shaders = {
                 "shaders/retro_skybox.vert",
-                "shaders/retro_skybox.frag"
+                "shaders/retro_skybox.frag",
+                "shaders/storm_skydome.vert",
+                "shaders/storm_skydome.frag"
         };
 
         for (String shader : shaders) {

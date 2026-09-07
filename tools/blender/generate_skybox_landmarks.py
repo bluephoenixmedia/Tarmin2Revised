@@ -395,6 +395,28 @@ def build_celestial_bodies():
     return sun, moon
 
 # -----------------------------------------------------------------------------
+# 5b. CELESTIAL SKY DOME (Hemisphere for Procedural Sky Shader)
+# -----------------------------------------------------------------------------
+def build_celestial_dome():
+    """Generates an inverted celestial sky dome (hemisphere) for the procedural sky shader."""
+    print("[Blender] Building Celestial Sky Dome...")
+    mat_dome = create_material("MatCelestialDome", (0.15, 0.15, 0.25, 1.0), roughness=1.0)
+    
+    # UV Sphere with radius 280.0
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=20, radius=280.0, location=(0, 0, 0))
+    dome = bpy.context.active_object
+    dome.name = "CelestialDome"
+    
+    # Invert normals so faces point inward toward the player
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.flip_normals()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    dome.data.materials.append(mat_dome)
+    return dome
+
+# -----------------------------------------------------------------------------
 # 6. STORM CLOUD DECKS (Upper Overhead Canopy & Lower Horizon Scud)
 # -----------------------------------------------------------------------------
 def build_storm_clouds_upper():
@@ -581,6 +603,11 @@ def main():
     sun, moon = build_celestial_bodies()
     export_object_as_obj(sun, os.path.join(out_dir, "celestial_sun.obj"))
     export_object_as_obj(moon, os.path.join(out_dir, "celestial_moon.obj"))
+
+    # 6b. Build Celestial Sky Dome
+    clear_scene()
+    dome = build_celestial_dome()
+    export_object_as_obj(dome, os.path.join(out_dir, "celestial_dome.obj"))
 
     # 7. Build Storm Cloud Decks
     clear_scene()

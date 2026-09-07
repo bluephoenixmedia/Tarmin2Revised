@@ -12,7 +12,8 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
-import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -21,22 +22,12 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherManager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * 3D Dynamic Skybox & Horizon Landmark Renderer.
  *
  * <p>Renders real 3D models of Castle Tarmin (North), the South Spire (South),
- * the Horizon Mountain Ring, West Cumulus Anvil Cloud, and celestial bodies (Sun/Moon).
- *
- * <p>Features:
- * <ul>
- *   <li>Subtle micro-parallax based on player grid coordinates.</li>
- *   <li>24-hour day/night celestial orbit with orbital lighting via {@link DayNightManager}.</li>
- *   <li>Dynamic storm cloud acceleration and lightning silhouetting via {@link WeatherManager}.</li>
- *   <li>Direct perspective horizon pass supporting both Modern and Retro CRT pipelines.</li>
- * </ul>
+ * the Horizon Mountain Ring, and celestial bodies (Sun/Moon) against a dynamic
+ * procedural 3D storm sky dome running multi-octave FBM fluid clouds and lightning scattering.
  */
 public class Skybox3DRenderer {
 
@@ -54,30 +45,33 @@ public class Skybox3DRenderer {
     private final DirectionalLight fillLight;
     private final ColorAttribute ambientAttr;
 
-    // Loaded 3D Models
+    // Loaded 3D Landmark Models
     private Model castleModel;
     private Model spireModel;
     private Model mountainModel;
-    private Model cumulusModel;
     private Model sunModel;
     private Model moonModel;
-    private Model stormCloudsUpperModel;
-    private Model stormCloudsLowerModel;
+    private Model domeModel;
+
+    // Procedural Sky Dome Shader & Transformation
+    private ShaderProgram stormShader;
+    private final Matrix4 domeTransform = new Matrix4();
 
     // 3D Model Instances
     private ModelInstance castleInstance;
     private ModelInstance spireInstance;
     private ModelInstance mountainInstance;
-    private ModelInstance cumulusInstance;
     private ModelInstance sunInstance;
     private ModelInstance moonInstance;
-    private ModelInstance stormCloudsUpperInstance;
-    private ModelInstance stormCloudsLowerInstance;
 
-    // Dynamic Cloud Drift & Rotations
-    private float cloudOffset = 0f;
-    private float upperCloudRotation = 0f;
-    private float lowerCloudRotation = 0f;
+    // Dynamic Atmosphere & Weather Tracking
+    private float totalTime = 0f;
+    private boolean isStormy = false;
+    private float currentFlash = 0f;
+    private final Vector3 sunDir = new Vector3(0.3f, 0.8f, 0.4f).nor();
+    private final Vector3 moonDir = new Vector3(-0.3f, -0.8f, -0.4f).nor();
+    private final Color skyTint = new Color(0.12f, 0.14f, 0.22f, 1f);
+    private final Color horizonFogColor = new Color(0.15f, 0.15f, 0.20f, 1f);
     private final Vector3 tempVec = new Vector3();
     private final Color tempColor = new Color();
 
@@ -100,7 +94,25 @@ public class Skybox3DRenderer {
         environment.add(keyLight);
         environment.add(fillLight);
 
+        initSkyShader();
         loadModels();
+    }
+
+    private void initSkyShader() {
+        try {
+            ShaderProgram.pedantic = false;
+            stormShader = new ShaderProgram(
+                    Gdx.files.internal("shaders/storm_skydome.vert"),
+                    Gdx.files.internal("shaders/storm_skydome.frag")
+            );
+            if (!stormShader.isCompiled()) {
+                Gdx.app.error(TAG, "Storm skydome shader compilation failed:\n" + stormShader.getLog());
+            } else {
+                Gdx.app.log(TAG, "Procedural storm sky dome shader successfully compiled.");
+            }
+        } catch (Throwable t) {
+            Gdx.app.error(TAG, "Error initializing storm sky shader: " + t.getMessage(), t);
+        }
     }
 
     private void loadModels() {
@@ -131,15 +143,6 @@ public class Skybox3DRenderer {
                 mountainInstance.transform.setToTranslation(0f, -8f, 0f);
             }
 
-            // West Cumulus Anvil Cloud (West: World -X)
-            if (Gdx.files.internal("models/skybox/west_cumulus.obj").exists()) {
-                cumulusModel = loader.loadModel(Gdx.files.internal("models/skybox/west_cumulus.obj"));
-                cumulusInstance = new ModelInstance(cumulusModel);
-                cumulusInstance.transform.setToTranslation(-LANDMARK_DISTANCE * 0.95f, 2f, 0f);
-                cumulusInstance.transform.rotate(Vector3.Y, 90f);
-                cumulusInstance.transform.scale(1.2f, 1.2f, 1.2f);
-            }
-
             // Celestial Sun & Moon
             if (Gdx.files.internal("models/skybox/celestial_sun.obj").exists()) {
                 sunModel = loader.loadModel(Gdx.files.internal("models/skybox/celestial_sun.obj"));
@@ -150,19 +153,12 @@ public class Skybox3DRenderer {
                 moonInstance = new ModelInstance(moonModel);
             }
 
-            // Upper Overhead Storm Cloud Canopy (360-degree overcast ceiling)
-            if (Gdx.files.internal("models/skybox/storm_clouds_upper.obj").exists()) {
-                stormCloudsUpperModel = loader.loadModel(Gdx.files.internal("models/skybox/storm_clouds_upper.obj"));
-                stormCloudsUpperInstance = new ModelInstance(stormCloudsUpperModel);
+            // Celestial Sky Dome (Hemisphere for Procedural FBM Cloud & Lightning Shader)
+            if (Gdx.files.internal("models/skybox/celestial_dome.obj").exists()) {
+                domeModel = loader.loadModel(Gdx.files.internal("models/skybox/celestial_dome.obj"));
             }
 
-            // Lower Horizon Storm Cloud Deck & Scud
-            if (Gdx.files.internal("models/skybox/storm_clouds_lower.obj").exists()) {
-                stormCloudsLowerModel = loader.loadModel(Gdx.files.internal("models/skybox/storm_clouds_lower.obj"));
-                stormCloudsLowerInstance = new ModelInstance(stormCloudsLowerModel);
-            }
-
-            isInitialized = (castleInstance != null && spireInstance != null);
+            isInitialized = (castleInstance != null && spireInstance != null && domeModel != null);
             Gdx.app.log(TAG, "3D Skybox models successfully loaded. Initialized: " + isInitialized);
         } catch (Throwable t) {
             Gdx.app.error(TAG, "Error loading 3D skybox models: " + t.getMessage(), t);
@@ -175,8 +171,10 @@ public class Skybox3DRenderer {
     public void update(float delta, Player player, WorldManager worldManager) {
         if (!isInitialized || player == null) return;
 
-        DayNightManager dayNight = worldManager.getDayNightManager();
-        WeatherManager weather   = worldManager.getWeatherManager();
+        totalTime += delta;
+
+        DayNightManager dayNight = (worldManager != null) ? worldManager.getDayNightManager() : null;
+        WeatherManager weather   = (worldManager != null) ? worldManager.getWeatherManager() : null;
 
         // 1. Camera Alignment (Direction tracks player view continuous vector)
         float fwdX = player.getDirectionVector().x;
@@ -190,53 +188,35 @@ public class Skybox3DRenderer {
         camera.up.set(Vector3.Y);
         camera.update();
 
-        // 2. Cloud Drift Velocity & Storm Acceleration
-        float driftSpeed = 0.6f;
-        if (weather != null && weather.isStormy()) {
-            driftSpeed = 2.8f; // Gale force surge during storm
-        }
-        cloudOffset += driftSpeed * delta;
-        upperCloudRotation += driftSpeed * 0.35f * delta;
-        lowerCloudRotation += driftSpeed * 0.85f * delta;
+        // Dome tracks camera position so player is always at center of celestial hemisphere
+        domeTransform.idt().setToTranslation(camX, 0.5f, camZ);
 
-        // Dynamic multi-layer cloud positioning - elevated high into the sky dome
-        if (stormCloudsUpperInstance != null) {
-            stormCloudsUpperInstance.transform.setToTranslation(camX, 22f, camZ);
-            stormCloudsUpperInstance.transform.rotate(Vector3.Y, upperCloudRotation);
-        }
-
-        if (stormCloudsLowerInstance != null) {
-            stormCloudsLowerInstance.transform.setToTranslation(camX, 10f, camZ);
-            stormCloudsLowerInstance.transform.rotate(Vector3.Y, lowerCloudRotation);
-        }
-
-        if (cumulusInstance != null) {
-            // Subtle bobbing & wind drift for western anvil cloud
-            float wobble = MathUtils.sin(cloudOffset * 0.4f) * 1.5f;
-            cumulusInstance.transform.setToTranslation(-LANDMARK_DISTANCE * 0.95f, 16f + wobble, 0f);
-            cumulusInstance.transform.rotate(Vector3.Y, 90f);
-            cumulusInstance.transform.scale(1.2f, 1.2f, 1.2f);
-        }
+        // 2. Weather Dynamics
+        isStormy = (weather != null && weather.isStormy());
+        currentFlash = (weather != null) ? weather.getFlashIntensity() : 0f;
 
         // 3. Day/Night Lighting & Celestial Disk Positions
         if (dayNight != null) {
-            Color skyTint = dayNight.getSkyTint();
+            Color currentSky = dayNight.getSkyTint();
+            skyTint.set(currentSky);
+            horizonFogColor.set(currentSky.r * 0.45f, currentSky.g * 0.45f, currentSky.b * 0.55f, 1f);
+
             float brightness = dayNight.getBrightness();
 
             // Key light color & direction
-            dayNight.getSunDirection(tempVec);
-            keyLight.direction.set(tempVec.x, -tempVec.y, tempVec.z).nor();
+            dayNight.getSunDirection(sunDir);
+            dayNight.getMoonDirection(moonDir);
+            keyLight.direction.set(sunDir.x, -sunDir.y, sunDir.z).nor();
 
             Color keyColor = dayNight.getDirectionalLightColor(tempColor);
 
             // Storm Dimming & Lightning Flash
-            float flash = (weather != null) ? weather.getFlashIntensity() : 0f;
-            if (flash > 0.05f) {
+            if (currentFlash > 0.05f) {
                 // Lightning Flash: brilliant white sky burst silhouetting towers
                 ambientAttr.color.set(0.95f, 0.95f, 1.0f, 1f);
                 keyLight.color.set(1.5f, 1.5f, 1.8f, 1f);
             } else {
-                float stormDim = (weather != null && weather.isStormy()) ? 0.45f : 1.0f;
+                float stormDim = isStormy ? 0.35f : 1.0f;
                 ambientAttr.color.set(
                         skyTint.r * 0.4f * stormDim,
                         skyTint.g * 0.4f * stormDim,
@@ -251,24 +231,22 @@ public class Skybox3DRenderer {
                 );
             }
 
-            // Position Sun Disk (opposite direction of light)
+            // Position Sun Disk
             if (sunInstance != null) {
-                dayNight.getSunDirection(tempVec);
                 sunInstance.transform.setToTranslation(
-                        camX + tempVec.x * 200f,
-                        tempVec.y * 200f,
-                        camZ + tempVec.z * 200f
+                        camX + sunDir.x * 200f,
+                        sunDir.y * 200f,
+                        camZ + sunDir.z * 200f
                 );
                 sunInstance.transform.scale(2.5f, 2.5f, 2.5f);
             }
 
             // Position Moon Disk
             if (moonInstance != null) {
-                dayNight.getMoonDirection(tempVec);
                 moonInstance.transform.setToTranslation(
-                        camX + tempVec.x * 200f,
-                        tempVec.y * 200f,
-                        camZ + tempVec.z * 200f
+                        camX + moonDir.x * 200f,
+                        moonDir.y * 200f,
+                        camZ + moonDir.z * 200f
                 );
                 moonInstance.transform.scale(2.0f, 2.0f, 2.0f);
             }
@@ -292,10 +270,8 @@ public class Skybox3DRenderer {
 
     private void renderPass(Viewport viewport, Color skyColor) {
         // Clear color to sky tint & clear depth for 3D horizon pass
-        Gdx.gl.glClearColor(skyColor.r * 0.35f, skyColor.g * 0.35f, skyColor.b * 0.45f, 1f);
+        Gdx.gl.glClearColor(skyColor.r * 0.25f, skyColor.g * 0.25f, skyColor.b * 0.35f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-        Gdx.gl.glDepthMask(true);
 
         viewport.apply();
 
@@ -303,16 +279,47 @@ public class Skybox3DRenderer {
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();
 
+        // --- PASS 1: PROCEDURAL STORM SKY DOME ---
+        // Rendered with depth testing disabled so it acts as an infinite background
+        if (domeModel != null && stormShader != null && stormShader.isCompiled()) {
+            Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+            Gdx.gl.glDepthMask(false);
+
+            stormShader.bind();
+            stormShader.setUniformMatrix("u_projTrans", camera.combined);
+            stormShader.setUniformMatrix("u_worldTrans", domeTransform);
+            stormShader.setUniformf("u_cameraPos", camera.position.x, camera.position.y, camera.position.z);
+            stormShader.setUniformf("u_time", totalTime);
+            stormShader.setUniformf("u_sunDir", sunDir.x, sunDir.y, sunDir.z);
+            stormShader.setUniformf("u_moonDir", moonDir.x, moonDir.y, moonDir.z);
+            stormShader.setUniformf("u_skyTint", skyTint.r, skyTint.g, skyTint.b);
+            stormShader.setUniformf("u_horizonColor", horizonFogColor.r, horizonFogColor.g, horizonFogColor.b);
+            stormShader.setUniformf("u_stormIntensity", isStormy ? 1.0f : 0.2f);
+            stormShader.setUniformf("u_flashIntensity", currentFlash);
+            stormShader.setUniformf("u_windSpeed", isStormy ? 2.5f : 0.8f);
+
+            for (int i = 0; i < domeModel.meshes.size; i++) {
+                domeModel.meshes.get(i).render(stormShader, GL20.GL_TRIANGLES);
+            }
+        }
+
+        // --- PASS 2: 3D LANDMARK TOWERS & HORIZON MOUNTAINS ---
+        // Rendered with depth test enabled so landmarks stand in silhouette against the sky dome
+        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDepthMask(true);
+        Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
+
         modelBatch.begin(camera);
 
-        if (mountainInstance        != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance          != null) modelBatch.render(castleInstance, environment);
-        if (spireInstance           != null) modelBatch.render(spireInstance, environment);
-        if (stormCloudsLowerInstance != null) modelBatch.render(stormCloudsLowerInstance, environment);
-        if (stormCloudsUpperInstance != null) modelBatch.render(stormCloudsUpperInstance, environment);
-        if (cumulusInstance         != null) modelBatch.render(cumulusInstance, environment);
-        if (sunInstance             != null) modelBatch.render(sunInstance, environment);
-        if (moonInstance            != null) modelBatch.render(moonInstance, environment);
+        if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
+        if (castleInstance   != null) modelBatch.render(castleInstance, environment);
+        if (spireInstance    != null) modelBatch.render(spireInstance, environment);
+
+        // Sun & Moon are visible during clear/partly-cloudy skies; occluded during heavy storms
+        if (!isStormy) {
+            if (sunInstance  != null) modelBatch.render(sunInstance, environment);
+            if (moonInstance != null) modelBatch.render(moonInstance, environment);
+        }
 
         modelBatch.end();
 
@@ -326,13 +333,12 @@ public class Skybox3DRenderer {
 
     public void dispose() {
         modelBatch.dispose();
-        if (castleModel           != null) castleModel.dispose();
-        if (spireModel            != null) spireModel.dispose();
-        if (mountainModel         != null) mountainModel.dispose();
-        if (cumulusModel          != null) cumulusModel.dispose();
-        if (sunModel              != null) sunModel.dispose();
-        if (moonModel             != null) moonModel.dispose();
-        if (stormCloudsUpperModel != null) stormCloudsUpperModel.dispose();
-        if (stormCloudsLowerModel != null) stormCloudsLowerModel.dispose();
+        if (castleModel   != null) castleModel.dispose();
+        if (spireModel    != null) spireModel.dispose();
+        if (mountainModel != null) mountainModel.dispose();
+        if (sunModel      != null) sunModel.dispose();
+        if (moonModel     != null) moonModel.dispose();
+        if (domeModel     != null) domeModel.dispose();
+        if (stormShader   != null) stormShader.dispose();
     }
 }
