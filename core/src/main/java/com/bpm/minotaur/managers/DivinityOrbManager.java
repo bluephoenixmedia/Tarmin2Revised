@@ -11,10 +11,10 @@ public class DivinityOrbManager {
 
     private static DivinityOrbManager instance;
 
-    // Virtual screen space: 1920×1080. Game area occupies y=180–1080 (HUD=180px at bottom).
+    // Virtual screen space: 1920×1080. Game area occupies y=200–1080 (HUD=200px at bottom).
     // Orb spawns at the centre of the game area and targets the "DIV:" counter in the HUD.
     private static final float SPAWN_X  = 960f;
-    private static final float SPAWN_Y  = 630f;  // 180 + 900/2
+    private static final float SPAWN_Y  = 640f;  // 200 + 880/2
     private static final float TARGET_X =  92f;
     private static final float TARGET_Y = 118f;
 

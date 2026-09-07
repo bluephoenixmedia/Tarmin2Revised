@@ -93,8 +93,8 @@ public class GameScreen extends BaseScreen {
     private final Viewport fboViewport;
     private static final int VIRTUAL_WIDTH = 1920;
     private static final int VIRTUAL_HEIGHT = 1080;
-    private static final int HUD_HEIGHT = 180;
-    private static final int GAME_HEIGHT = VIRTUAL_HEIGHT - HUD_HEIGHT; // 900px
+    private static final int HUD_HEIGHT = 200;
+    private static final int GAME_HEIGHT = VIRTUAL_HEIGHT - HUD_HEIGHT; // 880px
 
     private float trauma = 0f;
     private final Vector2 originalDir = new Vector2();

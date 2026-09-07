@@ -1606,7 +1606,6 @@ public class CombatManager {
         float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
         float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
         int totalExp = (int) (baseExp * colorMultiplier * levelMultiplier);
-        eventManager.addEvent((new GameEvent("You have gained " + totalExp + " experience", 2f)));
         player.addExperience(totalExp, eventManager);
 
         com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();

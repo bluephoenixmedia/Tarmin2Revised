@@ -18,7 +18,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -60,27 +62,42 @@ public class Hud implements Disposable {
     private final Texture whiteTexture; // Generic white texture for tinting
     private final TextureRegionDrawable bottomBarDrawable;
 
+    // --- Modern Theme & Component Actors ---
+    private final HudSkin hudSkin;
+    private final ModernStatBar hpBar;
+    private final ModernStatBar mpBar;
+    private final ModernStatBar expBar;
+    private final ModernStatBar foodBar;
+    private final ModernStatBar waterBar;
+    private final ModernStatBar tempBar;
+    private final ModernStatBar monsterHpBar;
+
+    private final CompassMedallion compassMedallion;
+    private final HudTooltip hudTooltip;
+
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
-    private final StatBar foodBar;
-    private final StatBar waterBar;
-    private final StatBar tempBar;
     private final Label arrowsValueLabel;
     private final Label directionLabel;
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
     private final Label combatStatusLabel;
-    private final Label logLabel; // Replaces messageLabel for the log area
+    private final Label logLabel; // Replaces messageLabel for backward compatibility
     private final Label treasureValueLabel;
     private final Label levelLabel, xpLabel;
+    private final Label levelBadgeLabel;
     private final Label divinitiesLabel;
     private final Label doomLabel;
+    private final Label equippedWeaponLabel;
     private Label heldItemLabel;
     private Label rightHandStatsLabel;
 
-    private final Actor[] backpackSlots = new Actor[6];
-    private final Actor leftHandSlot;
-    private final Actor rightHandSlot;
+    private final Table[] backpackSlots = new Table[6];
+    private final Table leftHandSlot;
+    private final Table rightHandSlot;
+
+    // --- Action Chronicle Labels (5 lines) ---
+    private final Label[] chronicleLabels = new Label[5];
 
     // Combat Menu
     public CombatMenu combatMenu;
@@ -107,6 +124,13 @@ public class Hud implements Disposable {
     // --- Layout Tables ---
     private final Table mainContainer;
     private final Table bottomBarTable;
+
+    private final Table vitalsZone;
+    private final Table beltZone;
+    private final Table delveZone;
+    private final Table delveInfoTable;
+    private final Table combatMonsterTable;
+    private final Table chronicleZone;
 
     private final Table statsTable;
     private final Table survivalTable; // New table for suvival stats
@@ -149,73 +173,6 @@ public class Hud implements Disposable {
 
     private final GlyphLayout glyphLayout = new GlyphLayout();
 
-    // --- StatBar Inner Class ---
-    private class StatBar extends Actor {
-        private final String name;
-        private float value;
-        private float maxValue;
-        private final Color barColor;
-        private final BitmapFont font;
-        private final GlyphLayout layout = new GlyphLayout();
-
-        public StatBar(String name, Color color, BitmapFont font) {
-            this.name = name;
-            this.barColor = new Color(color);
-            this.font = font;
-            this.maxValue = 100f;
-        }
-
-        public void setValue(float current, float max) {
-            this.value = current;
-            this.maxValue = max;
-        }
-
-        public void setBarColor(Color color) {
-            this.barColor.set(color);
-        }
-
-        @Override
-        public void draw(com.badlogic.gdx.graphics.g2d.Batch batch, float parentAlpha) {
-            Color color = getColor();
-            batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
-
-            float x = getX();
-            float y = getY();
-            float width = getWidth();
-            float height = getHeight();
-
-            // Background (Dark)
-            batch.setColor(0.1f, 0.1f, 0.1f, parentAlpha);
-            if (whiteTexture != null) {
-                batch.draw(whiteTexture, x, y, width, height);
-            }
-
-            // Foreground (Bar Color)
-            if (whiteTexture != null) {
-                float fillPercent = MathUtils.clamp(value / maxValue, 0f, 1f);
-                batch.setColor(barColor.r, barColor.g, barColor.b, barColor.a * parentAlpha);
-                batch.draw(whiteTexture, x, y, width * fillPercent, height);
-            }
-
-            // Text Overlay
-            String text;
-            if (name.equals("TEMP")) {
-                float farenheit = (value * 9.0f / 5.0f) + 32.0f;
-                text = String.format("%s: %.1fF", name, farenheit);
-            } else {
-                text = String.format("%s: %.0f/%.0f", name, value, maxValue);
-            }
-
-            layout.setText(font, text);
-            float textX = x + (width - layout.width) / 2;
-            float textY = y + (height + layout.height) / 2;
-
-            font.setColor(Color.WHITE);
-            font.draw(batch, layout, textX, textY);
-        }
-    }
-    // -------------------------
-
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
             WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
         this.game = game;
@@ -233,144 +190,146 @@ public class Hud implements Disposable {
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
         stage = new Stage(viewport, sb);
 
-        // --- Create Background ---
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(BG_COLOR_UI);
-        pixmap.fill();
-        bottomBarBg = new Texture(pixmap);
-        bottomBarDrawable = new TextureRegionDrawable(new TextureRegion(bottomBarBg));
-        pixmap.dispose();
+        // --- Initialize HudSkin Theme & Assets ---
+        this.hudSkin = new HudSkin();
+        this.font = hudSkin.getFontMain();
+        this.directionFont = hudSkin.getFontCompass();
+        this.logFont = hudSkin.getFontLog();
 
-        // --- Create White Texture ---
-        pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        // White Texture for legacy tinting
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(Color.WHITE);
         pixmap.fill();
         whiteTexture = new Texture(pixmap);
         pixmap.dispose();
 
-        // --- Font Loading ---
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = 24; // Base font size
-        parameter.color = Color.WHITE;
-        parameter.minFilter = Texture.TextureFilter.Nearest;
-        parameter.magFilter = Texture.TextureFilter.Nearest;
-        font = generator.generateFont(parameter);
+        // Background texture
+        bottomBarBg = hudSkin.getWhitePixel();
+        bottomBarDrawable = new TextureRegionDrawable(new TextureRegion(bottomBarBg));
 
-        parameter.size = 48; // Larger font size for the compass
-        directionFont = generator.generateFont(parameter);
-        generator.dispose();
-
-        attackIndicators = new java.util.ArrayList<>();
-
-        // --- Game Log Font ---
-        logFont = new BitmapFont();
-        logFont.getData().setScale(1.0f);
+        // Floating Tooltip Card
+        hudTooltip = new HudTooltip(hudSkin);
 
         // --- Label Styles ---
-        Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
-        Label.LabelStyle headerStyle = new Label.LabelStyle(font, Color.GOLD);
-        Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, Color.GOLD);
-        Label.LabelStyle logLabelStyle = new Label.LabelStyle(font, Color.LIGHT_GRAY);
+        Label.LabelStyle labelStyle = new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE);
+        Label.LabelStyle headerStyle = new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT);
+        Label.LabelStyle smallStyle = new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE);
+        Label.LabelStyle smallGoldStyle = new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT);
+        Label.LabelStyle directionLabelStyle = new Label.LabelStyle(directionFont, HudSkin.COL_GOLD_BRIGHT);
+        Label.LabelStyle logLabelStyle = new Label.LabelStyle(hudSkin.getFontLog(), Color.WHITE);
+        Label.LabelStyle weaponHeaderStyle = new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE);
 
-        Label.LabelStyle heldItemStyle = new Label.LabelStyle(font, Color.WHITE);
-        heldItemStyle.font.getData().setScale(0.8f);
-
-        // --- Initialize Tables ---
+        // --- Legacy Tables for compatibility ---
         bottomBarTable = new Table();
-        bottomBarTable.setBackground(bottomBarDrawable);
-
         statsTable = new Table();
         survivalTable = new Table();
         logTable = new Table();
         inventoryTable = new Table();
 
-        // --- Stats Section (Left) ---
+        // --- 4 Functional Zone Panels ---
+        vitalsZone = new Table();
+        beltZone = new Table();
+        delveZone = new Table();
+        delveInfoTable = new Table();
+        combatMonsterTable = new Table();
+        chronicleZone = new Table();
+
+        vitalsZone.setBackground(hudSkin.getPanelBg());
+        vitalsZone.pad(8f);
+
+        beltZone.setBackground(hudSkin.getPanelBg());
+        beltZone.pad(6f);
+
+        delveZone.setBackground(hudSkin.getPanelBg());
+        delveZone.pad(8f);
+
+        chronicleZone.setBackground(hudSkin.getPanelBg());
+        chronicleZone.pad(8f);
+
+        // ══════════════════════════════════════════════════════════════════
+        // ZONE 1: Character & Vitals (~450px)
+        // ══════════════════════════════════════════════════════════════════
         warStrengthValueLabel = new Label("", labelStyle);
         spiritualStrengthValueLabel = new Label("", labelStyle);
-
         levelLabel = new Label("", labelStyle);
         xpLabel = new Label("", labelStyle);
-        divinitiesLabel = new Label("", labelStyle);
-        doomLabel = new Label("", labelStyle);
+        divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
+        doomLabel = new Label("DOOM: 0 [0%]", smallStyle);
+        levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
+        arrowsValueLabel = new Label("", smallStyle);
+        treasureValueLabel = new Label("", smallStyle);
+        directionLabel = new Label("", directionLabelStyle);
 
-        dungeonLevelLabel = new Label("", labelStyle);
-        directionLabel = new Label("", directionLabelStyle); // Compass
+        hpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
+        mpBar = new ModernStatBar("MP", HudSkin.COL_MP_BLUE, hudSkin);
+        expBar = new ModernStatBar("EXP", HudSkin.COL_EXP_AMBER, hudSkin);
+        compassMedallion = new CompassMedallion(hudSkin, player);
 
-        statsTable.top().left().pad(20);
+        // Portrait
+        try {
+            if (game.getAssetManager().isLoaded("packed/portrait.atlas")) {
+                this.portraitAtlas = game.getAssetManager().get("packed/portrait.atlas", TextureAtlas.class);
+            }
+        } catch (Exception e) {
+            Gdx.app.error("Hud", "Failed to load portrait atlas", e);
+        }
 
-        // Row 1: HP & MP
-        statsTable.add(new Label("HP:", headerStyle)).left();
-        statsTable.add(warStrengthValueLabel).left().padLeft(10).width(150);
-        statsTable.add(new Label("MP:", headerStyle)).left().padLeft(20);
-        statsTable.add(spiritualStrengthValueLabel).left().padLeft(10).expandX();
-        statsTable.row().padTop(10);
+        Stack portraitStack = new Stack();
+        Image cameoFrame = new Image(hudSkin.getPortraitCameo());
+        portraitStack.add(cameoFrame);
 
-        // Row 2: Food, Hydration, Temp
-        // statsTable.add(new Label("FOOD:", headerStyle)).left(); // Removed label
-        // --- Survival Table Setup ---
-        survivalTable.top().left().pad(10);
+        if (portraitAtlas != null) {
+            TextureRegion region = portraitAtlas.findRegion("portrait", 100);
+            if (region != null) {
+                portraitImage = new Image(region);
+                Table portWrap = new Table();
+                portWrap.add(portraitImage).size(86, 86);
+                portraitStack.add(portWrap);
+            }
+        }
 
-        foodBar = new StatBar("FOOD", Color.GREEN, font);
-        waterBar = new StatBar("H2O", Color.CYAN, font);
-        tempBar = new StatBar("TEMP", Color.ORANGE, font);
+        Table portraitCol = new Table();
+        portraitCol.add(portraitStack).size(96, 96).row();
+        Table levelBadgeTable = new Table();
+        levelBadgeTable.setBackground(hudSkin.getGaugeTrack());
+        levelBadgeTable.add(levelBadgeLabel).pad(2, 8, 2, 8);
+        portraitCol.add(levelBadgeTable).padTop(4).row();
 
-        survivalTable.add(foodBar).fillX().height(24).width(160).padBottom(5).row();
-        survivalTable.add(waterBar).fillX().height(24).width(160).padBottom(5).row();
-        survivalTable.add(tempBar).fillX().height(24).width(160).padBottom(5).row();
+        Table barsCol = new Table();
+        barsCol.add(hpBar).width(235).height(22).padBottom(4).row();
+        barsCol.add(mpBar).width(235).height(22).padBottom(4).row();
+        barsCol.add(expBar).width(235).height(14).padBottom(6).row();
 
-        // statsTable.add(new Label("H2O:", headerStyle)).left().padLeft(20);
+        Table vitalsSubRow = new Table();
+        vitalsSubRow.add(compassMedallion).size(42, 42).padRight(12);
+        Table divDoomCol = new Table();
+        divDoomCol.add(divinitiesLabel).left().row();
+        divDoomCol.add(doomLabel).left().padTop(2).row();
+        vitalsSubRow.add(divDoomCol).left();
 
-        // statsTable.row().padTop(10);
-        // statsTable.add(new Label("TEMP:", headerStyle)).left();
+        barsCol.add(vitalsSubRow).left().row();
 
-        // statsTable.add(tempBar).left().width(140).height(24).padLeft(10);
+        vitalsZone.add(portraitCol).padRight(12);
+        vitalsZone.add(barsCol).expand().fill();
 
-        // statsTable.add(new Label("LVL:", headerStyle)).left().padLeft(20);
-        // statsTable.add(levelLabel).left().padLeft(10);
+        // ══════════════════════════════════════════════════════════════════
+        // ZONE 2: Equipment Hands & 2x3 Belt (~420px)
+        // ══════════════════════════════════════════════════════════════════
+        equippedWeaponLabel = new Label("Hands Empty", weaponHeaderStyle);
+        beltZone.add(equippedWeaponLabel).colspan(3).center().padBottom(4).row();
 
-        // Re-arranging to fit 3 bars.
-        // Row 2: Food & Water
-        statsTable.row().padTop(10);
+        float slotSize = 50f;
+        Table backpackTable = new Table();
 
-        // Row 3: Temp & Level
-        statsTable.row().padTop(10);
-
-        statsTable.add(new Label("LVL:", headerStyle)).left().padLeft(20);
-        statsTable.add(levelLabel).left().padLeft(10);
-        statsTable.row().padTop(10);
-
-        // Row 3: XP & Dungeon Level
-        statsTable.add(new Label("EXP:", headerStyle)).left();
-        statsTable.add(xpLabel).left().padLeft(10);
-        statsTable.add(dungeonLevelLabel).colspan(2).left().padLeft(20);
-        statsTable.row().padTop(10);
-
-        // Row 4: Divinities & Doom
-        statsTable.add(new Label("DIV:", headerStyle)).left();
-        statsTable.add(divinitiesLabel).left().padLeft(10);
-        statsTable.add(new Label("DOOM:", headerStyle)).left().padLeft(20);
-        statsTable.add(doomLabel).left().padLeft(10);
-        statsTable.row().padTop(10);
-
-        // Compass (Bottom of Left Panel)
-        statsTable.add(new Label("FACING:", headerStyle)).left().padTop(10);
-        statsTable.add(directionLabel).left().padLeft(10).padTop(10);
-
-        // --- Log Section (Center) ---
-        logLabel = new Label("", logLabelStyle);
-        logLabel.setWrap(true);
-        logLabel.setAlignment(com.badlogic.gdx.utils.Align.bottomLeft);
-
-        logTable.add(logLabel).grow().pad(10);
-
-        // --- Inventory Section (Right) ---
-        float slotSize = 60f;
-
-        // Init Actors
         for (int i = 0; i < 6; i++) {
             final int slotIdx = i;
-            backpackSlots[i] = new Actor();
+            backpackSlots[i] = new Table();
+            backpackSlots[i].setBackground(hudSkin.getSlotRecessed());
+            backpackSlots[i].top().left();
+
+            Label badge = new Label(String.valueOf(i + 1), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            backpackSlots[i].add(badge).padLeft(3).padTop(1).row();
+
             backpackSlots[i].addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -382,73 +341,152 @@ public class Hud implements Disposable {
                     }
                 }
             });
+
+            backpackSlots[i].addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    Item item = player.getInventory().getQuickSlots()[slotIdx];
+                    Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
+                    hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, "Hotkey " + (slotIdx + 1));
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    hudTooltip.hide();
+                }
+            });
         }
-        leftHandSlot = new Actor();
-        rightHandSlot = new Actor();
 
-        Table handsTable = new Table();
-        handsTable.add(new Label("L", headerStyle)).padRight(5);
-        handsTable.add(leftHandSlot).size(slotSize).padRight(20);
-        handsTable.add(rightHandSlot).size(slotSize).padLeft(20);
-        handsTable.add(new Label("R", headerStyle)).padLeft(5);
-
-        Table backpackTable = new Table();
-        backpackTable.add(backpackSlots[0]).size(slotSize).pad(4);
-        backpackTable.add(backpackSlots[1]).size(slotSize).pad(4);
-        backpackTable.add(backpackSlots[2]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[0]).size(slotSize).pad(3);
+        backpackTable.add(backpackSlots[1]).size(slotSize).pad(3);
+        backpackTable.add(backpackSlots[2]).size(slotSize).pad(3);
         backpackTable.row();
-        backpackTable.add(backpackSlots[3]).size(slotSize).pad(4);
-        backpackTable.add(backpackSlots[4]).size(slotSize).pad(4);
-        backpackTable.add(backpackSlots[5]).size(slotSize).pad(4);
+        backpackTable.add(backpackSlots[3]).size(slotSize).pad(3);
+        backpackTable.add(backpackSlots[4]).size(slotSize).pad(3);
+        backpackTable.add(backpackSlots[5]).size(slotSize).pad(3);
 
-        inventoryTable.add(handsTable).padBottom(10).row();
-        inventoryTable.add(backpackTable);
+        leftHandSlot = new Table();
+        leftHandSlot.setBackground(hudSkin.getSlotHand());
+        leftHandSlot.top().left();
+        Label lBadge = new Label("L", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+        leftHandSlot.add(lBadge).padLeft(3).padTop(1).row();
 
-        // --- Combat/Extra Labels (Hidden by default, overlaid or integrated) ---
-        // For now, keeping them simple.
-        monsterStrengthLabel = new Label("", labelStyle);
+        leftHandSlot.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                player.getInventory().swapHands();
+                if (eventManager != null) eventManager.addEvent(new GameEvent("Swapped hands.", 1.5f));
+            }
+        });
+        leftHandSlot.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                Item item = player.getInventory().getLeftHand();
+                Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
+                hudTooltip.show(item, pos.x + 28f, pos.y, "Click to Swap / [S]");
+            }
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                hudTooltip.hide();
+            }
+        });
+
+        rightHandSlot = new Table();
+        rightHandSlot.setBackground(hudSkin.getSlotHand());
+        rightHandSlot.top().left();
+        Label rBadge = new Label("R", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+        rightHandSlot.add(rBadge).padLeft(3).padTop(1).row();
+
+        rightHandSlot.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                player.getInventory().swapHands();
+                if (eventManager != null) eventManager.addEvent(new GameEvent("Swapped hands.", 1.5f));
+            }
+        });
+        rightHandSlot.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                Item item = player.getInventory().getRightHand();
+                Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
+                hudTooltip.show(item, pos.x + 28f, pos.y, "Click to Swap / [S]");
+            }
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                hudTooltip.hide();
+            }
+        });
+
+        beltZone.add(leftHandSlot).size(56).padRight(8);
+        beltZone.add(backpackTable).padRight(8);
+        beltZone.add(rightHandSlot).size(56);
+
+        // ══════════════════════════════════════════════════════════════════
+        // ZONE 3: Condition, Delve & Dynamic Combat Card (~330px)
+        // ══════════════════════════════════════════════════════════════════
+        dungeonLevelLabel = new Label("DUNGEON LVL 1", headerStyle);
+        foodBar = new ModernStatBar("FOOD", HudSkin.COL_FOOD_GREEN, hudSkin);
+        waterBar = new ModernStatBar("H2O", HudSkin.COL_WATER_CYAN, hudSkin);
+        tempBar = new ModernStatBar("TEMP", HudSkin.COL_TEMP_ORANGE, hudSkin);
+        tempBar.setTemperatureMode(true);
+
+        monsterStrengthLabel = new Label("", headerStyle);
         combatStatusLabel = new Label("", labelStyle);
-        treasureValueLabel = new Label("", labelStyle);
-        arrowsValueLabel = new Label("", labelStyle);
-        rightHandStatsLabel = new Label("", labelStyle);
-        heldItemLabel = new Label("", heldItemStyle);
+        monsterHpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
 
-        // Add combat info to stats table for now?
-        statsTable.row();
-        statsTable.add(monsterStrengthLabel).colspan(4).left().padTop(10);
+        // Sub-table 1: Delve exploration info
+        delveInfoTable.top().left();
+        delveInfoTable.add(dungeonLevelLabel).left().padBottom(4).row();
+        delveInfoTable.add(foodBar).width(210).height(20).padBottom(4).row();
+        delveInfoTable.add(waterBar).width(210).height(20).padBottom(4).row();
+        delveInfoTable.add(tempBar).width(210).height(20).row();
 
-        // --- Assemble Bottom Bar ---
+        // Sub-table 2: Combat monster card
+        combatMonsterTable.top().left();
+        combatMonsterTable.add(monsterStrengthLabel).left().padBottom(2).row();
+        combatMonsterTable.add(monsterHpBar).width(210).height(20).padBottom(4).row();
+        combatMonsterTable.add(combatStatusLabel).left().padBottom(6).row();
+        combatMonsterTable.setVisible(false);
 
-        // Portrait
-        try {
-            if (game.getAssetManager().isLoaded("packed/portrait.atlas")) {
-                this.portraitAtlas = game.getAssetManager().get("packed/portrait.atlas", TextureAtlas.class);
-            }
-        } catch (Exception e) {
-            Gdx.app.error("Hud", "Failed to load portrait atlas", e);
+        Stack delveStack = new Stack();
+        delveStack.add(delveInfoTable);
+        delveStack.add(combatMonsterTable);
+        delveZone.add(delveStack).grow();
+
+        // ══════════════════════════════════════════════════════════════════
+        // ZONE 4: Chronicle Action Log (~650px)
+        // ══════════════════════════════════════════════════════════════════
+        chronicleZone.top().left();
+        Label chronicleHeader = new Label("[ CHRONICLE ]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        chronicleZone.add(chronicleHeader).left().padBottom(2).row();
+
+        for (int i = 0; i < 5; i++) {
+            chronicleLabels[i] = new Label("", logLabelStyle);
+            chronicleLabels[i].setEllipsis(true);
+            chronicleZone.add(chronicleLabels[i]).left().growX().padBottom(1).row();
         }
+        logLabel = chronicleLabels[4]; // Alias for backward compatibility
 
-        if (portraitAtlas != null) {
-            TextureRegion region = portraitAtlas.findRegion("portrait", 100);
-            if (region != null) {
-                portraitImage = new com.badlogic.gdx.scenes.scene2d.ui.Image(region);
-                bottomBarTable.add(portraitImage).size(100, 100).pad(5).left();
-            }
-        }
+        // --- Assemble Bottom Bar Table ---
+        bottomBarTable.setBackground(hudSkin.getDashboardBg());
+        bottomBarTable.pad(10f, 15f, 10f, 15f);
 
-        bottomBarTable.add(statsTable).width(500).left().top().pad(5); // Reduced padding
-        bottomBarTable.add(inventoryTable).width(400).left().pad(5).padLeft(10); // Reduced padding
-        bottomBarTable.add(survivalTable).width(200).left().top().pad(5).padLeft(10); // Reduced padding
-        bottomBarTable.add(logTable).expandX().fill().pad(5); // Reduced padding
+        bottomBarTable.add(vitalsZone).width(450).fillY();
+        bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
+        bottomBarTable.add(beltZone).width(420).fillY();
+        bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
+        bottomBarTable.add(delveZone).width(330).fillY();
+        bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
+        bottomBarTable.add(chronicleZone).expandX().fill();
 
-        // --- Main Container ---
+        // --- Main Container (200px Height) ---
         mainContainer = new Table();
         mainContainer.setFillParent(true);
         mainContainer.bottom();
-        // Add Bottom Bar Height = 180px
-        mainContainer.add(bottomBarTable).growX().height(180);
+        mainContainer.add(bottomBarTable).growX().height(200);
 
         stage.addActor(mainContainer);
+        stage.addActor(hudTooltip);
 
         // Initialize Combat Menu
         combatMenu = new CombatMenu(font);
@@ -525,101 +563,105 @@ public class Hud implements Disposable {
 
         updatePortrait();
 
-        warStrengthValueLabel
-                .setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
-        spiritualStrengthValueLabel.setText(
-                checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));
+        // --- 1. Update Vitals Gauges ---
+        hpBar.setValue(player.getCurrentHP(), player.getMaxHP());
+        if (player.getCurrentHP() <= player.getMaxHP() * 0.25f) {
+            hpBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            hpBar.setBarColor(HudSkin.COL_HP_RED);
+        }
 
-        // Update Bars
-        foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
-        if (player.getFood() < 20)
-            foodBar.setBarColor(Color.RED);
-        else
-            foodBar.setBarColor(Color.FOREST);
+        mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
+        expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
+        levelBadgeLabel.setText("LVL " + player.getLevel());
 
-        waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
-        if (player.getStats().getHydrationFloat() < 20)
-            waterBar.setBarColor(Color.RED);
-        else
-            waterBar.setBarColor(Color.ROYAL);
-
-        float temp = player.getStats().getBodyTemperature();
-        tempBar.setValue(temp, 50f); // Max arbitrary for bar, but text is what matters?
-        // For temp bar to look right, we might want a range.
-        // Normal is 37. range 20 to 50?
-        // Let's just use 37 as 'full' or 'middle'?
-        // Usually temp is 37. Overheat 41. Freezing 32.
-        // Let's map it: 0% = 30C, 100% = 45C?
-        // Or just visualization.
-        // Let's just do dynamic coloring and standard value for now.
-        // If we map 0-50, 37 is 74%.
-        tempBar.setValue(temp, 50f);
-
-        if (temp < 35f)
-            tempBar.setBarColor(Color.CYAN);
-        else if (temp > 38f)
-            tempBar.setBarColor(Color.RED);
-        else
-            tempBar.setBarColor(Color.ORANGE); // Normal-ish
-
-        // foodValueLabel.setText(String.format("%d", player.getFood()));
-        // hydrationValueLabel.setText(String.format("%d",
-        // player.getStats().getHydration())); // New
-        // tempValueLabel.setText(String.format("%.1f",
-        // player.getStats().getBodyTemperature())); // New
-        arrowsValueLabel.setText(String.format("%d", player.getArrows()));
-        directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
-        dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel()));
-        treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
+        warStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
+        spiritualStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
+
         DivinityManager dm = DivinityManager.getInstance();
-        divinitiesLabel.setText(String.valueOf(dm.getCurrentDivinities()));
-        divinitiesLabel.setColor(dm.hasLostDivinities() ? Color.GOLD : Color.WHITE);
+        divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());
+        divinitiesLabel.setColor(dm.hasLostDivinities() ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE);
 
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
-        doomLabel.setText(String.format("%d (%.0f%%)", deaths, bridge));
+        doomLabel.setText(String.format("DOOM: %d (%.0f%%)", deaths, bridge));
         if (bridge >= 75f) {
-            doomLabel.setColor(Color.RED);
+            doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else if (bridge >= 40f) {
-            doomLabel.setColor(Color.ORANGE);
+            doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
         } else {
             doomLabel.setColor(Color.LIGHT_GRAY);
         }
 
-        Item rightHandItem = player.getInventory().getRightHand();
+        arrowsValueLabel.setText(String.format("%d", player.getArrows()));
+        directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
+        treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
 
-        // Update Held Item Label
-        Item itemInHand = player.getInventory().getRightHand();
-        if (rightHandItem != null) {
-            equippedWeapon = rightHandItem.getType() != null ? rightHandItem.getType().toString() : "UNKNOWN";
-            weaponColor = rightHandItem.getItemColor() != null ? rightHandItem.getItemColor().name() : "NONE";
-            weaponType = rightHandItem.getCategory() != null ? rightHandItem.getCategory().toString() : "NULL";
-        }
-
-        String mods = returnModsString(itemInHand);
-
-        if (itemInHand != null && itemInHand.getType() != null) {
-            rightHandStatsLabel.setText(weaponColor + " " + itemInHand.getType().toString() + mods);
-        }
-
-        if (itemInHand != null) {
-            heldItemLabel.setText(checkScramble(itemInHand.getDisplayName()));
+        // --- 2. Update Equipment Subtitle & Active Slot ---
+        Item rItem = player.getInventory().getRightHand();
+        Item lItem = player.getInventory().getLeftHand();
+        if (rItem != null) {
+            String mods = returnModsString(rItem);
+            String statStr = "";
+            if (rItem.getDamageDice() != null && !rItem.getDamageDice().isEmpty()) {
+                statStr = " [" + rItem.getDamageDice() + "]";
+            } else if (rItem.getArmorClassBonus() > 0) {
+                statStr = " [+" + rItem.getArmorClassBonus() + " AC]";
+            }
+            equippedWeaponLabel.setText(checkScramble(rItem.getDisplayName() + statStr + mods));
+        } else if (lItem != null) {
+            equippedWeaponLabel.setText(checkScramble(lItem.getDisplayName()));
         } else {
-            heldItemLabel.setText(checkScramble("Empty"));
+            equippedWeaponLabel.setText(checkScramble("Hands Empty"));
         }
 
-        // Show combat information only if combat is active
+        for (int i = 0; i < 6; i++) {
+            if (i == 0) {
+                backpackSlots[i].setBackground(hudSkin.getSlotActive());
+            } else {
+                backpackSlots[i].setBackground(hudSkin.getSlotRecessed());
+            }
+        }
+
+        // --- 3. Update Condition & Delve / Combat Card ---
+        foodBar.setValue(player.getFood(), PlayerStats.MAX_SATIETY);
+        foodBar.setBarColor(player.getFood() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_FOOD_GREEN);
+
+        waterBar.setValue(player.getStats().getHydrationFloat(), PlayerStats.MAX_HYDRATION);
+        waterBar.setBarColor(player.getStats().getHydrationFloat() < 20 ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_WATER_CYAN);
+
+        float temp = player.getStats().getBodyTemperature();
+        tempBar.setValue(temp, 50f);
+        if (temp < 35f) {
+            tempBar.setBarColor(HudSkin.COL_WATER_CYAN);
+        } else if (temp > 38.5f) {
+            tempBar.setBarColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            tempBar.setBarColor(HudSkin.COL_TEMP_ORANGE);
+        }
+
+        String biomeName = "MAZE";
+        if (worldManager != null && worldManager.getBiomeManager() != null) {
+            GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+            Biome b = worldManager.getBiomeManager().getBiome(chunkId);
+            if (b != null) biomeName = b.name();
+        }
+        dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
+
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
+            delveInfoTable.setVisible(false);
+            combatMonsterTable.setVisible(true);
+
             Monster monster = combatManager.getMonster();
             String catBadge = "";
             if (monster.getType() != null && monster.getType().getCategory() != null) {
                 switch (monster.getType().getCategory()) {
                     case BAD:
-                        catBadge = " [BAD: Weak to Spiritual]";
+                        catBadge = " [BAD: Holy/Spiritual]";
                         break;
                     case NASTY:
                         catBadge = " [NASTY: Weak to War]";
@@ -629,46 +671,104 @@ public class Hud implements Disposable {
                         break;
                 }
             }
-            monsterStrengthLabel
-                    .setText(checkScramble(monster.getMonsterType() + catBadge + "  HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP()));
-            monsterStrengthLabel.setVisible(true);
-            combatStatusLabel.setVisible(true);
+            monsterStrengthLabel.setText(checkScramble(monster.getMonsterType() + catBadge));
+            monsterHpBar.setValue(monster.getCurrentHP(), monster.getMaxHP());
 
-            // Display different status messages based on whose turn it is
             switch (combatManager.getCurrentState()) {
                 case PLAYER_TURN:
-                    combatStatusLabel.setText(checkScramble("PLAYER TURN"));
+                    combatStatusLabel.setText(checkScramble(">>> YOUR TURN <<<"));
+                    combatStatusLabel.setColor(HudSkin.COL_FOOD_GREEN);
                     break;
                 case MONSTER_TURN:
-                    combatStatusLabel.setText(checkScramble("MONSTER ATTACKS!"));
+                    combatStatusLabel.setText(checkScramble(">>> MONSTER ATTACKS! <<<"));
+                    combatStatusLabel.setColor(HudSkin.COL_HP_CRITICAL);
                     break;
                 default:
                     combatStatusLabel.setText(checkScramble(combatManager.getCurrentState().toString()));
+                    combatStatusLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
                     break;
             }
         } else {
-            // Hide combat labels when not in combat
-            monsterStrengthLabel.setText(""); // clear text instead of hide to avoid layout shifts if we want
-                                              // consistency
-            monsterStrengthLabel.setVisible(false);
-            combatStatusLabel.setVisible(false);
+            delveInfoTable.setVisible(true);
+            combatMonsterTable.setVisible(false);
         }
 
-        // --- Update Log Label with History ---
-        List<String> messageEvents = eventManager.getMessageHistory();
-        if (messageEvents != null && !messageEvents.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            int limit = Math.min(messageEvents.size(), 6); // Show last 6 messages
-            // messages are usually newest first? eventManager.getMessageHistory() returns
-            // history.
-            // Let's assume list order.
-            for (int i = 0; i < limit; i++) {
-                sb.append(messageEvents.get(i)).append("\n");
+        // --- 4. Update Chronicle Action Log ---
+        updateChronicleLog();
+    }
+
+    private static class ParsedLogLine {
+        String text;
+        Color color;
+        int count = 1;
+    }
+
+    private void updateChronicleLog() {
+        List<String> rawHistory = eventManager.getMessageHistory();
+        if (rawHistory == null || rawHistory.isEmpty()) {
+            for (Label l : chronicleLabels) {
+                l.setText("");
             }
-            logLabel.setText(checkScramble(sb.toString()));
-        } else {
-            logLabel.setText("");
+            return;
         }
+
+        // Deduplicate consecutive identical messages from the newest entries
+        java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
+        for (int i = 0; i < rawHistory.size() && deduplicated.size() < 5; i++) {
+            String raw = rawHistory.get(i);
+            if (raw == null || raw.trim().isEmpty()) continue;
+            raw = raw.trim();
+
+            if (!deduplicated.isEmpty() && deduplicated.get(deduplicated.size() - 1).text.equals(raw)) {
+                deduplicated.get(deduplicated.size() - 1).count++;
+            } else {
+                ParsedLogLine line = new ParsedLogLine();
+                line.text = raw;
+                line.color = getSemanticColor(raw);
+                deduplicated.add(line);
+            }
+        }
+
+        // Alphas: index 4 (newest, bottom) = 1.0f, then 0.85f, 0.70f, 0.55f, 0.40f
+        float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
+
+        for (int i = 0; i < 5; i++) {
+            chronicleLabels[i].setText("");
+        }
+
+        int numLines = Math.min(5, deduplicated.size());
+        for (int i = 0; i < numLines; i++) {
+            int labelIndex = 4 - i;
+            ParsedLogLine item = deduplicated.get(i);
+            String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
+            chronicleLabels[labelIndex].setText(checkScramble(display));
+            Color c = item.color;
+            float alpha = alphas[labelIndex];
+            chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
+        }
+    }
+
+    private Color getSemanticColor(String message) {
+        String lower = message.toLowerCase();
+        if (lower.contains("experience") || lower.contains("gained") || lower.contains("level")
+                || lower.contains("heal") || lower.contains("restored") || lower.contains("grace")) {
+            return Color.valueOf("55FF55"); // Green
+        }
+        if (lower.contains("divinit") || lower.contains("treasure") || lower.contains("gold")
+                || lower.contains("trophy") || lower.contains("holy") || lower.contains("blessed")) {
+            return HudSkin.COL_GOLD_BRIGHT; // Gold
+        }
+        if (lower.contains("damage") || lower.contains("hit") || lower.contains("attacks")
+                || lower.contains("dies") || lower.contains("dead") || lower.contains("starv")
+                || lower.contains("thirst") || lower.contains("bleed") || lower.contains("poison")
+                || lower.contains("wound")) {
+            return Color.valueOf("FF5555"); // Red
+        }
+        if (lower.contains("can't") || lower.contains("cannot") || lower.contains("locked")
+                || lower.contains("blocked") || lower.contains("fail")) {
+            return HudSkin.COL_TEMP_ORANGE; // Orange/Warning
+        }
+        return Color.valueOf("D0D8E0"); // Slate/Light Gray
     }
 
     public void render() {
@@ -1097,13 +1197,13 @@ public class Hud implements Disposable {
         Item[] quickSlots = player.getInventory().getQuickSlots();
         for (int i = 0; i < quickSlots.length; i++) {
             Item item = quickSlots[i];
-            Actor slot = backpackSlots[i]; // These actors align with the HUD slots visually
+            Actor slot = backpackSlots[i];
             if (item != null) {
                 Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
                 ItemTemplate template = item.getTemplate();
                 if (template != null && template.spriteData != null) {
-                    drawItemSprite(shapeRenderer, item, template.spriteData, pos.x, pos.y, slot.getWidth(),
-                            slot.getHeight(), item.getColor());
+                    drawItemSprite(shapeRenderer, item, template.spriteData, pos.x + 4, pos.y + 4,
+                            slot.getWidth() - 8, slot.getHeight() - 8, item.getColor());
                 }
             }
         }
@@ -1114,8 +1214,8 @@ public class Hud implements Disposable {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
             ItemTemplate template = leftHand.getTemplate();
             if (template != null && template.spriteData != null) {
-                drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x, pos.y, leftHandSlot.getWidth(),
-                        leftHandSlot.getHeight(), leftHand.getColor());
+                drawItemSprite(shapeRenderer, leftHand, template.spriteData, pos.x + 4, pos.y + 4,
+                        leftHandSlot.getWidth() - 8, leftHandSlot.getHeight() - 8, leftHand.getColor());
             }
         }
 
@@ -1125,25 +1225,12 @@ public class Hud implements Disposable {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
             ItemTemplate template = rightHand.getTemplate();
             if (template != null && template.spriteData != null) {
-                drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x, pos.y, rightHandSlot.getWidth(),
-                        rightHandSlot.getHeight(), rightHand.getColor());
+                drawItemSprite(shapeRenderer, rightHand, template.spriteData, pos.x + 4, pos.y + 4,
+                        rightHandSlot.getWidth() - 8, rightHandSlot.getHeight() - 8, rightHand.getColor());
             }
         }
 
         shapeRenderer.end();
-
-        // Draw slot number badges [1]..[6]
-        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
-        spriteBatch.begin();
-        font.getData().setScale(0.6f);
-        font.setColor(new Color(0.85f, 0.8f, 0.65f, 0.75f));
-        for (int i = 0; i < 6; i++) {
-            Actor slot = backpackSlots[i];
-            Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
-            font.draw(spriteBatch, String.valueOf(i + 1), pos.x + 3, pos.y + slot.getHeight() - 3);
-        }
-        font.getData().setScale(1.0f);
-        spriteBatch.end();
     }
 
     private void renderModernInventory() {
@@ -1155,52 +1242,28 @@ public class Hud implements Disposable {
         for (int i = 0; i < quickSlots.length; i++) {
             Item item = quickSlots[i];
             Actor slot = backpackSlots[i];
-
-            // NEW: Highlight Active Slot (Slot 0)
-            if (i == 0) {
-                spriteBatch.end();
-                shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(Color.GOLD);
-                // Draw slightly larger rectangle
-                Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
-                shapeRenderer.rect(pos.x - 2, pos.y - 2, slot.getWidth() + 4, slot.getHeight() + 4);
-                shapeRenderer.end();
-                spriteBatch.begin();
-            }
-
             Vector2 pos = slot.localToStageCoordinates(new Vector2(0, 0));
             if (item != null) {
-                drawModernItem(item, pos.x, pos.y, slot.getWidth(), slot.getHeight());
+                drawModernItem(item, pos.x + 4, pos.y + 4, slot.getWidth() - 8, slot.getHeight() - 8);
             }
-
-            // Draw slot hotkey number badge [1]..[6]
-            font.getData().setScale(0.6f);
-            font.setColor(new Color(0.85f, 0.8f, 0.65f, 0.75f));
-            font.draw(spriteBatch, String.valueOf(i + 1), pos.x + 3, pos.y + slot.getHeight() - 3);
-            font.getData().setScale(1.0f);
         }
 
         // Draw left hand item
         Item leftHand = player.getInventory().getLeftHand();
         if (leftHand != null) {
             Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            drawModernItem(leftHand, pos.x, pos.y, leftHandSlot.getWidth(), leftHandSlot.getHeight());
+            drawModernItem(leftHand, pos.x + 4, pos.y + 4, leftHandSlot.getWidth() - 8, leftHandSlot.getHeight() - 8);
         }
 
         // Draw right hand item
         Item rightHand = player.getInventory().getRightHand();
         if (rightHand != null) {
             Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
-            drawModernItem(rightHand, pos.x, pos.y, rightHandSlot.getWidth(), rightHandSlot.getHeight());
+            drawModernItem(rightHand, pos.x + 4, pos.y + 4, rightHandSlot.getWidth() - 8, rightHandSlot.getHeight() - 8);
         }
 
         spriteBatch.end();
 
-        // Render optional glows or overlays if needed (e.g. for modified items)
-        // using ShapeRenderer afterward, or integrated above if purely texture based.
-        // For now, let's add a simple glow for modified items using ShapeRenderer ON
-        // TOP
         renderModernItemOverlays();
     }
 
@@ -1830,7 +1893,7 @@ public class Hud implements Disposable {
         public CombatMenu(BitmapFont font) {
             this.setBackground(bottomBarDrawable); // Use bottom bar bg
             this.setSize(300, 210);
-            this.setPosition(20, 160); // Bottom Left above message log
+            this.setPosition(20, 205); // Bottom Left above 200px HUD
 
             Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
             Label.LabelStyle selectedStyle = new Label.LabelStyle(font, Color.YELLOW);
