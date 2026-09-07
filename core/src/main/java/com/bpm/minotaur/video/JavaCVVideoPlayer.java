@@ -108,7 +108,11 @@ public class JavaCVVideoPlayer implements Disposable {
                             }
                             sb.get(audioBuffer, 0, limit);
                             // Write samples (this BLOCKS if buffer is full, helping sync)
-                            audioDevice.writeSamples(audioBuffer, 0, limit);
+                            try {
+                                audioDevice.writeSamples(audioBuffer, 0, limit);
+                            } catch (Throwable t) {
+                                // OpenAL audio write glitch safeguard
+                            }
                         }
                     }
 

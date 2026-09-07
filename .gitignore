@@ -186,7 +186,7 @@ run_log*.txt
 *.zip
 fbx_parts/
 assets/models/
-monsters/
+/monsters/
 assets/images/monsters/Super Pixel Effects*/
 assets/images/monsters/Kenney Game Assets*/
 assets/images/monsters/Free Characters with Animations*/
