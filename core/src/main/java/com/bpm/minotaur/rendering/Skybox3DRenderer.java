@@ -69,6 +69,8 @@ public class Skybox3DRenderer {
     private Model cumulusModel;
     private Model sunModel;
     private Model moonModel;
+    private Model stormCloudsUpperModel;
+    private Model stormCloudsLowerModel;
 
     // 3D Model Instances
     private ModelInstance castleInstance;
@@ -77,9 +79,13 @@ public class Skybox3DRenderer {
     private ModelInstance cumulusInstance;
     private ModelInstance sunInstance;
     private ModelInstance moonInstance;
+    private ModelInstance stormCloudsUpperInstance;
+    private ModelInstance stormCloudsLowerInstance;
 
-    // Dynamic Cloud Drift
+    // Dynamic Cloud Drift & Rotations
     private float cloudOffset = 0f;
+    private float upperCloudRotation = 0f;
+    private float lowerCloudRotation = 0f;
     private final Vector3 tempVec = new Vector3();
     private final Color tempColor = new Color();
 
@@ -132,22 +138,22 @@ public class Skybox3DRenderer {
     private void loadModels() {
         ObjLoader loader = new ObjLoader();
         try {
-            // Castle Tarmin (North: World -Z)
+            // Castle Tarmin (North: World -Z) - Scaled +50% (1.35 * 1.5 = 2.025f)
             if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {
                 castleModel = loader.loadModel(Gdx.files.internal("models/skybox/castle_tarmin.obj"));
                 castleInstance = new ModelInstance(castleModel);
-                // Position North at Z = -140
-                castleInstance.transform.setToTranslation(0f, -4f, -LANDMARK_DISTANCE);
-                castleInstance.transform.scale(1.35f, 1.35f, 1.35f);
+                // Position North at Z = -140 with grounded base
+                castleInstance.transform.setToTranslation(0f, -6f, -LANDMARK_DISTANCE);
+                castleInstance.transform.scale(2.025f, 2.025f, 2.025f);
             }
 
-            // South Spire (South: World +Z)
+            // South Spire (South: World +Z) - Scaled +50% (1.25 * 1.5 = 1.875f)
             if (Gdx.files.internal("models/skybox/south_spire.obj").exists()) {
                 spireModel = loader.loadModel(Gdx.files.internal("models/skybox/south_spire.obj"));
                 spireInstance = new ModelInstance(spireModel);
-                // Position South at Z = +140
-                spireInstance.transform.setToTranslation(0f, -4f, LANDMARK_DISTANCE);
-                spireInstance.transform.scale(1.25f, 1.25f, 1.25f);
+                // Position South at Z = +140 with grounded base
+                spireInstance.transform.setToTranslation(0f, -6f, LANDMARK_DISTANCE);
+                spireInstance.transform.scale(1.875f, 1.875f, 1.875f);
             }
 
             // Mountain Ring (Perimeter)
@@ -174,6 +180,18 @@ public class Skybox3DRenderer {
             if (Gdx.files.internal("models/skybox/celestial_moon.obj").exists()) {
                 moonModel = loader.loadModel(Gdx.files.internal("models/skybox/celestial_moon.obj"));
                 moonInstance = new ModelInstance(moonModel);
+            }
+
+            // Upper Overhead Storm Cloud Canopy (360-degree overcast ceiling)
+            if (Gdx.files.internal("models/skybox/storm_clouds_upper.obj").exists()) {
+                stormCloudsUpperModel = loader.loadModel(Gdx.files.internal("models/skybox/storm_clouds_upper.obj"));
+                stormCloudsUpperInstance = new ModelInstance(stormCloudsUpperModel);
+            }
+
+            // Lower Horizon Storm Cloud Deck & Scud
+            if (Gdx.files.internal("models/skybox/storm_clouds_lower.obj").exists()) {
+                stormCloudsLowerModel = loader.loadModel(Gdx.files.internal("models/skybox/storm_clouds_lower.obj"));
+                stormCloudsLowerInstance = new ModelInstance(stormCloudsLowerModel);
             }
 
             isInitialized = (castleInstance != null && spireInstance != null);
@@ -207,9 +225,23 @@ public class Skybox3DRenderer {
         // 2. Cloud Drift Velocity & Storm Acceleration
         float driftSpeed = 0.6f;
         if (weather != null && weather.isStormy()) {
-            driftSpeed = 2.4f; // Surge during storm
+            driftSpeed = 2.8f; // Gale force surge during storm
         }
         cloudOffset += driftSpeed * delta;
+        upperCloudRotation += driftSpeed * 0.35f * delta;
+        lowerCloudRotation += driftSpeed * 0.85f * delta;
+
+        // Dynamic multi-layer cloud positioning
+        if (stormCloudsUpperInstance != null) {
+            stormCloudsUpperInstance.transform.setToTranslation(camX, 0f, camZ);
+            stormCloudsUpperInstance.transform.rotate(Vector3.Y, upperCloudRotation);
+        }
+
+        if (stormCloudsLowerInstance != null) {
+            stormCloudsLowerInstance.transform.setToTranslation(camX, -2f, camZ);
+            stormCloudsLowerInstance.transform.rotate(Vector3.Y, lowerCloudRotation);
+        }
+
         if (cumulusInstance != null) {
             // Subtle bobbing & wind drift for western anvil cloud
             float wobble = MathUtils.sin(cloudOffset * 0.4f) * 1.5f;
@@ -307,12 +339,14 @@ public class Skybox3DRenderer {
 
         modelBatch.begin(camera);
 
-        if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance   != null) modelBatch.render(castleInstance, environment);
-        if (spireInstance    != null) modelBatch.render(spireInstance, environment);
-        if (cumulusInstance  != null) modelBatch.render(cumulusInstance, environment);
-        if (sunInstance      != null) modelBatch.render(sunInstance, environment);
-        if (moonInstance     != null) modelBatch.render(moonInstance, environment);
+        if (mountainInstance        != null) modelBatch.render(mountainInstance, environment);
+        if (castleInstance          != null) modelBatch.render(castleInstance, environment);
+        if (spireInstance           != null) modelBatch.render(spireInstance, environment);
+        if (stormCloudsLowerInstance != null) modelBatch.render(stormCloudsLowerInstance, environment);
+        if (stormCloudsUpperInstance != null) modelBatch.render(stormCloudsUpperInstance, environment);
+        if (cumulusInstance         != null) modelBatch.render(cumulusInstance, environment);
+        if (sunInstance             != null) modelBatch.render(sunInstance, environment);
+        if (moonInstance            != null) modelBatch.render(moonInstance, environment);
 
         modelBatch.end();
 
@@ -332,12 +366,14 @@ public class Skybox3DRenderer {
         camera.update();
 
         modelBatch.begin(camera);
-        if (mountainInstance != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance   != null) modelBatch.render(castleInstance, environment);
-        if (spireInstance    != null) modelBatch.render(spireInstance, environment);
-        if (cumulusInstance  != null) modelBatch.render(cumulusInstance, environment);
-        if (sunInstance      != null) modelBatch.render(sunInstance, environment);
-        if (moonInstance     != null) modelBatch.render(moonInstance, environment);
+        if (mountainInstance        != null) modelBatch.render(mountainInstance, environment);
+        if (castleInstance          != null) modelBatch.render(castleInstance, environment);
+        if (spireInstance           != null) modelBatch.render(spireInstance, environment);
+        if (stormCloudsLowerInstance != null) modelBatch.render(stormCloudsLowerInstance, environment);
+        if (stormCloudsUpperInstance != null) modelBatch.render(stormCloudsUpperInstance, environment);
+        if (cumulusInstance         != null) modelBatch.render(cumulusInstance, environment);
+        if (sunInstance             != null) modelBatch.render(sunInstance, environment);
+        if (moonInstance            != null) modelBatch.render(moonInstance, environment);
         modelBatch.end();
 
         retroFbo.end();
@@ -371,12 +407,14 @@ public class Skybox3DRenderer {
 
     public void dispose() {
         modelBatch.dispose();
-        if (castleModel   != null) castleModel.dispose();
-        if (spireModel    != null) spireModel.dispose();
-        if (mountainModel != null) mountainModel.dispose();
-        if (cumulusModel  != null) cumulusModel.dispose();
-        if (sunModel      != null) sunModel.dispose();
-        if (moonModel     != null) moonModel.dispose();
+        if (castleModel           != null) castleModel.dispose();
+        if (spireModel            != null) spireModel.dispose();
+        if (mountainModel         != null) mountainModel.dispose();
+        if (cumulusModel          != null) cumulusModel.dispose();
+        if (sunModel              != null) sunModel.dispose();
+        if (moonModel             != null) moonModel.dispose();
+        if (stormCloudsUpperModel != null) stormCloudsUpperModel.dispose();
+        if (stormCloudsLowerModel != null) stormCloudsLowerModel.dispose();
 
         if (retroFbo != null) retroFbo.dispose();
         if (retroBatch != null) retroBatch.dispose();

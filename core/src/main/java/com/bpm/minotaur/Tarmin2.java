@@ -157,6 +157,12 @@ public class Tarmin2 extends Game {
         if (Gdx.files.internal("models/skybox/celestial_moon.obj").exists()) {
             assetManager.load("models/skybox/celestial_moon.obj", com.badlogic.gdx.graphics.g3d.Model.class);
         }
+        if (Gdx.files.internal("models/skybox/storm_clouds_upper.obj").exists()) {
+            assetManager.load("models/skybox/storm_clouds_upper.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/storm_clouds_lower.obj").exists()) {
+            assetManager.load("models/skybox/storm_clouds_lower.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
 
         // --- 4. Load Settings (Synchronous) ---
         SettingsManager.getInstance().load();

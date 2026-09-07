@@ -20,6 +20,7 @@ gradle-app.setting
 *.ear
 hs_err_pid*
 .attach_pid*
+*.blend1
 
 ## Android:
 /android/libs/armeabi-v7a/

@@ -23,6 +23,10 @@ public class SkyboxAssetsTest {
                 "west_cumulus.mtl",
                 "celestial_sun.obj",
                 "celestial_moon.obj",
+                "storm_clouds_upper.obj",
+                "storm_clouds_upper.mtl",
+                "storm_clouds_lower.obj",
+                "storm_clouds_lower.mtl",
                 "skybox_landmarks.blend"
         };
 

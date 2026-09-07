@@ -395,6 +395,143 @@ def build_celestial_bodies():
     return sun, moon
 
 # -----------------------------------------------------------------------------
+# 6. STORM CLOUD DECKS (Upper Overhead Canopy & Lower Horizon Scud)
+# -----------------------------------------------------------------------------
+def build_storm_clouds_upper():
+    """Generates an extensive 360-degree overhead storm cloud canopy."""
+    print("[Blender] Building Upper Storm Cloud Canopy...")
+    mat_cloud = create_material("MatStormCloudUpper", (0.16, 0.16, 0.22, 1.0), roughness=0.95)
+    
+    parts = []
+    # Concentric rings of overlapping flattened cloud masses spanning the sky
+    # Inner ring (R ~ 38, Z ~ 56)
+    for i in range(7):
+        angle = i * (2.0 * math.pi / 7.0) + 0.2
+        r = 38.0 + 8.0 * math.sin(i * 1.9)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 56.0 + 5.0 * math.cos(i * 2.1)
+        sx = 28.0 + 5.0 * math.sin(i * 1.3)
+        sy = 26.0 + 4.0 * math.cos(i * 1.7)
+        sz = 8.0 + 2.0 * math.sin(i * 2.5)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
+        puff = bpy.context.active_object
+        puff.scale = (sx, sy, sz)
+        puff.data.materials.append(mat_cloud)
+        parts.append(puff)
+
+    # Middle ring (R ~ 85, Z ~ 50)
+    for i in range(12):
+        angle = i * (2.0 * math.pi / 12.0) + 0.4
+        r = 85.0 + 12.0 * math.cos(i * 1.5)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 50.0 + 6.0 * math.sin(i * 2.3)
+        sx = 34.0 + 6.0 * math.cos(i * 1.4)
+        sy = 30.0 + 6.0 * math.sin(i * 1.8)
+        sz = 9.0 + 3.0 * math.cos(i * 2.7)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
+        puff = bpy.context.active_object
+        puff.scale = (sx, sy, sz)
+        puff.data.materials.append(mat_cloud)
+        parts.append(puff)
+
+    # Outer ring (R ~ 135, Z ~ 42)
+    for i in range(16):
+        angle = i * (2.0 * math.pi / 16.0) + 0.1
+        r = 135.0 + 15.0 * math.sin(i * 1.2)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 42.0 + 7.0 * math.cos(i * 1.9)
+        sx = 38.0 + 8.0 * math.sin(i * 1.1)
+        sy = 32.0 + 7.0 * math.cos(i * 1.6)
+        sz = 10.0 + 3.0 * math.sin(i * 2.2)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
+        puff = bpy.context.active_object
+        puff.scale = (sx, sy, sz)
+        puff.data.materials.append(mat_cloud)
+        parts.append(puff)
+
+    # Under-hanging dark storm lobes / mammatus pouches
+    for i in range(8):
+        angle = i * (2.0 * math.pi / 8.0) + 0.7
+        r = 55.0 + 20.0 * math.sin(i * 2.2)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 38.0 + 4.0 * math.cos(i * 1.7)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx, cy, cz))
+        pouch = bpy.context.active_object
+        pouch.scale = (16.0, 16.0, 7.0)
+        pouch.data.materials.append(mat_cloud)
+        parts.append(pouch)
+
+    bpy.ops.object.select_all(action='DESELECT')
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+
+    cloud_obj = bpy.context.active_object
+    cloud_obj.name = "StormCloudsUpper"
+    return cloud_obj
+
+def build_storm_clouds_lower():
+    """Generates billowing mid/horizon storm cloud banks and jagged scud bands."""
+    print("[Blender] Building Lower Horizon Storm Cloud Deck...")
+    mat_cloud = create_material("MatStormCloudLower", (0.13, 0.13, 0.18, 1.0), roughness=0.9)
+    
+    parts = []
+    
+    # 1. Horizon Storm Cloud Banks ringing perimeter (R ~ 125, Z in 18..38)
+    num_banks = 18
+    for i in range(num_banks):
+        angle = i * (2.0 * math.pi / num_banks)
+        r = 120.0 + 14.0 * math.sin(i * 1.8)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 24.0 + 7.0 * math.cos(i * 2.4)
+        
+        # Base puff
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
+        base_puff = bpy.context.active_object
+        base_puff.scale = (22.0 + 5.0 * math.sin(i), 18.0 + 4.0 * math.cos(i), 8.0 + 3.0 * math.sin(i * 1.5))
+        base_puff.data.materials.append(mat_cloud)
+        parts.append(base_puff)
+
+        # Upper billow
+        if i % 2 == 0:
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx * 0.95, cy * 0.95, cz + 8.0))
+            top_puff = bpy.context.active_object
+            top_puff.scale = (16.0, 14.0, 7.5)
+            top_puff.data.materials.append(mat_cloud)
+            parts.append(top_puff)
+
+    # 2. Jagged Low Scud Cloud Formations (R ~ 95, Z in 14..24)
+    num_scud = 10
+    for i in range(num_scud):
+        angle = i * (2.0 * math.pi / num_scud) + 0.3
+        r = 95.0 + 15.0 * math.sin(i * 2.1)
+        cx = math.cos(angle) * r
+        cy = math.sin(angle) * r
+        cz = 16.0 + 4.0 * math.sin(i * 1.7)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx, cy, cz))
+        scud = bpy.context.active_object
+        scud.scale = (18.0, 10.0, 4.0)
+        scud.rotation_euler = (0.1 * math.sin(i), 0.1 * math.cos(i), angle + 0.4)
+        scud.data.materials.append(mat_cloud)
+        parts.append(scud)
+
+    bpy.ops.object.select_all(action='DESELECT')
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+
+    lower_obj = bpy.context.active_object
+    lower_obj.name = "StormCloudsLower"
+    return lower_obj
+
+# -----------------------------------------------------------------------------
 # MAIN PIPELINE EXECUTION
 # -----------------------------------------------------------------------------
 def main():
@@ -433,20 +570,34 @@ def main():
     export_object_as_obj(sun, os.path.join(out_dir, "celestial_sun.obj"))
     export_object_as_obj(moon, os.path.join(out_dir, "celestial_moon.obj"))
 
-    # 7. Assemble Complete Scene and Save .blend Master File
+    # 7. Build Storm Cloud Decks
+    clear_scene()
+    clouds_upper = build_storm_clouds_upper()
+    export_object_as_obj(clouds_upper, os.path.join(out_dir, "storm_clouds_upper.obj"))
+
+    clear_scene()
+    clouds_lower = build_storm_clouds_lower()
+    export_object_as_obj(clouds_lower, os.path.join(out_dir, "storm_clouds_lower.obj"))
+
+    # 8. Assemble Complete Scene and Save .blend Master File
     clear_scene()
     c = build_castle_tarmin()
     c.location = (0, 110, 0)
+    c.scale = (2.025, 2.025, 2.025)
     c.rotation_euler = (0, 0, 0)
 
     s = build_south_spire()
     s.location = (0, -110, 0)
+    s.scale = (1.875, 1.875, 1.875)
 
     m = build_mountain_ring()
 
     w = build_west_cumulus()
     w.location = (-130, 0, 0)
     w.rotation_euler = (0, 0, -math.pi * 0.5)
+
+    cu = build_storm_clouds_upper()
+    cl = build_storm_clouds_lower()
 
     blend_file = os.path.join(out_dir, "skybox_landmarks.blend")
     bpy.ops.wm.save_as_mainfile(filepath=blend_file)
