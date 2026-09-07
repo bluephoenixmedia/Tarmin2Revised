@@ -155,6 +155,20 @@ public class Monster implements Renderable {
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
 
+    // Package-private constructor for unit testing combat mechanics without LibGDX asset loaders
+    Monster(MonsterType type, int hp, int ac) {
+        this.type = type;
+        this.position = new Vector2(0, 0);
+        this.monsterColor = MonsterColor.WHITE;
+        this.dataManager = null;
+        this.maxHP = hp;
+        this.currentHP = hp;
+        this.armorClass = ac;
+        this.damageDice = "1d4";
+        this.spriteData = new String[0];
+        this.statusManager = new StatusManager();
+    }
+
     public Monster(MonsterType type, float startX, float startY, MonsterColor color,
             MonsterDataManager dataManager, AssetManager assetManager) {
         this.type = type;
@@ -236,7 +250,7 @@ public class Monster implements Renderable {
         }
 
         // --- Tarmin's Hunger Scaling (The Meat Grinder) ---
-        float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier();
+        float scaling = com.bpm.minotaur.managers.DoomManager.getInstance().getEnemyScalingMultiplier(template.baseLevel);
         if (scaling > 1.0f) {
             this.maxHP = (int) (this.maxHP * scaling);
             this.currentHP = this.maxHP;
@@ -286,23 +300,32 @@ public class Monster implements Renderable {
         return isImmuneToType(this.type, damageType);
     }
 
-    public int takeDamage(int amount, DamageType damageType) {
+    public int takeDamage(int amount, DamageType damageType, boolean isCrit) {
         if (isImmuneToType(damageType)) {
             return 0;
         }
-        return takeDamage(amount);
+        return takeDamage(amount, isCrit);
     }
 
-    public int takeDamage(int amount) {
-        // AC > 10 provides partial damage soak (every 2 AC above 10 = -1 damage).
-        // This keeps AC meaningful beyond just the to-hit gate.
-        int reduction = Math.max(0, (armorClass - 10) / 2);
+    public int takeDamage(int amount, DamageType damageType) {
+        return takeDamage(amount, damageType, false);
+    }
+
+    public int takeDamage(int amount, boolean isCrit) {
+        // AC >= 14 provides partial damage soak (every 2 AC above 14 = -1 damage).
+        // Creatures with AC 10-13 rely on evasion (to-hit d20 gate) with 0 flat soak.
+        // Critical strikes bypass armor soak completely.
+        int reduction = isCrit ? 0 : Math.max(0, (armorClass - 14) / 2);
         int taken = Math.max(1, amount - reduction);
         this.currentHP -= taken;
         if (this.currentHP < 0) {
             this.currentHP = 0;
         }
         return taken;
+    }
+
+    public int takeDamage(int amount) {
+        return takeDamage(amount, false);
     }
 
     public String[] getSpriteData() {

@@ -44,21 +44,48 @@ public class DoomManager {
     public void incrementDeaths() {
         this.deathCount++;
         save();
-        Gdx.app.log("DoomManager", "Death Count increased to: " + deathCount);
-        BalanceLogger.getInstance().log("DOOM_UPDATE",
-                "Deaths: " + deathCount + " | Bridge: " + getBridgeIntegrity() + "%");
+        if (Gdx.app != null) {
+            Gdx.app.log("DoomManager", "Death Count increased to: " + deathCount);
+        }
+        if (Gdx.files != null) {
+            BalanceLogger.getInstance().log("DOOM_UPDATE",
+                    "Deaths: " + deathCount + " | Bridge: " + getBridgeIntegrity() + "%");
+        }
     }
 
     public int getDeathCount() {
         return deathCount;
     }
 
+    private int currentLevel = 1;
+
+    public void setCurrentLevel(int level) {
+        this.currentLevel = level;
+    }
+
+    public int getCurrentLevel() {
+        return currentLevel;
+    }
+
     /**
-     * @return Multiplier for Enemy Stats (HP/Damage). Base is 1.0, hard cap 1.5.
-     *         Without a cap this becomes a one-way ratchet toward unwinnable runs.
+     * @param level The dungeon depth or monster base level.
+     * @return Multiplier for Enemy Stats (HP/Damage).
+     *         Level 1 is strictly 1.0 (no doom penalty).
+     *         Level 2+ scales dynamically with depth up to full scaling at Level 5+.
+     */
+    public float getEnemyScalingMultiplier(int level) {
+        if (level <= 1) {
+            return 1.0f;
+        }
+        float depthWeight = Math.min(1.0f, (level - 1) / 4.0f);
+        return Math.min(1.5f, 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount * depthWeight));
+    }
+
+    /**
+     * @return Multiplier for Enemy Stats using the current tracked dungeon level.
      */
     public float getEnemyScalingMultiplier() {
-        return Math.min(1.5f, 1.0f + (DAMAGE_SCALE_PER_DEATH * deathCount));
+        return getEnemyScalingMultiplier(this.currentLevel);
     }
 
     /**
@@ -92,12 +119,17 @@ public class DoomManager {
     public void reset() {
         this.deathCount = 0;
         save();
-        Gdx.app.log("DoomManager", "DOOM RESET. The cycle begins anew.");
+        if (Gdx.app != null) {
+            Gdx.app.log("DoomManager", "DOOM RESET. The cycle begins anew.");
+        }
     }
 
     // --- Persistence ---
 
     public void save() {
+        if (Gdx.files == null) {
+            return;
+        }
         try {
             Json json = new Json();
             json.setOutputType(OutputType.json);
@@ -112,9 +144,13 @@ public class DoomManager {
             state.deathCount = this.deathCount;
 
             file.writeString(json.prettyPrint(state), false);
-            Gdx.app.log("DoomManager", "Saved Doom State.");
+            if (Gdx.app != null) {
+                Gdx.app.log("DoomManager", "Saved Doom State.");
+            }
         } catch (Exception e) {
-            Gdx.app.error("DoomManager", "Failed to save Doom State", e);
+            if (Gdx.app != null) {
+                Gdx.app.error("DoomManager", "Failed to save Doom State", e);
+            }
         }
     }
 

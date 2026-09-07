@@ -308,7 +308,7 @@ public class SpawnManager {
         SpawnContext ctx = createSpawnContext();
 
         for (int i = 0; i < budget; i++) {
-            GridPoint2 spawnPoint = getEmptySpawnPoint();
+            GridPoint2 spawnPoint = getEmptySpawnPointForMonster();
             if (spawnPoint == null)
                 break;
 
@@ -577,6 +577,36 @@ public class SpawnManager {
         if (displayName.contains("+"))
             displayName = "+" + value;
         item.addModifier(new ItemModifier(modInfo.type, value, displayName));
+    }
+
+    private GridPoint2 getEmptySpawnPointForMonster() {
+        if (validSpawnPoints.isEmpty())
+            return null;
+
+        // If this maze chunk contains home tiles (e.g. Level 1 Starting Shelter Chunk),
+        // enforce a 6-tile safety exclusion radius from the shelter door (17, 20) and any home tile.
+        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
+            for (int i = 0; i < validSpawnPoints.size(); i++) {
+                GridPoint2 pt = validSpawnPoints.get(i);
+                float distToDoor = pt.dst(17, 20);
+                if (distToDoor < 6.0f) {
+                    continue;
+                }
+                boolean tooCloseToHome = false;
+                for (GridPoint2 ht : maze.getHomeTiles()) {
+                    if (pt.dst(ht) < 6.0f) {
+                        tooCloseToHome = true;
+                        break;
+                    }
+                }
+                if (!tooCloseToHome) {
+                    return validSpawnPoints.remove(i);
+                }
+            }
+            return null;
+        }
+
+        return validSpawnPoints.remove(0);
     }
 
     private GridPoint2 getEmptySpawnPoint() {

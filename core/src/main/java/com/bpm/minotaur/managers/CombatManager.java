@@ -972,7 +972,7 @@ public class CombatManager {
                     eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
                 }
 
-                int actualDamage = monster.takeDamage(totalDamage, dmgType);
+                int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit);
                 showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
                 lastDamageDealt = actualDamage;
 

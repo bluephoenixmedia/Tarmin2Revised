@@ -42,7 +42,7 @@
 			"........................"
 		],
 		"baseValue": 5,
-		"damageDice": "1d5",
+		"damageDice": "1d6",
 		"armorClassBonus": 0,
 		"accuracyModifier": -1,
 		"range": 1,

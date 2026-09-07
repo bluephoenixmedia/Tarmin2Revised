@@ -69,6 +69,7 @@ public class WorldManager {
         this.gameMode = gameMode;
         this.difficulty = difficulty;
         this.currentLevel = initialLevel;
+        DoomManager.getInstance().setCurrentLevel(initialLevel);
         this.json = new Json();
         this.json.setUsePrototypes(false);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
@@ -344,6 +345,7 @@ public class WorldManager {
 
     public void setCurrentLevel(int level) {
         this.currentLevel = level;
+        DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
         this.currentLevelTheme = getThemeForLevel(level);
         Gdx.app.log("WorldManager", "Set current level to: " + level);

@@ -6,7 +6,7 @@
     "magicResistance": 0,
     "moveSpeed": 18,
     "alignment": "NEUTRAL",
-    "maxHP": 16,
+    "maxHP": 12,
     "maxMP": 8,
     "armorClass": 12,
     "baseExperience": 10,
@@ -212,7 +212,7 @@
   "GIANT_SCORPION": {
     "baseLevel": 1,
     "frequency": 8,
-    "maxHP": 26,
+    "maxHP": 18,
     "maxMP": 20,
     "armorClass": 13,
     "baseExperience": 20,
@@ -286,7 +286,7 @@
   "GIANT_SNAKE": {
     "baseLevel": 1,
     "frequency": 8,
-    "maxHP": 22,
+    "maxHP": 14,
     "maxMP": 12,
     "armorClass": 12,
     "baseExperience": 35,
@@ -408,7 +408,7 @@
   "SKELETON": {
     "baseLevel": 1,
     "frequency": 10,
-    "maxHP": 26,
+    "maxHP": 12,
     "maxMP": 10,
     "armorClass": 12,
     "baseExperience": 18,
@@ -834,7 +834,7 @@
   },
   "SPIDER": {
     "baseLevel": 1,
-    "maxHP": 18,
+    "maxHP": 8,
     "maxMP": 10,
     "armorClass": 14,
     "baseExperience": 5,
@@ -1563,7 +1563,7 @@
   },
   "KOBOLD": {
     "baseLevel": 1,
-    "maxHP": 12,
+    "maxHP": 8,
     "maxMP": 4,
     "armorClass": 12,
     "baseExperience": 5,
@@ -1623,7 +1623,7 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "maxHP": 14,
+    "maxHP": 10,
     "maxMP": 5,
     "armorClass": 12,
     "baseExperience": 8,
@@ -1683,7 +1683,7 @@
   },
   "TROGLODYTE": {
     "baseLevel": 1,
-    "maxHP": 20,
+    "maxHP": 18,
     "maxMP": 6,
     "armorClass": 11,
     "baseExperience": 15,
