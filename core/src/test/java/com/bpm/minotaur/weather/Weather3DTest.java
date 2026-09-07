@@ -50,15 +50,20 @@ public class Weather3DTest {
     }
 
     @Test
-    public void testSplashParticleLifecycle() {
-        WeatherRenderer.SplashParticle splash = new WeatherRenderer.SplashParticle(5f, 5f);
-        assertFalse("Splash must start alive", splash.isDead);
-        assertEquals("Initial radius should be 0.05", 0.05f, splash.radius, 0.001f);
+    public void testSplashDropletLifecycle() {
+        WeatherRenderer.SplashDroplet droplet = new WeatherRenderer.SplashDroplet(5f, 5f, 0.5f, 0.5f, 1.5f, 0.15f);
+        assertFalse("Splash droplet must start alive", droplet.isDead);
+        assertEquals("Initial Z should be slightly above ground", 0.02f, droplet.z, 0.001f);
 
-        // Update past max life (0.22s)
-        splash.update(0.30f);
-        assertTrue("Splash must die after maxLife", splash.isDead);
-        assertTrue("Splash radius must expand over time", splash.radius > 0.05f);
+        // Update partially
+        droplet.update(0.05f);
+        assertTrue("Droplet must have moved horizontally", droplet.x > 5f);
+        assertTrue("Droplet must have popped upward", droplet.z > 0.02f);
+        assertFalse("Droplet should still be alive", droplet.isDead);
+
+        // Update past max life (0.15s)
+        droplet.update(0.15f);
+        assertTrue("Droplet must die after maxLife", droplet.isDead);
     }
 
     @Test

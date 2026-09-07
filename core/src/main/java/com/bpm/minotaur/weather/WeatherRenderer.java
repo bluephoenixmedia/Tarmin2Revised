@@ -17,8 +17,9 @@ import com.bpm.minotaur.gamedata.player.Player;
  *
  * <p>Simulates rain, snow, and blizzards as full 3D particles in a cylindrical
  * volume around the player in maze world coordinates. Particles are projected
- * into camera space and occluded by dungeon geometry via per-column raycast depth buffer
- * checks, enabling realistic indoor-to-outdoor portal visibility and ground splashes.
+ * into camera space and occluded by dungeon geometry via vertical wall span depth buffer
+ * checks, enabling realistic indoor-to-outdoor portal visibility, needle-thin rain streaks,
+ * and delicate micro-splash droplets.
  */
 public class WeatherRenderer {
 
@@ -26,17 +27,17 @@ public class WeatherRenderer {
 
     // Cylinder simulation bounds
     public static final float CYLINDER_RADIUS = 16.0f;
-    public static final float CYLINDER_HEIGHT = 10.5f;
+    public static final float CYLINDER_HEIGHT = 11.0f;
 
     private final WeatherManager weatherManager;
     private final Array<WeatherParticle> particles = new Array<>(false, 2500);
-    private final Array<SplashParticle> splashes = new Array<>(false, 150);
+    private final Array<SplashDroplet> splashDroplets = new Array<>(false, 250);
 
     private final Vector3 windVector = new Vector3();
     private float spawnAccumulator = 0f;
 
     // Pre-calculated scratch colors to eliminate GC allocations
-    private final Color rainColor = new Color(0.70f, 0.80f, 0.95f, 1f);
+    private final Color rainColor = new Color(0.72f, 0.82f, 0.95f, 1f);
     private final Color snowColor = new Color(0.95f, 0.98f, 1.0f, 1f);
     private final Color splashColor = new Color(0.75f, 0.85f, 1.0f, 1f);
 
@@ -45,7 +46,7 @@ public class WeatherRenderer {
     }
 
     /**
-     * Updates 3D particles and ground splashes centered around the player's world position.
+     * Updates 3D particles and micro-splash droplets centered around the player's world position.
      */
     public void update(float delta, Player player, Maze maze) {
         if (weatherManager == null || player == null) return;
@@ -55,7 +56,7 @@ public class WeatherRenderer {
 
         if (!weatherManager.isPrecipitation(type)) {
             if (particles.size > 0) particles.clear();
-            if (splashes.size > 0) splashes.clear();
+            if (splashDroplets.size > 0) splashDroplets.clear();
             return;
         }
 
@@ -65,15 +66,15 @@ public class WeatherRenderer {
 
         int maxParticles = getMaxParticles(type, intensity);
 
-        // 1. Spawn new particles in the cylinder above outdoor tiles
-        spawnParticles(delta, type, intensity, playerX, playerY, maze, maxParticles);
+        // 1. Spawn new particles in the cylinder above outdoor tiles, biased in forward view
+        spawnParticles(delta, type, intensity, player, maze, maxParticles);
 
         // 2. Update existing falling particles
         for (int i = particles.size - 1; i >= 0; i--) {
             WeatherParticle p = particles.get(i);
             p.update(delta);
 
-            // Ground impact: spawn splash if hitting floor (z <= 0)
+            // Ground impact: spawn tiny splash droplets if hitting floor (z <= 0)
             if (p.z <= 0f) {
                 p.isDead = true;
                 if (p.type == WeatherType.RAIN || p.type == WeatherType.STORM) {
@@ -84,7 +85,7 @@ public class WeatherRenderer {
             // Despawn if drifted beyond cylinder radius
             float dx = p.x - playerX;
             float dy = p.y - playerY;
-            if (dx * dx + dy * dy > (CYLINDER_RADIUS + 2f) * (CYLINDER_RADIUS + 2f)) {
+            if (dx * dx + dy * dy > (CYLINDER_RADIUS + 3f) * (CYLINDER_RADIUS + 3f)) {
                 p.isDead = true;
             }
 
@@ -93,12 +94,12 @@ public class WeatherRenderer {
             }
         }
 
-        // 3. Update ground splashes
-        for (int i = splashes.size - 1; i >= 0; i--) {
-            SplashParticle s = splashes.get(i);
+        // 3. Update ground micro-splash droplets
+        for (int i = splashDroplets.size - 1; i >= 0; i--) {
+            SplashDroplet s = splashDroplets.get(i);
             s.update(delta);
             if (s.isDead) {
-                splashes.removeIndex(i);
+                splashDroplets.removeIndex(i);
             }
         }
     }
@@ -107,22 +108,33 @@ public class WeatherRenderer {
         if (type == WeatherType.BLIZZARD) return 2400;
         if (type == WeatherType.STORM) return 1800;
         if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 1400 : 800;
-        return (intensity == WeatherIntensity.HEAVY) ? 1400 : (intensity == WeatherIntensity.MEDIUM) ? 900 : 500;
+        return (intensity == WeatherIntensity.HEAVY) ? 1400 : (intensity == WeatherIntensity.MEDIUM) ? 950 : 550;
     }
 
     private void spawnParticles(float delta, WeatherType type, WeatherIntensity intensity,
-                                float playerX, float playerY, Maze maze, int targetMax) {
+                                Player player, Maze maze, int targetMax) {
         if (particles.size >= targetMax) return;
 
-        float spawnRate = targetMax * 1.8f; // Particles per second
+        float spawnRate = targetMax * 2.2f; // Particles per second
         spawnAccumulator += spawnRate * delta;
 
         int toSpawn = (int) spawnAccumulator;
         spawnAccumulator -= toSpawn;
 
+        float playerX = player.getPosition().x;
+        float playerY = player.getPosition().y;
+        Vector2 pDir = player.getDirectionVector();
+        float viewAngle = MathUtils.atan2(pDir.y, pDir.x);
+
         for (int i = 0; i < toSpawn && particles.size < targetMax; i++) {
-            // Uniform disk distribution
-            float angle = MathUtils.random(0f, MathUtils.PI2);
+            // Bias 70% of particles into the forward view frustum arc (+/- 65 deg)
+            float angle;
+            if (MathUtils.randomBoolean(0.70f)) {
+                angle = viewAngle + MathUtils.random(-1.15f, 1.15f);
+            } else {
+                angle = MathUtils.random(0f, MathUtils.PI2);
+            }
+
             float radius = (float) Math.sqrt(MathUtils.random()) * CYLINDER_RADIUS;
             float px = playerX + MathUtils.cos(angle) * radius;
             float py = playerY + MathUtils.sin(angle) * radius;
@@ -134,21 +146,21 @@ public class WeatherRenderer {
                 continue;
             }
 
-            float pz = MathUtils.random(CYLINDER_HEIGHT * 0.4f, CYLINDER_HEIGHT);
+            float pz = MathUtils.random(CYLINDER_HEIGHT * 0.35f, CYLINDER_HEIGHT);
 
             // Physical velocities
-            float vx = windVector.x + MathUtils.random(-0.5f, 0.5f);
-            float vy = windVector.z + MathUtils.random(-0.5f, 0.5f); // Maze Y is world Z
+            float vx = windVector.x + MathUtils.random(-0.4f, 0.4f);
+            float vy = windVector.z + MathUtils.random(-0.4f, 0.4f); // Maze Y is world Z
             float vz;
             float length;
 
             if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
                 vz = (type == WeatherType.BLIZZARD) ? -MathUtils.random(6.0f, 9.5f) : -MathUtils.random(1.8f, 3.2f);
-                length = (type == WeatherType.BLIZZARD) ? 0.35f : 0.12f;
+                length = (type == WeatherType.BLIZZARD) ? 0.30f : 0.12f;
             } else {
                 // Rain / Storm
-                vz = -MathUtils.random(14.0f, 18.5f);
-                length = (type == WeatherType.STORM) ? 0.65f : 0.45f;
+                vz = -MathUtils.random(15.0f, 19.5f);
+                length = (type == WeatherType.STORM) ? 0.60f : 0.42f;
             }
 
             particles.add(new WeatherParticle(px, py, pz, vx, vy, vz, length, type));
@@ -156,27 +168,36 @@ public class WeatherRenderer {
     }
 
     private void spawnSplash(float x, float y, float playerX, float playerY, Maze maze) {
-        if (splashes.size >= 120) return;
+        if (splashDroplets.size >= 240) return;
 
-        // Only spawn splashes in outdoor tiles within reasonable viewing radius
+        // Only spawn splashes within visible distance
         float dx = x - playerX;
         float dy = y - playerY;
-        if (dx * dx + dy * dy > 100f) return;
+        if (dx * dx + dy * dy > 80f) return;
 
         int tileX = MathUtils.floor(x);
         int tileY = MathUtils.floor(y);
         if (maze != null && maze.isIndoors(tileX, tileY)) return;
 
-        splashes.add(new SplashParticle(x, y));
+        // Spawn 3 tiny spray droplets popping upward and outward from ground contact
+        for (int i = 0; i < 3; i++) {
+            float angle = MathUtils.random(0f, MathUtils.PI2);
+            float speed = MathUtils.random(0.4f, 1.1f);
+            float vx = MathUtils.cos(angle) * speed;
+            float vy = MathUtils.sin(angle) * speed;
+            float vz = MathUtils.random(1.2f, 2.2f);
+            float maxLife = MathUtils.random(0.10f, 0.16f);
+            splashDroplets.add(new SplashDroplet(x, y, vx, vy, vz, maxLife));
+        }
     }
 
     /**
-     * Renders precipitation and ground splashes with camera-space projection and depth occlusion.
+     * Renders precipitation and micro-splashes with camera projection and vertical wall occlusion.
      */
     public void renderPrecipitation(SpriteBatch spriteBatch, Texture blankTexture,
                                     Viewport viewport, float[] depthBuffer,
                                     Player player, Maze maze) {
-        if (particles.size == 0 && splashes.size == 0) return;
+        if (particles.size == 0 && splashDroplets.size == 0) return;
         if (player == null || depthBuffer == null) return;
 
         float playerX = player.getPosition().x;
@@ -191,35 +212,35 @@ public class WeatherRenderer {
         float halfH  = worldH * 0.5f;
         int numCols  = depthBuffer.length;
 
-        // --- 1. RENDER GROUND SPLASH RINGS ---
-        for (int i = 0; i < splashes.size; i++) {
-            SplashParticle s = splashes.get(i);
+        // --- 1. RENDER GROUND MICRO-SPLASH DROPLETS ---
+        for (int i = 0; i < splashDroplets.size; i++) {
+            SplashDroplet s = splashDroplets.get(i);
             float relX = s.x - playerX;
             float relY = s.y - playerY;
 
-            float transformX = invDet * (dir.y * relX - dir.x * relY);
+            float transformX = invDet * (-dir.y * relX + dir.x * relY);
             float transformY = invDet * (-plane.y * relX + plane.x * relY);
 
-            if (transformY <= 0.25f) continue;
+            if (transformY <= 0.22f) continue;
 
             float screenX = halfW * (1.0f + transformX / transformY);
-            int col = (int) screenX;
+            int col = (int) ((screenX / worldW) * numCols);
             if (col < 0 || col >= numCols) continue;
 
-            // Depth occlusion: skip if splash is behind wall/door
-            if (transformY > depthBuffer[col]) continue;
+            // Ground droplet depth occlusion: skip if behind wall
+            float wallDist = depthBuffer[col];
+            if (wallDist < Float.MAX_VALUE && transformY > wallDist) continue;
 
-            // Floor altitude is at 0 (eye height is 0.5)
-            float screenY = halfH - (0.5f / transformY) * worldH;
+            float screenY = halfH + ((s.z - 0.5f) / transformY) * worldH;
             if (screenY < 0 || screenY > worldH) continue;
 
-            float ringW = (s.radius / transformY) * worldW;
-            float ringH = ringW * 0.35f; // Flat ellipse on the floor plane
-            float alpha = (1.0f - s.life / s.maxLife) * MathUtils.clamp(1.0f - transformY / 10f, 0.2f, 0.65f);
+            // Tiny 1-to-2 pixel spray specks
+            float size = MathUtils.clamp((0.022f / transformY) * worldH, 1.2f, 2.5f);
+            float alpha = (1.0f - s.life / s.maxLife) * MathUtils.clamp(1.0f - transformY / 9f, 0.25f, 0.75f);
 
             splashColor.a = alpha;
             spriteBatch.setColor(splashColor);
-            spriteBatch.draw(blankTexture, screenX - ringW * 0.5f, screenY - ringH * 0.5f, ringW, ringH);
+            spriteBatch.draw(blankTexture, screenX - size * 0.5f, screenY - size * 0.5f, size, size);
         }
 
         // --- 2. RENDER 3D PRECIPITATION STREAKS / FLAKES ---
@@ -229,48 +250,59 @@ public class WeatherRenderer {
             float relX = p.x - playerX;
             float relY = p.y - playerY;
 
-            float transformX = invDet * (dir.y * relX - dir.x * relY);
+            float transformX = invDet * (-dir.y * relX + dir.x * relY);
             float transformY = invDet * (-plane.y * relX + plane.x * relY);
 
             // Cull if behind camera plane or too close to lens
             if (transformY <= 0.18f) continue;
 
             float screenX = halfW * (1.0f + transformX / transformY);
-            int col = (int) screenX;
+            int col = (int) ((screenX / worldW) * numCols);
             if (col < 0 || col >= numCols) continue;
-
-            // Depth occlusion against dungeon raycast walls & monsters
-            if (transformY > depthBuffer[col]) continue;
 
             // Screen altitude projection (eye height = 0.5)
             float screenY = halfH + ((p.z - 0.5f) / transformY) * worldH;
-            if (screenY < -50 || screenY > worldH + 80) continue;
+            if (screenY < -50 || screenY > worldH + 100) continue;
+
+            // VERTICAL WALL OCCLUSION:
+            // The wall only occupies the vertical span up to wallTopY.
+            // Above wallTopY, it is OPEN SKY! Rain falling in the sky above walls is visible!
+            float wallDist = depthBuffer[col];
+            if (wallDist < Float.MAX_VALUE && transformY > wallDist) {
+                float wallTopY = halfH + (0.5f / wallDist) * worldH;
+                if (screenY <= wallTopY) {
+                    continue; // Drop is behind the solid wall surface
+                }
+            }
 
             // Proximity alpha fade & atmospheric depth falloff
-            float alpha = MathUtils.clamp(1.0f - (transformY / CYLINDER_RADIUS), 0.12f, 0.75f);
+            float alpha = MathUtils.clamp(0.85f - (transformY / CYLINDER_RADIUS) * 0.55f, 0.20f, 0.75f);
 
             if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
                 // SNOWFLAKE: Fluttering square quad
-                float flakeSize = Math.max(1.5f, (0.09f / transformY) * worldH);
+                float flakeSize = Math.max(1.2f, (0.07f / transformY) * worldH);
                 snowColor.a = alpha * 0.85f;
                 spriteBatch.setColor(snowColor);
                 spriteBatch.draw(blankTexture, screenX - flakeSize * 0.5f, screenY - flakeSize * 0.5f, flakeSize, flakeSize);
             } else {
-                // RAIN STREAK: Directional angled quad
-                float streakLen = MathUtils.clamp((p.length / transformY) * worldH, 4f, 100f);
-                float streakW   = MathUtils.clamp((0.035f / transformY) * worldW, 1.2f, 3.2f);
+                // RAIN STREAK: Directional slender angled quad
+                float streakLen = MathUtils.clamp((p.length / transformY) * worldH, 10f, 45f);
+                float streakW   = MathUtils.clamp(1.2f + (0.4f / transformY), 1.0f, 1.6f);
 
                 // Calculate visual slant angle from relative camera-space wind velocity
-                float vCamX = invDet * (dir.y * p.vx - dir.x * p.vy);
-                float slantDeg = MathUtils.clamp((vCamX / Math.abs(p.vz)) * 28f, -40f, 40f);
+                float vCamX = invDet * (-dir.y * p.vx + dir.x * p.vy);
+                float slantDeg = MathUtils.clamp((-vCamX / Math.abs(p.vz)) * 25f, -35f, 35f);
 
                 rainColor.a = alpha;
                 spriteBatch.setColor(rainColor);
                 spriteBatch.draw(
                         blankTexture,
-                        screenX, screenY - streakLen,
-                        0f, 0f,
-                        streakW, streakLen,
+                        screenX - streakW * 0.5f,
+                        screenY - streakLen,
+                        streakW * 0.5f,
+                        streakLen,
+                        streakW,
+                        streakLen,
                         1f, 1f,
                         slantDeg,
                         0, 0, 1, 1,
@@ -323,21 +355,32 @@ public class WeatherRenderer {
         }
     }
 
-    public static class SplashParticle {
-        public float x, y;
-        public float radius = 0.05f;
-        public float life = 0f;
-        public float maxLife = 0.22f;
-        public boolean isDead = false;
+    public static class SplashDroplet {
+        public float x, y, z;
+        public float vx, vy, vz;
+        public float life;
+        public float maxLife;
+        public boolean isDead;
 
-        public SplashParticle(float x, float y) {
+        public SplashDroplet(float x, float y, float vx, float vy, float vz, float maxLife) {
             this.x = x;
             this.y = y;
+            this.z = 0.02f;
+            this.vx = vx;
+            this.vy = vy;
+            this.vz = vz;
+            this.life = 0f;
+            this.maxLife = maxLife;
+            this.isDead = false;
         }
 
         public void update(float delta) {
             life += delta;
-            radius = MathUtils.lerp(0.05f, 0.30f, life / maxLife);
+            x += vx * delta;
+            y += vy * delta;
+            z += vz * delta;
+            vz -= 14.0f * delta; // Quick downward gravity
+            if (z < 0f) z = 0f;
             if (life >= maxLife) {
                 isDead = true;
             }
