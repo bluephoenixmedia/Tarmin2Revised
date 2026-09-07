@@ -95,6 +95,7 @@ public class Hud implements Disposable {
     private final Label levelBadgeLabel;
     private final Label divinitiesLabel;
     private final Label doomLabel;
+    private final Label dayNightLabel;
     private final Label equippedWeaponLabel;
     private Label heldItemLabel;
     private Label rightHandStatsLabel;
@@ -263,6 +264,7 @@ public class Hud implements Disposable {
         xpLabel = new Label("", labelStyle);
         divinitiesLabel = new Label("DIV: 0", smallGoldStyle);
         doomLabel = new Label("DOOM: 0 [0%]", smallStyle);
+        dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
         treasureValueLabel = new Label("", smallStyle);
@@ -311,7 +313,8 @@ public class Hud implements Disposable {
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(12);
         Table divDoomCol = new Table();
-        divDoomCol.add(divinitiesLabel).left().row();
+        divDoomCol.add(dayNightLabel).left().row();
+        divDoomCol.add(divinitiesLabel).left().padTop(2).row();
         divDoomCol.add(doomLabel).left().padTop(2).row();
         vitalsSubRow.add(divDoomCol).left();
 
@@ -588,6 +591,18 @@ public class Hud implements Disposable {
         spiritualStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));
         xpLabel.setText(String.format("%d", player.getExperience()));
         levelLabel.setText(String.format("%d", player.getLevel()));
+
+        if (worldManager != null && worldManager.getDayNightManager() != null) {
+            DayNightManager dnm = worldManager.getDayNightManager();
+            dayNightLabel.setText(dnm.getTimeString() + " " + dnm.getPhaseLabel());
+            if (dnm.getPhase() == DayNightManager.Phase.NIGHT) {
+                dayNightLabel.setColor(HudSkin.COL_MP_BLUE);
+            } else if (dnm.getPhase() == DayNightManager.Phase.DUSK || dnm.getPhase() == DayNightManager.Phase.DAWN) {
+                dayNightLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+            } else {
+                dayNightLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
+            }
+        }
 
         DivinityManager dm = DivinityManager.getInstance();
         divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());

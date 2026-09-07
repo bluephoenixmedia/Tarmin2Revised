@@ -37,6 +37,7 @@ public class WorldManager {
     private final AssetManager assetManager;
 
     private final WeatherManager weatherManager;
+    private final DayNightManager dayNightManager;
     private final SpawnTableData spawnTableData;
     private final com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager;
     private final CookingManager cookingManager;
@@ -89,6 +90,7 @@ public class WorldManager {
         this.cookingManager = new CookingManager();
 
         this.weatherManager = new WeatherManager(this);
+        this.dayNightManager = new DayNightManager();
 
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
@@ -386,7 +388,15 @@ public class WorldManager {
         return weatherManager;
     }
 
+    public DayNightManager getDayNightManager() {
+        return dayNightManager;
+    }
+
     public void update(float delta) {
+        if (dayNightManager != null) {
+            dayNightManager.update(delta);
+        }
+
         if (currentLevel == 1) {
             weatherManager.update(delta);
 

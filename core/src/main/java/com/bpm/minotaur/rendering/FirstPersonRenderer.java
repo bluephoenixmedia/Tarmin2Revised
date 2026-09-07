@@ -100,8 +100,10 @@ public class FirstPersonRenderer {
     private ShaderProgram retroFloorShader;
 
     private WeatherRenderer weatherRenderer;
+    private final Skybox3DRenderer skybox3DRenderer;
 
     public FirstPersonRenderer() {
+        skybox3DRenderer = new Skybox3DRenderer();
         spriteBatch = new SpriteBatch();
         wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
         wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
@@ -250,16 +252,22 @@ public class FirstPersonRenderer {
             depthBuffer = new float[viewport.getScreenWidth()];
         }
 
+        // 0. RENDER 3D SKYBOX & HORIZON LANDMARKS
+        boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
+        boolean has3DSky = false;
+        if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
+            skybox3DRenderer.render(spriteBatch, player, viewport, worldManager, debugManager.getRenderMode());
+            has3DSky = true;
+        }
+
         // 1. RENDER FLOOR & CEILING (Background)
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.setShader(null);
             spriteBatch.begin();
 
-            // FIX: Only render Skybox if NOT indoors.
-            // Previous logic: (!isIndoors || currentLevel > 1) caused Dungeons to have
-            // Skyboxes.
-            if (!isIndoors) {
+            // Only render 2D Skybox fallback if 3D Skybox was not rendered
+            if (!isIndoors && !has3DSky) {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor,
@@ -272,9 +280,10 @@ public class FirstPersonRenderer {
             spriteBatch.begin();
 
             // A. Ceiling/Skybox
-            // FIX: Only render Skybox if NOT indoors.
             if (!isIndoors) {
-                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
+                if (!has3DSky) {
+                    renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
+                }
             } else {
                 // Render Flat Ceiling for Indoors (Home OR Dungeon)
                 Color ceilColor = applyTorchLighting(currentCeilingColor, WorldConstants.TORCH_FADE_END, new Color());
@@ -329,8 +338,8 @@ public class FirstPersonRenderer {
                     depthBuffer[x] = Float.MAX_VALUE;
 
                     // Draw a per-column sky strip to overwrite the ceiling background.
-                    // Skip if the biome already drew a full-screen skybox texture.
-                    if (biome.getSkyboxTexturePath() == null) {
+                    // Skip if 3D skybox is active or biome drew a full-screen skybox texture.
+                    if (biome.getSkyboxTexturePath() == null && !has3DSky) {
                         Texture skyboxTexture;
                         boolean isStormy = false;
                         if (worldManager.getWeatherManager() != null) {
@@ -1751,6 +1760,25 @@ public class FirstPersonRenderer {
             this.fogDistance = fogDistance;
             this.fogColor = fogColor;
             this.lightIntensity = lightIntensity;
+        }
+    }
+
+    public Skybox3DRenderer getSkybox3DRenderer() {
+        return skybox3DRenderer;
+    }
+
+    public void dispose() {
+        if (skybox3DRenderer != null) {
+            skybox3DRenderer.dispose();
+        }
+        if (spriteBatch != null) {
+            spriteBatch.dispose();
+        }
+        if (floorShader != null) {
+            floorShader.dispose();
+        }
+        if (retroFloorShader != null) {
+            retroFloorShader.dispose();
         }
     }
 }

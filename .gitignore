@@ -182,10 +182,13 @@ replay_pid*.log
 run_log*.txt
 .claude/
 *.blend
+*.blend1
 *.xcf
 *.zip
 fbx_parts/
-assets/models/
+assets/models/*
+!assets/models/skybox/
+!assets/models/skybox/**
 /monsters/
 assets/images/monsters/Super Pixel Effects*/
 assets/images/monsters/Kenney Game Assets*/

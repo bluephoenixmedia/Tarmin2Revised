@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -62,8 +63,14 @@ public class Tarmin2 extends Game {
         Bullet.init();
         batch = new SpriteBatch();
 
-        // --- NEW: Initialize the ModelBatch ---
-        // modelBatch = new ModelBatch();
+        // Log Active Graphics Hardware & Driver
+        try {
+            Gdx.app.log("GPU", "Renderer: " + Gdx.gl.glGetString(GL20.GL_RENDERER)
+                    + " | Vendor: " + Gdx.gl.glGetString(GL20.GL_VENDOR)
+                    + " | Version: " + Gdx.gl.glGetString(GL20.GL_VERSION));
+        } catch (Throwable t) {
+            Gdx.app.log("GPU", "Could not query GL hardware: " + t.getMessage());
+        }
 
         OrthographicCamera camera = new OrthographicCamera();
         viewport = new FitViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
@@ -130,6 +137,26 @@ public class Tarmin2 extends Game {
         monsterDataManager.queueAssets(assetManager);
         itemDataManager.queueAssets(assetManager);
         encounterManager.queueAssets(assetManager);
+
+        // Queue 3D Skybox models if present
+        if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {
+            assetManager.load("models/skybox/castle_tarmin.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/south_spire.obj").exists()) {
+            assetManager.load("models/skybox/south_spire.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/mountain_ring.obj").exists()) {
+            assetManager.load("models/skybox/mountain_ring.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/west_cumulus.obj").exists()) {
+            assetManager.load("models/skybox/west_cumulus.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/celestial_sun.obj").exists()) {
+            assetManager.load("models/skybox/celestial_sun.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
+        if (Gdx.files.internal("models/skybox/celestial_moon.obj").exists()) {
+            assetManager.load("models/skybox/celestial_moon.obj", com.badlogic.gdx.graphics.g3d.Model.class);
+        }
 
         // --- 4. Load Settings (Synchronous) ---
         SettingsManager.getInstance().load();

@@ -264,6 +264,10 @@ public class WeatherManager {
         return Math.min(1.5f, globalLightDimmer + flashIntensity);
     }
 
+    public float getFlashIntensity() {
+        return flashIntensity;
+    }
+
     public boolean isLightningFlashing() {
         return flashIntensity > 0.1f;
     }

@@ -50,3 +50,18 @@ subprojects {
   }
 }
 
+task generateSkybox(type: Exec) {
+  group = 'assets'
+  description = 'Generates 3D skybox landmarks using Blender 5.1'
+
+  def blenderExec = 'blender'
+  if (System.getProperty("os.name").toLowerCase().contains("win")) {
+    def defaultWinPath = 'C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe'
+    if (file(defaultWinPath).exists()) {
+      blenderExec = defaultWinPath
+    }
+  }
+
+  commandLine blenderExec, '-b', '-P', file('tools/blender/generate_skybox_landmarks.py').absolutePath
+}
+

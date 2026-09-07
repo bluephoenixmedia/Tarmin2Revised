@@ -125,6 +125,44 @@ public class DayNightManager {
         }
     }
 
+    /** Returns normalized Sun position vector in world space. */
+    public com.badlogic.gdx.math.Vector3 getSunDirection(com.badlogic.gdx.math.Vector3 out) {
+        // Sun rises in East (+X), reaches zenith at noon (+Y), sets in West (-X)
+        float sunAngle = (timeOfDay - 0.25f) * 2.0f * MathUtils.PI;
+        float x = MathUtils.cos(sunAngle);
+        float y = MathUtils.sin(sunAngle);
+        // Slight southward declination for realistic lighting angle
+        float z = 0.35f;
+        out.set(x, y, z).nor();
+        return out;
+    }
+
+    /** Returns normalized Moon position vector in world space (opposite Sun). */
+    public com.badlogic.gdx.math.Vector3 getMoonDirection(com.badlogic.gdx.math.Vector3 out) {
+        getSunDirection(out);
+        out.scl(-1f);
+        return out;
+    }
+
+    /** Returns rotation angle for celestial starfield dome in degrees. */
+    public float getStarfieldRotation() {
+        return (timeOfDay * 360f) % 360f;
+    }
+
+    /** Returns directional key light color matching current celestial phase. */
+    public Color getDirectionalLightColor(Color out) {
+        float sunElevation = MathUtils.sin((timeOfDay - 0.25f) * 2.0f * MathUtils.PI);
+        if (sunElevation > 0.05f) {
+            // Sun is main illuminator
+            out.set(skyTint).mul(1.2f, 1.15f, 1.1f, 1f);
+            out.a = 1f;
+        } else {
+            // Moon / Night ambient
+            out.set(0.20f, 0.24f, 0.40f, 1f);
+        }
+        return out;
+    }
+
     // --- Private helpers ---
 
     private void recomputeSkyTint() {
@@ -165,3 +203,4 @@ public class DayNightManager {
         return t * t * (3f - 2f * t);
     }
 }
+
