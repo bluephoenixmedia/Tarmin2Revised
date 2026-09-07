@@ -18,17 +18,58 @@ apply plugin: 'io.github.fourlastor.construo'
 
 import io.github.fourlastor.construo.Target
 
-sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+def unusedAssetPatterns = [
+  'images/monsters/Kenney Game Assets 1 version 42/**',
+  'images/monsters/Super Pixel Effects Gigapack (Free Version) v2.0.0/**',
+  'images/monsters/x768p_HQ_Uncompressed_Frames/**',
+  'images/monsters/MP1/**',
+  'images/monsters/DELUXE_PNG/**',
+  'images/monsters/RPG_Items_Retro_Itchio/**',
+  'images/monsters/explosion pack 1/**',
+  'images/monsters/Free Characters with Animations For FPS game/**',
+  'images/monsters/free_cthulu_v1/**',
+  'images/monsters/Sci-Fi SFX Pack/**',
+  'images/monsters/DungeonProps-1.4.5/**',
+  'images/monsters/TT_Battlers_3_Wild_Beasts/**',
+  'images/monsters/mino_v1.1_free/**',
+  'images/monsters/BearFX Explosions/**',
+  'images/monsters/EVil Wizard 2/**',
+  'images/monsters/Golems_Free_Version/**',
+  'images/monsters/Hobgoblin/**',
+  'images/monsters/Mecha-stone Golem 0.1/**',
+  'images/monsters/Rat/**',
+  'images/monsters/Undead executioner/**',
+  'images/monsters/waechter-19/**',
+  'images/monsters/waechter-20/**',
+  'images/monsters/Free Pixel Effects Pack/**',
+  'images/monsters/old/**',
+  'images/monsters/*.blend',
+  'logs/**',
+  'saves/**',
+  '*.txt',
+  'assets.txt'
+]
+
+sourceSets.main.resources {
+  srcDirs += [ rootProject.file('assets').path ]
+  unusedAssetPatterns.each { pattern ->
+    exclude pattern
+  }
+}
 
 tasks.register('generateAssetList') {
   File assetsFolder = new File("${project.rootDir}/assets/")
   File assetsFile = new File(assetsFolder, "assets.txt")
 
-  inputs.files(fileTree(assetsFolder) { exclude "assets.txt" })
+  inputs.files(fileTree(assetsFolder) {
+    unusedAssetPatterns.each { pattern -> exclude pattern }
+  })
   outputs.file(assetsFile)
 
   doLast {
-    def lines = fileTree(assetsFolder) { exclude "assets.txt" }
+    def lines = fileTree(assetsFolder) {
+      unusedAssetPatterns.each { pattern -> exclude pattern }
+    }
       .collect { assetsFolder.relativePath(it) }
       .sort()
     byte[] content = (lines.join("\n") + "\n").getBytes("UTF-8")
