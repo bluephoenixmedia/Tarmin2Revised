@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.WorldManager;
 
@@ -57,10 +58,15 @@ public class WeatherManager {
 
         this.thunderDelayTimer = 0f;
         this.isThunderPending = false;
+        this.isRollingThunderPlayed = false;
+        this.wetness = 0.65f; // Initial storm starting wetness
 
         // Ensure visual targets are set correctly for the starting storm
         updateAtmosphereTargets();
     }
+
+    private float wetness = 0.65f;
+    private boolean isRollingThunderPlayed = false;
 
     public void update(float delta) {
         weatherTimer -= delta;
@@ -74,6 +80,14 @@ public class WeatherManager {
         // 2. Interpolate Fog
         currentFogDistance = MathUtils.lerp(currentFogDistance, targetFogDistance, FOG_LERP_SPEED * delta);
         currentFogColor.lerp(targetFogColor, FOG_LERP_SPEED * delta);
+
+        // 2b. Track Ground Surface Wetness
+        if (isPrecipitation()) {
+            float wetRate = (currentIntensity == WeatherIntensity.EXTREME) ? 0.12f : 0.06f;
+            wetness = Math.min(1.0f, wetness + delta * wetRate);
+        } else {
+            wetness = Math.max(0.0f, wetness - delta * 0.025f);
+        }
 
         // 3. Handle Lightning
         if (currentWeather == WeatherType.STORM || currentWeather == WeatherType.TORNADO) {
@@ -94,7 +108,7 @@ public class WeatherManager {
             thunderDelayTimer -= delta;
             if (thunderDelayTimer <= 0) {
                 // Time to play thunder
-                if (worldManager.getSoundManager() != null) {
+                if (worldManager != null && worldManager.getSoundManager() != null) {
                     worldManager.getSoundManager().playThunder(); // Plays random variant
                 }
                 isThunderPending = false;
@@ -104,11 +118,19 @@ public class WeatherManager {
 
     private void updateLightning(float delta) {
         lightningTimer -= delta;
+        // Rolling thunder prelude ~0.7s before the lightning flash
+        if (!isRollingThunderPlayed && lightningTimer <= 0.75f && lightningTimer > 0f) {
+            if (worldManager != null && worldManager.getSoundManager() != null) {
+                worldManager.getSoundManager().playRollingThunder();
+            }
+            isRollingThunderPlayed = true;
+        }
         if (lightningTimer <= 0) {
             triggerLightning();
             float minTime = (currentIntensity == WeatherIntensity.EXTREME) ? 2f : 5f;
             float maxTime = (currentIntensity == WeatherIntensity.EXTREME) ? 8f : 20f;
             lightningTimer = MathUtils.random(minTime, maxTime);
+            isRollingThunderPlayed = false;
         }
     }
 
@@ -116,7 +138,7 @@ public class WeatherManager {
         this.flashIntensity = 1.0f;
 
         // Trigger Sound Logic
-        if (worldManager.getSoundManager() != null) {
+        if (worldManager != null && worldManager.getSoundManager() != null) {
             if (currentIntensity == WeatherIntensity.EXTREME) {
                 // IMMEDIATE SOUND (Random Crash)
                 worldManager.getSoundManager().playLightningCrash();
@@ -131,6 +153,7 @@ public class WeatherManager {
     }
 
     private void changeWeather() {
+        if (worldManager == null) return;
         GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
         Biome currentBiome = worldManager.getBiomeManager().getBiome(chunkId);
 
@@ -363,5 +386,48 @@ public class WeatherManager {
         }
 
         return baseTemp;
+    }
+
+    public boolean isPrecipitation() {
+        return isPrecipitation(currentWeather);
+    }
+
+    public boolean isPrecipitation(WeatherType type) {
+        return type == WeatherType.RAIN || type == WeatherType.STORM ||
+                type == WeatherType.SNOW || type == WeatherType.BLIZZARD ||
+                type == WeatherType.TORNADO;
+    }
+
+    public float getWetness() {
+        return wetness;
+    }
+
+    /**
+     * Calculates the 3D world-space wind velocity vector.
+     */
+    public void getWindVector(Vector3 out) {
+        if (out == null) return;
+        float intensityMod = (currentIntensity == WeatherIntensity.EXTREME) ? 1.8f
+                : (currentIntensity == WeatherIntensity.HEAVY) ? 1.35f : 1.0f;
+        switch (currentWeather) {
+            case STORM:
+                out.set(-4.5f * intensityMod, 0f, 1.8f * intensityMod);
+                break;
+            case BLIZZARD:
+                out.set(-8.5f * intensityMod, 0f, 3.2f * intensityMod);
+                break;
+            case TORNADO:
+                out.set(-12.0f, 0f, 5.0f);
+                break;
+            case RAIN:
+                out.set(-1.8f * intensityMod, 0f, 0.7f * intensityMod);
+                break;
+            case SNOW:
+                out.set(-0.9f * intensityMod, 0f, 0.4f * intensityMod);
+                break;
+            default:
+                out.set(-0.3f, 0f, 0.1f);
+                break;
+        }
     }
 }

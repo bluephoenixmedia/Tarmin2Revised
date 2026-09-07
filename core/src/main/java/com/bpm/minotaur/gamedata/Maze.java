@@ -66,6 +66,10 @@ public class Maze {
         return homeTiles.contains(pos);
     }
 
+    public boolean isIndoors(int x, int y) {
+        return level > 1 || isHomeTile(x, y);
+    }
+
     public Set<GridPoint2> getHomeTiles() {
         return homeTiles;
     }

@@ -61,8 +61,9 @@ public class SoundManager {
         loadSound("thunder_1", "sounds/thunder_1.ogg");
         loadSound("thunder_2", "sounds/thunder_2.ogg");
         loadSound("thunder_3", "sounds/thunder_3.ogg");
+        loadSound("thunder_4", "sounds/thunder_4.ogg");
+        loadSound("thunder_5", "sounds/thunder_5.ogg");
         loadSound("lightning_crash_1", "sounds/lightning_crash_1.ogg");
-        loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
         loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
         loadSound("lightning_crash_3", "sounds/lightning_crash_3.ogg");
 
@@ -116,16 +117,16 @@ public class SoundManager {
             return;
         this.isDampened = dampened;
 
-        // Update currently playing loops immediately
-        float modifier = isDampened ? 0.25f : 1.0f;
-        float targetVol = currentBaseVol * modifier;
+        // Update currently playing loops immediately: rain 25% (roof drumming), wind 15%
+        float rainModifier = isDampened ? 0.25f : 1.0f;
+        float windModifier = isDampened ? 0.15f : 1.0f;
 
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
-            modernSounds.get("rain_loop").setVolume(currentRainId, targetVol);
+            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * rainModifier);
         }
         if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
-            float windVol = (lastWeatherType == WeatherType.STORM) ? targetVol * 0.8f : targetVol;
-            modernSounds.get("wind_loop").setVolume(currentWindId, windVol);
+            float windBase = (lastWeatherType == WeatherType.STORM) ? currentBaseVol * 0.85f : currentBaseVol;
+            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windModifier);
         }
     }
 
@@ -148,28 +149,29 @@ public class SoundManager {
         if (intensity == WeatherIntensity.EXTREME)
             currentBaseVol = 1.0f;
 
-        float modifier = isDampened ? 0.25f : 1.0f;
-        float vol = currentBaseVol * modifier;
+        float rainMod = isDampened ? 0.25f : 1.0f;
+        float windMod = isDampened ? 0.15f : 1.0f;
 
         switch (type) {
             case RAIN:
             case STORM:
                 if (modernSounds.containsKey("rain_loop")) {
-                    currentRainId = modernSounds.get("rain_loop").loop(vol);
+                    currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod);
                 }
                 if (type == WeatherType.STORM && modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(vol * 0.8f);
+                    currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * 0.85f * windMod);
                 }
                 break;
             case SNOW:
             case BLIZZARD:
                 if (modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(vol);
+                    float blizzardSpeed = (type == WeatherType.BLIZZARD) ? 1.15f : 0.85f;
+                    currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * windMod, blizzardSpeed, 0f);
                 }
                 break;
             case TORNADO:
                 if (modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(1.0f * modifier, 0.6f, 0.0f);
+                    currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod, 0.65f, 0.0f);
                 }
                 break;
             default:
@@ -178,11 +180,18 @@ public class SoundManager {
     }
 
     public void playThunder() {
-        int variant = MathUtils.random(1, 3);
-        // Thunder is loud, but still slightly dampened if indoors
-        float vol = isDampened ? 0.5f : 1.0f;
+        int variant = MathUtils.random(1, 5);
+        float vol = isDampened ? 0.45f : 1.0f;
         if (modernSounds.containsKey("thunder_" + variant)) {
             modernSounds.get("thunder_" + variant).play(vol);
+        }
+    }
+
+    public void playRollingThunder() {
+        int variant = MathUtils.random(1, 5);
+        float vol = isDampened ? 0.35f : 0.75f;
+        if (modernSounds.containsKey("thunder_" + variant)) {
+            modernSounds.get("thunder_" + variant).play(vol, 0.8f, 0.0f);
         }
     }
 

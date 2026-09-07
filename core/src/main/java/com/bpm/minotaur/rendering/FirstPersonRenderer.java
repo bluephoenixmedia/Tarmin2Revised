@@ -213,7 +213,12 @@ public class FirstPersonRenderer {
         // --- NEW: Check if player is inside the "Home" ---
         // Being inside the home behaves like being "Underground" (Level > 1)
         boolean isInsideHome = maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
-        boolean isIndoors = (currentLevel > 1) || isInsideHome;
+        boolean isIndoors = (currentLevel > 1) || isInsideHome || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y);
+
+        // Update ambient sound dampening based on shelter/indoor state
+        if (worldManager.getSoundManager() != null) {
+            worldManager.getSoundManager().setDampened(isIndoors);
+        }
 
         if (worldManager.getWeatherManager() != null && currentLevel == 1) {
             com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
@@ -271,7 +276,7 @@ public class FirstPersonRenderer {
                 renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor,
-                    lightIntensity, maze, worldManager);
+                    lightIntensity, maze, worldManager, isIndoors);
             spriteBatch.end();
         } else {
             // RETRO MODE
@@ -293,15 +298,14 @@ public class FirstPersonRenderer {
             }
 
             // B. Floor
-            renderRetroFloor(spriteBatch, player, viewport, maze, fogEnabled, fogDistance, fogColor, lightIntensity);
+            renderRetroFloor(spriteBatch, player, viewport, maze, fogEnabled, fogDistance, fogColor, lightIntensity, worldManager, isIndoors);
 
             spriteBatch.end();
         }
 
-        // --- RENDER TORNADO (Behind Walls) ---
+        // --- UPDATE 3D PRECIPITATION CYLINDER & SPLASHES ---
         if (this.weatherRenderer != null && currentLevel == 1) {
-            this.weatherRenderer.update(Gdx.graphics.getDeltaTime());
-            this.weatherRenderer.renderTornado(shapeRenderer, viewport);
+            this.weatherRenderer.update(Gdx.graphics.getDeltaTime(), player, maze);
         }
 
         // 2. RENDER WALLS (Midground)
@@ -427,14 +431,15 @@ public class FirstPersonRenderer {
             }
         }
 
-        // --- RENDER PRECIPITATION (Foreground) ---
-        // Only render if NOT indoors OR if we have Window Holes to see through
-
+        // --- RENDER PRECIPITATION & SPLASHES (Foreground with 3D Depth Occlusion) ---
+        // Rain particles are occluded by dungeon walls/monsters via depthBuffer, allowing
+        // exterior rain to be seen through open doorways/windows even when standing indoors.
         if (this.weatherRenderer != null && currentLevel == 1) {
-            if (!isIndoors) {
-                // Outdoors: Render normally
-                this.weatherRenderer.renderPrecipitation(shapeRenderer, viewport);
-            }
+            spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+            spriteBatch.setShader(null);
+            spriteBatch.begin();
+            this.weatherRenderer.renderPrecipitation(spriteBatch, blankTexture, viewport, depthBuffer, player, maze);
+            spriteBatch.end();
         }
     }
 
@@ -488,7 +493,7 @@ public class FirstPersonRenderer {
 
     // ADDED: WorldManager for biome floor lookup
     private int renderTexturedFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, boolean fogEnabled,
-            float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager) {
+            float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager, boolean isIndoors) {
 
         if (floorShader == null || !floorShader.isCompiled()) {
             return 0;
@@ -504,7 +509,10 @@ public class FirstPersonRenderer {
         floorShader.setUniformf("u_screenHeight", viewport.getWorldHeight());
         floorShader.setUniformf("u_fogDist", fogDistance);
         floorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
-        floorShader.setUniformf("u_lightIntensity", lightIntensity);
+        // Wetness stone darkening for outdoor floors
+        float wetness = (worldManager.getWeatherManager() != null) ? worldManager.getWeatherManager().getWetness() : 0f;
+        float floorLight = (!isIndoors && wetness > 0.05f) ? lightIntensity * (1.0f - wetness * 0.28f) : lightIntensity;
+        floorShader.setUniformf("u_lightIntensity", floorLight);
         floorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
 
         spriteBatch.setColor(Color.WHITE);
@@ -527,7 +535,8 @@ public class FirstPersonRenderer {
 
     // Retro floor rendering (Removed Blood Support)
     private void renderRetroFloor(SpriteBatch spriteBatch, Player player, Viewport viewport, Maze maze,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity,
+            WorldManager worldManager, boolean isIndoors) {
 
         if (retroFloorShader == null || !retroFloorShader.isCompiled()) {
             return;
@@ -543,7 +552,10 @@ public class FirstPersonRenderer {
         retroFloorShader.setUniformf("u_screenHeight", viewport.getWorldHeight());
         retroFloorShader.setUniformf("u_fogDist", fogDistance);
         retroFloorShader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
-        retroFloorShader.setUniformf("u_lightIntensity", lightIntensity);
+
+        float wetness = (worldManager != null && worldManager.getWeatherManager() != null) ? worldManager.getWeatherManager().getWetness() : 0f;
+        float floorLight = (!isIndoors && wetness > 0.05f) ? lightIntensity * (1.0f - wetness * 0.28f) : lightIntensity;
+        retroFloorShader.setUniformf("u_lightIntensity", floorLight);
         retroFloorShader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
 
         // Pass Floor Color (Theme color)

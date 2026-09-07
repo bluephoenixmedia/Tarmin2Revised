@@ -49,6 +49,10 @@ public class HeadlessSoundManager extends SoundManager {
     }
 
     @Override
+    public void playRollingThunder() {
+    }
+
+    @Override
     public void playLightningCrash() {
     }
 
