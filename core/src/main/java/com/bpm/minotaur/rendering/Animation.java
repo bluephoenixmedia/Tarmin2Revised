@@ -40,8 +40,8 @@ public class Animation {
         this.spriteData = spriteData;
     }
 
-    // NEW constructor for damage text
-    public Animation(AnimationType type, GridPoint2 position, String text, float duration) {
+    // NEW constructor for damage text with custom color
+    public Animation(AnimationType type, GridPoint2 position, String text, Color color, float duration) {
         this.type = type;
         this.textPosition = position;
         this.damageText = text;
@@ -52,8 +52,12 @@ public class Animation {
         // Initialize unused fields for projectiles
         this.startPosition = new Vector2();
         this.endPosition = new Vector2();
-        this.color = Color.WHITE;
+        this.color = (color != null) ? color : Color.WHITE;
         this.spriteData = null;
+    }
+
+    public Animation(AnimationType type, GridPoint2 position, String text, float duration) {
+        this(type, position, text, Color.WHITE, duration);
     }
 
     public void update(float delta) {

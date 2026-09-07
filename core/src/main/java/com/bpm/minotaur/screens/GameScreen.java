@@ -971,6 +971,8 @@ public class GameScreen extends BaseScreen {
             player.getStatusManager().clearEffects();
             Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().setRightHand(starterWeapon);
+            Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().setLeftHand(starterCross);
 
             // 6. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
             worldManager.setCurrentLevel(1);
@@ -996,6 +998,7 @@ public class GameScreen extends BaseScreen {
             hud.addMessage("You died! Returned to Shelter Bed.");
             hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
+            eventManager.addEvent(new GameEvent("Equipped: Rusty Sword (Right) & Wooden Cross (Left). Press [S] to swap hands.", 5f));
             soundManager.playDoorOpenSound();
             return;
         }

@@ -365,6 +365,10 @@ public class ItemDataManager {
         if (type == ItemType.KNIFE || type == ItemType.AXE || type == ItemType.RUSTY_SWORD) { // Basic weapons
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rusty Iron Die");
         }
+        // 1b. Priest's Holy Die (Spiritual Weapons)
+        else if (type == ItemType.WOODEN_CROSS) {
+            themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Priest's Holy Die");
+        }
         // 2. Warrior's Red Die
         else if (type == ItemType.SWORD || type == ItemType.TWO_HANDED_SWORD) {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Warrior's Red Die");
@@ -658,6 +662,30 @@ public class ItemDataManager {
 
     private void initializeMissingTemplates() {
         // --- NEW: Generate Templates for Corpses & Resources if missing ---
+        if (!itemTemplates.containsKey(ItemType.WOODEN_CROSS)) {
+            ItemTemplate cross = new ItemTemplate();
+            cross.friendlyName = "Wooden Cross";
+            cross.description = "A simple wooden cross that channels spiritual energy against chaotic fiends.";
+            cross.texturePath = "images/weapons/wooden_cross.png";
+            cross.isWeapon = true;
+            cross.damageDice = "1d4";
+            cross.baseValue = 10;
+            cross.scale = createDefaultScale();
+            cross.spriteData = new String[] {
+                "..........##..........",
+                "..........##..........",
+                "..........##..........",
+                "........######........",
+                "........######........",
+                "..........##..........",
+                "..........##..........",
+                "..........##..........",
+                "..........##..........",
+                "..........##.........."
+            };
+            itemTemplates.put(ItemType.WOODEN_CROSS, cross);
+        }
+
         if (!itemTemplates.containsKey(ItemType.CORPSE)) {
             ItemTemplate t = new ItemTemplate();
             t.friendlyName = "Corpse";

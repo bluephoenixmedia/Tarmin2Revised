@@ -973,15 +973,38 @@ public class CombatManager {
                 }
 
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit);
-                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+                Monster.Affinity affinity = monster.getAffinity(dmgType);
+                String dmgPrefix = "";
+                com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
+
+                if (isCrit) {
+                    dmgPrefix = "CRIT! ";
+                    textColor = com.badlogic.gdx.graphics.Color.RED;
+                } else if (affinity == Monster.Affinity.RESISTANT) {
+                    dmgPrefix = "RESISTED! ";
+                    textColor = com.badlogic.gdx.graphics.Color.CYAN;
+                    String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
+                    eventManager.addEvent(new GameEvent(monster.getType() + " resists " + attackCategory + " attacks!", 1.5f));
+                } else if (affinity == Monster.Affinity.WEAK) {
+                    dmgPrefix = "WEAKNESS! ";
+                    textColor = com.badlogic.gdx.graphics.Color.GOLD;
+                    String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
+                    eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
+                }
+
+                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor);
                 lastDamageDealt = actualDamage;
 
                 // --- VISCERAL: Feedback ---
                 float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
-                boolean isHeavy = damageRatio > 0.2f;
+                boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
 
                 // 1. Audio
-                soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
+                if (affinity == Monster.Affinity.RESISTANT && !isCrit) {
+                    soundManager.playWeaponImpact(false); // Dull deflection
+                } else {
+                    soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
+                }
                 soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
 
                 // 2. Screen Shake & Hit Pause
@@ -1143,8 +1166,13 @@ public class CombatManager {
     }
 
     public void showDamageText(int damage, GridPoint2 position) {
+        showDamageText(damage, position, "", com.badlogic.gdx.graphics.Color.WHITE);
+    }
+
+    public void showDamageText(int damage, GridPoint2 position, String prefix, com.badlogic.gdx.graphics.Color color) {
+        String text = (prefix != null ? prefix : "") + damage;
         animationManager.addAnimation(
-                new Animation(Animation.AnimationType.DAMAGE_TEXT, position, String.valueOf(damage), 1.0f));
+                new Animation(Animation.AnimationType.DAMAGE_TEXT, position, text, color, 1.0f));
     }
 
     public void update(float delta) {

@@ -10,17 +10,17 @@ public class BalanceTuningTest {
 
     @Test
     public void testArmorSoakThreshold() {
-        // Monsters below AC 14 should have 0 soak
-        Monster skeleton = new Monster(Monster.MonsterType.SKELETON, 20, 12);
-        int taken1 = skeleton.takeDamage(6, DamageType.PHYSICAL);
+        // Monsters below AC 14 should have 0 soak (using Category.HORRIBLE neutral monsters to isolate soak)
+        Monster ant = new Monster(Monster.MonsterType.GIANT_ANT, 20, 12);
+        int taken1 = ant.takeDamage(6, DamageType.PHYSICAL);
         assertEquals(6, taken1); // AC 12: soak = 0, full 6 damage dealt
 
-        Monster zombie = new Monster(Monster.MonsterType.ZOMBIE, 20, 13);
-        int taken2 = zombie.takeDamage(6, DamageType.PHYSICAL);
+        Monster alligator = new Monster(Monster.MonsterType.ALLIGATOR, 20, 13);
+        int taken2 = alligator.takeDamage(6, DamageType.PHYSICAL);
         assertEquals(6, taken2); // AC 13: soak = 0, full 6 damage dealt
 
-        Monster ghoul = new Monster(Monster.MonsterType.GHOUL, 20, 14);
-        int taken3 = ghoul.takeDamage(6, DamageType.PHYSICAL);
+        Monster minotaur = new Monster(Monster.MonsterType.MINOTAUR, 20, 14);
+        int taken3 = minotaur.takeDamage(6, DamageType.PHYSICAL);
         assertEquals(6, taken3); // AC 14: (14-14)/2 = 0 soak, full 6 damage dealt
 
         // Heavy armor: AC 16 has 1 soak

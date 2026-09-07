@@ -34,7 +34,7 @@ public class Item implements Renderable {
         REGULAR_CHEST, LAMP, UNKNOWN, LADDER, LADDER_UP, WAND, SHIELD, BACKPACK,
 
         // NEW TYPES FOR DICE INTEGRATION
-        SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD, RUSTY_SWORD,
+        SWORD, TWO_HANDED_SWORD, SKULL, RING_GOLD, RUSTY_SWORD, WOODEN_CROSS,
 
         // Additional ring appearances (to cover all 15 RingEffectType values)
         RING_RED, RING_YELLOW, RING_WHITE, RING_BLACK, RING_ORANGE, RING_SILVER, RING_BRONZE, RING_IVORY,
@@ -688,10 +688,15 @@ public class Item implements Renderable {
         if (type.name().startsWith("SCROLL"))
             return ItemCategory.USEFUL;
 
+        if (type == ItemType.WOODEN_CROSS || type == ItemType.WAND
+                || type == ItemType.WAR_BOOK || type == ItemType.SPIRITUAL_BOOK || type == ItemType.SPECIAL_BOOK) {
+            return ItemCategory.SPIRITUAL_WEAPON;
+        }
+
         if (isWeapon) {
-            // Refactor: With removal of War/Spirit stats, distinction is less relevant.
-            // We can treat everything as WAR_WEAPON or differentiate by Type if needed
-            // later.
+            if (type.name().contains("CROSS") || type.name().contains("HOLY") || type.name().contains("SPIRIT")) {
+                return ItemCategory.SPIRITUAL_WEAPON;
+            }
             return ItemCategory.WAR_WEAPON;
         }
         if (isArmor)

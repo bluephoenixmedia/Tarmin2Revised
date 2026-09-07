@@ -114,6 +114,13 @@ public class Player {
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
 
+        Item cross = itemDataManager.createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, assetManager);
+        inventory.setLeftHand(cross);
+        if (cross.getGrantedDie() != null) {
+            stats.getDicePool().add(cross.getGrantedDie());
+            BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + cross.getGrantedDie().getName());
+        }
+
         Item pack = itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager);
         equipment.setWornBack(pack);
         // Packs don't usually grant dice, but good to be consistent if we expand

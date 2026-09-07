@@ -19,17 +19,14 @@ public class Monster implements Renderable {
     }
 
     public enum MonsterType {
-        // Bad Monsters (Immune to War / PHYSICAL, vulnerable to SPIRITUAL)
-        GIANT_ANT(Category.BAD),
+        // Bad Monsters (Resistant to War / PHYSICAL, vulnerable to SPIRITUAL)
         DWARF(Category.BAD),
-        GIANT_SCORPION(Category.BAD),
-        GIANT_SNAKE(Category.BAD),
         KOBOLD(Category.BAD),
         GOBLIN(Category.BAD),
         TROGLODYTE(Category.BAD),
         HOBGOBLIN(Category.BAD),
 
-        // Nasty Monsters (Immune to SPIRITUAL, vulnerable to War / PHYSICAL)
+        // Nasty Monsters (Resistant to SPIRITUAL, vulnerable to War / PHYSICAL)
         GHOUL(Category.NASTY),
         SKELETON(Category.NASTY),
         CLOAKED_SKELETON(Category.NASTY),
@@ -40,6 +37,9 @@ public class Monster implements Renderable {
         WERERAT(Category.NASTY),
 
         // Horrible Monsters (Vulnerable to both War and Spiritual)
+        GIANT_ANT(Category.HORRIBLE),
+        GIANT_SCORPION(Category.HORRIBLE),
+        GIANT_SNAKE(Category.HORRIBLE),
         ALLIGATOR(Category.HORRIBLE),
         DRAGON(Category.HORRIBLE),
         WRAITH(Category.HORRIBLE),
@@ -284,15 +284,31 @@ public class Monster implements Renderable {
         return maxHP;
     }
 
-    public static boolean isImmuneToType(MonsterType type, DamageType damageType) {
-        if (type == null || damageType == null) return false;
+    public enum Affinity {
+        RESISTANT,
+        WEAK,
+        NEUTRAL
+    }
+
+    public static Affinity getAffinity(MonsterType type, DamageType damageType) {
+        if (type == null || damageType == null) return Affinity.NEUTRAL;
         Category cat = type.getCategory();
-        if (cat == Category.BAD && damageType == DamageType.PHYSICAL) {
-            return true;
+        if (cat == Category.BAD) {
+            if (damageType == DamageType.PHYSICAL) return Affinity.RESISTANT;
+            if (damageType == DamageType.SPIRITUAL) return Affinity.WEAK;
+        } else if (cat == Category.NASTY) {
+            if (damageType == DamageType.SPIRITUAL) return Affinity.RESISTANT;
+            if (damageType == DamageType.PHYSICAL) return Affinity.WEAK;
         }
-        if (cat == Category.NASTY && damageType == DamageType.SPIRITUAL) {
-            return true;
-        }
+        return Affinity.NEUTRAL;
+    }
+
+    public Affinity getAffinity(DamageType damageType) {
+        return getAffinity(this.type, damageType);
+    }
+
+    public static boolean isImmuneToType(MonsterType type, DamageType damageType) {
+        // Soft resistance replaces hard immunity. Retained for backwards compatibility.
         return false;
     }
 
@@ -304,7 +320,21 @@ public class Monster implements Renderable {
         if (isImmuneToType(damageType)) {
             return 0;
         }
-        return takeDamage(amount, isCrit);
+        Affinity affinity = getAffinity(damageType);
+        int modifiedAmount = amount;
+        if (isCrit) {
+            // Critical strikes pierce category resistance completely
+            if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        } else {
+            if (affinity == Affinity.RESISTANT) {
+                modifiedAmount = Math.max(1, amount / 2);
+            } else if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        }
+        return takeDamage(modifiedAmount, isCrit);
     }
 
     public int takeDamage(int amount, DamageType damageType) {

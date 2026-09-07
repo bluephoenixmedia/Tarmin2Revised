@@ -102,7 +102,8 @@ public class AnimationManager {
 
                 // Fade out over time
                 float alpha = 1.0f - animation.getProgress();
-                damageFont.setColor(1f, 1f, 1f, alpha);
+                Color animColor = animation.getColor() != null ? animation.getColor() : Color.WHITE;
+                damageFont.setColor(animColor.r, animColor.g, animColor.b, alpha);
 
                 damageFont.draw(batch, animation.getDamageText(), screenX, screenY + floatOffset);
             }

@@ -587,8 +587,22 @@ public class Hud implements Disposable {
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
             Monster monster = combatManager.getMonster();
+            String catBadge = "";
+            if (monster.getType() != null && monster.getType().getCategory() != null) {
+                switch (monster.getType().getCategory()) {
+                    case BAD:
+                        catBadge = " [BAD: Weak to Spiritual]";
+                        break;
+                    case NASTY:
+                        catBadge = " [NASTY: Weak to War]";
+                        break;
+                    case HORRIBLE:
+                        catBadge = " [HORRIBLE: Balanced]";
+                        break;
+                }
+            }
             monsterStrengthLabel
-                    .setText(checkScramble("HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP()));
+                    .setText(checkScramble(monster.getMonsterType() + catBadge + "  HP:" + monster.getCurrentHP() + " MP:" + monster.getCurrentMP()));
             monsterStrengthLabel.setVisible(true);
             combatStatusLabel.setVisible(true);
 
