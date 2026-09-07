@@ -39,7 +39,7 @@ class InventoryLayoutConfig {
     InventoryLayoutConfig() {
         positions.put(BACKPACK,   new float[]{1040f, 497f});
         positions.put(QUICKSLOTS, new float[]{1036f, 371f});
-        positions.put(ATTRIBUTES, new float[]{1040f,  20f});
+        positions.put(ATTRIBUTES, new float[]{1040f,  65f});
         positions.put(CORESTATS,  new float[]{  20f,  20f});
         positions.put(SPELLBOOK,  new float[]{ 240f,  20f});
         positions.put(ALCHEMY,    new float[]{  20f, 220f});

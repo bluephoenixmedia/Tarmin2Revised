@@ -187,12 +187,12 @@ public class ModernInventoryUI {
         // ── Right page: lower box (Tabbed Attributes / Item Details) ──
         rightBottomContainer = new Table();
         rightBottomContainer.top().left();
-        rightBottomContainer.setSize(608f, 335f);
+        rightBottomContainer.setSize(760f, 250f);
         rightBottomContainer.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
                                          config.getY(InventoryLayoutConfig.ATTRIBUTES));
 
         Table tabBar = new Table();
-        Label tabAttributes = new Label("[ Character Attributes ]",
+        Label tabAttributes = new Label("[ Attributes ]",
                 new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_BORDER_DARK));
         Label tabInspect = new Label("[ Item Details ]",
                 new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));

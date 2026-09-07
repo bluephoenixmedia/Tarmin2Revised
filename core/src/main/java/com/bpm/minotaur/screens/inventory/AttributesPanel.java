@@ -33,11 +33,11 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         this.skin = skin;
 
         top().left();
-        pad(6, 10, 6, 10);
+        pad(4, 12, 4, 12);
 
-        add(col1).top().left().expandY().padRight(12);
-        add(col2).top().left().expandY().padRight(12);
-        add(col3).top().left().expandY();
+        add(col1).top().left().width(250f).padRight(14);
+        add(col2).top().left().width(225f).padRight(14);
+        add(col3).top().left().width(250f);
 
         buildRows();
     }
@@ -89,14 +89,14 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
 
     private void addSectionHeader(Table col, String headerText) {
         Label header = new Label(headerText, new Label.LabelStyle(skin.getFontSmall(), COL_HEADER));
-        col.add(header).colspan(2).left().padBottom(4).row();
+        col.add(header).colspan(2).left().padBottom(5).row();
     }
 
     private void stat(Table col, String key, String value, Color valueColor) {
         Label k = new Label(key + ":", new Label.LabelStyle(skin.getFontSmall(), COL_KEY));
         Label v = new Label(value, new Label.LabelStyle(skin.getFontSmall(), valueColor));
-        col.add(k).left().padRight(4).padBottom(1);
-        col.add(v).right().padBottom(1).row();
+        col.add(k).left().width(130f).padBottom(1);
+        col.add(v).right().width(95f).padBottom(1).row();
     }
 
     // ── Colour helpers ────────────────────────────────────────────────
