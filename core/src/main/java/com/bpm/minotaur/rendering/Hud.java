@@ -1214,6 +1214,8 @@ public class Hud implements Disposable {
 
     private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y,
             float width, float height, Color color) {
+        if (spriteData == null || spriteData.length == 0)
+            return;
 
         if (item.isModified()) {
             shapeRenderer.setColor(GLOW_COLOR_UI);
@@ -1221,13 +1223,18 @@ public class Hud implements Disposable {
         }
 
         shapeRenderer.setColor(color);
-        float pixelWidth = width / 24.0f;
-        float pixelHeight = height / 24.0f;
+        int numRows = spriteData.length;
+        float pixelHeight = height / (float) numRows;
 
-        for (int row = 0; row < 24; row++) {
-            for (int col = 0; col < 24; col++) {
-                if (spriteData[row].charAt(col) == '#') {
-                    shapeRenderer.rect(x + col * pixelWidth, y + (23 - row) * pixelHeight, pixelWidth, pixelHeight);
+        for (int row = 0; row < numRows; row++) {
+            String line = spriteData[row];
+            if (line == null)
+                continue;
+            int numCols = line.length();
+            float pixelWidth = width / (float) Math.max(1, numCols);
+            for (int col = 0; col < numCols; col++) {
+                if (line.charAt(col) == '#') {
+                    shapeRenderer.rect(x + col * pixelWidth, y + (numRows - 1 - row) * pixelHeight, pixelWidth, pixelHeight);
                 }
             }
         }
