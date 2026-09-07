@@ -144,8 +144,12 @@ public class LoadingScreen extends ScreenAdapter {
 
         batch.end();
 
-        // --- 5. Asset Loading with Boosted Budget (100ms/frame) ---
-        boolean assetsLoaded = assetManager.update(100);
+        // --- 5. Asset Loading Budget ---
+        // While the intro video is playing, keep the asset loading slice small (5ms)
+        // so the render loop maintains a smooth 60 FPS without dropping video frames.
+        // Once the video finishes or is skipped, boost to 100ms to load any remaining assets rapidly.
+        int assetBudgetMs = (!videoFinished && !videoError) ? 5 : 100;
+        boolean assetsLoaded = assetManager.update(assetBudgetMs);
 
         // Check if we can proceed to MainMenu
         if (assetsLoaded && (videoFinished || videoError)) {
