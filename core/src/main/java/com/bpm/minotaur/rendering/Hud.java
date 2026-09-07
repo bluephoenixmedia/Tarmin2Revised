@@ -41,6 +41,7 @@ import java.util.List;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.screens.GameScreen;
 
 public class Hud implements Disposable {
 
@@ -74,6 +75,12 @@ public class Hud implements Disposable {
 
     private final CompassMedallion compassMedallion;
     private final HudTooltip hudTooltip;
+    private final WorldInteractionCard worldInteractionCard;
+    private GameScreen gameScreen;
+
+    public void setGameScreen(GameScreen gameScreen) {
+        this.gameScreen = gameScreen;
+    }
 
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
@@ -209,6 +216,7 @@ public class Hud implements Disposable {
 
         // Floating Tooltip Card
         hudTooltip = new HudTooltip(hudSkin);
+        worldInteractionCard = new WorldInteractionCard(hudSkin);
 
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE);
@@ -487,6 +495,7 @@ public class Hud implements Disposable {
 
         stage.addActor(mainContainer);
         stage.addActor(hudTooltip);
+        stage.addActor(worldInteractionCard);
 
         // Initialize Combat Menu
         combatMenu = new CombatMenu(font);
@@ -695,6 +704,9 @@ public class Hud implements Disposable {
 
         // --- 4. Update Chronicle Action Log ---
         updateChronicleLog();
+
+        // --- 5. Update World Interaction Modal Card ---
+        updateWorldInteractionCard();
     }
 
     private static class ParsedLogLine {
@@ -797,7 +809,6 @@ public class Hud implements Disposable {
         // Draw the 2D inventory items AFTER stage to appear on top
         drawInventory();
 
-        drawGroundItemPrompt();
         drawPickupToast();
 
         if (isDebug) {
@@ -1325,72 +1336,223 @@ public class Hud implements Disposable {
         }
     }
 
-    private void drawGroundItemPrompt() {
-        if (debugManager.isDebugOverlayVisible()) return;
-        if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) return;
+    private void updateWorldInteractionCard() {
+        if (worldInteractionCard == null) return;
 
-        int px = (int) player.getPosition().x;
-        int py = (int) player.getPosition().y;
-        GridPoint2 feetPos = new GridPoint2(px, py);
-        Item groundItem = maze.getItems().get(feetPos);
-        boolean atFeet = true;
+        if (debugManager.isDebugOverlayVisible() ||
+                (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
+            worldInteractionCard.hide();
+            return;
+        }
+
+        Vector2 dir = player.getFacing().getVector();
+        int frontX = (int) (player.getPosition().x + dir.x);
+        int frontY = (int) (player.getPosition().y + dir.y);
+        GridPoint2 frontTile = new GridPoint2(frontX, frontY);
+        GridPoint2 feetTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+        Item frontItem = maze.getItems().get(frontTile);
+
+        // 1. Check Shelter Objects
+        if (frontItem != null) {
+            if (frontItem.getType() == Item.ItemType.HOME_CHEST) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[STORAGE STASH]",
+                        "Shelter Storage Chest",
+                        "Secure repository for equipment, relics, and treasures. Stored items persist between delve runs.",
+                        "[ O ]",
+                        "Open Storage Chest",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[REST & RECOVERY]",
+                        "Shelter Bedroll",
+                        "Rest to fully replenish Health & Mana, cure status ailments, and save your delve progress.",
+                        "[ O ]",
+                        "Rest & Save Game",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[OSSUARY WORKTABLE]",
+                        "Bone Crafting Bench",
+                        "Chisel and sculpt harvested monster bones, gibs, and viscera into relics and weapons.",
+                        "[ O ]",
+                        "Open Crafting Bench",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+            if (frontItem.getType() == Item.ItemType.HOME_FIRE_POT) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[CAMPFIRE & COOKING]",
+                        "Cooking Fire Pot",
+                        "Combine harvested meats and forage into hearty meals granting lasting survival buffs.",
+                        "[ O ]",
+                        "Cook Meals",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+        }
+
+        // 2. Check Doors in front
+        Object objInFront = maze.getGameObjectAt(frontX, frontY);
+        if (objInFront instanceof Door) {
+            Door door = (Door) objInFront;
+            boolean isOpen = (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING);
+            worldInteractionCard.show(
+                    "[DOORWAY]",
+                    isOpen ? "[OPEN]" : "[CLOSED]",
+                    "Heavy Timber Door",
+                    isOpen ? "The doorway is open." : "Sturdy reinforced door keeping dungeon horrors out.",
+                    "[ O ]",
+                    isOpen ? "Close Door" : "Open Door",
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
+
+        // 3. Check Gates in front
+        Gate gate = maze.getGates().get(frontTile);
+        if (gate != null) {
+            boolean isChunk = gate.isChunkTransitionGate();
+            worldInteractionCard.show(
+                    isChunk ? "[EXPEDITION GATEWAY]" : "[DUNGEON PORTCULLIS]",
+                    "[GATE]",
+                    isChunk ? "Sector Passage Gate" : "Iron Portcullis",
+                    isChunk ? "Gateway leading into an adjacent sector of Castle Tarmin." : "Massive iron portcullis barring the corridor.",
+                    "[ O ]",
+                    "Pass Through Gate",
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
+
+        // 4. Check Containers in front
+        if (frontItem != null && frontItem.getCategory() == ItemCategory.CONTAINER) {
+            boolean locked = frontItem.isLocked();
+            worldInteractionCard.show(
+                    locked ? "[LOCKED CONTAINER]" : "[TREASURE CONTAINER]",
+                    "[CONTAINER]",
+                    frontItem.getDisplayName(),
+                    locked ? "Secured ancient chest. Requires a matching key to unlock." : "Open to search for relics and treasures inside.",
+                    "[ O ]",
+                    locked ? "Unlock Container" : "Open Container",
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
+
+        // 5. Check Corpses in front
+        if (frontItem != null && frontItem.getType() == Item.ItemType.CORPSE) {
+            boolean hasStored = frontItem.getContents() != null && !frontItem.getContents().isEmpty();
+            worldInteractionCard.show(
+                    hasStored ? "[FALLEN REMAINS]" : "[CREATURE CARCASS]",
+                    "[CORPSE]",
+                    hasStored ? "Lost Adventurer Remains" : frontItem.getDisplayName(),
+                    hasStored ? "Recover lost equipment and backpack from your previous demise." : "Fallen creature. Can be harvested for meat, bones, and alchemical viscera.",
+                    "[ O ]",
+                    hasStored ? "Recover Equipment" : "Harvest / Butcher",
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
+
+        // 6. Check Ladders in front or at feet
+        Ladder ladder = maze.getLadders().get(frontTile);
+        if (ladder == null) {
+            ladder = maze.getLadders().get(feetTile);
+        }
+        if (ladder != null) {
+            boolean isDown = (ladder.getType() == Ladder.LadderType.DOWN);
+            worldInteractionCard.show(
+                    isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]",
+                    "[LADDER]",
+                    isDown ? "Ladder Down" : "Ladder Up",
+                    isDown ? "Descends deeper into Castle Tarmin." : "Ascends toward upper sanctums and camp.",
+                    "[ D ]",
+                    isDown ? "Descend Ladder" : "Ascend Ladder",
+                    () -> { if (gameScreen != null) gameScreen.ascendOrDescendLadder(); }
+            );
+            return;
+        }
+
+        // 7. Check Ground Items (in front first, then at feet)
+        Item groundItem = (frontItem != null && !frontItem.isImpassable()) ? frontItem : null;
+        boolean atFeet = false;
         if (groundItem == null) {
-            GridPoint2 frontPos = new GridPoint2(
-                    (int) (player.getPosition().x + player.getFacing().getVector().x),
-                    (int) (player.getPosition().y + player.getFacing().getVector().y));
-            groundItem = maze.getItems().get(frontPos);
-            atFeet = false;
+            Item feetItem = maze.getItems().get(feetTile);
+            if (feetItem != null && !feetItem.isImpassable()) {
+                groundItem = feetItem;
+                atFeet = true;
+            }
+        }
+        if (groundItem != null) {
+            String loc = atFeet ? "[GROUND (FEET)]" : "[GROUND (AHEAD)]";
+            String cat = groundItem.getCategory() != null ? "[" + groundItem.getCategory().name().replace('_', ' ') + "]" : "[ITEM]";
+            String title = groundItem.getDisplayName();
+            String statDesc = formatItemStatDescription(groundItem);
+            String actionText = "Pick Up [P]";
+            if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
+                actionText += "  |  Quick Equip [E]";
+            } else if (groundItem.isConsumableOrTool()) {
+                actionText += "  |  Consume [E/U]";
+            }
+            worldInteractionCard.show(
+                    loc,
+                    cat,
+                    title,
+                    statDesc,
+                    "[ P / E ]",
+                    actionText,
+                    () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
+            );
+            return;
         }
 
-        if (groundItem == null || groundItem.isImpassable()) return;
+        // 8. Nothing interactive found
+        worldInteractionCard.hide();
+    }
 
-        String loc = atFeet ? "Ground (Feet)" : "Ground (Ahead)";
-        String name = groundItem.getDisplayName();
-        String statInfo = "";
-        if (groundItem.isWeapon()) {
-            statInfo = " (" + (groundItem.getDamageDice() != null ? groundItem.getDamageDice() : "1d6") + " Dmg)";
-        } else if (groundItem.isArmor()) {
-            statInfo = " (+" + groundItem.getArmorClassBonus() + " AC)";
-        } else if (groundItem.isFood()) {
-            statInfo = " (+" + (groundItem.getNutrition() > 0 ? groundItem.getNutrition() : 5) + " Food)";
-        } else if (groundItem.isPotion()) {
-            statInfo = groundItem.isIdentified() && groundItem.getTrueEffect() != null
-                    ? " (" + groundItem.getTrueEffect().getBaseName() + ")"
-                    : " (Unknown Potion)";
+    private String formatItemStatDescription(Item item) {
+        if (item == null) return "";
+        StringBuilder sb = new StringBuilder();
+        if (item.getDamageDice() != null && !item.getDamageDice().isEmpty()) {
+            sb.append("Damage: ").append(item.getDamageDice()).append("   ");
         }
-
-        String actions = "[P] Pick Up";
-        if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
-            actions += "  |  [E] Quick Equip";
-        } else if (groundItem.isConsumableOrTool()) {
-            actions += "  |  [E/U] Consume";
+        if (item.getArmorClassBonus() > 0) {
+            sb.append("Armor: +").append(item.getArmorClassBonus()).append(" AC   ");
         }
-
-        String fullText = loc + ": " + name + statInfo + "   " + actions;
-
-        GlyphLayout layout = new GlyphLayout(font, fullText);
-        float boxW = layout.width + 40;
-        float boxH = 44;
-        float boxX = (viewport.getWorldWidth() - boxW) / 2f;
-        float boxY = 195f;
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.08f, 0.06f, 0.04f, 0.88f);
-        shapeRenderer.rect(boxX, boxY, boxW, boxH);
-        shapeRenderer.end();
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(Color.GOLD);
-        shapeRenderer.rect(boxX, boxY, boxW, boxH);
-        shapeRenderer.end();
-
-        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
-        spriteBatch.begin();
-        font.setColor(Color.WHITE);
-        font.draw(spriteBatch, fullText, boxX + 20, boxY + boxH - 12);
-        spriteBatch.end();
+        if (item.getNutrition() > 0) {
+            sb.append("Food: +").append(item.getNutrition()).append("   ");
+        }
+        if (item.getHydrationValue() > 0) {
+            sb.append("Water: +").append(item.getHydrationValue()).append("   ");
+        }
+        if (item.isPotion()) {
+            if (item.isIdentified() && item.getTrueEffect() != null) {
+                sb.append("Effect: ").append(item.getTrueEffect().getBaseName()).append("   ");
+            } else {
+                sb.append("Unidentified Potion   ");
+            }
+        }
+        if (item.getGrantedDie() != null) {
+            sb.append("Die: ").append(item.getGrantedDie().getName()).append("   ");
+        }
+        if (item.getBaseValue() > 0 && sb.length() == 0) {
+            sb.append("Value: ").append(item.getBaseValue()).append(" Gold");
+        }
+        return sb.length() > 0 ? sb.toString().trim() : "Usable world item.";
     }
 
     private void drawPickupToast() {

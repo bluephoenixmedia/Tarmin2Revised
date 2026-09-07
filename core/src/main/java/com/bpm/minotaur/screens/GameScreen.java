@@ -219,6 +219,7 @@ public class GameScreen extends BaseScreen {
 
         // --- Setup Input Multiplexer (CRITICAL for resuming from Inventory) ---
         if (hud != null) {
+            hud.setGameScreen(this);
             hud.setDiscoveryManager(this.discoveryManager);
             player.setItemPickupListener(item -> hud.showPickupToast(item));
             inputMultiplexer.clear();
@@ -309,6 +310,7 @@ public class GameScreen extends BaseScreen {
 
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
+        hud.setGameScreen(this);
         hud.setDiscoveryManager(this.discoveryManager);
         player.setItemPickupListener(item -> hud.showPickupToast(item));
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -1453,62 +1455,10 @@ public class GameScreen extends BaseScreen {
                     needsAsciiRender = false;
                     return true;
                 case Input.Keys.O:
-                    // Check for Crafting Bench
-                    Vector2 v = player.getFacing().getVector();
-                    GridPoint2 target = new GridPoint2(
-                            (int) (player.getPosition().x + v.x),
-                            (int) (player.getPosition().y + v.y));
-
-                    Item itemInFront = maze.getItems().get(target);
-
-                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
-                        ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, ShelterChest.getInstance());
-                        game.setScreen(chestScreen);
-                        return true;
-                    }
-
-                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                        player.getStats().setCurrentHP(player.getStats().getMaxHP());
-                        player.getStats().setCurrentMP(player.getStats().getMaxMP());
-                        player.getStatusManager().clearEffects();
-                        worldManager.saveCurrentChunk(maze);
-                        ShelterChest.getInstance().save();
-                        DoomManager.getInstance().save();
-                        DivinityManager.getInstance().save();
-                        soundManager.playDoorOpenSound();
-                        eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
-                        hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
-                        playerTurnTakesAction();
-                        needsAsciiRender = true;
-                        return true;
-                    }
-
-                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
-                        try {
-                            OssuaryManager oMgr = new OssuaryManager(); // Create dynamically for now, or fetch from
-                                                                        // game
-                            OssuaryScreen ossuaryScreen = new OssuaryScreen(game, this, player, oMgr);
-                            game.setScreen(ossuaryScreen);
-                            return true;
-                        } catch (Exception e) {
-                            Gdx.app.error("GameScreen", "Failed to open Ossuary", e);
-                        }
-                    }
-
-                    if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_FIRE_POT) {
-                        InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
-                                InventoryScreen.InventoryMode.COOK);
-                        game.setScreen(invScreen);
-                        return true;
-                    }
-
-                    player.interact(maze, eventManager, soundManager, gameMode, worldManager);
-                    playerTurnTakesAction();
-                    needsAsciiRender = true;
+                    interactWithWorldObject();
                     return true;
                 case Input.Keys.P:
-                    player.interactWithItem(maze, eventManager, soundManager);
-                    playerTurnTakesAction();
+                    pickupWorldItem();
                     return true;
                 case Input.Keys.U:
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
@@ -1556,49 +1506,7 @@ public class GameScreen extends BaseScreen {
                     game.setScreen(invScreen);
                     return true;
                 case Input.Keys.D:
-                    GridPoint2 atFeet = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
-                    GridPoint2 inFront = new GridPoint2(
-                            (int) (player.getPosition().x + player.getFacing().getVector().x),
-                            (int) (player.getPosition().y + player.getFacing().getVector().y));
-                    Ladder ladder = maze.getLadders().get(atFeet);
-                    if (ladder == null)
-                        ladder = maze.getLadders().get(inFront);
-
-                    if (ladder != null) {
-                        // soundManager.playSound("level_up");
-                        if (ladder.getType() == Ladder.LadderType.DOWN) {
-                            GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
-                                    (int) ladder.getPosition().y);
-                            worldManager.descendLevel(ladderPos);
-                            this.currentLevel = worldManager.getCurrentLevel();
-                            worldManager.clearLoadedChunks();
-                            generateLevel(this.currentLevel);
-                            hud.addMessage("Descended to Level " + currentLevel);
-                        } else {
-                            boolean success = worldManager.ascendLevel();
-                            if (success) {
-                                this.currentLevel = worldManager.getCurrentLevel();
-                                worldManager.clearLoadedChunks();
-                                generateLevel(this.currentLevel);
-                                Vector2 foundDownLadderPos = null;
-                                for (Ladder l : maze.getLadders().values()) {
-                                    if (l.getType() == Ladder.LadderType.DOWN) {
-                                        foundDownLadderPos = l.getPosition();
-                                        break;
-                                    }
-                                }
-                                if (foundDownLadderPos != null) {
-                                    player.setPosition(
-                                            new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y));
-                                }
-                                hud.addMessage("Ascended to Level " + currentLevel);
-                            } else {
-                                hud.addMessage("You cannot ascend any higher.");
-                            }
-                        }
-                        playerTurnTakesAction();
-                        return true;
-                    }
+                    ascendOrDescendLadder();
                     return true;
                 case Input.Keys.R:
                     player.rest(eventManager);
@@ -1945,5 +1853,115 @@ public class GameScreen extends BaseScreen {
             }
         }
         return false;
+    }
+
+    public void interactWithWorldObject() {
+        Vector2 v = player.getFacing().getVector();
+        GridPoint2 target = new GridPoint2(
+                (int) (player.getPosition().x + v.x),
+                (int) (player.getPosition().y + v.y));
+
+        Item itemInFront = maze.getItems().get(target);
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
+            ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, ShelterChest.getInstance());
+            game.setScreen(chestScreen);
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+            player.getStats().setCurrentHP(player.getStats().getMaxHP());
+            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            player.getStatusManager().clearEffects();
+            worldManager.saveCurrentChunk(maze);
+            ShelterChest.getInstance().save();
+            DoomManager.getInstance().save();
+            DivinityManager.getInstance().save();
+            soundManager.playDoorOpenSound();
+            eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
+            hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
+            playerTurnTakesAction();
+            needsAsciiRender = true;
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
+            try {
+                OssuaryManager oMgr = new OssuaryManager();
+                OssuaryScreen ossuaryScreen = new OssuaryScreen(game, this, player, oMgr);
+                game.setScreen(ossuaryScreen);
+                return;
+            } catch (Exception e) {
+                Gdx.app.error("GameScreen", "Failed to open Ossuary", e);
+            }
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_FIRE_POT) {
+            InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
+                    InventoryScreen.InventoryMode.COOK);
+            game.setScreen(invScreen);
+            return;
+        }
+
+        player.interact(maze, eventManager, soundManager, gameMode, worldManager);
+        playerTurnTakesAction();
+        needsAsciiRender = true;
+    }
+
+    public void pickupWorldItem() {
+        player.interactWithItem(maze, eventManager, soundManager);
+        playerTurnTakesAction();
+    }
+
+    public void quickEquipOrConsumeWorldItem() {
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+            if (player.quickEquipOrConsumeGroundItem(maze, eventManager, this.discoveryManager, soundManager)) {
+                playerTurnTakesAction();
+            }
+        }
+    }
+
+    public void ascendOrDescendLadder() {
+        GridPoint2 atFeet = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        GridPoint2 inFront = new GridPoint2(
+                (int) (player.getPosition().x + player.getFacing().getVector().x),
+                (int) (player.getPosition().y + player.getFacing().getVector().y));
+        Ladder ladder = maze.getLadders().get(atFeet);
+        if (ladder == null)
+            ladder = maze.getLadders().get(inFront);
+
+        if (ladder != null) {
+            if (ladder.getType() == Ladder.LadderType.DOWN) {
+                GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
+                        (int) ladder.getPosition().y);
+                worldManager.descendLevel(ladderPos);
+                this.currentLevel = worldManager.getCurrentLevel();
+                worldManager.clearLoadedChunks();
+                generateLevel(this.currentLevel);
+                hud.addMessage("Descended to Level " + currentLevel);
+            } else {
+                boolean success = worldManager.ascendLevel();
+                if (success) {
+                    this.currentLevel = worldManager.getCurrentLevel();
+                    worldManager.clearLoadedChunks();
+                    generateLevel(this.currentLevel);
+                    Vector2 foundDownLadderPos = null;
+                    for (Ladder l : maze.getLadders().values()) {
+                        if (l.getType() == Ladder.LadderType.DOWN) {
+                            foundDownLadderPos = l.getPosition();
+                            break;
+                        }
+                    }
+                    if (foundDownLadderPos != null) {
+                        player.setPosition(
+                                new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y));
+                    }
+                    hud.addMessage("Ascended to Level " + currentLevel);
+                } else {
+                    hud.addMessage("You cannot ascend any higher.");
+                }
+            }
+            playerTurnTakesAction();
+        }
     }
 }
