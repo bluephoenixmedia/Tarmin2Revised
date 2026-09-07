@@ -4,8 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -14,8 +12,6 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -39,7 +35,7 @@ import java.util.List;
  *   <li>Subtle micro-parallax based on player grid coordinates.</li>
  *   <li>24-hour day/night celestial orbit with orbital lighting via {@link DayNightManager}.</li>
  *   <li>Dynamic storm cloud acceleration and lightning silhouetting via {@link WeatherManager}.</li>
- *   <li>Modern Mode direct pass and Retro Mode 320x180 FBO pass with 4x4 Bayer dithering.</li>
+ *   <li>Direct perspective horizon pass supporting both Modern and Retro CRT pipelines.</li>
  * </ul>
  */
 public class Skybox3DRenderer {
@@ -49,10 +45,6 @@ public class Skybox3DRenderer {
     // Horizon Distances
     private static final float LANDMARK_DISTANCE = 140f;
     private static final float PARALLAX_SCALE = 0.05f;
-
-    // Retro FBO Resolution
-    public static final int RETRO_FBO_WIDTH = 320;
-    public static final int RETRO_FBO_HEIGHT = 180;
 
     private final PerspectiveCamera camera;
     private final ModelBatch modelBatch;
@@ -89,11 +81,6 @@ public class Skybox3DRenderer {
     private final Vector3 tempVec = new Vector3();
     private final Color tempColor = new Color();
 
-    // Retro Mode FrameBuffer & Shader
-    private FrameBuffer retroFbo;
-    private SpriteBatch retroBatch;
-    private ShaderProgram retroDitherShader;
-
     private boolean isInitialized = false;
 
     public Skybox3DRenderer() {
@@ -113,26 +100,7 @@ public class Skybox3DRenderer {
         environment.add(keyLight);
         environment.add(fillLight);
 
-        initRetroResources();
         loadModels();
-    }
-
-    private void initRetroResources() {
-        try {
-            retroFbo = new FrameBuffer(Pixmap.Format.RGB888, RETRO_FBO_WIDTH, RETRO_FBO_HEIGHT, true);
-            retroBatch = new SpriteBatch();
-
-            ShaderProgram.pedantic = false;
-            retroDitherShader = new ShaderProgram(
-                    Gdx.files.internal("shaders/retro_skybox.vert"),
-                    Gdx.files.internal("shaders/retro_skybox.frag")
-            );
-            if (!retroDitherShader.isCompiled()) {
-                Gdx.app.error(TAG, "Retro skybox shader compilation failed:\n" + retroDitherShader.getLog());
-            }
-        } catch (Throwable t) {
-            Gdx.app.error(TAG, "Failed to initialize retro FBO resources: " + t.getMessage());
-        }
     }
 
     private void loadModels() {
@@ -231,21 +199,21 @@ public class Skybox3DRenderer {
         upperCloudRotation += driftSpeed * 0.35f * delta;
         lowerCloudRotation += driftSpeed * 0.85f * delta;
 
-        // Dynamic multi-layer cloud positioning
+        // Dynamic multi-layer cloud positioning - elevated high into the sky dome
         if (stormCloudsUpperInstance != null) {
-            stormCloudsUpperInstance.transform.setToTranslation(camX, 0f, camZ);
+            stormCloudsUpperInstance.transform.setToTranslation(camX, 22f, camZ);
             stormCloudsUpperInstance.transform.rotate(Vector3.Y, upperCloudRotation);
         }
 
         if (stormCloudsLowerInstance != null) {
-            stormCloudsLowerInstance.transform.setToTranslation(camX, -2f, camZ);
+            stormCloudsLowerInstance.transform.setToTranslation(camX, 10f, camZ);
             stormCloudsLowerInstance.transform.rotate(Vector3.Y, lowerCloudRotation);
         }
 
         if (cumulusInstance != null) {
             // Subtle bobbing & wind drift for western anvil cloud
             float wobble = MathUtils.sin(cloudOffset * 0.4f) * 1.5f;
-            cumulusInstance.transform.setToTranslation(-LANDMARK_DISTANCE * 0.95f, 2f + wobble, 0f);
+            cumulusInstance.transform.setToTranslation(-LANDMARK_DISTANCE * 0.95f, 16f + wobble, 0f);
             cumulusInstance.transform.rotate(Vector3.Y, 90f);
             cumulusInstance.transform.scale(1.2f, 1.2f, 1.2f);
         }
@@ -319,19 +287,17 @@ public class Skybox3DRenderer {
         DayNightManager dayNight = (worldManager != null) ? worldManager.getDayNightManager() : null;
         Color skyColor = (dayNight != null) ? dayNight.getSkyTint() : Color.NAVY;
 
-        if (renderMode == DebugManager.RenderMode.RETRO && retroFbo != null && retroDitherShader != null) {
-            renderRetroPass(spriteBatch, viewport, skyColor);
-        } else {
-            renderModernPass(viewport, skyColor);
-        }
+        renderPass(viewport, skyColor);
     }
 
-    private void renderModernPass(Viewport viewport, Color skyColor) {
+    private void renderPass(Viewport viewport, Color skyColor) {
         // Clear color to sky tint & clear depth for 3D horizon pass
         Gdx.gl.glClearColor(skyColor.r * 0.35f, skyColor.g * 0.35f, skyColor.b * 0.45f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
         Gdx.gl.glDepthMask(true);
+
+        viewport.apply();
 
         camera.viewportWidth = viewport.getWorldWidth();
         camera.viewportHeight = viewport.getWorldHeight();
@@ -354,53 +320,6 @@ public class Skybox3DRenderer {
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 
-    private void renderRetroPass(SpriteBatch spriteBatch, Viewport viewport, Color skyColor) {
-        // 1. Render 3D scene to low-res FBO (320x180)
-        retroFbo.begin();
-        Gdx.gl.glClearColor(skyColor.r * 0.35f, skyColor.g * 0.35f, skyColor.b * 0.45f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-
-        camera.viewportWidth = RETRO_FBO_WIDTH;
-        camera.viewportHeight = RETRO_FBO_HEIGHT;
-        camera.update();
-
-        modelBatch.begin(camera);
-        if (mountainInstance        != null) modelBatch.render(mountainInstance, environment);
-        if (castleInstance          != null) modelBatch.render(castleInstance, environment);
-        if (spireInstance           != null) modelBatch.render(spireInstance, environment);
-        if (stormCloudsLowerInstance != null) modelBatch.render(stormCloudsLowerInstance, environment);
-        if (stormCloudsUpperInstance != null) modelBatch.render(stormCloudsUpperInstance, environment);
-        if (cumulusInstance         != null) modelBatch.render(cumulusInstance, environment);
-        if (sunInstance             != null) modelBatch.render(sunInstance, environment);
-        if (moonInstance            != null) modelBatch.render(moonInstance, environment);
-        modelBatch.end();
-
-        retroFbo.end();
-        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
-
-        // 2. Blit upscaled FBO texture to screen using 4x4 Bayer dithering shader
-        Texture fboTexture = retroFbo.getColorBufferTexture();
-        fboTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-
-        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
-        spriteBatch.setShader(retroDitherShader);
-        spriteBatch.begin();
-
-        retroDitherShader.setUniformf("u_resolution", RETRO_FBO_WIDTH, RETRO_FBO_HEIGHT);
-
-        // FBO texture coordinates are inverted on Y in OpenGL
-        spriteBatch.draw(
-                fboTexture,
-                0, 0,
-                viewport.getWorldWidth(), viewport.getWorldHeight(),
-                0, 0, 1, 1
-        );
-
-        spriteBatch.end();
-        spriteBatch.setShader(null);
-    }
-
     public boolean isInitialized() {
         return isInitialized;
     }
@@ -415,9 +334,5 @@ public class Skybox3DRenderer {
         if (moonModel             != null) moonModel.dispose();
         if (stormCloudsUpperModel != null) stormCloudsUpperModel.dispose();
         if (stormCloudsLowerModel != null) stormCloudsLowerModel.dispose();
-
-        if (retroFbo != null) retroFbo.dispose();
-        if (retroBatch != null) retroBatch.dispose();
-        if (retroDitherShader != null) retroDitherShader.dispose();
     }
 }

@@ -398,70 +398,82 @@ def build_celestial_bodies():
 # 6. STORM CLOUD DECKS (Upper Overhead Canopy & Lower Horizon Scud)
 # -----------------------------------------------------------------------------
 def build_storm_clouds_upper():
-    """Generates an extensive 360-degree overhead storm cloud canopy."""
-    print("[Blender] Building Upper Storm Cloud Canopy...")
+    """Generates an extensive 360-degree high overhead storm cloud canopy."""
+    print("[Blender] Building Upper Storm Cloud Canopy (High Sky)...")
     mat_cloud = create_material("MatStormCloudUpper", (0.16, 0.16, 0.22, 1.0), roughness=0.95)
     
     parts = []
-    # Concentric rings of overlapping flattened cloud masses spanning the sky
-    # Inner ring (R ~ 38, Z ~ 56)
-    for i in range(7):
-        angle = i * (2.0 * math.pi / 7.0) + 0.2
-        r = 38.0 + 8.0 * math.sin(i * 1.9)
+    
+    # Apex overhead puffs (center of dome, Z ~ 115)
+    for i in range(4):
+        angle = i * (math.pi * 0.5) + 0.3
+        cx = math.cos(angle) * 12.0
+        cy = math.sin(angle) * 12.0
+        cz = 112.0 + 4.0 * math.sin(i * 2.0)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
+        puff = bpy.context.active_object
+        puff.scale = (26.0, 26.0, 10.0)
+        puff.data.materials.append(mat_cloud)
+        parts.append(puff)
+
+    # Inner ring (R ~ 45, Z ~ 100)
+    for i in range(8):
+        angle = i * (2.0 * math.pi / 8.0) + 0.2
+        r = 44.0 + 8.0 * math.sin(i * 1.9)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 56.0 + 5.0 * math.cos(i * 2.1)
-        sx = 28.0 + 5.0 * math.sin(i * 1.3)
-        sy = 26.0 + 4.0 * math.cos(i * 1.7)
-        sz = 8.0 + 2.0 * math.sin(i * 2.5)
+        cz = 98.0 + 6.0 * math.cos(i * 2.1)
+        sx = 32.0 + 6.0 * math.sin(i * 1.3)
+        sy = 30.0 + 5.0 * math.cos(i * 1.7)
+        sz = 11.0 + 3.0 * math.sin(i * 2.5)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
         puff = bpy.context.active_object
         puff.scale = (sx, sy, sz)
         puff.data.materials.append(mat_cloud)
         parts.append(puff)
 
-    # Middle ring (R ~ 85, Z ~ 50)
+    # Middle ring (R ~ 95, Z ~ 85)
     for i in range(12):
         angle = i * (2.0 * math.pi / 12.0) + 0.4
-        r = 85.0 + 12.0 * math.cos(i * 1.5)
+        r = 92.0 + 12.0 * math.cos(i * 1.5)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 50.0 + 6.0 * math.sin(i * 2.3)
-        sx = 34.0 + 6.0 * math.cos(i * 1.4)
-        sy = 30.0 + 6.0 * math.sin(i * 1.8)
-        sz = 9.0 + 3.0 * math.cos(i * 2.7)
+        cz = 84.0 + 7.0 * math.sin(i * 2.3)
+        sx = 36.0 + 7.0 * math.cos(i * 1.4)
+        sy = 32.0 + 6.0 * math.sin(i * 1.8)
+        sz = 12.0 + 4.0 * math.cos(i * 2.7)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
         puff = bpy.context.active_object
         puff.scale = (sx, sy, sz)
         puff.data.materials.append(mat_cloud)
         parts.append(puff)
 
-    # Outer ring (R ~ 135, Z ~ 42)
+    # Outer ring (R ~ 145, Z ~ 68)
     for i in range(16):
         angle = i * (2.0 * math.pi / 16.0) + 0.1
-        r = 135.0 + 15.0 * math.sin(i * 1.2)
+        r = 142.0 + 15.0 * math.sin(i * 1.2)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 42.0 + 7.0 * math.cos(i * 1.9)
-        sx = 38.0 + 8.0 * math.sin(i * 1.1)
-        sy = 32.0 + 7.0 * math.cos(i * 1.6)
-        sz = 10.0 + 3.0 * math.sin(i * 2.2)
+        cz = 68.0 + 8.0 * math.cos(i * 1.9)
+        sx = 42.0 + 8.0 * math.sin(i * 1.1)
+        sy = 36.0 + 7.0 * math.cos(i * 1.6)
+        sz = 13.0 + 4.0 * math.sin(i * 2.2)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
         puff = bpy.context.active_object
         puff.scale = (sx, sy, sz)
         puff.data.materials.append(mat_cloud)
         parts.append(puff)
 
-    # Under-hanging dark storm lobes / mammatus pouches
+    # Under-hanging dark storm lobes / mammatus pouches (Z ~ 74)
     for i in range(8):
         angle = i * (2.0 * math.pi / 8.0) + 0.7
-        r = 55.0 + 20.0 * math.sin(i * 2.2)
+        r = 65.0 + 20.0 * math.sin(i * 2.2)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 38.0 + 4.0 * math.cos(i * 1.7)
+        cz = 74.0 + 5.0 * math.cos(i * 1.7)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx, cy, cz))
         pouch = bpy.context.active_object
-        pouch.scale = (16.0, 16.0, 7.0)
+        pouch.scale = (18.0, 18.0, 8.0)
         pouch.data.materials.append(mat_cloud)
         parts.append(pouch)
 
@@ -477,46 +489,46 @@ def build_storm_clouds_upper():
 
 def build_storm_clouds_lower():
     """Generates billowing mid/horizon storm cloud banks and jagged scud bands."""
-    print("[Blender] Building Lower Horizon Storm Cloud Deck...")
+    print("[Blender] Building Lower Horizon Storm Cloud Deck (Mid Sky)...")
     mat_cloud = create_material("MatStormCloudLower", (0.13, 0.13, 0.18, 1.0), roughness=0.9)
     
     parts = []
     
-    # 1. Horizon Storm Cloud Banks ringing perimeter (R ~ 125, Z in 18..38)
+    # 1. Mid-Sky Storm Cloud Banks (R ~ 130, Z in 45..68)
     num_banks = 18
     for i in range(num_banks):
         angle = i * (2.0 * math.pi / num_banks)
-        r = 120.0 + 14.0 * math.sin(i * 1.8)
+        r = 125.0 + 14.0 * math.sin(i * 1.8)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 24.0 + 7.0 * math.cos(i * 2.4)
+        cz = 50.0 + 8.0 * math.cos(i * 2.4)
         
         # Base puff
         bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=7, radius=1.0, location=(cx, cy, cz))
         base_puff = bpy.context.active_object
-        base_puff.scale = (22.0 + 5.0 * math.sin(i), 18.0 + 4.0 * math.cos(i), 8.0 + 3.0 * math.sin(i * 1.5))
+        base_puff.scale = (26.0 + 6.0 * math.sin(i), 20.0 + 5.0 * math.cos(i), 10.0 + 4.0 * math.sin(i * 1.5))
         base_puff.data.materials.append(mat_cloud)
         parts.append(base_puff)
 
         # Upper billow
         if i % 2 == 0:
-            bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx * 0.95, cy * 0.95, cz + 8.0))
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx * 0.95, cy * 0.95, cz + 10.0))
             top_puff = bpy.context.active_object
-            top_puff.scale = (16.0, 14.0, 7.5)
+            top_puff.scale = (18.0, 16.0, 9.0)
             top_puff.data.materials.append(mat_cloud)
             parts.append(top_puff)
 
-    # 2. Jagged Low Scud Cloud Formations (R ~ 95, Z in 14..24)
+    # 2. Jagged Scud Formations (R ~ 105, Z in 34..46)
     num_scud = 10
     for i in range(num_scud):
         angle = i * (2.0 * math.pi / num_scud) + 0.3
-        r = 95.0 + 15.0 * math.sin(i * 2.1)
+        r = 102.0 + 16.0 * math.sin(i * 2.1)
         cx = math.cos(angle) * r
         cy = math.sin(angle) * r
-        cz = 16.0 + 4.0 * math.sin(i * 1.7)
+        cz = 38.0 + 5.0 * math.sin(i * 1.7)
         bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=1.0, location=(cx, cy, cz))
         scud = bpy.context.active_object
-        scud.scale = (18.0, 10.0, 4.0)
+        scud.scale = (20.0, 12.0, 5.0)
         scud.rotation_euler = (0.1 * math.sin(i), 0.1 * math.cos(i), angle + 0.4)
         scud.data.materials.append(mat_cloud)
         parts.append(scud)
