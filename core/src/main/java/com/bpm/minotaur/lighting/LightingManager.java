@@ -27,6 +27,7 @@ public class LightingManager {
     public static final Color COLOR_LANTERN = new Color(1.0f, 0.80f, 0.44f, 1.0f);   // Warm vintage golden incandescence
     public static final Color COLOR_CAMPFIRE = new Color(1.0f, 0.45f, 0.16f, 1.0f);  // Deep ember orange-red
     public static final Color COLOR_COLD_VOID = new Color(0.04f, 0.045f, 0.08f, 1f); // Chilling unlit dungeon darkness
+    public static final Color COLOR_SHELTER_AMBIENT = new Color(0.35f, 0.28f, 0.22f, 1.0f); // Warm safe haven shelter glow
 
     private final LightSource playerLight;
     private final Array<LightSource> worldLights = new Array<>(false, 32);
@@ -186,10 +187,19 @@ public class LightingManager {
      * ambient darkness, light falloffs, and line-of-sight shadow casting.
      */
     public void calculateLightAt(float x, float y, Maze maze, Color outColor, float baseAmbient) {
+        calculateLightAt(x, y, maze, outColor, baseAmbient, COLOR_COLD_VOID);
+    }
+
+    /**
+     * Calculates cumulative RGB lighting at a world coordinate (X, Y), allowing a tailored
+     * ambient color (e.g. warm shelter glow vs. cold subterranean void).
+     */
+    public void calculateLightAt(float x, float y, Maze maze, Color outColor, float baseAmbient, Color ambientColor) {
+        Color baseCol = (ambientColor != null) ? ambientColor : COLOR_COLD_VOID;
         outColor.set(
-                COLOR_COLD_VOID.r * baseAmbient,
-                COLOR_COLD_VOID.g * baseAmbient,
-                COLOR_COLD_VOID.b * baseAmbient,
+                baseCol.r * baseAmbient,
+                baseCol.g * baseAmbient,
+                baseCol.b * baseAmbient,
                 1.0f
         );
 

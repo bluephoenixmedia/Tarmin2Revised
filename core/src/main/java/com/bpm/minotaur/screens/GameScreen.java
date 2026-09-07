@@ -268,10 +268,12 @@ public class GameScreen extends BaseScreen {
                     game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager());
             player.getStatusManager().initialize(this.eventManager, player);
             player.setMaze(this.maze);
+            worldManager.setPlayerReference(player);
         } else {
             this.maze = worldManager.getInitialMaze();
             resetPlayerPosition();
             player.setMaze(this.maze);
+            worldManager.setPlayerReference(player);
         }
 
         combatManager = new CombatManager(player, maze, game, animationManager, eventManager, soundManager,
@@ -397,6 +399,7 @@ public class GameScreen extends BaseScreen {
     private void resetPlayerPosition() {
         GridPoint2 startPos = worldManager.getInitialPlayerStartPos();
         player.getPosition().set(startPos.x + 0.5f, startPos.y + 0.5f);
+        worldManager.setPlayerReference(player);
     }
 
     private boolean isVisible(Vector2 targetPos) {

@@ -796,10 +796,12 @@ public class EntityRenderer {
 
             Color monsterLight = new Color(1f, 1f, 1f, 1f);
             LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+            boolean isShelter = maze != null && maze.isHomeTile((int) monster.getPosition().x, (int) monster.getPosition().y);
             boolean isIndoors = maze != null && maze.isIndoors((int) monster.getPosition().x, (int) monster.getPosition().y);
-            float baseAmbient = isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            float baseAmbient = isShelter ? 0.35f : (isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
+            Color ambientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
             if (lm != null) {
-                lm.calculateLightAt(monster.getPosition().x, monster.getPosition().y, maze, monsterLight, baseAmbient);
+                lm.calculateLightAt(monster.getPosition().x, monster.getPosition().y, maze, monsterLight, baseAmbient, ambientColor);
             }
 
             float maxBright = Math.max(monsterLight.r, Math.max(monsterLight.g, monsterLight.b));
@@ -943,10 +945,12 @@ public class EntityRenderer {
 
             Color itemLight = new Color(1f, 1f, 1f, 1f);
             LightingManager itemLm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+            boolean isShelter = maze != null && maze.isHomeTile((int) item.getPosition().x, (int) item.getPosition().y);
             boolean itemIndoors = maze != null && maze.isIndoors((int) item.getPosition().x, (int) item.getPosition().y);
-            float itemBaseAmbient = itemIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+            float itemBaseAmbient = isShelter ? 0.35f : (itemIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
+            Color itemAmbientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
             if (itemLm != null) {
-                itemLm.calculateLightAt(item.getPosition().x, item.getPosition().y, maze, itemLight, itemBaseAmbient);
+                itemLm.calculateLightAt(item.getPosition().x, item.getPosition().y, maze, itemLight, itemBaseAmbient, itemAmbientColor);
             }
             spriteBatch.setColor(itemLight);
 
@@ -1363,10 +1367,12 @@ public class EntityRenderer {
                         if (pixelChar != '.') {
                             Color dynamicLight = new Color(1f, 1f, 1f, 1f);
                             LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+                            boolean isShelter = currentMaze != null && currentMaze.isHomeTile((int) entity.getPosition().x, (int) entity.getPosition().y);
                             boolean isIndoors = currentMaze != null && currentMaze.isIndoors((int) entity.getPosition().x, (int) entity.getPosition().y);
-                            float baseAmbient = isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f);
+                            float baseAmbient = isShelter ? 0.35f : (isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
+                            Color ambientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
                             if (lm != null) {
-                                lm.calculateLightAt(entity.getPosition().x, entity.getPosition().y, currentMaze, dynamicLight, baseAmbient);
+                                lm.calculateLightAt(entity.getPosition().x, entity.getPosition().y, currentMaze, dynamicLight, baseAmbient, ambientColor);
                             }
                             float maxBright = Math.max(dynamicLight.r, Math.max(dynamicLight.g, dynamicLight.b));
                             boolean isMonster = entity instanceof Monster;

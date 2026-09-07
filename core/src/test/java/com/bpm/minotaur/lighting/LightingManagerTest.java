@@ -166,4 +166,39 @@ public class LightingManagerTest {
         assertEquals("near", nearest.get(1).getId());
         assertEquals("mid", nearest.get(2).getId());
     }
+
+    @Test
+    public void testShelterAmbientLighting() {
+        Color outColor = new Color();
+        // Calculate light with shelter ambient color and intensity
+        lightingManager.calculateLightAt(5f, 5f, null, outColor, 0.35f, LightingManager.COLOR_SHELTER_AMBIENT);
+
+        assertTrue("Shelter ambient red component should be warm and visible", outColor.r >= 0.10f);
+        assertTrue("Shelter ambient green component should be warm", outColor.g >= 0.08f);
+        assertTrue("Shelter ambient blue component should be warm", outColor.b >= 0.06f);
+    }
+
+    @Test
+    public void testWallSurfaceLightingInRoom() {
+        // Room with a solid wall to the East of (0, 0)
+        int[][] wallData = new int[3][3];
+        wallData[0][0] = Direction.EAST.getWallMask(); // Wall at east edge of tile (0, 0)
+        wallData[0][1] = Direction.WEST.getWallMask();
+        Maze maze = new Maze(1, wallData);
+
+        // A torch is in the room at (0.5, 0.5)
+        LightSource torch = new LightSource("torch", 0.5f, 0.5f, LightingManager.COLOR_TORCH, 3.5f, 1.0f, LightSource.FlickerProfile.STEADY);
+        lightingManager.addLight(torch);
+
+        // Ray striking the east wall at (1.0, 0.5) is sampled 0.05 units in front of the wall (0.95, 0.5)
+        float sampleX = 1.0f - 0.05f;
+        float sampleY = 0.5f;
+
+        assertFalse("Light in room must NOT be occluded from illuminating front face of its own wall",
+                lightingManager.isOccluded(0.5f, 0.5f, sampleX, sampleY, maze));
+
+        Color outColor = new Color();
+        lightingManager.calculateLightAt(sampleX, sampleY, maze, outColor, 0.04f);
+        assertTrue("Wall face must be brightly illuminated by the room torch", outColor.r > 0.5f);
+    }
 }

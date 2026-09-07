@@ -470,6 +470,7 @@ public class WorldManager {
         this.currentPlayerChunkId = newChunkId;
         player.setMaze(newMaze);
         player.setPosition(newPlayerPos);
+        setPlayerReference(player);
         syncLightsForChunk(newMaze);
     }
 
