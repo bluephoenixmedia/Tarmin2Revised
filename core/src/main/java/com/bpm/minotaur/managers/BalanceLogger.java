@@ -30,15 +30,27 @@ public class BalanceLogger {
 
     private static BalanceLogger instance;
     private FileHandle logFile;
+    private java.io.BufferedWriter writer;
     private static final String LOG_PATH = "logs/game_balance_session.log";
 
     private BalanceLogger() {
-        // Create or overwrite the session log
-        logFile = Gdx.files.local(LOG_PATH);
-        // Only write header if we are creating it fresh in this session instance
+        if (Gdx.files != null) {
+            logFile = Gdx.files.local(LOG_PATH);
+            try {
+                java.io.File file = logFile.file();
+                if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                    file.getParentFile().mkdirs();
+                }
+                writer = new java.io.BufferedWriter(new java.io.FileWriter(file, true), 16384);
+            } catch (Exception e) {
+                if (Gdx.app != null) {
+                    Gdx.app.error("BalanceLogger", "Failed to open log writer", e);
+                }
+            }
+        }
     }
 
-    public static BalanceLogger getInstance() {
+    public static synchronized BalanceLogger getInstance() {
         if (instance == null) {
             instance = new BalanceLogger();
             String header = "--- NEW SESSION: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
@@ -48,11 +60,18 @@ public class BalanceLogger {
         return instance;
     }
 
-    private void writeRaw(String str) {
+    private synchronized void writeRaw(String str) {
         try {
-            logFile.writeString(str, true);
+            if (writer != null) {
+                writer.write(str);
+                writer.flush();
+            } else if (logFile != null) {
+                logFile.writeString(str, true);
+            }
         } catch (Exception e) {
-            Gdx.app.error("BalanceLogger", "Failed to write to log file", e);
+            if (Gdx.app != null) {
+                Gdx.app.error("BalanceLogger", "Failed to write to log file", e);
+            }
         }
     }
 

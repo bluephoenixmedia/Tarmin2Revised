@@ -47,8 +47,11 @@ public class Tarmin2 extends Game {
     private static final float VIRTUAL_WIDTH = 1920f;
     private static final float VIRTUAL_HEIGHT = 1080f;
 
+    private long startupStartTime;
+
     @Override
     public void create() {
+        startupStartTime = System.currentTimeMillis();
         // --- NEW: Set up Dual Logging ---
         // This ensures all Gdx.app.log/error/debug calls go to BOTH console and file.
         com.badlogic.gdx.ApplicationLogger existing = Gdx.app.getApplicationLogger();
@@ -141,6 +144,10 @@ public class Tarmin2 extends Game {
     public void proceedToMainMenu() {
         // Now that assets are loaded, we can finish setting up managers
         MusicManager.getInstance().finishLoading();
+
+        long elapsed = System.currentTimeMillis() - startupStartTime;
+        Gdx.app.log("Tarmin2", "Startup completed to MainMenu in " + elapsed + " ms (" + String.format("%.2f", elapsed / 1000f) + "s)");
+        BalanceLogger.getInstance().log("STARTUP", "Game initialized to MainMenu in " + elapsed + " ms");
 
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));

@@ -20,6 +20,7 @@ public class SettingsManager {
     // --- Settings ---
     private Difficulty currentDifficulty;
     private boolean isAdvancedMode;
+    private boolean skipIntroVideo;
     private final Map<String, Integer> keyBindings = new LinkedHashMap<>();
     private final Map<String, String> keyBindingDescriptions = new LinkedHashMap<>();
 
@@ -64,6 +65,9 @@ public class SettingsManager {
         // Load Game Mode
         isAdvancedMode = prefs.getBoolean("isAdvancedMode", false);
 
+        // Load Skip Intro Video
+        skipIntroVideo = prefs.getBoolean("skipIntroVideo", false);
+
         // Load Key Bindings
         keyBindings.clear();
         for (String action : keyBindingDescriptions.keySet()) {
@@ -76,7 +80,21 @@ public class SettingsManager {
     }
 
     private Preferences getPrefs() {
+        if (Gdx.app == null) return null;
         return Gdx.app.getPreferences(PREFS_NAME);
+    }
+
+    // --- Skip Intro Video ---
+    public boolean isSkipIntroVideo() {
+        return skipIntroVideo || Boolean.getBoolean("minotaur.skipIntro");
+    }
+
+    public void setSkipIntroVideo(boolean skip) {
+        this.skipIntroVideo = skip;
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putBoolean("skipIntroVideo", skip).flush();
+        }
     }
 
     // --- Difficulty ---

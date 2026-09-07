@@ -35,6 +35,13 @@ public class LoadingScreen extends ScreenAdapter {
 
         this.font = new BitmapFont();
 
+        boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo();
+        if (skipIntro) {
+            Gdx.app.log("LoadingScreen", "Intro video skipped by configuration.");
+            videoFinished = true;
+            return;
+        }
+
         // Initialize VideoPlayer
         try {
             videoPlayer = new JavaCVVideoPlayer();
@@ -68,6 +75,21 @@ public class LoadingScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        // --- 0. Check User Skip Input (Space, Enter, Escape, Left Click) ---
+        if (!videoFinished) {
+            if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ANY_KEY)
+                    || Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+                Gdx.app.log("LoadingScreen", "Intro video skipped by user input.");
+                videoFinished = true;
+                if (videoPlayer != null) {
+                    try {
+                        videoPlayer.stop();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+
         // --- 1. Clear the Screen ---
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -82,21 +104,20 @@ public class LoadingScreen extends ScreenAdapter {
             }
         }
 
-        // --- 3. Draw Video Frame ---
+        // --- 3. Draw Video Frame or Loading UI ---
         game.getViewport().apply();
         batch.setProjectionMatrix(game.getViewport().getCamera().combined);
         batch.begin();
 
-        if (videoPlayer != null && !videoError) {
+        float screenWidth = game.getViewport().getWorldWidth();
+        float screenHeight = game.getViewport().getWorldHeight();
+
+        if (videoPlayer != null && !videoFinished && !videoError) {
             Texture frame = videoPlayer.getTexture();
             if (frame != null) {
-                // Draw video centered and scaled to fit the screen
-                float screenWidth = game.getViewport().getWorldWidth();
-                float screenHeight = game.getViewport().getWorldHeight();
                 float videoWidth = frame.getWidth();
                 float videoHeight = frame.getHeight();
 
-                // Simple scaling to fit width or height while maintaining aspect ratio
                 float scale = Math.min(screenWidth / videoWidth, screenHeight / videoHeight);
                 float drawWidth = videoWidth * scale;
                 float drawHeight = videoHeight * scale;
@@ -105,28 +126,30 @@ public class LoadingScreen extends ScreenAdapter {
 
                 batch.draw(frame, x, y, drawWidth, drawHeight);
             }
+            // Skip hint
+            font.draw(batch, "[Press ANY KEY or Click to Skip]", screenWidth - 280, screenHeight - 20);
         }
 
-        // --- 4. Draw Loading Text (Overlay) ---
+        // --- 4. Draw Loading Text & Progress ---
         float progress = assetManager.getProgress();
         int progressPercent = (int) (progress * 100);
-        font.draw(batch, "Loading... " + progressPercent + "%",
-                game.getViewport().getWorldWidth() / 2 - 50,
-                20); // Draw near bottom
+
+        if (videoFinished) {
+            // Draw prominent loading message if video was skipped but assets are finishing
+            font.draw(batch, "CASTLE TARMIN", screenWidth / 2f - 60, screenHeight / 2f + 40);
+            font.draw(batch, "Loading Assets... " + progressPercent + "%", screenWidth / 2f - 75, screenHeight / 2f);
+        } else {
+            font.draw(batch, "Loading... " + progressPercent + "%", screenWidth / 2f - 50, 30);
+        }
 
         batch.end();
 
-        // --- 5. Asset Loading & Cleanup ---
-        boolean assetsLoaded = assetManager.update();
+        // --- 5. Asset Loading with Boosted Budget (100ms/frame) ---
+        boolean assetsLoaded = assetManager.update(100);
 
-        // Check if we can proceed
-        // Check if we can proceed
-        // Wait for videoFinished or videoError.
-        // Also safeguard against infinite hang if video never starts/ends (e.g. 10s
-        // timeout if assets loaded)
-        // Removed !videoPlayer.isPlaying() check because it races with thread startup
+        // Check if we can proceed to MainMenu
         if (assetsLoaded && (videoFinished || videoError)) {
-            Gdx.app.log("LoadingScreen", "Asset loading and video complete!");
+            Gdx.app.log("LoadingScreen", "Asset loading and video sequence complete!");
             game.proceedToMainMenu();
         }
     }

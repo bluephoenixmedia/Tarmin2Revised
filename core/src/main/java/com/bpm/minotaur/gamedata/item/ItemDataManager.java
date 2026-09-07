@@ -22,6 +22,18 @@ public class ItemDataManager {
 
     private final ObjectMap<ItemType, ItemTemplate> itemTemplates;
 
+    private static final java.util.Map<String, ItemType> ITEM_TYPE_MAP = new java.util.HashMap<>();
+    static {
+        for (ItemType t : ItemType.values()) {
+            ITEM_TYPE_MAP.put(t.name(), t);
+        }
+    }
+
+    public static ItemType getSafeItemType(String name) {
+        if (name == null) return null;
+        return ITEM_TYPE_MAP.get(name);
+    }
+
     private DiscoveryManager discoveryManager;
     private final Random random = new Random();
 
@@ -60,41 +72,14 @@ public class ItemDataManager {
         // ... rest of load() implementation ...
         JsonValue root = new JsonReader().parse(file);
 
-        for (ItemType type : ItemType.values()) {
-            JsonValue data = root.get(type.name());
-
-            if (data != null) {
-                ItemTemplate template = json.readValue(ItemTemplate.class, data);
-
-                // FIX: Set default probability if missing to ensure they spawn
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            ItemType type = getSafeItemType(entry.name);
+            if (type != null) {
+                ItemTemplate template = json.readValue(ItemTemplate.class, entry);
                 if (template.probability == 0) {
                     template.probability = 10;
                 }
-
                 itemTemplates.put(type, template);
-            } else {
-                // Skip error logging for procedural/generated items
-                String name = type.name();
-                boolean isProcedural = name.startsWith("SCROLL_") ||
-                        name.startsWith("WAND_") ||
-                        name.startsWith("POTION_") ||
-                        name.equals("CORPSE") ||
-                        name.equals("MEAT") ||
-                        name.equals("COOKED_MEAT") ||
-                        name.equals("BONE") ||
-                        name.equals("CHITIN") ||
-                        name.equals("TOOTH") ||
-                        name.equals("CLAW") ||
-                        name.equals("NAIL") ||
-                        name.equals("BLOOD_VIAL") ||
-                        name.equals("ORGAN") ||
-                        name.equals("LEATHER_SCRAP") ||
-                        name.equals("MYSTERIOUS_PORTAL") || // defined in code or json?
-                        name.equals("MONSTER_EYE");
-
-                if (!isProcedural) {
-                    Gdx.app.error("ItemDataManager", "No JSON data found for item type: " + type.name());
-                }
             }
         }
 
@@ -224,23 +209,22 @@ public class ItemDataManager {
         // Iterate over the JSON keys explicitly efficiently
         for (JsonValue entry = root.child; entry != null; entry = entry.next) {
             String typeName = entry.name;
-            try {
-                ItemType type = ItemType.valueOf(typeName);
-                ItemTemplate template = json.readValue(ItemTemplate.class, entry);
-
-                if (template.probability == 0) {
-                    template.probability = 10;
-                }
-
-                if (template.rotation != 0) {
-                    Gdx.app.log("ItemDataManager", "Loaded weapon " + typeName + " with rotation " + template.rotation);
-                }
-
-                itemTemplates.put(type, template);
-                loadedCount++;
-            } catch (IllegalArgumentException e) {
-                Gdx.app.error("ItemDataManager", "Skipping unknown weapon type in JSON: " + typeName);
+            ItemType type = getSafeItemType(typeName);
+            if (type == null) {
+                continue;
             }
+            ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+
+            if (template.probability == 0) {
+                template.probability = 10;
+            }
+
+            if (template.rotation != 0) {
+                Gdx.app.log("ItemDataManager", "Loaded weapon " + typeName + " with rotation " + template.rotation);
+            }
+
+            itemTemplates.put(type, template);
+            loadedCount++;
         }
 
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new weapons.");
@@ -270,23 +254,22 @@ public class ItemDataManager {
 
         for (JsonValue entry = root.child; entry != null; entry = entry.next) {
             String typeName = entry.name;
-            try {
-                ItemType type = ItemType.valueOf(typeName);
-                ItemTemplate template = json.readValue(ItemTemplate.class, entry);
-
-                // FIX: Set default probability if missing
-                if (template.probability == 0) {
-                    template.probability = 10;
-                }
-
-                itemTemplates.put(type, template);
-                if (type == ItemType.LEATHER_BOOTS) {
-                    Gdx.app.log("IDM_DEBUG", "Loaded LEATHER_BOOTS. isBoots=" + template.isBoots);
-                }
-                loadedCount++;
-            } catch (IllegalArgumentException e) {
-                Gdx.app.error("ItemDataManager", "Skipping unknown armor type in JSON: " + typeName);
+            ItemType type = getSafeItemType(typeName);
+            if (type == null) {
+                continue;
             }
+            ItemTemplate template = json.readValue(ItemTemplate.class, entry);
+
+            // FIX: Set default probability if missing
+            if (template.probability == 0) {
+                template.probability = 10;
+            }
+
+            itemTemplates.put(type, template);
+            if (type == ItemType.LEATHER_BOOTS) {
+                Gdx.app.log("IDM_DEBUG", "Loaded LEATHER_BOOTS. isBoots=" + template.isBoots);
+            }
+            loadedCount++;
         }
 
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
