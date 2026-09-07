@@ -1382,9 +1382,9 @@ public class Hud implements Disposable {
             if (frontItem.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
                 worldInteractionCard.show(
                         "[SHELTER HUB]",
-                        "[OSSUARY WORKTABLE]",
-                        "Bone Crafting Bench",
-                        "Chisel and sculpt harvested monster bones, gibs, and viscera into relics and weapons.",
+                        "[ARTISAN WORKBENCH]",
+                        "Artisan's Crafting Bench & Forge",
+                        "Hone weapons and armor, salvage dungeon scrap, infuse monster trophies, and carve bone relics. Draws from pack and chest.",
                         "[ O ]",
                         "Open Crafting Bench",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }

@@ -652,6 +652,33 @@ public class Item implements Renderable {
         this.modifiers.add(modifier);
     }
 
+    public int getEnhancementLevel() {
+        if (modifiers == null) return 0;
+        int level = 0;
+        for (ItemModifier mod : modifiers) {
+            if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_AC) {
+                level = Math.max(level, mod.value);
+            }
+        }
+        return level;
+    }
+
+    public int getTrophyInfusionCount() {
+        if (modifiers == null) return 0;
+        int count = 0;
+        for (ItemModifier mod : modifiers) {
+            if (mod.type != ModifierType.BONUS_DAMAGE && mod.type != ModifierType.BONUS_AC) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public void removeEnhancementModifier() {
+        if (modifiers == null) return;
+        modifiers.removeIf(mod -> mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_AC);
+    }
+
     public List<ItemModifier> getModifiers() {
         if (this.modifiers == null)
             this.modifiers = new ArrayList<>();

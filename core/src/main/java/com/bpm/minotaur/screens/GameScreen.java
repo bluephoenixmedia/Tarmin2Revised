@@ -108,6 +108,7 @@ public class GameScreen extends BaseScreen {
 
     // --- NEW: Visceral Feedback Components ---
     private FirstPersonWeaponOverlay weaponOverlay;
+    private CraftingManager craftingManager;
 
     private float hitPauseTimer = 0f;
     private float sleepTimer = 0f;
@@ -1887,12 +1888,14 @@ public class GameScreen extends BaseScreen {
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CRAFTING_BENCH) {
             try {
-                OssuaryManager oMgr = new OssuaryManager();
-                OssuaryScreen ossuaryScreen = new OssuaryScreen(game, this, player, oMgr);
-                game.setScreen(ossuaryScreen);
+                if (craftingManager == null) {
+                    craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
+                }
+                CraftingScreen craftingScreen = new CraftingScreen(game, this, player, craftingManager);
+                game.setScreen(craftingScreen);
                 return;
             } catch (Exception e) {
-                Gdx.app.error("GameScreen", "Failed to open Ossuary", e);
+                Gdx.app.error("GameScreen", "Failed to open Crafting Bench", e);
             }
         }
 
