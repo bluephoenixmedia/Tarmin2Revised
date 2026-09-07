@@ -448,9 +448,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     if (info.id == HOME_TILE_ID) {
                         for (int tx = 0; tx < 12; tx++) {
                             // --- FIX: Home Zone Logic ---
-                            // Include ALL home tiles (including props) in the list so
-                            // the game knows this is the "Home Zone" (Sheltered from weather).
-                            boolean isHomeZone = (tileY >= 4 && tileY <= 7 && tx >= 4 && tx <= 7);
+                            // Include ALL home tiles (including walls, door, window, and props) in the list so
+                            // the game knows this entire footprint is the "Home Zone" (Sheltered from weather).
+                            boolean isHomeZone = (tileY >= 3 && tileY <= 7 && tx >= 3 && tx <= 8);
 
                             if (isHomeZone) {
                                 int gameX = mapX * 12 + tx;

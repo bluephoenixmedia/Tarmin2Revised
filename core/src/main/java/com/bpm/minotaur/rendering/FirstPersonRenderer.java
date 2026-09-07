@@ -193,7 +193,7 @@ public class FirstPersonRenderer {
         batch.begin();
         for (WindowOverlay overlay : windowOverlays) {
             renderModernWindow(batch, overlay.hit, overlay.x, viewport, overlay.fogEnabled, overlay.fogDistance,
-                    overlay.fogColor, overlay.lightIntensity);
+                    overlay.fogColor, overlay.lightIntensity, overlay.isIndoors, null, null, null);
         }
         batch.end();
     }
@@ -277,8 +277,16 @@ public class FirstPersonRenderer {
             spriteBatch.begin();
 
             // Only render 2D Skybox fallback if 3D Skybox was not rendered
-            if (!isIndoors && !has3DSky) {
-                renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
+            if (!isIndoors) {
+                if (!has3DSky) {
+                    renderSkyboxCeiling(spriteBatch, player, viewport, lightIntensity, worldManager);
+                }
+            } else if (!has3DSky) {
+                // In indoor levels without 3D sky (e.g. underground dungeons), render the flat ceiling background
+                Color ceilColor = applyDynamicLighting(currentCeilingColor, player.getPosition().x, player.getPosition().y, maze, worldManager, new Color(), isIndoors);
+                spriteBatch.setColor(ceilColor);
+                spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(),
+                        viewport.getWorldHeight() / 2);
             }
             renderTexturedFloor(spriteBatch, player, viewport, fogEnabled, fogDistance, fogColor,
                     lightIntensity, maze, worldManager, isIndoors);
@@ -327,17 +335,17 @@ public class FirstPersonRenderer {
                     // Result indicates a HIT (Wall/Door/Window-Termination)
                     maze.markVisited(result.mapX, result.mapY);
                     renderWallSliceTexture(spriteBatch, result, x, viewport, fogEnabled, fogDistance, fogColor,
-                            lightIntensity, maze, worldManager);
+                            lightIntensity, maze, worldManager, isIndoors);
 
                     if (result.windowHits != null && !result.windowHits.isEmpty()) {
                         // Render window immediately (for depth writing)
                         if (result.windowHits.size() > 0) {
                             renderModernWindow(spriteBatch, result.windowHits.get(0), x, viewport, fogEnabled,
-                                    fogDistance, fogColor, lightIntensity);
+                                    fogDistance, fogColor, lightIntensity, isIndoors, player, maze, worldManager);
 
                             // Store for Overlay Pass (Draw over sprites)
                             windowOverlays.add(new WindowOverlay(x, result.windowHits.get(0), fogEnabled,
-                                    fogDistance, fogColor, lightIntensity));
+                                    fogDistance, fogColor, lightIntensity, isIndoors));
                         }
                     }
 
@@ -623,7 +631,8 @@ public class FirstPersonRenderer {
     }
 
     private void renderWallSliceTexture(SpriteBatch spriteBatch, RaycastResult result, int screenX, Viewport viewport,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity, Maze maze, WorldManager worldManager,
+            boolean isIndoors) {
         int lineHeight = (result.distance <= 0) ? Integer.MAX_VALUE
                 : (int) (viewport.getWorldHeight() / result.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -826,6 +835,16 @@ public class FirstPersonRenderer {
             spriteBatch.draw(texture, screenX, drawStart, 1, drawEnd - drawStart, texX, 0, 1, texture.getHeight(),
                     false,
                     false);
+        }
+
+        // Draw ceiling above indoor walls
+        if (isIndoors) {
+            float ceilHeight = viewport.getWorldHeight() - drawEnd;
+            if (ceilHeight > 0) {
+                Color ceilColor = applyDynamicLighting(currentCeilingColor, result.hitX, result.hitY, maze, worldManager, new Color(), true);
+                spriteBatch.setColor(ceilColor);
+                spriteBatch.draw(blankTexture, screenX, drawEnd, 1, ceilHeight + 1f);
+            }
         }
         spriteBatch.setColor(Color.WHITE);
     }
@@ -1043,7 +1062,8 @@ public class FirstPersonRenderer {
     }
 
     private void renderModernWindow(SpriteBatch spriteBatch, WindowHit hit, int screenX, Viewport viewport,
-            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity) {
+            boolean fogEnabled, float fogDistance, Color fogColor, float lightIntensity,
+            boolean isIndoors, Player player, Maze maze, WorldManager worldManager) {
         int lineHeight = (hit.distance <= 0) ? Integer.MAX_VALUE
                 : (int) (viewport.getWorldHeight() / hit.distance);
         float drawStart = Math.max(0, -lineHeight / 2f + viewport.getWorldHeight() / 2f);
@@ -1194,6 +1214,18 @@ public class FirstPersonRenderer {
                         spriteBatch.draw(blankTexture, screenX, rainY, 1, rainLen);
                     }
                 }
+            }
+        }
+
+        // Draw ceiling above the window or door lintel if indoors
+        if (isIndoors) {
+            float ceilHeight = viewport.getWorldHeight() - drawEnd;
+            if (ceilHeight > 0) {
+                float px = (player != null) ? player.getPosition().x : 0;
+                float py = (player != null) ? player.getPosition().y : 0;
+                Color ceilColor = applyDynamicLighting(currentCeilingColor, px, py, maze, worldManager, new Color(), true);
+                spriteBatch.setColor(ceilColor);
+                spriteBatch.draw(blankTexture, screenX, drawEnd, 1, ceilHeight + 1f);
             }
         }
         spriteBatch.setColor(Color.WHITE);
@@ -1817,15 +1849,17 @@ public class FirstPersonRenderer {
         final float fogDistance;
         final Color fogColor;
         final float lightIntensity;
+        final boolean isIndoors;
 
         WindowOverlay(int x, WindowHit hit, boolean fogEnabled, float fogDistance, Color fogColor,
-                float lightIntensity) {
+                float lightIntensity, boolean isIndoors) {
             this.x = x;
             this.hit = hit;
             this.fogEnabled = fogEnabled;
             this.fogDistance = fogDistance;
             this.fogColor = fogColor;
             this.lightIntensity = lightIntensity;
+            this.isIndoors = isIndoors;
         }
     }
 

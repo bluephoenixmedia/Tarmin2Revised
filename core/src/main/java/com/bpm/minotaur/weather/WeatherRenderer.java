@@ -106,6 +106,18 @@ public class WeatherRenderer {
                 if (p.isDead) {
                     particles.removeIndex(i);
                 }
+                continue;
+            }
+
+            // Check if particle drifted into an indoor roofed tile
+            int curTileX = MathUtils.floor(p.x);
+            int curTileY = MathUtils.floor(p.y);
+            if (maze != null && maze.isIndoors(curTileX, curTileY)) {
+                initParticle(p, playerX, playerY, viewAngle, maze, type, false);
+                if (p.isDead) {
+                    particles.removeIndex(i);
+                }
+                continue;
             }
         }
 
@@ -237,9 +249,13 @@ public class WeatherRenderer {
         float halfH  = worldH * 0.5f;
         int numCols  = depthBuffer.length;
 
+        boolean playerIndoors = (maze != null && maze.isIndoors((int) playerX, (int) playerY));
+
         // --- 1. RENDER GROUND MICRO-SPLASH DROPLETS ---
         for (int i = 0; i < splashDroplets.size; i++) {
             SplashDroplet s = splashDroplets.get(i);
+            if (maze != null && maze.isIndoors(MathUtils.floor(s.x), MathUtils.floor(s.y))) continue;
+
             float relX = s.x - playerX;
             float relY = s.y - playerY;
 
@@ -271,6 +287,7 @@ public class WeatherRenderer {
         // --- 2. RENDER 3D PRECIPITATION STREAKS / FLAKES ---
         for (int i = 0; i < particles.size; i++) {
             WeatherParticle p = particles.get(i);
+            if (maze != null && maze.isIndoors(MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
 
             float relX = p.x - playerX;
             float relY = p.y - playerY;
@@ -289,11 +306,14 @@ public class WeatherRenderer {
             float screenY = halfH + ((p.z - 0.5f) / transformY) * worldH;
             if (screenY < -50 || screenY > worldH + 100) continue;
 
-            // VERTICAL WALL OCCLUSION:
-            // The wall only occupies the vertical span up to wallTopY.
-            // Above wallTopY, it is OPEN SKY! Rain falling in the sky above walls is visible!
+            // VERTICAL WALL & CEILING OCCLUSION:
+            // When indoors under a roof, walls meet the ceiling and block drops behind them.
+            // When outdoors, open sky exists above wallTopY so rain falling in the sky above walls is visible.
             float wallDist = depthBuffer[col];
             if (wallDist < Float.MAX_VALUE && transformY > wallDist) {
+                if (playerIndoors) {
+                    continue; // Drop is behind indoor wall surface / under roof
+                }
                 float wallTopY = halfH + (0.5f / wallDist) * worldH;
                 if (screenY <= wallTopY) {
                     continue; // Drop is behind the solid wall surface
