@@ -26,7 +26,7 @@ public class WeatherRenderer {
     private static final String TAG = "WeatherRenderer";
 
     // Cylinder simulation bounds
-    public static final float CYLINDER_RADIUS = 16.0f;
+    public static final float CYLINDER_RADIUS = 13.0f;
     public static final float CYLINDER_HEIGHT = 11.0f;
 
     private final WeatherManager weatherManager;
@@ -34,7 +34,6 @@ public class WeatherRenderer {
     private final Array<SplashDroplet> splashDroplets = new Array<>(false, 250);
 
     private final Vector3 windVector = new Vector3();
-    private float spawnAccumulator = 0f;
 
     // Pre-calculated scratch colors to eliminate GC allocations
     private final Color rainColor = new Color(0.72f, 0.82f, 0.95f, 1f);
@@ -63,34 +62,50 @@ public class WeatherRenderer {
         weatherManager.getWindVector(windVector);
         float playerX = player.getPosition().x;
         float playerY = player.getPosition().y;
+        Vector2 pDir = player.getDirectionVector();
+        float viewAngle = MathUtils.atan2(pDir.y, pDir.x);
 
         int maxParticles = getMaxParticles(type, intensity);
 
-        // 1. Spawn new particles in the cylinder above outdoor tiles, biased in forward view
-        spawnParticles(delta, type, intensity, player, maze, maxParticles);
+        // 1. Maintain target particle count with instant fill if empty
+        int toSpawn = maxParticles - particles.size;
+        if (toSpawn > 0) {
+            int batchSpawn = (particles.size == 0) ? toSpawn : Math.min(toSpawn, 350);
+            for (int i = 0; i < batchSpawn; i++) {
+                WeatherParticle p = new WeatherParticle(0, 0, 0, 0, 0, 0, 0, type);
+                initParticle(p, playerX, playerY, viewAngle, maze, type, particles.size == 0);
+                if (!p.isDead) {
+                    particles.add(p);
+                }
+            }
+        }
 
-        // 2. Update existing falling particles
+        // 2. Update existing falling particles and recycle in-place
         for (int i = particles.size - 1; i >= 0; i--) {
             WeatherParticle p = particles.get(i);
             p.update(delta);
 
             // Ground impact: spawn tiny splash droplets if hitting floor (z <= 0)
             if (p.z <= 0f) {
-                p.isDead = true;
                 if (p.type == WeatherType.RAIN || p.type == WeatherType.STORM) {
                     spawnSplash(p.x, p.y, playerX, playerY, maze);
                 }
+                // Recycle drop immediately to maintain dense continuous downpour
+                initParticle(p, playerX, playerY, viewAngle, maze, type, false);
+                if (p.isDead) {
+                    particles.removeIndex(i);
+                }
+                continue;
             }
 
-            // Despawn if drifted beyond cylinder radius
+            // Recycle if drifted beyond cylinder radius
             float dx = p.x - playerX;
             float dy = p.y - playerY;
-            if (dx * dx + dy * dy > (CYLINDER_RADIUS + 3f) * (CYLINDER_RADIUS + 3f)) {
-                p.isDead = true;
-            }
-
-            if (p.isDead) {
-                particles.removeIndex(i);
+            if (dx * dx + dy * dy > (CYLINDER_RADIUS + 2.5f) * (CYLINDER_RADIUS + 2.5f)) {
+                initParticle(p, playerX, playerY, viewAngle, maze, type, false);
+                if (p.isDead) {
+                    particles.removeIndex(i);
+                }
             }
         }
 
@@ -111,46 +126,55 @@ public class WeatherRenderer {
         return (intensity == WeatherIntensity.HEAVY) ? 1400 : (intensity == WeatherIntensity.MEDIUM) ? 950 : 550;
     }
 
-    private void spawnParticles(float delta, WeatherType type, WeatherIntensity intensity,
-                                Player player, Maze maze, int targetMax) {
-        if (particles.size >= targetMax) return;
+    /**
+     * Initializes or recycles a particle with tiered near/mid/far distance distribution
+     * and frustum-aligned altitude so precipitation fills the screen from top to bottom,
+     * streaming down across close dungeon walls and floor rather than stopping at wall tops.
+     */
+    private void initParticle(WeatherParticle p, float playerX, float playerY, float viewAngle,
+                              Maze maze, WeatherType type, boolean initialScatter) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            // Multi-tiered distance distribution guaranteeing dense precipitation across near walls & floor:
+            // Tier 1 (Near: 0.35m - 2.8m): 45% -> falls directly in front of close walls, corridors, and player
+            // Tier 2 (Mid:  2.8m - 6.5m): 35% -> fills rooms, courtyards & doorways
+            // Tier 3 (Far:  6.5m - 13.0m): 20% -> fills open sky & distant horizon
+            float tierRoll = MathUtils.random();
+            float radius;
+            if (tierRoll < 0.45f) {
+                radius = MathUtils.random(0.35f, 2.8f);
+            } else if (tierRoll < 0.80f) {
+                radius = MathUtils.random(2.8f, 6.5f);
+            } else {
+                radius = MathUtils.random(6.5f, CYLINDER_RADIUS);
+            }
 
-        float spawnRate = targetMax * 2.2f; // Particles per second
-        spawnAccumulator += spawnRate * delta;
-
-        int toSpawn = (int) spawnAccumulator;
-        spawnAccumulator -= toSpawn;
-
-        float playerX = player.getPosition().x;
-        float playerY = player.getPosition().y;
-        Vector2 pDir = player.getDirectionVector();
-        float viewAngle = MathUtils.atan2(pDir.y, pDir.x);
-
-        for (int i = 0; i < toSpawn && particles.size < targetMax; i++) {
-            // Bias 70% of particles into the forward view frustum arc (+/- 65 deg)
+            // Bias 85% into forward camera frustum (+/- 45 deg, slightly wider than camera FOV)
             float angle;
-            if (MathUtils.randomBoolean(0.70f)) {
-                angle = viewAngle + MathUtils.random(-1.15f, 1.15f);
+            if (MathUtils.randomBoolean(0.85f)) {
+                angle = viewAngle + MathUtils.random(-0.80f, 0.80f);
             } else {
                 angle = MathUtils.random(0f, MathUtils.PI2);
             }
 
-            float radius = (float) Math.sqrt(MathUtils.random()) * CYLINDER_RADIUS;
             float px = playerX + MathUtils.cos(angle) * radius;
             float py = playerY + MathUtils.sin(angle) * radius;
 
-            // Never spawn precipitation inside roofed indoor tiles
+            // Never spawn inside roofed indoor tiles
             int tileX = MathUtils.floor(px);
             int tileY = MathUtils.floor(py);
             if (maze != null && maze.isIndoors(tileX, tileY)) {
                 continue;
             }
 
-            float pz = MathUtils.random(CYLINDER_HEIGHT * 0.35f, CYLINDER_HEIGHT);
+            // Frustum-aligned altitude: top of screen at distance r is at zTop = 0.5 + 0.52 * r
+            float zTop = 0.5f + 0.52f * radius;
+            float pz = initialScatter
+                    ? MathUtils.random(0.05f, zTop + 0.35f)
+                    : zTop + MathUtils.random(0.08f, 0.75f);
 
             // Physical velocities
             float vx = windVector.x + MathUtils.random(-0.4f, 0.4f);
-            float vy = windVector.z + MathUtils.random(-0.4f, 0.4f); // Maze Y is world Z
+            float vy = windVector.z + MathUtils.random(-0.4f, 0.4f);
             float vz;
             float length;
 
@@ -158,13 +182,14 @@ public class WeatherRenderer {
                 vz = (type == WeatherType.BLIZZARD) ? -MathUtils.random(6.0f, 9.5f) : -MathUtils.random(1.8f, 3.2f);
                 length = (type == WeatherType.BLIZZARD) ? 0.30f : 0.12f;
             } else {
-                // Rain / Storm
                 vz = -MathUtils.random(15.0f, 19.5f);
                 length = (type == WeatherType.STORM) ? 0.60f : 0.42f;
             }
 
-            particles.add(new WeatherParticle(px, py, pz, vx, vy, vz, length, type));
+            p.reset(px, py, pz, vx, vy, vz, length, type);
+            return;
         }
+        p.isDead = true;
     }
 
     private void spawnSplash(float x, float y, float playerX, float playerY, Maze maze) {
@@ -329,6 +354,11 @@ public class WeatherRenderer {
 
         public WeatherParticle(float x, float y, float z, float vx, float vy, float vz,
                                float length, WeatherType type) {
+            reset(x, y, z, vx, vy, vz, length, type);
+        }
+
+        public void reset(float x, float y, float z, float vx, float vy, float vz,
+                          float length, WeatherType type) {
             this.x = x;
             this.y = y;
             this.z = z;
@@ -337,6 +367,7 @@ public class WeatherRenderer {
             this.vz = vz;
             this.length = length;
             this.type = type;
+            this.isDead = false;
             this.wobble = MathUtils.random(0f, MathUtils.PI2);
             this.wobbleSpeed = MathUtils.random(2.5f, 6.0f);
         }
