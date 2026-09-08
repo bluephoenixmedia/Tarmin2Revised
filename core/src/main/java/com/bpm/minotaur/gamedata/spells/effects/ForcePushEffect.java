@@ -181,9 +181,6 @@ public class ForcePushEffect implements SpellEffect {
                 maze.getGoreManager().spawnGibExplosion(origin);
             }
         } else {
-            if (monster.getTexture() != null) {
-                maze.getGoreManager().spawnTextureGibs(origin, monster.getTexture());
-            }
             maze.getGoreManager().spawnGibExplosion(origin);
         }
 

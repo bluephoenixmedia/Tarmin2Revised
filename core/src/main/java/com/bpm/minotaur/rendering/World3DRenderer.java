@@ -484,25 +484,33 @@ public class World3DRenderer implements Disposable {
             }
         }
 
-        // 4. Active Flying Gib Chunks
+        // 4. Active Gib Chunks (Using authentic gibs texture files from gore atlas)
         Array<Gib> gibs = gore.getActiveGibs();
         if (gibs != null && gibs.size > 0) {
             for (int i = 0; i < gibs.size; i++) {
                 Gib g = gibs.get(i);
-                TextureRegion reg = (g.textureRegion != null) ? g.textureRegion
-                        : (g.polygonRegion != null ? g.polygonRegion.getRegion() : null);
-                if (reg == null) continue;
-                Texture tex = reg.getTexture();
+                // Strict check: only render authentic gib textures, ignore any monster texture shards
+                if (g.textureRegion == null) continue;
+                Texture tex = g.textureRegion.getTexture();
                 if (currentTex != null && currentTex != tex) {
                     dynamicBatcher.flush(shader, currentTex);
                 }
                 currentTex = tex;
-                dynamicBatcher.addBillboard(
-                        g.position.x, g.position.y, -g.position.z,
-                        0.25f, 0.25f,
-                        reg, g.color,
-                        camRight, camUp, camDir
-                );
+                float gibSize = 0.18f;
+                if (g.onGround) {
+                    dynamicBatcher.addFloorQuad(
+                            g.position.x, 0.003f, -g.position.z,
+                            gibSize * 0.5f, gibSize * 0.5f,
+                            g.textureRegion, g.color
+                    );
+                } else {
+                    dynamicBatcher.addBillboard(
+                            g.position.x, Math.max(0.02f, g.position.y), -g.position.z,
+                            gibSize, gibSize,
+                            g.textureRegion, g.color,
+                            camRight, camUp, camDir
+                    );
+                }
             }
         }
 
@@ -557,14 +565,29 @@ public class World3DRenderer implements Disposable {
                     if (region == null) {
                         region = new TextureRegion(tex);
                     }
-                    float w = 0.5f;
-                    float h = 0.5f;
+                    float baseHeight = 0.45f;
+                    Vector2 scale = it.getScale();
+                    float sx = (scale != null && scale.x > 0) ? scale.x : 0.5f;
+                    float sy = (scale != null && scale.y > 0) ? scale.y : 0.5f;
+
+                    float regW = region.getRegionWidth();
+                    float regH = region.getRegionHeight();
+                    float aspect = (regH > 0) ? (regW / regH) : 1.0f;
+
+                    float h = baseHeight * sy;
+                    float w = baseHeight * sx * aspect;
+
                     ItemTemplate t = it.getTemplate();
-                    if (t != null && t.modelScale > 0) {
+                    if (t != null && t.modelScale > 0 && t.modelScale != 1.0f) {
                         w *= t.modelScale;
                         h *= t.modelScale;
                     }
-                    dynamicBatcher.addBillboard(ex, 0.05f, wz, w, h, region, it.getColor(), camRight, camUp, camDir);
+
+                    // Bounds safety for dungeon floor items
+                    h = Math.max(0.06f, Math.min(0.6f, h));
+                    w = Math.max(0.06f, Math.min(0.8f, w));
+
+                    dynamicBatcher.addBillboard(ex, 0.01f, wz, w, h, region, it.getColor(), camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Scenery) {

@@ -1628,11 +1628,7 @@ public class CombatManager {
                 maze.getGoreManager().spawnGibExplosion(gibOrigin); // Fallback
             }
         } else {
-            // Modern Mode
-            if (monster.getTexture() != null) {
-                maze.getGoreManager().spawnTextureGibs(gibOrigin, monster.getTexture());
-            }
-            // ALSO spawn the new generic gibs for extra visceral feeling
+            // Modern Mode: spawn authentic gibs from gore atlas
             maze.getGoreManager().spawnGibExplosion(gibOrigin);
         }
 

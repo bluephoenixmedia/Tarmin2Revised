@@ -133,7 +133,7 @@ public class GoreManager {
     public void spawnGibExplosion(Vector3 origin) {
         // Modern Mode: Texture Gibs
         if (gibTextures.size > 0) {
-            int count = MathUtils.random(4, 7);
+            int count = MathUtils.random(6, 10);
             for (int i = 0; i < count; i++) {
                 Gib g = gibPool.obtain();
                 com.badlogic.gdx.graphics.g2d.TextureRegion tex = gibTextures.random();
@@ -148,30 +148,7 @@ public class GoreManager {
                 g.init(origin, vel, tex);
                 activeGibs.add(g);
             }
-        } else {
-            // Fallback or just ignore if no textures
         }
-
-        /*
-         * int meatCount = MathUtils.random(3, 6);
-         * int boneCount = MathUtils.random(2, 4);
-         * 
-         * // Use unified color for meat chunks
-         * for (int i = 0; i < meatCount; i++)
-         * spawnGib(origin, GibType.MEAT_CHUNK, UNIFIED_BLOOD_COLOR);
-         * 
-         * // Bones, ribs, intestines, etc usually have their own default tint or use
-         * the
-         * // unified color if we choose
-         * for (int i = 0; i < boneCount; i++)
-         * spawnGib(origin, GibType.BONE_SHARD, UNIFIED_BLOOD_COLOR);
-         * if (MathUtils.randomBoolean())
-         * spawnGib(origin, GibType.RIB_CAGE, UNIFIED_BLOOD_COLOR);
-         * if (MathUtils.randomBoolean())
-         * spawnGib(origin, GibType.INTESTINE, UNIFIED_BLOOD_COLOR);
-         * if (MathUtils.randomBoolean(0.3f))
-         * spawnGib(origin, GibType.EYEBALL, UNIFIED_BLOOD_COLOR);
-         */
     }
 
     private void spawnGib(Vector3 origin, GibType type, Color color) {
@@ -183,28 +160,8 @@ public class GoreManager {
     }
 
     public void spawnTextureGibs(Vector3 origin, com.badlogic.gdx.graphics.Texture texture) {
-        if (texture == null)
-            return;
-
-        // Create a TextureRegion for the whole texture
-        com.badlogic.gdx.graphics.g2d.TextureRegion fullRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                texture);
-
-        // Generate Voronoi-like shards (triangles)
-        // 10 internal points results in roughly 20-30 shards
-        Array<ShatterUtils.Shard> shards = ShatterUtils.shatter(fullRegion, 10);
-
-        for (ShatterUtils.Shard shard : shards) {
-            Gib g = gibPool.obtain();
-            // Random explosion velocity
-            Vector3 vel = new Vector3(
-                    MathUtils.random(-0.8f, 0.8f),
-                    MathUtils.random(2f, 5f),
-                    MathUtils.random(-0.8f, 0.8f)).nor().scl(MathUtils.random(2f, 5f));
-
-            g.init(origin, vel, shard);
-            activeGibs.add(g);
-        }
+        // Delegate to authentic gibs textures from gore atlas
+        spawnGibExplosion(origin);
     }
 
     public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {
