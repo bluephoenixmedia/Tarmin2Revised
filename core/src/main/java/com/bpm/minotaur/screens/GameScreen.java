@@ -62,6 +62,7 @@ public class GameScreen extends BaseScreen {
     // --- Renderers ---
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
+    private final World3DRenderer world3DRenderer = new World3DRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager(), game.getAssetManager());
     private final Difficulty difficulty;
 
@@ -583,85 +584,29 @@ public class GameScreen extends BaseScreen {
             // Blindness rendering (black screen)
             game.getBatch().end();
         } else if (player != null && maze != null) {
-            firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
-                    gameMode);
-
-            // --- 3D RENDER FIX: NEGATE Z COORDINATES ---
-            // DISABLED FOR NOW: Reverting to 2D Sprites/Textures for all items as per user
-            // request.
-            /*
-             * if (camera3d != null) {
-             * // Negate Y here to convert to standard 3D forward (-Z)
-             * camera3d.position.set(player.getPosition().x, 0.5f, -player.getPosition().y);
-             * camera3d.direction.set(player.getDirectionVector().x, 0,
-             * -player.getDirectionVector().y);
-             * camera3d.up.set(0, 1, 0);
-             * camera3d.update();
-             * 
-             * ModelBatch modelBatch = game.getModelBatch();
-             * boolean batchBegun = false;
-             * 
-             * if (modelBatch != null && maze != null) {
-             * for (Item item : maze.getItems().values()) {
-             * ItemTemplate template = item.getTemplate();
-             * if (template != null && template.modelPath != null) {
-             * if (!isVisible(item.getPosition()))
-             * continue;
-             * ModelInstance inst = item3dCache.get(item);
-             * if (inst == null) {
-             * Model model = game.getAssetManager().get(template.modelPath, Model.class);
-             * if (model != null) {
-             * inst = new ModelInstance(model);
-             * item3dCache.put(item, inst);
-             * }
-             * }
-             * if (inst != null) {
-             * if (!batchBegun) {
-             * modelBatch.begin(camera3d);
-             * batchBegun = true;
-             * }
-             * inst.transform.idt();
-             * // Negate Y here as well for item position
-             * inst.transform.translate(
-             * item.getPosition().x,
-             * template.modelYOffset,
-             * -item.getPosition().y);
-             * 
-             * if (template.modelRotation != 0f) {
-             * inst.transform.rotate(Vector3.Y, template.modelRotation);
-             * }
-             * inst.transform.scale(template.modelScale, template.modelScale,
-             * template.modelScale);
-             * modelBatch.render(inst, environment);
-             * }
-             * }
-             * }
-             * if (batchBegun)
-             * modelBatch.end();
-             * }
-             * }
-             */
-
-            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
-                    || combatManager.getMonster() == null) {
-                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
-                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+            if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
+                world3DRenderer.render(player, maze, currentViewport, worldManager, currentLevel, gameMode, combatManager);
             } else {
-                entityRenderer.render(shapeRenderer, player, maze, currentViewport,
-                        firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager,
-                        combatManager.getMonster());
+                firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
+                        gameMode);
+
+                if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
+                        || combatManager.getMonster() == null) {
+                    entityRenderer.render(shapeRenderer, player, maze, currentViewport,
+                            firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager);
+                } else {
+                    entityRenderer.render(shapeRenderer, player, maze, currentViewport,
+                            firstPersonRenderer.getDepthBuffer(), firstPersonRenderer, worldManager,
+                            combatManager.getMonster());
+                }
+
+                // --- FIX: Window Overlay Pass (Clips entities at window base/top) ---
+                game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
+                firstPersonRenderer.renderWindowOverlays(game.getBatch(), currentViewport);
+
+                animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(),
+                        firstPersonRenderer, maze);
             }
-
-            // --- FIX: Window Overlay Pass (Clips entities at window base/top) ---
-            game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
-            firstPersonRenderer.renderWindowOverlays(game.getBatch(), currentViewport);
-
-            // 3D Rendering Moved Above EntityRenderer
-
-            // 3D Rendering Moved Above EntityRenderer
-
-            animationManager.render(shapeRenderer, player, currentViewport, firstPersonRenderer.getDepthBuffer(),
-                    firstPersonRenderer, maze);
 
             // --- VISCERAL: Weapon Overlay ---
             // Render 2D weapon swipe on top of 3D world but before HUD/PostProcess?
@@ -1549,6 +1494,10 @@ public class GameScreen extends BaseScreen {
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
                 return true;
             case Input.Keys.F7:
+                debugManager.toggleRenderEngine();
+                eventManager.addEvent(new GameEvent("Render Engine: " + debugManager.getRenderEngine(), 2f));
+                return true;
+            case Input.Keys.F11:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
                     eventManager.addEvent(new GameEvent(
@@ -1726,6 +1675,7 @@ public class GameScreen extends BaseScreen {
         if (monsterDebugOverlay != null) {
             monsterDebugOverlay.dispose();
         }
+        world3DRenderer.dispose();
     }
 
     // --- NEW: Visceral API ---

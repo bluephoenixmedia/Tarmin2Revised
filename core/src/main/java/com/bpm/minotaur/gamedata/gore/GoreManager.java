@@ -292,6 +292,10 @@ public class GoreManager {
         return wallDecals.get(key);
     }
 
+    public Map<Integer, Array<WallDecal>> getAllWallDecals() {
+        return wallDecals;
+    }
+
     public void update(float delta, Maze maze) {
         for (int i = activeParticles.size - 1; i >= 0; i--) {
             BloodParticle p = activeParticles.get(i);

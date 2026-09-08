@@ -15,6 +15,11 @@ public class DebugManager {
         RETRO
     }
 
+    public enum RenderEngine {
+        RAYCASTER,
+        PLANAR_3D
+    }
+
     public enum TransitionState {
         NONE,
         FADING_OUT,  // current mode fading to black (before mode switch)
@@ -24,6 +29,7 @@ public class DebugManager {
     // Each phase takes this long in seconds
     private static final float PHASE_DURATION = 0.55f;
 
+    private RenderEngine renderEngine = RenderEngine.PLANAR_3D;
     private RenderMode renderMode = RenderMode.RETRO;
     private RenderMode targetRenderMode = null;
     private TransitionState transitionState = TransitionState.NONE;
@@ -51,6 +57,21 @@ public class DebugManager {
 
     public RenderMode getRenderMode() {
         return renderMode;
+    }
+
+    public RenderEngine getRenderEngine() {
+        return renderEngine;
+    }
+
+    public void setRenderEngine(RenderEngine renderEngine) {
+        this.renderEngine = renderEngine;
+    }
+
+    public void toggleRenderEngine() {
+        this.renderEngine = (this.renderEngine == RenderEngine.PLANAR_3D) ? RenderEngine.RAYCASTER : RenderEngine.PLANAR_3D;
+        if (Gdx.app != null) {
+            Gdx.app.log("DebugManager", "Switched Render Engine to: " + this.renderEngine);
+        }
     }
 
     /**
