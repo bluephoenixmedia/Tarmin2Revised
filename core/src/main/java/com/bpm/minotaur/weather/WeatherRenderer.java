@@ -143,39 +143,42 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (type == WeatherType.BLIZZARD) return 260;
-        if (type == WeatherType.STORM) return 220;
-        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 150 : 90;
-        return (intensity == WeatherIntensity.HEAVY) ? 140 : (intensity == WeatherIntensity.MEDIUM) ? 90 : 50;
+        if (type == WeatherType.BLIZZARD) return 340;
+        if (type == WeatherType.STORM) return 300;
+        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 190 : 110;
+        return (intensity == WeatherIntensity.HEAVY) ? 220 : (intensity == WeatherIntensity.MEDIUM) ? 150 : 80;
     }
 
     /**
      * Initializes or recycles a particle with tiered near/mid/far distance distribution
-     * and frustum-aligned altitude so precipitation fills the screen from top to bottom,
-     * streaming down across close dungeon walls and floor rather than stopping at wall tops.
+     * and frustum-aligned altitude so precipitation fills the screen uniformly from top to bottom
+     * across the entire player view, including the immediate foreground.
      */
     private void initParticle(WeatherParticle p, float playerX, float playerY, float viewAngle,
                               Maze maze, WeatherType type, boolean initialScatter) {
-        for (int attempt = 0; attempt < 3; attempt++) {
-            // Multi-tiered distance distribution with safe minimum radius (1.5m) so particles never
-            // clip into or bloat right against the camera lens:
-            // Tier 1 (Near: 1.5m - 3.8m): 35% -> visible in front of walls & corridors
-            // Tier 2 (Mid:  3.8m - 7.5m): 40% -> fills courtyards, doorways & open areas
-            // Tier 3 (Far:  7.5m - 13.0m): 25% -> fills open sky & distant landscape
+        for (int attempt = 0; attempt < 5; attempt++) {
+            // Uniform visual distribution across player's field of view:
+            // Counteracts foreshortening and shorter travel time of near particles by weighting near/mid spawns
             float tierRoll = MathUtils.random();
             float radius;
-            if (tierRoll < 0.35f) {
-                radius = MathUtils.random(1.5f, 3.8f);
-            } else if (tierRoll < 0.75f) {
-                radius = MathUtils.random(3.8f, 7.5f);
+            if (tierRoll < 0.36f) {
+                // Immediate Foreground: 0.4m - 1.8m (directly in front of player's face and corridor)
+                radius = MathUtils.random(0.4f, 1.8f);
+            } else if (tierRoll < 0.68f) {
+                // Mid-Near: 1.8m - 4.2m (corridor ahead, doorways, immediate outdoor spaces)
+                radius = MathUtils.random(1.8f, 4.2f);
+            } else if (tierRoll < 0.86f) {
+                // Mid-Far: 4.2m - 7.5m (courtyard, open grounds)
+                radius = MathUtils.random(4.2f, 7.5f);
             } else {
+                // Far: 7.5m - 12.0m (distant landscape, castle silhouette, sky)
                 radius = MathUtils.random(7.5f, CYLINDER_RADIUS);
             }
 
-            // Bias 80% into forward camera frustum (+/- 45 deg, slightly wider than camera FOV)
+            // Bias 92% across player's horizontal view cone (+/- 0.85 rad, ~49 deg matching camera FOV)
             float angle;
-            if (MathUtils.randomBoolean(0.80f)) {
-                angle = viewAngle + MathUtils.random(-0.80f, 0.80f);
+            if (MathUtils.randomBoolean(0.92f)) {
+                angle = viewAngle + MathUtils.random(-0.85f, 0.85f);
             } else {
                 angle = MathUtils.random(0f, MathUtils.PI2);
             }
@@ -190,11 +193,15 @@ public class WeatherRenderer {
                 continue;
             }
 
-            // Frustum-aligned altitude: top of screen at distance r is at zTop = 0.5 + 0.52 * r
-            float zTop = 0.5f + 0.52f * radius;
-            float pz = initialScatter
-                    ? MathUtils.random(0.05f, zTop + 0.35f)
-                    : zTop + MathUtils.random(0.08f, 0.75f);
+            // Frustum-aligned altitude with adequate height so near particles fall smoothly through the view
+            float zTop = 0.5f + 0.55f * radius;
+            float pz;
+            if (initialScatter) {
+                pz = MathUtils.random(0.05f, Math.max(zTop + 0.5f, 3.5f));
+            } else {
+                // Spawn above frustum top, with a minimum height (2.4m) so near particles don't instantly vanish
+                pz = Math.max(zTop + MathUtils.random(0.15f, 0.75f), MathUtils.random(2.4f, 4.0f));
+            }
 
             // Physical velocities
             float vx = windVector.x + MathUtils.random(-0.4f, 0.4f);
@@ -349,9 +356,21 @@ public class WeatherRenderer {
             float worldY = p.z;
             float worldZ = -p.y;
 
+            float dx = worldX - camPos.x;
+            float dy = worldY - camPos.y;
+            float dz = worldZ - camPos.z;
+            float distSq = dx * dx + dy * dy + dz * dz;
+
+            // Distance scaling compensation so near drops remain needle-crisp without perspective bloating
+            float scale = 1.0f;
+            if (distSq < 2.25f) { // Within 1.5m of camera
+                float dist = (float) Math.sqrt(distSq);
+                scale = Math.max(0.40f, dist / 1.5f);
+            }
+
             if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
                 // Square snowflake billboard quad
-                float halfS = 0.018f;
+                float halfS = 0.018f * scale;
                 batcher.addParticleQuad(
                         worldX - scratchCamRight.x * halfS - camUp.x * halfS,
                         worldY - scratchCamRight.y * halfS - camUp.y * halfS,
@@ -381,7 +400,7 @@ public class WeatherRenderer {
                 float speed = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
                 if (speed < 1e-4f) continue;
 
-                float len = p.length;
+                float len = p.length * Math.max(0.60f, scale);
                 float invSpeed = 1.0f / speed;
                 float dirX = vx * invSpeed;
                 float dirY = vy * invSpeed;
@@ -391,10 +410,12 @@ public class WeatherRenderer {
                 float tailY = worldY - dirY * len;
                 float tailZ = worldZ - dirZ * len;
 
+                float effectiveHalfWidth = streakHalfWidth * scale;
+
                 batcher.addRainStreak(
                         worldX, worldY, worldZ,
                         tailX, tailY, tailZ,
-                        streakHalfWidth,
+                        effectiveHalfWidth,
                         camPos,
                         camUp,
                         streakColor
