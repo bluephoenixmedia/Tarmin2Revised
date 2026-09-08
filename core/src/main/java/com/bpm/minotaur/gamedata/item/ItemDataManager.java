@@ -279,7 +279,20 @@ public class ItemDataManager {
     public ItemTemplate getTemplate(ItemType type) {
         ItemTemplate template = itemTemplates.get(type);
         if (template == null) {
-            throw new NullPointerException("No template loaded for item type: " + type);
+            Gdx.app.error("ItemDataManager", "Missing template for item type: " + type + ". Generating fallback template.");
+            template = new ItemTemplate();
+            template.friendlyName = (type != null) ? type.name() : "Unknown Item";
+            template.description = "An enigmatic artifact of unknown origin.";
+            template.scale = createDefaultScale();
+            ItemTemplate defaultRef = itemTemplates.get(ItemType.TARMIN_TREASURE);
+            if (defaultRef == null) defaultRef = itemTemplates.get(ItemType.SMALL_ROCK);
+            if (defaultRef != null) {
+                template.texturePath = defaultRef.texturePath;
+                template.spriteData = defaultRef.spriteData;
+            }
+            if (type != null) {
+                itemTemplates.put(type, template);
+            }
         }
         return template;
     }
@@ -737,6 +750,36 @@ public class ItemDataManager {
         createResourceTemplate(ItemType.FLINT_SHARD, "Flint", "Sharp stone.", ItemType.SMALL_ROCK);
         createResourceTemplate(ItemType.BROKEN_HILT, "Hilt", "Broken hilt.", ItemType.KNIFE);
         createResourceTemplate(ItemType.METAL_SCRAP, "Scrap", "Metal scrap.", ItemType.AXE);
+
+        // Lost Divinities
+        if (!itemTemplates.containsKey(ItemType.LOST_DIVINITIES)) {
+            ItemTemplate div = new ItemTemplate();
+            div.friendlyName = "Lost Divinities";
+            div.description = "Spiritual essence lost upon death. Step over to reclaim.";
+            ItemTemplate treasure = itemTemplates.get(ItemType.TARMIN_TREASURE);
+            if (treasure != null) {
+                div.texturePath = treasure.texturePath;
+                div.spriteData = treasure.spriteData;
+                div.scale = treasure.scale;
+            } else {
+                div.texturePath = "images/items/tarmin_treasure.png";
+                div.scale = createDefaultScale();
+            }
+            div.isTreasure = true;
+            div.baseValue = 0;
+            itemTemplates.put(ItemType.LOST_DIVINITIES, div);
+        }
+
+        // Cooked Meal
+        if (!itemTemplates.containsKey(ItemType.MEAL)) {
+            createResourceTemplate(ItemType.MEAL, "Cooked Meal", "A prepared dish that provides sustenance and temporary boons.", ItemType.FOOD);
+            ItemTemplate meal = itemTemplates.get(ItemType.MEAL);
+            if (meal != null) {
+                meal.isFood = true;
+                meal.isUsable = true;
+                meal.baseValue = 10;
+            }
+        }
     }
 
     private void createResourceTemplate(ItemType type, String name, String desc, ItemType baseType) {

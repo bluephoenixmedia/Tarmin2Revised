@@ -36,4 +36,21 @@ public class StartupOptimizationTest {
         // Cleanup
         System.clearProperty("minotaur.skipIntro");
     }
+
+    @Test
+    public void testItemDataManagerMissingTemplateFallback() {
+        if (com.badlogic.gdx.Gdx.app == null) {
+            com.badlogic.gdx.Gdx.app = (com.badlogic.gdx.Application) java.lang.reflect.Proxy.newProxyInstance(
+                    com.badlogic.gdx.Application.class.getClassLoader(),
+                    new Class<?>[]{com.badlogic.gdx.Application.class},
+                    (proxy, method, args) -> null
+            );
+        }
+
+        ItemDataManager idm = new ItemDataManager();
+        // Even without loading full json, getTemplate for missing type should generate a fallback instead of throwing NPE
+        com.bpm.minotaur.gamedata.item.ItemTemplate template = idm.getTemplate(ItemType.LOST_DIVINITIES);
+        assertNotNull(template);
+        assertEquals("LOST_DIVINITIES", template.friendlyName);
+    }
 }

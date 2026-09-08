@@ -5423,5 +5423,116 @@
     "isContainer": false,
     "isRing": true,
     "variants": [{ "color": "WHITE_SPIRITUAL", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+  },
+  "LOST_DIVINITIES": {
+    "friendlyName": "Lost Divinities",
+    "description": "Spiritual essence lost upon death. Step over to reclaim.",
+    "texturePath": "images/items/tarmin_treasure.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "..........####..........",
+      ".........######.........",
+      "........########........",
+      ".......##########.......",
+      ".......##########.......",
+      "......############......",
+      "......############......",
+      "......############......",
+      "......############......",
+      ".......##########.......",
+      ".......##########.......",
+      "........########........",
+      ".........######.........",
+      "..........####..........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": true,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "variants": [
+      {
+        "color": "GOLD",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "MEAL": {
+    "friendlyName": "Cooked Meal",
+    "description": "A prepared dish that provides sustenance and temporary boons.",
+    "texturePath": "images/items/food.png",
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".......##########.......",
+      "......############......",
+      ".....##############.....",
+      ".....##############.....",
+      "......############......",
+      ".......##########.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "baseValue": 10,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": true,
+    "isKey": false,
+    "isUsable": true,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   }
 }
