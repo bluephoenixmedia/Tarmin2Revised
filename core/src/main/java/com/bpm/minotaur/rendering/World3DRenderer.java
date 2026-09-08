@@ -587,7 +587,40 @@ public class World3DRenderer implements Disposable {
                     h = Math.max(0.06f, Math.min(0.6f, h));
                     w = Math.max(0.06f, Math.min(0.8f, w));
 
-                    dynamicBatcher.addBillboard(ex, 0.01f, wz, w, h, region, it.getColor(), camRight, camUp, camDir);
+                    // Check if item is at player's feet (same tile as player)
+                    float px = player.getPosition().x;
+                    float py = player.getPosition().y;
+                    float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
+                    boolean atFeet = distSq < 0.15f;
+
+                    float renderX = ex;
+                    float renderZ = wz;
+                    float renderFeetY = 0.01f;
+
+                    if (atFeet) {
+                        Vector2 dir = player.getDirectionVector();
+                        // Anchor within the player's tile, avoiding wall clipping
+                        int playerTileX = (int) px;
+                        int playerTileY = (int) py;
+                        boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
+                        float zOffset = wallInFront ? 0.35f : 0.42f;
+
+                        // Position vertically so the item sits comfortably in the lower view above the HUD banner
+                        float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
+                        float targetAngle = halfFovRad * 0.76f;
+                        float deltaY = zOffset * (float) Math.tan(targetAngle);
+                        float targetCenterY = camera.position.y - deltaY;
+
+                        renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
+                        renderX = px + dir.x * zOffset;
+                        renderZ = -py - dir.y * zOffset;
+
+                        // Scale slightly for close-up presentation at player's feet
+                        h = Math.min(0.32f, h * 0.85f);
+                        w = Math.min(0.40f, w * 0.85f);
+                    }
+
+                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, it.getColor(), camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Scenery) {
