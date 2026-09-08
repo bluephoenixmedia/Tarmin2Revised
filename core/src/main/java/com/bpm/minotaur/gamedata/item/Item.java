@@ -408,6 +408,9 @@ public class Item implements Renderable {
                     name = name.substring(0, name.length() - 4);
 
                 tempRegion = atlas.findRegion(name);
+                if (tempRegion == null && "brass_lantern".equals(name)) {
+                    tempRegion = atlas.findRegion("lamp");
+                }
                 if (tempRegion == null) {
                     Gdx.app.error("Item", "Could not find region '" + name + "' in items.atlas for " + type);
                     if (assetManager.isLoaded(template.texturePath)) {

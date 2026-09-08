@@ -40,6 +40,20 @@ public class FirstPersonRenderer {
     private Color currentDoorDarkColor;
     private final Color fogLerpColor = new Color();
 
+    private static final Color MODERN_CEILING_SHELTER = new Color(0.16f, 0.13f, 0.09f, 1.0f);
+    private static final Color MODERN_CEILING_DUNGEON = new Color(0.11f, 0.11f, 0.12f, 1.0f);
+
+    private Color getCeilingBaseColor(boolean isShelter, boolean isIndoors, Color retroCeilingColor) {
+        if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            if (isShelter) {
+                return MODERN_CEILING_SHELTER;
+            } else if (isIndoors) {
+                return MODERN_CEILING_DUNGEON;
+            }
+        }
+        return retroCeilingColor;
+    }
+
     // --- Rendering Constants ---
     private static final float DOOR_WIDTH = 0.25f;
     private static final float DOOR_HEIGHT_RATIO = 0.8f;
@@ -289,7 +303,8 @@ public class FirstPersonRenderer {
                 }
             } else if (!has3DSky) {
                 // In indoor levels without 3D sky (e.g. underground dungeons), render the flat ceiling background
-                Color ceilColor = applyDynamicLighting(currentCeilingColor, player.getPosition().x, player.getPosition().y, maze, worldManager, new Color(), isIndoors);
+                Color baseCeil = getCeilingBaseColor(isInsideHome, isIndoors, currentCeilingColor);
+                Color ceilColor = applyDynamicLighting(baseCeil, player.getPosition().x, player.getPosition().y, maze, worldManager, new Color(), isIndoors);
                 spriteBatch.setColor(ceilColor);
                 spriteBatch.draw(blankTexture, 0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(),
                         viewport.getWorldHeight() / 2);
@@ -879,7 +894,9 @@ public class FirstPersonRenderer {
         if (isIndoors) {
             float ceilHeight = viewport.getWorldHeight() - drawEnd;
             if (ceilHeight > 0) {
-                Color ceilColor = applyDynamicLighting(currentCeilingColor, sampleX, sampleY, maze, worldManager, new Color(), sliceIndoors);
+                boolean isShelter = (maze != null && maze.isHomeTile((int) sampleX, (int) sampleY));
+                Color baseCeil = getCeilingBaseColor(isShelter, sliceIndoors, currentCeilingColor);
+                Color ceilColor = applyDynamicLighting(baseCeil, sampleX, sampleY, maze, worldManager, new Color(), sliceIndoors);
                 spriteBatch.setColor(ceilColor);
                 spriteBatch.draw(blankTexture, screenX, drawEnd, 1, ceilHeight + 1f);
             }
@@ -1270,7 +1287,9 @@ public class FirstPersonRenderer {
             if (ceilHeight > 0) {
                 float px = (player != null) ? player.getPosition().x : 0;
                 float py = (player != null) ? player.getPosition().y : 0;
-                Color ceilColor = applyDynamicLighting(currentCeilingColor, px, py, maze, worldManager, new Color(), true);
+                boolean isShelter = (maze != null && maze.isHomeTile((int) px, (int) py));
+                Color baseCeil = getCeilingBaseColor(isShelter, true, currentCeilingColor);
+                Color ceilColor = applyDynamicLighting(baseCeil, px, py, maze, worldManager, new Color(), true);
                 spriteBatch.setColor(ceilColor);
                 spriteBatch.draw(blankTexture, screenX, drawEnd, 1, ceilHeight + 1f);
             }

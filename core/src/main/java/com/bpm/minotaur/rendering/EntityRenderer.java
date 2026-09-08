@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix4;
@@ -235,6 +236,7 @@ public class EntityRenderer {
                 }
                 if (!isSpriteBatchActive) {
                     spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+                    spriteBatch.setColor(Color.WHITE);
                     spriteBatch.begin();
                     isSpriteBatchActive = true;
                 }
@@ -270,6 +272,7 @@ public class EntityRenderer {
             isShapeRendererActive = false;
         }
         if (isSpriteBatchActive) {
+            spriteBatch.setColor(Color.WHITE);
             spriteBatch.end();
             isSpriteBatchActive = false;
         }
@@ -891,20 +894,16 @@ public class EntityRenderer {
             float drawY;
             int spriteHeight, spriteWidth;
 
+            TextureRegion region = item.getTextureRegion();
+            Texture tex = (region != null) ? region.getTexture() : item.getTexture();
+            float texW = (region != null) ? region.getRegionWidth() : ((tex != null) ? tex.getWidth() : 32f);
+            float texH = (region != null) ? region.getRegionHeight() : ((tex != null) ? tex.getHeight() : 32f);
+            float aspect = texW / Math.max(1f, texH);
+
             float offX = 0;
             float offY = 0;
             if (item.getTemplate() != null) {
-                // Normalize offsets (which are in pixels) to 0..1 range relative to texture
-                // size
-                Texture tex = item.getTexture();
-                float texW = (tex != null) ? tex.getWidth() : 32f;
-                float texH = (tex != null) ? tex.getHeight() : 32f;
-
-                if (item.getTextureRegion() != null) {
-                    texW = item.getTextureRegion().getRegionWidth();
-                    texH = item.getTextureRegion().getRegionHeight();
-                }
-
+                // Normalize offsets (which are in pixels) to 0..1 range relative to texture size
                 offX = item.getTemplate().offsetX / texW;
                 offY = item.getTemplate().offsetY / texH;
             }
@@ -912,7 +911,7 @@ public class EntityRenderer {
             if (atFeet) {
                 drawY = camera.viewportHeight / 8;
                 spriteHeight = AT_FEET_SPRITE_HEIGHT;
-                spriteWidth = AT_FEET_SPRITE_HEIGHT;
+                spriteWidth = (int) (AT_FEET_SPRITE_HEIGHT * aspect);
                 drawY += offY * spriteHeight;
             } else {
                 int wallLineHeightAtSameDist = (int) (camera.viewportHeight / transformY);
@@ -920,7 +919,7 @@ public class EntityRenderer {
 
                 int baseSpriteHeight = Math.abs((int) (camera.viewportHeight / transformY)) / 2;
                 spriteHeight = (int) (baseSpriteHeight * item.getScale().y);
-                spriteWidth = (int) (baseSpriteHeight * item.getScale().x);
+                spriteWidth = (int) (baseSpriteHeight * aspect * item.getScale().x);
                 drawY = floorY + (offY * spriteHeight);
 
                 int playerGridX = (int) player.getPosition().x;
@@ -950,7 +949,14 @@ public class EntityRenderer {
             float itemBaseAmbient = isShelter ? 0.35f : (itemIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
             Color itemAmbientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
             if (itemLm != null) {
-                itemLm.calculateLightAt(item.getPosition().x, item.getPosition().y, maze, itemLight, itemBaseAmbient, itemAmbientColor);
+                // Sample at tile center to avoid corner boundary occlusion with solid walls
+                itemLm.calculateLightAt(item.getPosition().x + 0.5f, item.getPosition().y + 0.5f, maze, itemLight, itemBaseAmbient, itemAmbientColor);
+            }
+            if (isShelter) {
+                // Maintain a calm, warm lighting floor on stationary shelter furnishings
+                itemLight.r = Math.max(itemLight.r, 0.75f);
+                itemLight.g = Math.max(itemLight.g, 0.70f);
+                itemLight.b = Math.max(itemLight.b, 0.60f);
             }
             spriteBatch.setColor(itemLight);
 

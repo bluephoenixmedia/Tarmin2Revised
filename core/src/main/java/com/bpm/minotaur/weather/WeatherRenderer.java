@@ -70,7 +70,7 @@ public class WeatherRenderer {
         // 1. Maintain target particle count with instant fill if empty
         int toSpawn = maxParticles - particles.size;
         if (toSpawn > 0) {
-            int batchSpawn = (particles.size == 0) ? toSpawn : Math.min(toSpawn, 350);
+            int batchSpawn = (particles.size == 0) ? toSpawn : Math.min(toSpawn, 140);
             for (int i = 0; i < batchSpawn; i++) {
                 WeatherParticle p = new WeatherParticle(0, 0, 0, 0, 0, 0, 0, type);
                 initParticle(p, playerX, playerY, viewAngle, maze, type, particles.size == 0);
@@ -132,10 +132,10 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (type == WeatherType.BLIZZARD) return 2400;
-        if (type == WeatherType.STORM) return 1800;
-        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 1400 : 800;
-        return (intensity == WeatherIntensity.HEAVY) ? 1400 : (intensity == WeatherIntensity.MEDIUM) ? 950 : 550;
+        if (type == WeatherType.BLIZZARD) return 960;
+        if (type == WeatherType.STORM) return 720;
+        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 560 : 320;
+        return (intensity == WeatherIntensity.HEAVY) ? 560 : (intensity == WeatherIntensity.MEDIUM) ? 380 : 220;
     }
 
     /**
@@ -205,7 +205,7 @@ public class WeatherRenderer {
     }
 
     private void spawnSplash(float x, float y, float playerX, float playerY, Maze maze) {
-        if (splashDroplets.size >= 240) return;
+        if (splashDroplets.size >= 96) return;
 
         // Only spawn splashes within visible distance
         float dx = x - playerX;

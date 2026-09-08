@@ -447,7 +447,7 @@
   },
   "BRASS_LANTERN": {
     "friendlyName": "Brass Lantern",
-    "texturePath": "images/items/brass_lantern.png",
+    "texturePath": "images/items/lamp.png",
     "isImpassable": false,
     "spriteData": [
       "........................",
