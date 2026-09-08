@@ -125,6 +125,33 @@ public class DayNightManager {
         }
     }
 
+    /** Returns intuitive period label based on 24-hour time of day. */
+    public String getPeriodLabel() {
+        float totalHours = timeOfDay * 24f;
+        if (totalHours >= 5.0f && totalHours < 7.0f)  return "DAWN";
+        if (totalHours >= 7.0f && totalHours < 11.5f) return "MORNING";
+        if (totalHours >= 11.5f && totalHours < 13.5f) return "NOON";
+        if (totalHours >= 13.5f && totalHours < 17.0f) return "AFTERNOON";
+        if (totalHours >= 17.0f && totalHours < 19.5f) return "DUSK";
+        if (totalHours >= 19.5f && totalHours < 22.5f) return "EVENING";
+        return "NIGHT";
+    }
+
+    /**
+     * Returns a 12-hour formatted time with period label:
+     * e.g. "7:41 AM [MORNING]", "9:10 AM [MORNING]", "12:00 PM [NOON]", "6:30 PM [DUSK]", "11:00 PM [NIGHT]".
+     */
+    public String getTimeDisplayString() {
+        float totalMinutes = timeOfDay * 24f * 60f;
+        int totalM = (int) totalMinutes;
+        int hours24 = (totalM / 60) % 24;
+        int minutes = totalM % 60;
+        int hours12 = hours24 % 12;
+        if (hours12 == 0) hours12 = 12;
+        String ampm = (hours24 < 12) ? "AM" : "PM";
+        return String.format("%d:%02d %s [%s]", hours12, minutes, ampm, getPeriodLabel());
+    }
+
     /** Returns normalized Sun position vector in world space. */
     public com.badlogic.gdx.math.Vector3 getSunDirection(com.badlogic.gdx.math.Vector3 out) {
         // Sun rises in East (+X), reaches zenith at noon (+Y), sets in West (-X)

@@ -87,9 +87,28 @@ void main() {
     vec3 scudColor = vec3(0.06, 0.06, 0.09);
     cloudColor = mix(cloudColor, scudColor, cloud2 * 0.5);
 
-    // Sun / Moon rim light scattering (silver lining)
+    // --- 4B. CELESTIAL CORONA THROUGH CLOUDS (Time-of-day solar/lunar position) ---
     float sunDot = max(dot(v_dir, u_sunDir), 0.0);
     float moonDot = max(dot(v_dir, u_moonDir), 0.0);
+
+    if (u_sunDir.y > -0.10) {
+        // Atmospheric solar corona: broad soft glow + brighter core
+        float sunCorona = pow(sunDot, 3.5) * 0.55 + pow(sunDot, 22.0) * 0.75;
+        // Warm gold/rose at dawn/dusk, radiant warm-white at midday
+        vec3 sunColor = mix(vec3(1.0, 0.60, 0.25), vec3(1.0, 0.96, 0.90), clamp(u_sunDir.y * 3.0, 0.0, 1.0));
+        vec3 sunGlow = sunColor * sunCorona * mix(0.95, 0.55, u_stormIntensity);
+        cloudColor += sunGlow;
+    }
+
+    if (u_moonDir.y > -0.10) {
+        // Cool lunar silver halo
+        float moonCorona = pow(moonDot, 4.5) * 0.30 + pow(moonDot, 28.0) * 0.45;
+        vec3 moonColor = vec3(0.65, 0.75, 0.95);
+        vec3 moonGlow = moonColor * moonCorona * mix(0.85, 0.40, u_stormIntensity);
+        cloudColor += moonGlow;
+    }
+
+    // Sun / Moon rim light scattering (silver lining)
     float celestialScatter = pow(sunDot, 6.0) * 0.4 + pow(moonDot, 4.0) * 0.25;
     vec3 rimLightColor = vec3(0.75, 0.70, 0.65) * celestialScatter * (1.0 - u_stormIntensity * 0.7);
     cloudColor += rimLightColor * smoothstep(0.3, 0.8, n1);

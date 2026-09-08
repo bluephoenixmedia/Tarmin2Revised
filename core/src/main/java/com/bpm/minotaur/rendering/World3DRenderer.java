@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -36,9 +37,11 @@ import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.managers.CombatManager;
+import com.bpm.minotaur.managers.DayNightManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
+import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
@@ -92,6 +95,17 @@ public class World3DRenderer implements Disposable {
 
     public static final float DEFAULT_FOV = DebugManager.DEFAULT_FOV_3D;
     private float totalTime = 0f;
+
+    // Smooth eye adaptation and celestial lighting state
+    private final Color currentAmbientColor = new Color(LightingManager.COLOR_SHELTER_AMBIENT);
+    private final Color targetAmbientColor = new Color();
+    private final Color displayAmbient = new Color();
+    private final Vector3 currentDirLightDir = new Vector3(0.3f, 0.8f, 0.4f).nor();
+    private final Vector3 targetDirLightDir = new Vector3(0.3f, 0.8f, 0.4f).nor();
+    private final Color currentDirLightColor = new Color(0f, 0f, 0f, 1f);
+    private final Color targetDirLightColor = new Color(0f, 0f, 0f, 1f);
+    private final Color scratchColor = new Color();
+    private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
     public World3DRenderer() {
         this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
@@ -168,6 +182,9 @@ public class World3DRenderer implements Disposable {
         boolean isInsideHome = maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
         boolean isIndoors = (currentLevel > 1) || isInsideHome || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y);
 
+        DayNightManager dnm = (worldManager != null) ? worldManager.getDayNightManager() : null;
+        com.bpm.minotaur.weather.WeatherManager wm = (worldManager != null) ? worldManager.getWeatherManager() : null;
+
         // Determine Atmosphere, Fog, and Doom
         Biome biome = (worldManager != null && worldManager.getBiomeManager() != null)
                 ? worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId())
@@ -176,14 +193,15 @@ public class World3DRenderer implements Disposable {
         float fogDistance = 1000f;
         Color fogColor = new Color(Color.WHITE);
         boolean fogEnabled = false;
-        float lightIntensity = 1.0f;
 
-        if (worldManager != null && worldManager.getWeatherManager() != null && currentLevel == 1) {
-            com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
+        if (wm != null && currentLevel == 1) {
             fogEnabled = true;
             fogDistance = wm.getFogDistance();
             fogColor.set(wm.getFogColor());
-            lightIntensity = wm.getLightIntensity();
+            // Atmospheric fog harmonization with Day/Night cycle
+            if (dnm != null) {
+                fogColor.mul(dnm.getSkyTint());
+            }
         } else if (gameMode == GameMode.ADVANCED && biome != null && biome.hasFogOfWar()) {
             fogEnabled = true;
             fogDistance = (biome == Biome.FOREST) ? 2.0f : biome.getFogDistance();
@@ -192,7 +210,6 @@ public class World3DRenderer implements Disposable {
 
         float bridgeIntegrity = DoomManager.getInstance().getBridgeIntegrity();
         float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
-        lightIntensity *= doomFactor;
         if (bridgeIntegrity > 50) {
             fogColor.lerp(Color.RED, ((bridgeIntegrity - 50) / 50f) * 0.3f);
         }
@@ -227,23 +244,75 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
         shader.setUniformf("u_doomFactor", doomFactor);
 
-        // Ambient color with lightning flash dynamics
-        Color ambientColor = isIndoors
-                ? (isInsideHome ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID)
-                : Color.WHITE;
+        // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
+        if (isInsideHome) {
+            // Shelter Haven: warm hearth/lamp sanctuary ambient
+            targetAmbientColor.set(LightingManager.COLOR_SHELTER_AMBIENT);
+            targetDirLightColor.set(0f, 0f, 0f, 1f); // Roof blocks direct sun/moon
+        } else if (currentLevel > 1 || (isIndoors && !isInsideHome)) {
+            // Dungeon / Underground Void
+            targetAmbientColor.set(LightingManager.COLOR_COLD_VOID);
+            targetDirLightColor.set(0f, 0f, 0f, 1f);
+        } else {
+            // Level 1 Outdoors: dynamically calibrated from Day/Night cycle and Weather
+            float dayAmbient = (dnm != null) ? dnm.getAmbientLight() : 0.60f;
+            Color skyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+            float weatherDim = (wm != null) ? wm.getGlobalLightDimmer() : 1.0f;
 
-        if (currentLevel == 1 && worldManager != null && worldManager.getWeatherManager() != null) {
-            float flash = worldManager.getWeatherManager().getFlashIntensity();
+            // During overcast storms/rain, ambient light takes on a cool slate-blue tint
+            float overcastFactor = (wm != null && wm.isPrecipitation()) ? 0.65f : 0.0f;
+            targetAmbientColor.set(skyTint).lerp(overcastTint, overcastFactor);
+
+            // Calibrated outdoor ambient intensity (soft, moody, never bleached):
+            // - Night storm: ~0.10
+            // - Morning storm (08:00): ~0.26 - 0.30
+            // - Midday storm: ~0.35 - 0.38
+            // - Clear midday: ~0.65 - 0.75
+            float outdoorAmbientIntensity = MathUtils.clamp(dayAmbient * weatherDim * 0.72f, 0.08f, 0.75f);
+            targetAmbientColor.mul(outdoorAmbientIntensity);
+
+            // Directional Celestial Light (Sun in daytime, Moon at night)
+            if (dnm != null) {
+                float sunElevation = MathUtils.sin((dnm.getTimeOfDay() - 0.25f) * 2.0f * MathUtils.PI);
+                if (sunElevation > 0.0f) {
+                    dnm.getSunDirection(targetDirLightDir);
+                    Color sunColor = dnm.getDirectionalLightColor(scratchColor);
+                    // Clouds diffuse sunlight during storm, keeping directional light soft
+                    float sunIntensity = MathUtils.clamp(sunElevation, 0.15f, 1.0f) * (wm != null && wm.isStormy() ? 0.18f : 0.50f);
+                    targetDirLightColor.set(sunColor).mul(sunIntensity);
+                } else {
+                    dnm.getMoonDirection(targetDirLightDir);
+                    float moonIntensity = (wm != null && wm.isStormy() ? 0.06f : 0.18f);
+                    targetDirLightColor.set(0.35f, 0.45f, 0.65f, 1.0f).mul(moonIntensity);
+                }
+            } else {
+                targetDirLightDir.set(0.3f, 0.8f, 0.4f).nor();
+                targetDirLightColor.set(0.2f, 0.2f, 0.2f, 1.0f);
+            }
+        }
+
+        // --- SMOOTH EYE ADAPTATION ---
+        float adaptSpeed = 3.5f; // ~0.5s smooth transition between environments
+        currentAmbientColor.lerp(targetAmbientColor, Math.min(1.0f, delta * adaptSpeed));
+        currentDirLightColor.lerp(targetDirLightColor, Math.min(1.0f, delta * adaptSpeed));
+        currentDirLightDir.lerp(targetDirLightDir, Math.min(1.0f, delta * adaptSpeed)).nor();
+
+        // Lightning flash surge
+        displayAmbient.set(currentAmbientColor);
+        if (currentLevel == 1 && wm != null) {
+            float flash = wm.getFlashIntensity();
             if (flash > 0.05f) {
                 if (isInsideHome) {
-                    // Lightning illuminates through window
-                    ambientColor = ambientColor.cpy().lerp(Color.WHITE, flash * 0.45f);
+                    displayAmbient.lerp(Color.WHITE, flash * 0.45f);
                 } else if (!isIndoors) {
-                    ambientColor = Color.WHITE;
+                    displayAmbient.lerp(Color.WHITE, flash * 0.90f);
                 }
             }
         }
-        shader.setUniformf("u_ambientColor", ambientColor.r * lightIntensity, ambientColor.g * lightIntensity, ambientColor.b * lightIntensity);
+
+        shader.setUniformf("u_ambientColor", displayAmbient.r, displayAmbient.g, displayAmbient.b);
+        shader.setUniformf("u_dirLightDir", currentDirLightDir);
+        shader.setUniformf("u_dirLightColor", currentDirLightColor.r, currentDirLightColor.g, currentDirLightColor.b);
 
         // Fog
         shader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
@@ -307,27 +376,24 @@ public class World3DRenderer implements Disposable {
         renderEntities(maze, player, combatManager, isRetro, theme);
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
-        if (currentLevel == 1 && worldManager != null && worldManager.getWeatherManager() != null) {
-            WeatherManager wm = worldManager.getWeatherManager();
-            if (wm.isPrecipitation()) {
-                if (this.weatherRenderer == null) {
-                    this.weatherRenderer = new WeatherRenderer(wm);
-                }
-                this.weatherRenderer.update(Gdx.graphics.getDeltaTime(), player, maze);
-
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-                Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-                Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
-                Gdx.gl.glDepthMask(false); // Depth-test against world geometry without writing to depth buffer
-
-                shader.setUniformf("u_alphaCutoff", 0.0f);
-                shader.setUniformf("u_retroBorder", 0.0f);
-
-                this.weatherRenderer.render3D(dynamicBatcher, blankTexture, shader, camera, player, maze, wm, isRetro);
-
-                Gdx.gl.glDepthMask(true);
+        if (currentLevel == 1 && wm != null && wm.isPrecipitation()) {
+            if (this.weatherRenderer == null) {
+                this.weatherRenderer = new WeatherRenderer(wm);
             }
+            this.weatherRenderer.update(Gdx.graphics.getDeltaTime(), player, maze);
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+            Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+            Gdx.gl.glDepthMask(false); // Depth-test against world geometry without writing to depth buffer
+
+            shader.setUniformf("u_alphaCutoff", 0.0f);
+            shader.setUniformf("u_retroBorder", 0.0f);
+
+            this.weatherRenderer.render3D(dynamicBatcher, blankTexture, shader, camera, player, maze, wm, isRetro);
+
+            Gdx.gl.glDepthMask(true);
         }
 
         // --- RESTORE OPENGL STATE ---

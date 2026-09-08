@@ -594,7 +594,7 @@ public class Hud implements Disposable {
 
         if (worldManager != null && worldManager.getDayNightManager() != null) {
             DayNightManager dnm = worldManager.getDayNightManager();
-            dayNightLabel.setText(dnm.getTimeString() + " " + dnm.getPhaseLabel());
+            dayNightLabel.setText(dnm.getTimeDisplayString());
             if (dnm.getPhase() == DayNightManager.Phase.NIGHT) {
                 dayNightLabel.setColor(HudSkin.COL_MP_BLUE);
             } else if (dnm.getPhase() == DayNightManager.Phase.DUSK || dnm.getPhase() == DayNightManager.Phase.DAWN) {

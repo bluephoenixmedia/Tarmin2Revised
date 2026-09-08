@@ -287,6 +287,10 @@ public class WeatherManager {
         return Math.min(1.5f, globalLightDimmer + flashIntensity);
     }
 
+    public float getGlobalLightDimmer() {
+        return globalLightDimmer;
+    }
+
     public float getFlashIntensity() {
         return flashIntensity;
     }

@@ -25,6 +25,10 @@ uniform vec3 u_fogColor;
 uniform vec3 u_ambientColor;
 uniform float u_doomFactor;
 
+// Directional celestial lighting (Sun / Moon)
+uniform vec3 u_dirLightDir;
+uniform vec3 u_dirLightColor;
+
 // Multi-point dynamic lights (up to 16)
 const int MAX_LIGHTS = 16;
 uniform int u_numLights;
@@ -62,6 +66,12 @@ void main() {
 
         // Ambient contribution scaled by Tarmin Doom
         vec3 accumulatedLight = u_ambientColor * u_doomFactor;
+
+        // Directional celestial light (Sun/Moon outdoors, modulated by doom and surface normal)
+        if (length(u_dirLightColor) > 0.001) {
+            float nDotSun = max(dot(v_normal, u_dirLightDir), 0.0);
+            accumulatedLight += u_dirLightColor * nDotSun * u_doomFactor;
+        }
 
         // Dynamic point light iteration
         int count = min(u_numLights, MAX_LIGHTS);
