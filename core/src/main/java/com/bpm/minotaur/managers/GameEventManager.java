@@ -17,8 +17,10 @@ public class GameEventManager {
     public GameEventManager() {
         // Clear log file on startup
         try {
-            com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.local(LOG_FILE);
-            file.writeString("", false); // Overwrite with empty string
+            if (com.badlogic.gdx.Gdx.files != null) {
+                com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.local(LOG_FILE);
+                file.writeString("", false); // Overwrite with empty string
+            }
         } catch (Exception e) {
             // Ignore if file doesn't exist etc
         }
@@ -35,10 +37,14 @@ public class GameEventManager {
 
             // Write to log file
             try {
-                com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.local(LOG_FILE);
-                file.writeString(event.message + "\n", true);
+                if (com.badlogic.gdx.Gdx.files != null) {
+                    com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.local(LOG_FILE);
+                    file.writeString(event.message + "\n", true);
+                }
             } catch (Exception e) {
-                com.badlogic.gdx.Gdx.app.error("GameEventManager", "Failed to write to log file", e);
+                if (com.badlogic.gdx.Gdx.app != null) {
+                    com.badlogic.gdx.Gdx.app.error("GameEventManager", "Failed to write to log file", e);
+                }
             }
         }
     }

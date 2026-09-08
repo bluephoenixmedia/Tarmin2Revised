@@ -1310,8 +1310,31 @@ public class Player {
             return;
         }
 
-        // 2. Handle Doors (UPDATED: Toggle Logic with Occupancy Lock)
+        // 2. Handle Barred Shelter Window
         Object obj = maze.getGameObjectAt(targetX, targetY);
+        if (obj instanceof Window) {
+            String weatherStr = "clear";
+            String intensityStr = "";
+            if (worldManager != null && worldManager.getWeatherManager() != null) {
+                weatherStr = worldManager.getWeatherManager().getCurrentWeather().name().toLowerCase();
+                intensityStr = worldManager.getWeatherManager().getCurrentIntensity().name().toLowerCase() + " ";
+            }
+            String phaseStr = "day";
+            if (worldManager != null && worldManager.getDayNightManager() != null) {
+                phaseStr = worldManager.getDayNightManager().getPhase().name().toLowerCase();
+            }
+            float bridgeIntegrity = DoomManager.getInstance() != null ? DoomManager.getInstance().getBridgeIntegrity() : 0f;
+
+            String msg = String.format("You peer through the iron bars into the %s wild: %s%s skies overhead. Doom Bridge integrity: %.0f%%.",
+                    phaseStr, intensityStr, weatherStr, bridgeIntegrity);
+            eventManager.addEvent(new GameEvent(msg, 4f));
+            if (soundManager != null) {
+                soundManager.playDoorOpenSound();
+            }
+            return;
+        }
+
+        // 3. Handle Doors (UPDATED: Toggle Logic with Occupancy Lock)
         if (obj instanceof Door) {
             Door door = (Door) obj;
             if (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING) {

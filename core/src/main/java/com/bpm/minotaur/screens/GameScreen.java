@@ -1261,6 +1261,13 @@ public class GameScreen extends BaseScreen {
                     return true;
                 case Input.Keys.E:
                     if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                        Vector2 dir = player.getFacing().getVector();
+                        int fx = (int) (player.getPosition().x + dir.x);
+                        int fy = (int) (player.getPosition().y + dir.y);
+                        if (maze.getGameObjectAt(fx, fy) instanceof Window) {
+                            interactWithWorldObject();
+                            return true;
+                        }
                         if (player.quickEquipOrConsumeGroundItem(maze, eventManager, this.discoveryManager, soundManager)) {
                             playerTurnTakesAction();
                             return true;

@@ -33,6 +33,7 @@ public class ChunkData {
     public List<ItemData> items = new ArrayList<>();
     public List<MonsterData> monsters = new ArrayList<>();
     public List<DoorData> doors = new ArrayList<>();
+    public List<WindowData> windows = new ArrayList<>();
     public List<GateData> gates = new ArrayList<>();
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
@@ -61,6 +62,8 @@ public class ChunkData {
         for (Object obj : maze.getGameObjects().values()) {
             if (obj instanceof Door) {
                 this.doors.add(new DoorData((Door) obj));
+            } else if (obj instanceof Window) {
+                this.windows.add(new WindowData((Window) obj));
             }
         }
 
@@ -120,6 +123,27 @@ public class ChunkData {
                 door.setOrientation(northSouthWalls ? Door.Orientation.EAST_WEST : Door.Orientation.NORTH_SOUTH);
             }
             maze.addGameObject(door, data.x, data.y);
+        }
+
+        if (this.windows != null) {
+            for (WindowData data : windows) {
+                maze.addGameObject(new Window(data.x, data.y), data.x, data.y);
+            }
+        }
+
+        // Fallback for legacy saves without WindowData
+        if ((this.windows == null || this.windows.isEmpty()) && this.homeTiles != null && !this.homeTiles.isEmpty()) {
+            int minX = Integer.MAX_VALUE;
+            int maxY = Integer.MIN_VALUE;
+            for (GridPoint2 pt : this.homeTiles) {
+                if (pt.x < minX) minX = pt.x;
+                if (pt.y > maxY) maxY = pt.y;
+            }
+            int targetX = minX;
+            int targetY = maxY - 2;
+            if (maze.getGameObjectAt(targetX, targetY) == null) {
+                maze.addGameObject(new Window(targetX, targetY), targetX, targetY);
+            }
         }
 
         for (GateData data : gates) {
@@ -282,6 +306,19 @@ public class ChunkData {
         public LadderData(Ladder ladder) {
             this.x = (int) ladder.getPosition().x;
             this.y = (int) ladder.getPosition().y;
+        }
+    }
+
+    public static class WindowData {
+        public int x;
+        public int y;
+
+        public WindowData() {
+        }
+
+        public WindowData(Window window) {
+            this.x = (int) window.getPosition().x;
+            this.y = (int) window.getPosition().y;
         }
     }
 }

@@ -1432,8 +1432,20 @@ public class Hud implements Disposable {
             }
         }
 
-        // 2. Check Doors in front
+        // 2. Check Doors / Windows in front
         Object objInFront = maze.getGameObjectAt(frontX, frontY);
+        if (objInFront instanceof Window) {
+            worldInteractionCard.show(
+                    "[SHELTER HAVEN]",
+                    "[BARRED WINDOW]",
+                    "Iron-Barred Window",
+                    "Three heavy iron bars set into a recessed stone embrasure. You can peer out at the wilderness and weather beyond.",
+                    "[ O / E ]",
+                    "Look Outside",
+                    () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+            );
+            return;
+        }
         if (objInFront instanceof Door) {
             Door door = (Door) objInFront;
             boolean isOpen = (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING);

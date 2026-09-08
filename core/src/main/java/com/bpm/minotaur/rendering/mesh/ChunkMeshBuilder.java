@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.Window;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,6 +120,12 @@ public class ChunkMeshBuilder {
                     int southData = (y > 0) ? maze.getWallDataAt(x, y - 1) : ALL_WALLS;
                     int northData = (y < maze.getHeight() - 1) ? maze.getWallDataAt(x, y + 1) : ALL_WALLS;
 
+                    boolean isSelfWindow = (maze.getGameObjectAt(x, y) instanceof Window);
+                    Object westObj = (x > 0) ? maze.getGameObjectAt(x - 1, y) : null;
+                    boolean isWestWindow = (westObj instanceof Window);
+                    Object eastObj = (x < maze.getWidth() - 1) ? maze.getGameObjectAt(x + 1, y) : null;
+                    boolean isEastWindow = (eastObj instanceof Window);
+
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     boolean hasNorthDoor = (currentData & DOOR_NORTH) != 0 || (northData & DOOR_SOUTH) != 0;
                     boolean hasNorthWall = !hasNorthDoor && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
@@ -146,29 +153,41 @@ public class ChunkMeshBuilder {
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
-                    boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                    boolean hasWestWall = !hasWestDoor && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
-                    if (hasWestWall) {
-                        addQuad(wallVerts, wallIndices,
-                                x, 0.0f, -y, 0f, 1f,
-                                x, 0.0f, -(y + 1), 1f, 1f,
-                                x, 1.0f, -(y + 1), 1f, 0f,
-                                x, 1.0f, -y, 0f, 0f,
-                                1f, 0f, 0f, whitePacked
-                        );
+                    if (!isSelfWindow) {
+                        boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
+                        boolean hasWestWall = !hasWestDoor && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                        if (hasWestWall) {
+                            if (isWestWindow) {
+                                addWestWindowMesh(wallVerts, wallIndices, x, y, whitePacked);
+                            } else {
+                                addQuad(wallVerts, wallIndices,
+                                        x, 0.0f, -y, 0f, 1f,
+                                        x, 0.0f, -(y + 1), 1f, 1f,
+                                        x, 1.0f, -(y + 1), 1f, 0f,
+                                        x, 1.0f, -y, 0f, 0f,
+                                        1f, 0f, 0f, whitePacked
+                                );
+                            }
+                        }
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
-                    boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
-                    boolean hasEastWall = !hasEastDoor && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
-                    if (hasEastWall) {
-                        addQuad(wallVerts, wallIndices,
-                                x + 1, 0.0f, -(y + 1), 0f, 1f,
-                                x + 1, 0.0f, -y, 1f, 1f,
-                                x + 1, 1.0f, -y, 1f, 0f,
-                                x + 1, 1.0f, -(y + 1), 0f, 0f,
-                                -1f, 0f, 0f, whitePacked
-                        );
+                    if (!isSelfWindow) {
+                        boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
+                        boolean hasEastWall = !hasEastDoor && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+                        if (hasEastWall) {
+                            if (isEastWindow) {
+                                addEastExteriorWindowCutout(wallVerts, wallIndices, x + 1, y, whitePacked);
+                            } else {
+                                addQuad(wallVerts, wallIndices,
+                                        x + 1, 0.0f, -(y + 1), 0f, 1f,
+                                        x + 1, 0.0f, -y, 1f, 1f,
+                                        x + 1, 1.0f, -y, 1f, 0f,
+                                        x + 1, 1.0f, -(y + 1), 0f, 0f,
+                                        -1f, 0f, 0f, whitePacked
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -243,5 +262,186 @@ public class ChunkMeshBuilder {
         indices.add(baseIndex);
         indices.add((short) (baseIndex + 2));
         indices.add((short) (baseIndex + 3));
+    }
+
+    /**
+     * Emits the interior face of the barred shelter window at plane X = x facing East (+X).
+     * Constructs a physical 0.50 x 0.40 central opening with stone sill, lintel, left/right jambs,
+     * recessed stone embrasure reveals (0.15 depth), and 3 double-sided vertical iron bars.
+     */
+    private static void addWestWindowMesh(
+            FloatArray verts, ShortArray indices,
+            int x, int y,
+            float whitePacked
+    ) {
+        float ySill = 0.30f;
+        float yLintel = 0.70f;
+        float zFar = -(y + 1);
+        float zNear = -y;
+        float zLeft = -(y + 0.75f);
+        float zRight = -(y + 0.25f);
+        float depth = 0.15f;
+        float xRec = x - depth;
+
+        // Normal facing East towards inside cell: (1, 0, 0)
+        // 1. Bottom Sill Wall: Y in [0, 0.30], Z in [zFar, zNear]
+        addQuad(verts, indices,
+                x, 0.0f, zNear, 0f, 1f,
+                x, 0.0f, zFar, 1f, 1f,
+                x, ySill, zFar, 1f, 0.70f,
+                x, ySill, zNear, 0f, 0.70f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 2. Top Header Lintel: Y in [0.70, 1.0], Z in [zFar, zNear]
+        addQuad(verts, indices,
+                x, yLintel, zNear, 0f, 0.30f,
+                x, yLintel, zFar, 1f, 0.30f,
+                x, 1.0f, zFar, 1f, 0f,
+                x, 1.0f, zNear, 0f, 0f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 3. Left Jamb Wall: Y in [0.30, 0.70], Z in [zFar, zLeft]
+        addQuad(verts, indices,
+                x, ySill, zLeft, 0.75f, 0.70f,
+                x, ySill, zFar, 1f, 0.70f,
+                x, yLintel, zFar, 1f, 0.30f,
+                x, yLintel, zLeft, 0.75f, 0.30f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 4. Right Jamb Wall: Y in [0.30, 0.70], Z in [zRight, zNear]
+        addQuad(verts, indices,
+                x, ySill, zNear, 0f, 0.70f,
+                x, ySill, zRight, 0.25f, 0.70f,
+                x, yLintel, zRight, 0.25f, 0.30f,
+                x, yLintel, zNear, 0f, 0.30f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // --- 4 Embrasure Reveals (0.15 depth into wall) ---
+        // 5. Sill Shelf reveal (Y = ySill, facing UP: (0, 1, 0))
+        addQuad(verts, indices,
+                xRec, ySill, zRight, 0f, 0f,
+                x, ySill, zRight, 0.15f, 0f,
+                x, ySill, zLeft, 0.15f, 0.50f,
+                xRec, ySill, zLeft, 0f, 0.50f,
+                0f, 1f, 0f, whitePacked
+        );
+
+        // 6. Lintel Underside reveal (Y = yLintel, facing DOWN: (0, -1, 0))
+        addQuad(verts, indices,
+                xRec, yLintel, zLeft, 0f, 0f,
+                x, yLintel, zLeft, 0.15f, 0f,
+                x, yLintel, zRight, 0.15f, 0.50f,
+                xRec, yLintel, zRight, 0f, 0.50f,
+                0f, -1f, 0f, whitePacked
+        );
+
+        // 7. Left Reveal Wall (Z = zLeft, facing +Z into opening: (0, 0, 1))
+        addQuad(verts, indices,
+                xRec, ySill, zLeft, 0.15f, 0.70f,
+                x, ySill, zLeft, 0f, 0.70f,
+                x, yLintel, zLeft, 0f, 0.30f,
+                xRec, yLintel, zLeft, 0.15f, 0.30f,
+                0f, 0f, 1f, whitePacked
+        );
+
+        // 8. Right Reveal Wall (Z = zRight, facing -Z into opening: (0, 0, -1))
+        addQuad(verts, indices,
+                x, ySill, zRight, 0f, 0.70f,
+                xRec, ySill, zRight, 0.15f, 0.70f,
+                xRec, yLintel, zRight, 0.15f, 0.30f,
+                x, yLintel, zRight, 0f, 0.30f,
+                0f, 0f, -1f, whitePacked
+        );
+
+        // --- 3 Vertical Iron Bars ---
+        // Color: Dark Wrought Iron (#222226)
+        float ironPacked = new Color(0.133f, 0.133f, 0.149f, 1f).toFloatBits();
+        float openingWidth = zRight - zLeft; // 0.50
+        float barHalfWidth = 0.0175f; // total width 0.035
+        float xBar = xRec; // Sits at back of the reveal
+
+        for (int i = 1; i <= 3; i++) {
+            float t = i / 4.0f; // 0.25, 0.50, 0.75
+            float zCenter = zLeft + t * openingWidth;
+            float z1 = zCenter - barHalfWidth;
+            float z2 = zCenter + barHalfWidth;
+
+            // Front face (facing East +X)
+            addQuad(verts, indices,
+                    xBar, ySill, z2, 0f, 1f,
+                    xBar, ySill, z1, 1f, 1f,
+                    xBar, yLintel, z1, 1f, 0f,
+                    xBar, yLintel, z2, 0f, 0f,
+                    1f, 0f, 0f, ironPacked
+            );
+
+            // Back face (facing West -X)
+            addQuad(verts, indices,
+                    xBar, ySill, z1, 0f, 1f,
+                    xBar, ySill, z2, 1f, 1f,
+                    xBar, yLintel, z2, 1f, 0f,
+                    xBar, yLintel, z1, 0f, 0f,
+                    -1f, 0f, 0f, ironPacked
+            );
+        }
+    }
+
+    /**
+     * Emits the exterior cutout of the shelter window at plane X = x facing West (-X).
+     * Leaves the central 0.50 x 0.40 opening open so exterior viewers can see inside the shelter
+     * and interior viewers looking out have a clear view to the landscape and sky.
+     */
+    private static void addEastExteriorWindowCutout(
+            FloatArray verts, ShortArray indices,
+            int x, int y,
+            float whitePacked
+    ) {
+        float ySill = 0.30f;
+        float yLintel = 0.70f;
+        float zFar = -(y + 1);
+        float zNear = -y;
+        float zLeft = -(y + 0.75f);
+        float zRight = -(y + 0.25f);
+
+        // Normal facing West towards exterior cell: (-1, 0, 0)
+        // 1. Bottom Sill Wall: Y in [0, 0.30]
+        addQuad(verts, indices,
+                x, 0.0f, zFar, 0f, 1f,
+                x, 0.0f, zNear, 1f, 1f,
+                x, ySill, zNear, 1f, 0.70f,
+                x, ySill, zFar, 0f, 0.70f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 2. Top Header Lintel: Y in [0.70, 1.0]
+        addQuad(verts, indices,
+                x, yLintel, zFar, 0f, 0.30f,
+                x, yLintel, zNear, 1f, 0.30f,
+                x, 1.0f, zNear, 1f, 0f,
+                x, 1.0f, zFar, 0f, 0f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 3. Right Jamb Wall (facing -X, towards -Z): Z in [zFar, zLeft]
+        addQuad(verts, indices,
+                x, ySill, zFar, 0f, 0.70f,
+                x, ySill, zLeft, 0.25f, 0.70f,
+                x, yLintel, zLeft, 0.25f, 0.30f,
+                x, yLintel, zFar, 0f, 0.30f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 4. Left Jamb Wall (facing -X, towards +Z): Z in [zRight, zNear]
+        addQuad(verts, indices,
+                x, ySill, zRight, 0.75f, 0.70f,
+                x, ySill, zNear, 1f, 0.70f,
+                x, yLintel, zNear, 1f, 0.30f,
+                x, yLintel, zRight, 0.75f, 0.30f,
+                -1f, 0f, 0f, whitePacked
+        );
     }
 }

@@ -325,6 +325,8 @@ public class Maze {
         // -----------------------------------
 
         Object obj = getGameObjectAt(x, y);
+        if (obj instanceof Window)
+            return false;
         if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN)
             return false;
         if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN)
