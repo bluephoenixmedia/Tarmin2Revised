@@ -111,6 +111,14 @@ public class ChunkData {
         for (DoorData data : doors) {
             Door door = new Door();
             door.setState(data.state, data.animationProgress);
+            if (data.orientation != null) {
+                door.setOrientation(data.orientation);
+            } else {
+                // Fallback for legacy saves: deduce from walls
+                int wall = maze.getWallDataAt(data.x, data.y);
+                boolean northSouthWalls = (wall & (0b01000000 | 0b00010000)) != 0;
+                door.setOrientation(northSouthWalls ? Door.Orientation.EAST_WEST : Door.Orientation.NORTH_SOUTH);
+            }
             maze.addGameObject(door, data.x, data.y);
         }
 
@@ -122,6 +130,12 @@ public class ChunkData {
                 gate = new Gate(data.x, data.y);
             }
             gate.setState(data.state, data.animationProgress);
+            if (data.orientation != null) {
+                gate.setOrientation(data.orientation);
+            } else {
+                boolean isEW = (data.x == 0 || data.x == maze.getWidth() - 1);
+                gate.setOrientation(isEW ? Door.Orientation.EAST_WEST : Door.Orientation.NORTH_SOUTH);
+            }
             maze.addGate(gate);
         }
 
@@ -218,16 +232,20 @@ public class ChunkData {
         public int y;
         public DoorState state;
         public float animationProgress;
+        public Door.Orientation orientation;
 
         public DoorData() {
         }
 
         public DoorData(Door door) {
-            GridPoint2 pos = door.findPositionIn(door.getMaze().getGameObjects());
+            GridPoint2 pos = (door.getMaze() != null && door.getMaze().getGameObjects() != null)
+                    ? door.findPositionIn(door.getMaze().getGameObjects())
+                    : null;
             this.x = (pos != null) ? pos.x : 0;
             this.y = (pos != null) ? pos.y : 0;
             this.state = door.getState();
             this.animationProgress = door.getAnimationProgress();
+            this.orientation = door.getOrientation();
         }
     }
 
@@ -238,6 +256,7 @@ public class ChunkData {
         public GridPoint2 targetPlayerPos;
         public GateState state;
         public float animationProgress;
+        public Door.Orientation orientation;
 
         public GateData() {
         }
@@ -249,6 +268,7 @@ public class ChunkData {
             this.targetPlayerPos = gate.getTargetPlayerPos();
             this.state = gate.getState();
             this.animationProgress = gate.getAnimationProgress();
+            this.orientation = gate.getOrientation();
         }
     }
 

@@ -453,10 +453,21 @@ public class ForestChunkGenerator implements IChunkGenerator {
         GridPoint2 eastTargetPlayer = new GridPoint2(1, height / 2);
         GridPoint2 westTargetPlayer = new GridPoint2(width - 2, height / 2);
 
-        maze.addGate(new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer));
-        maze.addGate(new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer));
-        maze.addGate(new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer));
-        maze.addGate(new Gate(westPos.x, westPos.y, westTargetChunk, westTargetPlayer));
+        Gate northGate = new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer);
+        northGate.setOrientation(Door.Orientation.NORTH_SOUTH);
+        maze.addGate(northGate);
+
+        Gate southGate = new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer);
+        southGate.setOrientation(Door.Orientation.NORTH_SOUTH);
+        maze.addGate(southGate);
+
+        Gate eastGate = new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer);
+        eastGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(eastGate);
+
+        Gate westGate = new Gate(westPos.x, westPos.y, westTargetChunk, westTargetPlayer);
+        westGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(westGate);
 
         Gdx.app.log("ForestChunkGenerator", "Spawned 4 transition gates for chunk " + chunkId);
     }

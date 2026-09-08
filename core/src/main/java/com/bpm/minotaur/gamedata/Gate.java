@@ -18,8 +18,17 @@ public class Gate implements Renderable {
     }
 
     private GateState state = GateState.CLOSED;
+    private Door.Orientation orientation = Door.Orientation.NORTH_SOUTH;
     private float animationProgress = 0.0f;
     private static final float ANIMATION_TIME = 1.0f; // 1 second to open
+
+    public Door.Orientation getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Door.Orientation orientation) {
+        this.orientation = orientation;
+    }
 
     /**
      * Original constructor for stat-jumbling gates (CLASSIC mode).

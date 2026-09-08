@@ -184,7 +184,9 @@ public class Maze {
             if (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING) {
                 door.startOpening();
             } else if (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING) {
-                door.startClosing();
+                if (!monsters.containsKey(new GridPoint2(x, y))) {
+                    door.startClosing();
+                }
             }
         }
     }

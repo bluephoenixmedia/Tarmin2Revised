@@ -1268,27 +1268,13 @@ public class Player {
             }
         }
 
-        Object doorObject = maze.getGameObjectAt(nextX, nextY);
+        position.set(nextX + 0.5f, nextY + 0.5f);
+        UnlockManager.getInstance().incrementStat("steps", 1);
 
-        if (doorObject instanceof Door) {
-            int finalX = nextX + (int) direction.getVector().x;
-            int finalY = nextY + (int) direction.getVector().y;
-
-            if (!maze.isWallBlocking(nextX, nextY, direction)) {
-                position.set(finalX + 0.5f, finalY + 0.5f);
-                UnlockManager.getInstance().incrementStat("steps", 1);
-            } else {
-                Gdx.app.log("Player [DEBUG]", "Move into door blocked by wall behind it.");
-            }
-        } else {
-            position.set(nextX + 0.5f, nextY + 0.5f);
-            UnlockManager.getInstance().incrementStat("steps", 1);
-
-            String eventId = maze.getEventAt(nextX, nextY);
-            if (eventId != null) {
-                eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, eventId));
-                maze.removeEvent(nextX, nextY);
-            }
+        String eventId = maze.getEventAt(nextX, nextY);
+        if (eventId != null) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, eventId));
+            maze.removeEvent(nextX, nextY);
         }
     }
 
@@ -1324,11 +1310,20 @@ public class Player {
             return;
         }
 
-        // 2. Handle Doors (UPDATED: Toggle Logic)
+        // 2. Handle Doors (UPDATED: Toggle Logic with Occupancy Lock)
         Object obj = maze.getGameObjectAt(targetX, targetY);
         if (obj instanceof Door) {
             Door door = (Door) obj;
-            // Use the new toggle method from Milestone 1
+            if (door.getState() == Door.DoorState.OPEN || door.getState() == Door.DoorState.OPENING) {
+                int px = (int) position.x;
+                int py = (int) position.y;
+                if ((px == targetX && py == targetY) || maze.getMonsters().containsKey(targetTile)) {
+                    eventManager.addEvent(new GameEvent("The doorway is blocked!", 1.5f));
+                    return;
+                }
+            }
+
+            // Use the toggle method
             maze.toggleDoorAt(targetX, targetY);
 
             // Check state AFTER toggle to determine event/sound
@@ -1339,7 +1334,6 @@ public class Player {
                     soundManager.playDoorOpenSound();
             } else if (door.getState() == Door.DoorState.CLOSING) {
                 eventManager.addEvent(new GameEvent("You close the door.", 1f));
-                // Reuse open sound for now, or add specific close sound later
                 if (soundManager != null)
                     soundManager.playDoorOpenSound();
             }

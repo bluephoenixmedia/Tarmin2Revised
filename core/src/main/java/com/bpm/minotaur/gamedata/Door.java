@@ -5,12 +5,22 @@ import java.util.Map;
 
 public class Door {
     public enum DoorState { CLOSED, OPENING, OPEN, CLOSING } // Added CLOSING
+    public enum Orientation { NORTH_SOUTH, EAST_WEST }
 
     private DoorState state = DoorState.CLOSED;
+    private Orientation orientation = Orientation.NORTH_SOUTH;
     private float animationProgress = 0f; // 0.0 = closed, 1.0 = open
     private static final float ANIMATION_SPEED = 2.0f; // Opens/Closes in 0.5 seconds
 
     private Maze maze;
+
+    public Orientation getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Orientation orientation) {
+        this.orientation = orientation;
+    }
 
     public DoorState getState() {
         return state;

@@ -352,10 +352,21 @@ public class MazeChunkGenerator implements IChunkGenerator {
         GridPoint2 southTargetPlayer = new GridPoint2(width / 2, height - 2);
         GridPoint2 eastTargetPlayer = new GridPoint2(1, height / 2);
         GridPoint2 westTargetPlayer = new GridPoint2(width - 2, height / 2);
-        maze.addGate(new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer));
-        maze.addGate(new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer));
-        maze.addGate(new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer));
-        maze.addGate(new Gate(westPos.x, westPos.y, westTargetChunk, westTargetPlayer));
+        Gate northGate = new Gate(northPos.x, northPos.y, northTargetChunk, northTargetPlayer);
+        northGate.setOrientation(Door.Orientation.NORTH_SOUTH);
+        maze.addGate(northGate);
+
+        Gate southGate = new Gate(southPos.x, southPos.y, southTargetChunk, southTargetPlayer);
+        southGate.setOrientation(Door.Orientation.NORTH_SOUTH);
+        maze.addGate(southGate);
+
+        Gate eastGate = new Gate(eastPos.x, eastPos.y, eastTargetChunk, eastTargetPlayer);
+        eastGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(eastGate);
+
+        Gate westGate = new Gate(westPos.x, westPos.y, westTargetChunk, westTargetPlayer);
+        westGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(westGate);
     }
 
     private String[] getTileContent(List<String[]> allTiles, int id, int rotation) {
@@ -543,9 +554,24 @@ public class MazeChunkGenerator implements IChunkGenerator {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
                 char c = layout[layoutY].charAt(x);
-                if (c == 'D')
-                    maze.addGameObject(new Door(), x, y);
-                else if (c == 'W')
+                if (c == 'D') {
+                    Door door = new Door();
+                    boolean hasWallTop = (layoutY > 0 && isStructure(layout[layoutY - 1].charAt(x)));
+                    boolean hasWallBottom = (layoutY + 1 < height && isStructure(layout[layoutY + 1].charAt(x)));
+                    boolean hasWallLeft = (x > 0 && isStructure(layout[layoutY].charAt(x - 1)));
+                    boolean hasWallRight = (x + 1 < width && isStructure(layout[layoutY].charAt(x + 1)));
+
+                    if (hasWallTop && hasWallBottom) {
+                        door.setOrientation(Door.Orientation.EAST_WEST);
+                    } else if (hasWallLeft && hasWallRight) {
+                        door.setOrientation(Door.Orientation.NORTH_SOUTH);
+                    } else if (hasWallTop || hasWallBottom) {
+                        door.setOrientation(Door.Orientation.EAST_WEST);
+                    } else {
+                        door.setOrientation(Door.Orientation.NORTH_SOUTH);
+                    }
+                    maze.addGameObject(door, x, y);
+                } else if (c == 'W')
                     maze.addGameObject(new Window(x, y), x, y); // NEW: Window
                 else if (c == 'S' || c == 'H') {
                     // --- NEW: Tarmin's Hunger Loot Decay ---
@@ -641,10 +667,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
         for (int y = 1; y < height - 1; y++) {
             for (int x = 1; x < width - 1; x++) {
                 if (originalChars[y][x] == 'D') {
-                    boolean hasWallTop = (originalChars[y - 1][x] == '#');
-                    boolean hasWallBottom = (originalChars[y + 1][x] == '#');
-                    boolean hasWallLeft = (originalChars[y][x - 1] == '#');
-                    boolean hasWallRight = (originalChars[y][x + 1] == '#');
+                    boolean hasWallTop = isStructure(originalChars[y - 1][x]);
+                    boolean hasWallBottom = isStructure(originalChars[y + 1][x]);
+                    boolean hasWallLeft = isStructure(originalChars[y][x - 1]);
+                    boolean hasWallRight = isStructure(originalChars[y][x + 1]);
                     boolean isVerticallyEnclosed = hasWallTop && hasWallBottom;
                     boolean isHorizontallyEnclosed = hasWallLeft && hasWallRight;
                     if (!isVerticallyEnclosed && !isHorizontallyEnclosed)

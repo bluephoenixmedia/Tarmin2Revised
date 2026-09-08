@@ -219,7 +219,13 @@ public class ElevatedRenderer {
 
                 } else if (isDoor || isGate) {
                     Material mat = isGate ? gateMat : doorMat;
-                    addDoorInstance(data, x, y, mat);
+                    boolean ewFacing = false;
+                    if (isDoor) {
+                        ewFacing = ((Door) obj).getOrientation() == Door.Orientation.EAST_WEST;
+                    } else if (isGate) {
+                        ewFacing = ((Gate) obj).getOrientation() == Door.Orientation.EAST_WEST;
+                    }
+                    addDoorInstance(ewFacing, x, y, mat);
                 }
             }
         }
@@ -229,9 +235,7 @@ public class ElevatedRenderer {
      * Creates a thin panel ModelInstance for a door or gate, oriented along the
      * correct wall face based on the door-direction bits in wallData.
      */
-    private void addDoorInstance(int data, int x, int y, Material mat) {
-        // Determine orientation from door face bits
-        boolean ewFacing = (data & (DOOR_EAST | DOOR_WEST)) != 0;
+    private void addDoorInstance(boolean ewFacing, int x, int y, Material mat) {
 
         // Door panel: full height, full width in one direction, thin in the other
         float bW = ewFacing ? 0.10f : 0.92f; // X width

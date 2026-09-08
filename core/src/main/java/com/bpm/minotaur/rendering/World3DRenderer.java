@@ -394,8 +394,7 @@ public class World3DRenderer implements Disposable {
                 Object obj = maze.getGameObjectAt(x, y);
                 if (obj instanceof Door) {
                     Door door = (Door) obj;
-                    int wallData = maze.getWallDataAt(x, y);
-                    boolean ewFacing = (wallData & (ChunkMeshBuilder.DOOR_EAST | ChunkMeshBuilder.DOOR_WEST)) != 0;
+                    boolean ewFacing = door.getOrientation() == Door.Orientation.EAST_WEST;
 
                     Color col = isRetro ? theme.door : Color.WHITE;
                     if (isRetro) {
@@ -406,8 +405,7 @@ public class World3DRenderer implements Disposable {
                     dynamicBatcher.flush(shader, doorTexture);
                 } else if (obj instanceof Gate) {
                     Gate gate = (Gate) obj;
-                    int wallData = maze.getWallDataAt(x, y);
-                    boolean ewFacing = (wallData & (ChunkMeshBuilder.DOOR_EAST | ChunkMeshBuilder.DOOR_WEST)) != 0;
+                    boolean ewFacing = gate.getOrientation() == Door.Orientation.EAST_WEST;
 
                     Color col = isRetro ? theme.doorDark : Color.WHITE;
                     if (isRetro) {

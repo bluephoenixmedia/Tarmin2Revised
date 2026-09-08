@@ -235,48 +235,66 @@ public class DynamicQuadBatcher implements Disposable {
             Color color
     ) {
         if (!ensureCapacity(2)) return;
-        float yBottom = openProgress * 1.0f;
-        float yTop = yBottom + 1.0f;
+        float yBottom = 0.0f;
+        float yTop = 1.0f;
         float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
 
+        // Subtle mechanical rumble vibration during opening/closing
+        float rumble = 0.0f;
+        if (openProgress > 0.0f && openProgress < 1.0f) {
+            rumble = (float) Math.sin(openProgress * Math.PI * 16.0) * 0.015f;
+        }
+
         if (isEastWest) {
-            float x = gridX + 0.5f;
+            // East-West barrier: sits in X plane at gridX + 0.5f, blocks East-West passage.
+            // Slides horizontally along Z into the flanking wall pocket (-Z direction).
+            float zShift = -openProgress * 1.0f;
+            float x = gridX + 0.5f + rumble;
+            float z1 = -gridY + zShift;
+            float z2 = -(gridY + 1) + zShift;
+
             // Face 1: looking East (+X)
             ChunkMeshBuilder.addQuad(
                     vertices, indices,
-                    x, yBottom, -gridY, 0f, 1f,
-                    x, yBottom, -(gridY + 1), 1f, 1f,
-                    x, yTop, -(gridY + 1), 1f, 0f,
-                    x, yTop, -gridY, 0f, 0f,
+                    x, yBottom, z1, 0f, 1f,
+                    x, yBottom, z2, 1f, 1f,
+                    x, yTop, z2, 1f, 0f,
+                    x, yTop, z1, 0f, 0f,
                     1f, 0f, 0f, packedColor
             );
             // Face 2: looking West (-X)
             ChunkMeshBuilder.addQuad(
                     vertices, indices,
-                    x, yBottom, -(gridY + 1), 0f, 1f,
-                    x, yBottom, -gridY, 1f, 1f,
-                    x, yTop, -gridY, 1f, 0f,
-                    x, yTop, -(gridY + 1), 0f, 0f,
+                    x, yBottom, z2, 0f, 1f,
+                    x, yBottom, z1, 1f, 1f,
+                    x, yTop, z1, 1f, 0f,
+                    x, yTop, z2, 0f, 0f,
                     -1f, 0f, 0f, packedColor
             );
         } else {
-            float z = -(gridY + 0.5f);
+            // North-South barrier: sits in Z plane at -(gridY + 0.5f), blocks North-South passage.
+            // Slides horizontally along X into the flanking wall pocket (-X direction).
+            float xShift = -openProgress * 1.0f;
+            float z = -(gridY + 0.5f) + rumble;
+            float x1 = gridX + xShift;
+            float x2 = gridX + 1.0f + xShift;
+
             // Face 1: looking South (+Z)
             ChunkMeshBuilder.addQuad(
                     vertices, indices,
-                    gridX, yBottom, z, 0f, 1f,
-                    gridX + 1, yBottom, z, 1f, 1f,
-                    gridX + 1, yTop, z, 1f, 0f,
-                    gridX, yTop, z, 0f, 0f,
+                    x1, yBottom, z, 0f, 1f,
+                    x2, yBottom, z, 1f, 1f,
+                    x2, yTop, z, 1f, 0f,
+                    x1, yTop, z, 0f, 0f,
                     0f, 0f, 1f, packedColor
             );
             // Face 2: looking North (-Z)
             ChunkMeshBuilder.addQuad(
                     vertices, indices,
-                    gridX + 1, yBottom, z, 0f, 1f,
-                    gridX, yBottom, z, 1f, 1f,
-                    gridX, yTop, z, 1f, 0f,
-                    gridX + 1, yTop, z, 0f, 0f,
+                    x2, yBottom, z, 0f, 1f,
+                    x1, yBottom, z, 1f, 1f,
+                    x1, yTop, z, 1f, 0f,
+                    x2, yTop, z, 0f, 0f,
                     0f, 0f, -1f, packedColor
             );
         }
