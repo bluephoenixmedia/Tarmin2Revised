@@ -45,11 +45,11 @@ public class WeatherRenderer {
     // 3D rendering scratch vectors and colors
     private final Vector3 scratchCamRight = new Vector3();
     private final Vector3 scratchCamUp = new Vector3();
-    private final Color retroCyan = new Color(0.0f, 0.85f, 1.0f, 0.85f);
-    private final Color modernRainStreak = new Color(0.70f, 0.80f, 0.95f, 0.35f);
-    private final Color modernStormStreak = new Color(0.78f, 0.88f, 1.0f, 0.42f);
-    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.80f);
-    private final Color modernSplash = new Color(0.75f, 0.85f, 1.0f, 0.50f);
+    private final Color retroCyan = new Color(0.0f, 0.90f, 1.0f, 1.0f);
+    private final Color modernRainStreak = new Color(0.78f, 0.88f, 1.0f, 0.65f);
+    private final Color modernStormStreak = new Color(0.85f, 0.93f, 1.0f, 0.72f);
+    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.90f);
+    private final Color modernSplash = new Color(0.80f, 0.90f, 1.0f, 0.70f);
 
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
@@ -143,10 +143,10 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (type == WeatherType.BLIZZARD) return 240;
-        if (type == WeatherType.STORM) return 180;
-        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 140 : 80;
-        return (intensity == WeatherIntensity.HEAVY) ? 120 : (intensity == WeatherIntensity.MEDIUM) ? 75 : 40;
+        if (type == WeatherType.BLIZZARD) return 260;
+        if (type == WeatherType.STORM) return 220;
+        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 150 : 90;
+        return (intensity == WeatherIntensity.HEAVY) ? 140 : (intensity == WeatherIntensity.MEDIUM) ? 90 : 50;
     }
 
     /**
@@ -275,20 +275,20 @@ public class WeatherRenderer {
                     ? Color.WHITE
                     : retroCyan;
             splashCol = streakColor;
-            streakHalfWidth = 0.0010f; // Thin crisp retro pixel streak (~2mm wide)
+            streakHalfWidth = 0.0018f; // Crisp retro pixel streak (~3.6mm wide)
         } else {
             if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
                 streakColor = modernSnowFlake;
                 splashCol = modernSnowFlake;
-                streakHalfWidth = 0.010f;
+                streakHalfWidth = 0.012f;
             } else if (type == WeatherType.STORM) {
                 streakColor = modernStormStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.0012f; // Thin, needle-like modern streak (~2.4mm wide)
+                streakHalfWidth = 0.0020f; // Clearly visible modern storm streak (~4mm wide)
             } else {
                 streakColor = modernRainStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.0010f; // Thin modern rain (~2.0mm wide)
+                streakHalfWidth = 0.0016f; // Clearly visible modern rain streak (~3.2mm wide)
             }
         }
 
