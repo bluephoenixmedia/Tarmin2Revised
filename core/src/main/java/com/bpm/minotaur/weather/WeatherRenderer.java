@@ -45,11 +45,11 @@ public class WeatherRenderer {
     // 3D rendering scratch vectors and colors
     private final Vector3 scratchCamRight = new Vector3();
     private final Vector3 scratchCamUp = new Vector3();
-    private final Color retroCyan = new Color(0.0f, 0.90f, 1.0f, 1.0f);
-    private final Color modernRainStreak = new Color(0.70f, 0.82f, 0.96f, 0.65f);
-    private final Color modernStormStreak = new Color(0.85f, 0.92f, 1.0f, 0.75f);
-    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.85f);
-    private final Color modernSplash = new Color(0.75f, 0.85f, 1.0f, 0.70f);
+    private final Color retroCyan = new Color(0.0f, 0.85f, 1.0f, 0.85f);
+    private final Color modernRainStreak = new Color(0.70f, 0.80f, 0.95f, 0.35f);
+    private final Color modernStormStreak = new Color(0.78f, 0.88f, 1.0f, 0.42f);
+    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.80f);
+    private final Color modernSplash = new Color(0.75f, 0.85f, 1.0f, 0.50f);
 
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
@@ -143,10 +143,10 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (type == WeatherType.BLIZZARD) return 960;
-        if (type == WeatherType.STORM) return 720;
-        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 560 : 320;
-        return (intensity == WeatherIntensity.HEAVY) ? 560 : (intensity == WeatherIntensity.MEDIUM) ? 380 : 220;
+        if (type == WeatherType.BLIZZARD) return 240;
+        if (type == WeatherType.STORM) return 180;
+        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 140 : 80;
+        return (intensity == WeatherIntensity.HEAVY) ? 120 : (intensity == WeatherIntensity.MEDIUM) ? 75 : 40;
     }
 
     /**
@@ -157,23 +157,24 @@ public class WeatherRenderer {
     private void initParticle(WeatherParticle p, float playerX, float playerY, float viewAngle,
                               Maze maze, WeatherType type, boolean initialScatter) {
         for (int attempt = 0; attempt < 3; attempt++) {
-            // Multi-tiered distance distribution guaranteeing dense precipitation across near walls & floor:
-            // Tier 1 (Near: 0.35m - 2.8m): 45% -> falls directly in front of close walls, corridors, and player
-            // Tier 2 (Mid:  2.8m - 6.5m): 35% -> fills rooms, courtyards & doorways
-            // Tier 3 (Far:  6.5m - 13.0m): 20% -> fills open sky & distant horizon
+            // Multi-tiered distance distribution with safe minimum radius (1.5m) so particles never
+            // clip into or bloat right against the camera lens:
+            // Tier 1 (Near: 1.5m - 3.8m): 35% -> visible in front of walls & corridors
+            // Tier 2 (Mid:  3.8m - 7.5m): 40% -> fills courtyards, doorways & open areas
+            // Tier 3 (Far:  7.5m - 13.0m): 25% -> fills open sky & distant landscape
             float tierRoll = MathUtils.random();
             float radius;
-            if (tierRoll < 0.45f) {
-                radius = MathUtils.random(0.35f, 2.8f);
-            } else if (tierRoll < 0.80f) {
-                radius = MathUtils.random(2.8f, 6.5f);
+            if (tierRoll < 0.35f) {
+                radius = MathUtils.random(1.5f, 3.8f);
+            } else if (tierRoll < 0.75f) {
+                radius = MathUtils.random(3.8f, 7.5f);
             } else {
-                radius = MathUtils.random(6.5f, CYLINDER_RADIUS);
+                radius = MathUtils.random(7.5f, CYLINDER_RADIUS);
             }
 
-            // Bias 85% into forward camera frustum (+/- 45 deg, slightly wider than camera FOV)
+            // Bias 80% into forward camera frustum (+/- 45 deg, slightly wider than camera FOV)
             float angle;
-            if (MathUtils.randomBoolean(0.85f)) {
+            if (MathUtils.randomBoolean(0.80f)) {
                 angle = viewAngle + MathUtils.random(-0.80f, 0.80f);
             } else {
                 angle = MathUtils.random(0f, MathUtils.PI2);
@@ -202,11 +203,11 @@ public class WeatherRenderer {
             float length;
 
             if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
-                vz = (type == WeatherType.BLIZZARD) ? -MathUtils.random(6.0f, 9.5f) : -MathUtils.random(1.8f, 3.2f);
-                length = (type == WeatherType.BLIZZARD) ? 0.30f : 0.12f;
+                vz = (type == WeatherType.BLIZZARD) ? -MathUtils.random(5.0f, 8.0f) : -MathUtils.random(1.5f, 2.8f);
+                length = (type == WeatherType.BLIZZARD) ? 0.20f : 0.10f;
             } else {
-                vz = -MathUtils.random(15.0f, 19.5f);
-                length = (type == WeatherType.STORM) ? 0.60f : 0.42f;
+                vz = -MathUtils.random(14.0f, 18.0f);
+                length = (type == WeatherType.STORM) ? 0.28f : 0.18f;
             }
 
             p.reset(px, py, pz, vx, vy, vz, length, type);
@@ -274,20 +275,20 @@ public class WeatherRenderer {
                     ? Color.WHITE
                     : retroCyan;
             splashCol = streakColor;
-            streakHalfWidth = 0.005f; // Extra thin crisp retro pixel streak
+            streakHalfWidth = 0.0010f; // Thin crisp retro pixel streak (~2mm wide)
         } else {
             if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
                 streakColor = modernSnowFlake;
                 splashCol = modernSnowFlake;
-                streakHalfWidth = 0.016f;
+                streakHalfWidth = 0.010f;
             } else if (type == WeatherType.STORM) {
                 streakColor = modernStormStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.006f; // Thin, needle-like modern streak
+                streakHalfWidth = 0.0012f; // Thin, needle-like modern streak (~2.4mm wide)
             } else {
                 streakColor = modernRainStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.006f; // Thin modern rain
+                streakHalfWidth = 0.0010f; // Thin modern rain (~2.0mm wide)
             }
         }
 

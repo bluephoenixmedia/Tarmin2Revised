@@ -83,9 +83,9 @@ public class ChunkMeshBuilder {
 
         for (int y = clampedMinY; y < clampedMaxY; y++) {
             for (int x = clampedMinX; x < clampedMaxX; x++) {
-                // If this cell contains a Window, emit NO maze geometry for it!
-                // The window is solely an opening in the adjacent room's wall.
+                // If this cell contains a Window, emit the complete 3D window embrasure
                 if (maze.getGameObjectAt(x, y) instanceof Window) {
+                    addWindowWallMesh(wallVerts, wallIndices, ceilVerts, ceilIndices, x, y, whitePacked);
                     continue;
                 }
 
@@ -164,20 +164,17 @@ public class ChunkMeshBuilder {
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
+                    // If West neighbor is a Window, skip emitting wall (provided by window mesh)
                     boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                    boolean hasWestWall = !hasWestDoor && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                    boolean hasWestWall = !hasWestDoor && !isWestWindow && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
                     if (hasWestWall) {
-                        if (isWestWindow) {
-                            addWestWindowMesh(wallVerts, wallIndices, x, y, whitePacked);
-                        } else {
-                            addQuad(wallVerts, wallIndices,
-                                    x, 0.0f, -y, 0f, 1f,
-                                    x, 0.0f, -(y + 1), 1f, 1f,
-                                    x, 1.0f, -(y + 1), 1f, 0f,
-                                    x, 1.0f, -y, 0f, 0f,
-                                    1f, 0f, 0f, whitePacked
-                            );
-                        }
+                        addQuad(wallVerts, wallIndices,
+                                x, 0.0f, -y, 0f, 1f,
+                                x, 0.0f, -(y + 1), 1f, 1f,
+                                x, 1.0f, -(y + 1), 1f, 0f,
+                                x, 1.0f, -y, 0f, 0f,
+                                1f, 0f, 0f, whitePacked
+                        );
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
@@ -269,12 +266,14 @@ public class ChunkMeshBuilder {
     }
 
     /**
-     * Emits the barred shelter window at plane X = x.
-     * Constructs a physical 0.50 x 0.40 central opening with double-sided stone sill, lintel,
-     * left/right jambs, recessed stone embrasure reveals (0.15 depth), and 3 double-sided vertical iron bars.
+     * Emits the complete 3D barred shelter window embrasure within wall cell (x, y).
+     * Builds a physical 0.50 x 0.40 opening tunneling 1.0m deep through the stone wall
+     * between West facade (X = x) and East facade (X = x + 1), with stone sill, lintel,
+     * jambs, connecting reveal surfaces, wall ceiling, and 3 double-sided vertical iron bars.
      */
-    private static void addWestWindowMesh(
-            FloatArray verts, ShortArray indices,
+    private static void addWindowWallMesh(
+            FloatArray wallVerts, ShortArray wallIndices,
+            FloatArray ceilVerts, ShortArray ceilIndices,
             int x, int y,
             float whitePacked
     ) {
@@ -284,126 +283,144 @@ public class ChunkMeshBuilder {
         float zNear = -y;
         float zLeft = -(y + 0.75f);
         float zRight = -(y + 0.25f);
-        float depth = 0.15f;
-        float xRec = x - depth;
+        float xWest = x;
+        float xEast = x + 1;
 
-        // --- Front faces facing East towards inside cell: (1, 0, 0) ---
-        // 1. Bottom Sill Wall: Y in [0, 0.30], Z in [zFar, zNear]
-        addQuad(verts, indices,
-                x, 0.0f, zNear, 0f, 1f,
-                x, 0.0f, zFar, 1f, 1f,
-                x, ySill, zFar, 1f, 0.70f,
-                x, ySill, zNear, 0f, 0.70f,
-                1f, 0f, 0f, whitePacked
-        );
-
-        // 2. Top Header Lintel: Y in [0.70, 1.0], Z in [zFar, zNear]
-        addQuad(verts, indices,
-                x, yLintel, zNear, 0f, 0.30f,
-                x, yLintel, zFar, 1f, 0.30f,
-                x, 1.0f, zFar, 1f, 0f,
-                x, 1.0f, zNear, 0f, 0f,
-                1f, 0f, 0f, whitePacked
-        );
-
-        // 3. Left Jamb Wall: Y in [0.30, 0.70], Z in [zFar, zLeft]
-        addQuad(verts, indices,
-                x, ySill, zLeft, 0.75f, 0.70f,
-                x, ySill, zFar, 1f, 0.70f,
-                x, yLintel, zFar, 1f, 0.30f,
-                x, yLintel, zLeft, 0.75f, 0.30f,
-                1f, 0f, 0f, whitePacked
-        );
-
-        // 4. Right Jamb Wall: Y in [0.30, 0.70], Z in [zRight, zNear]
-        addQuad(verts, indices,
-                x, ySill, zNear, 0f, 0.70f,
-                x, ySill, zRight, 0.25f, 0.70f,
-                x, yLintel, zRight, 0.25f, 0.30f,
-                x, yLintel, zNear, 0f, 0.30f,
-                1f, 0f, 0f, whitePacked
-        );
-
-        // --- Back faces facing West towards outside: (-1, 0, 0) ---
-        // 1b. Bottom Sill Wall Backface
-        addQuad(verts, indices,
-                x, 0.0f, zFar, 0f, 1f,
-                x, 0.0f, zNear, 1f, 1f,
-                x, ySill, zNear, 1f, 0.70f,
-                x, ySill, zFar, 0f, 0.70f,
+        // =========================================================================
+        // 1. WEST FACADE (Exterior face at X = x, facing West: Normal (-1, 0, 0))
+        // =========================================================================
+        // 1a. Bottom Sill Wall: Y in [0.0, 0.30], Z in [zFar, zNear]
+        addQuad(wallVerts, wallIndices,
+                xWest, 0.0f, zFar, 0f, 1f,
+                xWest, 0.0f, zNear, 1f, 1f,
+                xWest, ySill, zNear, 1f, 0.70f,
+                xWest, ySill, zFar, 0f, 0.70f,
                 -1f, 0f, 0f, whitePacked
         );
 
-        // 2b. Top Header Lintel Backface
-        addQuad(verts, indices,
-                x, yLintel, zFar, 0f, 0.30f,
-                x, yLintel, zNear, 1f, 0.30f,
-                x, 1.0f, zNear, 1f, 0f,
-                x, 1.0f, zFar, 0f, 0f,
+        // 1b. Top Header Lintel: Y in [0.70, 1.0], Z in [zFar, zNear]
+        addQuad(wallVerts, wallIndices,
+                xWest, yLintel, zFar, 0f, 0.30f,
+                xWest, yLintel, zNear, 1f, 0.30f,
+                xWest, 1.0f, zNear, 1f, 0f,
+                xWest, 1.0f, zFar, 0f, 0f,
                 -1f, 0f, 0f, whitePacked
         );
 
-        // 3b. Left Jamb Wall Backface
-        addQuad(verts, indices,
-                x, ySill, zFar, 0.75f, 0.70f,
-                x, ySill, zLeft, 1f, 0.70f,
-                x, yLintel, zLeft, 1f, 0.30f,
-                x, yLintel, zFar, 0.75f, 0.30f,
+        // 1c. Left (North) Jamb Wall: Y in [0.30, 0.70], Z in [zFar, zLeft]
+        addQuad(wallVerts, wallIndices,
+                xWest, ySill, zFar, 0.75f, 0.70f,
+                xWest, ySill, zLeft, 1f, 0.70f,
+                xWest, yLintel, zLeft, 1f, 0.30f,
+                xWest, yLintel, zFar, 0.75f, 0.30f,
                 -1f, 0f, 0f, whitePacked
         );
 
-        // 4b. Right Jamb Wall Backface
-        addQuad(verts, indices,
-                x, ySill, zRight, 0f, 0.70f,
-                x, ySill, zNear, 0.25f, 0.70f,
-                x, yLintel, zNear, 0.25f, 0.30f,
-                x, yLintel, zRight, 0f, 0.30f,
+        // 1d. Right (South) Jamb Wall: Y in [0.30, 0.70], Z in [zRight, zNear]
+        addQuad(wallVerts, wallIndices,
+                xWest, ySill, zRight, 0f, 0.70f,
+                xWest, ySill, zNear, 0.25f, 0.70f,
+                xWest, yLintel, zNear, 0.25f, 0.30f,
+                xWest, yLintel, zRight, 0f, 0.30f,
                 -1f, 0f, 0f, whitePacked
         );
 
-        // --- 4 Embrasure Reveals (0.15 depth into wall) ---
-        // 5. Sill Shelf reveal (Y = ySill, facing UP: (0, 1, 0))
-        addQuad(verts, indices,
-                xRec, ySill, zRight, 0f, 0f,
-                x, ySill, zRight, 0.15f, 0f,
-                x, ySill, zLeft, 0.15f, 0.50f,
-                xRec, ySill, zLeft, 0f, 0.50f,
+        // =========================================================================
+        // 2. EAST FACADE (Interior face at X = x + 1, facing East: Normal (1, 0, 0))
+        // =========================================================================
+        // 2a. Bottom Sill Wall: Y in [0.0, 0.30], Z in [zNear, zFar]
+        addQuad(wallVerts, wallIndices,
+                xEast, 0.0f, zNear, 0f, 1f,
+                xEast, 0.0f, zFar, 1f, 1f,
+                xEast, ySill, zFar, 1f, 0.70f,
+                xEast, ySill, zNear, 0f, 0.70f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 2b. Top Header Lintel: Y in [0.70, 1.0], Z in [zNear, zFar]
+        addQuad(wallVerts, wallIndices,
+                xEast, yLintel, zNear, 0f, 0.30f,
+                xEast, yLintel, zFar, 1f, 0.30f,
+                xEast, 1.0f, zFar, 1f, 0f,
+                xEast, 1.0f, zNear, 0f, 0f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 2c. Left (North) Jamb Wall: Y in [0.30, 0.70], Z in [zLeft, zFar]
+        addQuad(wallVerts, wallIndices,
+                xEast, ySill, zLeft, 0.75f, 0.70f,
+                xEast, ySill, zFar, 1f, 0.70f,
+                xEast, yLintel, zFar, 1f, 0.30f,
+                xEast, yLintel, zLeft, 0.75f, 0.30f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // 2d. Right (South) Jamb Wall: Y in [0.30, 0.70], Z in [zNear, zRight]
+        addQuad(wallVerts, wallIndices,
+                xEast, ySill, zNear, 0f, 0.70f,
+                xEast, ySill, zRight, 0.25f, 0.70f,
+                xEast, yLintel, zRight, 0.25f, 0.30f,
+                xEast, yLintel, zNear, 0f, 0.30f,
+                1f, 0f, 0f, whitePacked
+        );
+
+        // =========================================================================
+        // 3. EMBRASURE TUNNEL REVEALS (Connecting X = x to X = x + 1)
+        // =========================================================================
+        // 3a. Sill Shelf reveal (Y = ySill, facing UP: Normal (0, 1, 0))
+        addQuad(wallVerts, wallIndices,
+                xWest, ySill, zRight, 0f, 0f,
+                xEast, ySill, zRight, 1f, 0f,
+                xEast, ySill, zLeft, 1f, 0.50f,
+                xWest, ySill, zLeft, 0f, 0.50f,
                 0f, 1f, 0f, whitePacked
         );
 
-        // 6. Lintel Underside reveal (Y = yLintel, facing DOWN: (0, -1, 0))
-        addQuad(verts, indices,
-                xRec, yLintel, zLeft, 0f, 0f,
-                x, yLintel, zLeft, 0.15f, 0f,
-                x, yLintel, zRight, 0.15f, 0.50f,
-                xRec, yLintel, zRight, 0f, 0.50f,
+        // 3b. Lintel Underside reveal (Y = yLintel, facing DOWN: Normal (0, -1, 0))
+        addQuad(wallVerts, wallIndices,
+                xWest, yLintel, zRight, 0f, 0f,
+                xWest, yLintel, zLeft, 0f, 0.50f,
+                xEast, yLintel, zLeft, 1f, 0.50f,
+                xEast, yLintel, zRight, 1f, 0f,
                 0f, -1f, 0f, whitePacked
         );
 
-        // 7. Left Reveal Wall (Z = zLeft, facing +Z into opening: (0, 0, 1))
-        addQuad(verts, indices,
-                xRec, ySill, zLeft, 0.15f, 0.70f,
-                x, ySill, zLeft, 0f, 0.70f,
-                x, yLintel, zLeft, 0f, 0.30f,
-                xRec, yLintel, zLeft, 0.15f, 0.30f,
+        // 3c. Left (North) Reveal Wall (Z = zLeft, facing South into opening: Normal (0, 0, 1))
+        addQuad(wallVerts, wallIndices,
+                xWest, ySill, zLeft, 0f, 0.70f,
+                xEast, ySill, zLeft, 1f, 0.70f,
+                xEast, yLintel, zLeft, 1f, 0.30f,
+                xWest, yLintel, zLeft, 0f, 0.30f,
                 0f, 0f, 1f, whitePacked
         );
 
-        // 8. Right Reveal Wall (Z = zRight, facing -Z into opening: (0, 0, -1))
-        addQuad(verts, indices,
-                x, ySill, zRight, 0f, 0.70f,
-                xRec, ySill, zRight, 0.15f, 0.70f,
-                xRec, yLintel, zRight, 0.15f, 0.30f,
-                x, yLintel, zRight, 0f, 0.30f,
+        // 3d. Right (South) Reveal Wall (Z = zRight, facing North into opening: Normal (0, 0, -1))
+        addQuad(wallVerts, wallIndices,
+                xEast, ySill, zRight, 0f, 0.70f,
+                xWest, ySill, zRight, 1f, 0.70f,
+                xWest, yLintel, zRight, 1f, 0.30f,
+                xEast, yLintel, zRight, 0f, 0.30f,
                 0f, 0f, -1f, whitePacked
         );
 
-        // --- 3 Vertical Iron Bars ---
-        // Color: Dark Wrought Iron (#222226)
+        // =========================================================================
+        // 4. CEILING OVER WALL CELL (Y = 1.0, facing DOWN: Normal (0, -1, 0))
+        // =========================================================================
+        addQuad(ceilVerts, ceilIndices,
+                xWest, 1.0f, zNear, 0f, 0f,
+                xWest, 1.0f, zFar, 0f, 1f,
+                xEast, 1.0f, zFar, 1f, 1f,
+                xEast, 1.0f, zNear, 1f, 0f,
+                0f, -1f, 0f, whitePacked
+        );
+
+        // =========================================================================
+        // 5. 3 VERTICAL IRON BARS (Centered in wall thickness at X = x + 0.5)
+        // =========================================================================
         float ironPacked = new Color(0.133f, 0.133f, 0.149f, 1f).toFloatBits();
         float openingWidth = zRight - zLeft; // 0.50
         float barHalfWidth = 0.0175f; // total width 0.035
-        float xBar = xRec; // Sits at back of the reveal
+        float xBar = x + 0.5f; // Centered inside the 1m wall tunnel
 
         for (int i = 1; i <= 3; i++) {
             float t = i / 4.0f; // 0.25, 0.50, 0.75
@@ -412,7 +429,7 @@ public class ChunkMeshBuilder {
             float z2 = zCenter + barHalfWidth;
 
             // Front face (facing East +X)
-            addQuad(verts, indices,
+            addQuad(wallVerts, wallIndices,
                     xBar, ySill, z2, 0f, 1f,
                     xBar, ySill, z1, 1f, 1f,
                     xBar, yLintel, z1, 1f, 0f,
@@ -421,7 +438,7 @@ public class ChunkMeshBuilder {
             );
 
             // Back face (facing West -X)
-            addQuad(verts, indices,
+            addQuad(wallVerts, wallIndices,
                     xBar, ySill, z1, 0f, 1f,
                     xBar, ySill, z2, 1f, 1f,
                     xBar, yLintel, z2, 1f, 0f,
