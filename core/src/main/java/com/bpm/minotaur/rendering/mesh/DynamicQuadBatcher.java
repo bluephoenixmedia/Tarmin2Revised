@@ -19,7 +19,7 @@ import com.bpm.minotaur.gamedata.gore.WallDecal;
  */
 public class DynamicQuadBatcher implements Disposable {
 
-    private static final int MAX_QUADS = 1000;
+    private static final int MAX_QUADS = 2000;
     private static final int MAX_VERTICES = MAX_QUADS * 4;
     private static final int MAX_INDICES = MAX_QUADS * 6;
 
@@ -60,7 +60,7 @@ public class DynamicQuadBatcher implements Disposable {
             Vector3 camDir
     ) {
         if (region == null) return;
-        ensureCapacity(1);
+        if (!ensureCapacity(1)) return;
 
         float halfW = width * 0.5f;
         float centerY = feetY + height * 0.5f;
@@ -116,7 +116,7 @@ public class DynamicQuadBatcher implements Disposable {
             Color color
     ) {
         if (region == null) return;
-        ensureCapacity(1);
+        if (!ensureCapacity(1)) return;
 
         float u1 = region.getU();
         float v1 = region.getV2();
@@ -140,7 +140,7 @@ public class DynamicQuadBatcher implements Disposable {
      */
     public void addWallDecal(WallDecal decal, Color color) {
         if (decal == null || decal.textureRegion == null) return;
-        ensureCapacity(1);
+        if (!ensureCapacity(1)) return;
 
         TextureRegion region = decal.textureRegion;
         float r = Math.max(0.1f, decal.radius);
@@ -194,7 +194,7 @@ public class DynamicQuadBatcher implements Disposable {
             float openProgress,
             Color color
     ) {
-        ensureCapacity(2);
+        if (!ensureCapacity(2)) return;
         float yBottom = openProgress * 1.0f;
         float yTop = yBottom + 1.0f;
         float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
@@ -265,10 +265,8 @@ public class DynamicQuadBatcher implements Disposable {
         return indices.size / 6;
     }
 
-    private void ensureCapacity(int numQuads) {
-        if ((indices.size / 6) + numQuads > MAX_QUADS) {
-            throw new IllegalStateException("DynamicQuadBatcher exceeded MAX_QUADS capacity: " + MAX_QUADS);
-        }
+    private boolean ensureCapacity(int numQuads) {
+        return ((indices.size / 6) + numQuads <= MAX_QUADS);
     }
 
     @Override
