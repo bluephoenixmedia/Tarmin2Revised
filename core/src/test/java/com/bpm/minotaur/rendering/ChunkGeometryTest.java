@@ -103,4 +103,24 @@ public class ChunkGeometryTest {
         assertEquals(1, decal.side);
         assertTrue("Decal height should be clamped above floor", decal.height >= decal.radius);
     }
+
+    @Test
+    public void testCeilingIndoorsRule() {
+        int[][] wallData = new int[5][5];
+        Maze overlandMaze = new Maze(1, wallData);
+        // Mark (2, 2) as a shelter tile
+        java.util.List<com.badlogic.gdx.math.GridPoint2> shelter = new java.util.ArrayList<>();
+        shelter.add(new com.badlogic.gdx.math.GridPoint2(2, 2));
+        overlandMaze.setHomeTiles(shelter);
+
+        // On Level 1, corridor tile (1, 1) must NOT be indoors (no ceiling)
+        assertFalse("Level 1 corridor must not have ceiling", overlandMaze.isIndoors(1, 1));
+        // On Level 1, shelter tile (2, 2) MUST be indoors (has ceiling)
+        assertTrue("Level 1 shelter must have ceiling", overlandMaze.isIndoors(2, 2));
+
+        // On Level 2 (1 Z level down in the maze), all open tiles MUST be indoors (have ceiling)
+        Maze dungeonMaze = new Maze(2, wallData);
+        assertTrue("Dungeon corridor must have ceiling", dungeonMaze.isIndoors(1, 1));
+        assertTrue("Dungeon tile must have ceiling", dungeonMaze.isIndoors(2, 2));
+    }
 }

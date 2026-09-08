@@ -780,6 +780,27 @@ public class ItemDataManager {
                 meal.baseValue = 10;
             }
         }
+
+        // Closed-face Helm
+        if (!itemTemplates.containsKey(ItemType.CLOSED_FACE)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = "Closed-face Helm";
+            t.description = "Defense: 2";
+            ItemTemplate greatHelm = itemTemplates.get(ItemType.GREAT_HELM);
+            if (greatHelm != null) {
+                t.texturePath = greatHelm.texturePath;
+                t.spriteData = greatHelm.spriteData;
+                t.scale = greatHelm.scale;
+            } else {
+                t.texturePath = "images/armor/great_helm.png";
+                t.scale = createDefaultScale();
+            }
+            t.isArmor = true;
+            t.isHelmet = true;
+            t.armorClassBonus = 2;
+            t.baseValue = 40;
+            itemTemplates.put(ItemType.CLOSED_FACE, t);
+        }
     }
 
     private void createResourceTemplate(ItemType type, String name, String desc, ItemType baseType) {

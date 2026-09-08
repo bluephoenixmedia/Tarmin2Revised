@@ -196,7 +196,7 @@ public class World3DRenderer implements Disposable {
         updateCamera(player, viewport);
 
         // --- PASS 0: 3D SKYBOX & HORIZON LANDMARKS (Outdoors Level 1) ---
-        boolean canRender3DSky = (currentLevel == 1) && !isIndoors;
+        boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
             Gdx.gl.glDepthMask(false);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());

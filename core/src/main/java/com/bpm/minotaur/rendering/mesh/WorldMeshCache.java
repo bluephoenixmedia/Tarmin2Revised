@@ -110,14 +110,11 @@ public class WorldMeshCache implements Disposable {
                         int maxX = minX + CHUNK_SIZE;
                         int maxY = minY + CHUNK_SIZE;
 
-                        // Check if this chunk is indoors (e.g. shelter/home)
-                        boolean chunkIndoors = isIndoors || maze.isHomeTile(minX + CHUNK_SIZE / 2, minY + CHUNK_SIZE / 2);
-
                         chunkMeshes = ChunkMeshBuilder.buildChunk(
                                 maze,
                                 minX, minY, maxX, maxY,
                                 wallTexture, floorTexture, ceilingTexture,
-                                chunkIndoors
+                                false // Overland Level 1 chunks: ceilings emitted per-tile only for shelter tiles
                         );
                         cachedChunks.put(key, chunkMeshes);
                     }
