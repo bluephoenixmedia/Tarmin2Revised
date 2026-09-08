@@ -23,6 +23,10 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Renderable;
 import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.gore.BloodParticle;
+import com.bpm.minotaur.gamedata.gore.Gib;
+import com.bpm.minotaur.gamedata.gore.GoreManager;
+import com.bpm.minotaur.gamedata.gore.SurfaceDecal;
 import com.bpm.minotaur.gamedata.gore.WallDecal;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
@@ -268,17 +272,24 @@ public class World3DRenderer implements Disposable {
         // Dynamic Doors & Gates
         renderDynamicDoors(maze, player, isRetro, theme);
 
-        // --- PASS 2: ALPHA CUTOUT (Entities, Decals, Floor Corpses) ---
-        shader.setUniformf("u_alphaCutoff", 0.1f);
-        shader.setUniformf("u_retroBorder", 0.0f);
+        // --- PASS 2: ALPHA CUTOUT & BLENDING (Entities, Decals, Floor Corpses) ---
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-        // A. Coplanar Wall Decals (Blood splatters)
-        renderWallDecals(maze);
+        shader.setUniformf("u_alphaCutoff", 0.05f);
+        shader.setUniformf("u_retroBorder", 0.0f);
+        if (isRetro) {
+            shader.setUniformf("u_retroColor", Color.WHITE);
+        }
+
+        // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
+        renderGore(maze);
 
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
 
         // --- RESTORE OPENGL STATE ---
+        Gdx.gl.glDisable(GL20.GL_BLEND);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 
@@ -408,25 +419,93 @@ public class World3DRenderer implements Disposable {
         }
     }
 
-    private void renderWallDecals(Maze maze) {
-        if (maze.getGoreManager() == null) return;
-        java.util.Map<Integer, Array<WallDecal>> allDecals = maze.getGoreManager().getAllWallDecals();
-        if (allDecals == null || allDecals.isEmpty()) return;
+    private void renderGore(Maze maze) {
+        GoreManager gore = maze.getGoreManager();
+        if (gore == null) return;
 
         Texture currentTex = null;
-        for (Array<WallDecal> decals : allDecals.values()) {
-            if (decals == null) continue;
-            for (int i = 0; i < decals.size; i++) {
-                WallDecal decal = decals.get(i);
-                if (decal.textureRegion == null) continue;
-                Texture tex = decal.textureRegion.getTexture();
+
+        // 1. Coplanar Wall Decals
+        java.util.Map<Integer, Array<WallDecal>> allDecals = gore.getAllWallDecals();
+        if (allDecals != null && !allDecals.isEmpty()) {
+            for (Array<WallDecal> decals : allDecals.values()) {
+                if (decals == null) continue;
+                for (int i = 0; i < decals.size; i++) {
+                    WallDecal decal = decals.get(i);
+                    if (decal.textureRegion == null) continue;
+                    Texture tex = decal.textureRegion.getTexture();
+                    if (currentTex != null && currentTex != tex) {
+                        dynamicBatcher.flush(shader, currentTex);
+                    }
+                    currentTex = tex;
+                    dynamicBatcher.addWallDecal(decal, decal.color);
+                }
+            }
+        }
+
+        // 2. Floor Surface Decals (Blood Pools)
+        Array<SurfaceDecal> surfaceDecals = gore.getActiveDecals();
+        if (surfaceDecals != null && surfaceDecals.size > 0) {
+            for (int i = 0; i < surfaceDecals.size; i++) {
+                SurfaceDecal d = surfaceDecals.get(i);
+                if (d.textureRegion == null) continue;
+                Texture tex = d.textureRegion.getTexture();
                 if (currentTex != null && currentTex != tex) {
                     dynamicBatcher.flush(shader, currentTex);
                 }
                 currentTex = tex;
-                dynamicBatcher.addWallDecal(decal, decal.color);
+                float splatSize = Math.max(0.12f, d.size);
+                dynamicBatcher.addFloorQuad(
+                        d.position.x, 0.002f, -d.position.z,
+                        splatSize, splatSize,
+                        d.textureRegion, d.color
+                );
             }
         }
+
+        // 3. Active Flying Blood Droplets
+        Array<BloodParticle> particles = gore.getActiveParticles();
+        if (particles != null && particles.size > 0) {
+            for (int i = 0; i < particles.size; i++) {
+                BloodParticle p = particles.get(i);
+                if (p.textureRegion == null || p.onGround) continue;
+                Texture tex = p.textureRegion.getTexture();
+                if (currentTex != null && currentTex != tex) {
+                    dynamicBatcher.flush(shader, currentTex);
+                }
+                currentTex = tex;
+                float pSize = Math.max(0.04f, p.size * 2.0f);
+                dynamicBatcher.addBillboard(
+                        p.position.x, p.position.y, -p.position.z,
+                        pSize, pSize,
+                        p.textureRegion, p.color,
+                        camRight, camUp, camDir
+                );
+            }
+        }
+
+        // 4. Active Flying Gib Chunks
+        Array<Gib> gibs = gore.getActiveGibs();
+        if (gibs != null && gibs.size > 0) {
+            for (int i = 0; i < gibs.size; i++) {
+                Gib g = gibs.get(i);
+                TextureRegion reg = (g.textureRegion != null) ? g.textureRegion
+                        : (g.polygonRegion != null ? g.polygonRegion.getRegion() : null);
+                if (reg == null) continue;
+                Texture tex = reg.getTexture();
+                if (currentTex != null && currentTex != tex) {
+                    dynamicBatcher.flush(shader, currentTex);
+                }
+                currentTex = tex;
+                dynamicBatcher.addBillboard(
+                        g.position.x, g.position.y, -g.position.z,
+                        0.25f, 0.25f,
+                        reg, g.color,
+                        camRight, camUp, camDir
+                );
+            }
+        }
+
         if (currentTex != null) {
             dynamicBatcher.flush(shader, currentTex);
         }

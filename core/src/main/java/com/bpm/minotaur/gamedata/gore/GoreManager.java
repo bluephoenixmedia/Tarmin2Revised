@@ -268,7 +268,8 @@ public class GoreManager {
         activeGibs.add(g);
     }
 
-    private void spawnWallDecal(int x, int y, int side, float wallX, float height, float radius, Color color) {
+    private void spawnWallDecal(int x, int y, Direction dir, float wallX, float height, float radius, Color color) {
+        int side = (dir == Direction.EAST || dir == Direction.WEST) ? 0 : 1;
         int key = (x * 1000 + y) * 2 + side;
         if (!wallDecals.containsKey(key)) {
             wallDecals.put(key, new Array<>());
@@ -281,10 +282,17 @@ public class GoreManager {
             tex = spatterTexture;
         } else if (smearTextures.size > 0) {
             tex = smearTextures.random();
+        } else if (dropTextures.size > 0) {
+            tex = dropTextures.random();
         }
 
-        wd.init(x, y, side, wallX, height, splatRadius, color, tex);
+        wd.init(x, y, dir, wallX, height, splatRadius, color, tex);
         wallDecals.get(key).add(wd);
+    }
+
+    private void spawnWallDecal(int x, int y, int side, float wallX, float height, float radius, Color color) {
+        Direction fallbackDir = (side == 0) ? Direction.WEST : Direction.NORTH;
+        spawnWallDecal(x, y, fallbackDir, wallX, height, radius, color);
     }
 
     public Array<WallDecal> getWallDecals(int x, int y, int side) {
@@ -310,37 +318,40 @@ public class GoreManager {
             int prevGridY = (int) prevZ;
 
             boolean hitWall = false;
-            int hitX = currGridX;
-            int hitY = currGridY;
-            int side = -1; // 0 = East/West, 1 = North/South
+            int hitX = prevGridX;
+            int hitY = prevGridY;
+            Direction hitDir = null;
             float wallX = 0;
 
-            // 1. Check X-Axis Crossing (East/West Walls)
-            if (currGridX != prevGridX) {
-                Direction dir = (currGridX > prevGridX) ? Direction.EAST : Direction.WEST;
-                if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
-                    hitWall = true;
-                    side = 0;
-                    hitX = prevGridX;
-                    hitY = prevGridY;
-                    wallX = p.position.z - (int) p.position.z;
+            // Walls only exist from Y = 0.0 to Y = 1.0; particles above 1.0 fly freely over walls
+            if (p.position.y >= 0.0f && p.position.y <= 1.0f) {
+                // 1. Check X-Axis Crossing (East/West Walls)
+                if (currGridX != prevGridX) {
+                    Direction dir = (currGridX > prevGridX) ? Direction.EAST : Direction.WEST;
+                    if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
+                        hitWall = true;
+                        hitDir = dir;
+                        hitX = prevGridX;
+                        hitY = prevGridY;
+                        wallX = p.position.z - (int) p.position.z;
+                    }
+                }
+
+                // 2. Check Z-Axis Crossing (North/South Walls)
+                if (!hitWall && currGridY != prevGridY) {
+                    Direction dir = (currGridY > prevGridY) ? Direction.NORTH : Direction.SOUTH;
+                    if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
+                        hitWall = true;
+                        hitDir = dir;
+                        wallX = p.position.x - (int) p.position.x;
+                        hitX = prevGridX;
+                        hitY = prevGridY;
+                    }
                 }
             }
 
-            // 2. Check Z-Axis Crossing (North/South Walls)
-            if (!hitWall && currGridY != prevGridY) {
-                Direction dir = (currGridY > prevGridY) ? Direction.NORTH : Direction.SOUTH;
-                if (maze.isWallBlocking(prevGridX, prevGridY, dir)) {
-                    hitWall = true;
-                    side = 1;
-                    wallX = p.position.x - (int) p.position.x;
-                    hitX = prevGridX;
-                    hitY = prevGridY;
-                }
-            }
-
-            if (hitWall && side != -1) {
-                spawnWallDecal(hitX, hitY, side, wallX, p.position.y, p.size, p.color);
+            if (hitWall && hitDir != null) {
+                spawnWallDecal(hitX, hitY, hitDir, wallX, p.position.y, p.size, p.color);
                 activeParticles.removeIndex(i);
                 particlePool.free(p);
                 continue;

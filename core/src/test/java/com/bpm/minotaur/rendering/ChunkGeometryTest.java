@@ -84,4 +84,23 @@ public class ChunkGeometryTest {
         assertEquals(ChunkMeshBuilder.DOOR_SOUTH, Direction.SOUTH.getWallMask() << 1);
         assertEquals(ChunkMeshBuilder.DOOR_NORTH, Direction.NORTH.getWallMask() << 1);
     }
+
+    @Test
+    public void testWallDecalClampingAndDirection() {
+        com.bpm.minotaur.gamedata.gore.WallDecal decal = new com.bpm.minotaur.gamedata.gore.WallDecal();
+
+        // 1. Decal spawned high in the sky (e.g. Y = 3.5 from upward blood velocity)
+        decal.init(4, 7, Direction.EAST, 0.5f, 3.5f, 0.15f, Color.RED, null);
+        assertEquals(Direction.EAST, decal.dir);
+        assertEquals(0, decal.side);
+        // Height must be clamped to prevent floating into the sky above the 1.0 wall
+        assertTrue("Decal height should be clamped below 1.0", decal.height <= 1.0f - decal.radius);
+        assertTrue("Decal height should be above 0.0", decal.height >= decal.radius);
+
+        // 2. Decal spawned below floor (e.g. Y = -0.5)
+        decal.init(4, 7, Direction.NORTH, 0.5f, -0.5f, 0.15f, Color.RED, null);
+        assertEquals(Direction.NORTH, decal.dir);
+        assertEquals(1, decal.side);
+        assertTrue("Decal height should be clamped above floor", decal.height >= decal.radius);
+    }
 }

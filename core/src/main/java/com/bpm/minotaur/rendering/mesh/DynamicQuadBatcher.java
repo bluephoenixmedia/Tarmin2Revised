@@ -6,10 +6,12 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
+import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.gore.WallDecal;
 
 /**
@@ -136,52 +138,90 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
-     * Emits a coplanar wall decal quad offset by +0.002 along the wall normal to eliminate Z-fighting.
+     * Emits a coplanar wall decal quad offset by eps along the wall normal to eliminate Z-fighting.
      */
     public void addWallDecal(WallDecal decal, Color color) {
         if (decal == null || decal.textureRegion == null) return;
         if (!ensureCapacity(1)) return;
 
         TextureRegion region = decal.textureRegion;
-        float r = Math.max(0.1f, decal.radius);
-        float h = decal.height; // 0.0 to 1.0 world height
-        float wX = decal.wallX; // 0.0 to 1.0 along wall face
-        float eps = 0.002f;
+        float r = Math.max(0.08f, Math.min(0.35f, decal.radius));
+        float h = MathUtils.clamp(decal.height, r + 0.01f, 1.0f - r - 0.01f);
+        float wX = MathUtils.clamp(decal.wallX, r + 0.01f, 1.0f - r - 0.01f);
+        float eps = 0.003f;
 
         float u1 = region.getU();
-        float v1 = region.getV2();
+        float v1 = region.getV2(); // LibGDX V2 is texture bottom
         float u2 = region.getU2();
-        float v2 = region.getV();
+        float v2 = region.getV();  // LibGDX V is texture top
         float packedColor = (color != null) ? color.toFloatBits() : decal.color.toFloatBits();
 
-        if (decal.side == 0) {
-            // East/West wall plane at X = decal.gridX or gridX + 1
-            float xPos = decal.gridX + (wX > 0.5f ? 1.0f - eps : eps);
-            float zCenter = -(decal.gridY + wX);
-            float nx = (wX > 0.5f) ? -1f : 1f;
+        Direction dir = decal.dir;
+        if (dir == null) {
+            dir = (decal.side == 0) ? Direction.WEST : Direction.NORTH;
+        }
 
-            ChunkMeshBuilder.addQuad(
-                    vertices, indices,
-                    xPos, h - r, zCenter + r, u1, v1,
-                    xPos, h - r, zCenter - r, u2, v1,
-                    xPos, h + r, zCenter - r, u2, v2,
-                    xPos, h + r, zCenter + r, u1, v2,
-                    nx, 0f, 0f, packedColor
-            );
-        } else {
-            // North/South wall plane at Z = -(decal.gridY)
-            float zPos = -(decal.gridY + (wX > 0.5f ? 1.0f - eps : eps));
-            float xCenter = decal.gridX + wX;
-            float nz = (wX > 0.5f) ? 1f : -1f;
-
-            ChunkMeshBuilder.addQuad(
-                    vertices, indices,
-                    xCenter - r, h - r, zPos, u1, v1,
-                    xCenter + r, h - r, zPos, u2, v1,
-                    xCenter + r, h + r, zPos, u2, v2,
-                    xCenter - r, h + r, zPos, u1, v2,
-                    0f, 0f, nz, packedColor
-            );
+        switch (dir) {
+            case EAST: {
+                // Moving EAST: hit EAST boundary of cell (X = gridX + 1.0)
+                // Face normal points WEST (-1, 0, 0) into cell
+                float xPos = decal.gridX + 1.0f - eps;
+                float zCenter = -(decal.gridY + wX);
+                ChunkMeshBuilder.addQuad(
+                        vertices, indices,
+                        xPos, h - r, zCenter + r, u1, v1,
+                        xPos, h - r, zCenter - r, u2, v1,
+                        xPos, h + r, zCenter - r, u2, v2,
+                        xPos, h + r, zCenter + r, u1, v2,
+                        -1f, 0f, 0f, packedColor
+                );
+                break;
+            }
+            case WEST: {
+                // Moving WEST: hit WEST boundary of cell (X = gridX)
+                // Face normal points EAST (1, 0, 0) into cell
+                float xPos = decal.gridX + eps;
+                float zCenter = -(decal.gridY + wX);
+                ChunkMeshBuilder.addQuad(
+                        vertices, indices,
+                        xPos, h - r, zCenter - r, u1, v1,
+                        xPos, h - r, zCenter + r, u2, v1,
+                        xPos, h + r, zCenter + r, u2, v2,
+                        xPos, h + r, zCenter - r, u1, v2,
+                        1f, 0f, 0f, packedColor
+                );
+                break;
+            }
+            case NORTH: {
+                // Moving NORTH (+Y): hit NORTH boundary of cell (Z = -(gridY + 1.0))
+                // Face normal points SOUTH (0, 0, 1) into cell
+                float zPos = -(decal.gridY + 1.0f) + eps;
+                float xCenter = decal.gridX + wX;
+                ChunkMeshBuilder.addQuad(
+                        vertices, indices,
+                        xCenter - r, h - r, zPos, u1, v1,
+                        xCenter + r, h - r, zPos, u2, v1,
+                        xCenter + r, h + r, zPos, u2, v2,
+                        xCenter - r, h + r, zPos, u1, v2,
+                        0f, 0f, 1f, packedColor
+                );
+                break;
+            }
+            case SOUTH: {
+                // Moving SOUTH (-Y): hit SOUTH boundary of cell (Z = -gridY)
+                // Face normal points NORTH (0, 0, -1) into cell
+                float zPos = -decal.gridY - eps;
+                float xCenter = decal.gridX + wX;
+                ChunkMeshBuilder.addQuad(
+                        vertices, indices,
+                        xCenter + r, h - r, zPos, u1, v1,
+                        xCenter - r, h - r, zPos, u2, v1,
+                        xCenter - r, h + r, zPos, u2, v2,
+                        xCenter + r, h + r, zPos, u1, v2,
+                        0f, 0f, -1f, packedColor
+                );
+                break;
+            }
         }
     }
 
