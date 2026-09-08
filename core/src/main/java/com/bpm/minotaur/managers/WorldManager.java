@@ -99,6 +99,12 @@ public class WorldManager {
         this.dayNightManager = new DayNightManager();
         this.lightingManager = new LightingManager();
 
+        // Boot weather audio immediately: Heavy Storm raging outside, dampened inside shelter
+        if (this.soundManager != null && this.weatherManager != null) {
+            this.soundManager.updateWeatherAudio(this.weatherManager.getCurrentWeather(), this.weatherManager.getCurrentIntensity());
+            this.soundManager.setDampenedImmediate(true);
+        }
+
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
 
@@ -422,13 +428,17 @@ public class WorldManager {
             // Audio Dampening Check
             if (playerReference != null) {
                 if (currentMaze != null) {
-                    boolean insideHome = currentMaze.isHomeTile((int) playerReference.getPosition().x,
+                    boolean isIndoors = currentMaze.isIndoors((int) playerReference.getPosition().x,
                             (int) playerReference.getPosition().y);
-                    soundManager.setDampened(insideHome);
+                    soundManager.setDampened(isIndoors);
                 }
             }
         } else {
             soundManager.stopWeatherEffects();
+        }
+
+        if (soundManager != null) {
+            soundManager.update(delta);
         }
     }
 

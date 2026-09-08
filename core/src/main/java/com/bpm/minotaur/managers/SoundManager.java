@@ -26,8 +26,10 @@ public class SoundManager {
     private long currentWindId = -1;
     private WeatherType lastWeatherType = null;
 
-    // --- NEW: Dampening State ---
+    // --- Volume Dampening & Crossfade State ---
     private boolean isDampened = false;
+    private float currentDampenFactor = 1.0f;
+    private float targetDampenFactor = 1.0f;
     private float currentBaseVol = 0.5f;
 
     public SoundManager(DebugManager debugManager) {
@@ -41,6 +43,34 @@ public class SoundManager {
         this.debugManager = null;
         this.retroAudioDevice = null;
         // Do not load sounds
+    }
+
+    public void update(float delta) {
+        if (Math.abs(currentDampenFactor - targetDampenFactor) > 0.001f) {
+            // Smoothly interpolate over ~0.4s (speed factor 3.5)
+            currentDampenFactor = MathUtils.lerp(currentDampenFactor, targetDampenFactor, Math.min(1.0f, 3.5f * delta));
+            applyLoopVolumes();
+        }
+    }
+
+    public float getCurrentDampenFactor() {
+        return currentDampenFactor;
+    }
+
+    public float getTargetDampenFactor() {
+        return targetDampenFactor;
+    }
+
+    private void applyLoopVolumes() {
+        float windBase = (lastWeatherType == WeatherType.STORM) ? currentBaseVol * 0.85f : currentBaseVol;
+        float windDampen = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
+
+        if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
+            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * currentDampenFactor);
+        }
+        if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
+            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windDampen);
+        }
     }
 
     private void loadModernSounds() {
@@ -68,18 +98,18 @@ public class SoundManager {
         loadSound("lightning_crash_3", "sounds/lightning_crash_3.ogg");
 
         // --- NEW: Visceral Combat Sounds ---
-        loadSound("weapon_swing", "sounds/weapon_swing.wav"); // Defaults to a simple whoosh if file missing handled by
-                                                              // loadSound checks
+        loadSound("weapon_swing", "sounds/weapon_swing.wav"); 
         loadSound("meat_hit", "sounds/meat_hit.wav");
         loadSound("metal_hit", "sounds/metal_hit.wav");
         loadSound("monster_grunt_light", "sounds/monster_grunt_light.wav");
         loadSound("monster_roar_heavy", "sounds/monster_roar_heavy.wav");
     }
 
-    private void loadSound(String name, String path) {
-        FileHandle file = Gdx.files.internal(path);
-        if (file.exists()) {
-            modernSounds.put(name, Gdx.audio.newSound(file));
+    private void loadSound(String key, String path) {
+        if (Gdx.files.internal(path).exists()) {
+            modernSounds.put(key, Gdx.audio.newSound(Gdx.files.internal(path)));
+        } else {
+            Gdx.app.error("SoundManager", "Sound file not found: " + path);
         }
     }
 
@@ -111,23 +141,17 @@ public class SoundManager {
         playSound("tarmin_laugh");
     }
 
-    // --- NEW: Volume Dampening for Interiors ---
+    // --- Volume Dampening for Interiors (Smooth Crossfade) ---
     public void setDampened(boolean dampened) {
-        if (this.isDampened == dampened)
-            return;
         this.isDampened = dampened;
+        this.targetDampenFactor = dampened ? 0.25f : 1.0f;
+    }
 
-        // Update currently playing loops immediately: rain 25% (roof drumming), wind 15%
-        float rainModifier = isDampened ? 0.25f : 1.0f;
-        float windModifier = isDampened ? 0.15f : 1.0f;
-
-        if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
-            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * rainModifier);
-        }
-        if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
-            float windBase = (lastWeatherType == WeatherType.STORM) ? currentBaseVol * 0.85f : currentBaseVol;
-            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windModifier);
-        }
+    public void setDampenedImmediate(boolean dampened) {
+        this.isDampened = dampened;
+        this.targetDampenFactor = dampened ? 0.25f : 1.0f;
+        this.currentDampenFactor = this.targetDampenFactor;
+        applyLoopVolumes();
     }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
@@ -149,8 +173,8 @@ public class SoundManager {
         if (intensity == WeatherIntensity.EXTREME)
             currentBaseVol = 1.0f;
 
-        float rainMod = isDampened ? 0.25f : 1.0f;
-        float windMod = isDampened ? 0.15f : 1.0f;
+        float rainMod = currentDampenFactor;
+        float windMod = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
         switch (type) {
             case RAIN:
@@ -159,7 +183,8 @@ public class SoundManager {
                     currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod);
                 }
                 if (type == WeatherType.STORM && modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * 0.85f * windMod);
+                    float windBase = currentBaseVol * 0.85f;
+                    currentWindId = modernSounds.get("wind_loop").loop(windBase * windMod);
                 }
                 break;
             case SNOW:
@@ -181,7 +206,7 @@ public class SoundManager {
 
     public void playThunder() {
         int variant = MathUtils.random(1, 5);
-        float vol = isDampened ? 0.45f : 1.0f;
+        float vol = Math.max(0.40f, currentDampenFactor);
         if (modernSounds.containsKey("thunder_" + variant)) {
             modernSounds.get("thunder_" + variant).play(vol);
         }
@@ -299,7 +324,7 @@ public class SoundManager {
         }
     }
 
-    private void playSound(String name) {
+    public void playSound(String name) {
         if (modernSounds.containsKey(name)) {
             modernSounds.get(name).play();
         }

@@ -43,6 +43,8 @@ import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
+import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.weather.WeatherRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +75,9 @@ public class World3DRenderer implements Disposable {
 
     // Optional 3D skybox integration
     private Skybox3DRenderer skybox3DRenderer;
+
+    // 3D Weather & Precipitation Renderer
+    private WeatherRenderer weatherRenderer;
 
     // Reusable scratch vectors & arrays for camera math and lights
     private final Vector3 camRight = new Vector3();
@@ -222,10 +227,22 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
         shader.setUniformf("u_doomFactor", doomFactor);
 
-        // Ambient color
+        // Ambient color with lightning flash dynamics
         Color ambientColor = isIndoors
                 ? (isInsideHome ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID)
                 : Color.WHITE;
+
+        if (currentLevel == 1 && worldManager != null && worldManager.getWeatherManager() != null) {
+            float flash = worldManager.getWeatherManager().getFlashIntensity();
+            if (flash > 0.05f) {
+                if (isInsideHome) {
+                    // Lightning illuminates through window
+                    ambientColor = ambientColor.cpy().lerp(Color.WHITE, flash * 0.45f);
+                } else if (!isIndoors) {
+                    ambientColor = Color.WHITE;
+                }
+            }
+        }
         shader.setUniformf("u_ambientColor", ambientColor.r * lightIntensity, ambientColor.g * lightIntensity, ambientColor.b * lightIntensity);
 
         // Fog
@@ -288,6 +305,30 @@ public class World3DRenderer implements Disposable {
 
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
+
+        // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
+        if (currentLevel == 1 && worldManager != null && worldManager.getWeatherManager() != null) {
+            WeatherManager wm = worldManager.getWeatherManager();
+            if (wm.isPrecipitation()) {
+                if (this.weatherRenderer == null) {
+                    this.weatherRenderer = new WeatherRenderer(wm);
+                }
+                this.weatherRenderer.update(Gdx.graphics.getDeltaTime(), player, maze);
+
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+                Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+                Gdx.gl.glDepthMask(false); // Depth-test against world geometry without writing to depth buffer
+
+                shader.setUniformf("u_alphaCutoff", 0.0f);
+                shader.setUniformf("u_retroBorder", 0.0f);
+
+                this.weatherRenderer.render3D(dynamicBatcher, blankTexture, shader, camera, player, maze, wm, isRetro);
+
+                Gdx.gl.glDepthMask(true);
+            }
+        }
 
         // --- RESTORE OPENGL STATE ---
         Gdx.gl.glDisable(GL20.GL_BLEND);

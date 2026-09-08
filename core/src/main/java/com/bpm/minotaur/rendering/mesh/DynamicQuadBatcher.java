@@ -21,7 +21,7 @@ import com.bpm.minotaur.gamedata.gore.WallDecal;
  */
 public class DynamicQuadBatcher implements Disposable {
 
-    private static final int MAX_QUADS = 2000;
+    private static final int MAX_QUADS = 4000;
     private static final int MAX_VERTICES = MAX_QUADS * 4;
     private static final int MAX_INDICES = MAX_QUADS * 6;
 
@@ -33,6 +33,10 @@ public class DynamicQuadBatcher implements Disposable {
     private final Vector3 scratchV2 = new Vector3();
     private final Vector3 scratchV3 = new Vector3();
     private final Vector3 scratchV4 = new Vector3();
+
+    private final Vector3 scratchStreakDir = new Vector3();
+    private final Vector3 scratchStreakSide = new Vector3();
+    private final Vector3 scratchCamVec = new Vector3();
 
     public DynamicQuadBatcher() {
         this.mesh = new Mesh(false, MAX_VERTICES, MAX_INDICES, ChunkMeshBuilder.VERTEX_ATTRIBUTES);
@@ -321,6 +325,81 @@ public class DynamicQuadBatcher implements Disposable {
 
     public int getQuadCount() {
         return indices.size / 6;
+    }
+
+    /**
+     * Emits a camera-facing or billboard 3D quad with custom vertex positions.
+     */
+    public void addParticleQuad(
+            float x1, float y1, float z1,
+            float x2, float y2, float z2,
+            float x3, float y3, float z3,
+            float x4, float y4, float z4,
+            float nx, float ny, float nz,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
+        float packed = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                x1, y1, z1, 0f, 1f,
+                x2, y2, z2, 1f, 1f,
+                x3, y3, z3, 1f, 0f,
+                x4, y4, z4, 0f, 0f,
+                nx, ny, nz, packed
+        );
+    }
+
+    /**
+     * Emits a thin, velocity-oriented camera-facing ribbon quad for rain/storm streaks.
+     */
+    public void addRainStreak(
+            float headX, float headY, float headZ,
+            float tailX, float tailY, float tailZ,
+            float halfWidth,
+            Vector3 camPos,
+            Vector3 fallbackRight,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
+
+        // Direction of streak from tail to head
+        scratchStreakDir.set(headX - tailX, headY - tailY, headZ - tailZ);
+        float lenSq = scratchStreakDir.len2();
+        if (lenSq < 1e-6f) return;
+        scratchStreakDir.nor();
+
+        // Vector from head to camera
+        scratchCamVec.set(camPos.x - headX, camPos.y - headY, camPos.z - headZ);
+        float camDistSq = scratchCamVec.len2();
+        if (camDistSq < 1e-6f) return;
+        scratchCamVec.nor();
+
+        // Cross product: side vector across streak perpendicular to view
+        scratchStreakSide.set(scratchStreakDir).crs(scratchCamVec);
+        if (scratchStreakSide.len2() < 1e-6f) {
+            scratchStreakSide.set(fallbackRight);
+        } else {
+            scratchStreakSide.nor();
+        }
+        scratchStreakSide.scl(halfWidth);
+
+        // 4 corners: Head-Left, Head-Right, Tail-Right, Tail-Left
+        scratchV1.set(headX, headY, headZ).sub(scratchStreakSide);
+        scratchV2.set(headX, headY, headZ).add(scratchStreakSide);
+        scratchV3.set(tailX, tailY, tailZ).add(scratchStreakSide);
+        scratchV4.set(tailX, tailY, tailZ).sub(scratchStreakSide);
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                scratchV1.x, scratchV1.y, scratchV1.z, 0f, 1f,
+                scratchV2.x, scratchV2.y, scratchV2.z, 1f, 1f,
+                scratchV3.x, scratchV3.y, scratchV3.z, 1f, 0f,
+                scratchV4.x, scratchV4.y, scratchV4.z, 0f, 0f,
+                scratchCamVec.x, scratchCamVec.y, scratchCamVec.z, packedColor
+        );
     }
 
     private boolean ensureCapacity(int numQuads) {

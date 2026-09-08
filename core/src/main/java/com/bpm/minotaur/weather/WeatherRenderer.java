@@ -1,9 +1,11 @@
 package com.bpm.minotaur.weather;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -11,15 +13,15 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 
 /**
  * 3D World-Space Precipitation & Surface Impact Renderer.
  *
  * <p>Simulates rain, snow, and blizzards as full 3D particles in a cylindrical
- * volume around the player in maze world coordinates. Particles are projected
- * into camera space and occluded by dungeon geometry via vertical wall span depth buffer
- * checks, enabling realistic indoor-to-outdoor portal visibility, needle-thin rain streaks,
- * and delicate micro-splash droplets.
+ * volume around the player in maze world coordinates. Supports both true 3D OpenGL
+ * pipeline rendering (with hardware depth testing and velocity-aligned streaks)
+ * and legacy 2.5D raycaster projection.
  */
 public class WeatherRenderer {
 
@@ -39,6 +41,15 @@ public class WeatherRenderer {
     private final Color rainColor = new Color(0.72f, 0.82f, 0.95f, 1f);
     private final Color snowColor = new Color(0.95f, 0.98f, 1.0f, 1f);
     private final Color splashColor = new Color(0.75f, 0.85f, 1.0f, 1f);
+
+    // 3D rendering scratch vectors and colors
+    private final Vector3 scratchCamRight = new Vector3();
+    private final Vector3 scratchCamUp = new Vector3();
+    private final Color retroCyan = new Color(0.0f, 0.90f, 1.0f, 1.0f);
+    private final Color modernRainStreak = new Color(0.70f, 0.82f, 0.96f, 0.65f);
+    private final Color modernStormStreak = new Color(0.85f, 0.92f, 1.0f, 0.75f);
+    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.85f);
+    private final Color modernSplash = new Color(0.75f, 0.85f, 1.0f, 0.70f);
 
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
@@ -226,6 +237,172 @@ public class WeatherRenderer {
             float maxLife = MathUtils.random(0.10f, 0.16f);
             splashDroplets.add(new SplashDroplet(x, y, vx, vy, vz, maxLife));
         }
+    }
+
+    /**
+     * Renders precipitation and ground micro-splashes in true 3D world space
+     * using the DynamicQuadBatcher and camera orientation.
+     */
+    public void render3D(
+            DynamicQuadBatcher batcher,
+            Texture blankTexture,
+            ShaderProgram shader,
+            Camera camera,
+            Player player,
+            Maze maze,
+            WeatherManager wm,
+            boolean isRetro
+    ) {
+        if (particles.size == 0 && splashDroplets.size == 0) return;
+        if (batcher == null || camera == null || player == null || wm == null) return;
+
+        WeatherType type = wm.getCurrentWeather();
+        Vector3 camPos = camera.position;
+        Vector3 camDir = camera.direction;
+        Vector3 camUp = camera.up;
+
+        // Calculate Right unit vector for billboards
+        scratchCamRight.set(camDir).crs(camUp).nor();
+
+        // Shading parameters
+        Color streakColor;
+        Color splashCol;
+        float streakHalfWidth;
+
+        if (isRetro) {
+            streakColor = (type == WeatherType.SNOW || type == WeatherType.BLIZZARD)
+                    ? Color.WHITE
+                    : retroCyan;
+            splashCol = streakColor;
+            streakHalfWidth = 0.005f; // Extra thin crisp retro pixel streak
+        } else {
+            if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
+                streakColor = modernSnowFlake;
+                splashCol = modernSnowFlake;
+                streakHalfWidth = 0.016f;
+            } else if (type == WeatherType.STORM) {
+                streakColor = modernStormStreak;
+                splashCol = modernSplash;
+                streakHalfWidth = 0.006f; // Thin, needle-like modern streak
+            } else {
+                streakColor = modernRainStreak;
+                splashCol = modernSplash;
+                streakHalfWidth = 0.006f; // Thin modern rain
+            }
+        }
+
+        // --- 1. RENDER GROUND MICRO-SPLASHES (Outdoors Only) ---
+        float playerX = player.getPosition().x;
+        float playerY = player.getPosition().y;
+
+        for (int i = 0; i < splashDroplets.size; i++) {
+            SplashDroplet s = splashDroplets.get(i);
+            if (s.isDead) continue;
+
+            int tileX = MathUtils.floor(s.x);
+            int tileY = MathUtils.floor(s.y);
+            if (maze != null && maze.isIndoors(tileX, tileY)) continue;
+
+            float dx = s.x - playerX;
+            float dy = s.y - playerY;
+            if (dx * dx + dy * dy > 144f) continue; // within 12 tiles
+
+            float progress = s.life / s.maxLife;
+            float halfS = Math.max(0.003f, 0.012f * (1.0f - progress));
+
+            // World coords: X = s.x, Y = s.z, Z = -s.y
+            float worldX = s.x;
+            float worldY = Math.max(0.01f, s.z);
+            float worldZ = -s.y;
+
+            // Camera-facing billboard quad
+            batcher.addParticleQuad(
+                    worldX - scratchCamRight.x * halfS - camUp.x * halfS,
+                    worldY - scratchCamRight.y * halfS - camUp.y * halfS,
+                    worldZ - scratchCamRight.z * halfS - camUp.z * halfS,
+
+                    worldX + scratchCamRight.x * halfS - camUp.x * halfS,
+                    worldY + scratchCamRight.y * halfS - camUp.y * halfS,
+                    worldZ + scratchCamRight.z * halfS - camUp.z * halfS,
+
+                    worldX + scratchCamRight.x * halfS + camUp.x * halfS,
+                    worldY + scratchCamRight.y * halfS + camUp.y * halfS,
+                    worldZ + scratchCamRight.z * halfS + camUp.z * halfS,
+
+                    worldX - scratchCamRight.x * halfS + camUp.x * halfS,
+                    worldY - scratchCamRight.y * halfS + camUp.y * halfS,
+                    worldZ - scratchCamRight.z * halfS + camUp.z * halfS,
+
+                    -camDir.x, -camDir.y, -camDir.z,
+                    splashCol
+            );
+        }
+
+        // --- 2. RENDER PRECIPITATION PARTICLES ---
+        for (int i = 0; i < particles.size; i++) {
+            WeatherParticle p = particles.get(i);
+            if (p.isDead) continue;
+
+            // World coords: X = p.x, Y = p.z, Z = -p.y
+            float worldX = p.x;
+            float worldY = p.z;
+            float worldZ = -p.y;
+
+            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
+                // Square snowflake billboard quad
+                float halfS = 0.018f;
+                batcher.addParticleQuad(
+                        worldX - scratchCamRight.x * halfS - camUp.x * halfS,
+                        worldY - scratchCamRight.y * halfS - camUp.y * halfS,
+                        worldZ - scratchCamRight.z * halfS - camUp.z * halfS,
+
+                        worldX + scratchCamRight.x * halfS - camUp.x * halfS,
+                        worldY + scratchCamRight.y * halfS - camUp.y * halfS,
+                        worldZ + scratchCamRight.z * halfS - camUp.z * halfS,
+
+                        worldX + scratchCamRight.x * halfS + camUp.x * halfS,
+                        worldY + scratchCamRight.y * halfS + camUp.y * halfS,
+                        worldZ + scratchCamRight.z * halfS + camUp.z * halfS,
+
+                        worldX - scratchCamRight.x * halfS + camUp.x * halfS,
+                        worldY - scratchCamRight.y * halfS + camUp.y * halfS,
+                        worldZ - scratchCamRight.z * halfS + camUp.z * halfS,
+
+                        -camDir.x, -camDir.y, -camDir.z,
+                        streakColor
+                );
+            } else {
+                // Rain / Storm velocity-oriented streak
+                float vx = p.vx;
+                float vy = p.vz; // vertical downward velocity
+                float vz = -p.vy; // maze Y velocity -> world -Z
+
+                float speed = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
+                if (speed < 1e-4f) continue;
+
+                float len = p.length;
+                float invSpeed = 1.0f / speed;
+                float dirX = vx * invSpeed;
+                float dirY = vy * invSpeed;
+                float dirZ = vz * invSpeed;
+
+                float tailX = worldX - dirX * len;
+                float tailY = worldY - dirY * len;
+                float tailZ = worldZ - dirZ * len;
+
+                batcher.addRainStreak(
+                        worldX, worldY, worldZ,
+                        tailX, tailY, tailZ,
+                        streakHalfWidth,
+                        camPos,
+                        camUp,
+                        streakColor
+                );
+            }
+        }
+
+        // Flush precipitation buffer
+        batcher.flush(shader, blankTexture);
     }
 
     /**

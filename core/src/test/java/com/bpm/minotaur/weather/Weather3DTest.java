@@ -85,4 +85,52 @@ public class Weather3DTest {
         snow.update(0.1f);
         assertTrue("Snow altitude must decrease gently", snow.z < 8f && snow.z > 7.5f);
     }
+
+    @Test
+    public void testBootWeatherIsHeavyStorm() {
+        assertEquals("Boot weather must be STORM", WeatherType.STORM, weatherManager.getCurrentWeather());
+        assertEquals("Boot weather intensity must be HEAVY", WeatherIntensity.HEAVY, weatherManager.getCurrentIntensity());
+    }
+
+    @Test
+    public void testSoundManagerDampenCrossfade() {
+        com.bpm.minotaur.managers.SoundManager sm = new com.bpm.minotaur.managers.SoundManager() {};
+
+        // Default state: 1.0f
+        assertEquals(1.0f, sm.getCurrentDampenFactor(), 0.001f);
+        assertEquals(1.0f, sm.getTargetDampenFactor(), 0.001f);
+
+        // Immediate dampening on boot inside shelter
+        sm.setDampenedImmediate(true);
+        assertEquals(0.25f, sm.getCurrentDampenFactor(), 0.001f);
+        assertEquals(0.25f, sm.getTargetDampenFactor(), 0.001f);
+
+        // Player walks outdoors: smooth crossfade to 1.0f
+        sm.setDampened(false);
+        assertEquals("Target should be 1.0f", 1.0f, sm.getTargetDampenFactor(), 0.001f);
+        assertEquals("Current should start at 0.25f before updates", 0.25f, sm.getCurrentDampenFactor(), 0.001f);
+
+        // Simulate 0.15s elapsed
+        sm.update(0.15f);
+        assertTrue("Current dampen factor must increase towards 1.0", sm.getCurrentDampenFactor() > 0.25f);
+        assertTrue("Current dampen factor must not exceed 1.0", sm.getCurrentDampenFactor() <= 1.0f);
+
+        // Simulate further time (~1.0s total) to reach near target
+        for (int i = 0; i < 20; i++) {
+            sm.update(0.1f);
+        }
+        assertEquals("Current dampen factor should reach target after time", 1.0f, sm.getCurrentDampenFactor(), 0.01f);
+    }
+
+    @Test
+    public void testIndoorDetectionForWeather() {
+        com.bpm.minotaur.gamedata.Maze mazeL1 = new com.bpm.minotaur.gamedata.Maze(1, new int[16][16]);
+        mazeL1.setHomeTiles(java.util.Collections.singletonList(new com.badlogic.gdx.math.GridPoint2(8, 8)));
+
+        assertTrue("Level 1 home tile (8,8) must be indoors", mazeL1.isIndoors(8, 8));
+        assertFalse("Level 1 wilderness tile (0,0) must not be indoors", mazeL1.isIndoors(0, 0));
+
+        com.bpm.minotaur.gamedata.Maze mazeL2 = new com.bpm.minotaur.gamedata.Maze(2, new int[16][16]);
+        assertTrue("Level 2 tile must always be indoors", mazeL2.isIndoors(0, 0));
+    }
 }
