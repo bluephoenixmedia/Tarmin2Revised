@@ -83,6 +83,12 @@ public class ChunkMeshBuilder {
 
         for (int y = clampedMinY; y < clampedMaxY; y++) {
             for (int x = clampedMinX; x < clampedMaxX; x++) {
+                // If this cell contains a Window, emit NO maze geometry for it!
+                // The window is solely an opening in the adjacent room's wall.
+                if (maze.getGameObjectAt(x, y) instanceof Window) {
+                    continue;
+                }
+
                 int currentData = maze.getWallDataAt(x, y);
 
                 // If completely solid pillar/rock, skip floor and ceiling
@@ -120,15 +126,19 @@ public class ChunkMeshBuilder {
                     int southData = (y > 0) ? maze.getWallDataAt(x, y - 1) : ALL_WALLS;
                     int northData = (y < maze.getHeight() - 1) ? maze.getWallDataAt(x, y + 1) : ALL_WALLS;
 
-                    boolean isSelfWindow = (maze.getGameObjectAt(x, y) instanceof Window);
-                    Object westObj = (x > 0) ? maze.getGameObjectAt(x - 1, y) : null;
+                    Object westObj  = (x > 0) ? maze.getGameObjectAt(x - 1, y) : null;
                     boolean isWestWindow = (westObj instanceof Window);
-                    Object eastObj = (x < maze.getWidth() - 1) ? maze.getGameObjectAt(x + 1, y) : null;
+                    Object eastObj  = (x < maze.getWidth() - 1) ? maze.getGameObjectAt(x + 1, y) : null;
                     boolean isEastWindow = (eastObj instanceof Window);
+                    Object northObj = (y < maze.getHeight() - 1) ? maze.getGameObjectAt(x, y + 1) : null;
+                    boolean isNorthWindow = (northObj instanceof Window);
+                    Object southObj = (y > 0) ? maze.getGameObjectAt(x, y - 1) : null;
+                    boolean isSouthWindow = (southObj instanceof Window);
 
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
+                    // Do not emit North boundary wall if adjacent cell is a Window
                     boolean hasNorthDoor = (currentData & DOOR_NORTH) != 0 || (northData & DOOR_SOUTH) != 0;
-                    boolean hasNorthWall = !hasNorthDoor && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
+                    boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
                     if (hasNorthWall) {
                         addQuad(wallVerts, wallIndices,
                                 x, 0.0f, -(y + 1), 0f, 1f,
@@ -140,8 +150,9 @@ public class ChunkMeshBuilder {
                     }
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
+                    // Do not emit South boundary wall if adjacent cell is a Window
                     boolean hasSouthDoor = (currentData & DOOR_SOUTH) != 0 || (southData & DOOR_NORTH) != 0;
-                    boolean hasSouthWall = !hasSouthDoor && ((currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
+                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && ((currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
                     if (hasSouthWall) {
                         addQuad(wallVerts, wallIndices,
                                 x + 1, 0.0f, -y, 0f, 1f,
@@ -153,41 +164,34 @@ public class ChunkMeshBuilder {
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
-                    if (!isSelfWindow) {
-                        boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                        boolean hasWestWall = !hasWestDoor && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
-                        if (hasWestWall) {
-                            if (isWestWindow) {
-                                addWestWindowMesh(wallVerts, wallIndices, x, y, whitePacked);
-                            } else {
-                                addQuad(wallVerts, wallIndices,
-                                        x, 0.0f, -y, 0f, 1f,
-                                        x, 0.0f, -(y + 1), 1f, 1f,
-                                        x, 1.0f, -(y + 1), 1f, 0f,
-                                        x, 1.0f, -y, 0f, 0f,
-                                        1f, 0f, 0f, whitePacked
-                                );
-                            }
+                    boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
+                    boolean hasWestWall = !hasWestDoor && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                    if (hasWestWall) {
+                        if (isWestWindow) {
+                            addWestWindowMesh(wallVerts, wallIndices, x, y, whitePacked);
+                        } else {
+                            addQuad(wallVerts, wallIndices,
+                                    x, 0.0f, -y, 0f, 1f,
+                                    x, 0.0f, -(y + 1), 1f, 1f,
+                                    x, 1.0f, -(y + 1), 1f, 0f,
+                                    x, 1.0f, -y, 0f, 0f,
+                                    1f, 0f, 0f, whitePacked
+                            );
                         }
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
-                    if (!isSelfWindow) {
-                        boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
-                        boolean hasEastWall = !hasEastDoor && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
-                        if (hasEastWall) {
-                            if (isEastWindow) {
-                                addEastExteriorWindowCutout(wallVerts, wallIndices, x + 1, y, whitePacked);
-                            } else {
-                                addQuad(wallVerts, wallIndices,
-                                        x + 1, 0.0f, -(y + 1), 0f, 1f,
-                                        x + 1, 0.0f, -y, 1f, 1f,
-                                        x + 1, 1.0f, -y, 1f, 0f,
-                                        x + 1, 1.0f, -(y + 1), 0f, 0f,
-                                        -1f, 0f, 0f, whitePacked
-                                );
-                            }
-                        }
+                    // If East neighbor is a Window, skip emitting wall (no back wall at x + 1)
+                    boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
+                    boolean hasEastWall = !hasEastDoor && !isEastWindow && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+                    if (hasEastWall) {
+                        addQuad(wallVerts, wallIndices,
+                                x + 1, 0.0f, -(y + 1), 0f, 1f,
+                                x + 1, 0.0f, -y, 1f, 1f,
+                                x + 1, 1.0f, -y, 1f, 0f,
+                                x + 1, 1.0f, -(y + 1), 0f, 0f,
+                                -1f, 0f, 0f, whitePacked
+                        );
                     }
                 }
             }
@@ -265,9 +269,9 @@ public class ChunkMeshBuilder {
     }
 
     /**
-     * Emits the interior face of the barred shelter window at plane X = x facing East (+X).
-     * Constructs a physical 0.50 x 0.40 central opening with stone sill, lintel, left/right jambs,
-     * recessed stone embrasure reveals (0.15 depth), and 3 double-sided vertical iron bars.
+     * Emits the barred shelter window at plane X = x.
+     * Constructs a physical 0.50 x 0.40 central opening with double-sided stone sill, lintel,
+     * left/right jambs, recessed stone embrasure reveals (0.15 depth), and 3 double-sided vertical iron bars.
      */
     private static void addWestWindowMesh(
             FloatArray verts, ShortArray indices,
@@ -283,7 +287,7 @@ public class ChunkMeshBuilder {
         float depth = 0.15f;
         float xRec = x - depth;
 
-        // Normal facing East towards inside cell: (1, 0, 0)
+        // --- Front faces facing East towards inside cell: (1, 0, 0) ---
         // 1. Bottom Sill Wall: Y in [0, 0.30], Z in [zFar, zNear]
         addQuad(verts, indices,
                 x, 0.0f, zNear, 0f, 1f,
@@ -318,6 +322,43 @@ public class ChunkMeshBuilder {
                 x, yLintel, zRight, 0.25f, 0.30f,
                 x, yLintel, zNear, 0f, 0.30f,
                 1f, 0f, 0f, whitePacked
+        );
+
+        // --- Back faces facing West towards outside: (-1, 0, 0) ---
+        // 1b. Bottom Sill Wall Backface
+        addQuad(verts, indices,
+                x, 0.0f, zFar, 0f, 1f,
+                x, 0.0f, zNear, 1f, 1f,
+                x, ySill, zNear, 1f, 0.70f,
+                x, ySill, zFar, 0f, 0.70f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 2b. Top Header Lintel Backface
+        addQuad(verts, indices,
+                x, yLintel, zFar, 0f, 0.30f,
+                x, yLintel, zNear, 1f, 0.30f,
+                x, 1.0f, zNear, 1f, 0f,
+                x, 1.0f, zFar, 0f, 0f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 3b. Left Jamb Wall Backface
+        addQuad(verts, indices,
+                x, ySill, zFar, 0.75f, 0.70f,
+                x, ySill, zLeft, 1f, 0.70f,
+                x, yLintel, zLeft, 1f, 0.30f,
+                x, yLintel, zFar, 0.75f, 0.30f,
+                -1f, 0f, 0f, whitePacked
+        );
+
+        // 4b. Right Jamb Wall Backface
+        addQuad(verts, indices,
+                x, ySill, zRight, 0f, 0.70f,
+                x, ySill, zNear, 0.25f, 0.70f,
+                x, yLintel, zNear, 0.25f, 0.30f,
+                x, yLintel, zRight, 0f, 0.30f,
+                -1f, 0f, 0f, whitePacked
         );
 
         // --- 4 Embrasure Reveals (0.15 depth into wall) ---
@@ -388,60 +429,5 @@ public class ChunkMeshBuilder {
                     -1f, 0f, 0f, ironPacked
             );
         }
-    }
-
-    /**
-     * Emits the exterior cutout of the shelter window at plane X = x facing West (-X).
-     * Leaves the central 0.50 x 0.40 opening open so exterior viewers can see inside the shelter
-     * and interior viewers looking out have a clear view to the landscape and sky.
-     */
-    private static void addEastExteriorWindowCutout(
-            FloatArray verts, ShortArray indices,
-            int x, int y,
-            float whitePacked
-    ) {
-        float ySill = 0.30f;
-        float yLintel = 0.70f;
-        float zFar = -(y + 1);
-        float zNear = -y;
-        float zLeft = -(y + 0.75f);
-        float zRight = -(y + 0.25f);
-
-        // Normal facing West towards exterior cell: (-1, 0, 0)
-        // 1. Bottom Sill Wall: Y in [0, 0.30]
-        addQuad(verts, indices,
-                x, 0.0f, zFar, 0f, 1f,
-                x, 0.0f, zNear, 1f, 1f,
-                x, ySill, zNear, 1f, 0.70f,
-                x, ySill, zFar, 0f, 0.70f,
-                -1f, 0f, 0f, whitePacked
-        );
-
-        // 2. Top Header Lintel: Y in [0.70, 1.0]
-        addQuad(verts, indices,
-                x, yLintel, zFar, 0f, 0.30f,
-                x, yLintel, zNear, 1f, 0.30f,
-                x, 1.0f, zNear, 1f, 0f,
-                x, 1.0f, zFar, 0f, 0f,
-                -1f, 0f, 0f, whitePacked
-        );
-
-        // 3. Right Jamb Wall (facing -X, towards -Z): Z in [zFar, zLeft]
-        addQuad(verts, indices,
-                x, ySill, zFar, 0f, 0.70f,
-                x, ySill, zLeft, 0.25f, 0.70f,
-                x, yLintel, zLeft, 0.25f, 0.30f,
-                x, yLintel, zFar, 0f, 0.30f,
-                -1f, 0f, 0f, whitePacked
-        );
-
-        // 4. Left Jamb Wall (facing -X, towards +Z): Z in [zRight, zNear]
-        addQuad(verts, indices,
-                x, ySill, zRight, 0.75f, 0.70f,
-                x, ySill, zNear, 1f, 0.70f,
-                x, yLintel, zNear, 1f, 0.30f,
-                x, yLintel, zRight, 0.75f, 0.30f,
-                -1f, 0f, 0f, whitePacked
-        );
     }
 }
