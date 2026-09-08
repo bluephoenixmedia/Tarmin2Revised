@@ -36,11 +36,28 @@ public class DebugManager {
     private float transitionProgress = 0f; // 0→1 within the current phase
     private boolean isModernToRetro = false;
 
+    // --- 3D FOV Configuration ---
+    public static final float DEFAULT_FOV_3D = 80.0f;
+    private float fov3d = DEFAULT_FOV_3D;
+
     private DebugManager() {
     }
 
     public static DebugManager getInstance() {
         return INSTANCE;
+    }
+
+    public float getFov3d() {
+        return fov3d;
+    }
+
+    public void setFov3d(float fov) {
+        this.fov3d = MathUtils.clamp(fov, 45.0f, 110.0f);
+    }
+
+    public float adjustFov3d(float delta) {
+        this.fov3d = MathUtils.clamp(this.fov3d + delta, 45.0f, 110.0f);
+        return this.fov3d;
     }
 
     public boolean isDebugOverlayVisible() {

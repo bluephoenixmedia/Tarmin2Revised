@@ -85,10 +85,11 @@ public class World3DRenderer implements Disposable {
     private final float[] lightRadiusArray = new float[MAX_LIGHTS];
     private final float[] lightIntensityArray = new float[MAX_LIGHTS];
 
+    public static final float DEFAULT_FOV = DebugManager.DEFAULT_FOV_3D;
     private float totalTime = 0f;
 
     public World3DRenderer() {
-        this.camera = new PerspectiveCamera(70f, 1920f, 1080f);
+        this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
         this.camera.near = 0.05f;
         this.camera.far = 300f;
 
@@ -313,6 +314,7 @@ public class World3DRenderer implements Disposable {
             camera.up.rotate(camera.direction, dizzyAngle);
         }
 
+        camera.fieldOfView = DebugManager.getInstance().getFov3d();
         camera.viewportWidth = viewport.getWorldWidth();
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();

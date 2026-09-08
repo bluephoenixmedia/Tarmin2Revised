@@ -285,6 +285,7 @@ public class Skybox3DRenderer {
 
         viewport.apply();
 
+        camera.fieldOfView = DebugManager.getInstance().getFov3d();
         camera.viewportWidth = viewport.getWorldWidth();
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();

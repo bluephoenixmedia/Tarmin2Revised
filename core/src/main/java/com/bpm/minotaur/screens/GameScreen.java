@@ -360,6 +360,9 @@ public class GameScreen extends BaseScreen {
                 }
             }
         }
+        if (worldManager != null && player != null && maze != null) {
+            worldManager.updateExploration(player, maze);
+        }
     }
 
     private void checkLostDivinitiesPickup() {
@@ -988,6 +991,10 @@ public class GameScreen extends BaseScreen {
         // --- Periodic Spawning Hook ---
         turnCount++;
         worldManager.processTurn(player, turnCount);
+
+        if (worldManager != null && player != null && maze != null) {
+            worldManager.updateExploration(player, maze);
+        }
     }
 
     private void performChunkTransition(Gate transitionGate) {
@@ -1551,6 +1558,16 @@ public class GameScreen extends BaseScreen {
                     }
                 }
                 return true;
+            case Input.Keys.LEFT_BRACKET: {
+                float fov = debugManager.adjustFov3d(-1.0f);
+                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f°", fov), 1.5f));
+                return true;
+            }
+            case Input.Keys.RIGHT_BRACKET: {
+                float fov = debugManager.adjustFov3d(1.0f);
+                eventManager.addEvent(new GameEvent(String.format("3D FOV: %.0f°", fov), 1.5f));
+                return true;
+            }
         }
 
         return false;

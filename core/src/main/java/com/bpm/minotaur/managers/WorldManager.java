@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
@@ -81,7 +82,9 @@ public class WorldManager {
 
         // Initialize Seed
         this.worldSeed = new java.util.Random().nextLong();
-        Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
+        if (Gdx.app != null) {
+            Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
+        }
 
         this.biomeManager = new BiomeManager();
         this.dataManager = dataManager;
@@ -426,6 +429,97 @@ public class WorldManager {
             }
         } else {
             soundManager.stopWeatherEffects();
+        }
+    }
+
+    /**
+     * Decoupled exploration update: reveals ambient 3x3 tiles around the player
+     * plus a forward line-of-sight cone up to 8 tiles (stopped by closed walls/doors or biome fog).
+     * Works uniformly across all render engines (3D, Raycaster, etc.).
+     */
+    public void updateExploration(Player player, Maze maze) {
+        if (player == null || maze == null) return;
+
+        int px = (int) Math.floor(player.getPosition().x);
+        int py = (int) Math.floor(player.getPosition().y);
+
+        // 1. Ambient 3x3 reveal around player
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int nx = px + dx;
+                int ny = py + dy;
+                if (nx >= 0 && nx < maze.getWidth() && ny >= 0 && ny < maze.getHeight()) {
+                    maze.markVisited(nx, ny);
+                }
+            }
+        }
+
+        // 2. Directional sight cone
+        GridPoint2 chunkId = getCurrentPlayerChunkId();
+        Biome biome = (biomeManager != null && chunkId != null) ? biomeManager.getBiome(chunkId) : null;
+        float maxDist = (biome != null && biome.hasFogOfWar()) ? Math.min(8.0f, biome.getFogDistance()) : 8.0f;
+
+        Vector2 baseDir = player.getDirectionVector();
+        Vector2 cameraPlane = player.getCameraPlane();
+
+        float startX = player.getPosition().x;
+        float startY = player.getPosition().y;
+
+        int numRays = 30;
+        for (int r = 0; r < numRays; r++) {
+            float t = (numRays == 1) ? 0f : -1.0f + 2.0f * r / (numRays - 1);
+            float rdx = baseDir.x + (cameraPlane != null ? cameraPlane.x * t : 0f);
+            float rdy = baseDir.y + (cameraPlane != null ? cameraPlane.y * t : 0f);
+            float len = (float) Math.sqrt(rdx * rdx + rdy * rdy);
+            if (len > 0) {
+                rdx /= len;
+                rdy /= len;
+            }
+
+            float stepSize = 0.2f;
+            int maxSteps = (int) (maxDist / stepSize);
+            float curX = startX;
+            float curY = startY;
+
+            int prevTileX = px;
+            int prevTileY = py;
+
+            for (int s = 1; s <= maxSteps; s++) {
+                curX += rdx * stepSize;
+                curY += rdy * stepSize;
+
+                int tileX = (int) Math.floor(curX);
+                int tileY = (int) Math.floor(curY);
+
+                if (tileX < 0 || tileX >= maze.getWidth() || tileY < 0 || tileY >= maze.getHeight()) {
+                    break;
+                }
+
+                if (tileX != prevTileX || tileY != prevTileY) {
+                    boolean blocked = false;
+                    if (tileX != prevTileX) {
+                        Direction dX = (tileX > prevTileX) ? Direction.EAST : Direction.WEST;
+                        if (maze.isWallBlocking(prevTileX, prevTileY, dX) || maze.isWallBlocking(tileX, prevTileY, dX.getOpposite())) {
+                            blocked = true;
+                        }
+                    }
+                    if (!blocked && tileY != prevTileY) {
+                        Direction dY = (tileY > prevTileY) ? Direction.NORTH : Direction.SOUTH;
+                        if (maze.isWallBlocking(prevTileX, prevTileY, dY) || maze.isWallBlocking(prevTileX, tileY, dY.getOpposite())) {
+                            blocked = true;
+                        }
+                    }
+
+                    if (blocked) {
+                        maze.markVisited(tileX, tileY);
+                        break;
+                    }
+
+                    maze.markVisited(tileX, tileY);
+                    prevTileX = tileX;
+                    prevTileY = tileY;
+                }
+            }
         }
     }
 
