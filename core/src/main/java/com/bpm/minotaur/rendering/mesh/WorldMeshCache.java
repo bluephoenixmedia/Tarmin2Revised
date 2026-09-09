@@ -74,7 +74,7 @@ public class WorldMeshCache implements Disposable {
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         wallTexture, floorTexture, ceilingTexture,
-                        isIndoors, 0f, 0f
+                        false, 0f, 0f
                 );
                 cachedChunks.put(currentChunkKey, currentMeshes);
             }

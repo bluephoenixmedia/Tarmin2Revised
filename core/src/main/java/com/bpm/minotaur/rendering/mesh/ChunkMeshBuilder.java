@@ -121,7 +121,7 @@ public class ChunkMeshBuilder {
 
                     // --- 2. CEILING QUAD (Y = 1.0, Normal = Down) ---
                     // Ceilings are emitted only when inside the player's shelter OR underground in the maze (level > 1)
-                    boolean tileHasCeiling = isIndoors || (maze != null && maze.isIndoors(x, y));
+                    boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
                     if (tileHasCeiling) {
                         addQuad(ceilVerts, ceilIndices,
                                 x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
