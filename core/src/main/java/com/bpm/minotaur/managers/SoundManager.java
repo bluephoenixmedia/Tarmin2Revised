@@ -168,6 +168,11 @@ public class SoundManager {
     }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
+        if (DimensionalManager.getInstance().isWeatherSuppressed()) {
+            stopWeatherEffects();
+            return;
+        }
+
         if (type == lastWeatherType && intensity == lastWeatherIntensity) {
             return;
         }
@@ -315,6 +320,23 @@ public class SoundManager {
         } else {
             // Fallback existing
             playSound("player_attack");
+        }
+    }
+
+    public void playDimensionalWarpSound() {
+        stopWeatherEffects();
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    int[] freqs = new int[] { 880, 740, 587, 440, 330, 220, 165, 110, 82, 55 };
+                    for (int f : freqs) {
+                        playRetroSound(f, 0.08f, 0.65f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("pickup_item");
         }
     }
 

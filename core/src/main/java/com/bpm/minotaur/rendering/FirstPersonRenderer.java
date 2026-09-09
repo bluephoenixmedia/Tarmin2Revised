@@ -1000,6 +1000,21 @@ public class FirstPersonRenderer {
             }
             Color finalColor = new Color(renderColor).mul(colorModifier);
             Color litColor = applyDynamicLighting(finalColor, sampleX, sampleY, maze, worldManager, fogLerpColor, sliceIndoors);
+
+            // --- VOID DIMENSION GHOST WALLS & ETHEREAL SHIMMER ---
+            if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+                Direction wDir = (result.side == 0) ? Direction.EAST : Direction.NORTH;
+                boolean isGhost = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, result.mapX, result.mapY, wDir);
+                if (isGhost) {
+                    // Ethereal stippled / translucent violet shimmer for Ghost Walls
+                    if ((screenX % 3) == 0) {
+                        litColor.set(0.70f, 0.35f, 0.95f, 0.55f);
+                    } else {
+                        litColor.set(0.35f, 0.15f, 0.55f, 0.30f);
+                    }
+                }
+            }
+
             spriteBatch.setColor(litColor);
             spriteBatch.draw(blankTexture, screenX, drawStart, 1, height);
         }

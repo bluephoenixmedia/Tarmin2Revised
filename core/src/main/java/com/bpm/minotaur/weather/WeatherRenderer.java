@@ -77,6 +77,12 @@ public class WeatherRenderer {
      */
     public void update(float delta, Player player, Maze maze) {
         if (weatherManager == null || player == null) return;
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed()) {
+            if (particles.size > 0) particles.clear();
+            if (splashDroplets.size > 0) splashDroplets.clear();
+            tornadoInitialized = false;
+            return;
+        }
 
         WeatherType type = weatherManager.getCurrentWeather();
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
@@ -344,6 +350,7 @@ public class WeatherRenderer {
             WeatherManager wm,
             boolean isRetro
     ) {
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed()) return;
         WeatherType type = wm.getCurrentWeather();
         if (particles.size == 0 && splashDroplets.size == 0 && type != WeatherType.TORNADO) return;
         if (batcher == null || camera == null || player == null || wm == null) return;
@@ -715,6 +722,7 @@ public class WeatherRenderer {
     public void renderPrecipitation(SpriteBatch spriteBatch, Texture blankTexture,
                                     Viewport viewport, float[] depthBuffer,
                                     Player player, Maze maze) {
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed()) return;
         if (particles.size == 0 && splashDroplets.size == 0) return;
         if (player == null || depthBuffer == null) return;
 

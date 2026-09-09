@@ -30,11 +30,13 @@ public class DebugManager {
     private static final float PHASE_DURATION = 0.55f;
 
     private RenderEngine renderEngine = RenderEngine.PLANAR_3D;
-    private RenderMode renderMode = RenderMode.RETRO;
+    private RenderMode renderMode = RenderMode.MODERN;
     private RenderMode targetRenderMode = null;
+    private RenderEngine targetRenderEngine = null;
     private TransitionState transitionState = TransitionState.NONE;
     private float transitionProgress = 0f; // 0→1 within the current phase
     private boolean isModernToRetro = false;
+    private boolean isDimensionalWarp = false;
 
     // --- 3D FOV Configuration ---
     public static final float DEFAULT_FOV_3D = 80.0f;
@@ -76,6 +78,10 @@ public class DebugManager {
         return renderMode;
     }
 
+    public void setRenderModeDirect(RenderMode mode) {
+        this.renderMode = mode;
+    }
+
     public RenderEngine getRenderEngine() {
         return renderEngine;
     }
@@ -85,6 +91,9 @@ public class DebugManager {
     }
 
     public void toggleRenderEngine() {
+        if (DimensionalManager.getInstance().isInVoid() && !isDebugOverlayVisible) {
+            return;
+        }
         this.renderEngine = (this.renderEngine == RenderEngine.PLANAR_3D) ? RenderEngine.RAYCASTER : RenderEngine.PLANAR_3D;
         if (Gdx.app != null) {
             Gdx.app.log("DebugManager", "Switched Render Engine to: " + this.renderEngine);
@@ -96,15 +105,47 @@ public class DebugManager {
      * transitioning.
      */
     public void toggleRenderMode() {
+        if (DimensionalManager.getInstance().isInVoid() && !isDebugOverlayVisible) {
+            if (Gdx.app != null) {
+                Gdx.app.log("DebugManager", "Render mode locked to RETRO inside the Ancient Void.");
+            }
+            return;
+        }
         if (transitionState != TransitionState.NONE) return;
 
         targetRenderMode = (renderMode == RenderMode.MODERN) ? RenderMode.RETRO : RenderMode.MODERN;
+        targetRenderEngine = (renderMode == RenderMode.MODERN) ? RenderEngine.RAYCASTER : RenderEngine.PLANAR_3D;
         isModernToRetro = (renderMode == RenderMode.MODERN);
+        isDimensionalWarp = false;
         transitionState = TransitionState.FADING_OUT;
         transitionProgress = 0f;
 
-        Gdx.app.log("DebugManager [RETRO]",
-                "Render mode transition started: " + renderMode + " → " + targetRenderMode);
+        if (Gdx.app != null) {
+            Gdx.app.log("DebugManager [RETRO]",
+                    "Render mode transition started: " + renderMode + " → " + targetRenderMode);
+        }
+    }
+
+    /**
+     * Triggers the signature Reality Deconstruction Warp between the Mortal Realm and the Ancient Void.
+     */
+    public void triggerDimensionalWarp(boolean toVoid) {
+        if (transitionState != TransitionState.NONE) return;
+
+        targetRenderMode = toVoid ? RenderMode.RETRO : RenderMode.MODERN;
+        targetRenderEngine = toVoid ? RenderEngine.RAYCASTER : RenderEngine.PLANAR_3D;
+        isModernToRetro = toVoid;
+        isDimensionalWarp = true;
+        transitionState = TransitionState.FADING_OUT;
+        transitionProgress = 0f;
+
+        if (Gdx.app != null) {
+            Gdx.app.log("DebugManager [WARP]", "Reality Deconstruction Warp triggered: toVoid=" + toVoid);
+        }
+    }
+
+    public boolean isDimensionalWarp() {
+        return isDimensionalWarp;
     }
 
     /** Must be called once per frame from the game loop to advance the transition. */
@@ -116,21 +157,31 @@ public class DebugManager {
         if (transitionState == TransitionState.FADING_OUT && transitionProgress >= 1f) {
             RenderMode previous = renderMode;
             renderMode = targetRenderMode;
+            if (targetRenderEngine != null) {
+                renderEngine = targetRenderEngine;
+            }
             transitionState = TransitionState.FADING_IN;
             transitionProgress = 0f;
-            Gdx.app.log("DebugManager [RETRO]",
-                    "Render mode switched at transition midpoint: " + previous + " → " + renderMode);
+            if (Gdx.app != null) {
+                Gdx.app.log("DebugManager [RETRO]",
+                        "Render mode switched at transition midpoint: " + previous + " → " + renderMode + " (Engine: " + renderEngine + ")");
+            }
             logRetroModeActivated();
         } else if (transitionState == TransitionState.FADING_IN && transitionProgress >= 1f) {
             transitionState = TransitionState.NONE;
             transitionProgress = 0f;
             targetRenderMode = null;
-            Gdx.app.log("DebugManager [RETRO]",
-                    "Render mode transition complete. Active mode: " + renderMode);
+            targetRenderEngine = null;
+            isDimensionalWarp = false;
+            if (Gdx.app != null) {
+                Gdx.app.log("DebugManager [RETRO]",
+                        "Render mode transition complete. Active mode: " + renderMode);
+            }
         }
     }
 
     private void logRetroModeActivated() {
+        if (Gdx.app == null) return;
         if (renderMode == RenderMode.RETRO) {
             Gdx.app.log("DebugManager [RETRO]",
                     "RETRO mode is now active. All entities will render via ASCII sprite data. " +

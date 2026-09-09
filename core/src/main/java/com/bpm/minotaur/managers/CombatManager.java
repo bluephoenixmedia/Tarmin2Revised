@@ -283,9 +283,49 @@ public class CombatManager {
 
         if (player.getCurrentHP() <= 0) {
             this.monster = attacker;
-            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            if (shouldTriggerDeathInversion(attacker)) {
+                triggerDeathInversion(attacker);
+            } else {
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            }
             endCombat();
         }
+    }
+
+    public boolean shouldTriggerDeathInversion(Monster attacker) {
+        if (attacker == null) return false;
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) return false;
+        Monster.MonsterType type = attacker.getType();
+        return type == Monster.MonsterType.WRAITH ||
+               type == Monster.MonsterType.GHAST ||
+               type == Monster.MonsterType.LICH ||
+               type == Monster.MonsterType.BRINGER_OF_DEATH ||
+               type == Monster.MonsterType.FALL_ANGEL ||
+               type == Monster.MonsterType.VAMPIRE ||
+               type == Monster.MonsterType.ZOMBIE ||
+               type == Monster.MonsterType.GHOUL ||
+               type == Monster.MonsterType.MUMMY;
+    }
+
+    public void triggerDeathInversion(Monster attacker) {
+        Gdx.app.log("CombatManager", "Death Inversion triggered by " + attacker.getMonsterType());
+        int currentLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
+        com.badlogic.gdx.math.GridPoint2 currentChunk = (worldManager != null)
+                ? worldManager.getCurrentPlayerChunkId()
+                : new com.badlogic.gdx.math.GridPoint2(0, 0);
+
+        com.bpm.minotaur.managers.DimensionalManager.getInstance().enterVoid(true, player.getPosition(), currentLvl, currentChunk);
+
+        int revivedHp = Math.max(1, player.getStats().getMaxHP() / 2);
+        player.getStats().setCurrentHP(revivedHp);
+        player.getStatusManager().clearEffects();
+
+        eventManager.addEvent(new GameEvent("DEATH INVERSION! " + attacker.getMonsterType() + " severed your mortal soul!", 3.0f));
+        eventManager.addEvent(new GameEvent("You awaken in the Ancient Void as a Hollow Shade!", 3.5f));
+        eventManager.addEvent(new GameEvent("Find a Resonating Rift Anchor to reclaim your mortal form!", 4.0f));
+
+        com.bpm.minotaur.managers.DebugManager.getInstance().triggerDimensionalWarp(true);
+        soundManager.playDimensionalWarpSound();
     }
 
     public void openMenu() {
@@ -834,7 +874,15 @@ public class CombatManager {
         }
 
         // 3. Damage — unified formula: same STR+equipment bonus as instant combat
-        int totalAttack = totalDamage + fireDamage + lightningDamage + player.getDamageBonus();
+        int totalAttack;
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+            float physMult = com.bpm.minotaur.managers.DimensionalManager.getInstance().getPhysicalDamageMultiplier();
+            float spiritMult = com.bpm.minotaur.managers.DimensionalManager.getInstance().getSpiritualDamageMultiplier();
+            totalAttack = Math.max(1, (int) (totalDamage * physMult + (fireDamage + lightningDamage) * spiritMult + player.getDamageBonus()));
+            eventManager.addEvent(new GameEvent("VOID INVERSION! Physical dampened, Elements amplified!", 1.2f));
+        } else {
+            totalAttack = totalDamage + fireDamage + lightningDamage + player.getDamageBonus();
+        }
 
         // --- NEW: Berzerk Bonus ---
         if (player.getStatusManager().hasEffect(StatusEffectType.BERZERK)) {
@@ -972,6 +1020,16 @@ public class CombatManager {
                 int baseDamage = DiceRoller.roll(damageDice);
                 int damageBonus = player.getDamageBonus();
                 int totalDamage = Math.max(1, baseDamage + damageBonus);
+
+                if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+                    if (dmgType == DamageType.PHYSICAL) {
+                        totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getPhysicalDamageMultiplier()));
+                        eventManager.addEvent(new GameEvent("VOID DAMPENING! Physical -60%", 1f));
+                    } else {
+                        totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getSpiritualDamageMultiplier()));
+                        eventManager.addEvent(new GameEvent("VOID RESONANCE! Spiritual +250%", 1f));
+                    }
+                }
 
                 if (isCrit) {
                     totalDamage = (int) (totalDamage * player.getCritMultiplier());
@@ -1219,7 +1277,11 @@ public class CombatManager {
         } else if (currentState == CombatState.DEFEAT) {
             // Log Defeat
             BalanceLogger.getInstance().logCombatEnd("DEFEAT", currentCombatTurns, damageTakenInCombat);
-            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            if (shouldTriggerDeathInversion(monster)) {
+                triggerDeathInversion(monster);
+            } else {
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            }
             endCombat();
         }
     }

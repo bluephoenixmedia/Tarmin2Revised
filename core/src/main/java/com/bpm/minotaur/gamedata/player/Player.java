@@ -528,6 +528,11 @@ public class Player {
         }
         // ----------------------------------------------------------------
 
+        if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
+            useMysteriousPortal(maze, eventManager);
+            return;
+        }
+
         if (!item.isUsable() && !item.isPotion() && !item.isArmor() && !item.isRing()) {
             eventManager.addEvent(new GameEvent("You can't use that.", 2f));
             return;
@@ -587,14 +592,20 @@ public class Player {
     // --- NEW INTERACTION METHODS ---
 
     private void useMysteriousPortal(Maze maze, GameEventManager eventManager) {
-        eventManager.addEvent(new GameEvent("You step into the swirling portal...", 2.0f));
-        eventManager.addEvent(new GameEvent("The world dissolves around you!", 3.0f));
+        boolean toVoid = !com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid();
+        if (toVoid) {
+            eventManager.addEvent(new GameEvent("You step into the swirling Tear of Tarmin...", 2.0f));
+            eventManager.addEvent(new GameEvent("Reality shears! Entering the Ancient Raycast Void...", 3.0f));
+        } else {
+            eventManager.addEvent(new GameEvent("You step through the Resonating Rift...", 2.0f));
+            eventManager.addEvent(new GameEvent("The Void dissolves! Returning to the Mortal Realm...", 3.0f));
+        }
 
         // Trigger System Event
         eventManager.addEvent(new GameEvent(GameEvent.EventType.PORTAL_ACTIVATED, null));
 
         // --- BALANCE LOGGING ---
-        BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. Reset imminent.");
+        BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. toVoid=" + toVoid);
     }
 
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
@@ -1235,29 +1246,34 @@ public class Player {
             }
         }
 
-        // --- MOVEMENT DEBUGGING ---
-        if (!maze.isPassable(nextX, nextY)) {
-            // Check specific reasons for blockage
-            if (maze.getWallDataAt(nextX, nextY) == 1) {
-                Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
+        // --- GHOST WALL & MOVEMENT HANDLING ---
+        boolean isGhostWall = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, currentX, currentY, direction);
+        if (!isGhostWall) {
+            if (!maze.isPassable(nextX, nextY)) {
+                // Check specific reasons for blockage
+                if (maze.getWallDataAt(nextX, nextY) == 1) {
+                    Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
+                }
+                Item item = maze.getItems().get(nextTile);
+                if (item != null && item.isImpassable()) {
+                    Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at ("
+                            + nextX + "," + nextY + ")");
+                }
+                // Check for doors/gates
+                Object obj = maze.getGameObjectAt(nextX, nextY);
+                if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
+                    Gdx.app.log("Player [DEBUG]", "Move blocked by CLOSED DOOR at (" + nextX + "," + nextY + ")");
+                }
+                return;
             }
-            Item item = maze.getItems().get(nextTile);
-            if (item != null && item.isImpassable()) {
-                Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at ("
-                        + nextX + "," + nextY + ")");
-            }
-            // Check for doors/gates
-            Object obj = maze.getGameObjectAt(nextX, nextY);
-            if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
-                Gdx.app.log("Player [DEBUG]", "Move blocked by CLOSED DOOR at (" + nextX + "," + nextY + ")");
-            }
-            return;
-        }
 
-        if (maze.isWallBlocking(currentX, currentY, direction)) {
-            Gdx.app.log("Player [DEBUG]",
-                    "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
-            return;
+            if (maze.isWallBlocking(currentX, currentY, direction)) {
+                Gdx.app.log("Player [DEBUG]",
+                        "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
+                return;
+            }
+        } else {
+            eventManager.addEvent(new GameEvent("You phase through the ethereal Ghost Wall...", 1.2f));
         }
 
         if (maze.getScenery().containsKey(nextTile)) {
@@ -1270,6 +1286,14 @@ public class Player {
 
         position.set(nextX + 0.5f, nextY + 0.5f);
         UnlockManager.getInstance().incrementStat("steps", 1);
+
+        // --- VOID SIGHT LORE INSCRIPTIONS ---
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+            String voidLore = com.bpm.minotaur.managers.DimensionalManager.getInstance().getVoidLoreAt(0, 0, nextX, nextY);
+            if (voidLore != null) {
+                eventManager.addEvent(new GameEvent(voidLore, 4.0f));
+            }
+        }
 
         String eventId = maze.getEventAt(nextX, nextY);
         if (eventId != null) {

@@ -675,7 +675,8 @@ public class GameScreen extends BaseScreen {
             renderModeTransitionOverlay(
                     debugManager.getTransitionOverlayAlpha(),
                     debugManager.getTransitionPeakFactor(),
-                    debugManager.isModernToRetroTransition());
+                    debugManager.isModernToRetroTransition(),
+                    debugManager.isDimensionalWarp());
         }
 
         if (hud != null) {
@@ -756,7 +757,7 @@ public class GameScreen extends BaseScreen {
      * @param peakFactor  0–1 how close we are to the transition midpoint (drives scanline intensity)
      * @param toRetro     true when transitioning MODERN→RETRO
      */
-    private void renderModeTransitionOverlay(float blackAlpha, float peakFactor, boolean toRetro) {
+    private void renderModeTransitionOverlay(float blackAlpha, float peakFactor, boolean toRetro, boolean isWarp) {
         Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA,
                 com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -768,24 +769,68 @@ public class GameScreen extends BaseScreen {
         shapeRenderer.setColor(0f, 0f, 0f, blackAlpha);
         shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
 
-        // Horizontal scanlines appear as the screen darkens — simulates a CRT powering
-        // off / on. Each second line is slightly darker, with intensity tied to peakFactor.
-        if (peakFactor > 0.05f) {
-            int lineCount = 60;
-            float lineH = (float) GAME_HEIGHT / lineCount;
-            float scanAlpha = peakFactor * 0.55f;
-            shapeRenderer.setColor(0f, 0f, 0f, scanAlpha);
-            for (int i = 0; i < lineCount; i += 2) {
-                shapeRenderer.rect(0, HUD_HEIGHT + i * lineH, VIRTUAL_WIDTH, lineH * 0.6f);
+        if (isWarp) {
+            // --- REALITY DECONSTRUCTION WARP ---
+            // Chromatic scanline shear across horizontal bands
+            int bands = 36;
+            float bandH = (float) GAME_HEIGHT / bands;
+            for (int i = 0; i < bands; i++) {
+                float y = HUD_HEIGHT + i * bandH;
+                float shear = (float) Math.sin((time * 18.0f) + i * 0.4f) * peakFactor * 24.0f;
+                if (i % 2 == 0) {
+                    // Cyan / Ethereal blue band offset
+                    shapeRenderer.setColor(0.15f, 0.75f, 0.95f, peakFactor * 0.40f);
+                    shapeRenderer.rect(shear, y, VIRTUAL_WIDTH, bandH * 0.5f);
+                } else {
+                    // Mystic Violet / Tarmin-Zul purple band offset
+                    shapeRenderer.setColor(0.72f, 0.20f, 0.90f, peakFactor * 0.40f);
+                    shapeRenderer.rect(-shear, y, VIRTUAL_WIDTH, bandH * 0.5f);
+                }
             }
-        }
 
-        // When transitioning to RETRO, add a faint amber tint near the midpoint to
-        // evoke an old phosphor monitor warming up.
-        if (toRetro && peakFactor > 0.6f) {
-            float tintAlpha = (peakFactor - 0.6f) / 0.4f * 0.18f; // 0→0.18
-            shapeRenderer.setColor(0.9f, 0.55f, 0.05f, tintAlpha);
-            shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+            // Flashing stag skull sigil of Tarmin-Zul at transition peak
+            if (peakFactor > 0.40f) {
+                float sigilAlpha = (peakFactor - 0.40f) / 0.60f;
+                shapeRenderer.setColor(0.85f, 0.35f, 0.95f, sigilAlpha * 0.85f);
+
+                float cx = VIRTUAL_WIDTH * 0.5f;
+                float cy = HUD_HEIGHT + GAME_HEIGHT * 0.5f;
+
+                // Central stag skull / rune sigil lines
+                // Skull forehead
+                shapeRenderer.rect(cx - 14, cy - 10, 28, 20);
+                // Elongated snout
+                shapeRenderer.triangle(cx - 10, cy - 10, cx + 10, cy - 10, cx, cy - 42);
+
+                // Antler Main Beams
+                shapeRenderer.rectLine(cx - 10, cy + 8, cx - 45, cy + 50, 4);
+                shapeRenderer.rectLine(cx + 10, cy + 8, cx + 45, cy + 50, 4);
+
+                // Antler Tines
+                shapeRenderer.rectLine(cx - 24, cy + 26, cx - 50, cy + 28, 3);
+                shapeRenderer.rectLine(cx - 36, cy + 40, cx - 62, cy + 46, 3);
+                shapeRenderer.rectLine(cx + 24, cy + 26, cx + 50, cy + 28, 3);
+                shapeRenderer.rectLine(cx + 36, cy + 40, cx + 62, cy + 46, 3);
+            }
+        } else {
+            // Standard scanlines
+            if (peakFactor > 0.05f) {
+                int lineCount = 60;
+                float lineH = (float) GAME_HEIGHT / lineCount;
+                float scanAlpha = peakFactor * 0.55f;
+                shapeRenderer.setColor(0f, 0f, 0f, scanAlpha);
+                for (int i = 0; i < lineCount; i += 2) {
+                    shapeRenderer.rect(0, HUD_HEIGHT + i * lineH, VIRTUAL_WIDTH, lineH * 0.6f);
+                }
+            }
+
+            // When transitioning to RETRO, add a faint amber tint near the midpoint to
+            // evoke an old phosphor monitor warming up.
+            if (toRetro && peakFactor > 0.6f) {
+                float tintAlpha = (peakFactor - 0.6f) / 0.4f * 0.18f; // 0→0.18
+                shapeRenderer.setColor(0.9f, 0.55f, 0.05f, tintAlpha);
+                shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+            }
         }
 
         shapeRenderer.end();
@@ -843,24 +888,28 @@ public class GameScreen extends BaseScreen {
             }
         }
 
-        // --- NEW: Portal Reset Handling ---
+        // --- Portal & Dimensional Warp Handling ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
-            Gdx.app.log("GameScreen", "PORTAL_ACTIVATED detected. Resetting world.");
-            DivinityManager.getInstance().onRunReset();
+            boolean toVoid = !com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid();
+            Gdx.app.log("GameScreen", "PORTAL_ACTIVATED detected. Dimensional warp toVoid=" + toVoid);
 
-            // 1. Reset World Data
-            worldManager.resetWorldKeepDifficulty();
-            this.currentLevel = worldManager.getCurrentLevel(); // Should be 1
-
-            // 2. Clear Rendering State
-            worldManager.clearLoadedChunks();
-
-            // 3. Regenerate Level 1 (Simulate new game start)
-            generateLevel(this.currentLevel);
-
-            // 4. Feedback
-            hud.addMessage("The world shifts...");
-            hud.addMessage("You are back at the start, but stronger.");
+            if (toVoid) {
+                com.bpm.minotaur.managers.DimensionalManager.getInstance().enterVoid(
+                        false, player.getPosition(), currentLevel, worldManager.getCurrentPlayerChunkId());
+                debugManager.triggerDimensionalWarp(true);
+                soundManager.playDimensionalWarpSound();
+                hud.addMessage("Reality shears! Entering the Ancient Raycast Void of Tarmin-Zul.");
+            } else {
+                boolean recoveredSoul = com.bpm.minotaur.managers.DimensionalManager.getInstance().isHollowShade();
+                com.bpm.minotaur.managers.DimensionalManager.getInstance().exitVoid(true);
+                debugManager.triggerDimensionalWarp(false);
+                soundManager.playDimensionalWarpSound();
+                if (recoveredSoul) {
+                    player.getStats().setCurrentHP(player.getStats().getMaxHP());
+                    hud.addMessage("Your mortal soul is restored at the Rift Anchor!");
+                }
+                hud.addMessage("The Void dissolves! Returning to the Mortal Realm.");
+            }
         }
 
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
@@ -924,6 +973,9 @@ public class GameScreen extends BaseScreen {
             }
 
             // 5. Restore Player & Grant starter weapon
+            com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
+            debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
+            debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
             player.getStats().setCurrentHP(player.getStats().getMaxHP());
             player.getStats().setCurrentMP(player.getStats().getMaxMP());
             player.getStatusManager().clearEffects();
