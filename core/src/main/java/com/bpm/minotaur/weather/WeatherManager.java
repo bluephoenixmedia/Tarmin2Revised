@@ -66,6 +66,7 @@ public class WeatherManager {
     }
 
     private float wetness = 0.65f;
+    private float snowAccumulation = 0.0f;
     private boolean isRollingThunderPlayed = false;
 
     public void update(float delta) {
@@ -81,12 +82,29 @@ public class WeatherManager {
         currentFogDistance = MathUtils.lerp(currentFogDistance, targetFogDistance, FOG_LERP_SPEED * delta);
         currentFogColor.lerp(targetFogColor, FOG_LERP_SPEED * delta);
 
-        // 2b. Track Ground Surface Wetness
-        if (isPrecipitation()) {
-            float wetRate = (currentIntensity == WeatherIntensity.EXTREME) ? 0.12f : 0.06f;
+        // 2b. Track Ground Surface Wetness and Snow Accumulation
+        if (currentWeather == WeatherType.RAIN || currentWeather == WeatherType.STORM || currentWeather == WeatherType.TORNADO) {
+            float wetRate = (currentIntensity == WeatherIntensity.EXTREME) ? 0.12f
+                    : (currentIntensity == WeatherIntensity.HEAVY) ? 0.08f
+                    : (currentIntensity == WeatherIntensity.MEDIUM) ? 0.05f : 0.025f;
             wetness = Math.min(1.0f, wetness + delta * wetRate);
+            // Rain and storm rapidly wash away snow accumulation
+            snowAccumulation = Math.max(0.0f, snowAccumulation - delta * 0.12f);
         } else {
-            wetness = Math.max(0.0f, wetness - delta * 0.025f);
+            // Gradual drying during clear or non-rain weather (~45-60s for full dry)
+            float dryRate = (currentWeather == WeatherType.CLEAR) ? 0.020f : 0.008f;
+            wetness = Math.max(0.0f, wetness - delta * dryRate);
+        }
+
+        if (currentWeather == WeatherType.SNOW || currentWeather == WeatherType.BLIZZARD) {
+            float snowRate = (currentWeather == WeatherType.BLIZZARD) ? 0.08f
+                    : (currentIntensity == WeatherIntensity.HEAVY) ? 0.045f
+                    : (currentIntensity == WeatherIntensity.MEDIUM) ? 0.025f : 0.012f;
+            snowAccumulation = Math.min(1.0f, snowAccumulation + delta * snowRate);
+        } else if (currentWeather != WeatherType.RAIN && currentWeather != WeatherType.STORM) {
+            // Gradual melting in clear weather or fog
+            float meltRate = (currentWeather == WeatherType.CLEAR) ? 0.018f : 0.006f;
+            snowAccumulation = Math.max(0.0f, snowAccumulation - delta * meltRate);
         }
 
         // 3. Handle Lightning
@@ -226,39 +244,136 @@ public class WeatherManager {
     private void updateAtmosphereTargets() {
         switch (currentWeather) {
             case CLEAR:
-                targetFogDistance = 60f;
+                targetFogDistance = 70f;
                 targetFogColor.set(Color.WHITE);
                 globalLightDimmer = 1.0f;
                 break;
             case RAIN:
-                targetFogDistance = (currentIntensity == WeatherIntensity.HEAVY) ? 25f : 40f;
-                targetFogColor.set(0.6f, 0.6f, 0.7f, 1f);
-                globalLightDimmer = 0.8f;
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 45f;
+                        targetFogColor.set(0.68f, 0.72f, 0.80f, 1f);
+                        globalLightDimmer = 0.88f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 34f;
+                        targetFogColor.set(0.58f, 0.62f, 0.72f, 1f);
+                        globalLightDimmer = 0.78f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 24f;
+                        targetFogColor.set(0.48f, 0.52f, 0.64f, 1f);
+                        globalLightDimmer = 0.68f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 18f;
+                        targetFogColor.set(0.38f, 0.42f, 0.55f, 1f);
+                        globalLightDimmer = 0.58f;
+                        break;
+                }
                 break;
             case STORM:
-                targetFogDistance = 15f;
-                targetFogColor.set(0.3f, 0.3f, 0.35f, 1f);
-                globalLightDimmer = 0.5f;
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 22f;
+                        targetFogColor.set(0.35f, 0.35f, 0.42f, 1f);
+                        globalLightDimmer = 0.58f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 18f;
+                        targetFogColor.set(0.30f, 0.30f, 0.38f, 1f);
+                        globalLightDimmer = 0.50f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 14f;
+                        targetFogColor.set(0.24f, 0.24f, 0.32f, 1f);
+                        globalLightDimmer = 0.45f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 10f;
+                        targetFogColor.set(0.18f, 0.18f, 0.26f, 1f);
+                        globalLightDimmer = 0.38f;
+                        break;
+                }
                 break;
             case SNOW:
-                targetFogDistance = 30f;
-                targetFogColor.set(0.9f, 0.9f, 0.95f, 1f);
-                globalLightDimmer = 0.9f;
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 40f;
+                        targetFogColor.set(0.92f, 0.94f, 0.98f, 1f);
+                        globalLightDimmer = 0.95f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 28f;
+                        targetFogColor.set(0.88f, 0.90f, 0.95f, 1f);
+                        globalLightDimmer = 0.90f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 18f;
+                        targetFogColor.set(0.82f, 0.85f, 0.92f, 1f);
+                        globalLightDimmer = 0.82f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 12f;
+                        targetFogColor.set(0.78f, 0.82f, 0.90f, 1f);
+                        globalLightDimmer = 0.75f;
+                        break;
+                }
                 break;
             case BLIZZARD:
-                targetFogDistance = 8f;
-                targetFogColor.set(0.95f, 0.95f, 1.0f, 1f);
-                globalLightDimmer = 0.7f;
+                // Stark, disorienting whiteout
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 14f;
+                        targetFogColor.set(0.92f, 0.94f, 0.98f, 1f);
+                        globalLightDimmer = 0.75f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 11f;
+                        targetFogColor.set(0.95f, 0.96f, 1.0f, 1f);
+                        globalLightDimmer = 0.70f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 8.5f;
+                        targetFogColor.set(0.96f, 0.97f, 1.0f, 1f);
+                        globalLightDimmer = 0.65f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 6.5f;
+                        targetFogColor.set(0.98f, 0.99f, 1.0f, 1f);
+                        globalLightDimmer = 0.60f;
+                        break;
+                }
                 break;
             case FOG:
-                targetFogDistance = 12f;
-                targetFogColor.set(0.5f, 0.5f, 0.5f, 1f);
-                globalLightDimmer = 0.6f;
+                switch (currentIntensity) {
+                    case LIGHT:
+                        targetFogDistance = 25f;
+                        targetFogColor.set(0.65f, 0.65f, 0.68f, 1f);
+                        globalLightDimmer = 0.75f;
+                        break;
+                    case MEDIUM:
+                        targetFogDistance = 16f;
+                        targetFogColor.set(0.55f, 0.55f, 0.58f, 1f);
+                        globalLightDimmer = 0.65f;
+                        break;
+                    case HEAVY:
+                        targetFogDistance = 10f;
+                        targetFogColor.set(0.45f, 0.45f, 0.48f, 1f);
+                        globalLightDimmer = 0.55f;
+                        break;
+                    case EXTREME:
+                        targetFogDistance = 6f;
+                        targetFogColor.set(0.38f, 0.38f, 0.40f, 1f);
+                        globalLightDimmer = 0.45f;
+                        break;
+                }
                 break;
             case TORNADO:
-                targetFogDistance = 30f;
-                targetFogColor.set(0.4f, 0.35f, 0.2f, 1f);
-                globalLightDimmer = 0.6f;
+                // Ominous sickly green-black atmospheric supercell
+                targetFogDistance = 22f;
+                targetFogColor.set(0.28f, 0.35f, 0.24f, 1f);
+                globalLightDimmer = 0.48f;
                 break;
         }
     }
@@ -299,12 +414,34 @@ public class WeatherManager {
         return flashIntensity > 0.1f;
     }
 
+    public void setCurrentWeather(WeatherType weather) {
+        if (weather != null && this.currentWeather != weather) {
+            this.currentWeather = weather;
+            if (worldManager != null && worldManager.getSoundManager() != null) {
+                worldManager.getSoundManager().updateWeatherAudio(currentWeather, currentIntensity);
+            }
+            updateAtmosphereTargets();
+        }
+    }
+
+    public void setCurrentIntensity(WeatherIntensity intensity) {
+        if (intensity != null && this.currentIntensity != intensity) {
+            this.currentIntensity = intensity;
+            if (worldManager != null && worldManager.getSoundManager() != null) {
+                worldManager.getSoundManager().updateWeatherAudio(currentWeather, currentIntensity);
+            }
+            updateAtmosphereTargets();
+        }
+    }
+
     public void debugCycleWeather() {
         int nextOrdinal = (currentWeather.ordinal() + 1) % WeatherType.values().length;
         this.currentWeather = WeatherType.values()[nextOrdinal];
-        Gdx.app.log("WeatherManager", "Debug: Forced weather to " + currentWeather);
+        if (Gdx.app != null) {
+            Gdx.app.log("WeatherManager", "Debug: Forced weather to " + currentWeather);
+        }
 
-        if (worldManager.getSoundManager() != null) {
+        if (worldManager != null && worldManager.getSoundManager() != null) {
             worldManager.getSoundManager().updateWeatherAudio(currentWeather, currentIntensity);
         }
 
@@ -315,9 +452,11 @@ public class WeatherManager {
     public void debugCycleIntensity() {
         int nextOrdinal = (currentIntensity.ordinal() + 1) % WeatherIntensity.values().length;
         this.currentIntensity = WeatherIntensity.values()[nextOrdinal];
-        Gdx.app.log("WeatherManager", "Debug: Forced intensity to " + currentIntensity);
+        if (Gdx.app != null) {
+            Gdx.app.log("WeatherManager", "Debug: Forced intensity to " + currentIntensity);
+        }
 
-        if (worldManager.getSoundManager() != null) {
+        if (worldManager != null && worldManager.getSoundManager() != null) {
             worldManager.getSoundManager().updateWeatherAudio(currentWeather, currentIntensity);
         }
 
@@ -406,31 +545,76 @@ public class WeatherManager {
         return wetness;
     }
 
+    public void setWetness(float wetness) {
+        this.wetness = MathUtils.clamp(wetness, 0f, 1f);
+    }
+
+    public float getSnowAccumulation() {
+        return snowAccumulation;
+    }
+
+    public void setSnowAccumulation(float snowAccumulation) {
+        this.snowAccumulation = MathUtils.clamp(snowAccumulation, 0f, 1f);
+    }
+
+    /**
+     * Returns cloud coverage factor (0.0 = completely clear skies, 1.0 = heavy overcast/storm canopy).
+     */
+    public float getCloudCover() {
+        switch (currentWeather) {
+            case CLEAR:
+                return 0.0f;
+            case FOG:
+                return 0.45f;
+            case RAIN:
+                switch (currentIntensity) {
+                    case LIGHT: return 0.35f;
+                    case MEDIUM: return 0.55f;
+                    case HEAVY: return 0.75f;
+                    case EXTREME: default: return 0.90f;
+                }
+            case STORM:
+                return (currentIntensity == WeatherIntensity.LIGHT) ? 0.85f : 1.0f;
+            case SNOW:
+                switch (currentIntensity) {
+                    case LIGHT: return 0.40f;
+                    case MEDIUM: return 0.60f;
+                    case HEAVY: return 0.80f;
+                    case EXTREME: default: return 0.92f;
+                }
+            case BLIZZARD:
+            case TORNADO:
+            default:
+                return 1.0f;
+        }
+    }
+
     /**
      * Calculates the 3D world-space wind velocity vector.
      */
     public void getWindVector(Vector3 out) {
         if (out == null) return;
         float intensityMod = (currentIntensity == WeatherIntensity.EXTREME) ? 1.8f
-                : (currentIntensity == WeatherIntensity.HEAVY) ? 1.35f : 1.0f;
+                : (currentIntensity == WeatherIntensity.HEAVY) ? 1.35f
+                : (currentIntensity == WeatherIntensity.MEDIUM) ? 1.0f : 0.7f;
         switch (currentWeather) {
             case STORM:
                 out.set(-4.5f * intensityMod, 0f, 1.8f * intensityMod);
                 break;
             case BLIZZARD:
-                out.set(-8.5f * intensityMod, 0f, 3.2f * intensityMod);
+                out.set(-9.5f * intensityMod, 0f, 3.8f * intensityMod);
                 break;
             case TORNADO:
-                out.set(-12.0f, 0f, 5.0f);
+                out.set(-15.0f, 0f, 6.0f);
                 break;
             case RAIN:
                 out.set(-1.8f * intensityMod, 0f, 0.7f * intensityMod);
                 break;
             case SNOW:
-                out.set(-0.9f * intensityMod, 0f, 0.4f * intensityMod);
+                out.set(-0.6f * intensityMod, 0f, 0.25f * intensityMod); // gentle drift
                 break;
             default:
-                out.set(-0.3f, 0f, 0.1f);
+                out.set(-0.2f, 0f, 0.1f);
                 break;
         }
     }

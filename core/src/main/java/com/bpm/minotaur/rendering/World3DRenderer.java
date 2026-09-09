@@ -48,6 +48,7 @@ import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.weather.WeatherRenderer;
+import com.bpm.minotaur.weather.WeatherType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -215,7 +216,7 @@ public class World3DRenderer implements Disposable {
         }
 
         // --- UPDATE 3D CAMERA ---
-        updateCamera(player, viewport);
+        updateCamera(player, viewport, wm, isIndoors);
 
         // --- PASS 0: 3D SKYBOX & HORIZON LANDMARKS (Outdoors Level 1) ---
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
@@ -319,6 +320,12 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_fogDistance", fogDistance);
         shader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
 
+        // Dynamic surface weather modulation
+        float wetness = (wm != null && currentLevel == 1) ? wm.getWetness() : 0.0f;
+        float snowAccum = (wm != null && currentLevel == 1) ? wm.getSnowAccumulation() : 0.0f;
+        shader.setUniformf("u_wetness", wetness);
+        shader.setUniformf("u_snowAccumulation", snowAccum);
+
         // Setup dynamic point lights
         setupDynamicLights(lm, player);
 
@@ -401,7 +408,7 @@ public class World3DRenderer implements Disposable {
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 
-    private void updateCamera(Player player, Viewport viewport) {
+    private void updateCamera(Player player, Viewport viewport, WeatherManager wm, boolean isIndoors) {
         float px = player.getPosition().x;
         float py = player.getPosition().y;
         float pz = 0.5f; // Eye height
@@ -419,6 +426,17 @@ public class World3DRenderer implements Disposable {
         if (player.getStatusManager().hasEffect(StatusEffectType.CONFUSED)) {
             float dizzyAngle = 2.0f * (float) Math.sin(totalTime * 2.0f);
             camera.up.rotate(camera.direction, dizzyAngle);
+        }
+
+        // Outdoor Tornado Gale-force Wind Vibration / Trauma
+        if (wm != null && wm.getCurrentWeather() == WeatherType.TORNADO && !isIndoors) {
+            float traumaAngle = (float) (Math.sin(totalTime * 18.0f) * 0.70f + Math.cos(totalTime * 27.0f) * 0.40f);
+            camera.up.rotate(camera.direction, traumaAngle);
+            camera.position.add(
+                    (float) Math.sin(totalTime * 22.0f) * 0.015f,
+                    (float) Math.cos(totalTime * 19.0f) * 0.010f,
+                    (float) Math.sin(totalTime * 25.0f) * 0.015f
+            );
         }
 
         camera.fieldOfView = DebugManager.getInstance().getFov3d();

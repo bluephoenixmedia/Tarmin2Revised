@@ -1511,6 +1511,13 @@ public class GameScreen extends BaseScreen {
                 debugManager.toggleRenderEngine();
                 eventManager.addEvent(new GameEvent("Render Engine: " + debugManager.getRenderEngine(), 2f));
                 return true;
+            case Input.Keys.F10:
+                if (worldManager.getWeatherManager() != null) {
+                    worldManager.getWeatherManager().debugCycleIntensity();
+                    eventManager.addEvent(new GameEvent(
+                            "Debug Weather Intensity: " + worldManager.getWeatherManager().getCurrentIntensity(), 2f));
+                }
+                return true;
             case Input.Keys.F11:
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();

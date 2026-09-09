@@ -75,6 +75,7 @@ public class Skybox3DRenderer {
     private float totalTime = 0f;
     private boolean isStormy = false;
     private float currentFlash = 0f;
+    private float currentCloudCover = 0.2f;
     private final Vector3 sunDir = new Vector3(0.3f, 0.8f, 0.4f).nor();
     private final Vector3 moonDir = new Vector3(-0.3f, -0.8f, -0.4f).nor();
     private final Color skyTint = new Color(0.12f, 0.14f, 0.22f, 1f);
@@ -204,12 +205,19 @@ public class Skybox3DRenderer {
         isStormy = (weather != null && weather.isStormy());
         currentWeather = (weather != null) ? weather.getCurrentWeather() : WeatherType.CLEAR;
         currentFlash = (weather != null) ? weather.getFlashIntensity() : 0f;
+        currentCloudCover = (weather != null) ? weather.getCloudCover() : 0.0f;
 
         // 3. Day/Night Lighting & Celestial Disk Positions
         if (dayNight != null) {
             Color currentSky = dayNight.getSkyTint();
             skyTint.set(currentSky);
             horizonFogColor.set(currentSky.r * 0.45f, currentSky.g * 0.45f, currentSky.b * 0.55f, 1f);
+
+            if (currentWeather == WeatherType.TORNADO) {
+                // Distinct sickly greenish-dark supercell atmosphere
+                skyTint.lerp(new Color(0.18f, 0.25f, 0.16f, 1f), 0.70f);
+                horizonFogColor.set(0.24f, 0.30f, 0.20f, 1f);
+            }
 
             float brightness = dayNight.getBrightness();
 
@@ -306,6 +314,7 @@ public class Skybox3DRenderer {
             stormShader.setUniformf("u_skyTint", skyTint.r, skyTint.g, skyTint.b);
             stormShader.setUniformf("u_horizonColor", horizonFogColor.r, horizonFogColor.g, horizonFogColor.b);
             stormShader.setUniformf("u_stormIntensity", isStormy ? 1.0f : 0.2f);
+            stormShader.setUniformf("u_cloudCover", currentCloudCover);
             stormShader.setUniformf("u_flashIntensity", currentFlash);
             stormShader.setUniformf("u_windSpeed", isStormy ? 2.5f : 0.8f);
 
@@ -326,8 +335,8 @@ public class Skybox3DRenderer {
         if (castleInstance   != null) modelBatch.render(castleInstance, environment);
         if (spireInstance    != null) modelBatch.render(spireInstance, environment);
 
-        // Sun & Moon are visible during clear/partly-cloudy skies; occluded during heavy storms
-        if (!isStormy) {
+        // Sun & Moon are visible during clear/partly-cloudy skies; occluded during heavy overcast
+        if (currentCloudCover < 0.85f) {
             if (sunInstance  != null) modelBatch.render(sunInstance, environment);
             if (moonInstance != null) modelBatch.render(moonInstance, environment);
         }
@@ -382,6 +391,17 @@ public class Skybox3DRenderer {
                 float updraft  = 1.8f;
 
                 tornadoRenderer.line(px, y, pz, px + tangentX, y + updraft, pz + tangentZ);
+            }
+
+            // Low ground swirling dust cloud ring
+            if (t < 5) {
+                float dustR = r * 1.65f;
+                for (int d = 0; d < 4; d++) {
+                    float da = tierAngle * 1.4f + (d / 4.0f) * MathUtils.PI2;
+                    float dpx = tx + MathUtils.cos(da) * dustR;
+                    float dpz = tz + MathUtils.sin(da) * dustR;
+                    tornadoRenderer.line(dpx, y, dpz, dpx - MathUtils.sin(da) * 4.5f, y + 0.8f, dpz + MathUtils.cos(da) * 4.5f);
+                }
             }
         }
 

@@ -48,7 +48,10 @@ public class WeatherRenderer {
     private final Color retroCyan = new Color(0.0f, 0.90f, 1.0f, 1.0f);
     private final Color modernRainStreak = new Color(0.78f, 0.88f, 1.0f, 0.65f);
     private final Color modernStormStreak = new Color(0.85f, 0.93f, 1.0f, 0.72f);
-    private final Color modernSnowFlake = new Color(0.95f, 0.98f, 1.0f, 0.90f);
+    private final Color modernSnowCrystalline = new Color(0.98f, 0.99f, 1.0f, 0.92f);
+    private final Color modernSnowFluffy = new Color(0.92f, 0.95f, 1.0f, 0.78f);
+    private final Color modernBlizzardStreak = new Color(0.96f, 0.98f, 1.0f, 0.88f);
+    private final Color tornadoDebrisColor = new Color(0.28f, 0.24f, 0.18f, 0.85f);
     private final Color modernSplash = new Color(0.80f, 0.90f, 1.0f, 0.70f);
 
     public WeatherRenderer(WeatherManager weatherManager) {
@@ -83,7 +86,7 @@ public class WeatherRenderer {
         if (toSpawn > 0) {
             int batchSpawn = (particles.size == 0) ? toSpawn : Math.min(toSpawn, 140);
             for (int i = 0; i < batchSpawn; i++) {
-                WeatherParticle p = new WeatherParticle(0, 0, 0, 0, 0, 0, 0, type);
+                WeatherParticle p = new WeatherParticle(0, 0, 0, 0, 0, 0, 0, type, false, false);
                 initParticle(p, playerX, playerY, viewAngle, maze, type, particles.size == 0);
                 if (!p.isDead) {
                     particles.add(p);
@@ -143,10 +146,40 @@ public class WeatherRenderer {
     }
 
     private int getMaxParticles(WeatherType type, WeatherIntensity intensity) {
-        if (type == WeatherType.BLIZZARD) return 340;
-        if (type == WeatherType.STORM) return 300;
-        if (type == WeatherType.SNOW) return (intensity == WeatherIntensity.HEAVY) ? 190 : 110;
-        return (intensity == WeatherIntensity.HEAVY) ? 220 : (intensity == WeatherIntensity.MEDIUM) ? 150 : 80;
+        if (!weatherManager.isPrecipitation(type)) return 0;
+        switch (type) {
+            case BLIZZARD:
+                switch (intensity) {
+                    case LIGHT: return 200;
+                    case MEDIUM: return 260;
+                    case HEAVY: return 320;
+                    case EXTREME: default: return 380;
+                }
+            case STORM:
+                switch (intensity) {
+                    case LIGHT: return 180;
+                    case MEDIUM: return 240;
+                    case HEAVY: return 300;
+                    case EXTREME: default: return 360;
+                }
+            case SNOW:
+                switch (intensity) {
+                    case LIGHT: return 70;
+                    case MEDIUM: return 130;
+                    case HEAVY: return 200;
+                    case EXTREME: default: return 280;
+                }
+            case TORNADO:
+                return 260;
+            case RAIN:
+            default:
+                switch (intensity) {
+                    case LIGHT: return 75;
+                    case MEDIUM: return 140;
+                    case HEAVY: return 220;
+                    case EXTREME: default: return 300;
+                }
+        }
     }
 
     /**
@@ -208,16 +241,31 @@ public class WeatherRenderer {
             float vy = windVector.z + MathUtils.random(-0.4f, 0.4f);
             float vz;
             float length;
+            boolean isFluffy = (type == WeatherType.SNOW) && (MathUtils.random() < 0.32f);
+            boolean isDebris = (type == WeatherType.TORNADO) && (MathUtils.random() < 0.45f);
 
-            if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
-                vz = (type == WeatherType.BLIZZARD) ? -MathUtils.random(5.0f, 8.0f) : -MathUtils.random(1.5f, 2.8f);
-                length = (type == WeatherType.BLIZZARD) ? 0.20f : 0.10f;
+            if (type == WeatherType.SNOW) {
+                // Gentle fluttering descent
+                vz = isFluffy ? -MathUtils.random(1.2f, 1.8f) : -MathUtils.random(1.8f, 2.6f);
+                length = isFluffy ? 0.024f : 0.012f;
+            } else if (type == WeatherType.BLIZZARD) {
+                // High-velocity driving squall
+                vz = -MathUtils.random(5.5f, 9.0f);
+                length = MathUtils.random(0.16f, 0.26f);
+            } else if (type == WeatherType.TORNADO) {
+                if (isDebris) {
+                    vz = MathUtils.random(-3.0f, 1.5f);
+                    length = MathUtils.random(0.020f, 0.038f);
+                } else {
+                    vz = -MathUtils.random(12.0f, 16.0f);
+                    length = 0.25f;
+                }
             } else {
                 vz = -MathUtils.random(14.0f, 18.0f);
                 length = (type == WeatherType.STORM) ? 0.28f : 0.18f;
             }
 
-            p.reset(px, py, pz, vx, vy, vz, length, type);
+            p.reset(px, py, pz, vx, vy, vz, length, type, isFluffy, isDebris);
             return;
         }
         p.isDead = true;
@@ -284,18 +332,26 @@ public class WeatherRenderer {
             splashCol = streakColor;
             streakHalfWidth = 0.0018f; // Crisp retro pixel streak (~3.6mm wide)
         } else {
-            if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
-                streakColor = modernSnowFlake;
-                splashCol = modernSnowFlake;
-                streakHalfWidth = 0.012f;
+            if (type == WeatherType.SNOW) {
+                streakColor = modernSnowCrystalline;
+                splashCol = modernSnowCrystalline;
+                streakHalfWidth = 0.010f;
+            } else if (type == WeatherType.BLIZZARD) {
+                streakColor = modernBlizzardStreak;
+                splashCol = modernBlizzardStreak;
+                streakHalfWidth = 0.0022f; // Driving white streak (~4.4mm wide)
             } else if (type == WeatherType.STORM) {
                 streakColor = modernStormStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.0020f; // Clearly visible modern storm streak (~4mm wide)
+                streakHalfWidth = 0.0020f;
+            } else if (type == WeatherType.TORNADO) {
+                streakColor = modernStormStreak;
+                splashCol = modernSplash;
+                streakHalfWidth = 0.0022f;
             } else {
                 streakColor = modernRainStreak;
                 splashCol = modernSplash;
-                streakHalfWidth = 0.0016f; // Clearly visible modern rain streak (~3.2mm wide)
+                streakHalfWidth = 0.0016f;
             }
         }
 
@@ -361,16 +417,18 @@ public class WeatherRenderer {
             float dz = worldZ - camPos.z;
             float distSq = dx * dx + dy * dy + dz * dz;
 
-            // Distance scaling compensation so near drops remain needle-crisp without perspective bloating
+            // Distance scaling compensation so near particles remain needle-crisp without perspective bloating
             float scale = 1.0f;
             if (distSq < 2.25f) { // Within 1.5m of camera
                 float dist = (float) Math.sqrt(distSq);
                 scale = Math.max(0.40f, dist / 1.5f);
             }
 
-            if (p.type == WeatherType.SNOW || p.type == WeatherType.BLIZZARD) {
-                // Square snowflake billboard quad
-                float halfS = 0.018f * scale;
+            if (p.type == WeatherType.SNOW) {
+                // Square snowflake billboard quad with dual-layer variety
+                float baseSize = p.isFluffy ? 0.016f : 0.008f;
+                float halfS = baseSize * scale;
+                Color flakeColor = isRetro ? Color.WHITE : (p.isFluffy ? modernSnowFluffy : modernSnowCrystalline);
                 batcher.addParticleQuad(
                         worldX - scratchCamRight.x * halfS - camUp.x * halfS,
                         worldY - scratchCamRight.y * halfS - camUp.y * halfS,
@@ -389,10 +447,34 @@ public class WeatherRenderer {
                         worldZ - scratchCamRight.z * halfS + camUp.z * halfS,
 
                         -camDir.x, -camDir.y, -camDir.z,
-                        streakColor
+                        flakeColor
+                );
+            } else if (p.type == WeatherType.TORNADO && p.isDebris) {
+                // Flying debris quad
+                float halfS = 0.014f * scale;
+                Color debrisCol = isRetro ? Color.GRAY : tornadoDebrisColor;
+                batcher.addParticleQuad(
+                        worldX - scratchCamRight.x * halfS - camUp.x * halfS,
+                        worldY - scratchCamRight.y * halfS - camUp.y * halfS,
+                        worldZ - scratchCamRight.z * halfS - camUp.z * halfS,
+
+                        worldX + scratchCamRight.x * halfS - camUp.x * halfS,
+                        worldY + scratchCamRight.y * halfS - camUp.y * halfS,
+                        worldZ + scratchCamRight.z * halfS - camUp.z * halfS,
+
+                        worldX + scratchCamRight.x * halfS + camUp.x * halfS,
+                        worldY + scratchCamRight.y * halfS + camUp.y * halfS,
+                        worldZ + scratchCamRight.z * halfS + camUp.z * halfS,
+
+                        worldX - scratchCamRight.x * halfS + camUp.x * halfS,
+                        worldY - scratchCamRight.y * halfS + camUp.y * halfS,
+                        worldZ - scratchCamRight.z * halfS + camUp.z * halfS,
+
+                        -camDir.x, -camDir.y, -camDir.z,
+                        debrisCol
                 );
             } else {
-                // Rain / Storm velocity-oriented streak
+                // Driving streak for Rain, Storm, Blizzard, or Tornado mist
                 float vx = p.vx;
                 float vy = p.vz; // vertical downward velocity
                 float vz = -p.vy; // maze Y velocity -> world -Z
@@ -567,17 +649,29 @@ public class WeatherRenderer {
         public float vx, vy, vz;
         public float length;
         public WeatherType type;
+        public boolean isFluffy;
+        public boolean isDebris;
         public float wobble;
         public float wobbleSpeed;
         public boolean isDead = false;
 
         public WeatherParticle(float x, float y, float z, float vx, float vy, float vz,
                                float length, WeatherType type) {
-            reset(x, y, z, vx, vy, vz, length, type);
+            this(x, y, z, vx, vy, vz, length, type, false, false);
+        }
+
+        public WeatherParticle(float x, float y, float z, float vx, float vy, float vz,
+                               float length, WeatherType type, boolean isFluffy, boolean isDebris) {
+            reset(x, y, z, vx, vy, vz, length, type, isFluffy, isDebris);
         }
 
         public void reset(float x, float y, float z, float vx, float vy, float vz,
                           float length, WeatherType type) {
+            reset(x, y, z, vx, vy, vz, length, type, false, false);
+        }
+
+        public void reset(float x, float y, float z, float vx, float vy, float vz,
+                          float length, WeatherType type, boolean isFluffy, boolean isDebris) {
             this.x = x;
             this.y = y;
             this.z = z;
@@ -586,17 +680,19 @@ public class WeatherRenderer {
             this.vz = vz;
             this.length = length;
             this.type = type;
+            this.isFluffy = isFluffy;
+            this.isDebris = isDebris;
             this.isDead = false;
             this.wobble = MathUtils.random(0f, MathUtils.PI2);
-            this.wobbleSpeed = MathUtils.random(2.5f, 6.0f);
+            this.wobbleSpeed = isFluffy ? MathUtils.random(1.8f, 3.2f) : MathUtils.random(3.5f, 6.5f);
         }
 
         public void update(float delta) {
-            if (type == WeatherType.SNOW || type == WeatherType.BLIZZARD) {
+            if (type == WeatherType.SNOW) {
                 wobble += wobbleSpeed * delta;
-                float drift = MathUtils.sin(wobble) * 0.4f;
+                float drift = MathUtils.sin(wobble) * (isFluffy ? 0.60f : 0.28f);
                 x += (vx + drift) * delta;
-                y += vy * delta;
+                y += (vy + MathUtils.cos(wobble) * 0.20f) * delta;
             } else {
                 x += vx * delta;
                 y += vy * delta;

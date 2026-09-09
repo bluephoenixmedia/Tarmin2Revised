@@ -25,6 +25,7 @@ public class SoundManager {
     private long currentRainId = -1;
     private long currentWindId = -1;
     private WeatherType lastWeatherType = null;
+    private WeatherIntensity lastWeatherIntensity = null;
 
     // --- Volume Dampening & Crossfade State ---
     private boolean isDampened = false;
@@ -62,7 +63,17 @@ public class SoundManager {
     }
 
     private void applyLoopVolumes() {
-        float windBase = (lastWeatherType == WeatherType.STORM) ? currentBaseVol * 0.85f : currentBaseVol;
+        float windBase = currentBaseVol;
+        if (lastWeatherType == WeatherType.STORM) {
+            windBase = currentBaseVol * 0.85f;
+        } else if (lastWeatherType == WeatherType.SNOW) {
+            windBase = currentBaseVol * 0.45f;
+        } else if (lastWeatherType == WeatherType.BLIZZARD) {
+            windBase = currentBaseVol * 0.95f;
+        } else if (lastWeatherType == WeatherType.TORNADO) {
+            windBase = 1.0f;
+        }
+
         float windDampen = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
@@ -120,6 +131,7 @@ public class SoundManager {
         currentRainId = -1;
         currentWindId = -1;
         lastWeatherType = null;
+        lastWeatherIntensity = null;
     }
 
     public void stopWeatherEffects() {
@@ -132,6 +144,7 @@ public class SoundManager {
             currentWindId = -1;
         }
         lastWeatherType = null;
+        lastWeatherIntensity = null;
     }
 
     public void playPlayerDeathSound() {
@@ -155,52 +168,67 @@ public class SoundManager {
     }
 
     public void updateWeatherAudio(WeatherType type, WeatherIntensity intensity) {
-        if (type == lastWeatherType)
+        if (type == lastWeatherType && intensity == lastWeatherIntensity) {
             return;
+        }
+
+        boolean typeChanged = (type != lastWeatherType);
         lastWeatherType = type;
+        lastWeatherIntensity = intensity;
 
-        if (currentRainId != -1 && modernSounds.containsKey("rain_loop"))
-            modernSounds.get("rain_loop").stop(currentRainId);
-        if (currentWindId != -1 && modernSounds.containsKey("wind_loop"))
-            modernSounds.get("wind_loop").stop(currentWindId);
-
-        currentRainId = -1;
-        currentWindId = -1;
-
-        currentBaseVol = 0.5f;
-        if (intensity == WeatherIntensity.HEAVY)
-            currentBaseVol = 0.8f;
-        if (intensity == WeatherIntensity.EXTREME)
-            currentBaseVol = 1.0f;
+        // Base volume scaled by intensity tier
+        currentBaseVol = (intensity == WeatherIntensity.LIGHT) ? 0.35f
+                : (intensity == WeatherIntensity.MEDIUM) ? 0.55f
+                : (intensity == WeatherIntensity.HEAVY) ? 0.80f : 1.0f;
 
         float rainMod = currentDampenFactor;
         float windMod = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
-        switch (type) {
-            case RAIN:
-            case STORM:
-                if (modernSounds.containsKey("rain_loop")) {
-                    currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod);
-                }
-                if (type == WeatherType.STORM && modernSounds.containsKey("wind_loop")) {
-                    float windBase = currentBaseVol * 0.85f;
-                    currentWindId = modernSounds.get("wind_loop").loop(windBase * windMod);
-                }
-                break;
-            case SNOW:
-            case BLIZZARD:
-                if (modernSounds.containsKey("wind_loop")) {
-                    float blizzardSpeed = (type == WeatherType.BLIZZARD) ? 1.15f : 0.85f;
-                    currentWindId = modernSounds.get("wind_loop").loop(currentBaseVol * windMod, blizzardSpeed, 0f);
-                }
-                break;
-            case TORNADO:
-                if (modernSounds.containsKey("wind_loop")) {
-                    currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod, 0.65f, 0.0f);
-                }
-                break;
-            default:
-                break;
+        if (typeChanged) {
+            if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
+                modernSounds.get("rain_loop").stop(currentRainId);
+            }
+            if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
+                modernSounds.get("wind_loop").stop(currentWindId);
+            }
+
+            currentRainId = -1;
+            currentWindId = -1;
+
+            switch (type) {
+                case RAIN:
+                case STORM:
+                    if (modernSounds.containsKey("rain_loop")) {
+                        currentRainId = modernSounds.get("rain_loop").loop(currentBaseVol * rainMod);
+                    }
+                    if (type == WeatherType.STORM && modernSounds.containsKey("wind_loop")) {
+                        float windBase = currentBaseVol * 0.85f;
+                        currentWindId = modernSounds.get("wind_loop").loop(windBase * windMod, 1.0f, 0f);
+                    }
+                    break;
+                case SNOW:
+                    if (modernSounds.containsKey("wind_loop")) {
+                        float snowVol = currentBaseVol * 0.45f * windMod;
+                        currentWindId = modernSounds.get("wind_loop").loop(snowVol, 1.15f, 0f);
+                    }
+                    break;
+                case BLIZZARD:
+                    if (modernSounds.containsKey("wind_loop")) {
+                        float blizzardVol = currentBaseVol * 0.95f * windMod;
+                        currentWindId = modernSounds.get("wind_loop").loop(blizzardVol, 0.82f, 0f);
+                    }
+                    break;
+                case TORNADO:
+                    if (modernSounds.containsKey("wind_loop")) {
+                        currentWindId = modernSounds.get("wind_loop").loop(1.0f * windMod, 0.65f, 0.0f);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            // Intensity changed within same weather type: dynamically adjust active loop volumes
+            applyLoopVolumes();
         }
     }
 

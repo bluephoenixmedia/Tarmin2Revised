@@ -29,6 +29,10 @@ uniform float u_doomFactor;
 uniform vec3 u_dirLightDir;
 uniform vec3 u_dirLightColor;
 
+// Dynamic surface weather modulation
+uniform float u_wetness;           // 0.0 to 1.0: stone darkening and specular sheen
+uniform float u_snowAccumulation;  // 0.0 to 1.0: snow/frost dusting on horizontal stone
+
 // Multi-point dynamic lights (up to 16)
 const int MAX_LIGHTS = 16;
 uniform int u_numLights;
@@ -64,6 +68,19 @@ void main() {
         // --- MODERN MODE ---
         vec4 baseColor = texColor * v_color;
 
+        // 1. Wetness effect (darkens stone surface and gives rain-soaked tone)
+        if (u_wetness > 0.01) {
+            baseColor.rgb *= mix(1.0, 0.78, u_wetness);
+        }
+
+        // 2. Snow / Frost accumulation dusting on horizontal upward-facing stone
+        if (u_snowAccumulation > 0.01) {
+            float upwardSlope = smoothstep(0.55, 0.90, v_normal.y);
+            float snowFactor = u_snowAccumulation * upwardSlope;
+            vec3 snowTone = vec3(0.92, 0.95, 0.98);
+            baseColor.rgb = mix(baseColor.rgb, snowTone, snowFactor * 0.85);
+        }
+
         // Ambient contribution scaled by Tarmin Doom
         vec3 accumulatedLight = u_ambientColor * u_doomFactor;
 
@@ -71,6 +88,14 @@ void main() {
         if (length(u_dirLightColor) > 0.001) {
             float nDotSun = max(dot(v_normal, u_dirLightDir), 0.0);
             accumulatedLight += u_dirLightColor * nDotSun * u_doomFactor;
+
+            // Wetness specular highlight from sun / moon reflection
+            if (u_wetness > 0.05 && v_normal.y > 0.6) {
+                vec3 viewDir = normalize(u_cameraPos - v_worldPos);
+                vec3 halfDir = normalize(u_dirLightDir + viewDir);
+                float spec = pow(max(dot(v_normal, halfDir), 0.0), 32.0);
+                accumulatedLight += u_dirLightColor * (spec * 0.40 * u_wetness);
+            }
         }
 
         // Dynamic point light iteration
