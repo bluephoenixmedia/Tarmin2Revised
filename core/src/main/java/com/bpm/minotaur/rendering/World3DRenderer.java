@@ -13,6 +13,9 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -76,6 +79,13 @@ public class World3DRenderer implements Disposable {
     private final Texture floorTexture;
     private final Texture ceilingTexture;
     private final Texture blankTexture;
+
+    // 3D Skullgate Models & Assets
+    private Model gateFrameModel;
+    private Model gateLeftDoorModel;
+    private Model gateRightDoorModel;
+    private Texture gateDiffuseTexture;
+    private final Matrix4 gateTransform = new Matrix4();
 
     // Optional 3D skybox integration
     private Skybox3DRenderer skybox3DRenderer;
@@ -144,6 +154,25 @@ public class World3DRenderer implements Disposable {
 
         this.meshCache = new WorldMeshCache();
         this.dynamicBatcher = new DynamicQuadBatcher();
+
+        // Load 3D Skullgate Assets
+        ObjLoader objLoader = new ObjLoader();
+        try {
+            if (Gdx.files.internal("models/gate/gate_frame.obj").exists()) {
+                this.gateFrameModel = objLoader.loadModel(Gdx.files.internal("models/gate/gate_frame.obj"));
+            }
+            if (Gdx.files.internal("models/gate/gate_door_left.obj").exists()) {
+                this.gateLeftDoorModel = objLoader.loadModel(Gdx.files.internal("models/gate/gate_door_left.obj"));
+            }
+            if (Gdx.files.internal("models/gate/gate_door_right.obj").exists()) {
+                this.gateRightDoorModel = objLoader.loadModel(Gdx.files.internal("models/gate/gate_door_right.obj"));
+            }
+            if (Gdx.files.internal("models/gate/gate_diffuse.png").exists()) {
+                this.gateDiffuseTexture = new Texture(Gdx.files.internal("models/gate/gate_diffuse.png"));
+            }
+        } catch (Exception e) {
+            Gdx.app.error(TAG, "Failed to load 3D Skullgate assets", e);
+        }
 
         try {
             this.skybox3DRenderer = new Skybox3DRenderer();
@@ -326,8 +355,8 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_wetness", wetness);
         shader.setUniformf("u_snowAccumulation", snowAccum);
 
-        // Setup dynamic point lights
-        setupDynamicLights(lm, player);
+        // Setup dynamic point lights (including opening gate cyan emissive pulses)
+        setupDynamicLights(lm, player, maze);
 
         // --- PASS 1: OPAQUE CHUNK SUB-MESHES & DYNAMIC SLIDING DOORS ---
         shader.setUniformf("u_alphaCutoff", 0.0f);
@@ -451,7 +480,7 @@ public class World3DRenderer implements Disposable {
         camUp.set(camRight).crs(camera.direction).nor();
     }
 
-    private void setupDynamicLights(LightingManager lm, Player player) {
+    private void setupDynamicLights(LightingManager lm, Player player, Maze maze) {
         int count = 0;
         if (lm != null) {
             // Player Light at index 0
@@ -499,6 +528,31 @@ public class World3DRenderer implements Disposable {
             }
         }
 
+        // Also inject dynamic gate emissive lights if any gate nearby is OPEN or OPENING
+        if (maze != null && maze.getGates() != null) {
+            for (Gate gate : maze.getGates().values()) {
+                if (count >= MAX_LIGHTS) break;
+                if (gate.getState() == Gate.GateState.OPENING || gate.getState() == Gate.GateState.OPEN) {
+                    float dist2 = player.getPosition().dst2(gate.getPosition());
+                    if (dist2 < 144f) { // Within 12 tiles
+                        int idx = count * 3;
+                        lightPosArray[idx]     = gate.getPosition().x;
+                        lightPosArray[idx + 1] = 0.70f; // Eye level of gargoyles / demon skull
+                        lightPosArray[idx + 2] = -gate.getPosition().y;
+
+                        float pulse = (float) Math.sin(totalTime * 8.0f) * 0.20f + 0.80f;
+                        lightColorArray[idx]     = 0.15f * pulse; // Cyan R
+                        lightColorArray[idx + 1] = 0.85f * pulse; // Cyan G
+                        lightColorArray[idx + 2] = 1.00f * pulse; // Cyan B
+
+                        lightRadiusArray[count]     = 4.0f;
+                        lightIntensityArray[count] = 1.25f * pulse;
+                        count++;
+                    }
+                }
+            }
+        }
+
         shader.setUniform3fv("u_lightPos", lightPosArray, 0, count * 3);
         shader.setUniform3fv("u_lightColor", lightColorArray, 0, count * 3);
         shader.setUniform1fv("u_lightRadius", lightRadiusArray, 0, count);
@@ -509,13 +563,14 @@ public class World3DRenderer implements Disposable {
     private void renderDynamicDoors(Maze maze, Player player, boolean isRetro, RetroTheme.Theme theme) {
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
-        int radius = 12;
+        int radius = 16;
 
         int minX = Math.max(0, px - radius);
         int maxX = Math.min(maze.getWidth() - 1, px + radius);
         int minY = Math.max(0, py - radius);
         int maxY = Math.min(maze.getHeight() - 1, py + radius);
 
+        // 1. Standard sliding wooden doors
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 Object obj = maze.getGameObjectAt(x, y);
@@ -530,19 +585,126 @@ public class World3DRenderer implements Disposable {
                     }
                     dynamicBatcher.addSlidingDoor(x, y, ewFacing, door.getAnimationProgress(), col);
                     dynamicBatcher.flush(shader, doorTexture);
-                } else if (obj instanceof Gate) {
-                    Gate gate = (Gate) obj;
-                    boolean ewFacing = gate.getOrientation() == Door.Orientation.EAST_WEST;
+                }
+            }
+        }
 
+        // 2. 3D Skullgate Portals
+        if (maze.getGates() != null && !maze.getGates().isEmpty()) {
+            boolean has3dModels = (gateFrameModel != null && gateLeftDoorModel != null && gateRightDoorModel != null);
+
+            int colorLoc = shader.getAttributeLocation("a_color");
+            if (colorLoc >= 0) {
+                Gdx.gl.glVertexAttrib4f(colorLoc, 1f, 1f, 1f, 1f);
+            }
+
+            for (Gate gate : maze.getGates().values()) {
+                float gx = gate.getPosition().x;
+                float gy = gate.getPosition().y;
+                int tileX = (int) gx;
+                int tileY = (int) gy;
+
+                float distSq = (gx - player.getPosition().x) * (gx - player.getPosition().x) +
+                               (gy - player.getPosition().y) * (gy - player.getPosition().y);
+                if (distSq > (radius + 2) * (radius + 2)) continue;
+
+                if (!has3dModels) {
+                    // Fallback to sliding door quad if 3D model missing
+                    boolean ewFacing = gate.getOrientation() == Door.Orientation.EAST_WEST;
                     Color col = isRetro ? theme.doorDark : Color.WHITE;
                     if (isRetro) {
                         shader.setUniformf("u_retroColor", theme.doorDark);
                         shader.setUniformf("u_retroBorder", 1.0f);
                     }
-                    dynamicBatcher.addSlidingDoor(x, y, ewFacing, gate.getAnimationProgress(), col);
+                    dynamicBatcher.addSlidingDoor(tileX, tileY, ewFacing, gate.getAnimationProgress(), col);
                     dynamicBatcher.flush(shader, gateTexture);
+                    continue;
+                }
+
+                float progress = gate.getAnimationProgress();
+                float rumble = 0.0f;
+                if (gate.getState() == Gate.GateState.OPENING) {
+                    rumble = (float) Math.sin(progress * Math.PI * 18.0) * 1.8f;
+                }
+
+                // Determine base gate rotation so portal faces toward approaching player
+                float baseRotation = 0f;
+                if (tileY == maze.getHeight() - 1) {
+                    baseRotation = 0f;   // North boundary gate faces South into chunk
+                } else if (tileY == 0) {
+                    baseRotation = 180f; // South boundary gate faces North into chunk
+                } else if (tileX == maze.getWidth() - 1) {
+                    baseRotation = 270f; // East boundary gate faces West into chunk
+                } else if (tileX == 0) {
+                    baseRotation = 90f;  // West boundary gate faces East into chunk
+                } else {
+                    baseRotation = (gate.getOrientation() == Door.Orientation.EAST_WEST) ? 90f : 0f;
+                }
+
+                float gateX = tileX + 0.5f;
+                float gateZ = -(tileY + 0.5f);
+
+                // --- A. Gate Frame ---
+                gateTransform.idt();
+                gateTransform.translate(gateX, 0f, gateZ);
+                gateTransform.rotate(0f, 1f, 0f, baseRotation);
+
+                if (isRetro) {
+                    shader.setUniformf("u_retroColor", theme.wall);
+                    shader.setUniformf("u_retroBorder", 1.0f);
+                } else {
+                    shader.setUniformf("u_retroBorder", 0.0f);
+                    if (gateDiffuseTexture != null) {
+                        gateDiffuseTexture.bind(0);
+                        shader.setUniformi("u_diffuseTexture", 0);
+                    }
+                }
+
+                shader.setUniformMatrix("u_worldTrans", gateTransform);
+                for (Mesh mesh : gateFrameModel.meshes) {
+                    mesh.render(shader, GL20.GL_TRIANGLES);
+                }
+
+                // --- B. Left Door Leaf ---
+                // Hinge at local X = -0.35f, swings +90 deg away into portal
+                float angleLeft = 90.0f * progress + rumble;
+                gateTransform.idt();
+                gateTransform.translate(gateX, 0f, gateZ);
+                gateTransform.rotate(0f, 1f, 0f, baseRotation);
+                gateTransform.translate(-0.35f, 0f, 0f);
+                gateTransform.rotate(0f, 1f, 0f, angleLeft);
+
+                if (isRetro) {
+                    shader.setUniformf("u_retroColor", theme.doorDark);
+                    shader.setUniformf("u_retroBorder", 1.0f);
+                }
+                shader.setUniformMatrix("u_worldTrans", gateTransform);
+                for (Mesh mesh : gateLeftDoorModel.meshes) {
+                    mesh.render(shader, GL20.GL_TRIANGLES);
+                }
+
+                // --- C. Right Door Leaf ---
+                // Hinge at local X = +0.35f, swings -90 deg away into portal
+                float angleRight = -90.0f * progress - rumble;
+                gateTransform.idt();
+                gateTransform.translate(gateX, 0f, gateZ);
+                gateTransform.rotate(0f, 1f, 0f, baseRotation);
+                gateTransform.translate(0.35f, 0f, 0f);
+                gateTransform.rotate(0f, 1f, 0f, angleRight);
+
+                if (isRetro) {
+                    shader.setUniformf("u_retroColor", theme.doorDark);
+                    shader.setUniformf("u_retroBorder", 1.0f);
+                }
+                shader.setUniformMatrix("u_worldTrans", gateTransform);
+                for (Mesh mesh : gateRightDoorModel.meshes) {
+                    mesh.render(shader, GL20.GL_TRIANGLES);
                 }
             }
+
+            // Restore identity world transform for subsequent render passes
+            shader.setUniformMatrix("u_worldTrans", identityMatrix);
+            shader.setUniformf("u_retroBorder", 0.0f);
         }
     }
 
@@ -783,6 +945,11 @@ public class World3DRenderer implements Disposable {
         floorTexture.dispose();
         ceilingTexture.dispose();
         blankTexture.dispose();
+
+        if (gateFrameModel != null) gateFrameModel.dispose();
+        if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();
+        if (gateRightDoorModel != null) gateRightDoorModel.dispose();
+        if (gateDiffuseTexture != null) gateDiffuseTexture.dispose();
 
         if (skybox3DRenderer != null) {
             skybox3DRenderer.dispose();

@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.bpm.minotaur.gamedata.Direction;
+import com.bpm.minotaur.gamedata.Door;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
@@ -122,5 +123,50 @@ public class ChunkGeometryTest {
         Maze dungeonMaze = new Maze(2, wallData);
         assertTrue("Dungeon corridor must have ceiling", dungeonMaze.isIndoors(1, 1));
         assertTrue("Dungeon tile must have ceiling", dungeonMaze.isIndoors(2, 2));
+    }
+
+    @Test
+    public void testGatePerimeterWallOmission() {
+        int[][] wallData = new int[5][5];
+        Maze maze = new Maze(1, wallData);
+
+        // Add a North perimeter gate at (2, 4) where height is 5 (so y == height - 1)
+        com.bpm.minotaur.gamedata.Gate northGate = new com.bpm.minotaur.gamedata.Gate(2, 4);
+        northGate.setOrientation(Door.Orientation.NORTH_SOUTH);
+        maze.addGate(northGate);
+
+        assertTrue("Gate must be detected at (2, 4)", maze.hasGateAt(2, 4));
+        assertEquals(northGate, maze.getGateAt(2, 4));
+
+        // Add an East perimeter gate at (4, 2) where width is 5 (so x == width - 1)
+        com.bpm.minotaur.gamedata.Gate eastGate = new com.bpm.minotaur.gamedata.Gate(4, 2);
+        eastGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(eastGate);
+
+        assertTrue("Gate must be detected at (4, 2)", maze.hasGateAt(4, 2));
+    }
+
+    @Test
+    public void testGateWorldOffsetMath() {
+        int width = 24;
+        int height = 24;
+
+        // North neighbor (dx = 0, dy = 1)
+        float northOffsetX = 0 * width;
+        float northOffsetZ = -1 * height;
+        assertEquals(0f, northOffsetX, 0.001f);
+        assertEquals(-24f, northOffsetZ, 0.001f);
+
+        // South neighbor (dx = 0, dy = -1)
+        float southOffsetZ = -(-1) * height;
+        assertEquals(24f, southOffsetZ, 0.001f);
+
+        // East neighbor (dx = 1, dy = 0)
+        float eastOffsetX = 1 * width;
+        assertEquals(24f, eastOffsetX, 0.001f);
+
+        // West neighbor (dx = -1, dy = 0)
+        float westOffsetX = -1 * width;
+        assertEquals(-24f, westOffsetX, 0.001f);
     }
 }

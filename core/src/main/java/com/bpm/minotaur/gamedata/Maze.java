@@ -87,6 +87,21 @@ public class Maze {
         return gates;
     }
 
+    public Gate getGateAt(int x, int y) {
+        if (gates == null || gates.isEmpty()) return null;
+        for (Map.Entry<GridPoint2, Gate> entry : gates.entrySet()) {
+            GridPoint2 p = entry.getKey();
+            if (p.x == x && p.y == y) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    public boolean hasGateAt(int x, int y) {
+        return getGateAt(x, y) != null;
+    }
+
     public int getLevel() {
         return level;
     }

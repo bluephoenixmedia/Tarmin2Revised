@@ -6,25 +6,22 @@ import com.badlogic.gdx.utils.Disposable;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.managers.WorldManager;
 
+import com.bpm.minotaur.gamedata.Gate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Manages caching, streaming, and GPU disposal of 3D chunk sub-meshes.
- * Supports static level-wide caching for dungeons and sliding 3x3 chunk streaming for overland.
+ * Supports static level-wide caching for dungeons and seamless adjacent sector streaming for overland.
  */
 public class WorldMeshCache implements Disposable {
-
-    public static final int CHUNK_SIZE = 16;
 
     private final Map<String, List<ChunkSubMesh>> cachedChunks = new HashMap<>();
     private Maze currentMaze = null;
     private int currentLevel = -1;
-    private GridPoint2 lastCenterChunk = new GridPoint2(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    private final GridPoint2 lastCenterChunk = new GridPoint2(Integer.MIN_VALUE, Integer.MIN_VALUE);
 
     /**
      * Retrieves or builds all visible chunk sub-meshes for the current player location and maze.
@@ -44,11 +41,14 @@ public class WorldMeshCache implements Disposable {
 
         if (maze == null) return result;
 
-        // If level or maze reference changed, invalidate everything
-        if (maze != currentMaze || level != currentLevel) {
+        GridPoint2 currentChunkId = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+
+        // If level, maze reference, or player sector chunk changed, invalidate and rebuild
+        if (maze != currentMaze || level != currentLevel || currentChunkId.x != lastCenterChunk.x || currentChunkId.y != lastCenterChunk.y) {
             invalidate();
             this.currentMaze = maze;
             this.currentLevel = level;
+            this.lastCenterChunk.set(currentChunkId.x, currentChunkId.y);
         }
 
         if (level > 1) {
@@ -60,68 +60,58 @@ public class WorldMeshCache implements Disposable {
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         wallTexture, floorTexture, ceilingTexture,
-                        true // Dungeons always have ceilings
+                        true, 0f, 0f
                 );
                 cachedChunks.put(dungeonKey, dungeonMeshes);
             }
             result.addAll(dungeonMeshes);
         } else {
-            // --- OVERLAND (Level 1): Sliding 3x3 Chunk Streaming ---
-            int centerChunkX = (int) Math.floor(playerX / CHUNK_SIZE);
-            int centerChunkY = (int) Math.floor(playerY / CHUNK_SIZE);
-
-            GridPoint2 currentCenter = new GridPoint2(centerChunkX, centerChunkY);
-
-            // Determine the 3x3 needed chunk keys
-            Set<String> neededKeys = new HashSet<>();
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    int cx = centerChunkX + dx;
-                    int cy = centerChunkY + dy;
-                    neededKeys.add(cx + "_" + cy);
-                }
+            // --- OVERLAND (Level 1): Active Sector Chunk + Connected Neighbor Chunks ---
+            String currentChunkKey = "SECTOR_" + currentChunkId.x + "_" + currentChunkId.y;
+            List<ChunkSubMesh> currentMeshes = cachedChunks.get(currentChunkKey);
+            if (currentMeshes == null) {
+                currentMeshes = ChunkMeshBuilder.buildChunk(
+                        maze,
+                        0, 0, maze.getWidth(), maze.getHeight(),
+                        wallTexture, floorTexture, ceilingTexture,
+                        isIndoors, 0f, 0f
+                );
+                cachedChunks.put(currentChunkKey, currentMeshes);
             }
+            result.addAll(currentMeshes);
 
-            // Evict and dispose chunks outside the sliding window
-            List<String> toRemove = new ArrayList<>();
-            for (Map.Entry<String, List<ChunkSubMesh>> entry : cachedChunks.entrySet()) {
-                if (!neededKeys.contains(entry.getKey())) {
-                    for (ChunkSubMesh subMesh : entry.getValue()) {
-                        subMesh.dispose();
+            // Stream adjacent sectors connected via transition gates
+            if (worldManager != null && maze.getGates() != null) {
+                for (Gate gate : maze.getGates().values()) {
+                    if (gate.isChunkTransitionGate()) {
+                        GridPoint2 targetId = gate.getTargetChunkId();
+                        if (targetId != null) {
+                            int dx = targetId.x - currentChunkId.x;
+                            int dy = targetId.y - currentChunkId.y;
+                            float offsetX = dx * maze.getWidth();
+                            float offsetZ = -dy * maze.getHeight();
+
+                            String neighborKey = "NEIGHBOR_" + currentChunkId.x + "_" + currentChunkId.y + "_TO_" + targetId.x + "_" + targetId.y;
+                            List<ChunkSubMesh> neighborMeshes = cachedChunks.get(neighborKey);
+                            if (neighborMeshes == null) {
+                                Maze neighborMaze = worldManager.requestLoadChunk(targetId);
+                                if (neighborMaze != null) {
+                                    neighborMeshes = ChunkMeshBuilder.buildChunk(
+                                            neighborMaze,
+                                            0, 0, neighborMaze.getWidth(), neighborMaze.getHeight(),
+                                            wallTexture, floorTexture, ceilingTexture,
+                                            false, offsetX, offsetZ
+                                    );
+                                    cachedChunks.put(neighborKey, neighborMeshes);
+                                }
+                            }
+                            if (neighborMeshes != null) {
+                                result.addAll(neighborMeshes);
+                            }
+                        }
                     }
-                    toRemove.add(entry.getKey());
                 }
             }
-            for (String key : toRemove) {
-                cachedChunks.remove(key);
-            }
-
-            // Build any missing chunks in the 3x3 window
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    int cx = centerChunkX + dx;
-                    int cy = centerChunkY + dy;
-                    String key = cx + "_" + cy;
-
-                    List<ChunkSubMesh> chunkMeshes = cachedChunks.get(key);
-                    if (chunkMeshes == null) {
-                        int minX = cx * CHUNK_SIZE;
-                        int minY = cy * CHUNK_SIZE;
-                        int maxX = minX + CHUNK_SIZE;
-                        int maxY = minY + CHUNK_SIZE;
-
-                        chunkMeshes = ChunkMeshBuilder.buildChunk(
-                                maze,
-                                minX, minY, maxX, maxY,
-                                wallTexture, floorTexture, ceilingTexture,
-                                false // Overland Level 1 chunks: ceilings emitted per-tile only for shelter tiles
-                        );
-                        cachedChunks.put(key, chunkMeshes);
-                    }
-                    result.addAll(chunkMeshes);
-                }
-            }
-            lastCenterChunk.set(centerChunkX, centerChunkY);
         }
 
         return result;

@@ -190,6 +190,8 @@ fbx_parts/
 assets/models/*
 !assets/models/skybox/
 !assets/models/skybox/**
+!assets/models/gate/
+!assets/models/gate/**
 /monsters/
 assets/images/monsters/Super Pixel Effects*/
 assets/images/monsters/Kenney Game Assets*/

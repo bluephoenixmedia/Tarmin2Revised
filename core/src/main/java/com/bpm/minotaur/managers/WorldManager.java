@@ -553,6 +553,10 @@ public class WorldManager {
         return loadedChunks.keySet();
     }
 
+    public Maze getLoadedChunk(GridPoint2 chunkId) {
+        return loadedChunks.get(chunkId);
+    }
+
     public Maze requestLoadChunk(GridPoint2 chunkId) {
         if (loadedChunks.containsKey(chunkId)) {
             return loadedChunks.get(chunkId);

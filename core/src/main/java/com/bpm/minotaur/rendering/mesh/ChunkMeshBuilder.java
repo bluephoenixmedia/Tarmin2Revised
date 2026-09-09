@@ -10,6 +10,8 @@ import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Window;
+import com.bpm.minotaur.gamedata.Gate;
+import com.bpm.minotaur.gamedata.Door;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,19 @@ public class ChunkMeshBuilder {
             Texture ceilingTexture,
             boolean isIndoors
     ) {
+        return buildChunk(maze, minX, minY, maxX, maxY, wallTexture, floorTexture, ceilingTexture, isIndoors, 0f, 0f);
+    }
+
+    public static List<ChunkSubMesh> buildChunk(
+            Maze maze,
+            int minX, int minY, int maxX, int maxY,
+            Texture wallTexture,
+            Texture floorTexture,
+            Texture ceilingTexture,
+            boolean isIndoors,
+            float worldOffsetX,
+            float worldOffsetZ
+    ) {
         List<ChunkSubMesh> subMeshes = new ArrayList<>();
 
         FloatArray wallVerts = new FloatArray();
@@ -85,7 +100,7 @@ public class ChunkMeshBuilder {
             for (int x = clampedMinX; x < clampedMaxX; x++) {
                 // If this cell contains a Window, emit the complete 3D window embrasure
                 if (maze.getGameObjectAt(x, y) instanceof Window) {
-                    addWindowWallMesh(wallVerts, wallIndices, ceilVerts, ceilIndices, x, y, whitePacked);
+                    addWindowWallMesh(wallVerts, wallIndices, ceilVerts, ceilIndices, x, y, whitePacked, worldOffsetX, worldOffsetZ);
                     continue;
                 }
 
@@ -97,10 +112,10 @@ public class ChunkMeshBuilder {
                 if (!isSolidBlock) {
                     // --- 1. FLOOR QUAD (Y = 0.0, Normal = Up) ---
                     addQuad(floorVerts, floorIndices,
-                            x, 0.0f, -y, 0f, 0f,
-                            x + 1, 0.0f, -y, 1f, 0f,
-                            x + 1, 0.0f, -(y + 1), 1f, 1f,
-                            x, 0.0f, -(y + 1), 0f, 1f,
+                            x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 0f,
+                            x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 0f,
+                            x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                            x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                             0f, 1f, 0f, whitePacked
                     );
 
@@ -109,10 +124,10 @@ public class ChunkMeshBuilder {
                     boolean tileHasCeiling = isIndoors || (maze != null && maze.isIndoors(x, y));
                     if (tileHasCeiling) {
                         addQuad(ceilVerts, ceilIndices,
-                                x, 1.0f, -y, 0f, 0f,
-                                x, 1.0f, -(y + 1), 0f, 1f,
-                                x + 1, 1.0f, -(y + 1), 1f, 1f,
-                                x + 1, 1.0f, -y, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
                                 0f, -1f, 0f, whitePacked
                         );
                     }
@@ -135,58 +150,64 @@ public class ChunkMeshBuilder {
                     Object southObj = (y > 0) ? maze.getGameObjectAt(x, y - 1) : null;
                     boolean isSouthWindow = (southObj instanceof Window);
 
+                    Gate gateAtCell = (maze != null) ? maze.getGateAt(x, y) : null;
+                    boolean isNorthGate = gateAtCell != null && (y == maze.getHeight() - 1 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
+                    boolean isSouthGate = gateAtCell != null && (y == 0 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
+                    boolean isWestGate  = gateAtCell != null && (x == 0 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+                    boolean isEastGate  = gateAtCell != null && (x == maze.getWidth() - 1 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
-                    // Do not emit North boundary wall if adjacent cell is a Window
+                    // Do not emit North boundary wall if adjacent cell is a Window or if this is a Gate
                     boolean hasNorthDoor = (currentData & DOOR_NORTH) != 0 || (northData & DOOR_SOUTH) != 0;
-                    boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
+                    boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && !isNorthGate && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
                     if (hasNorthWall) {
                         addQuad(wallVerts, wallIndices,
-                                x, 0.0f, -(y + 1), 0f, 1f,
-                                x + 1, 0.0f, -(y + 1), 1f, 1f,
-                                x + 1, 1.0f, -(y + 1), 1f, 0f,
-                                x, 1.0f, -(y + 1), 0f, 0f,
+                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
                                 0f, 0f, 1f, whitePacked
                         );
                     }
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
-                    // Do not emit South boundary wall if adjacent cell is a Window
+                    // Do not emit South boundary wall if adjacent cell is a Window or if this is a Gate
                     boolean hasSouthDoor = (currentData & DOOR_SOUTH) != 0 || (southData & DOOR_NORTH) != 0;
-                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && ((currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
+                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && !isSouthGate && ((currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
                     if (hasSouthWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + 1, 0.0f, -y, 0f, 1f,
-                                x, 0.0f, -y, 1f, 1f,
-                                x, 1.0f, -y, 1f, 0f,
-                                x + 1, 1.0f, -y, 0f, 0f,
+                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
+                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
                                 0f, 0f, -1f, whitePacked
                         );
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
-                    // If West neighbor is a Window, skip emitting wall (provided by window mesh)
+                    // If West neighbor is a Window or if this is a Gate, skip emitting wall
                     boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                    boolean hasWestWall = !hasWestDoor && !isWestWindow && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                    boolean hasWestWall = !hasWestDoor && !isWestWindow && !isWestGate && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
                     if (hasWestWall) {
                         addQuad(wallVerts, wallIndices,
-                                x, 0.0f, -y, 0f, 1f,
-                                x, 0.0f, -(y + 1), 1f, 1f,
-                                x, 1.0f, -(y + 1), 1f, 0f,
-                                x, 1.0f, -y, 0f, 0f,
+                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
+                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
                                 1f, 0f, 0f, whitePacked
                         );
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
-                    // If East neighbor is a Window, skip emitting wall (no back wall at x + 1)
+                    // If East neighbor is a Window or if this is a Gate, skip emitting wall
                     boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
-                    boolean hasEastWall = !hasEastDoor && !isEastWindow && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+                    boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGate && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
                     if (hasEastWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + 1, 0.0f, -(y + 1), 0f, 1f,
-                                x + 1, 0.0f, -y, 1f, 1f,
-                                x + 1, 1.0f, -y, 1f, 0f,
-                                x + 1, 1.0f, -(y + 1), 0f, 0f,
+                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
                                 -1f, 0f, 0f, whitePacked
                         );
                     }
@@ -275,16 +296,18 @@ public class ChunkMeshBuilder {
             FloatArray wallVerts, ShortArray wallIndices,
             FloatArray ceilVerts, ShortArray ceilIndices,
             int x, int y,
-            float whitePacked
+            float whitePacked,
+            float worldOffsetX,
+            float worldOffsetZ
     ) {
         float ySill = 0.30f;
         float yLintel = 0.70f;
-        float zFar = -(y + 1);
-        float zNear = -y;
-        float zLeft = -(y + 0.75f);
-        float zRight = -(y + 0.25f);
-        float xWest = x;
-        float xEast = x + 1;
+        float zFar = -(y + 1) + worldOffsetZ;
+        float zNear = -y + worldOffsetZ;
+        float zLeft = -(y + 0.75f) + worldOffsetZ;
+        float zRight = -(y + 0.25f) + worldOffsetZ;
+        float xWest = x + worldOffsetX;
+        float xEast = x + 1 + worldOffsetX;
 
         // =========================================================================
         // 1. WEST FACADE (Exterior face at X = x, facing West: Normal (-1, 0, 0))
