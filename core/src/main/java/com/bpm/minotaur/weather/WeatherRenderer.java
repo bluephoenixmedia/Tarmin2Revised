@@ -54,6 +54,20 @@ public class WeatherRenderer {
     private final Color tornadoDebrisColor = new Color(0.28f, 0.24f, 0.18f, 0.85f);
     private final Color modernSplash = new Color(0.80f, 0.90f, 1.0f, 0.70f);
 
+    // 3D Tornado state & animation
+    private float tornadoAnimTime = 0f;
+    private float tornadoOrbitAngle = 0f;
+    private boolean tornadoInitialized = false;
+    private float tornadoWorldX = 0f;
+    private float tornadoWorldZ = 0f;
+
+    private final Color tempTornadoColor = new Color();
+    private final Color retroTornadoDark = new Color(0.10f, 0.10f, 0.14f, 1.0f);
+    private final Color retroTornadoMid = new Color(0.20f, 0.20f, 0.25f, 1.0f);
+    private final Color retroTornadoLight = new Color(0.32f, 0.32f, 0.38f, 1.0f);
+    private final Color retroDust1 = new Color(0.35f, 0.28f, 0.18f, 1.0f);
+    private final Color retroDust2 = new Color(0.25f, 0.20f, 0.12f, 1.0f);
+
     public WeatherRenderer(WeatherManager weatherManager) {
         this.weatherManager = weatherManager;
     }
@@ -66,6 +80,27 @@ public class WeatherRenderer {
 
         WeatherType type = weatherManager.getCurrentWeather();
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
+
+        // 0. Tornado vortex state tracking
+        if (type == WeatherType.TORNADO) {
+            tornadoAnimTime += delta;
+            float px = player.getPosition().x;
+            float py = player.getPosition().y;
+            if (!tornadoInitialized) {
+                // Initialize right in front of the player's viewing line of sight
+                Vector2 pDir = player.getDirectionVector();
+                float viewAngle = MathUtils.atan2(-pDir.y, pDir.x);
+                tornadoOrbitAngle = viewAngle + 0.10f;
+                tornadoInitialized = true;
+            } else {
+                tornadoOrbitAngle += delta * 0.08f;
+            }
+            float currentDist = 18.5f + (float) Math.sin(tornadoAnimTime * 0.35f) * 2.0f;
+            tornadoWorldX = px + MathUtils.cos(tornadoOrbitAngle) * currentDist;
+            tornadoWorldZ = -py + MathUtils.sin(tornadoOrbitAngle) * currentDist;
+        } else {
+            tornadoInitialized = false;
+        }
 
         if (!weatherManager.isPrecipitation(type)) {
             if (particles.size > 0) particles.clear();
@@ -309,16 +344,17 @@ public class WeatherRenderer {
             WeatherManager wm,
             boolean isRetro
     ) {
-        if (particles.size == 0 && splashDroplets.size == 0) return;
+        WeatherType type = wm.getCurrentWeather();
+        if (particles.size == 0 && splashDroplets.size == 0 && type != WeatherType.TORNADO) return;
         if (batcher == null || camera == null || player == null || wm == null) return;
 
-        WeatherType type = wm.getCurrentWeather();
         Vector3 camPos = camera.position;
         Vector3 camDir = camera.direction;
         Vector3 camUp = camera.up;
 
-        // Calculate Right unit vector for billboards
+        // Calculate Right & Up unit vectors for billboards
         scratchCamRight.set(camDir).crs(camUp).nor();
+        scratchCamUp.set(camUp).nor();
 
         // Shading parameters
         Color streakColor;
@@ -505,8 +541,172 @@ public class WeatherRenderer {
             }
         }
 
-        // Flush precipitation buffer
+        // --- 3. RENDER 3D TORNADO SUPERCELL VORTEX ---
+        if (type == WeatherType.TORNADO) {
+            render3DTornadoVortex(batcher, camera, player, maze, wm, isRetro);
+        }
+
+        // Flush precipitation and tornado buffer
         batcher.flush(shader, blankTexture);
+    }
+
+    /**
+     * Renders a towering, 3D volumetric tornado supercell vortex in true world coordinates,
+     * featuring 22 vertical tiers of rotating cloud quads with organic serpentine wind shear,
+     * violent ground debris touchdown ring, and spiraling airborne debris chunks.
+     */
+    private void render3DTornadoVortex(
+            DynamicQuadBatcher batcher,
+            Camera camera,
+            Player player,
+            Maze maze,
+            WeatherManager wm,
+            boolean isRetro
+    ) {
+        float tx = tornadoWorldX;
+        float tz = tornadoWorldZ;
+
+        Vector3 camDir = camera.direction;
+        float flash = (wm != null) ? wm.getFlashIntensity() : 0.0f;
+
+        // --- 1. TORNADO FUNNEL BODY (22 vertical tiers from ground Y=0.0m to cloud deck Y=26.0m) ---
+        int tiers = 22;
+        int quadsPerTier = 8;
+        float totalHeight = 26.0f;
+
+        for (int t = 0; t < tiers; t++) {
+            float hRatio = t / (float)(tiers - 1);
+            float y = hRatio * totalHeight;
+
+            // Natural condensation funnel profile:
+            // Choke at hRatio = 0.12, flaring broadly upwards into the mesocyclone anvil
+            float baseR = 2.4f;
+            float flare = 12.0f * (float) Math.pow(hRatio, 1.55);
+            float r = (hRatio < 0.12f)
+                    ? baseR - (hRatio / 0.12f) * 0.5f
+                    : (baseR - 0.5f) + flare;
+
+            // Organic serpentine curve / wind shear bending along height
+            float swayX = (float) Math.sin(tornadoAnimTime * 1.5f + hRatio * 3.2f) * (0.6f + 2.2f * hRatio);
+            float swayZ = (float) Math.cos(tornadoAnimTime * 1.3f + hRatio * 2.8f) * (0.6f + 2.2f * hRatio);
+            float sliceCenterX = tx + swayX;
+            float sliceCenterZ = tz + swayZ;
+
+            // Spin speed: rapid at ground touchdown (9.0 rad/s), broader at top (4.0 rad/s)
+            float spinSpeed = 9.0f - 5.0f * hRatio;
+
+            // Quad billboard size scales with tier height
+            float quadHalfW = 0.85f + 2.2f * hRatio;
+            float quadHalfH = 0.75f + 1.4f * hRatio;
+
+            for (int q = 0; q < quadsPerTier; q++) {
+                float angle = tornadoAnimTime * spinSpeed + (q / (float) quadsPerTier) * MathUtils.PI2 + t * 0.45f;
+                float qx = sliceCenterX + MathUtils.cos(angle) * r;
+                float qy = y + (float) Math.sin(angle * 2.0f + t) * 0.35f;
+                float qz = sliceCenterZ + MathUtils.sin(angle) * r;
+
+                // Color & Lighting modulation
+                Color quadCol;
+                if (isRetro) {
+                    if (t % 3 == 0) {
+                        quadCol = retroTornadoDark;
+                    } else if (t % 3 == 1) {
+                        quadCol = retroTornadoMid;
+                    } else {
+                        quadCol = (q % 2 == 0) ? retroCyan : retroTornadoLight;
+                    }
+                    if (flash > 0.05f) {
+                        quadCol = Color.WHITE;
+                    }
+                } else {
+                    float alpha = MathUtils.clamp(0.55f + 0.30f * (1.0f - hRatio), 0.38f, 0.88f);
+                    tempTornadoColor.set(0.12f, 0.17f, 0.12f, alpha);
+                    if (flash > 0.05f) {
+                        tempTornadoColor.lerp(Color.WHITE, flash * 0.90f);
+                    }
+                    quadCol = tempTornadoColor;
+                }
+
+                addBillboardQuad(batcher, qx, qy, qz, quadHalfW, quadHalfH, camDir, quadCol);
+            }
+        }
+
+        // --- 2. CHURNING GROUND DEBRIS BOWL (Touchdown dust ring at Y=0.01m - 1.4m) ---
+        int groundDustQuads = 16;
+        float dustR = 4.8f;
+        for (int d = 0; d < groundDustQuads; d++) {
+            float dAngle = tornadoAnimTime * 11.5f + (d / (float) groundDustQuads) * MathUtils.PI2;
+            float dqx = tx + MathUtils.cos(dAngle) * dustR;
+            float dqy = 0.12f + (float) Math.sin(dAngle * 3f) * 0.25f;
+            float dqz = tz + MathUtils.sin(dAngle) * dustR;
+
+            Color dustCol;
+            if (isRetro) {
+                dustCol = (d % 2 == 0) ? retroDust1 : retroDust2;
+                if (flash > 0.05f) dustCol = Color.WHITE;
+            } else {
+                tempTornadoColor.set(0.24f, 0.20f, 0.15f, 0.72f);
+                if (flash > 0.05f) tempTornadoColor.lerp(Color.WHITE, flash * 0.85f);
+                dustCol = tempTornadoColor;
+            }
+            addBillboardQuad(batcher, dqx, dqy, dqz, 1.3f, 0.85f, camDir, dustCol);
+        }
+
+        // --- 3. SPIRALING AIRBORNE DEBRIS CHUNKS IN UPDRAFT (20 flying fragments) ---
+        int debrisCount = 20;
+        for (int k = 0; k < debrisCount; k++) {
+            float debY = (tornadoAnimTime * 4.5f + k * 1.3f) % 22.0f;
+            float debHRatio = debY / 22.0f;
+            float debR = 2.0f + 8.5f * (float) Math.pow(debHRatio, 1.4f);
+            float debAngle = tornadoAnimTime * 8.0f + k * 1.6f;
+
+            float debX = tx + MathUtils.cos(debAngle) * debR;
+            float debZ = tz + MathUtils.sin(debAngle) * debR;
+
+            Color debCol = isRetro ? Color.GRAY : tornadoDebrisColor;
+            if (flash > 0.05f) debCol = Color.WHITE;
+            float debSize = 0.18f + 0.14f * (k % 3);
+            addBillboardQuad(batcher, debX, debY, debZ, debSize, debSize, camDir, debCol);
+        }
+    }
+
+    private void addBillboardQuad(
+            DynamicQuadBatcher batcher,
+            float cx, float cy, float cz,
+            float halfW, float halfH,
+            Vector3 camDir,
+            Color color
+    ) {
+        batcher.addParticleQuad(
+                cx - scratchCamRight.x * halfW - scratchCamUp.x * halfH,
+                cy - scratchCamRight.y * halfW - scratchCamUp.y * halfH,
+                cz - scratchCamRight.z * halfW - scratchCamUp.z * halfH,
+
+                cx + scratchCamRight.x * halfW - scratchCamUp.x * halfH,
+                cy + scratchCamRight.y * halfW - scratchCamUp.y * halfH,
+                cz + scratchCamRight.z * halfW - scratchCamUp.z * halfH,
+
+                cx + scratchCamRight.x * halfW + scratchCamUp.x * halfH,
+                cy + scratchCamRight.y * halfW + scratchCamUp.y * halfH,
+                cz + scratchCamRight.z * halfW + scratchCamUp.z * halfH,
+
+                cx - scratchCamRight.x * halfW + scratchCamUp.x * halfH,
+                cy - scratchCamRight.y * halfW + scratchCamUp.y * halfH,
+                cz - scratchCamRight.z * halfW + scratchCamUp.z * halfH,
+
+                -camDir.x, -camDir.y, -camDir.z,
+                color
+        );
+    }
+
+    public boolean isTornadoActive() {
+        return weatherManager != null && weatherManager.getCurrentWeather() == WeatherType.TORNADO;
+    }
+
+    public Vector3 getTornadoPosition(Vector3 out) {
+        if (out == null) out = new Vector3();
+        out.set(tornadoWorldX, 0f, tornadoWorldZ);
+        return out;
     }
 
     /**

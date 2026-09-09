@@ -1,6 +1,7 @@
 package com.bpm.minotaur.weather;
 
 import com.badlogic.gdx.math.Vector3;
+import com.bpm.minotaur.gamedata.player.Player;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -105,5 +106,28 @@ public class WeatherOverhaulTest {
         assertTrue("Tornado particle should be debris", debrisParticle.isDebris);
         debrisParticle.update(0.05f);
         assertTrue("Debris particle must travel fast horizontally", debrisParticle.x < 2f);
+    }
+
+    @Test
+    public void testTornadoVortexStateAndPosition() {
+        WeatherRenderer renderer = new WeatherRenderer(weatherManager);
+        assertFalse("Tornado should not be active initially", renderer.isTornadoActive());
+
+        weatherManager.setCurrentWeather(WeatherType.TORNADO);
+        assertTrue("Tornado should be active when weather is TORNADO", renderer.isTornadoActive());
+
+        Player player = new Player(10f, 10f);
+        renderer.update(0.1f, player, null);
+
+        Vector3 tornadoPos = new Vector3();
+        renderer.getTornadoPosition(tornadoPos);
+
+        // Verify distance from player (10, -10 in world coords)
+        float dx = tornadoPos.x - player.getPosition().x;
+        float dz = tornadoPos.z - (-player.getPosition().y);
+        float dist = (float) Math.sqrt(dx * dx + dz * dz);
+
+        assertTrue("Tornado should be positioned within visible range (15m - 22m), was " + dist,
+                dist >= 15f && dist <= 22f);
     }
 }

@@ -397,6 +397,8 @@ public class World3DRenderer implements Disposable {
 
             shader.setUniformf("u_alphaCutoff", 0.0f);
             shader.setUniformf("u_retroBorder", 0.0f);
+            shader.setUniformf("u_fogEnabled", 0.0f);
+            shader.setUniformf("u_retroColor", 1.0f, 1.0f, 1.0f, 1.0f);
 
             this.weatherRenderer.render3D(dynamicBatcher, blankTexture, shader, camera, player, maze, wm, isRetro);
 

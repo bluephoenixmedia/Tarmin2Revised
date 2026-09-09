@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -67,8 +66,6 @@ public class Skybox3DRenderer {
     private ModelInstance sunInstance;
     private ModelInstance moonInstance;
 
-    // 3D Horizon Tornado Renderer
-    private final ShapeRenderer tornadoRenderer;
     private WeatherType currentWeather = WeatherType.CLEAR;
 
     // Dynamic Atmosphere & Weather Tracking
@@ -101,8 +98,6 @@ public class Skybox3DRenderer {
         fillLight = new DirectionalLight().set(0.25f, 0.28f, 0.38f, 0.4f, 0.5f, 0.4f);
         environment.add(keyLight);
         environment.add(fillLight);
-
-        tornadoRenderer = new ShapeRenderer();
 
         initSkyShader();
         loadModels();
@@ -343,70 +338,8 @@ public class Skybox3DRenderer {
 
         modelBatch.end();
 
-        // 3D Horizon Tornado Vortex: rendered in horizon pass behind foreground raycast walls
-        if (currentWeather == WeatherType.TORNADO) {
-            render3DTornado();
-        }
-
         // Disable depth writing so subsequent 2D raycaster passes draw over the sky
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
-    }
-
-    private void render3DTornado() {
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
-        Gdx.gl.glDepthMask(false);
-
-        tornadoRenderer.setProjectionMatrix(camera.combined);
-        tornadoRenderer.begin(ShapeRenderer.ShapeType.Line);
-
-        // Sweeping orbit in distant horizon (~135 units out)
-        float orbitAngle = totalTime * 0.05f;
-        float tx = camera.position.x + MathUtils.cos(orbitAngle) * 135f;
-        float tz = camera.position.z + MathUtils.sin(orbitAngle) * 135f;
-
-        Color c = (currentFlash > 0.05f) ? Color.WHITE : tempColor.set(0.18f, 0.16f, 0.22f, 0.85f);
-        tornadoRenderer.setColor(c);
-
-        int tiers = 28;
-        int particlesPerTier = 10;
-        float totalH = 92f;
-
-        for (int t = 0; t < tiers; t++) {
-            float hRatio = t / (float) tiers;
-            float y = -8f + hRatio * totalH;
-            float r = 7f + 32f * (float) Math.pow(hRatio, 1.35);
-            float spinSpeed = (6f - 3f * hRatio);
-            float tierAngle = totalTime * spinSpeed + t * 0.45f;
-
-            for (int p = 0; p < particlesPerTier; p++) {
-                float a = tierAngle + (p / (float) particlesPerTier) * MathUtils.PI2;
-                float px = tx + MathUtils.cos(a) * r;
-                float pz = tz + MathUtils.sin(a) * r;
-
-                // Tangent velocity streak + vertical updraft
-                float tangentX = -MathUtils.sin(a) * 3.5f;
-                float tangentZ = MathUtils.cos(a) * 3.5f;
-                float updraft  = 1.8f;
-
-                tornadoRenderer.line(px, y, pz, px + tangentX, y + updraft, pz + tangentZ);
-            }
-
-            // Low ground swirling dust cloud ring
-            if (t < 5) {
-                float dustR = r * 1.65f;
-                for (int d = 0; d < 4; d++) {
-                    float da = tierAngle * 1.4f + (d / 4.0f) * MathUtils.PI2;
-                    float dpx = tx + MathUtils.cos(da) * dustR;
-                    float dpz = tz + MathUtils.sin(da) * dustR;
-                    tornadoRenderer.line(dpx, y, dpz, dpx - MathUtils.sin(da) * 4.5f, y + 0.8f, dpz + MathUtils.cos(da) * 4.5f);
-                }
-            }
-        }
-
-        tornadoRenderer.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     public boolean isInitialized() {
@@ -415,7 +348,6 @@ public class Skybox3DRenderer {
 
     public void dispose() {
         modelBatch.dispose();
-        if (tornadoRenderer != null) tornadoRenderer.dispose();
         if (castleModel   != null) castleModel.dispose();
         if (spireModel    != null) spireModel.dispose();
         if (mountainModel != null) mountainModel.dispose();
