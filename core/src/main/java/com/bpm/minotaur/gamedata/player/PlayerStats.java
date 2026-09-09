@@ -504,18 +504,20 @@ public class PlayerStats {
             this.luck = -13;
     }
 
-    // --- Cooking Stats ---
-    private int kindlingCount = 0;
-    private int cookingWaterCount = 0;
+    // --- Cooking Stats (Shelter Hearth Initial Stockpile) ---
+    private int kindlingCount = 5;
+    private int cookingWaterCount = 5;
     private int cookingSkill = 0;
 
     public int getKindlingCount() { return kindlingCount; }
+    public void setKindlingCount(int count) { this.kindlingCount = Math.max(0, count); }
     public void modifyKindlingCount(int amount) {
         this.kindlingCount += amount;
         if (this.kindlingCount < 0) this.kindlingCount = 0;
     }
 
     public int getCookingWaterCount() { return cookingWaterCount; }
+    public void setCookingWaterCount(int count) { this.cookingWaterCount = Math.max(0, count); }
     public void modifyCookingWaterCount(int amount) {
         this.cookingWaterCount += amount;
         if (this.cookingWaterCount < 0) this.cookingWaterCount = 0;

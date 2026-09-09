@@ -69,6 +69,14 @@ public class DayNightManager {
         recomputeSkyTint();
     }
 
+    /** Advances in-game time by a given number of minutes. */
+    public void advanceMinutes(float minutes) {
+        float fraction = minutes / (24f * 60f);
+        timeOfDay = (timeOfDay + fraction) % 1.0f;
+        if (timeOfDay < 0) timeOfDay += 1.0f;
+        recomputeSkyTint();
+    }
+
     /**
      * Brightness multiplier to apply to outdoor light (0.18 at night, 1.0 at noon).
      * Indoors / dungeon levels should ignore this.

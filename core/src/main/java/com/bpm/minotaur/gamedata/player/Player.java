@@ -54,6 +54,7 @@ public class Player {
     }
 
     private final StatusManager statusManager;
+    private final List<StatusEffectType> activeMealEffects = new ArrayList<>();
 
     // --- Position and Movement ---
     private final Vector2 position;
@@ -469,8 +470,14 @@ public class Player {
             return;
         }
 
-        // --- NEW: Handle Food Eating ---
+        // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
+            if (item.getType() == Item.ItemType.MEAL || (item.getMealEffects() != null && !item.getMealEffects().isEmpty())) {
+                feastOnMeal(item, eventManager);
+                inventory.removeItem(item);
+                return;
+            }
+
             // Basic food value
             stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 5);
             stats.addHydration(item.getHydrationValue());
@@ -499,7 +506,6 @@ public class Player {
                 if (!statusManager.hasEffect(intrinsic)) {
                     statusManager.addEffect(intrinsic, -1, 1, false);
                     eventManager.addEvent(new GameEvent("You feel a change in your nature.", 2.5f));
-                    // NetHack style messages?
                     if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)
                         eventManager.addEvent(new GameEvent("You feel cool.", 2f));
                     if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)
@@ -606,6 +612,74 @@ public class Player {
 
         // --- BALANCE LOGGING ---
         BalanceLogger.getInstance().log("PORTAL_USE", "Player triggered Mysterious Portal. toVoid=" + toVoid);
+    }
+
+    /**
+     * Consumes a cooked meal, applying Caves of Qud-style metabolic boons.
+     * Clears previous meal metabolic buffs, resets metabolizing timer, restores satiety, heals HP, and warms temperature.
+     */
+    public void feastOnMeal(Item meal) {
+        feastOnMeal(meal, null);
+    }
+
+    public void feastOnMeal(Item meal, GameEventManager eventManager) {
+        if (meal == null) return;
+
+        // 1. Satiety, Food, Hydration & Healing
+        stats.modifySatiety(45f);
+        stats.addFood(meal.getNutrition() > 0 ? meal.getNutrition() : 25);
+        stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : 15);
+        int healAmt = 15 + (stats.getCookingSkill() * 3);
+        stats.heal(healAmt);
+
+        // 2. Warm body temperature toward cozy normal (37°C)
+        float temp = stats.getBodyTemperature();
+        if (temp < com.bpm.minotaur.gamedata.player.PlayerStats.BODY_TEMP_NORMAL) {
+            stats.setBodyTemperature(Math.min(com.bpm.minotaur.gamedata.player.PlayerStats.BODY_TEMP_NORMAL, temp + 2.5f));
+        }
+
+        // 3. Caves of Qud Style Metabolic Overwrite
+        if (statusManager != null) {
+            for (StatusEffectType oldEff : activeMealEffects) {
+                statusManager.removeEffect(oldEff);
+            }
+            activeMealEffects.clear();
+            statusManager.removeEffect(StatusEffectType.METABOLIZING);
+
+            int duration = meal.getMealEffectDuration() > 0 ? meal.getMealEffectDuration() : 150;
+            statusManager.addEffect(StatusEffectType.METABOLIZING, duration, 1, false);
+
+            List<StatusEffectType> effs = meal.getMealEffects();
+            if (effs != null && !effs.isEmpty()) {
+                for (StatusEffectType eff : effs) {
+                    statusManager.addEffect(eff, duration, 1, false);
+                    activeMealEffects.add(eff);
+                }
+            }
+
+            StringBuilder effList = new StringBuilder();
+            if (effs != null && !effs.isEmpty()) {
+                for (int i = 0; i < effs.size(); i++) {
+                    if (i > 0) effList.append(", ");
+                    effList.append(effs.get(i).name().replace('_', ' '));
+                }
+            } else {
+                effList.append("Well Fed");
+            }
+
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You feast upon " + meal.getDisplayName() + "! Metabolizing: " + effList + " (" + duration + " turns).", 3.5f));
+            }
+        }
+
+        if (soundManager != null) {
+            soundManager.playPickupItemSound();
+        }
+        BalanceLogger.getInstance().logEconomy("RES_GAIN", "Cooked Meal", 25);
+    }
+
+    public List<StatusEffectType> getActiveMealEffects() {
+        return java.util.Collections.unmodifiableList(activeMealEffects);
     }
 
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,

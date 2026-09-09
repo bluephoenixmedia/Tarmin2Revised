@@ -56,7 +56,14 @@ public enum StatusEffectType {
     RESIST_POISON,
     TELEPATHY,
     INVISIBLE,
-    SEE_INVISIBLE;
+    SEE_INVISIBLE,
+
+    // Caves of Qud Style Metabolic & Conditional Boons
+    METABOLIZING,
+    BLOOD_SURGE,
+    SPIRITUAL_WARD,
+    CARAPACE_HARDENING,
+    NIGHT_HUNTER;
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;

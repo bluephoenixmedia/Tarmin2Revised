@@ -1936,10 +1936,13 @@ public class GameScreen extends BaseScreen {
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_FIRE_POT) {
-            InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
-                    InventoryScreen.InventoryMode.COOK);
-            game.setScreen(invScreen);
-            return;
+            try {
+                CookingScreen cookingScreen = new CookingScreen(game, this, player, worldManager);
+                game.setScreen(cookingScreen);
+                return;
+            } catch (Exception e) {
+                Gdx.app.error("GameScreen", "Failed to open Cooking Hearth", e);
+            }
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.BRASS_LANTERN) {

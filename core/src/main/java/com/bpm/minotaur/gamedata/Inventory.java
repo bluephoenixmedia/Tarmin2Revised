@@ -161,21 +161,21 @@ public class Inventory {
         return mainInventory;
     }
 
-    public void removeItem(Item item) {
+    public boolean removeItem(Item item) {
         if (rightHand == item) {
             rightHand = null;
-            return;
+            return true;
         }
         if (leftHand == item) {
             leftHand = null;
-            return;
+            return true;
         }
         for (int i = 0; i < quickSlots.length; i++) {
             if (quickSlots[i] == item) {
                 quickSlots[i] = null;
-                return;
+                return true;
             }
         }
-        mainInventory.remove(item);
+        return mainInventory.remove(item);
     }
 }

@@ -275,6 +275,31 @@ public class CombatManager {
             int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
+
+            // --- Caves of Qud Metabolic Triggers on Hit ---
+            if (player.getStatusManager() != null && actualDamage > 0) {
+                // 1. Carapace Hardening
+                if (player.getStatusManager().hasEffect(StatusEffectType.CARAPACE_HARDENING) && actualDamage >= 5) {
+                    if (!player.getStatusManager().hasEffect(StatusEffectType.HARDENED)) {
+                        player.getStatusManager().addEffect(StatusEffectType.HARDENED, 12, 1, false);
+                        eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Carapace hardened from the blow!", 2.0f));
+                    }
+                }
+                // 2. Blood Surge (low HP)
+                if (player.getStatusManager().hasEffect(StatusEffectType.BLOOD_SURGE)) {
+                    float hpPct = (float) player.getCurrentHP() / (float) player.getStats().getMaxHP();
+                    if (hpPct <= 0.35f && !player.getStatusManager().hasEffect(StatusEffectType.ADRENALINE_BOOST)) {
+                        player.getStatusManager().addEffect(StatusEffectType.ADRENALINE_BOOST, 15, 1, false);
+                        eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Blood Surge! Adrenaline courses through you!", 2.5f));
+                    }
+                }
+                // 3. Spiritual Ward
+                if (player.getStatusManager().hasEffect(StatusEffectType.SPIRITUAL_WARD)) {
+                    int retaliateDmg = Math.max(3, actualDamage / 2);
+                    attacker.takeDamage(retaliateDmg, DamageType.SPIRITUAL);
+                    eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Spiritual Ward retributively shocks " + attacker.getMonsterType() + " for " + retaliateDmg + "!", 2.0f));
+                }
+            }
         } else {
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses!", 1f));
         }
@@ -531,6 +556,12 @@ public class CombatManager {
             DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
         }
         DivinityOrbManager.getInstance().spawnOrb();
+
+        // Caves of Qud Night Hunter trigger
+        if (player != null && player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.NIGHT_HUNTER)) {
+            player.getStatusManager().addEffect(StatusEffectType.TELEPATHY, 15, 1, false);
+            eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Night Hunter grants void ESP!", 2.0f));
+        }
     }
 
     private void closeMenuOrPassTurn() {
@@ -1392,6 +1423,12 @@ public class CombatManager {
                     }
                 }
             }
+        }
+
+        // Caves of Qud Night Hunter trigger
+        if (player != null && player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.NIGHT_HUNTER)) {
+            player.getStatusManager().addEffect(StatusEffectType.TELEPATHY, 15, 1, false);
+            eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Night Hunter grants void ESP!", 2.0f));
         }
     }
 

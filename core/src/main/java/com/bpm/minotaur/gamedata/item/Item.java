@@ -238,6 +238,9 @@ public class Item implements Renderable {
     public void setMealEffectDuration(int duration) {
         this.mealEffectDuration = duration;
     }
+    public int getMealEffectDuration() {
+        return this.mealEffectDuration;
+    }
 
     private ItemTemplate template;
     private final ItemDataManager dataManager;
