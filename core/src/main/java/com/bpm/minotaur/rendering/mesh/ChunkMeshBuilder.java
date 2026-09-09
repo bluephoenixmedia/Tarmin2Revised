@@ -151,15 +151,30 @@ public class ChunkMeshBuilder {
                     boolean isSouthWindow = (southObj instanceof Window);
 
                     Gate gateAtCell = (maze != null) ? maze.getGateAt(x, y) : null;
-                    boolean isNorthGate = gateAtCell != null && (y == maze.getHeight() - 1 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
-                    boolean isSouthGate = gateAtCell != null && (y == 0 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
-                    boolean isWestGate  = gateAtCell != null && (x == 0 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
-                    boolean isEastGate  = gateAtCell != null && (x == maze.getWidth() - 1 || gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+                    Gate northGate  = (maze != null && y < maze.getHeight() - 1) ? maze.getGateAt(x, y + 1) : null;
+                    Gate southGate  = (maze != null && y > 0) ? maze.getGateAt(x, y - 1) : null;
+                    Gate westGate   = (maze != null && x > 0) ? maze.getGateAt(x - 1, y) : null;
+                    Gate eastGate   = (maze != null && x < maze.getWidth() - 1) ? maze.getGateAt(x + 1, y) : null;
+
+                    // Gate portal openings: omit wall across the portal passageway (both at the gate tile and from adjacent hallway)
+                    boolean isNorthGateOpening = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH)
+                                              || (northGate != null && northGate.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
+                    boolean isSouthGateOpening = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH)
+                                              || (southGate != null && southGate.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
+                    boolean isWestGateOpening  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST)
+                                              || (westGate != null && westGate.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+                    boolean isEastGateOpening  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST)
+                                              || (eastGate != null && eastGate.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+
+                    // Gate flanking walls: gate tile itself needs solid flanking walls on its sides
+                    boolean isGateFlankingNorth = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+                    boolean isGateFlankingSouth = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.EAST_WEST);
+                    boolean isGateFlankingWest  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
+                    boolean isGateFlankingEast  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
 
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
-                    // Do not emit North boundary wall if adjacent cell is a Window or if this is a Gate
                     boolean hasNorthDoor = (currentData & DOOR_NORTH) != 0 || (northData & DOOR_SOUTH) != 0;
-                    boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && !isNorthGate && ((currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
+                    boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && !isNorthGateOpening && (isGateFlankingNorth || (currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
                     if (hasNorthWall) {
                         addQuad(wallVerts, wallIndices,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
@@ -171,9 +186,8 @@ public class ChunkMeshBuilder {
                     }
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
-                    // Do not emit South boundary wall if adjacent cell is a Window or if this is a Gate
                     boolean hasSouthDoor = (currentData & DOOR_SOUTH) != 0 || (southData & DOOR_NORTH) != 0;
-                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && !isSouthGate && ((currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
+                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && !isSouthGateOpening && (isGateFlankingSouth || (currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
                     if (hasSouthWall) {
                         addQuad(wallVerts, wallIndices,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
@@ -185,9 +199,8 @@ public class ChunkMeshBuilder {
                     }
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
-                    // If West neighbor is a Window or if this is a Gate, skip emitting wall
                     boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                    boolean hasWestWall = !hasWestDoor && !isWestWindow && !isWestGate && ((currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                    boolean hasWestWall = !hasWestDoor && !isWestWindow && !isWestGateOpening && (isGateFlankingWest || (currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
                     if (hasWestWall) {
                         addQuad(wallVerts, wallIndices,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
@@ -199,9 +212,8 @@ public class ChunkMeshBuilder {
                     }
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
-                    // If East neighbor is a Window or if this is a Gate, skip emitting wall
                     boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
-                    boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGate && ((currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+                    boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGateOpening && (isGateFlankingEast || (currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
                     if (hasEastWall) {
                         addQuad(wallVerts, wallIndices,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,

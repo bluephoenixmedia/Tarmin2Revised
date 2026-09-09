@@ -144,6 +144,18 @@ public class ChunkGeometryTest {
         maze.addGate(eastGate);
 
         assertTrue("Gate must be detected at (4, 2)", maze.hasGateAt(4, 2));
+
+        // Add a West perimeter gate at (0, 2)
+        com.bpm.minotaur.gamedata.Gate westGate = new com.bpm.minotaur.gamedata.Gate(0, 2);
+        westGate.setOrientation(Door.Orientation.EAST_WEST);
+        maze.addGate(westGate);
+
+        // Verify that moving from (1, 2) towards WEST (into gate at (0, 2)) is NOT blocked by wall mask
+        maze.setTile(1, 2, ChunkMeshBuilder.WALL_WEST);
+        assertFalse("Wall mask must not block movement into gate", maze.isWallBlocking(1, 2, Direction.WEST));
+
+        // Verify that moving from (0, 2) towards EAST (out of gate into (1, 2)) is NOT blocked by wall mask
+        assertFalse("Wall mask must not block movement out of gate", maze.isWallBlocking(0, 2, Direction.EAST));
     }
 
     @Test

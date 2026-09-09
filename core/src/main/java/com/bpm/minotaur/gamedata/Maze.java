@@ -305,6 +305,14 @@ public class Maze {
     }
 
     public boolean isWallBlocking(int x, int y, Direction direction) {
+        int nextX = x + (int) direction.getVector().x;
+        int nextY = y + (int) direction.getVector().y;
+
+        // If moving into or out of a Gate opening, wall bitmask does not block
+        if (hasGateAt(nextX, nextY) || hasGateAt(x, y)) {
+            return false;
+        }
+
         int wallMask = direction.getWallMask();
         int doorMask = wallMask << 1;
         int currentCellData = getWallDataAt(x, y);
@@ -313,9 +321,6 @@ public class Maze {
             return true;
 
         if ((currentCellData & doorMask) != 0) {
-            int nextX = x + (int) direction.getVector().x;
-            int nextY = y + (int) direction.getVector().y;
-
             Object obj = getGameObjectAt(x, y);
             if (obj instanceof Door) {
                 return ((Door) obj).getState() != Door.DoorState.OPEN;
