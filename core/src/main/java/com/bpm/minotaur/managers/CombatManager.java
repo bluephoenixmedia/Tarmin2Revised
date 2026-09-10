@@ -1439,6 +1439,14 @@ public class CombatManager {
             player.getStatusManager().addEffect(StatusEffectType.TELEPATHY, 15, 1, false);
             eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Night Hunter grants void ESP!", 2.0f));
         }
+
+        // Minotaur Defeat Check: Unlocks Classic Mode globally and Pact of Torment
+        if (monster != null && monster.getType() == Monster.MonsterType.MINOTAUR) {
+            SaveManager.getInstance().unlockClassicMode();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("THE MINOTAUR HAS FALLEN! Classic Mode and Pact of Torment unlocked!", 5.0f));
+            }
+        }
     }
 
     public boolean performRangedAttack() {

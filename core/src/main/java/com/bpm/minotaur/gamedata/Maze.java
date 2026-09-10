@@ -233,6 +233,20 @@ public class Maze {
         items.put(new GridPoint2((int) item.getPosition().x, (int) item.getPosition().y), item);
     }
 
+    public void removeItem(Item item) {
+        if (item == null) return;
+        if (item.getPosition() != null) {
+            items.remove(new GridPoint2((int) item.getPosition().x, (int) item.getPosition().y));
+        }
+        Iterator<Map.Entry<GridPoint2, Item>> it = items.entrySet().iterator();
+        while (it.hasNext()) {
+            if (it.next().getValue() == item) {
+                it.remove();
+                break;
+            }
+        }
+    }
+
     public Map<GridPoint2, Monster> getMonsters() {
         return monsters;
     }

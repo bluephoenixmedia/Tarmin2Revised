@@ -1238,6 +1238,11 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.ESCAPE) {
+            game.setScreen(new PauseScreen(game, this));
+            return true;
+        }
+
         if (worldManager == null || player == null || maze == null)
             return false;
 
@@ -1800,6 +1805,9 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        if (player != null && worldManager != null) {
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
+        }
         shapeRenderer.dispose();
         font.dispose();
         if (hud != null)
@@ -1958,7 +1966,21 @@ public class GameScreen extends BaseScreen {
                 (int) (player.getPosition().x + v.x),
                 (int) (player.getPosition().y + v.y));
 
+        GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+        Item itemOnTile = maze.getItems().get(currentTile);
+        if (itemOnTile != null && itemOnTile.getType() == Item.ItemType.CORPSE) {
+            CorpseLootScreen corpseScreen = new CorpseLootScreen(game, this, player, itemOnTile, maze);
+            game.setScreen(corpseScreen);
+            return;
+        }
+
         Item itemInFront = maze.getItems().get(target);
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.CORPSE) {
+            CorpseLootScreen corpseScreen = new CorpseLootScreen(game, this, player, itemInFront, maze);
+            game.setScreen(corpseScreen);
+            return;
+        }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
             ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, ShelterChest.getInstance());
@@ -1970,10 +1992,8 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentHP(player.getStats().getMaxHP());
             player.getStats().setCurrentMP(player.getStats().getMaxMP());
             player.getStatusManager().clearEffects();
-            worldManager.saveCurrentChunk(maze);
-            ShelterChest.getInstance().save();
-            DoomManager.getInstance().save();
-            DivinityManager.getInstance().save();
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
+            SaveManager.getInstance().backupActiveSlot();
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
@@ -2083,6 +2103,30 @@ public class GameScreen extends BaseScreen {
                 }
             }
             playerTurnTakesAction();
+        }
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public WorldManager getWorldManager() {
+        return worldManager;
+    }
+
+    public void killPlayer() {
+        if (player != null && player.getStats() != null) {
+            player.getStats().setCurrentHP(0);
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent(com.bpm.minotaur.gamedata.GameEvent.EventType.PLAYER_DIED, null));
+        }
+    }
+
+    @Override
+    public void pause() {
+        if (player != null && worldManager != null) {
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
         }
     }
 }

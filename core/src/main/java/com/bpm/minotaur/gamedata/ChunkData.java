@@ -38,6 +38,9 @@ public class ChunkData {
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
     public List<EventData> events = new ArrayList<>();
+    public List<DecalData> surfaceDecals = new ArrayList<>();
+    public List<WallDecalData> wallDecals = new ArrayList<>();
+    public List<GibData> gibs = new ArrayList<>();
 
     public ChunkData() {
     }
@@ -100,6 +103,19 @@ public class ChunkData {
                 for (ItemModifier mod : data.modifiers) {
                     item.addModifier(mod);
                 }
+            }
+            if (data.contents != null && !data.contents.isEmpty()) {
+                List<Item> insideItems = new ArrayList<>();
+                for (ItemData insideData : data.contents) {
+                    Item inside = new Item(insideData.type, insideData.x, insideData.y, insideData.color, itemDataManager, assetManager);
+                    if (insideData.modifiers != null) {
+                        for (ItemModifier mod : insideData.modifiers) {
+                            inside.addModifier(mod);
+                        }
+                    }
+                    insideItems.add(inside);
+                }
+                item.setContents(insideItems);
             }
             maze.addItem(item);
         }
@@ -217,6 +233,7 @@ public class ChunkData {
         public int x;
         public int y;
         public List<ItemModifier> modifiers = new ArrayList<>();
+        public List<ItemData> contents = new ArrayList<>();
 
         public ItemData() {
         }
@@ -227,6 +244,13 @@ public class ChunkData {
             this.x = (int) item.getPosition().x;
             this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
+            if (item.getContents() != null && !item.getContents().isEmpty()) {
+                for (Item inside : item.getContents()) {
+                    if (inside != null) {
+                        this.contents.add(new ItemData(inside));
+                    }
+                }
+            }
         }
     }
 
@@ -320,5 +344,49 @@ public class ChunkData {
             this.x = (int) window.getPosition().x;
             this.y = (int) window.getPosition().y;
         }
+    }
+
+    public static class DecalData {
+        public float x;
+        public float y;
+        public float z;
+        public float size;
+        public float r;
+        public float g;
+        public float b;
+        public float a;
+        public float lifeTimer;
+
+        public DecalData() {}
+    }
+
+    public static class WallDecalData {
+        public int gridX;
+        public int gridY;
+        public String dir;
+        public float wallX;
+        public float height;
+        public float radius;
+        public float r;
+        public float g;
+        public float b;
+        public float a;
+        public float lifeTimer;
+
+        public WallDecalData() {}
+    }
+
+    public static class GibData {
+        public float x;
+        public float y;
+        public float z;
+        public float rotation;
+        public float r;
+        public float g;
+        public float b;
+        public float a;
+        public float lifeTimer;
+
+        public GibData() {}
     }
 }

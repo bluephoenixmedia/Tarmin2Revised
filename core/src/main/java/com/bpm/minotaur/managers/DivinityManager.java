@@ -11,7 +11,9 @@ import java.util.Set;
 public class DivinityManager {
 
     public static final String DIVINITY_NAME = "Divinities";
-    private static final String SAVE_FILE = "saves/divinities.json";
+    private String getSaveFilePath() {
+        return SaveManager.getInstance().getActiveSlotFilePath("divinities.json");
+    }
 
     private static DivinityManager instance;
 
@@ -147,14 +149,12 @@ public class DivinityManager {
         try {
             FileHandle dir = Gdx.files.local("saves/");
             if (!dir.exists()) dir.mkdirs();
-            FileHandle file = Gdx.files.local(SAVE_FILE);
-            Json json = new Json();
-            json.setUsePrototypes(false);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             SaveData data = new SaveData();
             data.lostDivinityAmount = lostDivinityAmount;
             data.lostDivinityChunkKey = lostDivinityChunkKey;
             data.lostDivinityTile = lostDivinityTile;
-            file.writeString(json.toJson(data), false);
+            SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             Gdx.app.error("DivinityManager", "Failed to save: " + e.getMessage());
         }
@@ -162,7 +162,7 @@ public class DivinityManager {
 
     private void load() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             if (file.exists()) {
                 Json json = new Json();
                 json.setUsePrototypes(false);

@@ -166,10 +166,9 @@ Thumbs.db
 
 distribution/
 logs/
-saves/*.json    
-saves/world/
+saves/
+**/saves/
 logs/game_balance_session.log
-saves/profile.json
 
 ## Texture Packer Source Assets
 /assets/images/debris/

@@ -178,4 +178,13 @@ public class Inventory {
         }
         return mainInventory.remove(item);
     }
+
+    public void clear() {
+        rightHand = null;
+        leftHand = null;
+        for (int i = 0; i < quickSlots.length; i++) {
+            quickSlots[i] = null;
+        }
+        mainInventory.clear();
+    }
 }

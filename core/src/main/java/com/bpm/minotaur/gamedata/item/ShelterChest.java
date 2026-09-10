@@ -5,6 +5,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
 
+import com.bpm.minotaur.managers.SaveManager;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +19,10 @@ public class ShelterChest {
 
     private static ShelterChest instance;
     private static final int DEFAULT_CAPACITY = 30;
-    private static final String SAVE_FILE = "saves/shelter_chest.json";
+
+    private String getSaveFilePath() {
+        return SaveManager.getInstance().getActiveSlotFilePath("shelter_chest.json");
+    }
 
     private final int capacity;
     private final List<Item> items;
@@ -97,11 +102,10 @@ public class ShelterChest {
      */
     public void save() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             file.parent().mkdirs();
-            String data = json.prettyPrint(items);
-            file.writeString(data, false);
-            Gdx.app.log("ShelterChest", "Saved " + items.size() + " items to " + SAVE_FILE);
+            SaveManager.getInstance().atomicWriteJson(file, items);
+            Gdx.app.log("ShelterChest", "Saved " + items.size() + " items to " + getSaveFilePath());
         } catch (Exception e) {
             Gdx.app.error("ShelterChest", "Failed to save shelter chest", e);
         }
@@ -112,14 +116,14 @@ public class ShelterChest {
      */
     public void load() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             if (file.exists()) {
                 items.clear();
                 @SuppressWarnings("unchecked")
                 ArrayList<Item> loaded = json.fromJson(ArrayList.class, Item.class, file);
                 if (loaded != null) {
                     items.addAll(loaded);
-                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + SAVE_FILE);
+                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
                 }
             }
         } catch (Exception e) {

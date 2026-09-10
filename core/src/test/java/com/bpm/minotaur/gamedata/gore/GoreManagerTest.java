@@ -109,4 +109,30 @@ public class GoreManagerTest {
         }
         assertEquals(GoreManager.MAX_ACTIVE_WALL_DECALS, goreManager.getActiveWallDecals().size);
     }
+
+    @Test
+    public void testChunkGoreSerializationRoundtrip() {
+        com.badlogic.gdx.math.GridPoint2 chunk0 = new com.badlogic.gdx.math.GridPoint2(0, 0);
+
+        // Spawn 2 surface decals and 1 wall decal in chunk 0 (coords < 36)
+        goreManager.spawnSurfaceDecal(new Vector3(10, 0, 10), Color.RED, 0.25f);
+        goreManager.spawnSurfaceDecal(new Vector3(15, 0, 12), Color.FIREBRICK, 0.30f);
+        goreManager.spawnWallDecal(10, 10, Direction.NORTH, 0.5f, 0.5f, 0.20f, Color.RED);
+
+        // Spawn a decal in adjacent chunk 1 (x >= 36)
+        goreManager.spawnSurfaceDecal(new Vector3(45, 0, 10), Color.RED, 0.25f);
+
+        com.bpm.minotaur.gamedata.ChunkData chunkData = new com.bpm.minotaur.gamedata.ChunkData();
+        goreManager.exportChunkGore(chunk0, chunkData);
+
+        assertEquals("Should export exactly 2 surface decals for chunk 0", 2, chunkData.surfaceDecals.size());
+        assertEquals("Should export exactly 1 wall decal for chunk 0", 1, chunkData.wallDecals.size());
+
+        // Restore into fresh manager
+        GoreManager freshManager = new GoreManager();
+        freshManager.importChunkGore(chunk0, chunkData);
+
+        assertEquals(2, freshManager.getActiveDecals().size);
+        assertEquals(1, freshManager.getActiveWallDecals().size);
+    }
 }

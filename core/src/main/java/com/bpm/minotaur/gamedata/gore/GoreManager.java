@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
+import com.bpm.minotaur.gamedata.ChunkData;
 import com.bpm.minotaur.gamedata.Direction;
 import com.bpm.minotaur.gamedata.Door;
 import com.bpm.minotaur.gamedata.Gate;
@@ -504,6 +505,134 @@ public class GoreManager {
         }
 
         return false;
+    }
+
+    // --- Chunk Persistence Serialization ---
+
+    public void exportChunkGore(GridPoint2 chunkId, ChunkData chunkData) {
+        if (chunkId == null || chunkData == null) return;
+        chunkData.surfaceDecals.clear();
+        chunkData.wallDecals.clear();
+        chunkData.gibs.clear();
+
+        for (int i = 0; i < activeSurfaceDecals.size; i++) {
+            SurfaceDecal d = activeSurfaceDecals.get(i);
+            int cx = (int) Math.floor(d.position.x / 36f);
+            int cy = (int) Math.floor(d.position.y / 36f);
+            if (cx == chunkId.x && cy == chunkId.y) {
+                ChunkData.DecalData data = new ChunkData.DecalData();
+                data.x = d.position.x;
+                data.y = d.position.y;
+                data.z = d.position.z;
+                data.size = d.size;
+                data.r = d.color.r;
+                data.g = d.color.g;
+                data.b = d.color.b;
+                data.a = d.color.a;
+                data.lifeTimer = d.lifeTimer;
+                chunkData.surfaceDecals.add(data);
+            }
+        }
+
+        for (int i = 0; i < activeWallDecals.size; i++) {
+            WallDecal d = activeWallDecals.get(i);
+            int cx = (int) Math.floor((float) d.gridX / 36f);
+            int cy = (int) Math.floor((float) d.gridY / 36f);
+            if (cx == chunkId.x && cy == chunkId.y) {
+                ChunkData.WallDecalData data = new ChunkData.WallDecalData();
+                data.gridX = d.gridX;
+                data.gridY = d.gridY;
+                data.dir = d.dir != null ? d.dir.name() : "NORTH";
+                data.wallX = d.wallX;
+                data.height = d.height;
+                data.radius = d.radius;
+                data.r = d.color.r;
+                data.g = d.color.g;
+                data.b = d.color.b;
+                data.a = d.color.a;
+                data.lifeTimer = d.lifeTimer;
+                chunkData.wallDecals.add(data);
+            }
+        }
+
+        for (int i = 0; i < activeGibs.size; i++) {
+            Gib g = activeGibs.get(i);
+            if (g.onGround) {
+                int cx = (int) Math.floor(g.position.x / 36f);
+                int cy = (int) Math.floor(g.position.y / 36f);
+                if (cx == chunkId.x && cy == chunkId.y) {
+                    ChunkData.GibData data = new ChunkData.GibData();
+                    data.x = g.position.x;
+                    data.y = g.position.y;
+                    data.z = g.position.z;
+                    data.rotation = g.rotation;
+                    data.r = g.color.r;
+                    data.g = g.color.g;
+                    data.b = g.color.b;
+                    data.a = g.color.a;
+                    data.lifeTimer = g.lifeTimer;
+                    chunkData.gibs.add(data);
+                }
+            }
+        }
+    }
+
+    public void importChunkGore(GridPoint2 chunkId, ChunkData chunkData) {
+        if (chunkId == null || chunkData == null) return;
+
+        if (chunkData.surfaceDecals != null) {
+            for (ChunkData.DecalData data : chunkData.surfaceDecals) {
+                if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) break;
+                SurfaceDecal decal = surfaceDecalPool.obtain();
+                decal.position.set(data.x, data.y, data.z);
+                decal.color.set(data.r, data.g, data.b, data.a);
+                decal.size = data.size;
+                decal.initialSize = data.size;
+                decal.targetSize = data.size;
+                decal.expandTimer = SurfaceDecal.EXPAND_DURATION;
+                decal.maxLife = SurfaceDecal.MAX_DECAL_LIFE;
+                decal.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : SurfaceDecal.MAX_DECAL_LIFE;
+                decal.textureRegion = (dropTextures.size > 0) ? dropTextures.first() : null;
+                activeSurfaceDecals.add(decal);
+            }
+        }
+
+        if (chunkData.wallDecals != null) {
+            for (ChunkData.WallDecalData data : chunkData.wallDecals) {
+                if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) break;
+                WallDecal decal = wallDecalPool.obtain();
+                Direction dir = Direction.NORTH;
+                try {
+                    if (data.dir != null) dir = Direction.valueOf(data.dir);
+                } catch (Exception ignored) {}
+
+                Color c = new Color(data.r, data.g, data.b, data.a);
+                decal.init(data.gridX, data.gridY, dir, data.wallX, data.height, data.radius, c,
+                        (smearTextures.size > 0) ? smearTextures.first() : null);
+                decal.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : WallDecal.MAX_WALL_DECAL_LIFE;
+                activeWallDecals.add(decal);
+
+                int key = (data.gridX * 1000 + data.gridY) * 2 + decal.side;
+                Array<WallDecal> list = wallDecalsByKey.computeIfAbsent(key, k -> new Array<>());
+                list.add(decal);
+            }
+        }
+
+        if (chunkData.gibs != null) {
+            for (ChunkData.GibData data : chunkData.gibs) {
+                if (activeGibs.size >= MAX_ACTIVE_GIBS) break;
+                Gib gib = gibPool.obtain();
+                gib.position.set(data.x, data.y, data.z);
+                gib.velocity.setZero();
+                gib.color.set(data.r, data.g, data.b, data.a);
+                gib.rotation = data.rotation;
+                gib.rotationalVelocity = 0f;
+                gib.onGround = true;
+                gib.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : Gib.MAX_GIB_LIFE;
+                gib.textureRegion = (gibTextures.size > 0) ? gibTextures.first() : null;
+                activeGibs.add(gib);
+            }
+        }
     }
 
     // --- Getters ---

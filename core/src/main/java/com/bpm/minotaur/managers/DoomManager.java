@@ -26,7 +26,9 @@ public class DoomManager {
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
     private static final float DAMAGE_SCALE_PER_DEATH = 0.025f; // +2.5% per death (Reduced from 5%)
     private static final float LOOT_DECAY_RATE = 0.02f; // -2% loot chance per death
-    private static final String SAVE_FILE = "saves/doom_state.json";
+    private String getSaveFilePath() {
+        return SaveManager.getInstance().getActiveSlotFilePath("doom_state.json");
+    }
 
     private DoomManager() {
         // Private constructor for singleton
@@ -51,6 +53,14 @@ public class DoomManager {
             BalanceLogger.getInstance().log("DOOM_UPDATE",
                     "Deaths: " + deathCount + " | Bridge: " + getBridgeIntegrity() + "%");
         }
+        if (this.deathCount >= MAX_DEATHS_ALLOWED) {
+            SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+        }
+    }
+
+    public void resetDeaths() {
+        this.deathCount = 0;
+        save();
     }
 
     public int getDeathCount() {
@@ -135,7 +145,7 @@ public class DoomManager {
             json.setOutputType(OutputType.json);
 
             // Simple wrapper object or just the int? Let's verify directory first.
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             if (!file.parent().exists()) {
                 file.parent().mkdirs();
             }
@@ -145,7 +155,7 @@ public class DoomManager {
 
             file.writeString(json.prettyPrint(state), false);
             if (Gdx.app != null) {
-                Gdx.app.log("DoomManager", "Saved Doom State.");
+                Gdx.app.log("DoomManager", "Saved Doom State to " + getSaveFilePath());
             }
         } catch (Exception e) {
             if (Gdx.app != null) {
@@ -156,7 +166,7 @@ public class DoomManager {
 
     public void load() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             if (file.exists()) {
                 Json json = new Json();
                 DoomState state = json.fromJson(DoomState.class, file);

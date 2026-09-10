@@ -26,7 +26,9 @@ import java.util.List;
  */
 public class DiscoveryManager {
 
-    private static final String SAVE_FILE = "saves/world/discovery_state.json";
+    private String getSaveFilePath() {
+        return SaveManager.getInstance().getActiveSlotFilePath("discovery_state.json");
+    }
 
     // --- POTIONS ---
     private ObjectMap<ItemType, PotionEffectType> potionMap = new ObjectMap<>();
@@ -382,9 +384,9 @@ public class DiscoveryManager {
                 state.wandIdentifiedString.put(entry.key.name(), entry.value);
             }
 
-            FileHandle file = Gdx.files.local(SAVE_FILE);
-            file.writeString(json.prettyPrint(state), false);
-            Gdx.app.log("DiscoveryManager", "Saved discovery state.");
+            FileHandle file = Gdx.files.local(getSaveFilePath());
+            SaveManager.getInstance().atomicWriteJson(file, state);
+            Gdx.app.log("DiscoveryManager", "Saved discovery state to " + getSaveFilePath());
         } catch (Exception e) {
             Gdx.app.error("DiscoveryManager", "Failed to save state", e);
         }
@@ -392,7 +394,7 @@ public class DiscoveryManager {
 
     public void loadState() {
         try {
-            FileHandle file = Gdx.files.local(SAVE_FILE);
+            FileHandle file = Gdx.files.local(getSaveFilePath());
             if (file.exists()) {
                 DiscoverySaveState state = json.fromJson(DiscoverySaveState.class, file);
 
@@ -484,6 +486,6 @@ public class DiscoveryManager {
     }
 
     public boolean hasSaveState() {
-        return Gdx.files.local(SAVE_FILE).exists();
+        return Gdx.files.local(getSaveFilePath()).exists();
     }
 }

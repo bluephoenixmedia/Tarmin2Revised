@@ -35,7 +35,10 @@ public class WorldManager {
     private int currentLevel;
     private GridPoint2 currentPlayerChunkId;
     private final Json json;
-    private static final String SAVE_DIRECTORY = "saves/world/";
+
+    private String getChunkSaveDir() {
+        return SaveManager.getInstance().getActiveChunkSaveDirectory();
+    }
 
     private final MonsterDataManager dataManager;
     private final ItemDataManager itemDataManager;
@@ -204,7 +207,7 @@ public class WorldManager {
 
         // 3. Delete Chunk Save Files (Keep Discovery, Keep Player meta if stored
         // separately)
-        FileHandle saveDir = Gdx.files.local(SAVE_DIRECTORY);
+        FileHandle saveDir = Gdx.files.local(getChunkSaveDir());
         if (saveDir.exists()) {
             for (FileHandle file : saveDir.list()) {
                 if (file.name().startsWith("chunk_")) {
@@ -297,12 +300,15 @@ public class WorldManager {
         }
 
         String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
-        FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);
+        FileHandle file = Gdx.files.local(getChunkSaveDir() + fileName);
         if (file.exists()) {
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
                 Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                 maze.setGoreManager(this.goreManager);
+                if (this.goreManager != null) {
+                    this.goreManager.importChunkGore(chunkId, data);
+                }
                 loadedChunks.put(chunkId, maze);
                 return maze;
             } catch (Exception e) {
@@ -409,10 +415,12 @@ public class WorldManager {
             return;
         try {
             ChunkData data = new ChunkData(maze);
-            String jsonData = json.prettyPrint(data);
+            if (this.goreManager != null) {
+                this.goreManager.exportChunkGore(chunkId, data);
+            }
             String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
-            FileHandle file = Gdx.files.local(SAVE_DIRECTORY + fileName);
-            file.writeString(jsonData, false);
+            FileHandle file = Gdx.files.local(getChunkSaveDir() + fileName);
+            SaveManager.getInstance().atomicWriteJson(file, data);
             Gdx.app.log("WorldManager", "Saved chunk state to " + file.path());
         } catch (Exception e) {
             Gdx.app.error("WorldManager", "Failed to save chunk: " + chunkId, e);
@@ -565,6 +573,14 @@ public class WorldManager {
 
     public BiomeManager getBiomeManager() {
         return biomeManager;
+    }
+
+    public GameMode getGameMode() {
+        return gameMode;
+    }
+
+    public Maze getCurrentMaze() {
+        return loadedChunks.get(currentPlayerChunkId);
     }
 
     public GridPoint2 getCurrentPlayerChunkId() {
