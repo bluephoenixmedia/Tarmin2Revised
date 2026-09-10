@@ -111,6 +111,17 @@ public class GameScreen extends BaseScreen {
     private FirstPersonWeaponOverlay weaponOverlay;
     private CraftingManager craftingManager;
 
+    public static class VisorDroplet {
+        public float x, y;
+        public float dripSpeed;
+        public float timer;
+        public float size;
+        public com.badlogic.gdx.graphics.g2d.TextureRegion region;
+        public Color color = new Color(0.85f, 0.12f, 0.12f, 1f);
+    }
+    private final java.util.List<VisorDroplet> visorDroplets = new ArrayList<>();
+    private final java.util.List<com.badlogic.gdx.graphics.g2d.TextureRegion> visorDropletTextures = new ArrayList<>();
+
     private float hitPauseTimer = 0f;
     private float sleepTimer = 0f;
 
@@ -307,6 +318,12 @@ public class GameScreen extends BaseScreen {
             gibRegs.add(goreAtlas.findRegion("gib" + i));
 
         maze.getGoreManager().setTextures(dropRegs, smearRegs, spatterReg, gibRegs);
+
+        visorDropletTextures.clear();
+        for (com.badlogic.gdx.graphics.g2d.TextureRegion dr : dropRegs) {
+            if (dr != null) visorDropletTextures.add(dr);
+        }
+        if (spatterReg != null) visorDropletTextures.add(spatterReg);
 
         // --- DICE UI INTEGRATION ---
         this.combatDiceOverlay = new CombatDiceOverlay(player, combatManager, game.getViewport());
@@ -732,6 +749,28 @@ public class GameScreen extends BaseScreen {
             Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         }
 
+        // --- VISOR BLOOD SPLATTERS ---
+        if (!visorDroplets.isEmpty()) {
+            float delta = Gdx.graphics.getDeltaTime();
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
+            for (int i = visorDroplets.size() - 1; i >= 0; i--) {
+                VisorDroplet vd = visorDroplets.get(i);
+                vd.timer -= delta;
+                vd.y -= vd.dripSpeed * delta;
+                if (vd.timer <= 0) {
+                    visorDroplets.remove(i);
+                    continue;
+                }
+                float alpha = com.badlogic.gdx.math.MathUtils.clamp(vd.timer / 1.5f, 0f, 1f);
+                vd.color.a = alpha;
+                game.getBatch().setColor(vd.color);
+                game.getBatch().draw(vd.region, vd.x, vd.y, vd.size, vd.size);
+            }
+            game.getBatch().setColor(Color.WHITE);
+            game.getBatch().end();
+        }
+
         // Log errors but don't spam trace logs
         if (combatDiceOverlay == null)
             return;
@@ -745,6 +784,27 @@ public class GameScreen extends BaseScreen {
             com.bpm.minotaur.managers.BalanceLogger.getInstance().log("UI_ERROR",
                     "Crash in CombatDiceOverlay: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    public void triggerVisorSplatter() {
+        if (visorDropletTextures.isEmpty() || game.getViewport() == null) return;
+        int count = com.badlogic.gdx.math.MathUtils.random(1, 3);
+        float vw = game.getViewport().getWorldWidth();
+        float vh = game.getViewport().getWorldHeight();
+
+        for (int i = 0; i < count; i++) {
+            VisorDroplet d = new VisorDroplet();
+            boolean leftSide = com.badlogic.gdx.math.MathUtils.randomBoolean();
+            d.x = leftSide
+                    ? com.badlogic.gdx.math.MathUtils.random(vw * 0.05f, vw * 0.35f)
+                    : com.badlogic.gdx.math.MathUtils.random(vw * 0.65f, vw * 0.95f);
+            d.y = com.badlogic.gdx.math.MathUtils.random(vh * 0.35f, vh * 0.85f);
+            d.dripSpeed = com.badlogic.gdx.math.MathUtils.random(12f, 26f);
+            d.timer = 1.5f;
+            d.size = com.badlogic.gdx.math.MathUtils.random(48f, 76f);
+            d.region = visorDropletTextures.get(com.badlogic.gdx.math.MathUtils.random(visorDropletTextures.size() - 1));
+            visorDroplets.add(d);
         }
     }
 

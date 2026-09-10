@@ -3,10 +3,12 @@ package com.bpm.minotaur.managers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.gore.GoreManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
@@ -54,6 +56,7 @@ public class WorldManager {
     private final BiomeManager biomeManager;
     private final Map<Biome, IChunkGenerator> generators = new HashMap<>();
     private final Map<GridPoint2, Maze> loadedChunks = new HashMap<>();
+    private final GoreManager goreManager;
 
     // --- NEW: Master Seed ---
     private long worldSeed;
@@ -79,6 +82,19 @@ public class WorldManager {
         this.json.setUsePrototypes(false);
         this.currentPlayerChunkId = new GridPoint2(0, 0);
         this.savingEnabled = true;
+
+        // Initialize Global Gore Simulation
+        this.goreManager = new GoreManager();
+        if (assetManager != null) {
+            String goreAtlasPath = "packed/gore.atlas";
+            if (!assetManager.isLoaded(goreAtlasPath)) {
+                assetManager.load(goreAtlasPath, TextureAtlas.class);
+                assetManager.finishLoading();
+            }
+            if (assetManager.isLoaded(goreAtlasPath)) {
+                this.goreManager.setTextures(assetManager.get(goreAtlasPath, TextureAtlas.class));
+            }
+        }
 
         // Initialize Seed
         this.worldSeed = new java.util.Random().nextLong();
@@ -286,6 +302,7 @@ public class WorldManager {
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
                 Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
+                maze.setGoreManager(this.goreManager);
                 loadedChunks.put(chunkId, maze);
                 return maze;
             } catch (Exception e) {
@@ -331,6 +348,7 @@ public class WorldManager {
                 chunkSeed,
                 playerReference != null ? playerReference.getLuck() : 0);
 
+        newMaze.setGoreManager(this.goreManager);
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -439,6 +457,10 @@ public class WorldManager {
 
         if (soundManager != null) {
             soundManager.update(delta);
+        }
+
+        if (goreManager != null) {
+            goreManager.update(delta, currentMaze, this);
         }
     }
 
@@ -625,5 +647,9 @@ public class WorldManager {
 
     public LightingManager getLightingManager() {
         return lightingManager;
+    }
+
+    public GoreManager getGoreManager() {
+        return goreManager;
     }
 }

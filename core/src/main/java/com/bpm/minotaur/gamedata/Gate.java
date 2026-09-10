@@ -106,6 +106,10 @@ public class Gate implements Renderable {
         return state;
     }
 
+    public boolean isOpen() {
+        return state == GateState.OPEN || animationProgress > 0.5f;
+    }
+
     public void startOpening(WorldManager worldManager) {
         if (state == GateState.CLOSED) {
             state = GateState.OPENING;

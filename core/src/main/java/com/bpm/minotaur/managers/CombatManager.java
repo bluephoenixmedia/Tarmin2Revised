@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.gore.GoreProfile;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
@@ -957,9 +958,13 @@ public class CombatManager {
 
             if (actualDamage > 0) {
                 maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
-                Vector3 hitPos = new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y);
-                Vector3 dir = new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y).nor();
-                maze.getGoreManager().spawnBloodSpray(hitPos, dir, 4);
+                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                float wx = cid.x * 36.0f + monster.getPosition().x;
+                float wz = cid.y * 36.0f + monster.getPosition().y;
+                Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+                Vector3 dir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.15f, monster.getPosition().y - player.getPosition().y).nor();
+                GoreProfile profile = GoreProfile.fromMonster(monster);
+                maze.getGoreManager().spawnBloodSpray(hitPos, dir, Math.max(2, actualDamage / 2), profile);
             }
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
             eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
@@ -1116,27 +1121,26 @@ public class CombatManager {
                 }
 
                 // 3. Blood (Scaling)
-                if (damageRatio < 0.1f) {
-                    // Chip damage (puff)
-                    maze.getGoreManager().spawnBloodSpray(
-                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                            1);
-                } else if (damageRatio < 0.3f) {
+                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                float wx = cid.x * 36.0f + monster.getPosition().x;
+                float wz = cid.y * 36.0f + monster.getPosition().y;
+                Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+                Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
+                GoreProfile profile = GoreProfile.fromMonster(monster);
+
+                if (damageRatio < 0.15f) {
+                    // Chip damage
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 2, profile);
+                } else if (damageRatio < 0.35f) {
                     // Solid Hit
-                    maze.getGoreManager().spawnBloodSpray(
-                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                            4);
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 5, profile);
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
                 } else {
-                    // Massive/Gib
-                    maze.getGoreManager().spawnBloodSpray(
-                            new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y),
-                            new Vector3(player.getDirectionVector().x, 0.2f, player.getDirectionVector().y),
-                            8);
-                    maze.getGoreManager()
-                            .spawnGibExplosion(new Vector3(monster.getPosition().x, 0.5f, monster.getPosition().y));
+                    // Massive Hit
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 8, profile);
+                    if (profile.hasGibs) {
+                        maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 1, profile);
+                    }
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
                 }
             }
@@ -1328,16 +1332,21 @@ public class CombatManager {
     }
 
     private void spawnCorpseEffects(Monster monster) {
+        spawnCorpseEffects(monster, 0);
+    }
+
+    private void spawnCorpseEffects(Monster monster, int overkillTier) {
         if (maze == null || itemDataManager == null)
             return;
 
         GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
-        // 1. Determine Gib Count based on Damage
+        // 1. Determine Gib Count based on Damage and Overkill Tier
         int gibCount = 1 + random.nextInt(2); // 1-2 gibs default
-
-        if (lastDamageDealt > 10) {
-            gibCount += 1;
+        if (overkillTier >= 2) {
+            gibCount = 3 + random.nextInt(3); // 3-5 gib items on Tier 2 obliteration
+        } else if (overkillTier == 1 || lastDamageDealt > 10) {
+            gibCount = 2 + random.nextInt(2);
         }
 
         // 2. Spawn Gibs
@@ -1715,23 +1724,57 @@ public class CombatManager {
 
         maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
 
-        // --- GIB ANIMATION ---
-        com.badlogic.gdx.math.Vector3 gibOrigin = new com.badlogic.gdx.math.Vector3(monster.getPosition().x, 0.5f,
-                monster.getPosition().y);
+        // --- GIB & OVERKILL ANIMATION ---
+        GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+        float worldX = cid.x * 36.0f + monster.getPosition().x;
+        float worldZ = cid.y * 36.0f + monster.getPosition().y;
+        Vector3 gibOrigin = new Vector3(worldX, 0.5f, worldZ);
+        Vector3 exitVector = new Vector3(
+                monster.getPosition().x - player.getPosition().x,
+                0.25f,
+                monster.getPosition().y - player.getPosition().y
+        ).nor();
+
+        GoreProfile profile = GoreProfile.fromMonster(monster);
+
+        int maxHp = Math.max(1, monster.getMaxHP());
+        int overkill = Math.max(0, -monster.getCurrentHP());
+        float overkillRatio = (float) overkill / (float) maxHp;
+        boolean isHeavyKill = (lastDamageDealt >= maxHp * 0.40f);
+
+        int overkillTier = 0;
+        if (overkillRatio >= 0.50f || (isHeavyKill && overkillRatio >= 0.25f)) {
+            overkillTier = 2; // Complete Obliteration
+        } else if (overkillRatio >= 0.25f || isHeavyKill) {
+            overkillTier = 1; // Significant Dismemberment
+        }
+
+        if (overkillTier > 0) {
+            // Trigger Visor Blood Droplet splash & camera trauma
+            if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+                gs.triggerVisorSplatter();
+                gs.addTrauma(overkillTier == 2 ? 0.6f : 0.35f);
+            }
+        }
 
         if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO) {
             String[] spriteData = monster.getSpriteData();
             if (spriteData != null) {
                 maze.getGoreManager().spawnRetroGibs(gibOrigin, spriteData, monster.getColor());
             } else {
-                maze.getGoreManager().spawnGibExplosion(gibOrigin); // Fallback
+                maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, Math.max(1, overkillTier), profile);
             }
         } else {
-            // Modern Mode: spawn authentic gibs from gore atlas
-            maze.getGoreManager().spawnGibExplosion(gibOrigin);
+            if (overkillTier > 0) {
+                maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
+                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, overkillTier == 2 ? 8 : 5, profile);
+            } else {
+                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, 2, profile);
+            }
         }
 
-        spawnCorpseEffects(monster);
+        spawnCorpseEffects(monster, overkillTier);
         DivinityOrbManager.getInstance().spawnOrb();
     }
 }

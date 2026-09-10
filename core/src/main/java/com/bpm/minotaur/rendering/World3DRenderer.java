@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
@@ -407,7 +408,7 @@ public class World3DRenderer implements Disposable {
         }
 
         // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
-        renderGore(maze);
+        renderGore(maze, worldManager, isRetro, theme);
 
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
@@ -709,27 +710,36 @@ public class World3DRenderer implements Disposable {
         }
     }
 
-    private void renderGore(Maze maze) {
-        GoreManager gore = maze.getGoreManager();
+    private void renderGore(Maze maze, WorldManager worldManager, boolean isRetro, RetroTheme.Theme theme) {
+        GoreManager gore = (worldManager != null) ? worldManager.getGoreManager() : (maze != null ? maze.getGoreManager() : null);
         if (gore == null) return;
 
+        GridPoint2 currentChunkId = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+        float chunkOriginX = currentChunkId.x * 36.0f;
+        float chunkOriginZ = currentChunkId.y * 36.0f;
+
         Texture currentTex = null;
+        Texture blankTex = blankTexture;
+        Color retroTint = (theme != null && theme.wall != null) ? theme.wall : Color.WHITE;
 
         // 1. Coplanar Wall Decals
-        java.util.Map<Integer, Array<WallDecal>> allDecals = gore.getAllWallDecals();
-        if (allDecals != null && !allDecals.isEmpty()) {
-            for (Array<WallDecal> decals : allDecals.values()) {
-                if (decals == null) continue;
-                for (int i = 0; i < decals.size; i++) {
-                    WallDecal decal = decals.get(i);
-                    if (decal.textureRegion == null) continue;
-                    Texture tex = decal.textureRegion.getTexture();
-                    if (currentTex != null && currentTex != tex) {
-                        dynamicBatcher.flush(shader, currentTex);
-                    }
-                    currentTex = tex;
-                    dynamicBatcher.addWallDecal(decal, decal.color);
+        Array<WallDecal> wallDecals = gore.getActiveWallDecals();
+        if (wallDecals != null && wallDecals.size > 0) {
+            for (int i = 0; i < wallDecals.size; i++) {
+                WallDecal decal = wallDecals.get(i);
+                TextureRegion region = isRetro ? null : decal.textureRegion;
+                Texture tex = (region != null) ? region.getTexture() : blankTex;
+                if (tex == null) continue;
+
+                if (currentTex != null && currentTex != tex) {
+                    dynamicBatcher.flush(shader, currentTex);
                 }
+                currentTex = tex;
+
+                float localGridX = decal.gridX - chunkOriginX;
+                float localGridY = decal.gridY - chunkOriginZ;
+                Color col = isRetro ? retroTint : decal.color;
+                dynamicBatcher.addWallDecal(decal, localGridX, localGridY, col);
             }
         }
 
@@ -738,17 +748,23 @@ public class World3DRenderer implements Disposable {
         if (surfaceDecals != null && surfaceDecals.size > 0) {
             for (int i = 0; i < surfaceDecals.size; i++) {
                 SurfaceDecal d = surfaceDecals.get(i);
-                if (d.textureRegion == null) continue;
-                Texture tex = d.textureRegion.getTexture();
+                TextureRegion region = isRetro ? null : d.textureRegion;
+                Texture tex = (region != null) ? region.getTexture() : blankTex;
+                if (tex == null) continue;
+
                 if (currentTex != null && currentTex != tex) {
                     dynamicBatcher.flush(shader, currentTex);
                 }
                 currentTex = tex;
-                float splatSize = Math.max(0.12f, d.size);
+
+                float localX = d.position.x - chunkOriginX;
+                float localZ = d.position.z - chunkOriginZ;
+                float splatSize = Math.max(0.08f, d.size);
+                Color col = isRetro ? retroTint : d.color;
                 dynamicBatcher.addFloorQuad(
-                        d.position.x, 0.002f, -d.position.z,
+                        localX, 0.002f, -localZ,
                         splatSize, splatSize,
-                        d.textureRegion, d.color
+                        region != null ? region : new TextureRegion(blankTex), col
                 );
             }
         }
@@ -758,47 +774,63 @@ public class World3DRenderer implements Disposable {
         if (particles != null && particles.size > 0) {
             for (int i = 0; i < particles.size; i++) {
                 BloodParticle p = particles.get(i);
-                if (p.textureRegion == null || p.onGround) continue;
-                Texture tex = p.textureRegion.getTexture();
+                if (p.onGround) continue;
+
+                TextureRegion region = isRetro ? null : p.textureRegion;
+                Texture tex = (region != null) ? region.getTexture() : blankTex;
+                if (tex == null) continue;
+
                 if (currentTex != null && currentTex != tex) {
                     dynamicBatcher.flush(shader, currentTex);
                 }
                 currentTex = tex;
-                float pSize = Math.max(0.04f, p.size * 2.0f);
+
+                float localX = p.position.x - chunkOriginX;
+                float localZ = p.position.z - chunkOriginZ;
+                float pSize = Math.max(0.035f, p.size * 2.0f);
+                Color col = isRetro ? retroTint : p.color;
+
                 dynamicBatcher.addBillboard(
-                        p.position.x, p.position.y, -p.position.z,
+                        localX, p.position.y, -localZ,
                         pSize, pSize,
-                        p.textureRegion, p.color,
+                        region != null ? region : new TextureRegion(blankTex), col,
                         camRight, camUp, camDir
                 );
             }
         }
 
-        // 4. Active Gib Chunks (Using authentic gibs texture files from gore atlas)
+        // 4. Active Gib Chunks (Airborne Tumbling Billboards and Resting Floor Quads)
         Array<Gib> gibs = gore.getActiveGibs();
         if (gibs != null && gibs.size > 0) {
             for (int i = 0; i < gibs.size; i++) {
                 Gib g = gibs.get(i);
-                // Strict check: only render authentic gib textures, ignore any monster texture shards
-                if (g.textureRegion == null) continue;
-                Texture tex = g.textureRegion.getTexture();
+                TextureRegion region = isRetro ? null : g.textureRegion;
+                Texture tex = (region != null) ? region.getTexture() : blankTex;
+                if (tex == null) continue;
+
                 if (currentTex != null && currentTex != tex) {
                     dynamicBatcher.flush(shader, currentTex);
                 }
                 currentTex = tex;
-                float gibSize = 0.18f;
+
+                float localX = g.position.x - chunkOriginX;
+                float localZ = g.position.z - chunkOriginZ;
+                float gibSize = 0.22f;
+                Color col = isRetro ? retroTint : g.color;
+
                 if (g.onGround) {
                     dynamicBatcher.addFloorQuad(
-                            g.position.x, 0.003f, -g.position.z,
+                            localX, 0.003f, -localZ,
                             gibSize * 0.5f, gibSize * 0.5f,
-                            g.textureRegion, g.color
+                            region != null ? region : new TextureRegion(blankTex), col
                     );
                 } else {
-                    dynamicBatcher.addBillboard(
-                            g.position.x, Math.max(0.02f, g.position.y), -g.position.z,
+                    dynamicBatcher.addRotatedBillboard(
+                            localX, Math.max(0.02f, g.position.y), -localZ,
                             gibSize, gibSize,
-                            g.textureRegion, g.color,
-                            camRight, camUp, camDir
+                            region != null ? region : new TextureRegion(blankTex), col,
+                            camRight, camUp, camDir,
+                            g.rotation
                     );
                 }
             }

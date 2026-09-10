@@ -37,7 +37,7 @@ public class Maze {
     // --- Debris Only ---
     private final List<CorpsePart> corpses = new ArrayList<>();
 
-    private final GoreManager goreManager;
+    private GoreManager goreManager;
 
     private RetroTheme.Theme theme;
 
@@ -402,10 +402,18 @@ public class Maze {
 
         for (CorpsePart part : corpses)
             part.update(delta);
-        goreManager.update(delta, this);
+        if (goreManager != null) {
+            goreManager.update(delta, this);
+        }
     }
 
     public GoreManager getGoreManager() {
         return goreManager;
+    }
+
+    public void setGoreManager(GoreManager goreManager) {
+        if (goreManager != null) {
+            this.goreManager = goreManager;
+        }
     }
 }

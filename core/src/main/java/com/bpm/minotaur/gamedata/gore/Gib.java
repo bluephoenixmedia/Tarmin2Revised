@@ -12,20 +12,41 @@ public class Gib implements Pool.Poolable {
     public Vector3 position = new Vector3();
     public Vector3 velocity = new Vector3();
     public String[] spriteData;
-    public TextureRegion textureRegion; // NEW: For texture-based gibs
+    public TextureRegion textureRegion; // For Modern 3D Mode
     public PolygonRegion polygonRegion;
     public float centroidX, centroidY;
     public Color color = new Color();
+    private final Color baseColor = new Color(Color.WHITE);
 
     public float rotation;
     public float rotationalVelocity;
     public boolean onGround;
     public float lifeTimer;
 
-    // Gibs stay for a while, then disappear or persist (we'll fade them after 20s)
-    public static final float MAX_GIB_LIFE = 10.0f;
+    // Gibs stay for 30s, fading out over the final 3s
+    public static final float MAX_GIB_LIFE = 30.0f;
+    public static final float FADE_DURATION = 3.0f;
 
     public Gib() {
+    }
+
+    public void init(Vector3 pos, Vector3 vel, TextureRegion region) {
+        init(pos, vel, region, Color.WHITE);
+    }
+
+    public void init(Vector3 pos, Vector3 vel, TextureRegion region, Color tint) {
+        this.position.set(pos);
+        this.velocity.set(vel);
+        this.spriteData = null;
+        this.polygonRegion = null;
+        this.textureRegion = region;
+        this.baseColor.set(tint != null ? tint : Color.WHITE);
+        this.color.set(baseColor);
+
+        this.rotation = MathUtils.random(0, 360);
+        this.rotationalVelocity = MathUtils.random(-360, 360);
+        this.onGround = false;
+        this.lifeTimer = MAX_GIB_LIFE;
     }
 
     public void init(Vector3 pos, Vector3 vel, GibType type, Color overrideColor) {
@@ -33,25 +54,13 @@ public class Gib implements Pool.Poolable {
         this.velocity.set(vel);
         this.spriteData = type.spriteData;
         this.textureRegion = null;
-        // Use monster color for meat, but default colors for bones/eyes
+        this.polygonRegion = null;
         if (type == GibType.MEAT_CHUNK && overrideColor != null) {
-            this.color.set(overrideColor);
+            this.baseColor.set(overrideColor);
         } else {
-            this.color.set(type.defaultColor);
+            this.baseColor.set(type.defaultColor);
         }
-
-        this.rotation = MathUtils.random(0, 360);
-        this.rotationalVelocity = MathUtils.random(-300, 300);
-        this.onGround = false;
-        this.lifeTimer = MAX_GIB_LIFE;
-    }
-
-    public void init(Vector3 pos, Vector3 vel, TextureRegion region) {
-        this.position.set(pos);
-        this.velocity.set(vel);
-        this.spriteData = null;
-        this.textureRegion = region;
-        this.color.set(Color.WHITE); // Default white for textures so they render naturally
+        this.color.set(baseColor);
 
         this.rotation = MathUtils.random(0, 360);
         this.rotationalVelocity = MathUtils.random(-300, 300);
@@ -65,7 +74,8 @@ public class Gib implements Pool.Poolable {
         this.spriteData = spriteData;
         this.textureRegion = null;
         this.polygonRegion = null;
-        this.color.set(color);
+        this.baseColor.set(color != null ? color : Color.WHITE);
+        this.color.set(baseColor);
         this.rotation = MathUtils.random(0, 360);
         this.rotationalVelocity = MathUtils.random(-300, 300);
         this.onGround = false;
@@ -80,7 +90,8 @@ public class Gib implements Pool.Poolable {
         this.polygonRegion = shard.region;
         this.centroidX = shard.centroidX;
         this.centroidY = shard.centroidY;
-        this.color.set(Color.WHITE);
+        this.baseColor.set(Color.WHITE);
+        this.color.set(baseColor);
         this.rotation = MathUtils.random(0, 360);
         this.rotationalVelocity = MathUtils.random(-300, 300);
         this.onGround = false;
@@ -93,13 +104,24 @@ public class Gib implements Pool.Poolable {
         velocity.setZero();
         textureRegion = null;
         polygonRegion = null;
+        spriteData = null;
         onGround = false;
         lifeTimer = 0;
         rotation = 0;
+        rotationalVelocity = 0;
+        color.set(Color.WHITE);
+        baseColor.set(Color.WHITE);
     }
 
     public void update(float delta) {
         lifeTimer -= delta;
+
+        // Fade out at end of life
+        if (lifeTimer <= FADE_DURATION) {
+            color.a = MathUtils.clamp(lifeTimer / FADE_DURATION, 0f, 1f) * baseColor.a;
+        } else {
+            color.a = baseColor.a;
+        }
 
         if (onGround)
             return;
@@ -110,24 +132,23 @@ public class Gib implements Pool.Poolable {
         position.mulAdd(velocity, delta);
         rotation += rotationalVelocity * delta;
 
-        // Floor Bounce Logic
+        // Floor Bounce Logic (y = 0.0f is floor level)
         if (position.y <= 0.0f) {
-            // Bounce!
             if (Math.abs(velocity.y) > 2.0f) {
+                // Bounce with energy loss
                 position.y = 0.0f;
-                velocity.y = -velocity.y * 0.4f; // Lose 60% energy
-                velocity.x *= 0.6f; // Friction
+                velocity.y = -velocity.y * 0.4f; // Lose 60% vertical velocity
+                velocity.x *= 0.6f; // Ground friction
                 velocity.z *= 0.6f;
                 rotationalVelocity *= 0.5f;
             } else {
-                // Stop
+                // Come to rest flat on the floor
                 position.y = 0.0f;
                 velocity.setZero();
                 rotationalVelocity = 0;
                 onGround = true;
-                rotation = 0; // Lie flat
+                rotation = 0;
             }
         }
-
     }
 }

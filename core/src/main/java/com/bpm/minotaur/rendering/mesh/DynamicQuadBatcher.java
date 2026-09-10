@@ -113,6 +113,63 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
+     * Emits a camera-facing billboard quad rotated around the view normal by angleDeg.
+     */
+    public void addRotatedBillboard(
+            float feetX, float feetY, float feetZ,
+            float width, float height,
+            TextureRegion region,
+            Color color,
+            Vector3 camRight,
+            Vector3 camUp,
+            Vector3 camDir,
+            float angleDeg
+    ) {
+        if (region == null) return;
+        if (!ensureCapacity(1)) return;
+
+        float halfW = width * 0.5f;
+        float halfH = height * 0.5f;
+        float centerY = feetY + halfH;
+
+        float cos = MathUtils.cosDeg(angleDeg);
+        float sin = MathUtils.sinDeg(angleDeg);
+
+        // Rotated right and up vectors in view plane
+        float rx = camRight.x * cos + camUp.x * sin;
+        float ry = camRight.y * cos + camUp.y * sin;
+        float rz = camRight.z * cos + camUp.z * sin;
+
+        float ux = -camRight.x * sin + camUp.x * cos;
+        float uy = -camRight.y * sin + camUp.y * cos;
+        float uz = -camRight.z * sin + camUp.z * cos;
+
+        float u1 = region.getU();
+        float v1 = region.getV2();
+        float u2 = region.getU2();
+        float v2 = region.getV();
+
+        scratchV1.set(feetX, centerY, feetZ).add(-rx * halfW - ux * halfH, -ry * halfW - uy * halfH, -rz * halfW - uz * halfH);
+        scratchV2.set(feetX, centerY, feetZ).add( rx * halfW - ux * halfH,  ry * halfW - uy * halfH,  rz * halfW - uz * halfH);
+        scratchV3.set(feetX, centerY, feetZ).add( rx * halfW + ux * halfH,  ry * halfW + uy * halfH,  rz * halfW + uz * halfH);
+        scratchV4.set(feetX, centerY, feetZ).add(-rx * halfW + ux * halfH, -ry * halfW + uy * halfH, -rz * halfW + uz * halfH);
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+        float nx = -camDir.x;
+        float ny = -camDir.y;
+        float nz = -camDir.z;
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                scratchV1.x, scratchV1.y, scratchV1.z, u1, v1,
+                scratchV2.x, scratchV2.y, scratchV2.z, u2, v1,
+                scratchV3.x, scratchV3.y, scratchV3.z, u2, v2,
+                scratchV4.x, scratchV4.y, scratchV4.z, u1, v2,
+                nx, ny, nz, packedColor
+        );
+    }
+
+    /**
      * Emits a flat horizontal quad resting on the floor (e.g. monster corpses, floor blood).
      */
     public void addFloorQuad(
@@ -145,6 +202,14 @@ public class DynamicQuadBatcher implements Disposable {
      * Emits a coplanar wall decal quad offset by eps along the wall normal to eliminate Z-fighting.
      */
     public void addWallDecal(WallDecal decal, Color color) {
+        if (decal == null) return;
+        addWallDecal(decal, decal.gridX, decal.gridY, color);
+    }
+
+    /**
+     * Emits a coplanar wall decal quad using explicit local grid coordinates (for multi-chunk camera transforms).
+     */
+    public void addWallDecal(WallDecal decal, float localGridX, float localGridY, Color color) {
         if (decal == null || decal.textureRegion == null) return;
         if (!ensureCapacity(1)) return;
 
@@ -167,10 +232,10 @@ public class DynamicQuadBatcher implements Disposable {
 
         switch (dir) {
             case EAST: {
-                // Moving EAST: hit EAST boundary of cell (X = gridX + 1.0)
+                // Moving EAST: hit EAST boundary of cell (X = localGridX + 1.0)
                 // Face normal points WEST (-1, 0, 0) into cell
-                float xPos = decal.gridX + 1.0f - eps;
-                float zCenter = -(decal.gridY + wX);
+                float xPos = localGridX + 1.0f - eps;
+                float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
                         xPos, h - r, zCenter + r, u1, v1,
@@ -182,10 +247,10 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case WEST: {
-                // Moving WEST: hit WEST boundary of cell (X = gridX)
+                // Moving WEST: hit WEST boundary of cell (X = localGridX)
                 // Face normal points EAST (1, 0, 0) into cell
-                float xPos = decal.gridX + eps;
-                float zCenter = -(decal.gridY + wX);
+                float xPos = localGridX + eps;
+                float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
                         xPos, h - r, zCenter - r, u1, v1,
@@ -197,10 +262,10 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case NORTH: {
-                // Moving NORTH (+Y): hit NORTH boundary of cell (Z = -(gridY + 1.0))
+                // Moving NORTH (+Y): hit NORTH boundary of cell (Z = -(localGridY + 1.0))
                 // Face normal points SOUTH (0, 0, 1) into cell
-                float zPos = -(decal.gridY + 1.0f) + eps;
-                float xCenter = decal.gridX + wX;
+                float zPos = -(localGridY + 1.0f) + eps;
+                float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
                         xCenter - r, h - r, zPos, u1, v1,
@@ -212,10 +277,10 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case SOUTH: {
-                // Moving SOUTH (-Y): hit SOUTH boundary of cell (Z = -gridY)
+                // Moving SOUTH (-Y): hit SOUTH boundary of cell (Z = -localGridY)
                 // Face normal points NORTH (0, 0, -1) into cell
-                float zPos = -decal.gridY - eps;
-                float xCenter = decal.gridX + wX;
+                float zPos = -localGridY - eps;
+                float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
                         xCenter + r, h - r, zPos, u1, v1,
