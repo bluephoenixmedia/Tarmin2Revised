@@ -33,8 +33,8 @@ min_z = min(c.z for c in coords)
 for v in obj.data.vertices:
     v.co.z -= min_z
 
-# Scale model to game scale (corridor width = 1.0, gate width ~ 1.18 to seat into walls)
-SCALE = 0.65
+# Scale model to game scale (corridor width = 1.0, height = 1.0, gate fits snugly under lintel)
+SCALE = 0.52
 for v in obj.data.vertices:
     v.co.x *= SCALE
     v.co.y *= SCALE
@@ -50,8 +50,8 @@ bpy.ops.object.modifier_apply(modifier="Decimate")
 print(f"Decimated mesh to {len(obj.data.polygons)} polygons, {len(obj.data.vertices)} vertices.")
 
 # 5. Create 3 distinct mesh objects directly
-door_z_max = 0.74
-door_x_max = 0.35
+door_z_max = 0.59
+door_x_max = 0.28
 
 frame_mesh = obj.data.copy()
 frame_mesh.name = "mesh_frame"

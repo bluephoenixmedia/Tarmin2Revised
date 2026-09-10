@@ -66,6 +66,7 @@ public class World3DRenderer implements Disposable {
 
     private static final String TAG = "World3DRenderer";
     private static final int MAX_LIGHTS = 16;
+    private static final float GATE_DOOR_HINGE_X = 0.28f;
 
     private final PerspectiveCamera camera;
     private final ShaderProgram shader;
@@ -666,12 +667,12 @@ public class World3DRenderer implements Disposable {
                 }
 
                 // --- B. Left Door Leaf ---
-                // Hinge at local X = -0.35f, swings +90 deg away into portal
+                // Hinge at local X = -GATE_DOOR_HINGE_X, swings +90 deg away into portal
                 float angleLeft = 90.0f * progress + rumble;
                 gateTransform.idt();
                 gateTransform.translate(gateX, 0f, gateZ);
                 gateTransform.rotate(0f, 1f, 0f, baseRotation);
-                gateTransform.translate(-0.35f, 0f, 0f);
+                gateTransform.translate(-GATE_DOOR_HINGE_X, 0f, 0f);
                 gateTransform.rotate(0f, 1f, 0f, angleLeft);
 
                 if (isRetro) {
@@ -684,12 +685,12 @@ public class World3DRenderer implements Disposable {
                 }
 
                 // --- C. Right Door Leaf ---
-                // Hinge at local X = +0.35f, swings -90 deg away into portal
+                // Hinge at local X = +GATE_DOOR_HINGE_X, swings -90 deg away into portal
                 float angleRight = -90.0f * progress - rumble;
                 gateTransform.idt();
                 gateTransform.translate(gateX, 0f, gateZ);
                 gateTransform.rotate(0f, 1f, 0f, baseRotation);
-                gateTransform.translate(0.35f, 0f, 0f);
+                gateTransform.translate(GATE_DOOR_HINGE_X, 0f, 0f);
                 gateTransform.rotate(0f, 1f, 0f, angleRight);
 
                 if (isRetro) {
