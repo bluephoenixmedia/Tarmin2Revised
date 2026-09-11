@@ -353,7 +353,9 @@ public class Skybox3DRenderer {
 
         modelBatch.end();
 
-        // Disable depth writing so subsequent 2D raycaster passes draw over the sky
+        // Clear depth buffer so subsequent scene passes (World3D mesh or 2D raycaster)
+        // always render cleanly OVER the skybox and landmarks.
+        Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 

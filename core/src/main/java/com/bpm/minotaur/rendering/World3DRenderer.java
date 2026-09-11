@@ -252,9 +252,10 @@ public class World3DRenderer implements Disposable {
         // --- PASS 0: 3D SKYBOX & HORIZON LANDMARKS (Outdoors Level 1) ---
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
-            Gdx.gl.glDepthMask(false);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());
-            Gdx.gl.glDepthMask(true);
+            // Clear depth buffer so the skybox & horizon landmarks remain purely background
+            // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.
+            Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
         } else {
             // In dungeons or indoors without skybox, clear color & depth cleanly
             Color clearCol = isIndoors ? new Color(0.04f, 0.04f, 0.06f, 1f) : fogColor;
