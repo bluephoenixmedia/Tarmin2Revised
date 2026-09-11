@@ -53,7 +53,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
     @Override
     public void show() {
-        stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
+        stage = new Stage(game.getViewport(), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
@@ -85,6 +85,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
         titleFont.getData().setScale(2.5f);
 
         buildUI();
+        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     private void buildUI() {
@@ -100,8 +101,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
         root.add(title).padTop(40).padBottom(10).row();
 
         String subStr = newGameMode
-                ? "Select an empty slot or choose an occupied slot to overwrite."
-                : "Choose an existing hero expedition to resume delve.";
+                ? "Select an empty slot or choose an occupied slot to overwrite.  |  [Keys: 1, 2, 3, ESC]"
+                : "Choose an existing hero expedition to resume delve.  |  [Keys: 1, 2, 3, ESC]";
         Label subtitle = new Label(subStr, new Label.LabelStyle(font, Color.LIGHT_GRAY));
         root.add(subtitle).padBottom(30).row();
 
@@ -340,10 +341,35 @@ public class SaveSlotSelectScreen extends BaseScreen {
         game.setScreen(parentScreen);
     }
 
+    private void triggerSlot(int slotIndex) {
+        if (slotIndex < 1 || slotIndex > SaveManager.MAX_SLOTS) return;
+        SlotMetadata meta = SaveManager.getInstance().getSlotMetadata(slotIndex);
+        if (newGameMode) {
+            if (meta.isOccupied) {
+                confirmOverwrite(slotIndex, meta);
+            } else {
+                promptNewGame(slotIndex);
+            }
+        } else {
+            if (meta.isOccupied) {
+                launchResumeGame(slotIndex);
+            }
+        }
+    }
+
     @Override
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.ESCAPE) {
             close();
+            return true;
+        } else if (keycode == Input.Keys.NUM_1 || keycode == Input.Keys.NUMPAD_1) {
+            triggerSlot(1);
+            return true;
+        } else if (keycode == Input.Keys.NUM_2 || keycode == Input.Keys.NUMPAD_2) {
+            triggerSlot(2);
+            return true;
+        } else if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
+            triggerSlot(3);
             return true;
         }
         return false;
@@ -354,12 +380,18 @@ public class SaveSlotSelectScreen extends BaseScreen {
         Gdx.gl.glClearColor(0.07f, 0.07f, 0.1f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        if (game.getViewport() != null) {
+            game.getViewport().apply();
+        }
         stage.act(delta);
         stage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
+        if (game.getViewport() != null) {
+            game.getViewport().update(width, height, true);
+        }
         if (stage != null) {
             stage.getViewport().update(width, height, true);
         }

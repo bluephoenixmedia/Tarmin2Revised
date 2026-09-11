@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -18,7 +19,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.GameMode;
 import com.bpm.minotaur.gamedata.save.SlotMetadata;
@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Main Title Screen supporting both Modern and Retro INTV visuals.
  * Provides rich multi-slot save interactions: Continue, Load Game,
- * New Game, Settings, and Quit.
+ * New Game, Settings, and Quit with unified keyboard and mouse navigation.
  */
 public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
@@ -51,8 +51,15 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private Texture buttonBgOver;
     private Texture buttonBgDisabled;
 
+    private TextButton.TextButtonStyle defaultStyle;
+    private TextButton.TextButtonStyle focusedStyle;
+    private TextButton.TextButtonStyle continueStyle;
+    private TextButton.TextButtonStyle continueFocusedStyle;
+    private TextButton.TextButtonStyle disabledStyle;
+
     private final List<TextButton> menuButtons = new ArrayList<>();
     private int selectedButtonIndex = 0;
+    private boolean hasSave = false;
 
     // Cooldown timer to prevent accidental immediate screen transitions
     private float inputCooldown = 0.2f;
@@ -106,8 +113,9 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         // Generate procedural UI textures for sleek button backgrounds
         createButtonTextures();
 
-        // Stage setup
-        stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
+        // Stage setup using the game's shared FitViewport
+        stage = new Stage(game.getViewport(), game.getBatch());
+        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         buildMenuUI();
 
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -120,31 +128,31 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
     private void createButtonTextures() {
         // Normal Button: Dark slate with subtle blue-gray border
-        Pixmap pix = new Pixmap(460, 56, Pixmap.Format.RGBA8888);
+        Pixmap pix = new Pixmap(500, 54, Pixmap.Format.RGBA8888);
         pix.setColor(0.10f, 0.12f, 0.18f, 0.88f);
         pix.fill();
         pix.setColor(0.35f, 0.42f, 0.55f, 1f);
-        pix.drawRectangle(0, 0, 460, 56);
-        pix.drawRectangle(1, 1, 458, 54);
+        pix.drawRectangle(0, 0, 500, 54);
+        pix.drawRectangle(1, 1, 498, 52);
         buttonBg = new Texture(pix);
         pix.dispose();
 
         // Hover / Focused Button: Deep navy with glowing gold border
-        Pixmap overPix = new Pixmap(460, 56, Pixmap.Format.RGBA8888);
+        Pixmap overPix = new Pixmap(500, 54, Pixmap.Format.RGBA8888);
         overPix.setColor(0.18f, 0.28f, 0.42f, 0.95f);
         overPix.fill();
         overPix.setColor(0.98f, 0.85f, 0.35f, 1f);
-        overPix.drawRectangle(0, 0, 460, 56);
-        overPix.drawRectangle(1, 1, 458, 54);
+        overPix.drawRectangle(0, 0, 500, 54);
+        overPix.drawRectangle(1, 1, 498, 52);
         buttonBgOver = new Texture(overPix);
         overPix.dispose();
 
         // Disabled Button: Faded dark background
-        Pixmap disPix = new Pixmap(460, 56, Pixmap.Format.RGBA8888);
+        Pixmap disPix = new Pixmap(500, 54, Pixmap.Format.RGBA8888);
         disPix.setColor(0.08f, 0.09f, 0.12f, 0.45f);
         disPix.fill();
         disPix.setColor(0.22f, 0.24f, 0.30f, 0.5f);
-        disPix.drawRectangle(0, 0, 460, 56);
+        disPix.drawRectangle(0, 0, 500, 54);
         buttonBgDisabled = new Texture(disPix);
         disPix.dispose();
     }
@@ -159,7 +167,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
         Table buttonTable = new Table();
 
-        TextButton.TextButtonStyle defaultStyle = new TextButton.TextButtonStyle();
+        defaultStyle = new TextButton.TextButtonStyle();
         defaultStyle.font = buttonFont;
         defaultStyle.fontColor = INTV_WHITE;
         defaultStyle.overFontColor = INTV_YELLOW;
@@ -168,9 +176,27 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         defaultStyle.over = new TextureRegionDrawable(buttonBgOver);
         defaultStyle.disabled = new TextureRegionDrawable(buttonBgDisabled);
 
+        focusedStyle = new TextButton.TextButtonStyle();
+        focusedStyle.font = buttonFont;
+        focusedStyle.fontColor = INTV_YELLOW;
+        focusedStyle.overFontColor = INTV_YELLOW;
+        focusedStyle.disabledFontColor = Color.GRAY;
+        focusedStyle.up = new TextureRegionDrawable(buttonBgOver);
+        focusedStyle.over = new TextureRegionDrawable(buttonBgOver);
+        focusedStyle.disabled = new TextureRegionDrawable(buttonBgDisabled);
+
+        continueStyle = new TextButton.TextButtonStyle(defaultStyle);
+        continueStyle.fontColor = INTV_YELLOW;
+
+        continueFocusedStyle = new TextButton.TextButtonStyle(focusedStyle);
+        continueFocusedStyle.fontColor = INTV_YELLOW;
+
+        disabledStyle = new TextButton.TextButtonStyle(defaultStyle);
+        disabledStyle.up = new TextureRegionDrawable(buttonBgDisabled);
+
         // 1. CONTINUE BUTTON
         final int recentSlot = SaveManager.getInstance().getMostRecentOccupiedSlot();
-        boolean hasSave = recentSlot >= 1;
+        hasSave = recentSlot >= 1;
 
         String continueLabel = "CONTINUE (C)";
         if (hasSave) {
@@ -178,84 +204,127 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             continueLabel = "CONTINUE: SLOT " + recentSlot + " (LVL " + meta.level + " " + meta.characterClass + ")";
         }
 
-        TextButton.TextButtonStyle continueStyle = new TextButton.TextButtonStyle(defaultStyle);
-        if (hasSave) {
-            continueStyle.fontColor = INTV_YELLOW;
-        }
-
-        TextButton continueBtn = new TextButton(continueLabel, continueStyle);
+        final TextButton continueBtn = new TextButton(continueLabel, hasSave ? continueStyle : defaultStyle);
         continueBtn.setDisabled(!hasSave);
-        if (hasSave) {
-            continueBtn.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    if (inputCooldown <= 0) {
-                        SaveSlotSelectScreen.launchResumeGame(game, recentSlot);
-                    }
-                }
-            });
-        }
+        setupButton(continueBtn, 0);
         buttonTable.add(continueBtn).width(500).height(54).padBottom(14).row();
         menuButtons.add(continueBtn);
 
         // 2. LOAD GAME BUTTON
-        TextButton loadBtn = new TextButton("LOAD EXPEDITION (L)", defaultStyle);
-        loadBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (inputCooldown <= 0) {
-                    game.setScreen(new SaveSlotSelectScreen(game, MainMenuScreen.this, false));
-                }
-            }
-        });
+        final TextButton loadBtn = new TextButton("LOAD EXPEDITION (L)", defaultStyle);
+        setupButton(loadBtn, 1);
         buttonTable.add(loadBtn).width(500).height(54).padBottom(14).row();
         menuButtons.add(loadBtn);
 
         // 3. NEW GAME BUTTON
-        TextButton newGameBtn = new TextButton("NEW EXPEDITION (N)", defaultStyle);
-        newGameBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (inputCooldown <= 0) {
-                    game.setScreen(new SaveSlotSelectScreen(game, MainMenuScreen.this, true));
-                }
-            }
-        });
+        final TextButton newGameBtn = new TextButton("NEW EXPEDITION (N)", defaultStyle);
+        setupButton(newGameBtn, 2);
         buttonTable.add(newGameBtn).width(500).height(54).padBottom(14).row();
         menuButtons.add(newGameBtn);
 
         // 4. SETTINGS BUTTON
-        TextButton settingsBtn = new TextButton("SETTINGS (S)", defaultStyle);
-        settingsBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (inputCooldown <= 0) {
-                    game.setScreen(new SettingsScreen(game));
-                }
-            }
-        });
+        final TextButton settingsBtn = new TextButton("SETTINGS (S)", defaultStyle);
+        setupButton(settingsBtn, 3);
         buttonTable.add(settingsBtn).width(500).height(54).padBottom(14).row();
         menuButtons.add(settingsBtn);
 
         // 5. QUIT BUTTON
-        TextButton exitBtn = new TextButton("QUIT TO DESKTOP (ESC)", defaultStyle);
-        exitBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (inputCooldown <= 0) {
-                    Gdx.app.exit();
-                }
-            }
-        });
+        final TextButton exitBtn = new TextButton("QUIT TO DESKTOP (ESC)", defaultStyle);
+        setupButton(exitBtn, 4);
         buttonTable.add(exitBtn).width(500).height(54).row();
         menuButtons.add(exitBtn);
 
-        // In Modern mode, pad down so it sits below title logo; in INTV mode below retro title
         root.add(buttonTable).padTop(240).row();
         stage.addActor(root);
 
-        // Default keyboard selection
-        selectedButtonIndex = hasSave ? 0 : 1;
+        // Default selection: Continue if save exists, else New Game
+        selectedButtonIndex = hasSave ? 0 : 2;
+        updateButtonStyles();
+    }
+
+    private void setupButton(final TextButton btn, final int index) {
+        btn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (!btn.isDisabled()) {
+                    triggerButton(index);
+                }
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (!btn.isDisabled() && pointer == -1) {
+                    selectedButtonIndex = index;
+                    updateButtonStyles();
+                }
+            }
+        });
+    }
+
+    private void updateButtonStyles() {
+        for (int i = 0; i < menuButtons.size(); i++) {
+            TextButton btn = menuButtons.get(i);
+            if (btn.isDisabled()) {
+                btn.setStyle(disabledStyle);
+                continue;
+            }
+            if (i == selectedButtonIndex) {
+                btn.setStyle((i == 0 && hasSave) ? continueFocusedStyle : focusedStyle);
+            } else {
+                btn.setStyle((i == 0 && hasSave) ? continueStyle : defaultStyle);
+            }
+        }
+    }
+
+    private void selectPreviousButton() {
+        if (menuButtons.isEmpty()) return;
+        int next = selectedButtonIndex;
+        for (int i = 0; i < menuButtons.size(); i++) {
+            next = (next - 1 + menuButtons.size()) % menuButtons.size();
+            if (!menuButtons.get(next).isDisabled()) {
+                selectedButtonIndex = next;
+                updateButtonStyles();
+                break;
+            }
+        }
+    }
+
+    private void selectNextButton() {
+        if (menuButtons.isEmpty()) return;
+        int next = selectedButtonIndex;
+        for (int i = 0; i < menuButtons.size(); i++) {
+            next = (next + 1) % menuButtons.size();
+            if (!menuButtons.get(next).isDisabled()) {
+                selectedButtonIndex = next;
+                updateButtonStyles();
+                break;
+            }
+        }
+    }
+
+    private void triggerButton(int index) {
+        if (inputCooldown > 0) return;
+        switch (index) {
+            case 0: // CONTINUE
+                final int recentSlot = SaveManager.getInstance().getMostRecentOccupiedSlot();
+                if (recentSlot >= 1) {
+                    SaveSlotSelectScreen.launchResumeGame(game, recentSlot);
+                }
+                break;
+            case 1: // LOAD
+                game.setScreen(new SaveSlotSelectScreen(game, this, false));
+                break;
+            case 2: // NEW GAME
+                game.setScreen(new SaveSlotSelectScreen(game, this, true));
+                break;
+            case 3: // SETTINGS
+                game.setScreen(new SettingsScreen(game));
+                break;
+            case 4: // QUIT
+                Gdx.app.exit();
+                break;
+        }
     }
 
     @Override
@@ -267,6 +336,9 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         textBlink = animationTimer % 1.6f < 0.8f;
         float targetWidth = game.getViewport().getWorldWidth();
         float targetHeight = game.getViewport().getWorldHeight();
+
+        // Ensure viewport is applied
+        game.getViewport().apply();
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
             // Modern Visual Mode
@@ -281,9 +353,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             stage.draw();
 
             // Bottom status / hint bar
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
             game.getBatch().begin();
             regularFont.setColor(INTV_WHITE);
-            String modeStr = "F2: RETRO VIEW  |  M: MODE [" + selectedGameMode.name() + "]";
+            String modeStr = "F2: RETRO VIEW  |  M: MODE [" + selectedGameMode.name() + "]  |  UP/DOWN/ENTER: NAVIGATE";
             drawCenteredText(regularFont, modeStr, targetHeight * 0.05f);
             game.getBatch().end();
 
@@ -325,9 +398,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             stage.draw();
 
             // Bottom credits
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
             game.getBatch().begin();
             regularFont.setColor(INTV_WHITE);
-            drawCenteredText(regularFont, "*TM OF TSR HOBBIES  |  F2: MODERN VIEW", targetHeight * 0.05f);
+            drawCenteredText(regularFont, "*TM OF TSR HOBBIES  |  F2: MODERN VIEW  |  UP/DOWN/ENTER: NAVIGATE", targetHeight * 0.05f);
             game.getBatch().end();
         }
     }
@@ -350,28 +424,55 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             return true;
         }
 
+        // Arrow and Vim navigation
+        if (keycode == Input.Keys.UP || keycode == Input.Keys.W || keycode == Input.Keys.K) {
+            selectPreviousButton();
+            return true;
+        } else if (keycode == Input.Keys.DOWN || keycode == Input.Keys.J) {
+            selectNextButton();
+            return true;
+        } else if (keycode == Input.Keys.TAB) {
+            if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                selectPreviousButton();
+            } else {
+                selectNextButton();
+            }
+            return true;
+        }
+
+        // Activation keys
+        if (keycode == Input.Keys.ENTER || keycode == Input.Keys.NUMPAD_ENTER || keycode == Input.Keys.SPACE) {
+            if (selectedButtonIndex >= 0 && selectedButtonIndex < menuButtons.size()) {
+                TextButton btn = menuButtons.get(selectedButtonIndex);
+                if (!btn.isDisabled()) {
+                    triggerButton(selectedButtonIndex);
+                    return true;
+                }
+            }
+            return true;
+        }
+
         if (inputCooldown > 0) {
             return false;
         }
 
         // Direct shortcut keys
         if (keycode == Input.Keys.C) {
-            int recentSlot = SaveManager.getInstance().getMostRecentOccupiedSlot();
-            if (recentSlot >= 1) {
-                SaveSlotSelectScreen.launchResumeGame(game, recentSlot);
+            if (hasSave) {
+                triggerButton(0);
                 return true;
             }
         } else if (keycode == Input.Keys.L) {
-            game.setScreen(new SaveSlotSelectScreen(game, this, false));
+            triggerButton(1);
             return true;
         } else if (keycode == Input.Keys.N) {
-            game.setScreen(new SaveSlotSelectScreen(game, this, true));
+            triggerButton(2);
             return true;
         } else if (keycode == Input.Keys.S) {
-            game.setScreen(new SettingsScreen(game));
+            triggerButton(3);
             return true;
         } else if (keycode == Input.Keys.ESCAPE) {
-            Gdx.app.exit();
+            triggerButton(4);
             return true;
         }
 
@@ -380,7 +481,9 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public void resize(int width, int height) {
-        game.getViewport().update(width, height, true);
+        if (game.getViewport() != null) {
+            game.getViewport().update(width, height, true);
+        }
         if (stage != null) {
             stage.getViewport().update(width, height, true);
         }

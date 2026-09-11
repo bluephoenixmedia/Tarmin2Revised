@@ -42,7 +42,7 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void show() {
-        stage = new Stage(game.getViewport());
+        stage = new Stage(game.getViewport(), game.getBatch());
 
         // We need a Skin for standard UI widgets like buttons
         // Using a basic one here. You can customize this.
@@ -145,11 +145,13 @@ public class SettingsScreen extends BaseScreen {
         stage.addActor(table);
 
         // We need to process input on BOTH the stage (for buttons)
-        // AND this screen (for the keyDown override to bind keys)
+        // AND this screen (for the keyDown override to bind keys and ESC)
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
-       // multiplexer.addProcessor(this); // 'this' screen implements InputProcessor via BaseScreen
+        multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+
+        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     private void addKeyBindingRow(Table table, final String action, String description, Skin skin) {
@@ -226,6 +228,9 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        if (game.getViewport() != null) {
+            game.getViewport().apply();
+        }
         ScreenUtils.clear(Color.BLACK);
         stage.act(Math.min(delta, 1 / 30f));
         stage.draw();
@@ -233,7 +238,12 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
+        if (game.getViewport() != null) {
+            game.getViewport().update(width, height, true);
+        }
+        if (stage != null) {
+            stage.getViewport().update(width, height, true);
+        }
     }
 
     @Override
@@ -250,6 +260,10 @@ public class SettingsScreen extends BaseScreen {
         if (isListeningForKey) {
             bindNewKey(keycode);
             return true; // Key was "consumed" for binding
+        }
+        if (keycode == Input.Keys.ESCAPE) {
+            game.setScreen(new MainMenuScreen(game));
+            return true;
         }
         return false; // Let stage handle it
     }
