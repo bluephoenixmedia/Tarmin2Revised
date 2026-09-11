@@ -2079,7 +2079,8 @@ public class GameScreen extends BaseScreen {
                 this.currentLevel = worldManager.getCurrentLevel();
                 worldManager.clearLoadedChunks();
                 generateLevel(this.currentLevel);
-                hud.addMessage("Descended to Level " + currentLevel);
+                player.getPosition().set(ladderPos.x + 0.5f, ladderPos.y + 0.5f);
+                hud.addMessage("Descended into Strata (Depth " + (currentLevel - 1) + ")");
             } else {
                 boolean success = worldManager.ascendLevel();
                 if (success) {
@@ -2097,7 +2098,11 @@ public class GameScreen extends BaseScreen {
                         player.setPosition(
                                 new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y));
                     }
-                    hud.addMessage("Ascended to Level " + currentLevel);
+                    if (currentLevel == 1) {
+                        hud.addMessage("Ascended to the Overland Surface.");
+                    } else {
+                        hud.addMessage("Ascended to Strata (Depth " + (currentLevel - 1) + ")");
+                    }
                 } else {
                     hud.addMessage("You cannot ascend any higher.");
                 }

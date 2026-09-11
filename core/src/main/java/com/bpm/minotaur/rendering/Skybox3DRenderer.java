@@ -123,9 +123,11 @@ public class Skybox3DRenderer {
     private void loadModels() {
         ObjLoader loader = new ObjLoader();
         try {
-            // Castle Tarmin (North: World -Z) - Scaled +50% (1.35 * 1.5 = 2.025f)
-            if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {
-                castleModel = loader.loadModel(Gdx.files.internal("models/skybox/castle_tarmin.obj"));
+            // Castle Citadel / Tarmin (North: World -Z)
+            String citadelPath = "models/skybox/castle_citadel.obj";
+            String castlePath = Gdx.files.internal(citadelPath).exists() ? citadelPath : "models/skybox/castle_tarmin.obj";
+            if (Gdx.files.internal(castlePath).exists()) {
+                castleModel = loader.loadModel(Gdx.files.internal(castlePath));
                 castleInstance = new ModelInstance(castleModel);
                 // Position North at Z = -140 with grounded base
                 castleInstance.transform.setToTranslation(0f, -6f, -LANDMARK_DISTANCE);
@@ -263,6 +265,19 @@ public class Skybox3DRenderer {
                 );
                 moonInstance.transform.scale(2.0f, 2.0f, 2.0f);
             }
+        }
+
+        // Dynamic Castle Tarmin Landmark Parallax (North: World -Z)
+        if (castleInstance != null) {
+            com.badlogic.gdx.math.GridPoint2 chunk = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new com.badlogic.gdx.math.GridPoint2(0, 0);
+            float chunkY = chunk.y + (player.getPosition().y / 16f);
+            float northProgress = Math.min(Math.max(chunkY / 5.0f, 0f), 1.0f);
+            float currentDist = LANDMARK_DISTANCE - (northProgress * 55f); // 140f down to 85f
+            float currentScale = 2.025f * (1.0f + (northProgress * 0.85f));
+            float castleX = (chunk.x * 2.5f);
+            castleInstance.transform.idt()
+                    .setToTranslation(camX + castleX, -6f, -currentDist)
+                    .scale(currentScale, currentScale, currentScale);
         }
     }
 

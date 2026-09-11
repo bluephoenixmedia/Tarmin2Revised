@@ -180,7 +180,9 @@ public class ChunkData {
         }
 
         for (LadderData data : ladders) {
-            maze.addLadder(new Ladder(data.x, data.y));
+            Ladder.LadderType type = (data.type != null) ? data.type : Ladder.LadderType.DOWN;
+            Ladder.EntranceStyle style = (data.style != null) ? data.style : Ladder.EntranceStyle.LADDER;
+            maze.addLadder(new Ladder(data.x, data.y, type, style));
         }
 
         for (SceneryData data : scenery) {
@@ -323,6 +325,8 @@ public class ChunkData {
     public static class LadderData {
         public int x;
         public int y;
+        public Ladder.LadderType type = Ladder.LadderType.DOWN;
+        public Ladder.EntranceStyle style = Ladder.EntranceStyle.LADDER;
 
         public LadderData() {
         }
@@ -330,6 +334,8 @@ public class ChunkData {
         public LadderData(Ladder ladder) {
             this.x = (int) ladder.getPosition().x;
             this.y = (int) ladder.getPosition().y;
+            this.type = ladder.getType();
+            this.style = ladder.getStyle();
         }
     }
 

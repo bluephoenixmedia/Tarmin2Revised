@@ -290,9 +290,11 @@ public class MazeChunkGenerator implements IChunkGenerator {
             }
         }
 
+        Ladder.EntranceStyle downStyle = (maze.getLevel() == 1) ? Ladder.EntranceStyle.STONE_STAIRS : Ladder.EntranceStyle.LADDER;
+
         if (!candidates.isEmpty()) {
             GridPoint2 chosen = candidates.get(random.nextInt(candidates.size()));
-            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN));
+            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN, downStyle));
         } else {
             // Fallback: original unbounded loop (guards against pathological layouts)
             int x, y;
@@ -305,11 +307,12 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     currentChunkHomeTiles.contains(new GridPoint2(x, y)) ||
                     (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y));
             Gdx.app.log("MazeChunkGenerator", "WARN: No reachable ladder candidate, using fallback at " + x + "," + y);
-            maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN));
+            maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN, downStyle));
         }
 
         if (forcedUpLadderPos != null) {
-            maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP));
+            Ladder.EntranceStyle upStyle = (maze.getLevel() == 1) ? Ladder.EntranceStyle.STONE_STAIRS : Ladder.EntranceStyle.ROPE;
+            maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP, upStyle));
         }
     }
 

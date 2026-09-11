@@ -33,6 +33,11 @@ public class ForestChunkGenerator implements IChunkGenerator {
     private String[] finalLayout;
     // playerSpawnPoint is not used here, but required by the generator logic
     private GridPoint2 playerSpawnPoint = new GridPoint2(1, 1);
+    private GridPoint2 forcedUpLadderPos = null;
+
+    public void setForcedUpLadderPos(GridPoint2 pos) {
+        this.forcedUpLadderPos = pos;
+    }
 
     // --- Forest Tile Definitions ---
     // # = Impassable Chunk Boundary Wall (only for edges)
@@ -349,6 +354,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
     }
 
     private void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
+        if (forcedUpLadderPos != null) {
+            maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP, Ladder.EntranceStyle.ROPE));
+            forcedUpLadderPos = null;
+            return;
+        }
+
         List<GridPoint2> candidates = new ArrayList<>();
         int height = maze.getHeight();
         for (int y = 0; y < height; y++) {
@@ -363,10 +374,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
             }
         }
 
+        Ladder.EntranceStyle style = (random.nextBoolean()) ? Ladder.EntranceStyle.SINKHOLE : Ladder.EntranceStyle.CAVE_MOUTH;
+
         if (!candidates.isEmpty()) {
             GridPoint2 chosen = candidates.get(random.nextInt(candidates.size()));
-            maze.addLadder(new Ladder(chosen.x, chosen.y));
-            Gdx.app.log("ForestChunkGenerator", "Ladder spawned at (" + chosen.x + ", " + chosen.y + ")");
+            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN, style));
+            Gdx.app.log("ForestChunkGenerator", style.name() + " entrance spawned at (" + chosen.x + ", " + chosen.y + ")");
         } else {
             // Fallback
             int x, y;
@@ -377,7 +390,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                     maze.getItems().containsKey(new GridPoint2(x, y)) ||
                     maze.getMonsters().containsKey(new GridPoint2(x, y)));
             Gdx.app.log("ForestChunkGenerator", "WARN: No reachable ladder candidate, fallback at (" + x + "," + y + ")");
-            maze.addLadder(new Ladder(x, y));
+            maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN, style));
         }
     }
 

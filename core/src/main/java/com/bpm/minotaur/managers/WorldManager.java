@@ -157,7 +157,7 @@ public class WorldManager {
     }
 
     public Maze getInitialMaze() {
-        Maze maze = loadChunk(new GridPoint2(0, 0));
+        Maze maze = loadChunk(currentPlayerChunkId);
         syncLightsForChunk(maze);
         return maze;
     }
@@ -182,7 +182,8 @@ public class WorldManager {
     private int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
         int horizontalDistance = Math.abs(chunkId.x) + Math.abs(chunkId.y);
         int distancePenalty = (int) (horizontalDistance * 0.5f);
-        return depth + distancePenalty + difficultyOffset;
+        int depthScale = Math.max(0, depth - 1) * 3;
+        return 1 + depthScale + distancePenalty + difficultyOffset;
     }
 
     public void resetWorldKeepDifficulty() {
@@ -231,13 +232,13 @@ public class WorldManager {
         // Clear cache so we don't see old level chunks
         loadedChunks.clear();
         syncLightsForChunk(null);
-        this.currentPlayerChunkId = new GridPoint2(0, 0);
+        // Retain currentPlayerChunkId so player stays in the same coordinate column
 
         // Update Deepest Level Tracking
         UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
 
         Gdx.app.log("WorldManager",
-                "Descending to Level " + currentLevel + ". Pending UP Ladder at " + pendingUpLadderPos);
+                "Descending to Level " + currentLevel + " at chunk " + currentPlayerChunkId + ". Pending UP Ladder at " + pendingUpLadderPos);
 
         // --- BALANCE LOGGING ---
         BalanceLogger.getInstance().log("NAVIGATION", "Descending to Depth " + currentLevel);
@@ -259,9 +260,9 @@ public class WorldManager {
 
         loadedChunks.clear();
         syncLightsForChunk(null);
-        this.currentPlayerChunkId = new GridPoint2(0, 0);
+        // Retain currentPlayerChunkId so player returns to the same coordinate column
 
-        Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel);
+        Gdx.app.log("WorldManager", "Ascending to Level " + currentLevel + " at chunk " + currentPlayerChunkId);
         return true;
     }
 
@@ -293,10 +294,14 @@ public class WorldManager {
             return loadedChunks.get(chunkId);
         }
 
-        Biome biome = biomeManager.getBiome(chunkId);
-
-        if (biome == Biome.OCEAN || biome == Biome.MOUNTAINS) {
-            return null;
+        Biome biome;
+        if (this.currentLevel > 1) {
+            biome = Biome.MAZE;
+        } else {
+            biome = biomeManager.getBiome(chunkId);
+            if (biome == Biome.OCEAN || biome == Biome.MOUNTAINS) {
+                return null;
+            }
         }
 
         String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
@@ -308,6 +313,13 @@ public class WorldManager {
                 maze.setGoreManager(this.goreManager);
                 if (this.goreManager != null) {
                     this.goreManager.importChunkGore(chunkId, data);
+                }
+                // Ensure paired UP ladder exists if player is descending into previously visited chunk
+                if (pendingUpLadderPos != null && chunkId.equals(currentPlayerChunkId)) {
+                    if (!maze.getLadders().containsKey(pendingUpLadderPos)) {
+                        maze.addLadder(new Ladder(pendingUpLadderPos.x, pendingUpLadderPos.y, Ladder.LadderType.UP, Ladder.EntranceStyle.ROPE));
+                    }
+                    pendingUpLadderPos = null;
                 }
                 loadedChunks.put(chunkId, maze);
                 return maze;
@@ -322,10 +334,12 @@ public class WorldManager {
         }
 
         // --- NEW: Inject Forced Ladder Pos if applicable ---
-        if (generator instanceof MazeChunkGenerator && pendingUpLadderPos != null) {
-            // Only force it for the initial chunk (0,0) where player enters
-            if (chunkId.x == 0 && chunkId.y == 0) {
+        if (pendingUpLadderPos != null && chunkId.equals(currentPlayerChunkId)) {
+            if (generator instanceof MazeChunkGenerator) {
                 ((MazeChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof ForestChunkGenerator) {
+                ((ForestChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
             }
         }

@@ -1514,13 +1514,58 @@ public class Hud implements Disposable {
         }
         if (ladder != null) {
             boolean isDown = (ladder.getType() == Ladder.LadderType.DOWN);
+            Ladder.EntranceStyle style = ladder.getStyle();
+            String tag;
+            String header;
+            String title;
+            String desc;
+            String action;
+
+            if (style == Ladder.EntranceStyle.SINKHOLE) {
+                tag = "[STRATA DESCENT]";
+                header = "[SINKHOLE]";
+                title = "Natural Sinkhole Chasm";
+                desc = "A yawning fissure plunging deep into the subterranean grottoes.";
+                action = "Descend into Grotto [D]";
+            } else if (style == Ladder.EntranceStyle.CAVE_MOUTH) {
+                tag = "[STRATA DESCENT]";
+                header = "[CAVE MOUTH]";
+                title = "Cavern Entrance";
+                desc = "A dark stone cavern opening leading down into uncharted subterranean depths.";
+                action = "Enter Cavern [D]";
+            } else if (style == Ladder.EntranceStyle.STONE_STAIRS) {
+                tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
+                header = "[STONE STAIRS]";
+                title = isDown ? "Ancient Stairwell Down" : "Ancient Stairwell Up";
+                desc = isDown ? "Heftily carved stone steps leading down into ancient crypts." : "Worn stone steps ascending to the overland surface.";
+                action = isDown ? "Descend Stairs [D]" : "Ascend Stairs [D]";
+            } else if (style == Ladder.EntranceStyle.TRAPDOOR) {
+                tag = "[STRATA DESCENT]";
+                header = "[TRAPDOOR]";
+                title = "Reinforced Iron Trapdoor";
+                desc = "A heavy iron hatchway sealed flush against the stone floor.";
+                action = "Open and Descend [D]";
+            } else if (style == Ladder.EntranceStyle.ROPE) {
+                tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
+                header = "[EXPEDITION ROPE]";
+                title = isDown ? "Climbing Rope Down" : "Climbing Rope Up";
+                desc = isDown ? "A knotted hemp rope dropping into the cavern below." : "A knotted climbing rope anchored securely to the surface above.";
+                action = isDown ? "Climb Down Rope [D]" : "Climb Up Rope [D]";
+            } else {
+                tag = isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]";
+                header = "[LADDER]";
+                title = isDown ? "Ladder Down" : "Ladder Up";
+                desc = isDown ? "Descends deeper into Castle Tarmin." : "Ascends toward upper sanctums and camp.";
+                action = isDown ? "Descend Ladder [D]" : "Ascend Ladder [D]";
+            }
+
             worldInteractionCard.show(
-                    isDown ? "[STRATA DESCENT]" : "[STRATA ASCENT]",
-                    "[LADDER]",
-                    isDown ? "Ladder Down" : "Ladder Up",
-                    isDown ? "Descends deeper into Castle Tarmin." : "Ascends toward upper sanctums and camp.",
+                    tag,
+                    header,
+                    title,
+                    desc,
                     "[ D ]",
-                    isDown ? "Descend Ladder" : "Ascend Ladder",
+                    action,
                     () -> { if (gameScreen != null) gameScreen.ascendOrDescendLadder(); }
             );
             return;
