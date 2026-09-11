@@ -309,20 +309,31 @@ public class WorldManager {
         if (file.exists()) {
             try {
                 ChunkData data = json.fromJson(ChunkData.class, file);
-                Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
-                maze.setGoreManager(this.goreManager);
-                if (this.goreManager != null) {
-                    this.goreManager.importChunkGore(chunkId, data);
-                }
-                // Ensure paired UP ladder exists if player is descending into previously visited chunk
-                if (pendingUpLadderPos != null && chunkId.equals(currentPlayerChunkId)) {
-                    if (!maze.getLadders().containsKey(pendingUpLadderPos)) {
-                        maze.addLadder(new Ladder(pendingUpLadderPos.x, pendingUpLadderPos.y, Ladder.LadderType.UP, Ladder.EntranceStyle.ROPE));
+                if (data.level != this.currentLevel) {
+                    Gdx.app.error("WorldManager", "Chunk file " + fileName + " has level " + data.level
+                            + " but current level is " + this.currentLevel + "! Discarding corrupted chunk.");
+                    file.delete();
+                } else if (this.currentLevel == 1 && chunkId.x == 0 && chunkId.y == 0
+                        && (data.homeTiles == null || data.homeTiles.isEmpty())) {
+                    Gdx.app.error("WorldManager", "Chunk file " + fileName
+                            + " is missing Home Shelter zone! Discarding and regenerating starting shelter.");
+                    file.delete();
+                } else {
+                    Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
+                    maze.setGoreManager(this.goreManager);
+                    if (this.goreManager != null) {
+                        this.goreManager.importChunkGore(chunkId, data);
                     }
-                    pendingUpLadderPos = null;
+                    // Ensure paired UP ladder exists if player is descending into previously visited chunk
+                    if (pendingUpLadderPos != null && chunkId.equals(currentPlayerChunkId)) {
+                        if (!maze.getLadders().containsKey(pendingUpLadderPos)) {
+                            maze.addLadder(new Ladder(pendingUpLadderPos.x, pendingUpLadderPos.y, Ladder.LadderType.UP, Ladder.EntranceStyle.ROPE));
+                        }
+                        pendingUpLadderPos = null;
+                    }
+                    loadedChunks.put(chunkId, maze);
+                    return maze;
                 }
-                loadedChunks.put(chunkId, maze);
-                return maze;
             } catch (Exception e) {
                 Gdx.app.error("WorldManager", "Failed to load/parse chunk: " + chunkId, e);
             }
@@ -401,7 +412,12 @@ public class WorldManager {
     }
 
     public void setCurrentLevel(int level) {
-        this.currentLevel = level;
+        if (this.currentLevel != level) {
+            saveAllChunks();
+            loadedChunks.clear();
+            syncLightsForChunk(null);
+            this.currentLevel = level;
+        }
         DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
         this.currentLevelTheme = getThemeForLevel(level);

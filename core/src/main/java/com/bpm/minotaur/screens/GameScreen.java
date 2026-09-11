@@ -1069,7 +1069,15 @@ public class GameScreen extends BaseScreen {
             GridPoint2 bedPos = null;
             for (Item item : shelterMaze.getItems().values()) {
                 if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                    bedPos = new GridPoint2((int) item.getPosition().x, (int) item.getPosition().y);
+                    int bx = (int) item.getPosition().x;
+                    int by = (int) item.getPosition().y;
+                    if (shelterMaze.isPassable(bx - 1, by)) {
+                        bedPos = new GridPoint2(bx - 1, by);
+                    } else if (shelterMaze.isPassable(bx, by + 1)) {
+                        bedPos = new GridPoint2(bx, by + 1);
+                    } else {
+                        bedPos = new GridPoint2(bx, by);
+                    }
                     break;
                 }
             }
