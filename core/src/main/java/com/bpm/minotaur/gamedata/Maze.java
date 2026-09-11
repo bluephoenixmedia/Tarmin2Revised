@@ -337,12 +337,14 @@ public class Maze {
         if ((currentCellData & doorMask) != 0) {
             Object obj = getGameObjectAt(x, y);
             if (obj instanceof Door) {
-                return ((Door) obj).getState() != Door.DoorState.OPEN;
+                Door door = (Door) obj;
+                return door.getState() != Door.DoorState.OPEN && door.getState() != Door.DoorState.OPENING;
             }
 
             obj = getGameObjectAt(nextX, nextY);
             if (obj instanceof Door) {
-                return ((Door) obj).getState() != Door.DoorState.OPEN;
+                Door door = (Door) obj;
+                return door.getState() != Door.DoorState.OPEN && door.getState() != Door.DoorState.OPENING;
             }
             return true;
         }
@@ -361,7 +363,7 @@ public class Maze {
         Object obj = getGameObjectAt(x, y);
         if (obj instanceof Window)
             return false;
-        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN)
+        if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN && ((Door) obj).getState() != Door.DoorState.OPENING)
             return false;
         if (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN)
             return false;
@@ -384,7 +386,7 @@ public class Maze {
         Object obj = getGameObjectAt(x, y);
         if (obj instanceof Door) {
             Door door = (Door) obj;
-            if (door.getState() == Door.DoorState.CLOSED) {
+            if (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING) {
                 door.startOpening();
             }
         }

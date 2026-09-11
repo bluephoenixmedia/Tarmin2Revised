@@ -1296,14 +1296,27 @@ public class Player {
     }
 
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
-        move(facing, maze, eventManager, gameMode);
+        moveForward(maze, eventManager, gameMode, null);
+    }
+
+    public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode, SoundManager soundManager) {
+        move(facing, maze, eventManager, gameMode, soundManager);
     }
 
     public void moveBackward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
-        move(facing.getOpposite(), maze, eventManager, gameMode);
+        move(facing.getOpposite(), maze, eventManager, gameMode, null);
+    }
+
+    public void moveBackward(Maze maze, GameEventManager eventManager, GameMode gameMode, SoundManager soundManager) {
+        move(facing.getOpposite(), maze, eventManager, gameMode, soundManager);
     }
 
     public void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode) {
+        move(direction, maze, eventManager, gameMode, null);
+    }
+
+    public void move(Direction direction, Maze maze, GameEventManager eventManager, GameMode gameMode,
+            SoundManager soundManager) {
         int currentX = (int) position.x;
         int currentY = (int) position.y;
 
@@ -1320,30 +1333,46 @@ public class Player {
             }
         }
 
+        // --- BUMP TO OPEN DOOR ---
+        if (direction == facing && nextObject instanceof Door door) {
+            if (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING) {
+                door.startOpening();
+                eventManager.addEvent(new GameEvent("You open the door.", 1f));
+                UnlockManager.getInstance().incrementStat("doors", 1);
+                if (soundManager != null) {
+                    soundManager.playDoorOpenSound();
+                }
+                return;
+            }
+        }
+
         // --- GHOST WALL & MOVEMENT HANDLING ---
         boolean isGhostWall = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, currentX, currentY, direction);
         if (!isGhostWall) {
             if (!maze.isPassable(nextX, nextY)) {
                 // Check specific reasons for blockage
-                if (maze.getWallDataAt(nextX, nextY) == 1) {
+                if (Gdx.app != null && maze.getWallDataAt(nextX, nextY) == 1) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
                 }
                 Item item = maze.getItems().get(nextTile);
-                if (item != null && item.isImpassable()) {
+                if (Gdx.app != null && item != null && item.isImpassable()) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by IMPASSABLE ITEM: " + item.getDisplayName() + " at ("
                             + nextX + "," + nextY + ")");
                 }
                 // Check for doors/gates
                 Object obj = maze.getGameObjectAt(nextX, nextY);
-                if (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN) {
+                if (Gdx.app != null && obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN
+                        && ((Door) obj).getState() != Door.DoorState.OPENING) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by CLOSED DOOR at (" + nextX + "," + nextY + ")");
                 }
                 return;
             }
 
             if (maze.isWallBlocking(currentX, currentY, direction)) {
-                Gdx.app.log("Player [DEBUG]",
-                        "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
+                if (Gdx.app != null) {
+                    Gdx.app.log("Player [DEBUG]",
+                            "Move blocked by WALL MASK from (" + currentX + "," + currentY + ") facing " + direction);
+                }
                 return;
             }
         } else {
@@ -1353,7 +1382,9 @@ public class Player {
         if (maze.getScenery().containsKey(nextTile)) {
             Scenery s = maze.getScenery().get(nextTile);
             if (s.isImpassable()) {
-                Gdx.app.log("Player [DEBUG]", "Move blocked by SCENERY at (" + nextX + "," + nextY + ")");
+                if (Gdx.app != null) {
+                    Gdx.app.log("Player [DEBUG]", "Move blocked by SCENERY at (" + nextX + "," + nextY + ")");
+                }
                 return;
             }
         }

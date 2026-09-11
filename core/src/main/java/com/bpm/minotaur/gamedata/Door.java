@@ -27,7 +27,7 @@ public class Door {
     }
 
     public boolean isOpen() {
-        return state == DoorState.OPEN || animationProgress > 0.5f;
+        return state == DoorState.OPEN || state == DoorState.OPENING || animationProgress > 0.5f;
     }
 
     public void close() {

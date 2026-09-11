@@ -33,13 +33,21 @@ public class UnlockManager {
     }
 
     public void load() {
+        if (Gdx.files == null) {
+            data = new UnlockData();
+            return;
+        }
         FileHandle file = Gdx.files.local(saveFile);
         if (file.exists()) {
             try {
                 data = json.fromJson(UnlockData.class, file);
-                Gdx.app.log("UnlockManager", "Profile loaded successfully.");
+                if (Gdx.app != null) {
+                    Gdx.app.log("UnlockManager", "Profile loaded successfully.");
+                }
             } catch (Exception e) {
-                Gdx.app.error("UnlockManager", "Failed to load profile, creating new.", e);
+                if (Gdx.app != null) {
+                    Gdx.app.error("UnlockManager", "Failed to load profile, creating new.", e);
+                }
                 data = new UnlockData();
             }
         } else {
@@ -49,11 +57,16 @@ public class UnlockManager {
     }
 
     public void save() {
+        if (Gdx.files == null) {
+            return;
+        }
         try {
             FileHandle file = Gdx.files.local(saveFile);
             file.writeString(json.prettyPrint(data), false);
         } catch (Exception e) {
-            Gdx.app.error("UnlockManager", "Failed to save profile.", e);
+            if (Gdx.app != null) {
+                Gdx.app.error("UnlockManager", "Failed to save profile.", e);
+            }
         }
     }
 

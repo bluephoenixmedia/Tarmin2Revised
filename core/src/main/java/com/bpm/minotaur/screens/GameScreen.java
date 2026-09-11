@@ -1522,7 +1522,7 @@ public class GameScreen extends BaseScreen {
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
                     } else {
-                        player.moveForward(maze, eventManager, gameMode);
+                        player.moveForward(maze, eventManager, gameMode, soundManager);
                     }
                     playerTurnTakesAction();
                     needsAsciiRender = false;
