@@ -33,6 +33,7 @@ import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ShelterChest;
 
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 
@@ -924,6 +925,12 @@ public class GameScreen extends BaseScreen {
 
     private void handleSystemEvents() {
         GameEvent event;
+
+        // Centralized Player Death Check: any damage (combat, environmental, fatigue) reducing HP to 0 triggers death
+        if (player != null && player.getCurrentHP() <= 0) {
+            killPlayer();
+        }
+
         if (gameMode == GameMode.ADVANCED) {
             while ((event = eventManager.findAndConsume(GameEvent.EventType.CHUNK_TRANSITION)) != null) {
                 if (event.payload instanceof Gate) {
@@ -988,6 +995,10 @@ public class GameScreen extends BaseScreen {
                 return;
             }
 
+            if (combatManager != null) {
+                combatManager.endCombat();
+            }
+
             // 3. Record Death Location & Lost Divinities
             GridPoint2 deathChunk = worldManager.getCurrentPlayerChunkId();
             int deathLevel = worldManager.getCurrentLevel();
@@ -1038,6 +1049,10 @@ public class GameScreen extends BaseScreen {
             debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
             player.getStats().setCurrentHP(player.getStats().getMaxHP());
             player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
+            player.getStats().setSatiety(80.0f);
+            player.getStats().setHydration(80.0f);
+            player.getStats().setToxicity(0);
             player.getStatusManager().clearEffects();
             Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().setRightHand(starterWeapon);

@@ -175,8 +175,14 @@ public class TurnManager {
         if (stats.getSatietyFloat() <= 0) {
             if (Math.random() < 0.1) { // Chance to take damage every turn
                 player.takeTrueDamage(1);
-                if (eventManager != null)
-                    eventManager.addEvent(new GameEvent("You are starving!", 1.0f));
+                if (eventManager != null) {
+                    if (player.getCurrentHP() <= 0) {
+                        eventManager.addEvent(new GameEvent("You starved to death!", 2.0f));
+                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                    } else {
+                        eventManager.addEvent(new GameEvent("You are starving!", 1.0f));
+                    }
+                }
             }
         }
 
@@ -184,8 +190,14 @@ public class TurnManager {
         if (stats.getHydrationFloat() <= 0) {
             if (Math.random() < 0.2) { // Thirst hurts more
                 player.takeTrueDamage(1);
-                if (eventManager != null)
-                    eventManager.addEvent(new GameEvent("You are parched!", 1.0f));
+                if (eventManager != null) {
+                    if (player.getCurrentHP() <= 0) {
+                        eventManager.addEvent(new GameEvent("You died of thirst!", 2.0f));
+                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                    } else {
+                        eventManager.addEvent(new GameEvent("You are parched!", 1.0f));
+                    }
+                }
             }
         }
 
@@ -193,8 +205,14 @@ public class TurnManager {
         if (stats.getBodyTemperature() < PlayerStats.BODY_TEMP_FREEZING) {
             if (Math.random() < 0.2) {
                 player.takeTrueDamage(1);
-                if (eventManager != null)
-                    eventManager.addEvent(new GameEvent("You are freezing to death!", 1.0f));
+                if (eventManager != null) {
+                    if (player.getCurrentHP() <= 0) {
+                        eventManager.addEvent(new GameEvent("You froze to death!", 2.0f));
+                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                    } else {
+                        eventManager.addEvent(new GameEvent("You are freezing to death!", 1.0f));
+                    }
+                }
             }
         }
 
@@ -202,8 +220,14 @@ public class TurnManager {
         if (stats.getBodyTemperature() > PlayerStats.BODY_TEMP_OVERHEAT) {
             if (Math.random() < 0.2) {
                 player.takeTrueDamage(1);
-                if (eventManager != null)
-                    eventManager.addEvent(new GameEvent("You are overheating!", 1.0f));
+                if (eventManager != null) {
+                    if (player.getCurrentHP() <= 0) {
+                        eventManager.addEvent(new GameEvent("You succumbed to heatstroke!", 2.0f));
+                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+                    } else {
+                        eventManager.addEvent(new GameEvent("You are overheating!", 1.0f));
+                    }
+                }
             }
         }
     }

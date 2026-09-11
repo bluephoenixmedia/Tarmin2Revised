@@ -88,4 +88,42 @@ public class WorldInteractionTest {
         assertEquals(5, frontX);
         assertEquals(6, frontY); // NORTH vector is (0, 1) in Tarmin2 grid
     }
+
+    @Test
+    public void testPlayerStatsHPClamping() {
+        stats.setCurrentHP(-10);
+        assertEquals("HP must never clamp below 0", 0, stats.getCurrentHP());
+
+        stats.setWarStrength(-5);
+        assertEquals("War Strength must never clamp below 0", 0, stats.getWarStrength());
+
+        stats.setCurrentMP(-8);
+        assertEquals("MP must never clamp below 0", 0, stats.getCurrentMP());
+
+        stats.setSpiritualStrength(-12);
+        assertEquals("Spiritual Strength must never clamp below 0", 0, stats.getSpiritualStrength());
+    }
+
+    @Test
+    public void testSurvivalVitalsReset() {
+        stats.setBodyTemperature(28.0f); // Hypothermia
+        stats.setSatiety(0f); // Starvation
+        stats.setHydration(0f); // Dehydration
+        stats.setToxicity(80);
+
+        assertTrue("Body temp should be freezing", stats.getBodyTemperature() < PlayerStats.BODY_TEMP_FREEZING);
+        assertEquals(0, stats.getSatiety());
+        assertEquals(0, stats.getHydration());
+
+        // Simulate reset after death / shelter respawn
+        stats.setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
+        stats.setSatiety(80.0f);
+        stats.setHydration(80.0f);
+        stats.setToxicity(0);
+
+        assertEquals(37.0f, stats.getBodyTemperature(), 0.01f);
+        assertEquals(80, stats.getSatiety());
+        assertEquals(80, stats.getHydration());
+        assertEquals(0, stats.getToxicity());
+    }
 }

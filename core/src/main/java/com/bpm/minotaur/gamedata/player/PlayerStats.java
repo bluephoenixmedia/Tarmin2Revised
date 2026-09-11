@@ -248,7 +248,7 @@ public class PlayerStats {
     }
 
     public void setCurrentHP(int currentHP) {
-        this.currentHP = currentHP;
+        this.currentHP = Math.max(0, currentHP);
     }
 
     public int getCurrentMP() {
@@ -256,7 +256,7 @@ public class PlayerStats {
     }
 
     public void setCurrentMP(int currentMP) {
-        this.currentMP = currentMP;
+        this.currentMP = Math.max(0, currentMP);
     }
 
     // Deprecated Aliases for compatibility during refactor
@@ -269,11 +269,11 @@ public class PlayerStats {
     }
 
     public void setWarStrength(int val) {
-        this.currentHP = val;
+        this.currentHP = Math.max(0, val);
     }
 
     public void setSpiritualStrength(int val) {
-        this.currentMP = val;
+        this.currentMP = Math.max(0, val);
     }
 
     public int getFood() {
