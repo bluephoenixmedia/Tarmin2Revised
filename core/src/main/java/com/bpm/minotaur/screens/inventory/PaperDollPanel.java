@@ -97,6 +97,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
 
     // Optional paper doll widget reference (set from ModernInventoryUI)
     private PaperDollWidget paperDollWidget;
+    private com.bpm.minotaur.paperdoll.PaperDoll3DWidget paperDoll3DWidget;
 
     // Frame overlay — stored so attachPaperDollWidget can insert before it
     // private Image frameOverlayImage;
@@ -246,6 +247,20 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         // addActorBefore(frameOverlayImage, widget);
     }
 
+    /**
+     * Attaches the interactive 3D paper doll viewport.
+     */
+    public void attachPaperDoll3DWidget(com.bpm.minotaur.paperdoll.PaperDoll3DWidget widget) {
+        this.paperDoll3DWidget = widget;
+        widget.setPosition(PORTRAIT_X, PORTRAIT_Y);
+        widget.setSize(PORTRAIT_W, PORTRAIT_H);
+        addActorAt(0, widget);
+    }
+
+    public com.bpm.minotaur.paperdoll.PaperDoll3DWidget getPaperDoll3DWidget() {
+        return paperDoll3DWidget;
+    }
+
     public void refresh() {
         PlayerEquipment eq = player.getEquipment();
         slotHead.setItem(eq.getWornHelmet());
@@ -293,6 +308,13 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     }
 
     private void syncPaperDoll(PlayerEquipment eq) {
+        if (paperDoll3DWidget != null) {
+            paperDoll3DWidget.syncEquipment(
+                    player.getInventory().getRightHand(),
+                    player.getInventory().getLeftHand(),
+                    eq.getWornChest(),
+                    eq.getWornHelmet());
+        }
         if (paperDollWidget == null)
             return;
         paperDollWidget.clearEquipment();

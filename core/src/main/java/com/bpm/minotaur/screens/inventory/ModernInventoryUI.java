@@ -66,6 +66,7 @@ public class ModernInventoryUI {
     private Texture paperDollTexture;
     private Texture headTexture;
     private Texture bgTexture;
+    private com.bpm.minotaur.paperdoll.PaperDoll3DWidget doll3DWidget;
 
     /** Debug overlay — press F3 in-game to toggle. */
     private final InventoryDebugOverlay debugOverlay;
@@ -101,6 +102,8 @@ public class ModernInventoryUI {
         // ── Panels ────────────────────────────────────────────────────
         paperDoll = new PaperDollPanel(player, skin, dnd, idm, paperDollTexture);
         paperDoll.attachPaperDollWidget(dollWidget);
+        doll3DWidget = new com.bpm.minotaur.paperdoll.PaperDoll3DWidget();
+        paperDoll.attachPaperDoll3DWidget(doll3DWidget);
 
         coreStats = new CoreStatsPanel(player, skin);
         spellbook = new SpellbookPanel(player, skin);
@@ -338,6 +341,8 @@ public class ModernInventoryUI {
             headTexture.dispose();
         if (bgTexture != null)
             bgTexture.dispose();
+        if (doll3DWidget != null)
+            doll3DWidget.dispose();
         debugOverlay.dispose(); // disposes the internal ShapeRenderer
     }
 
