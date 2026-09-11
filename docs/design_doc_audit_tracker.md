@@ -1,11 +1,11 @@
 # Design Document Audit Tracker
 
 Last Updated: 2026-09-11
-Audit Status: In Progress (Session 1 - Round 2)
+Audit Status: In Progress (Session 1 - Round 3)
 Current Branch: `audit/design-docs-review`
 
 ## Overview & Methodology
-This tracker maintains the multi-session audit of legacy design documents located in [docs/DEsign](file:///c:/Users/denni/Desktop/Tarmin2/docs/DEsign).
+This tracker maintains the multi-session audit of legacy design documents originally located in [docs/DEsign](file:///c:/Users/denni/Desktop/Tarmin2/docs/DEsign).
 For each document:
 1. **Fact-Finding Scan**: Inspect codebase classes, systems, and assets to verify if proposed architectural items exist.
 2. **Gap Analysis**: Detail what was implemented vs what is missing or changed.
@@ -31,56 +31,23 @@ For each document:
 | 11 | `Design Document_ Status Effect System.docx` | Combat / Effects | **COMPLETE** | `docs/complete/` | Built in `effects/` package, `StatusManager` |
 | 12 | `Design Document_ _Project Viscera_ (Retro Gore System).pdf` | Gore / VFX | **COMPLETE** | `docs/complete/` | Built in `gore/` package, `GoreManager` |
 | 13 | `Forest Biome Implementation (Revised).pdf` | Biomes / Render | **COMPLETE** | `docs/complete/` | Built via `Scenery`, `ForestChunkGenerator` |
-| 14 | `Design Document_ 3D Chunk & Dungeon Level Integration.pdf` | World / Engine | **SUPERSEDED** | `docs/archive/` | Superseded by Open World Strata Descent architecture |
-| 15 | `Game Design Analysis and Enhancement (1).pdf` | Meta / Research | **ARCHIVE / REFERENCE** | `docs/archive/` | Theoretical research paper on asymptotic dungeon |
-| 16 | `Minotaur spec.pdf` | Specification | **ARCHIVE / REFERENCE** | `docs/archive/` | Original founding remake specification |
-| 17 | `Implementation Plan_ The Expedition Loop & Progression Reboot.md` | Architecture Core | **ACTIVE FOUNDATION** | `docs/` root | Living canonical blueprint per `AGENTS.md` |
-| 18 | `Procedural Creature Assembly_ Gap-Free Stitching.pdf` | Monster / Mesh | **COMPLETE** | Pending Round 2 | `GapBridgeBuilder`, `MeshSurfaceIntersector`, etc. implemented |
-| 19 | `Implementation Plan_ Modular Creature System & Weather Engine.md` | Monsters / Weather | **SUPERSEDED / PARTIAL** | Pending Round 2 | Weather is complete; Decal/physics graph superseded by 2.5D pipeline |
-| 20 | `Implementation Plan_ 3D-to-2.5D Monster Rendering Pipeline.md` | Monster / Render | **PARTIAL (DEV ONLY)** | Pending Round 2 | `CreatureBaker` & `CreatureDevScreen` live; live dungeon spawning missing |
-| 21 | `Math-Infused Dice Combat System Design (2).pdf` | Combat / Dice | **COMPLETE / ADAPTED** | Pending Round 2 | Bullet physics 3D dice implemented with themed RPG dice & Bone traits |
+| 14 | `Procedural Creature Assembly_ Gap-Free Stitching.pdf` | Monster / Mesh | **COMPLETE** | `docs/complete/` | Mesh extraction, intersector, bridge builder built in `stitcher/` |
+| 15 | `Design Document_ 3D Chunk & Dungeon Level Integration.pdf` | World / Engine | **SUPERSEDED** | `docs/archive/` | Superseded by Open World Strata Descent architecture |
+| 16 | `Game Design Analysis and Enhancement (1).pdf` | Meta / Research | **ARCHIVE / REFERENCE** | `docs/archive/` | Theoretical research paper on asymptotic dungeon |
+| 17 | `Minotaur spec.pdf` | Specification | **ARCHIVE / REFERENCE** | `docs/archive/` | Original founding remake specification |
+| 18 | `Implementation Plan_ Modular Creature System & Weather Engine.md` | Monsters / Weather | **SUPERSEDED** | `docs/archive/` | Weather & DNA built; Decal/physics graph replaced by 2.5D pipeline |
+| 19 | `Implementation Plan_ The Expedition Loop & Progression Reboot.md` | Architecture Core | **ACTIVE FOUNDATION** | `docs/` root | Living canonical blueprint per `AGENTS.md` |
+| 20 | `Implementation Plan_ 3D-to-2.5D Monster Rendering Pipeline.md` | Monster / Render | **ACTIVE SPEC (WIP)** | `docs/DEsign/` | Core rendering engine live in F9 dev screen; needs runtime dungeon spawning |
+| 21 | `Math-Infused Dice Combat System Design (2).pdf` | Combat / Design | **UNDER REVIEW** | `docs/DEsign/` | Revisit from scratch from a gameplay and design perspective |
 
 ---
 
-## Detailed Reviews & Status Breakdown
+## Active Workstreams in `docs/DEsign/`
 
-### 18. `Procedural Creature Assembly_ Gap-Free Stitching.pdf`
-- **Specification**: Outlines algorithmic requirements for assembling modular 3D creature components and stitching vertices across boundaries without visual gaps. Specifies mesh vertex extraction, surface intersection, and bridge geometry generation.
-- **Codebase Findings**:
-  - [MeshVertexExtractor.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/monster/stitcher/MeshVertexExtractor.java) exists and is fully implemented.
-  - [MeshSurfaceIntersector.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/monster/stitcher/MeshSurfaceIntersector.java) exists and is fully implemented.
-  - [GapBridgeBuilder.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/monster/stitcher/GapBridgeBuilder.java) exists and is fully implemented.
-  - Integrated into `CreatureStitcher` and `StitchedCreature`.
-- **Status**: **COMPLETE**. The algorithmic implementation matches the paper.
+### Workstream 1: Procedural Monster Spawning in Live Strata (`Implementation Plan_ 3D-to-2.5D Monster Rendering Pipeline.md`)
+- **Status**: Engine built (`CreatureBaker`, `BakedMonsterSprite`, `creature_stylize.frag`, `CreatureDevScreen`), pending live dungeon generation hook.
+- **Goal**: Allow `SpawnManager.spawnMonsters()` to optionally roll DNA, assemble parts, bake 2.5D sprites, and spawn procedural chimeras in deeper strata alongside handcrafted monsters.
 
-### 19. `Implementation Plan_ Modular Creature System & Weather Engine.md`
-- **Specification**:
-  - Part 1: Modular Stitcher (JSON DNA, parts manifest, socket attachment).
-  - Part 2: Weather Engine GPU fog/shader upgrade.
-  - Part 3: `CreatureBillboard` (DecalBatch) and `CreaturePhysicsGraph` (Bullet physics joint constraints per limb).
-- **Codebase Findings**:
-  - Part 1 is fully built in `com.bpm.minotaur.gamedata.monster.stitcher`.
-  - Part 2 is fully built in `com.bpm.minotaur.weather`.
-  - Part 3 (`CreatureBillboard` / `CreaturePhysicsGraph`) was evaluated and deliberately superseded by `Implementation Plan_ 3D-to-2.5D Monster Rendering Pipeline.md`, which proved that the engine's column raycaster (`EntityRenderer`) already handles 2.5D directional monster billboarding without needing DecalBatch or multi-body physics joint overhead.
-- **Status**: **SUPERSEDED / COMPLETED IN SUCCESSOR**.
-
-### 20. `Implementation Plan_ 3D-to-2.5D Monster Rendering Pipeline.md`
-- **Specification**:
-  - Two-pass baking pipeline: ModelBatch 3D render to scene FBO, then SpriteBatch + `creature_stylize.frag` pixelation/palette mapping to style FBO.
-  - Directional baking (4 facings: N, E, S, W) into `BakedMonsterSprite`.
-  - Integration with `EntityRenderer.drawMonsterTexture()`.
-  - Dynamic runtime procedural creature generation during dungeon play.
-- **Codebase Findings**:
-  - [CreatureBaker.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/CreatureBaker.java) and [BakedMonsterSprite.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/BakedMonsterSprite.java) are completely built and functional.
-  - [creature_stylize.frag](file:///c:/Users/denni/Desktop/Tarmin2/assets/shaders/creature_stylize.frag) is implemented.
-  - [CreatureDevScreen.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/screens/CreatureDevScreen.java) is fully operational (accessed via F9) to assemble, bake, view, and test limb severing.
-  - **Gap**: Procedurally stitched chimeras are NOT hooked into runtime level generation (`SpawnManager.spawnMonsters()`). The live game currently spawns standard monsters defined in `assets/data/monsters.json`.
-- **Status**: **PARTIAL (CORE ENGINE BUILT, LIVE IN-GAME SPAWNING UNWIRED)**.
-
-### 21. `Math-Infused Dice Combat System Design (2).pdf`
-- **Specification**: "The Axiomatic Engine" - integrating non-Euclidean stochastics, mathematical metaphysics (axioms $\pi, e, 1, 0$), topology, and Bullet physics 3D dice simulation.
-- **Codebase Findings**:
-  - Bullet physics 3D dice simulation is completely implemented in [StochasticManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/StochasticManager.java) (`btDiscreteDynamicsWorld`, rigid bodies, dice settling, face detection).
-  - Wired directly into [CombatManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/CombatManager.java) (`PHYSICS_RESOLUTION` and `PHYSICS_DELAY`).
-  - Adapted into rich gameplay themed dice ([DiceFactory.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/dice/DiceFactory.java)) and [BoneTrait.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/dice/BoneTrait.java), replacing the hyper-abstract mathematical axioms with RPG-grounded traits.
-- **Status**: **COMPLETE / ADAPTED**.
+### Workstream 2: Gameplay Review of Dice Combat (`Math-Infused Dice Combat System Design (2).pdf`)
+- **Status**: Under gameplay design review. The 3D Bullet physics rolling engine exists in `StochasticManager` and can be triggered via Key 7 / `playerAttackWithDice()`.
+- **Goal**: Re-evaluate from scratch whether physical 3D dice rolling, dice collection, and bone traits fit the core "Delve & Return" expedition loop, or whether it creates pacing friction against fast bump-to-attack grid combat.

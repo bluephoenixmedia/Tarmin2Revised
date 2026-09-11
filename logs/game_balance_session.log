@@ -43847,3 +43847,544 @@
 [18:29:31] [ItemDataManager [DEBUG]] createItem called for: BOOTS
 [18:29:31] [Player [DEBUG]] Constructor: Finished creating items.
 [18:29:31] [GoreManager] setTextures called. Drops: 4, Smears: 3
+--- NEW SESSION: 2026-09-11 18:06:43 ---
+[18:06:43] [SESSION] Engine Start. Initializing systems...
+[18:06:43] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:06:43] [DoomManager] Loaded Doom State. Deaths: 2
+[18:06:43] [MonsterDataManager] Loaded 48 monster templates.
+[18:06:43] [ItemDataManager] Live Reloading items.json from source.
+[18:06:43] [ItemDataManager] Loaded 135 item templates.
+[18:06:43] [EncounterManager] Loaded 2 encounters.
+[18:06:43] [ItemDataManager] Live Reloading weapons.json from source.
+[18:06:44] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:06:44] [ItemDataManager] Loaded 250 new weapons.
+[18:06:44] [ItemDataManager] Live Reloading armor.json from source.
+[18:06:44] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:06:44] [ItemDataManager] Loaded 117 new armor items.
+[18:06:44] [Tarmin2] Loading SpawnTableData...
+[18:06:44] [Tarmin2] SpawnTableData loaded.
+[18:06:44] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:06:44] [LoadingScreen] Starting asset loading...
+[18:06:58] [LoadingScreen] Asset loading and video sequence complete!
+[18:06:58] [Tarmin2] Startup completed to MainMenu in 14417 ms (14.42s)
+[18:06:58] [STARTUP] Game initialized to MainMenu in 14417 ms
+--- NEW SESSION: 2026-09-11 18:12:00 ---
+[18:12:00] [SESSION] Engine Start. Initializing systems...
+[18:12:00] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:12:00] [DoomManager] Loaded Doom State. Deaths: 2
+[18:12:00] [MonsterDataManager] Loaded 48 monster templates.
+[18:12:00] [ItemDataManager] Live Reloading items.json from source.
+[18:12:00] [ItemDataManager] Loaded 135 item templates.
+[18:12:00] [EncounterManager] Loaded 2 encounters.
+[18:12:00] [ItemDataManager] Live Reloading weapons.json from source.
+[18:12:00] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:12:00] [ItemDataManager] Loaded 250 new weapons.
+[18:12:00] [ItemDataManager] Live Reloading armor.json from source.
+[18:12:00] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:12:00] [ItemDataManager] Loaded 117 new armor items.
+[18:12:00] [Tarmin2] Loading SpawnTableData...
+[18:12:00] [Tarmin2] SpawnTableData loaded.
+[18:12:00] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:12:00] [LoadingScreen] Starting asset loading...
+[18:12:14] [LoadingScreen] Asset loading and video sequence complete!
+[18:12:14] [Tarmin2] Startup completed to MainMenu in 14405 ms (14.40s)
+[18:12:14] [STARTUP] Game initialized to MainMenu in 14405 ms
+[18:12:17] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:12:18] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:12:19] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:12:19] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:12:20] [GoreManager] Loaded gore atlas textures: 4 drops, 3 smears, 10 gibs.
+[18:12:20] [WorldManager] World Initialized with Seed: -2382206543426169033
+[18:12:20] [CookingManager] Randomized gib effects for 48 monsters.
+[18:12:20] [CookingManager] Initialized 11 cooking recipes.
+[18:12:20] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:12:20] [DiscoveryManager] Loaded discovery state.
+[18:12:20] [ERROR] [Item] Could not find region 'bow' in items.atlas for LANCE_FLIGHT
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[18:12:20] [Monster] Spawned HOBGOBLIN with Doom Scaling: x1.01 HP: 26
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:12:20] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:12:20] [Player [DEBUG]] Constructor: Creating starting items...
+[18:12:20] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:12:20] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:12:20] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[18:12:20] [DICE_DEBUG] Added initial die: Priest's Holy Die
+[18:12:20] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:12:20] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:12:20] [Player [DEBUG]] Constructor: Finished creating items.
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:12:20] [ERROR] [Item] Could not find region 'bow' in items.atlas for QUARREL_LIGHT
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:20] [ERROR] [Item] Could not find region 'bow' in items.atlas for JAVELIN_TWO_HANDED
+[18:12:20] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:12:23] [UnlockManager] Profile loaded successfully.
+[18:12:26] [Player [DEBUG]] Move blocked by CLOSED DOOR at (9,6)
+[18:12:54] [AI] GIANT_SCORPION saw player! State -> HUNTING
+[18:12:57] [AI] HOBGOBLIN heard player! State -> HUNTING
+[18:13:00] [Player] Attempting pickup at (20, 15). Items before: 12
+[18:13:00] [Player] Items after: 12
+[18:13:00] [ECONOMY] PICKUP: Food (Val/Amt: 5)
+[18:13:10] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:13:10] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:13:10] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:13:10] [SaveManager] Saved game successfully for slot 1
+[18:13:10] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:13:10] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:13:10] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:13:10] [SaveManager] Saved game successfully for slot 1
+--- NEW SESSION: 2026-09-11 18:25:30 ---
+[18:25:30] [SESSION] Engine Start. Initializing systems...
+[18:25:30] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:25:30] [DoomManager] Loaded Doom State. Deaths: 2
+[18:25:30] [MonsterDataManager] Loaded 48 monster templates.
+[18:25:30] [ItemDataManager] Live Reloading items.json from source.
+[18:25:30] [ItemDataManager] Loaded 135 item templates.
+[18:25:30] [EncounterManager] Loaded 2 encounters.
+[18:25:30] [ItemDataManager] Live Reloading weapons.json from source.
+[18:25:30] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:25:30] [ItemDataManager] Loaded 250 new weapons.
+[18:25:30] [ItemDataManager] Live Reloading armor.json from source.
+[18:25:30] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:25:30] [ItemDataManager] Loaded 117 new armor items.
+[18:25:30] [Tarmin2] Loading SpawnTableData...
+[18:25:30] [Tarmin2] SpawnTableData loaded.
+[18:25:30] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:25:30] [LoadingScreen] Starting asset loading...
+[18:25:43] [LoadingScreen] Asset loading and video sequence complete!
+[18:25:43] [Tarmin2] Startup completed to MainMenu in 13681 ms (13.68s)
+[18:25:43] [STARTUP] Game initialized to MainMenu in 13681 ms
+[18:25:50] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:25:50] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:25:52] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:25:52] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:25:52] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:25:52] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:25:52] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:25:52] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:25:52] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:25:52] [GoreManager] Loaded gore atlas textures: 4 drops, 3 smears, 10 gibs.
+[18:25:52] [WorldManager] World Initialized with Seed: 3133434154502287653
+[18:25:52] [CookingManager] Randomized gib effects for 48 monsters.
+[18:25:52] [CookingManager] Initialized 11 cooking recipes.
+[18:25:52] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:25:52] [DiscoveryManager] Loaded discovery state.
+[18:25:52] [ERROR] [Item] Could not find region 'bow' in items.atlas for LANCE_FLIGHT
+[18:25:52] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:52] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:25:52] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[18:25:52] [Monster] Spawned HOBGOBLIN with Doom Scaling: x1.01 HP: 26
+[18:25:53] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:25:53] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:25:53] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:25:53] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:25:53] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:25:53] [Player [DEBUG]] Constructor: Creating starting items...
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:25:53] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[18:25:53] [DICE_DEBUG] Added initial die: Priest's Holy Die
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:25:53] [Player [DEBUG]] Constructor: Finished creating items.
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:53] [GameScreen] PLAYER_DIED event received.
+[18:25:53] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:25:53] [DoomManager] Death Count increased to: 3
+[18:25:53] [DOOM_UPDATE] Deaths: 3 | Bridge: 6.0%
+[18:25:53] [GameScreen] Doom updated on death. Count: 3 (6%)
+[18:25:53] [CombatManager] Combat ended.
+[18:25:53] [DivinityManager] Player died with 1 Divinities. Stored at chunk: 1_0_0 at tile: (19, 15)
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: CORPSE
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: BONE
+[18:25:53] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:25:53] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[18:25:53] [UnlockManager] Profile loaded successfully.
+[18:25:53] [WorldManager] Set current level to: 1
+[18:25:53] [WorldManager] Loading chunk from cache: (0, 0)
+[18:25:53] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:53] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:25:53] [ERROR] [Item] Could not find region 'bow' in items.atlas for QUARREL_LIGHT
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:25:53] [ERROR] [Item] Could not find region 'bow' in items.atlas for JAVELIN_TWO_HANDED
+[18:25:53] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:26:07] [Player [DEBUG]] Move blocked by WALL MASK from (1,2) facing WEST
+[18:26:17] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:26:17] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:26:17] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:26:17] [SaveManager] Saved game successfully for slot 1
+[18:26:17] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:26:17] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:26:17] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:26:17] [SaveManager] Saved game successfully for slot 1
+--- NEW SESSION: 2026-09-11 18:43:44 ---
+[18:43:44] [SESSION] Engine Start. Initializing systems...
+[18:43:44] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:43:44] [DoomManager] Loaded Doom State. Deaths: 3
+[18:43:44] [MonsterDataManager] Loaded 48 monster templates.
+[18:43:44] [ItemDataManager] Live Reloading items.json from source.
+[18:43:44] [ItemDataManager] Loaded 135 item templates.
+[18:43:44] [EncounterManager] Loaded 2 encounters.
+[18:43:44] [ItemDataManager] Live Reloading weapons.json from source.
+[18:43:44] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:43:44] [ItemDataManager] Loaded 250 new weapons.
+[18:43:44] [ItemDataManager] Live Reloading armor.json from source.
+[18:43:44] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:43:44] [ItemDataManager] Loaded 117 new armor items.
+[18:43:44] [Tarmin2] Loading SpawnTableData...
+[18:43:44] [Tarmin2] SpawnTableData loaded.
+[18:43:44] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:43:44] [LoadingScreen] Starting asset loading...
+--- NEW SESSION: 2026-09-11 18:46:57 ---
+[18:46:57] [SESSION] Engine Start. Initializing systems...
+[18:46:58] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:46:58] [DoomManager] Loaded Doom State. Deaths: 3
+[18:46:58] [MonsterDataManager] Loaded 48 monster templates.
+[18:46:58] [ItemDataManager] Live Reloading items.json from source.
+[18:46:58] [ItemDataManager] Loaded 135 item templates.
+[18:46:58] [EncounterManager] Loaded 2 encounters.
+[18:46:58] [ItemDataManager] Live Reloading weapons.json from source.
+[18:46:58] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:46:58] [ItemDataManager] Loaded 250 new weapons.
+[18:46:58] [ItemDataManager] Live Reloading armor.json from source.
+[18:46:58] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:46:58] [ItemDataManager] Loaded 117 new armor items.
+[18:46:58] [Tarmin2] Loading SpawnTableData...
+[18:46:58] [Tarmin2] SpawnTableData loaded.
+[18:46:58] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:46:58] [LoadingScreen] Starting asset loading...
+[18:47:13] [LoadingScreen] Asset loading and video sequence complete!
+[18:47:13] [Tarmin2] Startup completed to MainMenu in 15324 ms (15.32s)
+[18:47:13] [STARTUP] Game initialized to MainMenu in 15324 ms
+--- NEW SESSION: 2026-09-11 18:50:07 ---
+[18:50:07] [SESSION] Engine Start. Initializing systems...
+[18:50:07] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:50:07] [DoomManager] Loaded Doom State. Deaths: 3
+[18:50:07] [MonsterDataManager] Loaded 48 monster templates.
+[18:50:07] [ItemDataManager] Live Reloading items.json from source.
+[18:50:07] [ItemDataManager] Loaded 135 item templates.
+[18:50:07] [EncounterManager] Loaded 2 encounters.
+[18:50:07] [ItemDataManager] Live Reloading weapons.json from source.
+[18:50:07] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:50:07] [ItemDataManager] Loaded 250 new weapons.
+[18:50:07] [ItemDataManager] Live Reloading armor.json from source.
+[18:50:07] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:50:07] [ItemDataManager] Loaded 117 new armor items.
+[18:50:07] [Tarmin2] Loading SpawnTableData...
+[18:50:07] [Tarmin2] SpawnTableData loaded.
+[18:50:07] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:50:07] [LoadingScreen] Starting asset loading...
+[18:50:31] [LoadingScreen] Asset loading and video sequence complete!
+[18:50:31] [Tarmin2] Startup completed to MainMenu in 24686 ms (24.69s)
+[18:50:31] [STARTUP] Game initialized to MainMenu in 24686 ms
+[18:50:54] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:50:55] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:50:56] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:50:56] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:50:57] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:50:57] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:50:57] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:50:57] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:50:57] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:50:57] [GoreManager] Loaded gore atlas textures: 4 drops, 3 smears, 10 gibs.
+[18:50:57] [WorldManager] World Initialized with Seed: -8271527871935000104
+[18:50:57] [CookingManager] Randomized gib effects for 48 monsters.
+[18:50:57] [CookingManager] Initialized 11 cooking recipes.
+[18:50:57] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:50:57] [DiscoveryManager] Loaded discovery state.
+[18:50:57] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: -5479496203397610775
+[18:50:57] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[18:50:57] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BRASS_LANTERN
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BRASS_LANTERN
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[18:50:57] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[18:50:57] [MazeChunkGenerator] Reachability: 741 tiles reachable from (1, 1)
+[18:50:57] [UnlockManager] Profile loaded successfully.
+[18:50:57] [UnlockManager] Generating progressive unlock plan...
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SMALL_SHIELD. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SHIELD. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: BACKPACK. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: BARDS_FRIEND. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: DRAGONS_PAW. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: FLAIL_FOOTMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: FLAIL_HORSEMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: GLADIATORS_FRIEND_FOOTMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: GLADIATORS_FRIEND_HORSEMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: KNIFE_WIDOWS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MACE_FOOTMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MACE_FOOTMANS_WHISTLING. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MACE_HORSEMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MACE_HORSEMANS_WHISTLING. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PICK_FOOTMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PICK_HORSEMANS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: STAFF_HAMANUS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SWORD_MARINERS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: WHIP_MASTERS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: BACK_AND_BREAST. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: CAP. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MAIL_COIF. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: OPEN_FACED. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: IMPROVED_MAIL. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: LORICA_SEGMENTA. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: MAIL_AND_PLATE. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: METAL_LAMELLAR. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PLATE_MAIL. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SCALE_ARMOR. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SHIELD_MEDIUM. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SHIELD_LARGE. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: THREE_QUARTER_PLATE. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: CHAINMAIL_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SPLINT_MAIL_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: SCALE_MAIL_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: RING_MAIL_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PLATE_MAIL_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PADDED_BOOTS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: PADDED_ARMS. Generating fallback template.
+[18:50:57] [ERROR] [ItemDataManager] Missing template for item type: WOOD_BONE_GAUNTLETS. Generating fallback template.
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: SWORD_GREAT_SCIMITAR
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: SWORD_WAKIZASHI
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: AXE
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: CHAIN_MAIL
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: PUNCH_CUTTER
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: CHAIN_MAIL
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: STICKS_SINGING
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BOW_PIXIE
+[18:50:57] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_PIXIE
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: WRIST_RAZOR
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_LEGGINGS
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: SWORD_SABRE
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: CLOAK
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:50:57] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: RING_BLACK
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: WOOD_BONE_LEGGINGS
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: POTION_GREEN
+[18:50:57] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:50:57] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: GAIN_STRENGTH
+[18:50:57] [ItemDataManager [DEBUG]] Setting trueEffect (GAIN_STRENGTH) and identified (false) on item.
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: POTION_GREEN
+[18:50:57] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:50:57] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: GAIN_STRENGTH
+[18:50:57] [ItemDataManager [DEBUG]] Setting trueEffect (GAIN_STRENGTH) and identified (false) on item.
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: FIELD_PLATE_BOOTS
+[18:50:57] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[18:50:57] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[18:50:57] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: CONFUSION
+[18:50:57] [ItemDataManager [DEBUG]] Setting trueEffect (CONFUSION) and identified (false) on item.
+[18:50:57] [ERROR] [ItemDataManager] No 'variants' defined for item type: HOPLITE_SILVER_ARMS
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: SCOURGE
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:50:57] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BOX
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[18:50:57] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: KEY
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[18:50:57] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: STAGNANT_POOL
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: CHARRED_WOOD
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: BAT_WING
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: FUNGAL_SPORE
+[18:50:57] [ItemDataManager [DEBUG]] createItem called for: MOSS_CLUMP
+[18:50:57] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 14,10
+[18:50:57] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 20,26
+[18:50:57] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 25,6
+[18:50:57] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (17, 19)
+[18:50:57] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:50:57] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[18:50:57] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Green Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Green Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Rare/Blue
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Scourge (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Sage Ring (RING) | Val: 100 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Field plate boots (ARMOR) | Val: 2000 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Brass Lantern (WAR_WEAPON) | Val: 50 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Brass Lantern (WAR_WEAPON) | Val: 50 | Rarity: Common/Tan
+[18:50:57] [LOOT_SPAWN] Lvl 1 | Item: Wood/Bone Leggings (ARMOR) | Val: 40 | Rarity: Common/Tan
+[18:50:58] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:50:58] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:50:58] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:50:58] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:50:58] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:50:58] [Player [DEBUG]] Constructor: Creating starting items...
+[18:50:58] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:50:58] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:50:58] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[18:50:58] [DICE_DEBUG] Added initial die: Priest's Holy Die
+[18:50:58] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:50:58] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:50:58] [Player [DEBUG]] Constructor: Finished creating items.
+[18:50:58] [DivinityManager] Loaded lost Divinities: 1 at 1_0_0 tile (19, 15)
+[18:50:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:50:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for QUARREL_LIGHT
+[18:50:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:58] [ERROR] [Item] Could not find region 'bow' in items.atlas for JAVELIN_TWO_HANDED
+[18:50:58] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:50:58] [COMBAT_FLOW] State -> PLAYER_MENU (Manual Open)
+[18:51:34] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:51:34] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:51:34] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:51:34] [SaveManager] Saved game successfully for slot 1
+[18:51:34] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:51:34] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:51:34] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:51:34] [SaveManager] Saved game successfully for slot 1
+--- NEW SESSION: 2026-09-11 18:56:07 ---
+[18:56:07] [SESSION] Engine Start. Initializing systems...
+[18:56:07] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:56:07] [DoomManager] Loaded Doom State. Deaths: 3
+[18:56:07] [MonsterDataManager] Loaded 48 monster templates.
+[18:56:07] [ItemDataManager] Live Reloading items.json from source.
+[18:56:07] [ItemDataManager] Loaded 135 item templates.
+[18:56:07] [EncounterManager] Loaded 2 encounters.
+[18:56:07] [ItemDataManager] Live Reloading weapons.json from source.
+[18:56:07] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:56:07] [ItemDataManager] Loaded 250 new weapons.
+[18:56:07] [ItemDataManager] Live Reloading armor.json from source.
+[18:56:07] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:56:07] [ItemDataManager] Loaded 117 new armor items.
+[18:56:07] [Tarmin2] Loading SpawnTableData...
+[18:56:07] [Tarmin2] SpawnTableData loaded.
+[18:56:07] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:56:07] [LoadingScreen] Starting asset loading...
+[18:56:20] [LoadingScreen] Asset loading and video sequence complete!
+[18:56:20] [Tarmin2] Startup completed to MainMenu in 13744 ms (13.74s)
+[18:56:20] [STARTUP] Game initialized to MainMenu in 13744 ms
+[18:56:22] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:56:22] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:56:24] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[18:56:24] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[18:56:24] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:56:24] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:56:24] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:56:24] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:56:24] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:56:24] [GoreManager] Loaded gore atlas textures: 4 drops, 3 smears, 10 gibs.
+[18:56:24] [WorldManager] World Initialized with Seed: 902642058427144307
+[18:56:24] [CookingManager] Randomized gib effects for 48 monsters.
+[18:56:24] [CookingManager] Initialized 11 cooking recipes.
+[18:56:24] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[18:56:24] [DiscoveryManager] Loaded discovery state.
+[18:56:24] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:24] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:24] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:25] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[18:56:25] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[18:56:25] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[18:56:25] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[18:56:25] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[18:56:25] [Player [DEBUG]] Constructor: Creating starting items...
+[18:56:25] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[18:56:25] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[18:56:25] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[18:56:25] [DICE_DEBUG] Added initial die: Priest's Holy Die
+[18:56:25] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[18:56:25] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[18:56:25] [Player [DEBUG]] Constructor: Finished creating items.
+[18:56:25] [DivinityManager] Loaded lost Divinities: 1 at 1_0_0 tile (19, 15)
+[18:56:25] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:25] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:25] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:25] [ERROR] [Item] Could not find region 'bow' in items.atlas for BOW_GIANT_KIN_LONG
+[18:56:25] [ERROR] [Item] Could not find region 'bow' in items.atlas for QUARREL_LIGHT
+[18:56:25] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:25] [ERROR] [Item] Could not find region 'bow' in items.atlas for JAVELIN_TWO_HANDED
+[18:56:25] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[18:56:33] [UnlockManager] Profile loaded successfully.
+[18:56:35] [ECONOMY] PICKUP: Sage Ring (Val/Amt: 100)
+[18:56:41] [ECONOMY] TREASURE: Lost Divinities (Val/Amt: 0)
+[18:56:51] [AI] GOBLIN heard player! State -> HUNTING
+[18:56:54] [AI] SKELETON heard player! State -> HUNTING
+[18:56:54] [AI] SPIDER saw player! State -> HUNTING
+[18:56:57] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 46 | Delta: -14 (Hard Fight)
+[18:56:57] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:57] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 14
+[18:56:57] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 40 | Delta: -20 (Hard Fight)
+[18:56:57] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:57] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 14
+[18:56:58] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 37 | Delta: -23 (Hard Fight)
+[18:56:58] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:58] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 14
+[18:56:58] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 37 | Delta: -23 (Hard Fight)
+[18:56:58] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:58] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 14
+[18:56:58] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 37 | Delta: -23 (Hard Fight)
+[18:56:58] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:58] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 14
+[18:56:58] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 37 | Delta: -23 (Hard Fight)
+[18:56:58] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:58] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 14
+[18:56:59] [COMBAT_START] Vs SPIDER (MCR: 60) | Player PPS: 49 | Delta: -11 (Hard Fight)
+[18:56:59] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:56:59] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 14
+[18:56:59] [CombatManager] You have defeated SPIDER
+[18:56:59] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[18:56:59] [LOOT_DROP] Dropped Spider Flesh
+[18:56:59] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[18:56:59] [LOOT_DROP] Dropped Spider Flesh
+[18:56:59] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:56:59] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:56:59] [CombatManager] Combat ended.
+[18:57:00] [Player] Attempting pickup at (17, 1). Items before: 23
+[18:57:00] [Player] Items after: 23
+[18:57:00] [ECONOMY] PICKUP: Spider Flesh (Val/Amt: 1)
+[18:57:03] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 43 | Delta: -15 (Hard Fight)
+[18:57:03] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:57:03] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 12
+[18:57:03] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 46 | Delta: -12 (Hard Fight)
+[18:57:03] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:57:03] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 12
+[18:57:03] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 46 | Delta: -12 (Hard Fight)
+[18:57:03] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:57:03] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 12
+[18:57:04] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 49 | Delta: -9 (Even Match)
+[18:57:04] [WeaponOverlay] Resolved texture from AssetManager (Explicit): images/weapons/rusty_sword.png
+[18:57:04] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 12
+[18:57:04] [CombatManager] You have defeated SKELETON
+[18:57:04] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[18:57:04] [LOOT_DROP] Dropped Skeleton Bone
+[18:57:04] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[18:57:04] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[18:57:04] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[18:57:04] [CombatManager] Combat ended.
+[18:57:08] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:57:08] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:57:08] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:57:08] [SaveManager] Saved game successfully for slot 1
+[18:57:08] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[18:57:08] [ShelterChest] Saved 0 items to saves/slot_1/shelter_chest.json
+[18:57:08] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[18:57:08] [SaveManager] Saved game successfully for slot 1
