@@ -554,3 +554,17 @@ Write a standalone `BakerTestScreen`. Load any `.g3db` (a box if nothing else ex
 | `.g3db` pivot misaligned from AI tool | Enforce in Meshy prompt; write `CreatureValidator.validate(model)` that logs if bounding box centre is not within 0.05u of origin |
 | Re-bake on sever causes GPU pipeline flush mid-frame | Cap one re-bake per frame; queue additional severs. A single 512×512 bake pass takes ~1ms on any modern GPU — acceptable |
 | FBO texture Y-flip causes upside-down sprites | Already handled in `bakeAtAngle()` by drawing with negative height: `spriteBatch.draw(..., 0, BAKE_H, BAKE_W, -BAKE_H)` |
+
+---
+
+## 14. Live In-Game Integration: Strata 3+ Aberrations (Decision 2026-09-11)
+
+### Gameplay Role
+To maintain the iconic identity of classic Tarmin monsters (Skeletons, Giant Ants, Scorpions) while leveraging the procedural baking pipeline:
+1. **Standard Delves (Strata 1–2)**: Corridors exclusively spawn handcrafted, iconic monsters loaded from `monsters.json`.
+2. **Deep Strata Delves (Strata 3+)**: `SpawnManager.java` rolls a chance (e.g. 15–20% on Strata 3, 30% on Strata 4) to spawn a procedural **"Aberration / Chimera"** miniboss.
+3. **Runtime Assembly**:
+   - `SpawnManager` selects a DNA descriptor (or randomizes limb selection via `WeightedPartSelector`).
+   - `CreatureBaker` bakes the 4 directional angles into a `BakedMonsterSprite` during chunk generation.
+   - Monster is initialized with dynamic HP/Damage scaled to effective depth, and limb severing is active via `GoreManager`.
+
