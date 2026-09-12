@@ -81,6 +81,8 @@ public class World3DRenderer implements Disposable {
     private final Texture floorTexture;
     private final Texture ceilingTexture;
     private final Texture blankTexture;
+    private final Texture ladderDownTexture;
+    private final Texture ladderUpTexture;
 
     // 3D Skullgate Models & Assets
     private Model gateFrameModel;
@@ -153,6 +155,9 @@ public class World3DRenderer implements Disposable {
         pix.fill();
         this.blankTexture = new Texture(pix);
         pix.dispose();
+
+        this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
+        this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
 
         this.meshCache = new WorldMeshCache();
         this.dynamicBatcher = new DynamicQuadBatcher();
@@ -956,9 +961,45 @@ public class World3DRenderer implements Disposable {
                 }
             } else if (r instanceof Ladder) {
                 Ladder ld = (Ladder) r;
-                // Render ladder as a 3D billboard
-                dynamicBatcher.addBillboard(ex, 0.0f, wz, 0.8f, 1.0f, new TextureRegion(doorTexture), Color.WHITE, camRight, camUp, camDir);
-                dynamicBatcher.flush(shader, doorTexture);
+                boolean isUp = (ld.getType() == Ladder.LadderType.UP);
+                Texture tex = isUp ? ladderUpTexture : ladderDownTexture;
+                TextureRegion region = new TextureRegion(tex);
+
+                float w = isUp ? 0.8f : 0.85f;
+                float h = isUp ? 1.0f : 0.45f;
+
+                // Check if ladder is at player's feet (same tile as player)
+                float px = player.getPosition().x;
+                float py = player.getPosition().y;
+                float distSq = (ex - px) * (ex - px) + (ey - py) * (ey - py);
+                boolean atFeet = distSq < 0.15f;
+
+                float renderX = ex;
+                float renderZ = wz;
+                float renderFeetY = 0.01f;
+
+                if (atFeet) {
+                    Vector2 dir = player.getDirectionVector();
+                    int playerTileX = (int) px;
+                    int playerTileY = (int) py;
+                    boolean wallInFront = maze != null && maze.isWallBlocking(playerTileX, playerTileY, player.getFacing());
+                    float zOffset = wallInFront ? 0.35f : 0.42f;
+
+                    float halfFovRad = (float) Math.toRadians(camera.fieldOfView * 0.5f);
+                    float targetAngle = halfFovRad * 0.76f;
+                    float deltaY = zOffset * (float) Math.tan(targetAngle);
+                    float targetCenterY = camera.position.y - deltaY;
+
+                    renderFeetY = Math.max(0.01f, targetCenterY - h * 0.5f);
+                    renderX = px + dir.x * zOffset;
+                    renderZ = -py - dir.y * zOffset;
+
+                    h = isUp ? 0.6f : 0.32f;
+                    w = isUp ? 0.5f : 0.60f;
+                }
+
+                dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, Color.WHITE, camRight, camUp, camDir);
+                dynamicBatcher.flush(shader, tex);
             }
         }
     }
@@ -979,6 +1020,8 @@ public class World3DRenderer implements Disposable {
         floorTexture.dispose();
         ceilingTexture.dispose();
         blankTexture.dispose();
+        ladderDownTexture.dispose();
+        ladderUpTexture.dispose();
 
         if (gateFrameModel != null) gateFrameModel.dispose();
         if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();
