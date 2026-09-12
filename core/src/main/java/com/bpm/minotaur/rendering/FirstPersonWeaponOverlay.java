@@ -337,31 +337,30 @@ public class FirstPersonWeaponOverlay {
             CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
 
             drawX = (worldW * state.xRel) + (bobX * 0.3f);
-            drawY = (worldH * state.yRel) + (worldH * 0.22f) + (bobY * 0.3f);
+            drawY = (worldH * state.yRel) + (bobY * 0.3f);
             rotation = state.rotation;
         } else {
-            // Persistent ready posture (lower right)
-            drawX = (worldW * 0.72f) + bobX;
-            drawY = (worldH * -0.08f) + (worldH * 0.22f) + bobY;
+            // Idle ready posture: moved down just off-screen
+            drawX = (worldW * 0.76f) + bobX;
+            drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + bobY;
             rotation = -22f;
 
             if (mainHandArchetype == AnimationArchetype.SLASHING_2H) {
                 // Centered two-handed grip stance
-                drawX = (worldW * 0.58f) + (bobX * 0.6f);
-                drawY = (worldH * -0.05f) + (worldH * 0.22f) + bobY;
+                drawX = (worldW * 0.60f) + (bobX * 0.6f);
                 rotation = -12f;
             } else if (mainHandArchetype == AnimationArchetype.THRUSTING_PIERCE) {
-                drawX = (worldW * 0.68f) + bobX;
+                drawX = (worldW * 0.70f) + bobX;
                 rotation = -32f;
             }
         }
 
-        float targetHeight = worldH * 0.58f;
+        float targetHeight = worldH * 0.46f;
         float ratio = (float) mainHandTexture.getRegionWidth() / (float) mainHandTexture.getRegionHeight();
         float targetWidth = targetHeight * ratio;
 
-        float originX = targetWidth * 0.45f;
-        float originY = targetHeight * 0.05f;
+        float originX = targetWidth * 0.5f;
+        float originY = targetHeight * 0.10f;
 
         // Sample blade tip and hilt positions for procedural trail
         if (active && currentProfile != null) {
@@ -412,32 +411,32 @@ public class FirstPersonWeaponOverlay {
             float progress = attackTimer / currentProfile.duration;
             CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
             drawX = worldW * state.xRel;
-            drawY = (worldH * state.yRel) + (worldH * 0.20f);
+            drawY = worldH * state.yRel;
             rotation = state.rotation;
         } else if (guardFlinchTimer > 0f) {
             // Defensive flinch
             float flinchT = guardFlinchTimer / GUARD_FLINCH_DURATION;
             drawX = (worldW * 0.18f) - (bobX * 0.5f) + (MathUtils.sin(flinchT * MathUtils.PI) * (worldW * 0.04f));
-            drawY = (worldH * 0.05f) + bobY;
+            drawY = (worldH * 0.02f) + bobY;
             rotation = 28f - (flinchT * 12f);
         } else if (isGuarding) {
-            // High Guard stance
-            drawX = (worldW * 0.24f) - (bobX * 0.5f);
-            drawY = (worldH * 0.08f) + bobY;
+            // High Guard stance - raised into view to block
+            drawX = (worldW * 0.22f) - (bobX * 0.5f);
+            drawY = (worldH * 0.02f) + bobY;
             rotation = 8f;
         } else {
-            // Standard offhand ready posture (lower left)
+            // Idle offhand: moved down just off-screen
             drawX = (worldW * 0.12f) - (bobX * 0.5f);
-            drawY = (worldH * -0.06f) + (worldH * 0.20f) + (bobY * 0.8f);
+            drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + (bobY * 0.8f);
             rotation = 18f;
         }
 
-        float targetHeight = worldH * 0.52f;
+        float targetHeight = worldH * 0.36f;
         float ratio = (float) offHandTexture.getRegionWidth() / (float) offHandTexture.getRegionHeight();
         float targetWidth = targetHeight * ratio;
 
         float originX = targetWidth * 0.5f;
-        float originY = targetHeight * 0.1f;
+        float originY = targetHeight * 0.12f;
 
         batch.setColor(Color.WHITE);
         batch.draw(offHandTexture,
@@ -470,20 +469,20 @@ public class FirstPersonWeaponOverlay {
             float progress = attackTimer / currentProfile.duration;
             CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
             drawX = worldW * state.xRel;
-            drawY = (worldH * state.yRel) + (worldH * 0.22f);
+            drawY = worldH * state.yRel;
         } else {
-            drawX = worldW * 0.72f;
-            drawY = (worldH * 0.14f) + totalBobY;
+            drawX = worldW * 0.76f;
+            drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + totalBobY;
         }
 
         // Render main hand ASCII block
-        renderRetroSprite(shapeRenderer, mainHandSpriteData, mainHandSpriteColor, drawX, drawY, worldH * 0.52f);
+        renderRetroSprite(shapeRenderer, mainHandSpriteData, mainHandSpriteColor, drawX, drawY, worldH * 0.44f);
 
         // Render off-hand ASCII block if equipped
         if (offHandSpriteData != null) {
-            float offX = isGuarding ? (worldW * 0.25f) : (worldW * 0.14f);
-            float offY = isGuarding ? (worldH * 0.22f) : (worldH * 0.12f) + totalBobY;
-            renderRetroSprite(shapeRenderer, offHandSpriteData, offHandSpriteColor, offX, offY, worldH * 0.46f);
+            float offX = isGuarding ? (worldW * 0.22f) : (worldW * 0.12f);
+            float offY = isGuarding ? (worldH * 0.02f) : (worldH * CombatMotionProfile.IDLE_Y_REL) + totalBobY;
+            renderRetroSprite(shapeRenderer, offHandSpriteData, offHandSpriteColor, offX, offY, worldH * 0.36f);
         }
     }
 

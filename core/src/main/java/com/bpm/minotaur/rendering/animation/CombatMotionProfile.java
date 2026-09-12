@@ -75,6 +75,8 @@ public class CombatMotionProfile {
      * - Phase 2 (anticipationRatio -> impactRatio): Explosive forward snap towards impact.
      * - Phase 3 (impactRatio -> 1.0): Snappy follow-through and recovery back to ready stance.
      */
+    public static final float IDLE_Y_REL = -0.36f;
+
     public MotionState evaluate(float progress) {
         progress = MathUtils.clamp(progress, 0f, 1f);
         MotionState state = new MotionState();
@@ -101,26 +103,26 @@ public class CombatMotionProfile {
 
         // Standard dynamic swing kinematics
         if (progress < anticipationRatio) {
-            // Windup: Pull back slightly in the opposite direction
+            // Windup: Surge up from off-screen into strike position
             float t = progress / anticipationRatio;
             float smooth = t * t;
             state.rotation = MathUtils.lerp(startRotation, startRotation - 12f, smooth);
             state.xRel = MathUtils.lerp(startXRel, startXRel + 0.04f, smooth);
-            state.yRel = MathUtils.lerp(startYRel, startYRel + 0.03f, smooth);
+            state.yRel = MathUtils.lerp(IDLE_Y_REL, startYRel, smooth);
         } else if (progress < impactRatio) {
             // Explosive snap: Rapid acceleration to impact point
             float t = (progress - anticipationRatio) / (impactRatio - anticipationRatio);
             float snap = t * t * (3f - 2f * t); // SmoothStep
             state.rotation = MathUtils.lerp(startRotation - 12f, endRotation, snap);
             state.xRel = MathUtils.lerp(startXRel + 0.04f, endXRel, snap);
-            state.yRel = MathUtils.lerp(startYRel + 0.03f, endYRel, snap) + MathUtils.sin(t * MathUtils.PI) * arcHeightRel;
+            state.yRel = MathUtils.lerp(startYRel, endYRel, snap) + MathUtils.sin(t * MathUtils.PI) * arcHeightRel;
         } else {
-            // Recovery: Follow through and settle
+            // Recovery: Follow through and settle back down off-screen
             float t = (progress - impactRatio) / (1f - impactRatio);
             float recover = t * t;
             state.rotation = MathUtils.lerp(endRotation, startRotation, recover);
             state.xRel = MathUtils.lerp(endXRel, startXRel, recover);
-            state.yRel = MathUtils.lerp(endYRel, startYRel, recover);
+            state.yRel = MathUtils.lerp(endYRel, IDLE_Y_REL, recover);
         }
 
         return state;
@@ -131,18 +133,18 @@ public class CombatMotionProfile {
             float t = progress / anticipationRatio;
             state.rotation = MathUtils.lerp(startRotation, startRotation - 5f, t);
             state.xRel = MathUtils.lerp(startXRel, startXRel + 0.05f, t);
-            state.yRel = MathUtils.lerp(startYRel, startYRel - 0.08f, t); // Draw back
+            state.yRel = MathUtils.lerp(IDLE_Y_REL, startYRel - 0.04f, t);
         } else if (progress < impactRatio) {
             float t = (progress - anticipationRatio) / (impactRatio - anticipationRatio);
             float snap = t * t * (3f - 2f * t);
             state.rotation = MathUtils.lerp(startRotation - 5f, endRotation, snap);
             state.xRel = MathUtils.lerp(startXRel + 0.05f, 0.50f, snap); // Center screen thrust
-            state.yRel = MathUtils.lerp(startYRel - 0.08f, 0.18f, snap); // Thrust forward
+            state.yRel = MathUtils.lerp(startYRel - 0.04f, 0.12f, snap); // Thrust forward
         } else {
             float t = (progress - impactRatio) / (1f - impactRatio);
             state.rotation = MathUtils.lerp(endRotation, startRotation, t);
             state.xRel = MathUtils.lerp(0.50f, startXRel, t);
-            state.yRel = MathUtils.lerp(0.18f, startYRel, t);
+            state.yRel = MathUtils.lerp(0.12f, IDLE_Y_REL, t * t);
         }
     }
 
@@ -151,35 +153,32 @@ public class CombatMotionProfile {
             float t = progress / anticipationRatio;
             state.rotation = MathUtils.lerp(0f, -8f, t);
             state.xRel = MathUtils.lerp(startXRel, startXRel + 0.05f, t);
-            state.yRel = MathUtils.lerp(startYRel, startYRel - 0.06f, t); // Pull string back
+            state.yRel = MathUtils.lerp(IDLE_Y_REL, startYRel, t);
         } else if (progress < impactRatio) {
-            // Release snap
             float t = (progress - anticipationRatio) / (impactRatio - anticipationRatio);
             state.rotation = MathUtils.lerp(-8f, 4f, t);
             state.xRel = MathUtils.lerp(startXRel + 0.05f, startXRel - 0.02f, t);
-            state.yRel = MathUtils.lerp(startYRel - 0.06f, startYRel + 0.03f, t);
+            state.yRel = MathUtils.lerp(startYRel, startYRel + 0.08f, t);
         } else {
             float t = (progress - impactRatio) / (1f - impactRatio);
             state.rotation = MathUtils.lerp(4f, 0f, t);
             state.xRel = MathUtils.lerp(startXRel - 0.02f, startXRel, t);
-            state.yRel = MathUtils.lerp(startYRel + 0.03f, startYRel, t);
+            state.yRel = MathUtils.lerp(startYRel + 0.08f, IDLE_Y_REL, t * t);
         }
     }
 
     private void evaluateRangedKick(float progress, MotionState state) {
         if (progress < impactRatio) {
-            // Immediate explosive upward recoil kick
             float t = progress / impactRatio;
             float snap = MathUtils.sin(t * (MathUtils.PI / 2f));
-            state.rotation = MathUtils.lerp(0f, 32f, snap);
+            state.rotation = MathUtils.lerp(0f, 28f, snap);
             state.xRel = MathUtils.lerp(startXRel, startXRel + 0.03f, snap);
-            state.yRel = MathUtils.lerp(startYRel, startYRel + 0.12f, snap);
+            state.yRel = MathUtils.lerp(IDLE_Y_REL, 0.08f, snap);
         } else {
-            // Slower settle back to rest
             float t = (progress - impactRatio) / (1f - impactRatio);
-            state.rotation = MathUtils.lerp(32f, 0f, t * t);
+            state.rotation = MathUtils.lerp(28f, 0f, t * t);
             state.xRel = MathUtils.lerp(startXRel + 0.03f, startXRel, t);
-            state.yRel = MathUtils.lerp(startYRel + 0.12f, startYRel, t);
+            state.yRel = MathUtils.lerp(0.08f, IDLE_Y_REL, t * t);
         }
     }
 
@@ -187,19 +186,19 @@ public class CombatMotionProfile {
         if (progress < anticipationRatio) {
             float t = progress / anticipationRatio;
             state.rotation = MathUtils.lerp(15f, 25f, t);
-            state.xRel = MathUtils.lerp(0.20f, 0.15f, t);
-            state.yRel = MathUtils.lerp(-0.05f, -0.08f, t);
+            state.xRel = MathUtils.lerp(0.18f, 0.12f, t);
+            state.yRel = MathUtils.lerp(IDLE_Y_REL, -0.05f, t);
         } else if (progress < impactRatio) {
             float t = (progress - anticipationRatio) / (impactRatio - anticipationRatio);
             float snap = t * t * (3f - 2f * t);
             state.rotation = MathUtils.lerp(25f, -5f, snap);
-            state.xRel = MathUtils.lerp(0.15f, 0.42f, snap); // Smash into center-left
-            state.yRel = MathUtils.lerp(-0.08f, 0.10f, snap);
+            state.xRel = MathUtils.lerp(0.12f, 0.40f, snap);
+            state.yRel = MathUtils.lerp(-0.05f, 0.08f, snap);
         } else {
             float t = (progress - impactRatio) / (1f - impactRatio);
             state.rotation = MathUtils.lerp(-5f, 15f, t);
-            state.xRel = MathUtils.lerp(0.42f, 0.20f, t);
-            state.yRel = MathUtils.lerp(0.10f, -0.05f, t);
+            state.xRel = MathUtils.lerp(0.40f, 0.18f, t);
+            state.yRel = MathUtils.lerp(0.08f, IDLE_Y_REL, t * t);
         }
     }
 
