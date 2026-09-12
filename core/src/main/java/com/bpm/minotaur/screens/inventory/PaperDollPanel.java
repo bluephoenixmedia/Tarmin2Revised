@@ -305,6 +305,8 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
             paperDoll2DWidget.clearEquipment();
             if (eq.getWornHelmet() != null)
                 paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.HELMET, eq.getWornHelmet());
+            else if (eq.getWornEyes() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.HELMET, eq.getWornEyes());
             if (eq.getWornChest() != null)
                 paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CHEST, eq.getWornChest());
             if (eq.getWornArms() != null)

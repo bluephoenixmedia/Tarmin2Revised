@@ -129,7 +129,8 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
 
         if (item.isHelmet()) {
             equip(PaperDollSlot.HELMET, item);
-        } else if (item.isTorso()) {
+        } else if (item.isTorso() || (item.isArmor() && !item.isHelmet() && !item.isShield() && !item.isRing()
+                && !item.isGauntlets() && !item.isBoots() && !item.isLegs() && !item.isArms() && !item.isCloak())) {
             equip(PaperDollSlot.CHEST, item);
         } else if (item.isArms()) {
             equip(PaperDollSlot.ARMS, item);

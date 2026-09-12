@@ -101,4 +101,44 @@ public class PaperDoll2DTest {
         assertEquals("weapon", PaperDoll2DWidget.PaperDollSlot.WEAPON_MAIN.folderName);
         assertEquals("shield", PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF.folderName);
     }
+
+    @Test
+    public void testBatchBakedArmorAssetsExistAndMatchStandardDimensions() throws IOException {
+        String[] batchSampleImages = {
+                "assets/images/paperdoll/head/great_helm.png",
+                "assets/images/paperdoll/head/full_plate_helmet.png",
+                "assets/images/paperdoll/head/leather_helmet.png",
+                "assets/images/paperdoll/head/hoplite_helmet.png",
+                "assets/images/paperdoll/chest/full_plate.png",
+                "assets/images/paperdoll/chest/leather_plate.png",
+                "assets/images/paperdoll/chest/hoplite_armor.png",
+                "assets/images/paperdoll/chest/chain_mail.png",
+                "assets/images/paperdoll/chest/banded_mail.png",
+                "assets/images/paperdoll/arms/full_plate_arms.png",
+                "assets/images/paperdoll/arms/leather_arms.png",
+                "assets/images/paperdoll/arms/wood_bone_arms.png",
+                "assets/images/paperdoll/hands/full_plate_gauntlets.png",
+                "assets/images/paperdoll/hands/bronze_gauntlets.png",
+                "assets/images/paperdoll/hands/chainmail_gauntlets.png",
+                "assets/images/paperdoll/legs/full_plate_leggings.png",
+                "assets/images/paperdoll/legs/leather_leggings.png",
+                "assets/images/paperdoll/legs/hoplite_leggings.png",
+                "assets/images/paperdoll/feet/full_plate_boots.png",
+                "assets/images/paperdoll/feet/leather_boots.png",
+                "assets/images/paperdoll/feet/hoplite_boots.png",
+                "assets/images/paperdoll/shield/hoplite_shield.png",
+                "assets/images/paperdoll/shield/large_shield.png",
+                "assets/images/paperdoll/shield/body_shield_1.png",
+                "assets/images/paperdoll/cloak/cloak.png"
+        };
+
+        for (String path : batchSampleImages) {
+            File file = resolveFile(path);
+            assertTrue("Sample asset should exist: " + path, file.exists());
+            BufferedImage img = ImageIO.read(file);
+            assertNotNull("Should decode as image: " + path, img);
+            assertEquals("Width must be 1024 for " + path, EXPECTED_WIDTH, img.getWidth());
+            assertEquals("Height must be 1536 for " + path, EXPECTED_HEIGHT, img.getHeight());
+        }
+    }
 }
