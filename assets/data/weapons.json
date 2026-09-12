@@ -12668,7 +12668,7 @@
 	"SWORD_KHOPESH": {
 		"friendlyName": "Sword, Khopesh",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_khopesh.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12852,7 +12852,7 @@
 	"SWORD_MANDIBLE": {
 		"friendlyName": "Sword, Mandible",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_mandible.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12944,7 +12944,7 @@
 	"SWORD_MARINER_S": {
 		"friendlyName": "Sword, Mariner's",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_mariners.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13036,7 +13036,7 @@
 	"SWORD_PIERCER": {
 		"friendlyName": "Sword, Piercer",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_piercer.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13128,7 +13128,7 @@
 	"SWORD_PIXIE": {
 		"friendlyName": "Sword, Pixie",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_pixie.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13220,7 +13220,7 @@
 	"SWORD_RAPIER": {
 		"friendlyName": "Sword, Rapier",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_rapier.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13312,7 +13312,7 @@
 	"SWORD_SABRE": {
 		"friendlyName": "Sword, Sabre",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_sabre.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13404,7 +13404,7 @@
 	"SWORD_SCIMITAR": {
 		"friendlyName": "Sword, Scimitar",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_scimitar.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13496,7 +13496,7 @@
 	"SWORD_SHORT": {
 		"friendlyName": "Sword, Short",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_short.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13588,7 +13588,7 @@
 	"SWORD_TALWAR": {
 		"friendlyName": "Sword, Talwar",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_talwar.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13680,7 +13680,7 @@
 	"SWORD_TWO_HANDED": {
 		"friendlyName": "Sword, Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13772,7 +13772,7 @@
 	"SWORD_WAKIZASHI": {
 		"friendlyName": "Sword, Wakizashi",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_wakizashi.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -13864,7 +13864,7 @@
 	"SWORDLET": {
 		"friendlyName": "Swordlet",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_short.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16464,7 +16464,7 @@
 	"TWO_HANDED_SWORD": {
 		"friendlyName": "Greatsword",
 		"description": null,
-		"texturePath": "images/weapons/big_bolt.png",
+		"texturePath": "images/weapons/sword_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
