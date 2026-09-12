@@ -1558,14 +1558,27 @@ public class GameScreen extends BaseScreen {
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
-                    } else if (!maze.isPassable(tx, ty)) {
-                        soundManager.playWeaponImpact(false);
-                        weaponOverlay.triggerWallClank();
-                        addTrauma(0.12f);
-                        eventManager.addEvent(new GameEvent("Thud! You strike a solid wall.", 1.0f));
                     } else {
-                        weaponOverlay.setWalking(true);
-                        player.moveForward(maze, eventManager, gameMode, soundManager);
+                        Object obj = maze.getGameObjectAt(tx, ty);
+                        boolean isClosedDoor = (obj instanceof Door door) &&
+                                (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING);
+
+                        if (isClosedDoor) {
+                            // Bump into door to open it!
+                            player.moveForward(maze, eventManager, gameMode, soundManager);
+                        } else {
+                            float prevX = player.getPosition().x;
+                            float prevY = player.getPosition().y;
+                            player.moveForward(maze, eventManager, gameMode, soundManager);
+                            if (player.getPosition().x != prevX || player.getPosition().y != prevY) {
+                                weaponOverlay.setWalking(true);
+                            } else {
+                                soundManager.playWeaponImpact(false);
+                                weaponOverlay.triggerWallClank();
+                                addTrauma(0.12f);
+                                eventManager.addEvent(new GameEvent("Thud! You strike a solid wall.", 1.0f));
+                            }
+                        }
                     }
                     playerTurnTakesAction();
                     needsAsciiRender = false;
@@ -1583,13 +1596,17 @@ public class GameScreen extends BaseScreen {
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
-                    } else if (!maze.isPassable(tx, ty)) {
-                        soundManager.playWeaponImpact(false);
-                        weaponOverlay.triggerWallClank();
-                        addTrauma(0.12f);
                     } else {
-                        weaponOverlay.setWalking(true);
-                        player.moveBackward(maze, eventManager, gameMode);
+                        float prevX = player.getPosition().x;
+                        float prevY = player.getPosition().y;
+                        player.moveBackward(maze, eventManager, gameMode, soundManager);
+                        if (player.getPosition().x != prevX || player.getPosition().y != prevY) {
+                            weaponOverlay.setWalking(true);
+                        } else {
+                            soundManager.playWeaponImpact(false);
+                            weaponOverlay.triggerWallClank();
+                            addTrauma(0.12f);
+                        }
                     }
                     playerTurnTakesAction();
                     needsAsciiRender = false;
