@@ -1,5 +1,7 @@
-- [x] The Spells Quick Slots UX element needs to be 75% smaller and moved to the far left of the screen so as to not block other UX elements. (Resolved: Hud.java shrunk hotbar to 200x34 docked at x=16f, y=204f)
-- [x] We need a better sequence for the death of the player and better transition to the shelter and next run. (Resolved: PlayerDeathScreen.java implemented with Doom clock progression, casualties accounting, and smooth awakening transition)
-- [x] Upon death and return to the shelter, the maze is not being regenerated from a new seed. (Resolved: WorldManager.wipeExploredWorldOnDeath() now wipes all chunk files including chunk_1_0_0.json, re-seeding the entire world and starting shelter maze)
-- [x] The starting sword is pointing at too low of an angle in the first person idle view, it needs to be more vertically aligned. (Resolved: FirstPersonWeaponOverlay.java idle rotation aligned from -22f to -5f)
-- [x] The game crashes when opening the chest in the shelter. (Resolved: ShelterChest.java serialization migrated to ItemSaveData DTOs with asset rehydration; Item.java and ShelterChestScreen.java hardened against null type/display names)
+- The Spells Quick Slots UX element needs to be 75% smaller and movedto the far left of the screen so as to not block other UX elements.
+- We need a better sequence for the death of the player and better transition to the shelter and next run.
+- Upon death and return to the shelter, the maze is not being regenerated from a new seed.
+- The starting sword is pointing at too low of an angle in the first person idle view, it needs to be more vertically aligned
+- We need a hotkey to turn off / on the player's lantern
+- The game crashes when opening the chest in the shelter
+- 
