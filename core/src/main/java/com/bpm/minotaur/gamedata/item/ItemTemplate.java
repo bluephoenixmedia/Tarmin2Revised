@@ -86,6 +86,18 @@ public class ItemTemplate {
     // --- Collision Logic ---
     public boolean isImpassable = false; // New Flag
 
+    // --- Open5e Weapon & Armor Mechanics ---
+    public boolean isReach = false;
+    public boolean isThrown = false;
+    public boolean isFinesse = false;
+    public boolean isVersatile = false;
+    public String versatileDamageDice = null;
+    public boolean isTwoHanded = false;
+    public String armorCategory = "LIGHT"; // LIGHT, MEDIUM, HEAVY, SHIELD
+    public boolean stealthDisadvantage = false;
+    public int maxDexBonus = 99;
+    public String damageType = "SLASHING"; // SLASHING, PIERCING, BLUDGEONING, SPIRITUAL
+
     public Vector2Wrapper scale;
 
     // --- Bone & Die System ---

@@ -67,6 +67,8 @@ public class Player {
 
     // --- Spells ---
     private final List<com.bpm.minotaur.gamedata.spells.SpellType> knownSpells = new ArrayList<>();
+    private final List<String> knownSpellIds = new ArrayList<>();
+    private final String[] preparedSpells = new String[5];
 
     public List<com.bpm.minotaur.gamedata.spells.SpellType> getKnownSpells() {
         return knownSpells;
@@ -76,6 +78,78 @@ public class Player {
         if (!knownSpells.contains(spell)) {
             knownSpells.add(spell);
         }
+    }
+
+    public List<String> getKnownSpellIds() {
+        return knownSpellIds;
+    }
+
+    public void learnSpellId(String spellId) {
+        if (spellId != null && !knownSpellIds.contains(spellId.toUpperCase())) {
+            knownSpellIds.add(spellId.toUpperCase());
+        }
+    }
+
+    public String[] getPreparedSpells() {
+        return preparedSpells;
+    }
+
+    public void prepareSpell(int slot, String spellId) {
+        if (slot >= 0 && slot < preparedSpells.length) {
+            preparedSpells[slot] = spellId != null ? spellId.toUpperCase() : null;
+        }
+    }
+
+    public String getPreparedSpell(int slot) {
+        if (slot >= 0 && slot < preparedSpells.length) {
+            return preparedSpells[slot];
+        }
+        return null;
+    }
+
+    public boolean castPreparedSpell(int slot, Maze maze, GameEventManager eventManager, CombatManager combatManager) {
+        String id = getPreparedSpell(slot);
+        if (id == null || id.isEmpty()) {
+            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is empty! Assign in Spellbook.", 1.5f));
+            return false;
+        }
+        return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(id, this, maze, eventManager, combatManager);
+    }
+
+    public boolean scribeScroll(Item scrollItem, GameEventManager eventManager) {
+        if (scrollItem == null) return false;
+        String name = scrollItem.getFriendlyName();
+        String spellId = null;
+        if (scrollItem.getType() == Item.ItemType.SCROLL_FIREBALL) spellId = "FIREBALL";
+        else if (scrollItem.getType() == Item.ItemType.SCROLL_MISTY_STEP) spellId = "MISTY_STEP";
+        else if (scrollItem.getType() == Item.ItemType.SCROLL_MAGIC_MISSILE) spellId = "MAGIC_MISSILE";
+        else if (scrollItem.getType() == Item.ItemType.SCROLL_LIGHTNING_BOLT) spellId = "LIGHTNING_BOLT";
+        else if (name != null && name.contains("(") && name.contains(")")) {
+            spellId = name.substring(name.indexOf('(') + 1, name.indexOf(')')).replace(' ', '_').toUpperCase();
+        }
+
+        if (spellId == null) {
+            eventManager.addEvent(new GameEvent("This scroll cannot be transcribed.", 1.5f));
+            return false;
+        }
+
+        if (knownSpellIds.contains(spellId)) {
+            eventManager.addEvent(new GameEvent("You already know " + spellId + "!", 1.5f));
+            return false;
+        }
+
+        int divinityCost = 10;
+        if (com.bpm.minotaur.managers.DivinityManager.getInstance().getCurrentDivinities() < divinityCost) {
+            eventManager.addEvent(new GameEvent("Need " + divinityCost + " Divinity to transcribe!", 1.5f));
+            return false;
+        }
+
+        com.bpm.minotaur.managers.DivinityManager.getInstance().spendDivinities(divinityCost);
+        learnSpellId(spellId);
+        inventory.removeItem(scrollItem);
+        eventManager.addEvent(new GameEvent("Transcribed " + spellId + " into Spellbook!", 2.0f));
+        if (soundManager != null) soundManager.playPickupItemSound();
+        return true;
     }
 
     public boolean hasEnoughMana(int cost) {
@@ -103,6 +177,19 @@ public class Player {
         this.assetManager = null;
         this.stats = new PlayerStats(Difficulty.MEDIUM);
         this.statusManager = new StatusManager();
+        initStartingSpells();
+    }
+
+    private void initStartingSpells() {
+        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
+        learnSpellId("MAGIC_MISSILE");
+        learnSpellId("FIRE_BOLT");
+        learnSpellId("CURE_WOUNDS");
+        learnSpellId("SHIELD");
+        prepareSpell(0, "MAGIC_MISSILE");
+        prepareSpell(1, "FIRE_BOLT");
+        prepareSpell(2, "CURE_WOUNDS");
+        prepareSpell(3, "SHIELD");
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -158,6 +245,14 @@ public class Player {
 
         // Initialize Spells
         knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
+        learnSpellId("MAGIC_MISSILE");
+        learnSpellId("FIRE_BOLT");
+        learnSpellId("CURE_WOUNDS");
+        learnSpellId("SHIELD");
+        prepareSpell(0, "MAGIC_MISSILE");
+        prepareSpell(1, "FIRE_BOLT");
+        prepareSpell(2, "CURE_WOUNDS");
+        prepareSpell(3, "SHIELD");
     }
 
     public interface ItemPickupListener {
@@ -1150,14 +1245,38 @@ public class Player {
         return stats.getMaxMP() + equipment.getEquippedModifierSum(ModifierType.BONUS_MAX_MP);
     }
 
-    public int getArmorClass() { // Base 10 + Equipment AC
-        return 10 + equipment.getACBonus(); // Need to ensure equipment has this method or we calculate summation here.
-        // equipment.getArmorDefense() was doing summation.
+    public int getEffectiveDexterityModifier() {
+        return (getEffectiveDexterity() - 10) / 2;
+    }
+
+    public int getEffectiveWisdomModifier() {
+        return (getEffectiveWisdom() - 10) / 2;
+    }
+
+    public int getWisdomModifier() {
+        return getEffectiveWisdomModifier();
+    }
+
+    public int getArmorClass() { // 5e Base 10 + Dex (capped by Armor tier) + Equipment AC
+        int base = 10;
+        int dexMod = getEffectiveDexterityModifier();
+        int maxDex = (equipment != null) ? equipment.getMaxDexBonus() : 99;
+        int appliedDex = Math.min(maxDex, dexMod);
+        if (appliedDex < 0) appliedDex = 0;
+
+        int ac = base + appliedDex;
+        if (equipment != null) {
+            ac += equipment.getACBonus();
+        }
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HARDENED)) {
+            ac += 4;
+        }
+        return ac;
     }
 
     public int getArmorDefense() {
         return getArmorClass();
-    } // Alias for compatibility with Renderer?
+    }
 
     // Deprecated Aliases
     public int getWarStrength() {
@@ -1849,6 +1968,21 @@ public class Player {
     public int getDamageBonus() {
         int strDmg = Math.max(0, (getEffectiveStrength() - 10) / 2);
         return strDmg + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+    }
+
+    public int getEffectiveStrengthModifier() {
+        return (getEffectiveStrength() - 10) / 2;
+    }
+
+    public int getFinesseDamageBonus() {
+        int stat = Math.max(getEffectiveStrength(), getEffectiveDexterity());
+        int statMod = Math.max(0, (stat - 10) / 2);
+        return statMod + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+    }
+
+    public int getFinesseToHitBonus() {
+        int stat = Math.max(getEffectiveStrength(), getEffectiveDexterity());
+        return (stat - 10) / 2;
     }
 
     /** Flat spell damage bonus: INT modifier + equipment BONUS_SPELL_POWER + Ring of Spell Mastery. */

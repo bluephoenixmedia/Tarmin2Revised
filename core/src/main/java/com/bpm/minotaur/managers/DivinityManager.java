@@ -121,6 +121,18 @@ public class DivinityManager {
         return currentDivinities;
     }
 
+    public boolean spendDivinities(int amount) {
+        if (currentDivinities < amount) return false;
+        currentDivinities -= amount;
+        save();
+        return true;
+    }
+
+    public void addDivinities(int amount) {
+        currentDivinities += Math.max(0, amount);
+        save();
+    }
+
     // ---- Persistence ----
 
     public void save() {

@@ -1284,25 +1284,60 @@ public class GameScreen extends BaseScreen {
                                 break;
                         }
                         return true;
+                    case Input.Keys.Z:
+                        player.castPreparedSpell(0, maze, eventManager, combatManager);
+                        return true;
+                    case Input.Keys.X:
+                        player.castPreparedSpell(1, maze, eventManager, combatManager);
+                        return true;
+                    case Input.Keys.V:
+                        player.castPreparedSpell(2, maze, eventManager, combatManager);
+                        return true;
+                    case Input.Keys.B:
+                        player.castPreparedSpell(3, maze, eventManager, combatManager);
+                        return true;
+                    case Input.Keys.N:
+                        player.castPreparedSpell(4, maze, eventManager, combatManager);
+                        return true;
                     case Input.Keys.NUM_1:
                     case Input.Keys.NUMPAD_1:
-                        combatManager.playerUseItem(0, discoveryManager);
+                        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                            player.castPreparedSpell(0, maze, eventManager, combatManager);
+                        } else {
+                            combatManager.playerUseItem(0, discoveryManager);
+                        }
                         return true;
                     case Input.Keys.NUM_2:
                     case Input.Keys.NUMPAD_2:
-                        combatManager.playerUseItem(1, discoveryManager);
+                        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                            player.castPreparedSpell(1, maze, eventManager, combatManager);
+                        } else {
+                            combatManager.playerUseItem(1, discoveryManager);
+                        }
                         return true;
                     case Input.Keys.NUM_3:
                     case Input.Keys.NUMPAD_3:
-                        combatManager.playerUseItem(2, discoveryManager);
+                        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                            player.castPreparedSpell(2, maze, eventManager, combatManager);
+                        } else {
+                            combatManager.playerUseItem(2, discoveryManager);
+                        }
                         return true;
                     case Input.Keys.NUM_4:
                     case Input.Keys.NUMPAD_4:
-                        combatManager.playerUseItem(3, discoveryManager);
+                        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                            player.castPreparedSpell(3, maze, eventManager, combatManager);
+                        } else {
+                            combatManager.playerUseItem(3, discoveryManager);
+                        }
                         return true;
                     case Input.Keys.NUM_5:
                     case Input.Keys.NUMPAD_5:
-                        combatManager.playerUseItem(4, discoveryManager);
+                        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                            player.castPreparedSpell(4, maze, eventManager, combatManager);
+                        } else {
+                            combatManager.playerUseItem(4, discoveryManager);
+                        }
                         return true;
                     case Input.Keys.NUM_6:
                     case Input.Keys.NUMPAD_6:
@@ -1384,25 +1419,87 @@ public class GameScreen extends BaseScreen {
                 combatManager.playerAttackWithDice();
                 return true;
             }
+            if (keycode == Input.Keys.Z) {
+                if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+            if (keycode == Input.Keys.X) {
+                if (player.castPreparedSpell(1, maze, eventManager, combatManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+            if (keycode == Input.Keys.V) {
+                if (player.castPreparedSpell(2, maze, eventManager, combatManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+            if (keycode == Input.Keys.B) {
+                if (player.castPreparedSpell(3, maze, eventManager, combatManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+            if (keycode == Input.Keys.N) {
+                if (player.castPreparedSpell(4, maze, eventManager, combatManager)) {
+                    combatManager.passTurnToMonster();
+                }
+                return true;
+            }
+
             // --- Quick Slots 1-6 in Combat Turn ---
+            boolean isShiftCombat = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
             if (keycode == Input.Keys.NUM_1 || keycode == Input.Keys.NUMPAD_1) {
-                combatManager.playerUseItem(0, discoveryManager);
+                if (isShiftCombat) {
+                    if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
+                        combatManager.passTurnToMonster();
+                    }
+                } else {
+                    combatManager.playerUseItem(0, discoveryManager);
+                }
                 return true;
             }
             if (keycode == Input.Keys.NUM_2 || keycode == Input.Keys.NUMPAD_2) {
-                combatManager.playerUseItem(1, discoveryManager);
+                if (isShiftCombat) {
+                    if (player.castPreparedSpell(1, maze, eventManager, combatManager)) {
+                        combatManager.passTurnToMonster();
+                    }
+                } else {
+                    combatManager.playerUseItem(1, discoveryManager);
+                }
                 return true;
             }
             if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
-                combatManager.playerUseItem(2, discoveryManager);
+                if (isShiftCombat) {
+                    if (player.castPreparedSpell(2, maze, eventManager, combatManager)) {
+                        combatManager.passTurnToMonster();
+                    }
+                } else {
+                    combatManager.playerUseItem(2, discoveryManager);
+                }
                 return true;
             }
             if (keycode == Input.Keys.NUM_4 || keycode == Input.Keys.NUMPAD_4) {
-                combatManager.playerUseItem(3, discoveryManager);
+                if (isShiftCombat) {
+                    if (player.castPreparedSpell(3, maze, eventManager, combatManager)) {
+                        combatManager.passTurnToMonster();
+                    }
+                } else {
+                    combatManager.playerUseItem(3, discoveryManager);
+                }
                 return true;
             }
             if (keycode == Input.Keys.NUM_5 || keycode == Input.Keys.NUMPAD_5) {
-                combatManager.playerUseItem(4, discoveryManager);
+                if (isShiftCombat) {
+                    if (player.castPreparedSpell(4, maze, eventManager, combatManager)) {
+                        combatManager.passTurnToMonster();
+                    }
+                } else {
+                    combatManager.playerUseItem(4, discoveryManager);
+                }
                 return true;
             }
             if (keycode == Input.Keys.NUM_6 || keycode == Input.Keys.NUMPAD_6) {
@@ -1473,10 +1570,18 @@ public class GameScreen extends BaseScreen {
             }
 
             if (keycode == Input.Keys.A) {
-                // Ranged Attack
-                if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
-                    combatManager.playerAttackInstant();
-                    return true;
+                // Ranged Attack or Thrown Weapon
+                Item weapon = player.getInventory().getRightHand();
+                if (weapon != null) {
+                    if (weapon.isRanged()) {
+                        combatManager.playerAttackInstant();
+                        return true;
+                    } else if (weapon.isThrown()) {
+                        if (combatManager.throwWeapon(weapon)) {
+                            playerTurnTakesAction();
+                            return true;
+                        }
+                    }
                 }
             }
 
@@ -1495,6 +1600,17 @@ public class GameScreen extends BaseScreen {
                     }
 
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    // 5e Reach Weapon check (2-tile strike)
+                    Item rightHand = player.getInventory().getRightHand();
+                    if (bumpTarget == null && rightHand != null && rightHand.isReach() && !maze.isWall(tx, ty)) {
+                        int rtx = (int) Math.floor(player.getPosition().x + dir.x * 2);
+                        int rty = (int) Math.floor(player.getPosition().y + dir.y * 2);
+                        Monster reachTarget = maze.getMonsters().get(new GridPoint2(rtx, rty));
+                        if (reachTarget != null) {
+                            bumpTarget = reachTarget;
+                        }
+                    }
+
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
                     } else {
@@ -1573,33 +1689,78 @@ public class GameScreen extends BaseScreen {
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
                     playerTurnTakesAction();
                     return true;
+                case Input.Keys.Z:
+                    if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.X:
+                    if (player.castPreparedSpell(1, maze, eventManager, combatManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.V:
+                    if (player.castPreparedSpell(2, maze, eventManager, combatManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.B:
+                    if (player.castPreparedSpell(3, maze, eventManager, combatManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
+                case Input.Keys.N:
+                    if (player.castPreparedSpell(4, maze, eventManager, combatManager)) {
+                        playerTurnTakesAction();
+                    }
+                    return true;
                 case Input.Keys.NUM_1:
                 case Input.Keys.NUMPAD_1:
-                    if (player.useQuickSlot(0, eventManager, this.discoveryManager, maze)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                        if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
+                            playerTurnTakesAction();
+                        }
+                    } else if (player.useQuickSlot(0, eventManager, this.discoveryManager, maze)) {
                         playerTurnTakesAction();
                     }
                     return true;
                 case Input.Keys.NUM_2:
                 case Input.Keys.NUMPAD_2:
-                    if (player.useQuickSlot(1, eventManager, this.discoveryManager, maze)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                        if (player.castPreparedSpell(1, maze, eventManager, combatManager)) {
+                            playerTurnTakesAction();
+                        }
+                    } else if (player.useQuickSlot(1, eventManager, this.discoveryManager, maze)) {
                         playerTurnTakesAction();
                     }
                     return true;
                 case Input.Keys.NUM_3:
                 case Input.Keys.NUMPAD_3:
-                    if (player.useQuickSlot(2, eventManager, this.discoveryManager, maze)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                        if (player.castPreparedSpell(2, maze, eventManager, combatManager)) {
+                            playerTurnTakesAction();
+                        }
+                    } else if (player.useQuickSlot(2, eventManager, this.discoveryManager, maze)) {
                         playerTurnTakesAction();
                     }
                     return true;
                 case Input.Keys.NUM_4:
                 case Input.Keys.NUMPAD_4:
-                    if (player.useQuickSlot(3, eventManager, this.discoveryManager, maze)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                        if (player.castPreparedSpell(3, maze, eventManager, combatManager)) {
+                            playerTurnTakesAction();
+                        }
+                    } else if (player.useQuickSlot(3, eventManager, this.discoveryManager, maze)) {
                         playerTurnTakesAction();
                     }
                     return true;
                 case Input.Keys.NUM_5:
                 case Input.Keys.NUMPAD_5:
-                    if (player.useQuickSlot(4, eventManager, this.discoveryManager, maze)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                        if (player.castPreparedSpell(4, maze, eventManager, combatManager)) {
+                            playerTurnTakesAction();
+                        }
+                    } else if (player.useQuickSlot(4, eventManager, this.discoveryManager, maze)) {
                         playerTurnTakesAction();
                     }
                     return true;

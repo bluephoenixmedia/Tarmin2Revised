@@ -104,6 +104,7 @@ public class ModernInventoryUI {
         backpack.setBus(bus);
         quickSlots.setBus(bus);
         paperDoll.setBus(bus);
+        spellbook.setBus(bus);
 
         // ── Event subscriptions ───────────────────────────────────────
         bus.subscribe(paperDoll);

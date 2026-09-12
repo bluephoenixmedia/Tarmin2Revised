@@ -151,7 +151,13 @@ public class Item implements Renderable {
         CHARRED_WOOD, CERAMIC_SHARD, ROTTEN_ROPE, FUNGAL_SPORE, BAT_GUANO, LOOSE_BRICK,
         TWISTED_ROOT, SLIME_RESIDUE, RAT_SKULL, RUSTED_CHAIN, MOSS_CLUMP, FLINT_SHARD,
         HOLLOW_LOG, SPIDER_SILK, BAT_WING, PARCHMENT_SCRAP, BROKEN_HILT, BENT_NAIL,
-        STAGNANT_POOL, GLOWING_LICHEN
+        STAGNANT_POOL, GLOWING_LICHEN,
+
+        // Open5e Magic Items
+        RING_OF_PROTECTION, BOOTS_OF_ELVENKIND, CLOAK_OF_PROTECTION,
+        WAND_OF_MAGIC_MISSILES, PERIAPT_OF_WOUND_CLOSURE, BAG_OF_HOLDING,
+        POTION_OF_INVISIBILITY, POTION_OF_HEROISM,
+        SCROLL_FIREBALL, SCROLL_MISTY_STEP, SCROLL_MAGIC_MISSILE, SCROLL_LIGHTNING_BOLT
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -640,6 +646,46 @@ public class Item implements Renderable {
 
     public String getDamageDice() {
         return this.damageDice;
+    }
+
+    public boolean isReach() {
+        return template != null && template.isReach;
+    }
+
+    public boolean isThrown() {
+        return template != null && template.isThrown;
+    }
+
+    public boolean isFinesse() {
+        return template != null && template.isFinesse;
+    }
+
+    public boolean isVersatile() {
+        return template != null && template.isVersatile;
+    }
+
+    public String getVersatileDamageDice() {
+        return template != null ? template.versatileDamageDice : null;
+    }
+
+    public boolean isTwoHanded() {
+        return template != null && template.isTwoHanded;
+    }
+
+    public String getArmorCategory() {
+        return template != null ? template.armorCategory : "LIGHT";
+    }
+
+    public boolean hasStealthDisadvantage() {
+        return template != null && template.stealthDisadvantage;
+    }
+
+    public int getMaxDexBonus() {
+        return template != null ? template.maxDexBonus : 99;
+    }
+
+    public String getDamageType() {
+        return template != null ? template.damageType : "SLASHING";
     }
 
     public int getArmorClassBonus() {

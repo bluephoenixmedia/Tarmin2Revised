@@ -108,6 +108,12 @@ public class Hud implements Disposable {
     private final Table leftHandSlot;
     private final Table rightHandSlot;
 
+    // --- 5-Slot Spell Quick-Cast Hotbar ---
+    private final Table spellHotbarTable;
+    private final Table[] spellSlots = new Table[5];
+    private final Label[] spellNameLabels = new Label[5];
+    private final Label[] spellCostLabels = new Label[5];
+
     // --- Action Chronicle Labels (5 lines) ---
     private final Label[] chronicleLabels = new Label[5];
 
@@ -508,6 +514,62 @@ public class Hud implements Disposable {
         bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
         bottomBarTable.add(chronicleZone).width(648).fillY();
 
+        // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
+        spellHotbarTable = new Table();
+        spellHotbarTable.setBackground(hudSkin.getDashboardBg());
+        spellHotbarTable.pad(3f, 6f, 3f, 6f);
+        Label spellTitle = new Label("SPELLS", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        spellHotbarTable.add(spellTitle).padRight(6);
+
+        for (int i = 0; i < 5; i++) {
+            final int slotIdx = i;
+            spellSlots[i] = new Table();
+            spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+            spellSlots[i].top().left();
+
+            Label badge = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            spellSlots[i].add(badge).padLeft(2).padTop(1).row();
+
+            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontSmall(), Color.CYAN));
+            spellNameLabels[i].setEllipsis(true);
+            spellSlots[i].add(spellNameLabels[i]).width(72).padLeft(2).row();
+
+            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+            spellSlots[i].add(spellCostLabels[i]).padLeft(2);
+
+            spellSlots[i].addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    player.castPreparedSpell(slotIdx, maze, eventManager, combatManager);
+                }
+            });
+
+            spellSlots[i].addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    String spellId = player.getPreparedSpell(slotIdx);
+                    if (spellId != null && !spellId.isEmpty()) {
+                        com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
+                        if (st != null) {
+                            Vector2 pos = spellSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
+                            hudTooltip.showSpell(st.getName(), st.getSchool(), st.getMpCost(), st.getDescription(), pos.x + 38f, pos.y, "Shift+" + (slotIdx + 1));
+                        }
+                    }
+                }
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    hudTooltip.hide();
+                }
+            });
+
+            spellHotbarTable.add(spellSlots[i]).size(76, 44).pad(2);
+        }
+
+        spellHotbarTable.pack();
+        spellHotbarTable.setPosition(470f, 204f);
+
         // --- Main Container (200px Height) ---
         mainContainer = new Table();
         mainContainer.setFillParent(true);
@@ -515,6 +577,7 @@ public class Hud implements Disposable {
         mainContainer.add(bottomBarTable).growX().height(200);
 
         stage.addActor(mainContainer);
+        stage.addActor(spellHotbarTable);
         stage.addActor(dungeonTagTable);
         stage.addActor(hudTooltip);
         stage.addActor(worldInteractionCard);
@@ -666,6 +729,28 @@ public class Hud implements Disposable {
                 backpackSlots[i].setBackground(hudSkin.getSlotActive());
             } else {
                 backpackSlots[i].setBackground(hudSkin.getSlotRecessed());
+            }
+        }
+
+        // --- Update Spell Hotbar Slots ---
+        for (int i = 0; i < 5; i++) {
+            String spellId = player.getPreparedSpell(i);
+            if (spellId != null && !spellId.isEmpty()) {
+                com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
+                if (st != null) {
+                    spellNameLabels[i].setText(st.getName());
+                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "Cantrip" : st.getMpCost() + " MP");
+                    boolean canCast = player.hasEnoughMana(st.getMpCost());
+                    spellNameLabels[i].setColor(canCast ? Color.CYAN : Color.GRAY);
+                    spellCostLabels[i].setColor(canCast ? Color.LIGHT_GRAY : Color.DARK_GRAY);
+                } else {
+                    spellNameLabels[i].setText(spellId);
+                    spellCostLabels[i].setText("");
+                }
+            } else {
+                spellNameLabels[i].setText("---");
+                spellCostLabels[i].setText("");
+                spellNameLabels[i].setColor(Color.DARK_GRAY);
             }
         }
 

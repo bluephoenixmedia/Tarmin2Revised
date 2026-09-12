@@ -221,3 +221,7 @@ assets/images/monsters/old/
 assets/images/monsters/waechter-19/
 assets/images/monsters/waechter-20/
 assets/images/monsters/x768p_HQ_Uncompressed_Frames/
+
+# Python
+__pycache__/
+*.py[cod]

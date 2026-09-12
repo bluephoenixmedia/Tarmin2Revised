@@ -107,6 +107,24 @@ public class HudTooltip extends Table {
         setVisible(true);
     }
 
+    public void showSpell(String spellName, String school, int mpCost, String desc, float anchorX, float anchorY, String hotkeyHint) {
+        if (spellName == null) {
+            setVisible(false);
+            return;
+        }
+        titleLabel.setText(spellName);
+        categoryLabel.setText(school != null ? school.toUpperCase() + " SPELL" : "SPELL");
+        statsLabel.setText((mpCost == 0 ? "Cantrip (0 MP)" : mpCost + " MP") + (desc != null && !desc.isEmpty() ? "  -  " + desc : ""));
+        promptLabel.setText("[Click to Cast]  [" + (hotkeyHint != null ? hotkeyHint : "Shift+Key") + "]");
+
+        pack();
+        float posX = Math.max(10f, Math.min(1920f - getWidth() - 10f, anchorX - getWidth() / 2f));
+        float posY = 260f;
+        setPosition(posX, posY);
+        toFront();
+        setVisible(true);
+    }
+
     public void hide() {
         setVisible(false);
     }

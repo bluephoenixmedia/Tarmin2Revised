@@ -79,6 +79,10 @@ public class CombatManager {
         this.hud = hud;
     }
 
+    public AnimationManager getAnimationManager() {
+        return animationManager;
+    }
+
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f;
 
@@ -553,7 +557,7 @@ public class CombatManager {
         }
     }
 
-    private void handleRemoteKill(Monster m) {
+    public void handleRemoteKill(Monster m) {
         maze.getMonsters().remove(new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
         player.getStats().addExperience(m.getBaseExperience());
         eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
@@ -626,13 +630,13 @@ public class CombatManager {
             gs.getWeaponOverlay().triggerAttack(pendingWeapon);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 this.currentMotionProfile = profile;
-                int d20Roll = DiceRoller.d20();
+                int d20Roll = DiceRoller.roll("1d20");
                 Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
                 resolveAttack(d20Roll);
                 this.currentMotionProfile = null;
             });
         } else {
-            int d20Roll = DiceRoller.d20();
+            int d20Roll = DiceRoller.roll("1d20");
             Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
             resolveAttack(d20Roll);
         }
@@ -647,10 +651,69 @@ public class CombatManager {
                 if (flurryWeapon != null) {
                     pendingWeapon = flurryWeapon;
                     eventManager.addEvent(new GameEvent("Flurry!", 0.8f));
-                    resolveAttack(DiceRoller.d20(), true);
+                    resolveAttack(DiceRoller.roll("1d20"), true);
                 }
             }
         }
+    }
+
+    public boolean throwWeapon(Item weapon) {
+        if (weapon == null) return false;
+        int maxRange = Math.max(3, weapon.getRange());
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true);
+
+        Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
+        Vector2 targetPos = hit.collisionPoint != null ?
+                new Vector2(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f) :
+                startPos.cpy().add(player.getDirectionVector().cpy().scl(maxRange));
+
+        soundManager.playWeaponSwing();
+        if (animationManager != null) {
+            animationManager.addAnimation(new Animation(
+                    Animation.AnimationType.PROJECTILE_PLAYER,
+                    startPos, targetPos,
+                    com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 0.4f,
+                    new String[] { "/" }));
+        }
+
+        int statBonus = Math.max(player.getEffectiveStrengthModifier(), player.getEffectiveDexterityModifier());
+        int attackRoll = DiceRoller.roll("1d20") + statBonus;
+
+        if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            Monster target = hit.hitMonster;
+            if (Monster.isImmuneToType(target.getType(), DamageType.PHYSICAL)) {
+                eventManager.addEvent(new GameEvent(target.getType() + " is immune to thrown weapons!", 1.5f));
+                showDamageText(0, hit.collisionPoint);
+            } else if (attackRoll >= target.getArmorClass()) {
+                int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
+                dmg = Math.max(1, dmg);
+                int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                showDamageText(actual, hit.collisionPoint);
+                eventManager.addEvent(new GameEvent("Threw " + weapon.getFriendlyName() + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
+
+                if (target.getCurrentHP() <= 0) {
+                    if (target == this.monster) {
+                        handleMonsterDeath();
+                        currentState = CombatState.VICTORY;
+                    } else {
+                        handleRemoteKill(target);
+                    }
+                }
+            } else {
+                eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " glanced off " + target.getType() + "!", 1.0f));
+            }
+            weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+            maze.addItem(weapon);
+        } else {
+            eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " clatters to the stone.", 1.0f));
+            if (hit.collisionPoint != null) {
+                weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+                maze.addItem(weapon);
+            }
+        }
+
+        player.getInventory().removeItem(weapon);
+        return true;
     }
 
     private void resolveRangedAttackAgainst(Monster target) {
@@ -1041,7 +1104,7 @@ public class CombatManager {
 
         currentCombatTurns++;
 
-        int toHitBonus = player.getToHitBonus();
+        int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
         boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());
@@ -1068,9 +1131,10 @@ public class CombatManager {
             DamageType dmgType = DamageType.PHYSICAL;
             String damageDice = "1d2";
             if (pendingWeapon != null) {
-                damageDice = pendingWeapon.getDamageDice();
+                damageDice = player.getInventory().getActiveDamageDice(pendingWeapon);
                 if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
-                if (pendingWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
+                if ("SPIRITUAL".equalsIgnoreCase(pendingWeapon.getDamageType()) ||
+                        pendingWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
                     dmgType = DamageType.SPIRITUAL;
                 }
             }
@@ -1083,7 +1147,7 @@ public class CombatManager {
                 soundManager.playWeaponImpact(false);
             } else {
                 int baseDamage = DiceRoller.roll(damageDice);
-                int damageBonus = player.getDamageBonus();
+                int damageBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
                 int totalDamage = Math.max(1, baseDamage + damageBonus);
 
                 // Combo Damage Multiplier

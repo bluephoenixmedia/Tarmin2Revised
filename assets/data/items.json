@@ -5526,5 +5526,108 @@
         "weight": 1
       }
     ]
+  },
+  "RING_OF_PROTECTION": {
+    "friendlyName": "Ring of Protection",
+    "description": "A shimmering ring that grants +1 to Armor Class and saving throws.",
+    "texturePath": "images/items/ring.png",
+    "baseValue": 1500,
+    "armorClassBonus": 1,
+    "isRing": true,
+    "isRingAppearance": true,
+    "isUsable": false
+  },
+  "BOOTS_OF_ELVENKIND": {
+    "friendlyName": "Boots of Elvenkind",
+    "description": "While you wear these boots, your steps make no sound.",
+    "texturePath": "images/armor/leather_boots.png",
+    "baseValue": 1200,
+    "armorClassBonus": 1,
+    "isBoots": true,
+    "isArmor": true,
+    "stealthDisadvantage": false,
+    "armorCategory": "LIGHT"
+  },
+  "CLOAK_OF_PROTECTION": {
+    "friendlyName": "Cloak of Protection",
+    "description": "A fine elven cloak granting +1 to Armor Class and resistances.",
+    "texturePath": "images/items/dirty_cloth.png",
+    "baseValue": 1400,
+    "armorClassBonus": 1,
+    "isCloak": true,
+    "isArmor": true
+  },
+  "WAND_OF_MAGIC_MISSILES": {
+    "friendlyName": "Wand of Magic Missiles",
+    "description": "This wand has 7 charges to cast Magic Missile.",
+    "texturePath": "images/items/wand.png",
+    "baseValue": 1000,
+    "isWandAppearance": true,
+    "isUsable": true
+  },
+  "PERIAPT_OF_WOUND_CLOSURE": {
+    "friendlyName": "Periapt of Wound Closure",
+    "description": "A mystical amulet that stabilizes dying heroes and doubles healing.",
+    "texturePath": "images/items/necklace.png",
+    "baseValue": 1800,
+    "isAmulet": true,
+    "isArmor": true
+  },
+  "BAG_OF_HOLDING": {
+    "friendlyName": "Bag of Holding",
+    "description": "An extradimensional bag that holds up to 500 lbs effortlessly.",
+    "texturePath": "images/items/large_bag.png",
+    "baseValue": 2000,
+    "isContainer": true
+  },
+  "POTION_OF_INVISIBILITY": {
+    "friendlyName": "Potion of Invisibility",
+    "description": "Drinking this potion cloaks you in complete invisibility for 1 hour.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 600,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true
+  },
+  "POTION_OF_HEROISM": {
+    "friendlyName": "Potion of Heroism",
+    "description": "Grants 10 temporary HP and the effects of the Bless spell.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 800,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true
+  },
+  "SCROLL_FIREBALL": {
+    "friendlyName": "Spell Scroll (Fireball)",
+    "description": "A scroll containing the Fireball incantation. Can be cast or scribed at camp.",
+    "texturePath": "images/items/scroll.png",
+    "baseValue": 500,
+    "isScrollAppearance": true,
+    "isUsable": true
+  },
+  "SCROLL_MISTY_STEP": {
+    "friendlyName": "Spell Scroll (Misty Step)",
+    "description": "A scroll containing Misty Step. Can be cast or scribed at camp.",
+    "texturePath": "images/items/scroll.png",
+    "baseValue": 350,
+    "isScrollAppearance": true,
+    "isUsable": true
+  },
+  "SCROLL_MAGIC_MISSILE": {
+    "friendlyName": "Spell Scroll (Magic Missile)",
+    "description": "A scroll containing Magic Missile. Can be cast or scribed at camp.",
+    "texturePath": "images/items/scroll.png",
+    "baseValue": 200,
+    "isScrollAppearance": true,
+    "isUsable": true
+  },
+  "SCROLL_LIGHTNING_BOLT": {
+    "friendlyName": "Spell Scroll (Lightning Bolt)",
+    "description": "A scroll containing Lightning Bolt. Can be cast or scribed at camp.",
+    "texturePath": "images/items/scroll.png",
+    "baseValue": 550,
+    "isScrollAppearance": true,
+    "isUsable": true
   }
 }

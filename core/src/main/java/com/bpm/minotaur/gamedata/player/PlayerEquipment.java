@@ -110,6 +110,33 @@ public class PlayerEquipment {
         return getACBonus();
     }
 
+    public String getArmorTier() {
+        if (wornChest != null && wornChest.getArmorCategory() != null) {
+            return wornChest.getArmorCategory();
+        }
+        return "LIGHT";
+    }
+
+    public int getMaxDexBonus() {
+        if (wornChest != null) {
+            return wornChest.getMaxDexBonus();
+        }
+        return 99;
+    }
+
+    public boolean hasStealthDisadvantage() {
+        if (wornChest != null && wornChest.hasStealthDisadvantage()) {
+            return true;
+        }
+        Item[] pieces = { wornHelmet, wornChest, wornGauntlets, wornLegs, wornBoots, wornShield };
+        for (Item p : pieces) {
+            if (p != null && "HEAVY".equalsIgnoreCase(p.getArmorCategory()) && p.hasStealthDisadvantage()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int getRingDefense() {
         int totalDefense = 0;
         if (wornRing != null) {

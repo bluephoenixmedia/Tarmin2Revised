@@ -148,6 +148,12 @@ public class Inventory {
 
     public void setRightHand(Item item) {
         this.rightHand = item;
+        // Two-handed weapon automatically unequips off-hand shield/weapon to backpack
+        if (item != null && item.isTwoHanded() && leftHand != null) {
+            Item offhand = leftHand;
+            leftHand = null;
+            pickupToBackpack(offhand);
+        }
     }
 
     public Item getLeftHand() {
@@ -155,7 +161,25 @@ public class Inventory {
     }
 
     public void setLeftHand(Item item) {
+        // If holding a two-handed weapon, unequip it to backpack when equipping left hand
+        if (item != null && rightHand != null && rightHand.isTwoHanded()) {
+            Item twoHander = rightHand;
+            rightHand = null;
+            pickupToBackpack(twoHander);
+        }
         this.leftHand = item;
+    }
+
+    /**
+     * Resolves the active damage die: uses versatile 2H die if left hand is empty,
+     * or standard 1H die if wielding a shield or offhand item.
+     */
+    public String getActiveDamageDice(Item weapon) {
+        if (weapon == null) return "1d2";
+        if (weapon.isVersatile() && leftHand == null && weapon.getVersatileDamageDice() != null) {
+            return weapon.getVersatileDamageDice();
+        }
+        return weapon.getDamageDice() != null ? weapon.getDamageDice() : "1d4";
     }
 
     public Item[] getQuickSlots() {

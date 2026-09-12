@@ -186,6 +186,13 @@ public class Maze {
         return wallData[y][x];
     }
 
+    public boolean isWall(int x, int y) {
+        if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) {
+            return true;
+        }
+        return wallData[y][x] == 1 || (getWallDataAt(x, y) & 0b1111) == 0b1111;
+    }
+
     public void setTile(int x, int y, int type) {
         if (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) {
             wallData[y][x] = type;
