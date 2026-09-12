@@ -58,9 +58,10 @@ public class LightingManagerTest {
     public void testPlayerLanternUpgrade() {
         Player player = new Player(10f, 10f);
 
-        // Default: Torch
+        // Default: Torch / Personal Light
         lightingManager.update(0.016f, player, null);
         assertEquals(LightingManager.TORCH_RADIUS, lightingManager.getPlayerLight().getBaseRadius(), 0.01f);
+        assertEquals(LightingManager.TORCH_INTENSITY, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
         assertEquals(LightSource.FlickerProfile.TORCH_FLUTTER, lightingManager.getPlayerLight().getProfile());
 
         // Equip Brass Lantern in off-hand
@@ -70,13 +71,21 @@ public class LightingManagerTest {
         lightingManager.update(0.016f, player, null);
         assertEquals(LightingManager.LANTERN_RADIUS, lightingManager.getPlayerLight().getBaseRadius(), 0.01f);
         assertEquals(LightSource.FlickerProfile.LANTERN_BREATH, lightingManager.getPlayerLight().getProfile());
-        assertEquals(1.15f, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
+        assertEquals(LightingManager.LANTERN_INTENSITY, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
         assertEquals(LightingManager.COLOR_LANTERN.r, lightingManager.getPlayerLight().getBaseColor().r, 0.01f);
 
-        // Unequip Lantern
+        // Unequip from off-hand, equip in main-hand (right hand)
         player.getInventory().setLeftHand(null);
+        player.getInventory().setRightHand(lantern);
+        lightingManager.update(0.016f, player, null);
+        assertEquals(LightingManager.LANTERN_RADIUS, lightingManager.getPlayerLight().getBaseRadius(), 0.01f);
+        assertEquals(LightingManager.LANTERN_INTENSITY, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
+
+        // Unequip completely
+        player.getInventory().setRightHand(null);
         lightingManager.update(0.016f, player, null);
         assertEquals(LightingManager.TORCH_RADIUS, lightingManager.getPlayerLight().getBaseRadius(), 0.01f);
+        assertEquals(LightingManager.TORCH_INTENSITY, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
         assertEquals(LightSource.FlickerProfile.TORCH_FLUTTER, lightingManager.getPlayerLight().getProfile());
     }
 

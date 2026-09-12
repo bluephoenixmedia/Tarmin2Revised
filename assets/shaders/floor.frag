@@ -86,7 +86,7 @@ void main() {
             lightAccum += u_lightColor[i] * atten;
         }
     }
-    lightAccum = min(lightAccum, vec3(1.3)) * u_lightIntensity;
+    lightAccum = min(lightAccum, vec3(1.8)) * u_lightIntensity;
 
     vec3 finalColor = texColor.rgb * lightAccum;
 

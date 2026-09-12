@@ -23,6 +23,10 @@ public class LightingManager {
     public static final float TORCH_RADIUS = 3.5f;
     public static final float LANTERN_RADIUS = 5.5f;
 
+    public static final float TORCH_INTENSITY = 1.40f;           // 40% boost for personal light (was 1.0f)
+    public static final float LANTERN_INTENSITY = 1.61f;         // 40% boost for equipped brass lantern (was 1.15f)
+    public static final float MOUNTED_LANTERN_INTENSITY = 1.40f; // 40% boost for mounted lanterns (was 1.0f)
+
     public static final Color COLOR_TORCH = new Color(1.0f, 0.62f, 0.26f, 1.0f);     // Pine torch flame
     public static final Color COLOR_LANTERN = new Color(1.0f, 0.80f, 0.44f, 1.0f);   // Warm vintage golden incandescence
     public static final Color COLOR_CAMPFIRE = new Color(1.0f, 0.45f, 0.16f, 1.0f);  // Deep ember orange-red
@@ -45,7 +49,7 @@ public class LightingManager {
                 0f, 0f,
                 COLOR_TORCH,
                 TORCH_RADIUS,
-                1.0f,
+                TORCH_INTENSITY,
                 LightSource.FlickerProfile.TORCH_FLUTTER
         );
 
@@ -72,22 +76,24 @@ public class LightingManager {
     }
 
     /**
-     * Syncs player light coordinates and upgrades to Brass Lantern if equipped in Left Hand.
+     * Syncs player light coordinates and upgrades to Brass Lantern if equipped in either hand.
      */
     private void updatePlayerLight(Player player) {
         playerLight.setPosition(player.getPosition().x, player.getPosition().y);
 
         Item offHand = (player.getInventory() != null) ? player.getInventory().getLeftHand() : null;
-        boolean hasLantern = offHand != null && offHand.getType() == ItemType.BRASS_LANTERN;
+        Item mainHand = (player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+        boolean hasLantern = (offHand != null && offHand.getType() == ItemType.BRASS_LANTERN)
+                || (mainHand != null && mainHand.getType() == ItemType.BRASS_LANTERN);
 
         if (hasLantern) {
             playerLight.setBaseRadius(LANTERN_RADIUS);
-            playerLight.setBaseIntensity(1.15f);
+            playerLight.setBaseIntensity(LANTERN_INTENSITY);
             playerLight.setBaseColor(COLOR_LANTERN);
             playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
         } else {
             playerLight.setBaseRadius(TORCH_RADIUS);
-            playerLight.setBaseIntensity(1.0f);
+            playerLight.setBaseIntensity(TORCH_INTENSITY);
             playerLight.setBaseColor(COLOR_TORCH);
             playerLight.setProfile(LightSource.FlickerProfile.TORCH_FLUTTER);
         }
@@ -214,9 +220,9 @@ public class LightingManager {
         }
 
         // Clamp values to valid visual HDR range
-        outColor.r = MathUtils.clamp(outColor.r, 0.0f, 1.3f);
-        outColor.g = MathUtils.clamp(outColor.g, 0.0f, 1.3f);
-        outColor.b = MathUtils.clamp(outColor.b, 0.0f, 1.3f);
+        outColor.r = MathUtils.clamp(outColor.r, 0.0f, 1.8f);
+        outColor.g = MathUtils.clamp(outColor.g, 0.0f, 1.8f);
+        outColor.b = MathUtils.clamp(outColor.b, 0.0f, 1.8f);
     }
 
     private void applyLightSource(LightSource light, float x, float y, Maze maze, Color outColor) {

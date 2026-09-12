@@ -458,7 +458,7 @@ public class Player {
                 if (itemInHand.getType() == ItemType.BRASS_LANTERN) {
                     maze.addLight(new LightSource("shelter_lantern_" + playerTile.x + "_" + playerTile.y,
                             playerTile.x + 0.5f, playerTile.y + 0.5f,
-                            LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                            LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                             LightSource.FlickerProfile.LANTERN_BREATH));
                 }
                 inventory.setRightHand(null);
@@ -1978,7 +1978,7 @@ public class Player {
             if (item.getType() == ItemType.BRASS_LANTERN) {
                 maze.addLight(new LightSource("shelter_lantern_" + playerTile.x + "_" + playerTile.y,
                         playerTile.x + 0.5f, playerTile.y + 0.5f,
-                        LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                        LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                         LightSource.FlickerProfile.LANTERN_BREATH));
             }
             return true;
@@ -1997,7 +1997,7 @@ public class Player {
             if (item.getType() == ItemType.BRASS_LANTERN) {
                 maze.addLight(new LightSource("shelter_lantern_" + frontTile.x + "_" + frontTile.y,
                         frontTile.x + 0.5f, frontTile.y + 0.5f,
-                        LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                        LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                         LightSource.FlickerProfile.LANTERN_BREATH));
             }
             return true;
@@ -2019,7 +2019,7 @@ public class Player {
                     if (item.getType() == ItemType.BRASS_LANTERN) {
                         maze.addLight(new LightSource("shelter_lantern_" + neighborTile.x + "_" + neighborTile.y,
                                 neighborTile.x + 0.5f, neighborTile.y + 0.5f,
-                                LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                                LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                                 LightSource.FlickerProfile.LANTERN_BREATH));
                     }
                     return true;

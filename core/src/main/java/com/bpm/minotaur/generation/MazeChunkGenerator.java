@@ -607,7 +607,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     maze.addItem(
                             itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
                     maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
-                            LightingManager.COLOR_LANTERN, 5.0f, 1.0f,
+                            LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                             LightSource.FlickerProfile.LANTERN_BREATH));
                 }
             }

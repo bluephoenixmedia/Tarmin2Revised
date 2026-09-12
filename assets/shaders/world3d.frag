@@ -121,7 +121,7 @@ void main() {
         }
 
         // Clamp maximum light brightness
-        accumulatedLight = min(accumulatedLight, vec3(1.5));
+        accumulatedLight = min(accumulatedLight, vec3(2.2));
         finalColor = vec4(baseColor.rgb * accumulatedLight, baseColor.a);
     }
 

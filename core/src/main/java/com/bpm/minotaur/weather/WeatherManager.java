@@ -663,7 +663,7 @@ public class WeatherManager {
                 out.set(-9.5f * intensityMod, 0f, 3.8f * intensityMod);
                 break;
             case TORNADO:
-                out.set(-15.0f, 0f, 6.0f);
+                out.set(-20.0f * intensityMod, 0f, 8.0f * intensityMod);
                 break;
             case RAIN:
                 out.set(-1.8f * intensityMod, 0f, 0.7f * intensityMod);
