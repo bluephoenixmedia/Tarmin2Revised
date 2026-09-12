@@ -881,6 +881,12 @@ public class World3DRenderer implements Disposable {
                     }
                     float w = m.getScale().x;
                     float h = m.getScale().y;
+                    float maxMonsterW = 1.0f + 2.0f * ChunkMeshBuilder.WALL_INSET - 0.08f;
+                    if (w > maxMonsterW) {
+                        float scale = maxMonsterW / w;
+                        w = maxMonsterW;
+                        h *= scale;
+                    }
                     dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }

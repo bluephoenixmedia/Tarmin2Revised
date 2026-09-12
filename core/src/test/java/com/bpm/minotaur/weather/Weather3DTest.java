@@ -45,6 +45,8 @@ public class Weather3DTest {
 
     @Test
     public void testWindVectorGeneration() {
+        weatherManager.setCurrentWeather(WeatherType.STORM);
+        weatherManager.setCurrentIntensity(WeatherIntensity.HEAVY);
         Vector3 wind = new Vector3();
         weatherManager.getWindVector(wind);
 

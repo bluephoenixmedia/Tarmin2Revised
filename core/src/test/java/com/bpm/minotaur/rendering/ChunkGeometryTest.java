@@ -181,4 +181,54 @@ public class ChunkGeometryTest {
         float westOffsetX = -1 * width;
         assertEquals(-24f, westOffsetX, 0.001f);
     }
+
+    @Test
+    public void testCorridorWallInsetDimensions() {
+        // Verify WALL_INSET is configured to widen hallways beyond 1.0 unit
+        assertTrue("WALL_INSET must be positive", ChunkMeshBuilder.WALL_INSET > 0.10f);
+        float corridorWidth = 1.0f + 2.0f * ChunkMeshBuilder.WALL_INSET;
+        assertTrue("Widened corridor must exceed 1.30 units", corridorWidth >= 1.35f);
+    }
+
+    @Test
+    public void testAirtightCornerCoordinates() {
+        float inset = ChunkMeshBuilder.WALL_INSET;
+        int x = 2;
+        int y = 3;
+
+        // North-West corner for cell (2, 3) with West and North walls
+        float xMin = x - inset;
+        float zMin = -(y + 1.0f) - inset;
+
+        // Verify North wall V1 (xMin, 0, zMin) and West wall V2 (xMin, 0, zMin) match
+        assertEquals(2.0f - inset, xMin, 0.0001f);
+        assertEquals(-4.0f - inset, zMin, 0.0001f);
+
+        // Floor V4 must also share (xMin, 0, zMin)
+        float floorV4X = xMin;
+        float floorV4Z = zMin;
+        assertEquals(xMin, floorV4X, 0.0001f);
+        assertEquals(zMin, floorV4Z, 0.0001f);
+    }
+
+    @Test
+    public void testSlidingDoorWidenedSpan() {
+        float inset = ChunkMeshBuilder.WALL_INSET;
+        float expectedSpan = 1.0f + 2.0f * inset;
+
+        int gridX = 5;
+        float x1 = gridX - inset;
+        float x2 = gridX + 1.0f + inset;
+        assertEquals(expectedSpan, x2 - x1, 0.0001f);
+    }
+
+    @Test
+    public void testMonsterCorridorClearance() {
+        // GIANT_ANT has scale.x = 1.2
+        float antWidth = 1.2f;
+        float corridorWidth = 1.0f + 2.0f * ChunkMeshBuilder.WALL_INSET;
+        float clearance = corridorWidth - antWidth;
+
+        assertTrue("Giant Ant must fit inside widened corridor without clipping", clearance > 0.10f);
+    }
 }

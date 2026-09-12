@@ -43,6 +43,8 @@ public class ChunkMeshBuilder {
             new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0")
     );
 
+    public static final float WALL_INSET = 0.18f;
+
     /**
      * Builds the static sub-meshes for the specified rectangle within the maze.
      *
@@ -110,32 +112,6 @@ public class ChunkMeshBuilder {
                 boolean isSolidBlock = (currentData & ALL_WALLS) == ALL_WALLS;
 
                 if (!isSolidBlock) {
-                    // --- 1. FLOOR QUAD (Y = 0.0, Normal = Up) ---
-                    addQuad(floorVerts, floorIndices,
-                            x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 0f,
-                            x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 0f,
-                            x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                            x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
-                            0f, 1f, 0f, whitePacked
-                    );
-
-                    // --- 2. CEILING QUAD (Y = 1.0, Normal = Down) ---
-                    // Ceilings are emitted only when inside the player's shelter OR underground in the maze (level > 1)
-                    boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
-                    if (tileHasCeiling) {
-                        addQuad(ceilVerts, ceilIndices,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
-                                0f, -1f, 0f, whitePacked
-                        );
-                    }
-                }
-
-                // --- 3. WALL FACES ---
-                // We inspect the 4 boundaries around cell (x, y) if this is an open corridor
-                if (!isSolidBlock) {
                     int westData  = (x > 0) ? maze.getWallDataAt(x - 1, y) : ALL_WALLS;
                     int eastData  = (x < maze.getWidth() - 1) ? maze.getWallDataAt(x + 1, y) : ALL_WALLS;
                     int southData = (y > 0) ? maze.getWallDataAt(x, y - 1) : ALL_WALLS;
@@ -172,54 +148,87 @@ public class ChunkMeshBuilder {
                     boolean isGateFlankingWest  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
                     boolean isGateFlankingEast  = (gateAtCell != null && gateAtCell.getOrientation() == com.bpm.minotaur.gamedata.Door.Orientation.NORTH_SOUTH);
 
-                    // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     boolean hasNorthDoor = (currentData & DOOR_NORTH) != 0 || (northData & DOOR_SOUTH) != 0;
                     boolean hasNorthWall = !hasNorthDoor && !isNorthWindow && !isNorthGateOpening && (isGateFlankingNorth || (currentData & WALL_NORTH) != 0 || (northData & WALL_SOUTH) != 0 || (northData & ALL_WALLS) == ALL_WALLS || y == maze.getHeight() - 1);
+
+                    boolean hasSouthDoor = (currentData & DOOR_SOUTH) != 0 || (southData & DOOR_NORTH) != 0;
+                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && !isSouthGateOpening && (isGateFlankingSouth || (currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
+
+                    boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
+                    boolean hasWestWall = !hasWestDoor && !isWestWindow && !isWestGateOpening && (isGateFlankingWest || (currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+
+                    boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
+                    boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGateOpening && (isGateFlankingEast || (currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+
+                    // Compute widened boundaries for open cells (expanded by WALL_INSET where adjacent to solid walls)
+                    float xMin = (hasWestWall ? (x - WALL_INSET) : x) + worldOffsetX;
+                    float xMax = (hasEastWall ? (x + 1.0f + WALL_INSET) : (x + 1.0f)) + worldOffsetX;
+                    float zMin = (hasNorthWall ? (-(y + 1.0f) - WALL_INSET) : -(y + 1.0f)) + worldOffsetZ;
+                    float zMax = (hasSouthWall ? (-y + WALL_INSET) : -y) + worldOffsetZ;
+
+                    // --- 1. FLOOR QUAD (Y = 0.0, Normal = Up) ---
+                    addQuad(floorVerts, floorIndices,
+                            xMin, 0.0f, zMax, 0f, 0f,
+                            xMax, 0.0f, zMax, 1f, 0f,
+                            xMax, 0.0f, zMin, 1f, 1f,
+                            xMin, 0.0f, zMin, 0f, 1f,
+                            0f, 1f, 0f, whitePacked
+                    );
+
+                    // --- 2. CEILING QUAD (Y = 1.0, Normal = Down) ---
+                    // Ceilings are emitted only when inside the player's shelter OR underground in the maze (level > 1)
+                    boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
+                    if (tileHasCeiling) {
+                        addQuad(ceilVerts, ceilIndices,
+                                xMin, 1.0f, zMax, 0f, 0f,
+                                xMin, 1.0f, zMin, 0f, 1f,
+                                xMax, 1.0f, zMin, 1f, 1f,
+                                xMax, 1.0f, zMax, 1f, 0f,
+                                0f, -1f, 0f, whitePacked
+                        );
+                    }
+
+                    // --- 3. WALL FACES ---
+                    // A. North boundary (Z = zMin, facing South towards camera inside cell)
                     if (hasNorthWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
-                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
+                                xMin, 0.0f, zMin, 0f, 1f,
+                                xMax, 0.0f, zMin, 1f, 1f,
+                                xMax, 1.0f, zMin, 1f, 0f,
+                                xMin, 1.0f, zMin, 0f, 0f,
                                 0f, 0f, 1f, whitePacked
                         );
                     }
 
-                    // B. South boundary (Z = -y, facing North towards camera inside cell)
-                    boolean hasSouthDoor = (currentData & DOOR_SOUTH) != 0 || (southData & DOOR_NORTH) != 0;
-                    boolean hasSouthWall = !hasSouthDoor && !isSouthWindow && !isSouthGateOpening && (isGateFlankingSouth || (currentData & WALL_SOUTH) != 0 || (southData & WALL_NORTH) != 0 || (southData & ALL_WALLS) == ALL_WALLS || y == 0);
+                    // B. South boundary (Z = zMax, facing North towards camera inside cell)
                     if (hasSouthWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
-                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                xMax, 0.0f, zMax, 0f, 1f,
+                                xMin, 0.0f, zMax, 1f, 1f,
+                                xMin, 1.0f, zMax, 1f, 0f,
+                                xMax, 1.0f, zMax, 0f, 0f,
                                 0f, 0f, -1f, whitePacked
                         );
                     }
 
-                    // C. West boundary (X = x, facing East towards camera inside cell)
-                    boolean hasWestDoor = (currentData & DOOR_WEST) != 0 || (westData & DOOR_EAST) != 0;
-                    boolean hasWestWall = !hasWestDoor && !isWestWindow && !isWestGateOpening && (isGateFlankingWest || (currentData & WALL_WEST) != 0 || (westData & WALL_EAST) != 0 || (westData & ALL_WALLS) == ALL_WALLS || x == 0);
+                    // C. West boundary (X = xMin, facing East towards camera inside cell)
                     if (hasWestWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
-                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                xMin, 0.0f, zMax, 0f, 1f,
+                                xMin, 0.0f, zMin, 1f, 1f,
+                                xMin, 1.0f, zMin, 1f, 0f,
+                                xMin, 1.0f, zMax, 0f, 0f,
                                 1f, 0f, 0f, whitePacked
                         );
                     }
 
-                    // D. East boundary (X = x + 1, facing West towards camera inside cell)
-                    boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
-                    boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGateOpening && (isGateFlankingEast || (currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
+                    // D. East boundary (X = xMax, facing West towards camera inside cell)
                     if (hasEastWall) {
                         addQuad(wallVerts, wallIndices,
-                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
-                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
+                                xMax, 0.0f, zMin, 0f, 1f,
+                                xMax, 0.0f, zMax, 1f, 1f,
+                                xMax, 1.0f, zMax, 1f, 0f,
+                                xMax, 1.0f, zMin, 0f, 0f,
                                 -1f, 0f, 0f, whitePacked
                         );
                     }

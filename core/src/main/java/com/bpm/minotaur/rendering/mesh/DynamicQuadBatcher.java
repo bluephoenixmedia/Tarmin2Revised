@@ -230,11 +230,12 @@ public class DynamicQuadBatcher implements Disposable {
             dir = (decal.side == 0) ? Direction.WEST : Direction.NORTH;
         }
 
+        float inset = ChunkMeshBuilder.WALL_INSET;
         switch (dir) {
             case EAST: {
-                // Moving EAST: hit EAST boundary of cell (X = localGridX + 1.0)
+                // Moving EAST: hit EAST boundary of cell (X = localGridX + 1.0 + inset)
                 // Face normal points WEST (-1, 0, 0) into cell
-                float xPos = localGridX + 1.0f - eps;
+                float xPos = localGridX + 1.0f + inset - eps;
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
@@ -247,9 +248,9 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case WEST: {
-                // Moving WEST: hit WEST boundary of cell (X = localGridX)
+                // Moving WEST: hit WEST boundary of cell (X = localGridX - inset)
                 // Face normal points EAST (1, 0, 0) into cell
-                float xPos = localGridX + eps;
+                float xPos = localGridX - inset + eps;
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
@@ -262,9 +263,9 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case NORTH: {
-                // Moving NORTH (+Y): hit NORTH boundary of cell (Z = -(localGridY + 1.0))
+                // Moving NORTH (+Y): hit NORTH boundary of cell (Z = -(localGridY + 1.0) - inset)
                 // Face normal points SOUTH (0, 0, 1) into cell
-                float zPos = -(localGridY + 1.0f) + eps;
+                float zPos = -(localGridY + 1.0f) - inset + eps;
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
@@ -277,9 +278,9 @@ public class DynamicQuadBatcher implements Disposable {
                 break;
             }
             case SOUTH: {
-                // Moving SOUTH (-Y): hit SOUTH boundary of cell (Z = -localGridY)
+                // Moving SOUTH (-Y): hit SOUTH boundary of cell (Z = -localGridY + inset)
                 // Face normal points NORTH (0, 0, -1) into cell
-                float zPos = -localGridY - eps;
+                float zPos = -localGridY + inset - eps;
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
@@ -314,13 +315,16 @@ public class DynamicQuadBatcher implements Disposable {
             rumble = (float) Math.sin(openProgress * Math.PI * 16.0) * 0.015f;
         }
 
+        float inset = ChunkMeshBuilder.WALL_INSET;
+        float doorSpan = 1.0f + 2.0f * inset;
+
         if (isEastWest) {
             // East-West barrier: sits in X plane at gridX + 0.5f, blocks East-West passage.
             // Slides horizontally along Z into the flanking wall pocket (-Z direction).
-            float zShift = -openProgress * 1.0f;
+            float zShift = -openProgress * doorSpan;
             float x = gridX + 0.5f + rumble;
-            float z1 = -gridY + zShift;
-            float z2 = -(gridY + 1) + zShift;
+            float z1 = -gridY + inset + zShift;
+            float z2 = -(gridY + 1.0f) - inset + zShift;
 
             // Face 1: looking East (+X)
             ChunkMeshBuilder.addQuad(
@@ -343,10 +347,10 @@ public class DynamicQuadBatcher implements Disposable {
         } else {
             // North-South barrier: sits in Z plane at -(gridY + 0.5f), blocks North-South passage.
             // Slides horizontally along X into the flanking wall pocket (-X direction).
-            float xShift = -openProgress * 1.0f;
+            float xShift = -openProgress * doorSpan;
             float z = -(gridY + 0.5f) + rumble;
-            float x1 = gridX + xShift;
-            float x2 = gridX + 1.0f + xShift;
+            float x1 = gridX - inset + xShift;
+            float x2 = gridX + 1.0f + inset + xShift;
 
             // Face 1: looking South (+Z)
             ChunkMeshBuilder.addQuad(
