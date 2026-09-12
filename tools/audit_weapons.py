@@ -51,7 +51,7 @@ def main():
         if tex == 'images/items/bow.png':
             bow_item_fallback.append(k)
         elif tex == 'images/weapons/bow.png':
-            if k == 'BOW':
+            if k in ['BOW', 'BOW_SHORT', 'BOW_FOLDING_SHORT']:
                 has_valid_texture.append(k)
             else:
                 bow_weapon_fallback.append(k)
