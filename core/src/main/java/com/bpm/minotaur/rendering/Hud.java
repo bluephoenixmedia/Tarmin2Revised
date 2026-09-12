@@ -36,6 +36,8 @@ import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -180,6 +182,7 @@ public class Hud implements Disposable {
     }
 
     private final GlyphLayout glyphLayout = new GlyphLayout();
+    private final GlyphLayout chronicleGlyphLayout = new GlyphLayout();
 
     public Hud(SpriteBatch sb, Player player, Maze maze, CombatManager combatManager, GameEventManager eventManager,
             WorldManager worldManager, Tarmin2 game, DebugManager debugManager, GameMode gameMode) {
@@ -480,7 +483,7 @@ public class Hud implements Disposable {
         for (int i = 0; i < 5; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().growX().padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().width(632).padBottom(1).row();
         }
         logLabel = chronicleLabels[4]; // Alias for backward compatibility
 
@@ -494,7 +497,7 @@ public class Hud implements Disposable {
         bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
         bottomBarTable.add(delveZone).width(330).fillY();
         bottomBarTable.add(new Image(hudSkin.getDividerIron())).width(6).fillY().padLeft(4).padRight(4);
-        bottomBarTable.add(chronicleZone).expandX().fill();
+        bottomBarTable.add(chronicleZone).width(648).fillY();
 
         // --- Main Container (200px Height) ---
         mainContainer = new Table();
@@ -736,6 +739,101 @@ public class Hud implements Disposable {
         int count = 1;
     }
 
+    private static class DisplayRow {
+        String text;
+        Color color;
+    }
+
+    private List<String> wrapMessage(String message, float maxWidth) {
+        return wrapMessageText(message, logFont, chronicleGlyphLayout, maxWidth);
+    }
+
+    public static List<String> wrapMessageText(String message, BitmapFont font, GlyphLayout layout, float maxWidth) {
+        if (message == null || message.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (font != null && layout != null) {
+            layout.setText(font, message);
+            if (layout.width <= maxWidth) {
+                return Collections.singletonList(message);
+            }
+        } else if (message.length() <= 55) {
+            return Collections.singletonList(message);
+        }
+
+        String[] words = message.split(" ");
+        List<String> lines = new ArrayList<>();
+        StringBuilder currentLine = new StringBuilder();
+
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+
+            String candidate = currentLine.length() == 0 ? word : currentLine + " " + word;
+            boolean fits;
+            if (font != null && layout != null) {
+                layout.setText(font, candidate);
+                fits = (layout.width <= maxWidth);
+            } else {
+                fits = (candidate.length() <= 55);
+            }
+
+            if (fits) {
+                currentLine = new StringBuilder(candidate);
+            } else {
+                if (currentLine.length() > 0) {
+                    lines.add(currentLine.toString());
+                    currentLine = new StringBuilder();
+                }
+
+                // Check if the single word itself is wider than maxWidth
+                boolean singleWordFits;
+                if (font != null && layout != null) {
+                    layout.setText(font, word);
+                    singleWordFits = (layout.width <= maxWidth);
+                } else {
+                    singleWordFits = (word.length() <= 55);
+                }
+
+                if (!singleWordFits) {
+                    StringBuilder subWord = new StringBuilder();
+                    for (int c = 0; c < word.length(); c++) {
+                        char ch = word.charAt(c);
+                        String subCandidate = subWord.toString() + ch;
+                        boolean subFits;
+                        if (font != null && layout != null) {
+                            layout.setText(font, subCandidate);
+                            subFits = (layout.width <= maxWidth);
+                        } else {
+                            subFits = (subCandidate.length() <= 55);
+                        }
+
+                        if (subFits) {
+                            subWord.append(ch);
+                        } else {
+                            if (subWord.length() > 0) {
+                                lines.add(subWord.toString());
+                                subWord = new StringBuilder();
+                            }
+                            subWord.append(ch);
+                        }
+                    }
+                    if (subWord.length() > 0) {
+                        currentLine = subWord;
+                    }
+                } else {
+                    currentLine.append(word);
+                }
+            }
+        }
+
+        if (currentLine.length() > 0) {
+            lines.add(currentLine.toString());
+        }
+
+        return lines;
+    }
+
     private void updateChronicleLog() {
         List<String> rawHistory = eventManager.getMessageHistory();
         if (rawHistory == null || rawHistory.isEmpty()) {
@@ -747,7 +845,7 @@ public class Hud implements Disposable {
 
         // Deduplicate consecutive identical messages from the newest entries
         java.util.List<ParsedLogLine> deduplicated = new java.util.ArrayList<>();
-        for (int i = 0; i < rawHistory.size() && deduplicated.size() < 5; i++) {
+        for (int i = 0; i < rawHistory.size() && deduplicated.size() < 10; i++) {
             String raw = rawHistory.get(i);
             if (raw == null || raw.trim().isEmpty()) continue;
             raw = raw.trim();
@@ -762,6 +860,32 @@ public class Hud implements Disposable {
             }
         }
 
+        // Wrap messages into visual display rows fitting Chronicle width (620px)
+        // Newer messages are placed lower. We collect up to 5 visual rows total.
+        List<DisplayRow> displayRows = new ArrayList<>();
+        for (ParsedLogLine item : deduplicated) {
+            if (displayRows.size() >= 5) break;
+
+            String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
+            List<String> wrapped = wrapMessage(display, 620f);
+
+            List<DisplayRow> messageRows = new ArrayList<>();
+            for (String subLine : wrapped) {
+                DisplayRow row = new DisplayRow();
+                row.text = subLine;
+                row.color = item.color;
+                messageRows.add(row);
+            }
+
+            // Insert at front so older messages precede newer messages in reading order
+            displayRows.addAll(0, messageRows);
+        }
+
+        // Keep at most the most recent 5 rows (the tail)
+        if (displayRows.size() > 5) {
+            displayRows = displayRows.subList(displayRows.size() - 5, displayRows.size());
+        }
+
         // Alphas: index 4 (newest, bottom) = 1.0f, then 0.85f, 0.70f, 0.55f, 0.40f
         float[] alphas = { 0.40f, 0.55f, 0.70f, 0.85f, 1.0f };
 
@@ -769,13 +893,12 @@ public class Hud implements Disposable {
             chronicleLabels[i].setText("");
         }
 
-        int numLines = Math.min(5, deduplicated.size());
-        for (int i = 0; i < numLines; i++) {
-            int labelIndex = 4 - i;
-            ParsedLogLine item = deduplicated.get(i);
-            String display = item.count > 1 ? item.text + " (x" + item.count + ")" : item.text;
-            chronicleLabels[labelIndex].setText(checkScramble(display));
-            Color c = item.color;
+        int numRows = displayRows.size();
+        for (int i = 0; i < numRows; i++) {
+            int labelIndex = (5 - numRows) + i;
+            DisplayRow row = displayRows.get(i);
+            chronicleLabels[labelIndex].setText(checkScramble(row.text));
+            Color c = row.color;
             float alpha = alphas[labelIndex];
             chronicleLabels[labelIndex].setColor(c.r, c.g, c.b, alpha);
         }
