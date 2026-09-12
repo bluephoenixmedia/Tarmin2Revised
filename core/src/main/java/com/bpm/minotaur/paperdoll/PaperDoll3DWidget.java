@@ -82,7 +82,7 @@ public class PaperDoll3DWidget extends Widget implements Disposable {
         // Portrait aspect ratio camera
         camera = new PerspectiveCamera(38f, FBO_W, FBO_H);
         // Paladin model: height ~1.72m, centered around Y=0.86m
-        camera.position.set(0f, 0.92f, 2.75f);
+        camera.position.set(0f, 0.90f, 2.65f);
         camera.lookAt(0f, 0.88f, 0f);
         camera.near = 0.1f;
         camera.far = 20f;

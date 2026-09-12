@@ -1,10 +1,10 @@
 """
-Converts Mixamo/FBX models into Wavefront OBJ/MTL with textures and scale normalization for LibGDX.
-Run via Blender 5.1 headless:
-& "C:\\Program Files\\Blender Foundation\\Blender 5.1\\blender.exe" -b --python tools/convert_fbx_to_obj.py
+Converts Mixamo/FBX models into Wavefront OBJ/MTL with textures, A-pose transformation,
+and scale normalization for LibGDX.
 """
 
 import os
+import math
 from io_scene_fbx import parse_fbx
 
 INPUT_FBX_NOPROPS = "assets/models/character_noprops.fbx"
@@ -13,7 +13,31 @@ OUT_DIR = "assets/models/player"
 
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# 1. Export Paladin Body + Head
+def transform_to_a_pose(x, y, z):
+    # Left Arm (X > 0)
+    if x > 0.16 and y > 0.90:
+        factor = min(1.0, (x - 0.16) / 0.08)
+        angle = math.radians(-65.0 * factor)
+        px, py = 0.16, 1.38
+        dx, dy = x - px, y - py
+        nx = px + dx * math.cos(angle) - dy * math.sin(angle)
+        ny = py + dx * math.sin(angle) + dy * math.cos(angle)
+        # Slight forward bend at elbow/forearm
+        nz = z + (0.04 * factor if y < 1.10 else 0.0)
+        return nx, ny, nz
+    # Right Arm (X < 0)
+    elif x < -0.16 and y > 0.90:
+        factor = min(1.0, (-x - 0.16) / 0.08)
+        angle = math.radians(65.0 * factor)
+        px, py = -0.16, 1.38
+        dx, dy = x - px, y - py
+        nx = px + dx * math.cos(angle) - dy * math.sin(angle)
+        ny = py + dx * math.sin(angle) + dy * math.cos(angle)
+        nz = z + (0.04 * factor if y < 1.10 else 0.0)
+        return nx, ny, nz
+    return x, y, z
+
+# 1. Export Paladin Body + Head in A-pose
 elem, version = parse_fbx.parse(INPUT_FBX_NOPROPS)
 objs = [c for c in elem.elems if c.id == b'Objects'][0]
 
@@ -54,12 +78,15 @@ for m in mesh_models:
     raw_poly = poly_elem.props
 
     for i in range(0, len(raw_v), 3):
-        all_v.append((raw_v[i] * 0.01, raw_v[i+1] * 0.01, raw_v[i+2] * 0.01))
+        x, y, z = raw_v[i] * 0.01, raw_v[i+1] * 0.01, raw_v[i+2] * 0.01
+        ax, ay, az = transform_to_a_pose(x, y, z)
+        all_v.append((ax, ay, az))
 
     raw_uv = [c for c in uv_elem.elems if c.id == b'UV'][0].props
     uv_idx_elems = [c for c in uv_elem.elems if c.id == b'UVIndex']
     raw_uv_idx = uv_idx_elems[0].props if uv_idx_elems else None
 
+    # Standard UV coordinate mapping
     for i in range(0, len(raw_uv), 2):
         all_vt.append((raw_uv[i], raw_uv[i+1]))
 
@@ -110,9 +137,9 @@ with open(obj_path, "w") as f:
         tokens = [f"{vs[i]}/{vts[i]}/{vns[i]}" for i in range(len(vs))]
         f.write("f " + " ".join(tokens) + "\n")
 
-print(f"Generated {obj_path}")
+print(f"Generated {obj_path} in A-pose with flipped UVs")
 
-# 2. Export Sword and Shield from PROPS FBX
+# 2. Export Sword and Shield from PROPS FBX transformed to match hands
 elem_props, _ = parse_fbx.parse(INPUT_FBX_PROPS)
 objs_props = [c for c in elem_props.elems if c.id == b'Objects'][0]
 
@@ -135,7 +162,9 @@ def export_prop(m_elem, filename):
         f.write("mtllib paladin.mtl\n")
         f.write("usemtl Paladin_Mat\n")
         for i in range(0, len(raw_v), 3):
-            f.write(f"v {raw_v[i]*0.01:.5f} {raw_v[i+1]*0.01:.5f} {raw_v[i+2]*0.01:.5f}\n")
+            x, y, z = raw_v[i]*0.01, raw_v[i+1]*0.01, raw_v[i+2]*0.01
+            ax, ay, az = transform_to_a_pose(x, y, z)
+            f.write(f"v {ax:.5f} {ay:.5f} {az:.5f}\n")
         for i in range(0, len(raw_uv), 2):
             f.write(f"vt {raw_uv[i]:.5f} {raw_uv[i+1]:.5f}\n")
         for i in range(0, len(raw_norm), 3):
