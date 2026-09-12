@@ -11932,7 +11932,7 @@
 	"SWORD_FLAMBERGE": {
 		"friendlyName": "Sword, Flamberge",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_flamberge.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12024,7 +12024,7 @@
 	"SWORD_GIANT_KIN_TWO_HANDED": {
 		"friendlyName": "Sword, Giant-kin Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_giant_kin_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12116,7 +12116,7 @@
 	"SWORD_GREAT_SCIMITAR": {
 		"friendlyName": "Sword, Great Scimitar",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_great_scimitar.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12208,7 +12208,7 @@
 	"SWORD_HOOK": {
 		"friendlyName": "Sword, Hook",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_hook.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12300,7 +12300,7 @@
 	"SWORD_KATANA_ONE_HANDED": {
 		"friendlyName": "Sword, Katana, One-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_katana_one_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12392,7 +12392,7 @@
 	"SWORD_KATANA_TWO_HANDED": {
 		"friendlyName": "Sword, Katana, Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_katana_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12484,7 +12484,7 @@
 	"SWORD_KHANDAR_ONE_HANDED": {
 		"friendlyName": "Sword, Khandar, One-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_khandar_one_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -12576,7 +12576,7 @@
 	"SWORD_KHANDAR_TWO_HANDED": {
 		"friendlyName": "Sword, Khandar, Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_khandar_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16648,7 +16648,7 @@
 	"ARROW_FLIGHT": {
 		"friendlyName": "Arrow, Flight",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/flightarrow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16740,7 +16740,7 @@
 	"ARROW_FORGET": {
 		"friendlyName": "Arrow, Forget",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16832,7 +16832,7 @@
 	"ARROW_GIANT_KIN": {
 		"friendlyName": "Arrow, Giant-kin",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16924,7 +16924,7 @@
 	"ARROW_KENYAN": {
 		"friendlyName": "Arrow, Kenyan",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17016,7 +17016,7 @@
 	"ARROW_MAIL_PIERCER": {
 		"friendlyName": "Arrow, Mail-Piercer",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17108,7 +17108,7 @@
 	"ARROW_SHEAF": {
 		"friendlyName": "Arrow, Sheaf",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17200,7 +17200,7 @@
 	"ARROW_SLEEP": {
 		"friendlyName": "Arrow, Sleep",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17292,7 +17292,7 @@
 	"ARROW_STONE_FLIGHT": {
 		"friendlyName": "Arrow, Stone Flight",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17384,7 +17384,7 @@
 	"ARROW_WAR": {
 		"friendlyName": "Arrow, War",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17476,7 +17476,7 @@
 	"AXE_FOREARM": {
 		"friendlyName": "Axe, Forearm",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17568,7 +17568,7 @@
 	"AXE_HAND_THROWING": {
 		"friendlyName": "Axe, Hand/Throwing",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17660,7 +17660,7 @@
 	"AXE_TWO_HANDED_BATTLE": {
 		"friendlyName": "Axe, Two-Handed Battle",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17752,7 +17752,7 @@
 	"BELAYING_PIN": {
 		"friendlyName": "Belaying Pin",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17844,7 +17844,7 @@
 	"BLOWGUN": {
 		"friendlyName": "Blowgun",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17936,7 +17936,7 @@
 	"BLOWGUN_BARBED_DART": {
 		"friendlyName": "Blowgun, Barbed Dart",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18028,7 +18028,7 @@
 	"BLOWGUN_NEEDLE": {
 		"friendlyName": "Blowgun, Needle",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18120,7 +18120,7 @@
 	"BOW_COMPOSITE_SHORT": {
 		"friendlyName": "Bow, Composite Short",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18212,7 +18212,7 @@
 	"BOW_FOLDING_SHORT": {
 		"friendlyName": "Bow, Folding Short",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18304,7 +18304,7 @@
 	"BOW_GIANT_KIN_LONG": {
 		"friendlyName": "Bow, Giant-kin Long",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18396,7 +18396,7 @@
 	"BOW_KENYAN_LONG": {
 		"friendlyName": "Bow, Kenyan Long",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18488,7 +18488,7 @@
 	"BOW_LONG": {
 		"friendlyName": "Bow, Long",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18580,7 +18580,7 @@
 	"BOW_PIXIE": {
 		"friendlyName": "Bow, Pixie",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18672,7 +18672,7 @@
 	"BOW_SHORT": {
 		"friendlyName": "Bow, Short",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18764,7 +18764,7 @@
 	"CALTROP": {
 		"friendlyName": "Caltrop",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18856,7 +18856,7 @@
 	"CLUB_GREAT": {
 		"friendlyName": "Club, Great",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18948,7 +18948,7 @@
 	"CLUB_RIM": {
 		"friendlyName": "Club, Rim",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19040,7 +19040,7 @@
 	"CROSSBOW_DISK": {
 		"friendlyName": "Crossbow, Disk",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19132,7 +19132,7 @@
 	"CROSSBOW_HAND": {
 		"friendlyName": "Crossbow, Hand",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19224,7 +19224,7 @@
 	"CROSSBOW_HEAVY": {
 		"friendlyName": "Crossbow, Heavy",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19316,7 +19316,7 @@
 	"CROSSBOW_LIGHT": {
 		"friendlyName": "Crossbow, Light",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19408,7 +19408,7 @@
 	"DAGGER_BONE": {
 		"friendlyName": "Dagger, Bone",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19500,7 +19500,7 @@
 	"DAGGER_CLIMBING": {
 		"friendlyName": "Dagger, Climbing",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19592,7 +19592,7 @@
 	"DAGGER_GIANT_KIN": {
 		"friendlyName": "Dagger, Giant-kin",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19684,7 +19684,7 @@
 	"DAGGER_PARRYING": {
 		"friendlyName": "Dagger, Parrying",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19776,7 +19776,7 @@
 	"DAGGER_STONE": {
 		"friendlyName": "Dagger, Stone",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19868,7 +19868,7 @@
 	"DART_BARBED": {
 		"friendlyName": "Dart, Barbed",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19960,7 +19960,7 @@
 	"DEJADA_CESTUS": {
 		"friendlyName": "Dejada Cestus",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20052,7 +20052,7 @@
 	"DISK_CROSSBOW": {
 		"friendlyName": "Disk, Crossbow",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20144,7 +20144,7 @@
 	"FLAIL_FOOTMAN_S": {
 		"friendlyName": "Flail, Footman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20236,7 +20236,7 @@
 	"FLAIL_GRAIN": {
 		"friendlyName": "Flail, Grain",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20328,7 +20328,7 @@
 	"FLAIL_HORSEMAN_S": {
 		"friendlyName": "Flail, Horseman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20420,7 +20420,7 @@
 	"GAFF_HOOK_ATTACHED": {
 		"friendlyName": "Gaff / Hook, Attached",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20512,7 +20512,7 @@
 	"GAFF_HOOK_HELD": {
 		"friendlyName": "Gaff / Hook, Held",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20604,7 +20604,7 @@
 	"GLADIATOR_S_FRIEND_FOOTMAN_S": {
 		"friendlyName": "Gladiator's Friend, Footman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20696,7 +20696,7 @@
 	"GLADIATOR_S_FRIEND_HORSEMAN_S": {
 		"friendlyName": "Gladiator's Friend, Horseman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20788,7 +20788,7 @@
 	"HARPOON_TWO_HANDED": {
 		"friendlyName": "Harpoon, Two-Handed",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20880,7 +20880,7 @@
 	"HATCHET": {
 		"friendlyName": "Hatchet",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20972,7 +20972,7 @@
 	"HATCHET_HAWK": {
 		"friendlyName": "Hatchet, Hawk",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21064,7 +21064,7 @@
 	"JAVELIN_STONE_ONE_HANDED": {
 		"friendlyName": "Javelin, Stone, One-Handed",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21156,7 +21156,7 @@
 	"JAVELIN_STONE_TWO_HANDED": {
 		"friendlyName": "Javelin, Stone, Two-Handed",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21248,7 +21248,7 @@
 	"JAVELIN_TWO_HANDED": {
 		"friendlyName": "Javelin, Two-Handed",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21340,7 +21340,7 @@
 	"KNIFE_BONE": {
 		"friendlyName": "Knife, Bone",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21432,7 +21432,7 @@
 	"KNIFE_HARNESS": {
 		"friendlyName": "Knife, Harness",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21524,7 +21524,7 @@
 	"KNIFE_STONE": {
 		"friendlyName": "Knife, Stone",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21616,7 +21616,7 @@
 	"KNIFE_THROWING": {
 		"friendlyName": "Knife, Throwing",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21708,7 +21708,7 @@
 	"KNIFE_WIDOW_S": {
 		"friendlyName": "Knife, Widow's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21800,7 +21800,7 @@
 	"LANCE_FLIGHT": {
 		"friendlyName": "Lance, Flight",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21892,7 +21892,7 @@
 	"LANCE_HEAVY_HORSE1": {
 		"friendlyName": "Lance, Heavy Horse1",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21984,7 +21984,7 @@
 	"LANCE_JOUSTING1": {
 		"friendlyName": "Lance, Jousting1",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22076,7 +22076,7 @@
 	"LANCE_LIGHT_HORSE1": {
 		"friendlyName": "Lance, Light Horse1",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22168,7 +22168,7 @@
 	"LANCE_MEDIUM_HORSE1": {
 		"friendlyName": "Lance, Medium Horse1",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22260,7 +22260,7 @@
 	"LASSO": {
 		"friendlyName": "Lasso",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22352,7 +22352,7 @@
 	"MACE_BLADEBACK": {
 		"friendlyName": "Mace, Bladeback",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22444,7 +22444,7 @@
 	"MACE_FOOTMAN_S": {
 		"friendlyName": "Mace, Footman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22536,7 +22536,7 @@
 	"MACE_FOOTMAN_S_WHISTLING": {
 		"friendlyName": "Mace, Footman's Whistling",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22628,7 +22628,7 @@
 	"MACE_GIANT_KIN": {
 		"friendlyName": "Mace, Giant-kin",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22720,7 +22720,7 @@
 	"MACE_HORSEMAN_S": {
 		"friendlyName": "Mace, Horseman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22812,7 +22812,7 @@
 	"MACE_HORSEMAN_S_WHISTLING": {
 		"friendlyName": "Mace, Horseman's Whistling",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22904,7 +22904,7 @@
 	"MANCATCHER2": {
 		"friendlyName": "Mancatcher2",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22996,7 +22996,7 @@
 	"MORNING_STAR_DOUBLE_BALL": {
 		"friendlyName": "Morning Star, Double-Ball",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23088,7 +23088,7 @@
 	"NET": {
 		"friendlyName": "Net",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23180,7 +23180,7 @@
 	"PATA1": {
 		"friendlyName": "Pata1",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23272,7 +23272,7 @@
 	"PICK_HORSEMAN_S": {
 		"friendlyName": "Pick, Horseman's",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23364,7 +23364,7 @@
 	"PICK_ICE": {
 		"friendlyName": "Pick, Ice",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23456,7 +23456,7 @@
 	"POLEARM_GLAIVE4": {
 		"friendlyName": "Polearm, Glaive4",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23548,7 +23548,7 @@
 	"POLEARM_GUISARME": {
 		"friendlyName": "Polearm, Guisarme",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23640,7 +23640,7 @@
 	"POLEARM_MILITARY_FORK4": {
 		"friendlyName": "Polearm, Military Fork4",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23732,7 +23732,7 @@
 	"POLEARM_NAGINATA3": {
 		"friendlyName": "Polearm, Naginata3",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23824,7 +23824,7 @@
 	"POLEARM_PARTISAN3": {
 		"friendlyName": "Polearm, Partisan3",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23916,7 +23916,7 @@
 	"POLEARM_QUAD_FAUCHARD": {
 		"friendlyName": "Polearm, Quad Fauchard",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24008,7 +24008,7 @@
 	"POLEARM_RANSEUR3": {
 		"friendlyName": "Polearm, Ranseur3",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24100,7 +24100,7 @@
 	"POLEARM_SPETUM3": {
 		"friendlyName": "Polearm, Spetum3",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24192,7 +24192,7 @@
 	"POLEARM_TETSUBO": {
 		"friendlyName": "Polearm, Tetsubo",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24284,7 +24284,7 @@
 	"POLEARM_TRIKAL": {
 		"friendlyName": "Polearm, Trikal",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24376,7 +24376,7 @@
 	"POLEARM_VOULGE": {
 		"friendlyName": "Polearm, Voulge",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24468,7 +24468,7 @@
 	"QUARREL_HEAVY": {
 		"friendlyName": "Quarrel, Heavy",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24560,7 +24560,7 @@
 	"QUARREL_LIGHT": {
 		"friendlyName": "Quarrel, Light",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24652,7 +24652,7 @@
 	"RAZOR": {
 		"friendlyName": "Razor",
 		"description": null,
-		"texturePath": "images/items/bow.png",
+		"texturePath": "images/weapons/bow.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
