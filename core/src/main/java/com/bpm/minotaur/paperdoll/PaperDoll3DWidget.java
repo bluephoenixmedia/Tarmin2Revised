@@ -102,7 +102,7 @@ public class PaperDoll3DWidget extends Widget implements Disposable {
 
         try {
             if (Gdx.files.internal("models/player/paladin.obj").exists()) {
-                bodyModel = loader.loadModel(Gdx.files.internal("models/player/paladin.obj"));
+                bodyModel = loader.loadModel(Gdx.files.internal("models/player/paladin.obj"), true);
                 bodyInstance = new ModelInstance(bodyModel);
                 applyPixelFiltering(bodyModel);
             }
@@ -112,7 +112,7 @@ public class PaperDoll3DWidget extends Widget implements Disposable {
 
         try {
             if (Gdx.files.internal("models/player/paladin_sword.obj").exists()) {
-                swordModel = loader.loadModel(Gdx.files.internal("models/player/paladin_sword.obj"));
+                swordModel = loader.loadModel(Gdx.files.internal("models/player/paladin_sword.obj"), true);
                 swordInstance = new ModelInstance(swordModel);
                 applyPixelFiltering(swordModel);
             }
@@ -122,7 +122,7 @@ public class PaperDoll3DWidget extends Widget implements Disposable {
 
         try {
             if (Gdx.files.internal("models/player/paladin_shield.obj").exists()) {
-                shieldModel = loader.loadModel(Gdx.files.internal("models/player/paladin_shield.obj"));
+                shieldModel = loader.loadModel(Gdx.files.internal("models/player/paladin_shield.obj"), true);
                 shieldInstance = new ModelInstance(shieldModel);
                 applyPixelFiltering(shieldModel);
             }

@@ -137,7 +137,7 @@ with open(obj_path, "w") as f:
         tokens = [f"{vs[i]}/{vts[i]}/{vns[i]}" for i in range(len(vs))]
         f.write("f " + " ".join(tokens) + "\n")
 
-print(f"Generated {obj_path} in A-pose with flipped UVs")
+print(f"Generated {obj_path} in A-pose with standard OBJ UVs (LibGDX ObjLoader requires flipV=true)")
 
 # 2. Export Sword and Shield from PROPS FBX transformed to match hands
 elem_props, _ = parse_fbx.parse(INPUT_FBX_PROPS)
