@@ -204,6 +204,23 @@ public class FirstPersonWeaponOverlay {
         comboWindowTimer = 0f;
     }
 
+    /**
+     * Resets any active attack animations, walking states, and trails (e.g. when opening modal dialogs).
+     */
+    public void reset() {
+        active = false;
+        attackTimer = 0f;
+        comboIndex = 0;
+        comboWindowTimer = 0f;
+        isWalking = false;
+        isGuarding = false;
+        guardFlinchTimer = 0f;
+        turnSway = 0f;
+        if (trailRenderer != null) {
+            trailRenderer.clear();
+        }
+    }
+
     public void addBloodToWeapon() {
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }

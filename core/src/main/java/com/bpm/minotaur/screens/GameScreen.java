@@ -951,6 +951,9 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.encounters.Encounter encounter = game.getEncounterManager()
                         .getEncounter(eventId);
                 if (encounter != null && hud != null && hud.getEncounterWindow() != null) {
+                    if (weaponOverlay != null) {
+                        weaponOverlay.reset();
+                    }
                     hud.getEncounterWindow().configure(player, game.getEncounterManager(), eventManager,
                             game.getItemDataManager(), game.getMonsterDataManager(), game.getAssetManager(),
                             maze, null);
@@ -1265,6 +1268,12 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
+        // --- Forward keyboard input to active EncounterWindow modal ---
+        if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
+            hud.getEncounterWindow().handleInput(keycode);
+            return true;
+        }
+
         if (keycode == Input.Keys.ESCAPE) {
             game.setScreen(new PauseScreen(game, this));
             return true;
@@ -1272,10 +1281,6 @@ public class GameScreen extends BaseScreen {
 
         if (worldManager == null || player == null || maze == null)
             return false;
-
-        if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
-            return true;
-        }
 
         // --- FIX: Block Input if Sleeping ---
         if (player != null && player.getStatusManager().hasEffect(StatusEffectType.SLEEP)) {
@@ -1500,8 +1505,12 @@ public class GameScreen extends BaseScreen {
                 // And A can remain as Quick Slot / Ranged?
             }
 
-            if (weaponOverlay != null && weaponOverlay.isMovementLocked()) {
-                // Movement locked during anticipation windup (~0.10s)
+            boolean isMovementKey = (keycode == Input.Keys.UP || keycode == Input.Keys.DOWN ||
+                    keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT ||
+                    keycode == Input.Keys.NUMPAD_8 || keycode == Input.Keys.NUMPAD_2 ||
+                    keycode == Input.Keys.NUMPAD_4 || keycode == Input.Keys.NUMPAD_6);
+            if (isMovementKey && weaponOverlay != null && weaponOverlay.isMovementLocked()) {
+                // Directional movement locked during anticipation windup (~0.10s)
                 return true;
             }
 

@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -44,6 +46,7 @@ public class EncounterWindow extends Table {
     private List<TextButton> choiceButtons = new ArrayList<>();
     private List<EncounterChoice> choiceData = new ArrayList<>(); // Keep track of data
     private int selectedIndex = -1;
+    private boolean resolved = false;
 
     // Drawables for button states
     private TextureRegionDrawable normalDrawable;
@@ -83,20 +86,22 @@ public class EncounterWindow extends Table {
 
         titleLabel = new Label("", titleStyle);
         titleLabel.setAlignment(Align.center);
-        this.add(titleLabel).growX().padBottom(20).row();
+        this.add(titleLabel).growX().padBottom(12).row();
 
         eventImage = new Image();
         eventImage.setScaling(Scaling.fit);
-        this.add(eventImage).size(900, 400).padBottom(20).row();
+        this.add(eventImage).size(760, 320).padBottom(12).row();
 
         bodyLabel = new Label("", bodyStyle);
         bodyLabel.setWrap(true);
         bodyLabel.setAlignment(Align.left);
-        this.add(bodyLabel).growX().width(500).padBottom(20).row();
+        this.add(bodyLabel).growX().width(760).padBottom(15).row();
 
         choicesTable = new Table();
+        choicesTable.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
         this.add(choicesTable).growX().row();
 
+        this.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
         this.setVisible(false);
 
         // --- Keyboard Listener (Local Focus Fallback) ---
@@ -106,11 +111,47 @@ public class EncounterWindow extends Table {
                 return handleInput(keycode);
             }
         });
+
+        // Ensure clicking anywhere on the window re-focuses it for keyboard input
+        this.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (getStage() != null) {
+                    getStage().setKeyboardFocus(EncounterWindow.this);
+                }
+            }
+        });
     }
 
     public boolean handleInput(int keycode) {
         if (!isVisible())
             return false;
+
+        // Direct number keys 1-9 to immediately trigger corresponding enabled choice
+        if (keycode >= com.badlogic.gdx.Input.Keys.NUM_1 && keycode <= com.badlogic.gdx.Input.Keys.NUM_9) {
+            int targetIdx = keycode - com.badlogic.gdx.Input.Keys.NUM_1;
+            if (targetIdx < choiceButtons.size()) {
+                TextButton btn = choiceButtons.get(targetIdx);
+                if (!btn.isDisabled()) {
+                    selectedIndex = targetIdx;
+                    updateSelectionVisuals();
+                    triggerSelection();
+                    return true;
+                }
+            }
+        }
+        if (keycode >= com.badlogic.gdx.Input.Keys.NUMPAD_1 && keycode <= com.badlogic.gdx.Input.Keys.NUMPAD_9) {
+            int targetIdx = keycode - com.badlogic.gdx.Input.Keys.NUMPAD_1;
+            if (targetIdx < choiceButtons.size()) {
+                TextButton btn = choiceButtons.get(targetIdx);
+                if (!btn.isDisabled()) {
+                    selectedIndex = targetIdx;
+                    updateSelectionVisuals();
+                    triggerSelection();
+                    return true;
+                }
+            }
+        }
 
         if (keycode == com.badlogic.gdx.Input.Keys.UP || keycode == com.badlogic.gdx.Input.Keys.W) {
             moveSelection(-1);
@@ -119,7 +160,8 @@ public class EncounterWindow extends Table {
             moveSelection(1);
             return true;
         } else if (keycode == com.badlogic.gdx.Input.Keys.ENTER
-                || keycode == com.badlogic.gdx.Input.Keys.SPACE) {
+                || keycode == com.badlogic.gdx.Input.Keys.SPACE
+                || keycode == com.badlogic.gdx.Input.Keys.E) {
             triggerSelection();
             return true;
         } else if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE) {
@@ -168,6 +210,7 @@ public class EncounterWindow extends Table {
         if (encounter == null)
             return;
 
+        resolved = false;
         titleLabel.setText(encounter.title);
         bodyLabel.setText(encounter.text);
 
@@ -184,10 +227,12 @@ public class EncounterWindow extends Table {
 
         for (int i = 0; i < encounter.choices.size(); i++) {
             EncounterChoice choice = encounter.choices.get(i);
-            // Create a UNIQUE style for each button so we can change its 'up' drawable
-            // independently
+            // Create a UNIQUE style for each button so we can change its 'up' drawable independently
             TextButton.TextButtonStyle uniqueStyle = new TextButton.TextButtonStyle(buttonStyle);
-            TextButton btn = new TextButton(choice.text, uniqueStyle);
+            String buttonText = "[ " + (i + 1) + " ]  " + choice.text;
+            TextButton btn = new TextButton(buttonText, uniqueStyle);
+            btn.getLabel().setAlignment(Align.left);
+            btn.pad(8, 20, 8, 20);
 
             boolean reqMet = encounterManager.checkRequirement(player, choice.requirement);
             boolean costMet = encounterManager.checkCost(player, choice.cost);
@@ -196,11 +241,11 @@ public class EncounterWindow extends Table {
 
             if (!reqMet) {
                 if (choice.requirement != null) {
-                    btn.setText(choice.text + " [Req: " + choice.requirement.stat + "]");
+                    btn.setText(buttonText + "  [Req: " + choice.requirement.stat + " > " + choice.requirement.value + "]");
                 }
             } else if (!costMet) {
                 if (choice.cost != null) {
-                    btn.setText(choice.text + " [Cost: " + choice.cost.amount + " " + choice.cost.type + "]");
+                    btn.setText(buttonText + "  [Cost: " + choice.cost.amount + " " + choice.cost.type + "]");
                 }
             }
 
@@ -212,6 +257,13 @@ public class EncounterWindow extends Table {
                 // Determine initial selection
                 if (selectedIndex == -1)
                     selectedIndex = index;
+
+                btn.addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ChangeEvent event, Actor actor) {
+                        resolveChoice(choiceData.get(index));
+                    }
+                });
 
                 btn.addListener(new ClickListener() {
                     @Override
@@ -232,25 +284,38 @@ public class EncounterWindow extends Table {
 
             choiceButtons.add(btn);
             choiceData.add(choice);
-            choicesTable.add(btn).growX().padBottom(10).row();
+            choicesTable.add(btn).growX().height(44).padBottom(8).row();
         }
 
         updateSelectionVisuals();
 
-        // --- Fix Positioning: Center Strictly ---
+        // --- Fix Positioning: Center Strictly above 200px HUD bottom bar ---
         this.pack(); // Re-calculate size
-        if (getStage() != null) {
-            this.setPosition(getStage().getWidth() / 2f, getStage().getHeight() / 2f, Align.center);
-        }
+        float preferredW = Math.max(920f, getPrefWidth());
+        float preferredH = Math.max(600f, getPrefHeight());
+        this.setSize(preferredW, preferredH);
 
-        this.setVisible(true);
-        this.toFront();
-
-        // Request Focus for Keyboard
         if (getStage() != null) {
+            float hudHeight = 200f;
+            float availableHeight = getStage().getHeight() - hudHeight;
+            float centerY = hudHeight + availableHeight / 2f;
+            this.setPosition(getStage().getWidth() / 2f, centerY, Align.center);
+
+            // Safety bounds clamping
+            if (getY() < hudHeight + 10f) {
+                setY(hudHeight + 10f);
+            }
+            if (getY() + getHeight() > getStage().getHeight() - 10f) {
+                setY(getStage().getHeight() - getHeight() - 10f);
+            }
+
             getStage().setKeyboardFocus(this);
             getStage().setScrollFocus(this);
         }
+
+        this.setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+        this.setVisible(true);
+        this.toFront();
 
         // Unlock cursor for UI interaction
         Gdx.input.setCursorCatched(false);
@@ -312,7 +377,26 @@ public class EncounterWindow extends Table {
     }
 
     private void resolveChoice(EncounterChoice choice) {
+        if (resolved)
+            return;
+        if (choice == null) {
+            close();
+            return;
+        }
+        resolved = true;
+
         encounterManager.payCost(player, choice.cost);
+
+        // Simple or direct combat encounter choice (e.g. Doppelganger from broken mirror)
+        if ((choice.type == EncounterChoice.CheckType.COMBAT || choice.monsterId != null)
+                && (choice.successEffect == null
+                        || choice.successEffect.type != com.bpm.minotaur.gamedata.encounters.EncounterResult.Type.SPAWN_MONSTER)) {
+            com.bpm.minotaur.gamedata.encounters.EncounterResult combatResult = new com.bpm.minotaur.gamedata.encounters.EncounterResult();
+            combatResult.type = com.bpm.minotaur.gamedata.encounters.EncounterResult.Type.SPAWN_MONSTER;
+            combatResult.monsterId = choice.monsterId != null ? choice.monsterId : "DOPPELGANGER";
+            encounterManager.resolveResult(combatResult, player, eventManager, itemDataManager,
+                    monsterDataManager, assetManager, currentMaze);
+        }
 
         boolean success = true;
         if (choice.successChance < 1.0f) {
@@ -330,10 +414,11 @@ public class EncounterWindow extends Table {
         close();
     }
 
-    private void close() {
+    public void close() {
         this.setVisible(false);
         if (getStage() != null) {
             getStage().setKeyboardFocus(null); // Release focus
+            getStage().setScrollFocus(null);
         }
         if (onClose != null)
             onClose.run();

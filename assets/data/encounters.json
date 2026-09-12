@@ -43,13 +43,17 @@
             "id": "EVENT_BROKEN_MIRROR",
             "title": "The Broken Mirror",
             "imagePath": "images/events/broken_mirror.png",
-            "text": "You gaze into the minor. The reflection moves on its own, offering you a trade.",
+            "text": "You gaze into the mirror. The reflection moves on its own, offering you a trade.",
             "choices": [
                 {
                     "text": "Smash the mirror.",
                     "type": "COMBAT",
                     "monsterId": "DOPPELGANGER",
-                    "text": "The reflection shatters and steps out!"
+                    "successEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "DOPPELGANGER",
+                        "text": "The reflection shatters and steps out!"
+                    }
                 },
                 {
                     "text": "Offer your vitality (Lose 5 Max HP).",

@@ -344,6 +344,7 @@ public class Hud implements Disposable {
             backpackSlots[i].addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
                     if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
                             || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
                         combatManager.playerUseItem(slotIdx, discoveryManager);
@@ -356,6 +357,7 @@ public class Hud implements Disposable {
             backpackSlots[i].addListener(new InputListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (encounterWindow != null && encounterWindow.isVisible()) return;
                     Item item = player.getInventory().getQuickSlots()[slotIdx];
                     Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
                     hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, "Hotkey " + (slotIdx + 1));
@@ -385,6 +387,7 @@ public class Hud implements Disposable {
         leftHandSlot.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
                 player.getInventory().swapHands();
                 if (eventManager != null) eventManager.addEvent(new GameEvent("Swapped hands.", 1.5f));
             }
@@ -392,6 +395,7 @@ public class Hud implements Disposable {
         leftHandSlot.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
                 Item item = player.getInventory().getLeftHand();
                 Vector2 pos = leftHandSlot.localToStageCoordinates(new Vector2(0, 0));
                 hudTooltip.show(item, pos.x + 28f, pos.y, "Click to Swap / [S]");
@@ -411,6 +415,7 @@ public class Hud implements Disposable {
         rightHandSlot.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
                 player.getInventory().swapHands();
                 if (eventManager != null) eventManager.addEvent(new GameEvent("Swapped hands.", 1.5f));
             }
@@ -418,6 +423,7 @@ public class Hud implements Disposable {
         rightHandSlot.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
                 Item item = player.getInventory().getRightHand();
                 Vector2 pos = rightHandSlot.localToStageCoordinates(new Vector2(0, 0));
                 hudTooltip.show(item, pos.x + 28f, pos.y, "Click to Swap / [S]");
@@ -821,10 +827,11 @@ public class Hud implements Disposable {
         // This renders all actors (labels, etc.) *and* the debug lines (if enabled)
         stage.draw();
 
-        // Draw the 2D inventory items AFTER stage to appear on top
-        drawInventory();
-
-        drawPickupToast();
+        // Draw the 2D inventory items AFTER stage to appear on top (unless modal encounter is open)
+        if (encounterWindow == null || !encounterWindow.isVisible()) {
+            drawInventory();
+            drawPickupToast();
+        }
 
         if (isDebug) {
 
@@ -1355,6 +1362,7 @@ public class Hud implements Disposable {
         if (worldInteractionCard == null) return;
 
         if (debugManager.isDebugOverlayVisible() ||
+                (encounterWindow != null && encounterWindow.isVisible()) ||
                 (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
             worldInteractionCard.hide();
             return;
