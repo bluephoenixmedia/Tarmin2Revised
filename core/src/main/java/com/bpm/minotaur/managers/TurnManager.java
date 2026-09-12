@@ -141,25 +141,26 @@ public class TurnManager {
             }
 
             float stress = 0f;
-            if (ambientTemp < 10.0f) {
-                // Cold stress
-                float effectiveCold = (10.0f - ambientTemp) - totalWarmth;
+            if (ambientTemp < 5.0f) {
+                // True cold stress (Snow / Blizzard)
+                float effectiveCold = (5.0f - ambientTemp) - totalWarmth;
                 if (effectiveCold > 0) {
-                    stress = -effectiveCold * 0.01f;
+                    stress = -effectiveCold * 0.003f;
                 } else {
-                    // Warm enough, maybe slowly recover to 37
                     if (currentTemp < 37.0f) {
-                        stress = 0.005f;
+                        stress = 0.01f;
                     }
                 }
-            } else if (ambientTemp > 30.0f) {
-                stress = (ambientTemp - 30.0f) * 0.01f; // Heat stress (Armor makes it worse? For now ignore)
+            } else if (ambientTemp > 35.0f) {
+                // True heat stress (Extreme Desert Heatwave)
+                stress = (ambientTemp - 35.0f) * 0.005f;
             } else {
-                // Recovery to 37
+                // Natural homeostasis comfort zone (5°C to 35°C):
+                // Body naturally regulates toward healthy 37.0°C
                 if (currentTemp < 37.0f)
-                    stress = 0.01f;
+                    stress = 0.02f;
                 if (currentTemp > 37.0f)
-                    stress = -0.01f;
+                    stress = -0.02f;
                 // Snap if close
                 if (Math.abs(currentTemp - 37.0f) < 0.1f) {
                     stats.setBodyTemperature(37.0f);
@@ -167,7 +168,9 @@ public class TurnManager {
                 }
             }
 
-            stats.setBodyTemperature(currentTemp + (stress * time));
+            // Body temp clamped to non-lethal safe floor of 34.0°C (93.2°F)
+            float newTemp = Math.max(34.0f, Math.min(41.0f, currentTemp + (stress * time)));
+            stats.setBodyTemperature(newTemp);
         }
 
         // 3. Effects / Damage
@@ -201,32 +204,20 @@ public class TurnManager {
             }
         }
 
-        // Hypothermia
-        if (stats.getBodyTemperature() < PlayerStats.BODY_TEMP_FREEZING) {
-            if (Math.random() < 0.2) {
-                player.takeTrueDamage(1);
+        // Hypothermia: Non-lethal sensory feedback (no damage, no death)
+        if (stats.getBodyTemperature() <= 35.0f) {
+            if (Math.random() < 0.03) {
                 if (eventManager != null) {
-                    if (player.getCurrentHP() <= 0) {
-                        eventManager.addEvent(new GameEvent("You froze to death!", 2.0f));
-                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-                    } else {
-                        eventManager.addEvent(new GameEvent("You are freezing to death!", 1.0f));
-                    }
+                    eventManager.addEvent(new GameEvent("You shiver from the biting chill.", 1.5f));
                 }
             }
         }
 
-        // Hyperthermia
-        if (stats.getBodyTemperature() > PlayerStats.BODY_TEMP_OVERHEAT) {
-            if (Math.random() < 0.2) {
-                player.takeTrueDamage(1);
+        // Hyperthermia: Non-lethal sensory feedback (no damage, no death)
+        if (stats.getBodyTemperature() >= PlayerStats.BODY_TEMP_OVERHEAT) {
+            if (Math.random() < 0.03) {
                 if (eventManager != null) {
-                    if (player.getCurrentHP() <= 0) {
-                        eventManager.addEvent(new GameEvent("You succumbed to heatstroke!", 2.0f));
-                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-                    } else {
-                        eventManager.addEvent(new GameEvent("You are overheating!", 1.0f));
-                    }
+                    eventManager.addEvent(new GameEvent("You sweat profusely from the intense heat.", 1.5f));
                 }
             }
         }

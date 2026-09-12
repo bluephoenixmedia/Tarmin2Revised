@@ -198,19 +198,19 @@ public class WeatherManager {
             case MAZE:
             case FOREST:
             case PLAINS:
-                if (roll < 0.20f)
+                if (roll < 0.35f)
                     return WeatherType.CLEAR;
-                if (roll < 0.30f)
+                if (roll < 0.55f)
                     return WeatherType.FOG;
-                if (roll < 0.45f)
+                if (roll < 0.80f)
                     return WeatherType.RAIN;
-                if (roll < 0.90f)
+                if (roll < 0.98f)
                     return WeatherType.STORM;
                 return WeatherType.TORNADO;
             case MOUNTAINS:
-                if (roll < 0.20f)
+                if (roll < 0.35f)
                     return WeatherType.CLEAR;
-                if (roll < 0.40f)
+                if (roll < 0.70f)
                     return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
             case OCEAN:
@@ -472,60 +472,78 @@ public class WeatherManager {
     }
 
     public float getAmbientTemperature(Biome biome) {
-        float baseTemp = 20.0f; // Default temperate
+        if (biome == Biome.MAZE) {
+            // Subterranean dungeon / shelter: stable, insulated cave climate
+            return 20.0f; // 68°F - temperate baseline
+        }
+
+        float baseTemp = 20.0f; // Default temperate baseline
 
         switch (biome) {
-            case MAZE:
             case PLAINS:
-                baseTemp = 20.0f;
+                baseTemp = 22.0f; // 71.6°F
                 break;
             case FOREST:
-                baseTemp = 15.0f;
+                baseTemp = 20.0f; // 68°F
                 break;
             case MOUNTAINS:
-                baseTemp = 5.0f;
+                baseTemp = 15.0f; // 59°F - crisp alpine elevation
                 break;
             case DESERT:
-                baseTemp = 35.0f;
+                baseTemp = 28.0f; // 82.4°F - warm arid climate
                 break;
             case OCEAN:
-                baseTemp = 18.0f;
+                baseTemp = 19.0f; // 66.2°F - maritime breeze
                 break;
             default:
                 baseTemp = 20.0f;
                 break;
         }
 
-        // Weather modifiers
+        // Weather modifiers - temperatures do NOT become extreme unless weather supports it
         switch (currentWeather) {
             case CLEAR:
-                // No change or slight heat in desert
-                if (biome == Biome.DESERT)
-                    baseTemp += 5.0f;
-                break;
-            case RAIN:
-                baseTemp -= 5.0f;
-                break;
-            case STORM:
-                baseTemp -= 8.0f;
+                if (biome == Biome.DESERT) {
+                    baseTemp += (currentIntensity == WeatherIntensity.EXTREME) ? 10.0f : 4.0f;
+                } else {
+                    baseTemp += 2.0f; // Pleasant sunny warmth
+                }
                 break;
             case FOG:
-                baseTemp -= 2.0f;
+                baseTemp -= 1.0f; // Slight damp chill
                 break;
-            case SNOW:
-                baseTemp -= 10.0f;
+            case RAIN:
+                baseTemp -= 2.0f; // Mild cooling rain (e.g. 18°C)
                 break;
-            case BLIZZARD:
-                baseTemp -= 20.0f; // Freezing!
+            case STORM:
+                baseTemp -= 3.0f; // Cool thunderstorm (e.g. 17°C)
                 break;
             case TORNADO:
-                baseTemp -= 5.0f; // Wind chill
+                baseTemp -= 3.0f; // Strong wind chill
+                break;
+            case SNOW:
+                // Winter weather: drops near freezing
+                baseTemp = (biome == Biome.MOUNTAINS) ? -2.0f : 1.0f;
+                break;
+            case BLIZZARD:
+                // Severe winter weather: extreme sub-zero freezing
+                float blizzardBase = (biome == Biome.MOUNTAINS) ? -16.0f : -10.0f;
+                if (currentIntensity == WeatherIntensity.HEAVY) {
+                    blizzardBase -= 3.0f;
+                } else if (currentIntensity == WeatherIntensity.EXTREME) {
+                    blizzardBase -= 6.0f;
+                }
+                baseTemp = blizzardBase;
                 break;
         }
 
-        // Intensity scaling
-        if (currentIntensity == WeatherIntensity.HEAVY || currentIntensity == WeatherIntensity.EXTREME) {
-            baseTemp -= 3.0f;
+        // Subtle intensity adjustments for rain/storm
+        if (currentWeather == WeatherType.RAIN || currentWeather == WeatherType.STORM) {
+            if (currentIntensity == WeatherIntensity.HEAVY) {
+                baseTemp -= 1.0f;
+            } else if (currentIntensity == WeatherIntensity.EXTREME) {
+                baseTemp -= 2.0f;
+            }
         }
 
         return baseTemp;

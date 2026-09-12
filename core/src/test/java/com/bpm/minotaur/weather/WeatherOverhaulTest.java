@@ -130,4 +130,28 @@ public class WeatherOverhaulTest {
         assertTrue("Tornado should be positioned within visible range (15m - 22m), was " + dist,
                 dist >= 15f && dist <= 22f);
     }
+
+    @Test
+    public void testAmbientTemperatureCalibration() {
+        // Maze should always be stable temperate cave baseline (20°C)
+        weatherManager.setCurrentWeather(WeatherType.STORM);
+        weatherManager.setCurrentIntensity(WeatherIntensity.EXTREME);
+        assertEquals(20.0f, weatherManager.getAmbientTemperature(com.bpm.minotaur.generation.Biome.MAZE), 0.01f);
+
+        // Forest in severe storm should be temperate (~15-18°C), not freezing
+        float forestStormTemp = weatherManager.getAmbientTemperature(com.bpm.minotaur.generation.Biome.FOREST);
+        assertTrue("Forest storm temp should be survivable (> 12°C), was: " + forestStormTemp, forestStormTemp > 12.0f);
+
+        // Sub-zero extreme cold should ONLY occur in Blizzard or winter Snow
+        weatherManager.setCurrentWeather(WeatherType.BLIZZARD);
+        weatherManager.setCurrentIntensity(WeatherIntensity.EXTREME);
+        float blizzardTemp = weatherManager.getAmbientTemperature(com.bpm.minotaur.generation.Biome.MOUNTAINS);
+        assertTrue("Blizzard in mountains should be sub-zero (< -10°C), was: " + blizzardTemp, blizzardTemp < -10.0f);
+
+        // Desert extreme heat should only occur under extreme clear weather
+        weatherManager.setCurrentWeather(WeatherType.CLEAR);
+        weatherManager.setCurrentIntensity(WeatherIntensity.EXTREME);
+        float desertHeatTemp = weatherManager.getAmbientTemperature(com.bpm.minotaur.generation.Biome.DESERT);
+        assertTrue("Extreme clear in desert should reach heatwave (>= 38°C), was: " + desertHeatTemp, desertHeatTemp >= 38.0f);
+    }
 }
