@@ -176,6 +176,7 @@ logs/game_balance_session.log
 
 ## Temporary / local files
 temp_weapons/
+tools/raw_weapons/
 inventory_layout.txt
 gradlew_build.log
 replay_pid*.log

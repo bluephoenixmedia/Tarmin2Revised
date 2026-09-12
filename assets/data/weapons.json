@@ -12760,7 +12760,7 @@
 	"SWORD_LONG": {
 		"friendlyName": "Sword, Long",
 		"description": null,
-		"texturePath": "images/weapons/bow.png",
+		"texturePath": "images/weapons/sword_long.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
