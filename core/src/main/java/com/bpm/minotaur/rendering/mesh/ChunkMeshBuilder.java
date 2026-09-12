@@ -43,7 +43,6 @@ public class ChunkMeshBuilder {
             new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0")
     );
 
-    public static final float WALL_INSET = 0.18f;
 
     /**
      * Builds the static sub-meshes for the specified rectangle within the maze.
@@ -160,18 +159,12 @@ public class ChunkMeshBuilder {
                     boolean hasEastDoor = (currentData & DOOR_EAST) != 0 || (eastData & DOOR_WEST) != 0;
                     boolean hasEastWall = !hasEastDoor && !isEastWindow && !isEastGateOpening && (isGateFlankingEast || (currentData & WALL_EAST) != 0 || (eastData & WALL_WEST) != 0 || (eastData & ALL_WALLS) == ALL_WALLS || x == maze.getWidth() - 1);
 
-                    // Compute widened boundaries for open cells (expanded by WALL_INSET where adjacent to solid walls)
-                    float xMin = (hasWestWall ? (x - WALL_INSET) : x) + worldOffsetX;
-                    float xMax = (hasEastWall ? (x + 1.0f + WALL_INSET) : (x + 1.0f)) + worldOffsetX;
-                    float zMin = (hasNorthWall ? (-(y + 1.0f) - WALL_INSET) : -(y + 1.0f)) + worldOffsetZ;
-                    float zMax = (hasSouthWall ? (-y + WALL_INSET) : -y) + worldOffsetZ;
-
                     // --- 1. FLOOR QUAD (Y = 0.0, Normal = Up) ---
                     addQuad(floorVerts, floorIndices,
-                            xMin, 0.0f, zMax, 0f, 0f,
-                            xMax, 0.0f, zMax, 1f, 0f,
-                            xMax, 0.0f, zMin, 1f, 1f,
-                            xMin, 0.0f, zMin, 0f, 1f,
+                            x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 0f,
+                            x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 0f,
+                            x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                            x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                             0f, 1f, 0f, whitePacked
                     );
 
@@ -180,55 +173,55 @@ public class ChunkMeshBuilder {
                     boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
                     if (tileHasCeiling) {
                         addQuad(ceilVerts, ceilIndices,
-                                xMin, 1.0f, zMax, 0f, 0f,
-                                xMin, 1.0f, zMin, 0f, 1f,
-                                xMax, 1.0f, zMin, 1f, 1f,
-                                xMax, 1.0f, zMax, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
                                 0f, -1f, 0f, whitePacked
                         );
                     }
 
                     // --- 3. WALL FACES ---
-                    // A. North boundary (Z = zMin, facing South towards camera inside cell)
+                    // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     if (hasNorthWall) {
                         addQuad(wallVerts, wallIndices,
-                                xMin, 0.0f, zMin, 0f, 1f,
-                                xMax, 0.0f, zMin, 1f, 1f,
-                                xMax, 1.0f, zMin, 1f, 0f,
-                                xMin, 1.0f, zMin, 0f, 0f,
+                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
                                 0f, 0f, 1f, whitePacked
                         );
                     }
 
-                    // B. South boundary (Z = zMax, facing North towards camera inside cell)
+                    // B. South boundary (Z = -y, facing North towards camera inside cell)
                     if (hasSouthWall) {
                         addQuad(wallVerts, wallIndices,
-                                xMax, 0.0f, zMax, 0f, 1f,
-                                xMin, 0.0f, zMax, 1f, 1f,
-                                xMin, 1.0f, zMax, 1f, 0f,
-                                xMax, 1.0f, zMax, 0f, 0f,
+                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
+                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
                                 0f, 0f, -1f, whitePacked
                         );
                     }
 
-                    // C. West boundary (X = xMin, facing East towards camera inside cell)
+                    // C. West boundary (X = x, facing East towards camera inside cell)
                     if (hasWestWall) {
                         addQuad(wallVerts, wallIndices,
-                                xMin, 0.0f, zMax, 0f, 1f,
-                                xMin, 0.0f, zMin, 1f, 1f,
-                                xMin, 1.0f, zMin, 1f, 0f,
-                                xMin, 1.0f, zMax, 0f, 0f,
+                                x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
+                                x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
+                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
                                 1f, 0f, 0f, whitePacked
                         );
                     }
 
-                    // D. East boundary (X = xMax, facing West towards camera inside cell)
+                    // D. East boundary (X = x + 1, facing West towards camera inside cell)
                     if (hasEastWall) {
                         addQuad(wallVerts, wallIndices,
-                                xMax, 0.0f, zMin, 0f, 1f,
-                                xMax, 0.0f, zMax, 1f, 1f,
-                                xMax, 1.0f, zMax, 1f, 0f,
-                                xMax, 1.0f, zMin, 0f, 0f,
+                                x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
+                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
                                 -1f, 0f, 0f, whitePacked
                         );
                     }
