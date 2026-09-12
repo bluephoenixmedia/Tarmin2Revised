@@ -38,15 +38,7 @@ public class WeatherManager {
     public WeatherManager(WorldManager worldManager) {
         this.worldManager = worldManager;
 
-        // --- [CHANGED] Default to High Intensity Storm ---
-        this.currentWeather = WeatherType.STORM;
-        this.currentIntensity = WeatherIntensity.HEAVY;
-        // ------------------------------------------------
-
-        this.weatherTimer = 300f;
-
-        // Init defaults (These will be overwritten immediately by
-        // updateAtmosphereTargets, but good to have)
+        // Init defaults
         this.targetFogDistance = 60f;
         this.targetFogColor = new Color(Color.WHITE);
         this.currentFogDistance = targetFogDistance;
@@ -59,13 +51,61 @@ public class WeatherManager {
         this.thunderDelayTimer = 0f;
         this.isThunderPending = false;
         this.isRollingThunderPlayed = false;
-        this.wetness = 0.65f; // Initial storm starting wetness
 
-        // Ensure visual targets are set correctly for the starting storm
-        updateAtmosphereTargets();
+        // Randomize starting weather for each run based on the starting biome
+        randomizeStartingWeather();
     }
 
-    private float wetness = 0.65f;
+    /**
+     * Randomizes starting weather for each run based on the starting biome,
+     * setting appropriate initial wetness, snow accumulation, and atmosphere targets.
+     */
+    public void randomizeStartingWeather() {
+        Biome startingBiome = Biome.FOREST;
+        if (worldManager != null && worldManager.getBiomeManager() != null) {
+            GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
+            if (chunkId != null) {
+                Biome b = worldManager.getBiomeManager().getBiome(chunkId);
+                if (b != null) {
+                    startingBiome = b;
+                }
+            }
+        }
+
+        this.currentWeather = pickWeatherForBiome(startingBiome);
+        this.currentIntensity = pickIntensityForWeather(this.currentWeather);
+        this.weatherTimer = MathUtils.random(MIN_WEATHER_DURATION, MAX_WEATHER_DURATION);
+
+        // Calibrate initial wetness and snow accumulation based on starting weather
+        if (this.currentWeather == WeatherType.RAIN || this.currentWeather == WeatherType.STORM || this.currentWeather == WeatherType.TORNADO) {
+            this.wetness = (this.currentIntensity == WeatherIntensity.EXTREME) ? 0.85f
+                    : (this.currentIntensity == WeatherIntensity.HEAVY) ? 0.65f
+                    : (this.currentIntensity == WeatherIntensity.MEDIUM) ? 0.45f : 0.25f;
+            this.snowAccumulation = 0.0f;
+        } else if (this.currentWeather == WeatherType.SNOW || this.currentWeather == WeatherType.BLIZZARD) {
+            this.wetness = 0.1f;
+            this.snowAccumulation = (this.currentWeather == WeatherType.BLIZZARD) ? 0.5f : 0.25f;
+        } else {
+            this.wetness = 0.0f;
+            this.snowAccumulation = 0.0f;
+        }
+
+        this.lightningTimer = 0f;
+        this.flashIntensity = 0f;
+        this.thunderDelayTimer = 0f;
+        this.isThunderPending = false;
+        this.isRollingThunderPlayed = false;
+
+        if (Gdx.app != null) {
+            Gdx.app.log("WeatherManager", "Starting run with randomized weather: " + currentIntensity + " " + currentWeather);
+        }
+
+        updateAtmosphereTargets();
+        this.currentFogDistance = this.targetFogDistance;
+        this.currentFogColor.set(this.targetFogColor);
+    }
+
+    private float wetness = 0.0f;
     private float snowAccumulation = 0.0f;
     private boolean isRollingThunderPlayed = false;
 

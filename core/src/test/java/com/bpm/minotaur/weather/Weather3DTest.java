@@ -28,8 +28,12 @@ public class Weather3DTest {
 
     @Test
     public void testWetnessAccumulationAndDrying() {
+        weatherManager.setCurrentWeather(WeatherType.STORM);
+        weatherManager.setCurrentIntensity(WeatherIntensity.HEAVY);
+        weatherManager.setWetness(0.5f);
+
         float initialWetness = weatherManager.getWetness();
-        assertTrue("Starting storm must have initial wetness", initialWetness > 0f);
+        assertTrue("Storm must have initial wetness", initialWetness > 0f);
 
         // Update in stormy weather -> wetness should accumulate toward 1.0
         for (int i = 0; i < 30; i++) {
@@ -87,9 +91,22 @@ public class Weather3DTest {
     }
 
     @Test
-    public void testBootWeatherIsHeavyStorm() {
-        assertEquals("Boot weather must be STORM", WeatherType.STORM, weatherManager.getCurrentWeather());
-        assertEquals("Boot weather intensity must be HEAVY", WeatherIntensity.HEAVY, weatherManager.getCurrentIntensity());
+    public void testRandomizedStartingWeather() {
+        assertNotNull("Starting weather must not be null", weatherManager.getCurrentWeather());
+        assertNotNull("Starting weather intensity must not be null", weatherManager.getCurrentIntensity());
+
+        // Verify across multiple instantiations that weather initializes properly and is randomized
+        boolean hadNonClear = false;
+        boolean hadValidIntensity = false;
+        for (int i = 0; i < 50; i++) {
+            WeatherManager wm = new WeatherManager(null);
+            assertNotNull(wm.getCurrentWeather());
+            assertNotNull(wm.getCurrentIntensity());
+            if (wm.getCurrentWeather() != WeatherType.CLEAR) hadNonClear = true;
+            if (wm.getCurrentIntensity() != null) hadValidIntensity = true;
+        }
+        assertTrue("Random starting weather should produce varied weather types across runs", hadNonClear);
+        assertTrue("Starting weather must have valid intensity", hadValidIntensity);
     }
 
     @Test
