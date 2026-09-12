@@ -189,10 +189,27 @@ public class PauseScreen extends BaseScreen {
                 }
             }
         };
+
+        TextButton.TextButtonStyle alertBtnStyle = new TextButton.TextButtonStyle();
+        alertBtnStyle.font = font;
+        alertBtnStyle.fontColor = Color.WHITE;
+        alertBtnStyle.up = new TextureRegionDrawable(whitePixel).tint(new Color(0.6f, 0.15f, 0.15f, 0.95f));
+        alertBtnStyle.over = new TextureRegionDrawable(whitePixel).tint(new Color(0.8f, 0.2f, 0.2f, 1f));
+
+        TextButton.TextButtonStyle cancelBtnStyle = new TextButton.TextButtonStyle();
+        cancelBtnStyle.font = font;
+        cancelBtnStyle.fontColor = Color.LIGHT_GRAY;
+        cancelBtnStyle.up = new TextureRegionDrawable(whitePixel).tint(new Color(0.25f, 0.25f, 0.3f, 0.95f));
+        cancelBtnStyle.over = new TextureRegionDrawable(whitePixel).tint(new Color(0.35f, 0.35f, 0.4f, 1f));
+
+        dialog.getContentTable().pad(25);
+        dialog.getButtonTable().pad(20);
+        dialog.getButtonTable().defaults().pad(8).height(50);
+
         dialog.text(new Label("Are you sure you want to abandon this expedition?\nYou will succumb to the Doom and leave your gear where you fell.",
                 new Label.LabelStyle(font, Color.WHITE)));
-        dialog.button("YES, ABANDON", true);
-        dialog.button("CANCEL", false);
+        dialog.button("YES, ABANDON", true, alertBtnStyle);
+        dialog.button("CANCEL", false, cancelBtnStyle);
         dialog.show(stage);
     }
 

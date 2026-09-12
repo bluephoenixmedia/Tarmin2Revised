@@ -253,6 +253,15 @@ public class SaveSlotSelectScreen extends BaseScreen {
         }
     }
 
+    private TextButton.TextButtonStyle createDialogButtonStyle(Color baseColor, Color overColor, Color fontColor) {
+        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
+        style.font = font;
+        style.fontColor = fontColor;
+        style.up = new TextureRegionDrawable(whitePixel).tint(baseColor);
+        style.over = new TextureRegionDrawable(whitePixel).tint(overColor);
+        return style;
+    }
+
     private void showModeSelectDialog(final int slotIndex) {
         Dialog dialog = new Dialog("SELECT GAME MODE", new Window.WindowStyle(cardTitleFont, Color.WHITE, new TextureRegionDrawable(cardBg))) {
             @Override
@@ -264,10 +273,20 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 }
             }
         };
+
+        TextButton.TextButtonStyle modeBtnStyle = createDialogButtonStyle(
+                new Color(0.2f, 0.5f, 0.25f, 0.95f), new Color(0.3f, 0.65f, 0.35f, 1f), Color.WHITE);
+        TextButton.TextButtonStyle cancelBtnStyle = createDialogButtonStyle(
+                new Color(0.25f, 0.25f, 0.3f, 0.95f), new Color(0.35f, 0.35f, 0.4f, 1f), Color.LIGHT_GRAY);
+
+        dialog.getContentTable().pad(25);
+        dialog.getButtonTable().pad(20);
+        dialog.getButtonTable().defaults().pad(8).height(50);
+
         dialog.text(new Label("Classic Mode has been unlocked! Choose your expedition style:", new Label.LabelStyle(font, Color.WHITE)));
-        dialog.button("MODERN EXPEDITION", "MODERN");
-        dialog.button("CLASSIC TARMIN (1982)", "CLASSIC");
-        dialog.button("CANCEL", null);
+        dialog.button("MODERN EXPEDITION", "MODERN", modeBtnStyle);
+        dialog.button("CLASSIC TARMIN (1982)", "CLASSIC", modeBtnStyle);
+        dialog.button("CANCEL", null, cancelBtnStyle);
         dialog.show(stage);
     }
 
@@ -280,10 +299,20 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 }
             }
         };
+
+        TextButton.TextButtonStyle alertBtnStyle = createDialogButtonStyle(
+                new Color(0.6f, 0.15f, 0.15f, 0.95f), new Color(0.8f, 0.2f, 0.2f, 1f), Color.WHITE);
+        TextButton.TextButtonStyle cancelBtnStyle = createDialogButtonStyle(
+                new Color(0.25f, 0.25f, 0.3f, 0.95f), new Color(0.35f, 0.35f, 0.4f, 1f), Color.LIGHT_GRAY);
+
+        dialog.getContentTable().pad(25);
+        dialog.getButtonTable().pad(20);
+        dialog.getButtonTable().defaults().pad(8).height(50);
+
         dialog.text(new Label("Are you sure you want to overwrite Level " + meta.level + " " + meta.characterName + "?\nAll save data in Slot " + slotIndex + " will be PERMANENTLY lost.",
                 new Label.LabelStyle(font, Color.WHITE)));
-        dialog.button("YES, OVERWRITE", true);
-        dialog.button("CANCEL", false);
+        dialog.button("YES, OVERWRITE", true, alertBtnStyle);
+        dialog.button("CANCEL", false, cancelBtnStyle);
         dialog.show(stage);
     }
 
@@ -297,10 +326,20 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 }
             }
         };
+
+        TextButton.TextButtonStyle alertBtnStyle = createDialogButtonStyle(
+                new Color(0.6f, 0.15f, 0.15f, 0.95f), new Color(0.8f, 0.2f, 0.2f, 1f), Color.WHITE);
+        TextButton.TextButtonStyle cancelBtnStyle = createDialogButtonStyle(
+                new Color(0.25f, 0.25f, 0.3f, 0.95f), new Color(0.35f, 0.35f, 0.4f, 1f), Color.LIGHT_GRAY);
+
+        dialog.getContentTable().pad(25);
+        dialog.getButtonTable().pad(20);
+        dialog.getButtonTable().defaults().pad(8).height(50);
+
         dialog.text(new Label("Permanently delete " + meta.characterName + " (Level " + meta.level + ")?\nThis action cannot be undone.",
                 new Label.LabelStyle(font, Color.WHITE)));
-        dialog.button("DELETE", true);
-        dialog.button("CANCEL", false);
+        dialog.button("DELETE", true, alertBtnStyle);
+        dialog.button("CANCEL", false, cancelBtnStyle);
         dialog.show(stage);
     }
 
