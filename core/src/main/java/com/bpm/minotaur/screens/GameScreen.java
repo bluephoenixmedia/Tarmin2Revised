@@ -537,7 +537,10 @@ public class GameScreen extends BaseScreen {
                 checkForProactiveChunkLoading();
             }
 
-            // Update Overlay Animation
+            // Update Overlay Animation and Equipment
+            if (player != null && player.getInventory() != null) {
+                weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+            }
             weaponOverlay.update(delta);
             DivinityOrbManager.getInstance().update(delta);
         }
@@ -638,15 +641,16 @@ public class GameScreen extends BaseScreen {
             // (currentViewport)
             game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
 
-            if (weaponOverlay.isActive()) {
-                if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
-                    shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
-                    weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
-                } else {
-                    game.getBatch().begin();
-                    weaponOverlay.render(game.getBatch(), game.getViewport());
-                    game.getBatch().end();
-                }
+            if (debugManager.getRenderMode() == DebugManager.RenderMode.RETRO) {
+                shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+                weaponOverlay.renderRetro(shapeRenderer, game.getViewport());
+            } else {
+                shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+                weaponOverlay.renderTrails(shapeRenderer);
+
+                game.getBatch().begin();
+                weaponOverlay.render(game.getBatch(), game.getViewport());
+                game.getBatch().end();
             }
 
             if (debugManager.isDebugOverlayVisible()) {
@@ -1496,6 +1500,30 @@ public class GameScreen extends BaseScreen {
                 // And A can remain as Quick Slot / Ranged?
             }
 
+            if (weaponOverlay != null && weaponOverlay.isMovementLocked()) {
+                // Movement locked during anticipation windup (~0.10s)
+                return true;
+            }
+
+            if (keycode == Input.Keys.G) {
+                // Shield Guard / Shield Bash
+                Item leftHand = player.getInventory().getLeftHand();
+                if (leftHand != null && leftHand.isShield()) {
+                    Vector2 dir = player.getFacing().getVector();
+                    int tx = (int) Math.floor(player.getPosition().x + dir.x);
+                    int ty = (int) Math.floor(player.getPosition().y + dir.y);
+                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    if (bumpTarget != null) {
+                        combatManager.playerShieldBash(bumpTarget);
+                    } else {
+                        combatManager.playerGuard();
+                        weaponOverlay.triggerGuardFlinch();
+                    }
+                    playerTurnTakesAction();
+                    return true;
+                }
+            }
+
             if (keycode == Input.Keys.A) {
                 // Ranged Attack
                 if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
@@ -1521,7 +1549,13 @@ public class GameScreen extends BaseScreen {
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
+                    } else if (!maze.isPassable(tx, ty)) {
+                        soundManager.playWeaponImpact(false);
+                        weaponOverlay.triggerWallClank();
+                        addTrauma(0.12f);
+                        eventManager.addEvent(new GameEvent("Thud! You strike a solid wall.", 1.0f));
                     } else {
+                        weaponOverlay.setWalking(true);
                         player.moveForward(maze, eventManager, gameMode, soundManager);
                     }
                     playerTurnTakesAction();
@@ -1540,7 +1574,12 @@ public class GameScreen extends BaseScreen {
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
+                    } else if (!maze.isPassable(tx, ty)) {
+                        soundManager.playWeaponImpact(false);
+                        weaponOverlay.triggerWallClank();
+                        addTrauma(0.12f);
                     } else {
+                        weaponOverlay.setWalking(true);
                         player.moveBackward(maze, eventManager, gameMode);
                     }
                     playerTurnTakesAction();
@@ -1548,11 +1587,13 @@ public class GameScreen extends BaseScreen {
                     return true;
                 }
                 case Input.Keys.LEFT:
+                    weaponOverlay.addTurnSway(-1.0f);
                     player.turnLeft();
                     playerTurnTakesAction();
                     needsAsciiRender = false;
                     return true;
                 case Input.Keys.RIGHT:
+                    weaponOverlay.addTurnSway(1.0f);
                     player.turnRight();
                     playerTurnTakesAction();
                     needsAsciiRender = false;

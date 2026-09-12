@@ -698,7 +698,7 @@ public class Item implements Renderable {
 
     @Override
     public Color getColor() {
-        return itemColor.getColor();
+        return itemColor != null ? itemColor.getColor() : Color.WHITE;
     }
 
     public ItemColor getItemColor() {

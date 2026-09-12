@@ -89,6 +89,7 @@ public class CombatManager {
 
     private Item pendingWeapon;
     private boolean pendingIsRanged;
+    private com.bpm.minotaur.rendering.animation.CombatMotionProfile currentMotionProfile;
 
     // --- TIMING VARIABLES ---
     private float physicsTimer = 0f;
@@ -248,10 +249,14 @@ public class CombatManager {
         if (weapon != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(weapon);
-            gs.getWeaponOverlay().jumpToImpact();
+            gs.getWeaponOverlay().setHitFrameCallback(profile -> {
+                this.currentMotionProfile = profile;
+                resolveAttack(DiceRoller.d20(), true);
+                this.currentMotionProfile = null;
+            });
+        } else {
+            resolveAttack(DiceRoller.d20(), true);
         }
-
-        resolveAttack(DiceRoller.d20(), true);
     }
 
     public void monsterMeleeStrike(Monster attacker) {
@@ -619,15 +624,18 @@ public class CombatManager {
         if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(pendingWeapon);
-            gs.getWeaponOverlay().jumpToImpact();
+            gs.getWeaponOverlay().setHitFrameCallback(profile -> {
+                this.currentMotionProfile = profile;
+                int d20Roll = DiceRoller.d20();
+                Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
+                resolveAttack(d20Roll);
+                this.currentMotionProfile = null;
+            });
+        } else {
+            int d20Roll = DiceRoller.d20();
+            Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
+            resolveAttack(d20Roll);
         }
-
-        // Roll d20
-        int d20Roll = DiceRoller.d20();
-
-        Gdx.app.log("CombatManager", "Instant Attack: Rolled " + d20Roll + " on D20");
-
-        resolveAttack(d20Roll);
 
         // AGI Flurry: at AGI 14+ the player has a chance at a bonus instant attack this turn.
         // Stateless so it doesn't re-trigger MONSTER_TURN or turn processing.
@@ -757,6 +765,27 @@ public class CombatManager {
 
         currentState = CombatState.MONSTER_TURN;
         monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
+    }
+
+    public void playerShieldBash(Monster target) {
+        if (target == null) return;
+        this.monster = target;
+        Item shield = player.getInventory().getLeftHand();
+        if (shield == null || !shield.isShield()) return;
+
+        soundManager.playWeaponSwing();
+        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.getWeaponOverlay().triggerShieldBash(shield);
+            gs.getWeaponOverlay().setHitFrameCallback(profile -> {
+                int bashDmg = Math.max(1, DiceRoller.roll("1d4") + shield.getArmorClassBonus());
+                int actual = target.takeDamage(bashDmg, DamageType.PHYSICAL);
+                soundManager.playWeaponImpact(true);
+                gs.addTrauma(0.28f);
+                eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getMonsterType() + " for " + actual, 1.2f));
+                showDamageText(actual, new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y), "BASH! ", com.badlogic.gdx.graphics.Color.ORANGE);
+            });
+        }
     }
 
     private int playerCurrentBlock = 0; // Reset every round
@@ -1057,6 +1086,11 @@ public class CombatManager {
                 int damageBonus = player.getDamageBonus();
                 int totalDamage = Math.max(1, baseDamage + damageBonus);
 
+                // Combo Damage Multiplier
+                if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
+                    totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
+                }
+
                 if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
                     if (dmgType == DamageType.PHYSICAL) {
                         totalDamage = Math.max(1, (int) (totalDamage * com.bpm.minotaur.managers.DimensionalManager.getInstance().getPhysicalDamageMultiplier()));
@@ -1077,9 +1111,24 @@ public class CombatManager {
                 String dmgPrefix = "";
                 com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
 
+                String comboTag = "";
+                if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
+                    if (currentMotionProfile.isFinisher) {
+                        comboTag = "FINISHER! ";
+                    } else {
+                        comboTag = "COMBO x" + (currentMotionProfile.comboStep + 1) + "! ";
+                    }
+                }
+
                 if (isCrit) {
-                    dmgPrefix = "CRIT! ";
+                    dmgPrefix = comboTag + "CRIT! ";
                     textColor = com.badlogic.gdx.graphics.Color.RED;
+                } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
+                    dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
+                    textColor = com.badlogic.gdx.graphics.Color.GOLD;
+                } else if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
+                    dmgPrefix = comboTag;
+                    textColor = com.badlogic.gdx.graphics.Color.YELLOW;
                 } else if (affinity == Monster.Affinity.RESISTANT) {
                     dmgPrefix = "RESISTED! ";
                     textColor = com.badlogic.gdx.graphics.Color.CYAN;
@@ -1111,12 +1160,16 @@ public class CombatManager {
                 if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                     com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
 
+                    // Coat blade with blood
+                    gs.getWeaponOverlay().addBloodToWeapon();
+
                     // Shake
-                    float trauma = isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f);
-                    gs.addTrauma(trauma);
+                    float extraTrauma = (currentMotionProfile != null) ? currentMotionProfile.screenTrauma : 0f;
+                    float trauma = (isCrit ? 0.5f : (isHeavy ? 0.3f : 0.1f)) + extraTrauma;
+                    gs.addTrauma(Math.min(1.0f, trauma));
 
                     // Pause (Freeze frame)
-                    float pauseDur = isCrit ? 0.15f : 0.05f;
+                    float pauseDur = isCrit ? 0.15f : (currentMotionProfile != null && currentMotionProfile.isFinisher ? 0.12f : 0.05f);
                     gs.triggerHitPause(pauseDur);
                 }
 
@@ -1148,6 +1201,10 @@ public class CombatManager {
         } else {
             // Miss
             eventManager.addEvent(new GameEvent("Miss!", 1f));
+            if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+                gs.getWeaponOverlay().triggerWhiff();
+            }
         }
 
         if (pendingWeapon != null && pendingWeapon.isUsable()) {

@@ -32,6 +32,7 @@ public class ItemTemplate {
     public float attackEndX = 0.25f;
     public float attackStartY = -0.05f;
     public float attackEndY = -0.05f;
+    public String animationArchetype = null;
 
     public RingEffectType ringEffect; // New: For JSON Loading
 

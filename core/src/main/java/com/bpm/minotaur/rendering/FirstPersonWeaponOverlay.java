@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -12,187 +13,274 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
+import com.bpm.minotaur.rendering.animation.AnimationArchetype;
+import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
+import com.bpm.minotaur.rendering.animation.WeaponTrailRenderer;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Overhauled First-Person Weapon & Combat Animation System.
+ * Supports persistent ready stance with breathing and walking bob, camera inertia sway,
+ * dedicated animation archetypes, multi-phase snappy kinematics, true hit-frame callbacks,
+ * rhythmic windowed combos with devastating finishers, dual-hand viewport (shields/offhand),
+ * and procedural ribbon slash trails.
+ */
 public class FirstPersonWeaponOverlay {
 
-    private TextureRegion weaponTexture;
-    // RETRO mode sprite data, populated alongside the texture in triggerAttack
-    private String[] weaponSpriteData;
-    private Color weaponSpriteColor = Color.WHITE;
+    public interface HitFrameCallback {
+        void onHitFrame(CombatMotionProfile profile);
+    }
 
+    // Main hand item and texture
+    private Item mainHandItem;
+    private TextureRegion mainHandTexture;
+    private String[] mainHandSpriteData;
+    private Color mainHandSpriteColor = Color.WHITE;
+    private AnimationArchetype mainHandArchetype = AnimationArchetype.SLASHING_1H;
+
+    // Off-hand item and texture
+    private Item offHandItem;
+    private TextureRegion offHandTexture;
+    private String[] offHandSpriteData;
+    private Color offHandSpriteColor = Color.WHITE;
+
+    // Motion and combo state
     private boolean active = false;
-    private float timer = 0f;
-    private float duration = 0.6f; // Slower swipe for better visibility
+    private float attackTimer = 0f;
+    private List<CombatMotionProfile> comboChain = new ArrayList<>();
+    private int comboIndex = 0;
+    private CombatMotionProfile currentProfile;
+    private boolean hasFiredHitFrame = false;
+    private HitFrameCallback hitFrameCallback;
 
-    // Animation parameters
-    private float startRotation = -60f;
-    private float endRotation = 60f;
-    private float scaleX = -1f;
-    private float scaleY = -1f;
+    // Combo timing window (seconds remaining to chain next strike)
+    private float comboWindowTimer = 0f;
+    private static final float COMBO_WINDOW_MAX = 0.55f;
 
-    // New Position parameters
-    private float startXRel = 0.75f;
-    private float endXRel = 0.25f;
-    private float startYRel = -0.05f;
-    private float endYRel = -0.05f;
+    // Persistent stance dynamics
+    private float idleBobTimer = 0f;
+    private float walkBobTimer = 0f;
+    private boolean isWalking = false;
+    private float turnSway = 0f;
+    private float menuLoweringProgress = 0f; // 0 = fully ready, 1 = lowered offscreen
+
+    // Off-hand guard & flinch state
+    private boolean isGuarding = false;
+    private float guardFlinchTimer = 0f;
+    private static final float GUARD_FLINCH_DURATION = 0.20f;
+
+    // Blood coating on weapon
+    private float bloodLevel = 0f; // 0.0 to 1.0
+
+    // Procedural weapon trail
+    private final WeaponTrailRenderer trailRenderer = new WeaponTrailRenderer();
 
     private final AssetManager assetManager;
 
     public FirstPersonWeaponOverlay(ItemDataManager itemDataManager, AssetManager assetManager) {
         this.assetManager = assetManager;
+        this.currentProfile = new CombatMotionProfile();
     }
 
+    public void setHitFrameCallback(HitFrameCallback callback) {
+        this.hitFrameCallback = callback;
+    }
+
+    public void setEquipment(Item rightHand, Item leftHand) {
+        if (this.mainHandItem != rightHand) {
+            this.mainHandItem = rightHand;
+            this.mainHandTexture = resolveTexture(rightHand);
+            if (rightHand != null) {
+                this.mainHandSpriteData = rightHand.getSpriteData();
+                this.mainHandSpriteColor = (rightHand.getColor() != null) ? rightHand.getColor().cpy() : Color.WHITE;
+            } else {
+                this.mainHandSpriteData = null;
+            }
+            this.mainHandArchetype = AnimationArchetype.fromItem(rightHand);
+            rebuildComboChain();
+        }
+
+        if (this.offHandItem != leftHand) {
+            this.offHandItem = leftHand;
+            this.offHandTexture = resolveTexture(leftHand);
+            if (leftHand != null) {
+                this.offHandSpriteData = leftHand.getSpriteData();
+                this.offHandSpriteColor = (leftHand.getColor() != null) ? leftHand.getColor().cpy() : Color.WHITE;
+            } else {
+                this.offHandSpriteData = null;
+            }
+            rebuildComboChain();
+        }
+    }
+
+    private void rebuildComboChain() {
+        boolean isDualWielding = (mainHandItem != null && offHandItem != null
+                && mainHandItem.isWeapon() && offHandItem.isWeapon());
+        this.comboChain = CombatMotionProfile.buildComboChain(mainHandArchetype, mainHandItem, isDualWielding);
+        if (this.comboIndex >= this.comboChain.size()) {
+            this.comboIndex = 0;
+        }
+        if (!comboChain.isEmpty()) {
+            this.currentProfile = comboChain.get(this.comboIndex);
+        }
+    }
+
+    /**
+     * Triggers the next attack in the combo chain.
+     */
     public void triggerAttack(Item weapon) {
-        this.active = true;
-        this.timer = 0f;
+        setEquipment(weapon, this.offHandItem);
 
-        // Default or Null check
-        if (weapon == null) {
-            this.active = false;
-            return;
+        if (comboChain.isEmpty()) {
+            rebuildComboChain();
         }
 
-        // Cache RETRO sprite data from the weapon — used by renderRetro()
-        this.weaponSpriteData = weapon.getSpriteData();
-        this.weaponSpriteColor = (weapon.getColor() != null) ? weapon.getColor().cpy() : Color.WHITE;
-
-        // Resolve texture
-        if (weapon.getTemplate() != null) {
-
-            String texturePath = weapon.getTemplate().texturePath;
-
-            // Re-initialize texture to ensure we don't hold stale state
-            this.weaponTexture = null;
-
-            // PRIORITY 1: Explicit Texture Path from Data
-            if (texturePath != null) {
-                // Try to load/get the texture directly
-                try {
-                    if (assetManager.isLoaded(texturePath)) {
-                        Texture t = assetManager.get(texturePath, Texture.class);
-                        this.weaponTexture = new TextureRegion(t);
-                        com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                                "Resolved texture from AssetManager (Explicit): " + texturePath);
-                    } else {
-                        // Force load if missing. This is a blocking call to ensure visual correctness.
-                        assetManager.load(texturePath, Texture.class);
-                        assetManager.finishLoadingAsset(texturePath);
-                        Texture t = assetManager.get(texturePath, Texture.class);
-                        this.weaponTexture = new TextureRegion(t);
-                        com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                                "Forced load & Resolved texture (Explicit): " + texturePath);
-                    }
-                } catch (Exception e) {
-                    com.badlogic.gdx.Gdx.app.error("WeaponOverlay", "Failed to load explicit texture: " + texturePath,
-                            e);
-                }
-            }
-
-            // PRIORITY 2: Atlas Lookups (Fallback if explicit load failed)
-            if (this.weaponTexture == null) {
-                String regionName = null;
-                if (texturePath != null) {
-                    int lastSlash = texturePath.lastIndexOf('/');
-                    int lastDot = texturePath.lastIndexOf('.');
-                    if (lastDot > lastSlash) {
-                        regionName = texturePath.substring(lastSlash + 1, lastDot);
-                    } else {
-                        regionName = texturePath;
-                    }
-                }
-
-                // Try weapons.atlas
-                if (regionName != null && assetManager.isLoaded("packed/weapons.atlas")) {
-                    TextureAtlas weaponAtlas = assetManager.get("packed/weapons.atlas", TextureAtlas.class);
-                    TextureRegion region = weaponAtlas.findRegion(regionName);
-                    if (region != null) {
-                        this.weaponTexture = region;
-                        com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                                "Resolved texture from Weapons Atlas: " + regionName);
-                    }
-                }
-
-                // Try items.atlas
-                if (this.weaponTexture == null && regionName != null && assetManager.isLoaded("packed/items.atlas")) {
-                    TextureAtlas itemsAtlas = assetManager.get("packed/items.atlas", TextureAtlas.class);
-                    TextureRegion region = itemsAtlas.findRegion(regionName);
-                    if (region != null) {
-                        this.weaponTexture = region;
-                        com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                                "Resolved texture from Items Atlas: " + regionName);
-                    }
-                }
-            }
-
-            // PRIORITY 3: Strict File Load Fallback
-            // If explicit priority 1 failed (e.g. invalid path? or some other issue), try
-            // loadTexture helper
-            if (this.weaponTexture == null && texturePath != null) {
-                this.weaponTexture = loadTexture(texturePath);
-                if (this.weaponTexture != null) {
-                    com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                            "Resolved texture via loadTexture fallback: " + texturePath);
-                }
-            }
-
-            // FINAL FALLBACK
-            if (this.weaponTexture == null) {
-                com.badlogic.gdx.Gdx.app.log("WeaponOverlay",
-                        "Texture NOT found for " + weapon.getType() + ". Using GENERIC fallback.");
-                this.weaponTexture = resolveGenericFallback(weapon);
-            }
-
-            // Apply Rotation & Scale & Position Settings
-            ItemTemplate t = weapon.getTemplate();
-            this.startRotation = t.attackStartRotation;
-            this.endRotation = t.attackEndRotation;
-            this.scaleX = t.attackScaleX;
-            this.scaleY = t.attackScaleY;
-
-            this.startXRel = t.attackStartX;
-            this.endXRel = t.attackEndX;
-            this.startYRel = t.attackStartY;
-            this.endYRel = t.attackEndY;
-
+        // Advance combo if within the window, else reset to opener
+        if (comboWindowTimer > 0f && !comboChain.isEmpty()) {
+            comboIndex = (comboIndex + 1) % comboChain.size();
         } else {
-            com.badlogic.gdx.Gdx.app.log("WeaponOverlay", "Weapon Template is NULL");
+            comboIndex = 0;
+        }
+
+        this.currentProfile = comboChain.get(comboIndex);
+        this.active = true;
+        this.attackTimer = 0f;
+        this.hasFiredHitFrame = false;
+        this.comboWindowTimer = 0f;
+
+        // Configure trail color based on weapon elemental/category
+        configureTrailColor(weapon);
+        trailRenderer.clear();
+        trailRenderer.setEmitting(true);
+    }
+
+    /**
+     * Triggers an offensive shield bash.
+     */
+    public void triggerShieldBash(Item shield) {
+        this.currentProfile = new CombatMotionProfile();
+        this.currentProfile.comboName = "SHIELD BASH";
+        this.currentProfile.isShieldBash = true;
+        this.currentProfile.duration = 0.30f;
+        this.currentProfile.anticipationRatio = 0.20f;
+        this.currentProfile.impactRatio = 0.38f;
+        this.currentProfile.screenTrauma = 0.30f;
+        this.currentProfile.damageMultiplier = 1.0f;
+
+        this.active = true;
+        this.attackTimer = 0f;
+        this.hasFiredHitFrame = false;
+        this.comboWindowTimer = 0f;
+        trailRenderer.clear();
+    }
+
+    /**
+     * Triggers defensive guard deflection flinch when an incoming hit is blocked.
+     */
+    public void triggerGuardFlinch() {
+        this.guardFlinchTimer = GUARD_FLINCH_DURATION;
+    }
+
+    /**
+     * Halts an in-flight swing when hitting a solid obstacle/wall, resetting combo.
+     */
+    public void triggerWallClank() {
+        if (active) {
+            active = false;
+            attackTimer = 0f;
+            comboIndex = 0;
+            comboWindowTimer = 0f;
+            trailRenderer.clear();
         }
     }
 
-    private TextureRegion loadTexture(String path) {
-        if (path == null)
-            return null;
-        if (!assetManager.isLoaded(path)) {
-            try {
-                assetManager.load(path, Texture.class);
-                assetManager.finishLoadingAsset(path);
-                com.badlogic.gdx.Gdx.app.log("WeaponOverlay", "Loaded Explicit Texture: " + path);
-            } catch (Exception e) {
-                com.badlogic.gdx.Gdx.app.log("WeaponOverlay", "Failed to load explicit texture: " + path);
-                return null;
-            }
-        }
-        return new TextureRegion(assetManager.get(path, Texture.class));
+    /**
+     * Whiff on empty air: resets combo string back to opener.
+     */
+    public void triggerWhiff() {
+        comboIndex = 0;
+        comboWindowTimer = 0f;
     }
 
-    // New fallback helper
-    private TextureRegion resolveGenericFallback(Item weapon) {
-        // Just use DART as ultimate fallback if nothing matches
-        // Ideally we have a 'generic_weapon.png'
-        // For now, rely on logic checking items.atlas for "dart" if exists
-        if (assetManager.isLoaded("packed/items.atlas")) {
-            TextureAtlas itemsAtlas = assetManager.get("packed/items.atlas", TextureAtlas.class);
-            return itemsAtlas.findRegion("dart");
-        }
-        return null;
+    public void addBloodToWeapon() {
+        this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
+    }
+
+    public void setWalking(boolean walking) {
+        this.isWalking = walking;
+    }
+
+    public void addTurnSway(float yawDelta) {
+        // Clamp and add rotational inertia lag
+        this.turnSway = MathUtils.clamp(this.turnSway + (yawDelta * 35f), -120f, 120f);
+    }
+
+    public void setGuarding(boolean guarding) {
+        this.isGuarding = guarding;
+    }
+
+    public void setMenuLowered(boolean lowered) {
+        // Smooth transition target handled in update
     }
 
     public void update(float delta) {
-        if (active) {
-            timer += delta;
-            if (timer >= duration) {
+        // Update persistent breathing and walking bob
+        idleBobTimer += delta * 2.2f;
+        if (isWalking) {
+            walkBobTimer += delta * 8.5f;
+        }
+
+        // Decay camera turn sway back to zero
+        turnSway = MathUtils.lerp(turnSway, 0f, delta * 9f);
+
+        // Decay blood coating on blade
+        if (bloodLevel > 0f) {
+            bloodLevel = Math.max(0f, bloodLevel - (delta * 0.08f));
+        }
+
+        // Decay guard flinch
+        if (guardFlinchTimer > 0f) {
+            guardFlinchTimer -= delta;
+        }
+
+        // Update trail renderer
+        trailRenderer.update(delta);
+
+        // Update attack animation
+        if (active && currentProfile != null) {
+            attackTimer += delta;
+            float progress = attackTimer / currentProfile.duration;
+
+            // Stop emitting trail once past impact follow-through
+            if (progress > currentProfile.impactRatio + 0.15f) {
+                trailRenderer.setEmitting(false);
+            }
+
+            // Fire True Hit-Frame callback exactly when blade connects
+            if (progress >= currentProfile.impactRatio && !hasFiredHitFrame) {
+                hasFiredHitFrame = true;
+                if (hitFrameCallback != null) {
+                    hitFrameCallback.onHitFrame(currentProfile);
+                }
+                // Open combo chaining window
+                comboWindowTimer = COMBO_WINDOW_MAX;
+            }
+
+            if (attackTimer >= currentProfile.duration) {
                 active = false;
-                timer = 0f;
+                attackTimer = 0f;
+                trailRenderer.setEmitting(false);
+            }
+        } else {
+            // Count down active combo rhythm window
+            if (comboWindowTimer > 0f) {
+                comboWindowTimer -= delta;
+                if (comboWindowTimer <= 0f) {
+                    comboWindowTimer = 0f;
+                    comboIndex = 0; // Rhythm expired, reset combo to opener
+                }
             }
         }
     }
@@ -201,129 +289,300 @@ public class FirstPersonWeaponOverlay {
         return active;
     }
 
-    // Force animation to complete/skip to end
-    public void jumpToImpact() {
-        if (active) {
-            timer = duration;
-            // active = false; // Maybe let next update frame handle the disable?
-            // Actually, usually jumpToImpact implies skipping the windup.
-            // If damage happens at end of animation, this helps sync.
-        }
+    /**
+     * Micro-lock: during windup anticipation, player movement is locked to guarantee aim.
+     * After impact frame, recovery is immediately cancelable by movement.
+     */
+    public boolean isMovementLocked() {
+        if (!active || currentProfile == null) return false;
+        float progress = attackTimer / currentProfile.duration;
+        return progress < currentProfile.impactRatio;
+    }
+
+    public int getComboIndex() {
+        return comboIndex;
+    }
+
+    public CombatMotionProfile getCurrentProfile() {
+        return currentProfile;
     }
 
     public void render(SpriteBatch batch, Viewport viewport) {
-        if (!active || weaponTexture == null) {
+        float worldW = viewport.getWorldWidth();
+        float worldH = viewport.getWorldHeight();
+
+        // Calculate walking and breathing bob offsets
+        float breathY = MathUtils.sin(idleBobTimer) * (worldH * 0.012f);
+        float walkBobX = isWalking ? MathUtils.cos(walkBobTimer * 0.5f) * (worldW * 0.008f) : 0f;
+        float walkBobY = isWalking ? Math.abs(MathUtils.sin(walkBobTimer)) * (worldH * 0.022f) : 0f;
+        float totalBobX = walkBobX + (turnSway * (worldW / 1920f));
+        float totalBobY = breathY - walkBobY;
+
+        // 1. Render Off-Hand (Left Hand: Shield, Offhand Weapon, or Lantern)
+        renderOffHand(batch, viewport, worldW, worldH, totalBobX, totalBobY);
+
+        // 2. Render Main Hand (Right Hand)
+        renderMainHand(batch, viewport, worldW, worldH, totalBobX, totalBobY);
+    }
+
+    private void renderMainHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {
+        if (mainHandTexture == null) {
             return;
         }
 
-        float progress = timer / duration;
+        float drawX, drawY, rotation;
 
-        // Sine wave for smooth swing
-        // 0 -> 1 -> 0 ? No, usually a slash is Start -> End
-        // Let's do a simple Linear or SmoothStep interp
-        // float t = MathUtils.sin(progress * MathUtils.PI); // Arc motion 0 -> 1 -> 0
-        // (if we want back and forth)
+        if (active && currentProfile != null) {
+            float progress = attackTimer / currentProfile.duration;
+            CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
 
-        // For a slash: Start -> End
-        float t = progress; // Linear
-        // t = t * t * (3 - 2 * t); // SmoothStep
+            drawX = (worldW * state.xRel) + (bobX * 0.3f);
+            drawY = (worldH * state.yRel) + (worldH * 0.22f) + (bobY * 0.3f);
+            rotation = state.rotation;
+        } else {
+            // Persistent ready posture (lower right)
+            drawX = (worldW * 0.72f) + bobX;
+            drawY = (worldH * -0.08f) + (worldH * 0.22f) + bobY;
+            rotation = -22f;
 
-        // Interpolate Rotation
-        float currentRotation = MathUtils.lerp(startRotation, endRotation, t);
+            if (mainHandArchetype == AnimationArchetype.SLASHING_2H) {
+                // Centered two-handed grip stance
+                drawX = (worldW * 0.58f) + (bobX * 0.6f);
+                drawY = (worldH * -0.05f) + (worldH * 0.22f) + bobY;
+                rotation = -12f;
+            } else if (mainHandArchetype == AnimationArchetype.THRUSTING_PIERCE) {
+                drawX = (worldW * 0.68f) + bobX;
+                rotation = -32f;
+            }
+        }
 
-        // Interpolate Position (Screen space)
-        // Default: Bottom Right -> Bottom Left
-        float startX = viewport.getWorldWidth() * startXRel;
-        float endX = viewport.getWorldWidth() * endXRel;
-        float startY = viewport.getWorldHeight() * startYRel; // Below screen
-        float endY = viewport.getWorldHeight() * endYRel; // Below screen
-
-        // We want the weapon to arc up? Or just slide?
-        // Let's add an arc height offset
-        float arcHeight = viewport.getWorldHeight() * 0.1f;
-        float yOffset = MathUtils.sin(progress * MathUtils.PI) * arcHeight;
-
-        float currentX = MathUtils.lerp(startX, endX, t);
-        float currentY = MathUtils.lerp(startY, endY, t) + yOffset + 200f;
-
-        // Draw
-        batch.setColor(Color.WHITE);
-
-        // Scale based on texture size vs screen size?
-        // Let's just draw it large enough to look like a first-person item.
-        // E.g. height = 1/2 screen height
-        float targetHeight = viewport.getWorldHeight() * 0.6f;
-        float ratio = (float) weaponTexture.getRegionWidth() / (float) weaponTexture.getRegionHeight();
+        float targetHeight = worldH * 0.58f;
+        float ratio = (float) mainHandTexture.getRegionWidth() / (float) mainHandTexture.getRegionHeight();
         float targetWidth = targetHeight * ratio;
 
-        // Apply flip if needed
-        float finalWidth = targetWidth * (scaleX > 0 ? 1 : -1) * Math.abs(scaleX); // Logic: scaleX sign determines flip
-        float finalHeight = targetHeight * scaleY;
+        float originX = targetWidth * 0.45f;
+        float originY = targetHeight * 0.05f;
 
-        // Origin for rotation should be bottom-right (handle) usually?
-        // Or center?
-        // Let's try Center-Bottom roughly
-        float originX = finalWidth / 2f;
-        float originY = 0f; // Handle at bottom
+        // Sample blade tip and hilt positions for procedural trail
+        if (active && currentProfile != null) {
+            float rad = rotation * MathUtils.degreesToRadians;
+            float cos = MathUtils.cos(rad);
+            float sin = MathUtils.sin(rad);
 
-        batch.draw(weaponTexture,
-                currentX, currentY,
+            float tipLocalX = targetWidth * 0.5f - originX;
+            float tipLocalY = targetHeight * 0.95f - originY;
+            float hiltLocalX = targetWidth * 0.5f - originX;
+            float hiltLocalY = targetHeight * 0.25f - originY;
+
+            float tipWorldX = drawX + originX + (tipLocalX * cos - tipLocalY * sin);
+            float tipWorldY = drawY + originY + (tipLocalX * sin + tipLocalY * cos);
+            float hiltWorldX = drawX + originX + (hiltLocalX * cos - hiltLocalY * sin);
+            float hiltWorldY = drawY + originY + (hiltLocalX * sin + hiltLocalY * cos);
+
+            trailRenderer.addSample(tipWorldX, tipWorldY, hiltWorldX, hiltWorldY);
+        }
+
+        // Draw weapon sprite
+        Color originalColor = batch.getColor();
+        if (bloodLevel > 0.05f) {
+            // Blood-stained red tinting on blade
+            batch.setColor(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
+        } else {
+            batch.setColor(Color.WHITE);
+        }
+
+        batch.draw(mainHandTexture,
+                drawX, drawY,
                 originX, originY,
-                finalWidth, finalHeight,
-                1f, 1f, // Scale is already applied to W/H
-                currentRotation);
+                targetWidth, targetHeight,
+                1f, 1f,
+                rotation);
+
+        batch.setColor(originalColor);
+    }
+
+    private void renderOffHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {
+        if (offHandTexture == null) {
+            return;
+        }
+
+        float drawX, drawY, rotation;
+
+        if (active && currentProfile != null && currentProfile.isShieldBash) {
+            float progress = attackTimer / currentProfile.duration;
+            CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
+            drawX = worldW * state.xRel;
+            drawY = (worldH * state.yRel) + (worldH * 0.20f);
+            rotation = state.rotation;
+        } else if (guardFlinchTimer > 0f) {
+            // Defensive flinch
+            float flinchT = guardFlinchTimer / GUARD_FLINCH_DURATION;
+            drawX = (worldW * 0.18f) - (bobX * 0.5f) + (MathUtils.sin(flinchT * MathUtils.PI) * (worldW * 0.04f));
+            drawY = (worldH * 0.05f) + bobY;
+            rotation = 28f - (flinchT * 12f);
+        } else if (isGuarding) {
+            // High Guard stance
+            drawX = (worldW * 0.24f) - (bobX * 0.5f);
+            drawY = (worldH * 0.08f) + bobY;
+            rotation = 8f;
+        } else {
+            // Standard offhand ready posture (lower left)
+            drawX = (worldW * 0.12f) - (bobX * 0.5f);
+            drawY = (worldH * -0.06f) + (worldH * 0.20f) + (bobY * 0.8f);
+            rotation = 18f;
+        }
+
+        float targetHeight = worldH * 0.52f;
+        float ratio = (float) offHandTexture.getRegionWidth() / (float) offHandTexture.getRegionHeight();
+        float targetWidth = targetHeight * ratio;
+
+        float originX = targetWidth * 0.5f;
+        float originY = targetHeight * 0.1f;
+
+        batch.setColor(Color.WHITE);
+        batch.draw(offHandTexture,
+                drawX, drawY,
+                originX, originY,
+                targetWidth, targetHeight,
+                1f, 1f,
+                rotation);
+    }
+
+    public void renderTrails(ShapeRenderer shapeRenderer) {
+        trailRenderer.render(shapeRenderer);
     }
 
     /**
-     * RETRO render path: draws the weapon's ASCII sprite data using ShapeRenderer
-     * instead of a texture. The sweep animation position is identical to the MODERN
-     * path but rotation is omitted (pixel blocks don't rotate gracefully).
+     * RETRO mode render path: renders ASCII sprite pixel data with kinematic parity,
+     * stance bobbing, combo arcs, and off-hand shield support.
      */
     public void renderRetro(ShapeRenderer shapeRenderer, Viewport viewport) {
-        if (!active) return;
+        float worldW = viewport.getWorldWidth();
+        float worldH = viewport.getWorldHeight();
 
-        float progress = timer / duration;
-        float t = progress;
+        float breathY = MathUtils.sin(idleBobTimer) * (worldH * 0.012f);
+        float walkBobY = isWalking ? Math.abs(MathUtils.sin(walkBobTimer)) * (worldH * 0.022f) : 0f;
+        float totalBobY = breathY - walkBobY;
 
-        float startX = viewport.getWorldWidth() * startXRel;
-        float endX   = viewport.getWorldWidth() * endXRel;
-        float startY = viewport.getWorldHeight() * startYRel;
-        float endY   = viewport.getWorldHeight() * endYRel;
-        float arcHeight = viewport.getWorldHeight() * 0.1f;
-        float yOffset   = MathUtils.sin(progress * MathUtils.PI) * arcHeight;
+        float drawX, drawY;
 
-        float currentX = MathUtils.lerp(startX, endX, t);
-        float currentY = MathUtils.lerp(startY, endY, t) + yOffset + 200f;
+        if (active && currentProfile != null) {
+            float progress = attackTimer / currentProfile.duration;
+            CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
+            drawX = worldW * state.xRel;
+            drawY = (worldH * state.yRel) + (worldH * 0.22f);
+        } else {
+            drawX = worldW * 0.72f;
+            drawY = (worldH * 0.14f) + totalBobY;
+        }
 
-        float targetHeight = viewport.getWorldHeight() * 0.55f;
+        // Render main hand ASCII block
+        renderRetroSprite(shapeRenderer, mainHandSpriteData, mainHandSpriteColor, drawX, drawY, worldH * 0.52f);
 
-        if (weaponSpriteData != null && weaponSpriteData.length > 0) {
-            int rows = weaponSpriteData.length;
-            int cols = weaponSpriteData[0].length();
+        // Render off-hand ASCII block if equipped
+        if (offHandSpriteData != null) {
+            float offX = isGuarding ? (worldW * 0.25f) : (worldW * 0.14f);
+            float offY = isGuarding ? (worldH * 0.22f) : (worldH * 0.12f) + totalBobY;
+            renderRetroSprite(shapeRenderer, offHandSpriteData, offHandSpriteColor, offX, offY, worldH * 0.46f);
+        }
+    }
+
+    private void renderRetroSprite(ShapeRenderer shapeRenderer, String[] spriteData, Color color, float x, float y, float targetHeight) {
+        if (spriteData != null && spriteData.length > 0) {
+            int rows = spriteData.length;
+            int cols = spriteData[0].length();
             float pixelW = (targetHeight / 2f) / cols;
             float pixelH = targetHeight / rows;
 
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(weaponSpriteColor);
+            shapeRenderer.setColor(color);
             for (int py = 0; py < rows; py++) {
-                String row = weaponSpriteData[py];
+                String row = spriteData[py];
                 for (int px = 0; px < cols && px < row.length(); px++) {
                     if (row.charAt(px) == '#') {
-                        float drawX = currentX + px * pixelW;
-                        float drawY = currentY + (rows - 1 - py) * pixelH;
-                        shapeRenderer.rect(drawX, drawY, pixelW, pixelH);
+                        float bx = x + px * pixelW;
+                        float by = y + (rows - 1 - py) * pixelH;
+                        shapeRenderer.rect(bx, by, pixelW, pixelH);
                     }
                 }
             }
             shapeRenderer.end();
         } else {
-            // No sprite data — draw a plain coloured block as fallback
-            float blockW = 60f;
-            float blockH = 160f;
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(weaponSpriteColor);
-            shapeRenderer.rect(currentX, currentY, blockW, blockH);
+            shapeRenderer.setColor(color);
+            shapeRenderer.rect(x, y, 60f, 160f);
             shapeRenderer.end();
         }
+    }
+
+    private void configureTrailColor(Item weapon) {
+        if (weapon == null) {
+            trailRenderer.setTintColor(new Color(1f, 1f, 1f, 0.65f));
+            return;
+        }
+        if (weapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
+            // Holy gold
+            trailRenderer.setTintColor(new Color(1.0f, 0.88f, 0.35f, 0.75f));
+        } else if (weapon.getTemplate() != null && weapon.getTemplate().fireDamage > 0) {
+            // Fiery ember
+            trailRenderer.setTintColor(new Color(1.0f, 0.45f, 0.15f, 0.80f));
+        } else {
+            // Steel silver
+            trailRenderer.setTintColor(new Color(0.88f, 0.94f, 1.0f, 0.65f));
+        }
+    }
+
+    private TextureRegion resolveTexture(Item item) {
+        if (item == null || item.getTemplate() == null) {
+            return null;
+        }
+
+        String texturePath = item.getTemplate().texturePath;
+
+        // PRIORITY 1: Explicit Texture Path
+        if (texturePath != null) {
+            try {
+                if (assetManager.isLoaded(texturePath)) {
+                    return new TextureRegion(assetManager.get(texturePath, Texture.class));
+                } else {
+                    assetManager.load(texturePath, Texture.class);
+                    assetManager.finishLoadingAsset(texturePath);
+                    return new TextureRegion(assetManager.get(texturePath, Texture.class));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // PRIORITY 2: Atlas Lookup
+        String regionName = null;
+        if (texturePath != null) {
+            int lastSlash = texturePath.lastIndexOf('/');
+            int lastDot = texturePath.lastIndexOf('.');
+            if (lastDot > lastSlash) {
+                regionName = texturePath.substring(lastSlash + 1, lastDot);
+            } else {
+                regionName = texturePath;
+            }
+        }
+
+        if (regionName != null) {
+            if (assetManager.isLoaded("packed/weapons.atlas")) {
+                TextureAtlas atlas = assetManager.get("packed/weapons.atlas", TextureAtlas.class);
+                TextureRegion r = atlas.findRegion(regionName);
+                if (r != null) return r;
+            }
+            if (assetManager.isLoaded("packed/items.atlas")) {
+                TextureAtlas atlas = assetManager.get("packed/items.atlas", TextureAtlas.class);
+                TextureRegion r = atlas.findRegion(regionName);
+                if (r != null) return r;
+            }
+            if (assetManager.isLoaded("packed/armor.atlas")) {
+                TextureAtlas atlas = assetManager.get("packed/armor.atlas", TextureAtlas.class);
+                TextureRegion r = atlas.findRegion(regionName);
+                if (r != null) return r;
+            }
+        }
+
+        return null;
     }
 }
