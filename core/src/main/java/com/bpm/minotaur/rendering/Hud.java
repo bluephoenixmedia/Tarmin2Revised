@@ -517,9 +517,9 @@ public class Hud implements Disposable {
         // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
         spellHotbarTable = new Table();
         spellHotbarTable.setBackground(hudSkin.getDashboardBg());
-        spellHotbarTable.pad(3f, 6f, 3f, 6f);
-        Label spellTitle = new Label("SPELLS", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        spellHotbarTable.add(spellTitle).padRight(6);
+        spellHotbarTable.pad(2f, 4f, 2f, 4f);
+        Label spellTitle = new Label("SPL", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        spellHotbarTable.add(spellTitle).padRight(4);
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
@@ -528,14 +528,14 @@ public class Hud implements Disposable {
             spellSlots[i].top().left();
 
             Label badge = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
-            spellSlots[i].add(badge).padLeft(2).padTop(1).row();
+            spellSlots[i].add(badge).padLeft(1).padTop(1).row();
 
             spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontSmall(), Color.CYAN));
             spellNameLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellNameLabels[i]).width(72).padLeft(2).row();
+            spellSlots[i].add(spellNameLabels[i]).width(44).padLeft(1).row();
 
             spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-            spellSlots[i].add(spellCostLabels[i]).padLeft(2);
+            spellSlots[i].add(spellCostLabels[i]).padLeft(1);
 
             spellSlots[i].addListener(new ClickListener() {
                 @Override
@@ -564,11 +564,11 @@ public class Hud implements Disposable {
                 }
             });
 
-            spellHotbarTable.add(spellSlots[i]).size(76, 44).pad(2);
+            spellHotbarTable.add(spellSlots[i]).size(48, 30).pad(1);
         }
 
         spellHotbarTable.pack();
-        spellHotbarTable.setPosition(470f, 204f);
+        spellHotbarTable.setPosition(16f, 204f);
 
         // --- Main Container (200px Height) ---
         mainContainer = new Table();

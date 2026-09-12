@@ -297,6 +297,19 @@ public class GoreManager {
         activeSurfaceDecals.add(d);
     }
 
+    /**
+     * Spawns elemental ground marks (scorch, frost, acid, holy rune) at the specified position.
+     */
+    public void spawnElementalScorch(Vector3 pos, Color color, float radius) {
+        spawnSurfaceDecal(pos, color, radius);
+        for (int i = 0; i < 2; i++) {
+            float ox = MathUtils.random(-0.3f, 0.3f);
+            float oz = MathUtils.random(-0.3f, 0.3f);
+            Vector3 splatPos = new Vector3(pos.x + ox, pos.y, pos.z + oz);
+            spawnSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
+        }
+    }
+
     public void spawnWallDecal(int x, int y, Direction dir, float wallX, float height, float radius, Color color) {
         if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) {
             WallDecal old = activeWallDecals.removeIndex(0);

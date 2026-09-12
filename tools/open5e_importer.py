@@ -126,6 +126,66 @@ def parse_status_effect(desc):
         return "HARDENED"
     return None
 
+def normalize_rune_school(school):
+    s = (school or "").upper()
+    valid = ["EVOCATION", "ABJURATION", "NECROMANCY", "CONJURATION", "TRANSMUTATION", "DIVINATION", "ENCHANTMENT", "ILLUSION"]
+    for v in valid:
+        if v in s:
+            return v
+    return "EVOCATION"
+
+def classify_visual_archetype(name, school, target_type, damage_type, desc):
+    nl = (name or "").lower()
+    dl = (desc or "").lower()
+    sl = (school or "").lower()
+    dt = (damage_type or "").upper()
+    tt = (target_type or "").upper()
+
+    # 1. Iconic Spells Bespoke Flourishes (The Fab Five + Iconic)
+    if "fireball" in nl or "delayed blast fireball" in nl:
+        return "EXPLOSIVE_BURST", "FIREBALL"
+    if "magic missile" in nl:
+        return "FORCE_MISSILE", "MAGIC_MISSILE"
+    if "misty step" in nl or "dimension door" in nl or "teleport" in nl or "blink" in nl:
+        return "SPATIAL_WARP", "MISTY_STEP"
+    if "thunderwave" in nl:
+        return "THUNDER_CONCUSSION", "THUNDERWAVE"
+    if ("shield" in nl and "faith" not in nl) or "mage armor" in nl:
+        return "ARCANE_WARD", "SHIELD"
+
+    # 2. Damage-Type and Name/Keyword Driven
+    if dt == "THUNDER" or "thunder" in nl or "shatter" in nl:
+        return "THUNDER_CONCUSSION", None
+    if dt == "PSYCHIC" or "mind" in nl or "psychic" in nl or "phantasm" in nl or "dissonant" in nl:
+        return "PSYCHIC_SHOCK", None
+    if dt == "FIRE":
+        if tt in ("BURST", "CONE") or "burst" in dl or "explosion" in dl or "sphere" in dl:
+            return "EXPLOSIVE_BURST", None
+        return "FLAME_BOLT", None
+    if dt == "COLD" or "frost" in nl or "ice" in nl or "cold" in nl or "blizzard" in nl or "ray of frost" in nl:
+        return "FROST_RAY", None
+    if dt == "LIGHTNING" or "lightning" in nl or "shock" in nl or "spark" in nl or "witch bolt" in nl:
+        return "LIGHTNING_ARC", None
+    if dt in ("ACID", "POISON") or "cloud" in nl or "acid" in nl or "poison" in nl or "stinking" in nl:
+        return "TOXIC_CLOUD", None
+    if dt == "RADIANT" or sl == "divination" or "heal" in nl or "cure" in nl or "aid" in nl or "sacred" in nl or "sun" in nl or "light" in nl or "bless" in nl:
+        return "HOLY_RADIANCE", None
+    if dt == "NECROTIC" or sl == "necromancy" or "drain" in nl or "death" in nl or "vampir" in nl or "inflict" in nl or "chill" in nl:
+        return "NECROTIC_DRAIN", None
+    if "teleport" in dl or "plane" in dl or "portal" in dl or "planar" in nl:
+        return "SPATIAL_WARP", None
+    if sl == "abjuration" or tt == "SELF" or "ward" in nl or "protect" in nl or "barrier" in nl or "armor" in nl:
+        return "ARCANE_WARD", None
+    if dt == "FORCE" or sl == "evocation":
+        return "FORCE_MISSILE", None
+
+    # 3. Structural Fallbacks
+    if tt in ("BURST", "CONE"):
+        return "EXPLOSIVE_BURST", None
+    elif tt == "SELF":
+        return "ARCANE_WARD", None
+    return "FORCE_MISSILE", None
+
 def import_spells():
     print("\n--- IMPORTING SPELLS FROM OPEN5E ---")
     all_spells = {}
@@ -157,17 +217,9 @@ def import_spells():
 
             target_type = parse_target_type(range_str, desc)
             school = s.get('school', 'evocation').lower()
-            visual = "PROJECTILE"
-            if target_type == "BURST":
-                visual = "BURST"
-            elif target_type == "SELF":
-                visual = "SELF_BUFF"
-            elif target_type == "CONE":
-                visual = "BURST"
-            elif target_type == "TOUCH":
-                visual = "MELEE_TOUCH"
-            elif target_type == "BEAM":
-                visual = "BEAM"
+            damage_type = parse_damage_type(desc)
+            v_arch, bespoke = classify_visual_archetype(s.get('name'), school, target_type, damage_type, desc)
+            rune_school = normalize_rune_school(school)
 
             all_spells[slug] = {
                 "id": slug,
@@ -178,11 +230,14 @@ def import_spells():
                 "range": parse_range_tiles(range_str),
                 "targetType": target_type,
                 "damageDice": dmg_dice,
-                "damageType": parse_damage_type(desc),
+                "damageType": damage_type,
                 "domain": "SPIRITUAL",
                 "duration": s.get('duration', 'Instantaneous'),
                 "statusEffect": parse_status_effect(desc),
-                "visualArchetype": visual,
+                "visualArchetype": v_arch,
+                "secondaryArchetype": target_type,
+                "runeSchool": rune_school,
+                "bespokeEffect": bespoke,
                 "description": desc[:300].strip() + ("..." if len(desc) > 300 else "")
             }
         url = data.get('next')
@@ -199,21 +254,28 @@ def import_spells():
             range_str = s.get('range', '30 feet')
             dmg_dice = parse_damage_dice(desc) or f"{max(1, level)}d8"
             target_type = parse_target_type(range_str, desc)
+            school = s.get('school', 'evocation').lower()
+            damage_type = parse_damage_type(desc)
+            v_arch, bespoke = classify_visual_archetype(s.get('name'), school, target_type, damage_type, desc)
+            rune_school = normalize_rune_school(school)
 
             all_spells[slug] = {
                 "id": slug,
                 "name": s.get('name'),
                 "level": level,
-                "school": s.get('school', 'evocation').lower(),
+                "school": school,
                 "mpCost": calculate_mp_cost(level),
                 "range": parse_range_tiles(range_str),
                 "targetType": target_type,
                 "damageDice": dmg_dice,
-                "damageType": parse_damage_type(desc),
+                "damageType": damage_type,
                 "domain": "SPIRITUAL",
                 "duration": s.get('duration', 'Instantaneous'),
                 "statusEffect": parse_status_effect(desc),
-                "visualArchetype": "BURST" if target_type in ("BURST", "CONE") else "PROJECTILE",
+                "visualArchetype": v_arch,
+                "secondaryArchetype": target_type,
+                "runeSchool": rune_school,
+                "bespokeEffect": bespoke,
                 "description": desc[:300].strip() + ("..." if len(desc) > 300 else "")
             }
 
@@ -221,6 +283,34 @@ def import_spells():
     with open(spells_file, 'w', encoding='utf-8') as f:
         json.dump(all_spells, f, indent=2)
     print(f"PASS: Wrote {len(all_spells)} total spells to {spells_file}")
+
+def enrich_spells_vfx():
+    spells_file = os.path.join(DATA_DIR, "spells.json")
+    if not os.path.exists(spells_file):
+        print(f"Spells file not found: {spells_file}")
+        return
+    with open(spells_file, 'r', encoding='utf-8') as f:
+        spells = json.load(f)
+
+    updated_count = 0
+    for sid, s in spells.items():
+        v_arch, bespoke = classify_visual_archetype(
+            s.get("name"),
+            s.get("school"),
+            s.get("targetType"),
+            s.get("damageType"),
+            s.get("description", "")
+        )
+        rune_school = normalize_rune_school(s.get("school"))
+        s["visualArchetype"] = v_arch
+        s["secondaryArchetype"] = s.get("targetType", "PROJECTILE")
+        s["runeSchool"] = rune_school
+        s["bespokeEffect"] = bespoke
+        updated_count += 1
+
+    with open(spells_file, 'w', encoding='utf-8') as f:
+        json.dump(spells, f, indent=2)
+    print(f"PASS: Enriched {updated_count} spells with visual archetypes, rune schools, and bespoke effects.")
 
 
 def calibrate_weapons():

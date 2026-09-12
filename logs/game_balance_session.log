@@ -49600,3 +49600,612 @@
 [13:23:02] [Player [DEBUG]] Move blocked by IMPASSABLE ITEM: Crafting Bench at (19,18)
 [13:23:02] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
 [13:23:02] [DiscoveryManager] Saved discovery state to saves/slot_1/discovery_state.json
+--- NEW SESSION: 2026-09-12 18:59:56 ---
+[18:59:56] [SESSION] Engine Start. Initializing systems...
+[18:59:56] [GPU] Renderer: NVIDIA GeForce RTX 4060 Laptop GPU/PCIe/SSE2 | Vendor: NVIDIA Corporation | Version: 4.6.0 NVIDIA 616.92
+[18:59:56] [DoomManager] Loaded Doom State. Deaths: 5
+[18:59:56] [MonsterDataManager] Loaded 48 monster templates.
+[18:59:56] [ItemDataManager] Live Reloading items.json from source.
+[18:59:56] [ItemDataManager] Loaded 149 item templates.
+[18:59:56] [EncounterManager] Loaded 2 encounters.
+[18:59:56] [ItemDataManager] Live Reloading weapons.json from source.
+[18:59:56] [ItemDataManager] Loaded weapon RUSTY_SWORD with rotation 74.0
+[18:59:56] [ItemDataManager] Loaded 250 new weapons.
+[18:59:56] [ItemDataManager] Live Reloading armor.json from source.
+[18:59:56] [IDM_DEBUG] Loaded LEATHER_BOOTS. isBoots=true
+[18:59:56] [ItemDataManager] Loaded 117 new armor items.
+[18:59:56] [Tarmin2] Loading SpawnTableData...
+[18:59:56] [Tarmin2] SpawnTableData loaded.
+[18:59:56] [LoadingScreen] Found video file: video/stinger_studio.mp4
+[18:59:56] [LoadingScreen] Starting asset loading...
+[19:00:09] [LoadingScreen] Asset loading and video sequence complete!
+[19:00:09] [Tarmin2] Startup completed to MainMenu in 13462 ms (13.46s)
+[19:00:09] [STARTUP] Game initialized to MainMenu in 13462 ms
+[19:00:16] [SaveManager] Deleted save slot 1
+[19:00:16] [DoomManager] Saved Doom State to saves/slot_1/doom_state.json
+[19:00:16] [SaveManager] Started New Game in slot 1 [MODERN] as Hero
+[19:00:16] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[19:00:16] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[19:00:17] [Skybox3DRenderer] Procedural storm sky dome shader successfully compiled.
+[19:00:17] [Skybox3DRenderer] 3D Skybox models successfully loaded. Initialized: true
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[19:00:18] [GoreManager] Loaded gore atlas textures: 4 drops, 3 smears, 10 gibs.
+[19:00:18] [WorldManager] World Initialized with Seed: -160262589030703483
+[19:00:18] [CookingManager] Randomized gib effects for 48 monsters.
+[19:00:18] [CookingManager] Initialized 11 cooking recipes.
+[19:00:18] [WeatherManager] Starting run with randomized weather: LIGHT CLEAR
+[19:00:18] [GameScreen [DEBUG]] generateLevel START. Player is NULL
+[19:00:18] [DiscoveryManager] Initializing new game discovery state...
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_PINK -> BERZERK
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_BLUE -> BLINDNESS
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_OF_INVISIBILITY -> HEALING
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_SWIRLY -> LEVITATION
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_BUBBLY -> SLEEP
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_GOLD -> POISON
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_GREEN -> SUPER_VISION
+[19:00:18] [DiscoveryManager] Mapped Potion: POTION_OF_HEROISM -> CONFUSION
+[19:00:18] [MazeChunkGenerator] Generating Chunk (0, 0) with Seed: 3323925277086407452
+[19:00:18] [ChunkGenerator] Injecting Home Tile at map coordinates [1,1]
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOME_FIRE_POT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOME_SLEEPING_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BRASS_LANTERN
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOME_CRAFTING_BENCH
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BRASS_LANTERN
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOME_CHEST
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[19:00:18] [MazeChunkGenerator] Reachability: 757 tiles reachable from (1, 1)
+[19:00:18] [UnlockManager] Profile loaded successfully.
+[19:00:18] [UnlockManager] Generating progressive unlock plan...
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SMALL_SHIELD. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SHIELD. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: BACKPACK. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: BARDS_FRIEND. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: DRAGONS_PAW. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: FLAIL_FOOTMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: FLAIL_HORSEMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: GLADIATORS_FRIEND_FOOTMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: GLADIATORS_FRIEND_HORSEMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: KNIFE_WIDOWS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MACE_FOOTMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MACE_FOOTMANS_WHISTLING. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MACE_HORSEMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MACE_HORSEMANS_WHISTLING. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PICK_FOOTMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PICK_HORSEMANS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: STAFF_HAMANUS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SWORD_MARINERS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: WHIP_MASTERS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: BACK_AND_BREAST. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: CAP. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MAIL_COIF. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: OPEN_FACED. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: IMPROVED_MAIL. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: LORICA_SEGMENTA. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: MAIL_AND_PLATE. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: METAL_LAMELLAR. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PLATE_MAIL. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SCALE_ARMOR. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SHIELD_MEDIUM. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SHIELD_LARGE. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: THREE_QUARTER_PLATE. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: CHAINMAIL_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SPLINT_MAIL_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: SCALE_MAIL_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: RING_MAIL_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PLATE_MAIL_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PADDED_BOOTS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: PADDED_ARMS. Generating fallback template.
+[19:00:18] [ERROR] [ItemDataManager] Missing template for item type: WOOD_BONE_GAUNTLETS. Generating fallback template.
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOW_FOLDING_SHORT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RUSTY_ARMOR
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: GOUGE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SHIELD_SMALL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: QUARREL_LIGHT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPEAR_LONG_ONE_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POLEARM_TRIKAL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CHAIN_LEGGINGS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_TWO_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: GALLIC_HELMET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ANKUS_ELEPHANT_GOAD
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HALF_PLATE_HELMET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_STONE_ONE_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ARROW_STONE_FLIGHT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_BOOTS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LEATHER_HELM
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: POTION_OF_HEROISM
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[19:00:18] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[19:00:18] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[19:00:18] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: STUDDED_LEATHER_BOOTS
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RING_BRONZE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POTION_SWIRLY
+[19:00:18] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[19:00:18] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: LEVITATION
+[19:00:18] [ItemDataManager [DEBUG]] Setting trueEffect (LEVITATION) and identified (false) on item.
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MORNING_STAR
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: QUABONE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOX
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: COINS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KEY
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOX
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LAMP
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KEY
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: VINES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
+[19:00:18] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 17,15
+[19:00:18] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 11,29
+[19:00:18] [ChunkGenerator] findPlayerStart: Set spawn to safe Home Tile: (17, 19)
+[19:00:18] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_0.json
+[19:00:18] [WorldManager] Generated Chunk (0, 0) with Effective Difficulty: 1
+[19:00:18] [CHUNK_GEN] Generated Chunk (0, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Ring (RING) | Val: 100 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Iron Morning Star (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Swirly Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Studded Leather Boots (ARMOR) | Val: 15 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Brass Lantern (WAR_WEAPON) | Val: 50 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Brass Lantern (WAR_WEAPON) | Val: 50 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Quabone (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/weapon_swing.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/meat_hit.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/metal_hit.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/monster_grunt_light.wav
+[19:00:18] [ERROR] [SoundManager] Sound file not found: sounds/monster_roar_heavy.wav
+[19:00:18] [Player [DEBUG]] Constructor: Creating starting items...
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RUSTY_SWORD
+[19:00:18] [DICE_DEBUG] Added initial die: Rusty Iron Die
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: WOODEN_CROSS
+[19:00:18] [DICE_DEBUG] Added initial die: Priest's Holy Die
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MEDIUM_PACK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOOTS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CRAFTING_TOOLKIT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: COOKING_KIT
+[19:00:18] [Player [DEBUG]] Constructor: Finished creating items.
+[19:00:18] [SpellDataManager] Loaded 369 spell entries from spells.json
+[19:00:18] [MazeChunkGenerator] Generating Chunk (0, -1) with Seed: 3323925277086407451
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[19:00:18] [MazeChunkGenerator] Reachability: 681 tiles reachable from (1, 1)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOW_COMPOSITE_LONG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: PESHKABZ
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BRONZE_BOOTS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: TROMBASH_THROWN
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: GALLIC_LEGGINGS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPEAR_PADDLE
+[19:00:18] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: QUARTERSTAFF
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BREASTPLATE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KORA
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: STUDDED_LEATHER
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POLEARM_MILITARY_FORK4
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_ONE_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BASINET
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: SCROLL_LIGHTNING_BOLT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: GALLIC_ARMOR
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CHAIN_LEGGINGS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POLEARM_BARDICHE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FIELD_PLATE_BOOTS
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: POTION_FERAL_DRAUGHT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RING_WHITE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPEAR_CASTER
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPLINT_MAIL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MACE_BLADEBACK
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MEAL
+[19:00:18] [Item [DEBUG]] Created FOOD Item: MEAL (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: COINS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SLIME_RESIDUE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOLLOW_LOG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: DEAD_PLANT_MATTER
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MUD
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOLLOW_LOG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BROKEN_COLUMN
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 21,13
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 19,32
+[19:00:18] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 27,34
+[19:00:18] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_-1.json
+[19:00:18] [WorldManager] Generated Chunk (0, -1) with Effective Difficulty: 1
+[19:00:18] [CHUNK_GEN] Generated Chunk (0, -1) (Biome: MAZE) | Eff. Difficulty: 1
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Splint mail (ARMOR) | Val: 80 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Mace, Bladeback (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Field plate boots (ARMOR) | Val: 2000 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Ring (RING) | Val: 100 | Rarity: Super/White
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Chain leggings (ARMOR) | Val: 75 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Polearm, Bardiche (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Cooked Meal (FOOD) | Val: 10 | Rarity: Super/White
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Gallic Armor (ARMOR) | Val: 30 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Spear Caster (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [MazeChunkGenerator] Generating Chunk (0, 1) with Seed: 3323925277086407453
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[19:00:18] [MazeChunkGenerator] Reachability: 691 tiles reachable from (1, 1)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_FIREBALL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LEGS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CHATKCHA
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: LORICA_HAMATA_ARMS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LORICA_HAMATA_ARMS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: TALID
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: JAVELIN_STONE_ONE_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SWORD_KHANDAR_TWO_HANDED
+[19:00:18] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SWORD_GIANT_KIN_TWO_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MAIN_GAUCHE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: STICK_GOBLIN
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MEAL
+[19:00:18] [Item [DEBUG]] Created FOOD Item: MEAL (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: WRIST_RAZOR
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[19:00:18] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[19:00:18] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[19:00:18] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: STILETTO
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: GOUGE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POTION_PINK
+[19:00:18] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[19:00:18] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BERZERK
+[19:00:18] [ItemDataManager [DEBUG]] Setting trueEffect (BERZERK) and identified (false) on item.
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOX
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KEY
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FLINT_SHARD
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ROTTEN_ROPE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ROTTEN_ROPE
+[19:00:18] [MazeChunkGenerator] Added event EVENT_WEEPING_STATUE at 15,34
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 29,25
+[19:00:18] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_0_1.json
+[19:00:18] [WorldManager] Generated Chunk (0, 1) with Effective Difficulty: 1
+[19:00:18] [CHUNK_GEN] Generated Chunk (0, 1) (Biome: MAZE) | Eff. Difficulty: 1
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Pink Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Cooked Meal (FOOD) | Val: 10 | Rarity: Super/White
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Iron Stick, Goblin +1 (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Wrist Razor (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Gouge (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Stiletto (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [MazeChunkGenerator] Generating Chunk (1, 0) with Seed: 3323925277086407483
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[19:00:18] [MazeChunkGenerator] Reachability: 690 tiles reachable from (1, 1)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: DAGGER_PARRYING
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FULL_PLATE_GAUNTLETS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CLUB_GREAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SHIELD_SMALL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SCOURGE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: PADDED_HELMET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPEAR_PADDLE
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: BOOTS_OF_ELVENKIND
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOOTS_OF_ELVENKIND
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MACA
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: AXE_BATTLE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KORA
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RUSTY_ARMOR
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: QUABONE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CHAINMAIL_HELMET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ZAGHNAL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LORICA_HAMATA
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MORNING_STAR_DOUBLE_BALL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: ASSEGAI
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HIDE_HELMET
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: SCROLL_MISTY_STEP
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POTION_BLUE
+[19:00:18] [ItemDataManager [DEBUG]] Type is a potion appearance.
+[19:00:18] [ItemDataManager [DEBUG]] Got effect from DiscoveryManager: BLINDNESS
+[19:00:18] [ItemDataManager [DEBUG]] Setting trueEffect (BLINDNESS) and identified (false) on item.
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SWORD_SHORT
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RING_GOLD
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MEAL
+[19:00:18] [Item [DEBUG]] Created FOOD Item: MEAL (isFood=true)
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FOOD
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FOOD (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_BAG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: COINS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BROKEN_HILT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOLLOW_LOG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BROKEN_COLUMN
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: CERAMIC_SHARD
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: MOSS_CLUMP
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 6,6
+[19:00:18] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_1_0.json
+[19:00:18] [WorldManager] Generated Chunk (1, 0) with Effective Difficulty: 1
+[19:00:18] [CHUNK_GEN] Generated Chunk (1, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Gold Ring (RING) | Val: 250 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Sword, Short (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Bronze Assegai (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Cooked Meal (FOOD) | Val: 10 | Rarity: Super/White
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Hide Helmet (ARMOR) | Val: 25 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Small Bag (CONTAINER) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Food (FOOD) | Val: 5 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Blue Potion (USEFUL) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [MazeChunkGenerator] Generating Chunk (-1, 0) with Seed: 3323925277086407421
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText STARTING.
+[19:00:18] [MazeChunkGenerator [DEBUG]] createMazeFromText FINISHED.
+[19:00:18] [MazeChunkGenerator] Reachability: 721 tiles reachable from (1, 1)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HATCHET_HAWK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_LEGGINGS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPEAR_LONG_ONE_HANDED
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SWORD_SABRE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SPIKES_BODY
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: POLEARM_QUAD_FAUCHARD
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: FULL_PLATE_ARMS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FULL_PLATE_ARMS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOW_KENYAN_LONG
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HELMET
+[19:00:18] [ERROR] [MonsterDataManager] No valid variants found for TROGLODYTE at level 1
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LANCE_MEDIUM_HORSE1
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: AMULET_OF_INSIGHT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KNOBKERRIE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_GAUNTLETS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BLUNDERBUS
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FULL_PLATE_HELMET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SHOTEL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BERSERKERS_GAUNTLETS
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: COOKED_MEAT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: FLOUR_SACK
+[19:00:18] [Item [DEBUG]] Created FOOD Item: FLOUR_SACK (isFood=true)
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: RING_ORANGE
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: SCROLL_MISTY_STEP
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: SCROLL_MAGIC_MISSILE
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: HOPLITE_SILVER_HELMET
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BLUNDERBUS
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: WAND_OF_MAGIC_MISSILES
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: SCROLL_FIREBALL
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BASINET
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOX
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: LAMP
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KEY
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BOX
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SCROLL
+[19:00:18] [ItemDataManager] Converted generic SCROLL to SCROLL_E
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: KEY
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: SMALL_ROCK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BROKEN_HILT
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: PUDDLE_WATER
+[19:00:18] [ERROR] [ItemDataManager] No 'variants' defined for item type: STICK
+[19:00:18] [ItemDataManager [DEBUG]] createItem called for: BONES
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 17,5
+[19:00:18] [MazeChunkGenerator] Added event EVENT_BROKEN_MIRROR at 31,15
+[19:00:18] [WorldManager] Saved chunk state to saves/slot_1/chunks/chunk_L1_-1_0.json
+[19:00:18] [WorldManager] Generated Chunk (-1, 0) with Effective Difficulty: 1
+[19:00:18] [CHUNK_GEN] Generated Chunk (-1, 0) (Biome: MAZE) | Eff. Difficulty: 1
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Silver Hoplite Helmet (ARMOR) | Val: 200 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Iron Blunderbus (WAR_WEAPON) | Val: 10 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Ring (RING) | Val: 100 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Basinet (ARMOR) | Val: 8 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Key (USEFUL) | Val: 0 | Rarity: Common/Tan
+[19:00:18] [LOOT_SPAWN] Lvl 1 | Item: Box (CONTAINER) | Val: 20 | Rarity: Common/Tan
+[19:01:21] [ECONOMY] PICKUP: Food (Val/Amt: 5)
+[19:01:25] [AI] GIANT_SNAKE heard player! State -> HUNTING
+[19:01:26] [AI] SPIDER saw player! State -> HUNTING
+[19:01:27] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[19:01:27] [Player] Taken Damage: 3 (Adj. Amount: 6)
+[19:01:27] [Player] Taken Damage: 2 (Adj. Amount: 5)
+[19:01:28] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 39 | Delta: -23 (Hard Fight)
+[19:01:28] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 12
+[19:01:28] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 30 | Delta: -32 (DEADLY)
+[19:01:28] [CombatManger] Player Attack: Roll 11 + 1 = 12 vs AC 12
+[19:01:28] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 42 | Delta: -20 (Hard Fight)
+[19:01:28] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[19:01:29] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 30 | Delta: -32 (DEADLY)
+[19:01:29] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[19:01:29] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 30 | Delta: -32 (DEADLY)
+[19:01:29] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 12
+[19:01:29] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 42 | Delta: -20 (Hard Fight)
+[19:01:29] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[19:01:29] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 42 | Delta: -20 (Hard Fight)
+[19:01:30] [CombatManger] Player Attack: Roll 15 + 1 = 16 vs AC 12
+[19:01:30] [CombatManager] You have defeated GIANT_SNAKE
+[19:01:30] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:01:30] [LOOT_DROP] Dropped Giant snake Bone
+[19:01:30] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:01:30] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:01:30] [CombatManager] Combat ended.
+[19:01:31] [ECONOMY] PICKUP: Giant snake Bone (Val/Amt: 1)
+[19:01:33] [ECONOMY] RES_USED: Food (Val/Amt: 1)
+[19:01:42] [AI] SKELETON saw player! State -> HUNTING
+[19:01:51] [AI] GIANT_ANT saw player! State -> HUNTING
+[19:01:51] [Player] Taken Damage: 1 (Adj. Amount: 1)
+[19:01:52] [COMBAT_START] Vs GIANT_ANT (MCR: 83) | Player PPS: 36 | Delta: -47 (DEADLY)
+[19:01:52] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 12
+[19:01:52] [COMBAT_START] Vs GIANT_ANT (MCR: 83) | Player PPS: 39 | Delta: -44 (DEADLY)
+[19:01:52] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 12
+[19:01:53] [COMBAT_START] Vs GIANT_ANT (MCR: 83) | Player PPS: 36 | Delta: -47 (DEADLY)
+[19:01:53] [CombatManger] Player Attack: Roll 2 + 1 = 3 vs AC 12
+[19:01:53] [COMBAT_START] Vs GIANT_ANT (MCR: 83) | Player PPS: 39 | Delta: -44 (DEADLY)
+[19:01:53] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 12
+[19:01:53] [COMBAT_START] Vs GIANT_ANT (MCR: 83) | Player PPS: 36 | Delta: -47 (DEADLY)
+[19:01:53] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[19:01:53] [CombatManager] You have defeated GIANT_ANT
+[19:01:53] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:01:53] [LOOT_DROP] Dropped Giant ant Bone
+[19:01:53] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[19:01:53] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:01:53] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:01:53] [CombatManager] Combat ended.
+[19:01:55] [ECONOMY] PICKUP: Giant ant Bone (Val/Amt: 1)
+[19:01:59] [Player] Attempting pickup at (10, 32). Items before: 21
+[19:01:59] [Player] Items after: 21
+[19:01:59] [ECONOMY] PICKUP: Puddle (Val/Amt: 0)
+[19:02:05] [AI] GIANT_SNAKE saw player! State -> HUNTING
+[19:02:06] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 27 | Delta: -35 (DEADLY)
+[19:02:06] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[19:02:06] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 30 | Delta: -32 (DEADLY)
+[19:02:06] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[19:02:06] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 27 | Delta: -35 (DEADLY)
+[19:02:07] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[19:02:07] [COMBAT_START] Vs GIANT_SNAKE (MCR: 62) | Player PPS: 30 | Delta: -32 (DEADLY)
+[19:02:07] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 12
+[19:02:07] [CombatManager] You have defeated GIANT_SNAKE
+[19:02:07] [ItemDataManager [DEBUG]] createItem called for: GIB_ORGAN
+[19:02:07] [LOOT_DROP] Dropped Giant snake Organ
+[19:02:07] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:02:07] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:02:07] [CombatManager] Combat ended.
+[19:02:09] [AI] GIANT_SCORPION saw player! State -> HUNTING
+[19:02:09] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 30 | Delta: -47 (DEADLY)
+[19:02:10] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 13
+[19:02:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 42 | Delta: -35 (DEADLY)
+[19:02:10] [CombatManger] Player Attack: Roll 10 + 1 = 11 vs AC 13
+[19:02:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 30 | Delta: -47 (DEADLY)
+[19:02:10] [CombatManger] Player Attack: Roll 19 + 1 = 20 vs AC 13
+[19:02:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 30 | Delta: -47 (DEADLY)
+[19:02:10] [CombatManger] Player Attack: Roll 9 + 1 = 10 vs AC 13
+[19:02:10] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 27 | Delta: -50 (DEADLY)
+[19:02:10] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[19:02:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[19:02:11] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 13
+[19:02:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[19:02:11] [CombatManger] Player Attack: Roll 5 + 1 = 6 vs AC 13
+[19:02:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 39 | Delta: -38 (DEADLY)
+[19:02:11] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 13
+[19:02:11] [COMBAT_START] Vs GIANT_SCORPION (MCR: 77) | Player PPS: 27 | Delta: -50 (DEADLY)
+[19:02:11] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 13
+[19:02:11] [CombatManager] You have defeated GIANT_SCORPION
+[19:02:11] [ItemDataManager [DEBUG]] createItem called for: GIB_ORGAN
+[19:02:11] [LOOT_DROP] Dropped Giant scorpion Organ
+[19:02:11] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:02:11] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:02:11] [CombatManager] Combat ended.
+[19:02:13] [ECONOMY] PICKUP: Giant scorpion Organ (Val/Amt: 2)
+[19:02:15] [Player] Attempting pickup at (1, 27). Items before: 23
+[19:02:15] [Player] Items after: 23
+[19:02:15] [ECONOMY] PICKUP: Giant snake Organ (Val/Amt: 2)
+[19:02:19] [AI] SKELETON heard player! State -> HUNTING
+[19:02:21] [Player] Taken Damage: 1 (Adj. Amount: 2)
+[19:02:21] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 30 | Delta: -28 (Hard Fight)
+[19:02:21] [CombatManger] Player Attack: Roll 6 + 1 = 7 vs AC 12
+[19:02:22] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 27 | Delta: -31 (DEADLY)
+[19:02:22] [CombatManger] Player Attack: Roll 17 + 1 = 18 vs AC 12
+[19:02:22] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 36 | Delta: -22 (Hard Fight)
+[19:02:22] [CombatManger] Player Attack: Roll 18 + 1 = 19 vs AC 12
+[19:02:22] [CombatManager] You have defeated SKELETON
+[19:02:22] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:02:22] [LOOT_DROP] Dropped Skeleton Bone
+[19:02:22] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:02:22] [LOOT_DROP] Dropped Skeleton Bone
+[19:02:22] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:02:22] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:02:22] [CombatManager] Combat ended.
+[19:02:41] [Player] Attempting pickup at (10, 1). Items before: 25
+[19:02:41] [Player] Items after: 25
+[19:02:41] [ECONOMY] PICKUP: Swirly Potion (Val/Amt: 20)
+[19:03:19] [AI] SKELETON heard player! State -> HUNTING
+[19:03:21] [Player] Taken Damage: 3 (Adj. Amount: 6)
+[19:03:21] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 27 | Delta: -31 (DEADLY)
+[19:03:22] [CombatManger] Player Attack: Roll 14 + 1 = 15 vs AC 12
+[19:03:22] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 45 | Delta: -13 (Hard Fight)
+[19:03:22] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 12
+[19:03:22] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 27 | Delta: -31 (DEADLY)
+[19:03:22] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[19:03:22] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 33 | Delta: -25 (Hard Fight)
+[19:03:22] [CombatManger] Player Attack: Roll 3 + 1 = 4 vs AC 12
+[19:03:23] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 42 | Delta: -16 (Hard Fight)
+[19:03:23] [CombatManger] Player Attack: Roll 8 + 1 = 9 vs AC 12
+[19:03:23] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 30 | Delta: -28 (Hard Fight)
+[19:03:23] [CombatManger] Player Attack: Roll 4 + 1 = 5 vs AC 12
+[19:03:24] [COMBAT_START] Vs SKELETON (MCR: 58) | Player PPS: 42 | Delta: -16 (Hard Fight)
+[19:03:24] [CombatManger] Player Attack: Roll 20 + 1 = 21 vs AC 12
+[19:03:24] [CombatManager] You have defeated SKELETON
+[19:03:24] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:03:24] [LOOT_DROP] Dropped Skeleton Bone
+[19:03:24] [ItemDataManager [DEBUG]] createItem called for: GIB_BONE
+[19:03:24] [LOOT_DROP] Dropped Skeleton Bone
+[19:03:24] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:03:24] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:03:24] [CombatManager] Combat ended.
+[19:03:26] [ECONOMY] PICKUP: Skeleton Bone (Val/Amt: 1)
+[19:03:26] [AI] KOBOLD heard player! State -> HUNTING
+[19:03:31] [COMBAT_START] Vs KOBOLD (MCR: 58) | Player PPS: 36 | Delta: -22 (Hard Fight)
+[19:03:31] [CombatManger] Player Attack: Roll 7 + 1 = 8 vs AC 12
+[19:03:32] [COMBAT_START] Vs KOBOLD (MCR: 58) | Player PPS: 30 | Delta: -28 (Hard Fight)
+[19:03:32] [CombatManger] Player Attack: Roll 13 + 1 = 14 vs AC 12
+[19:03:32] [COMBAT_START] Vs KOBOLD (MCR: 58) | Player PPS: 42 | Delta: -16 (Hard Fight)
+[19:03:32] [CombatManger] Player Attack: Roll 12 + 1 = 13 vs AC 12
+[19:03:32] [CombatManager] You have defeated KOBOLD
+[19:03:32] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[19:03:32] [LOOT_DROP] Dropped Kobold Flesh
+[19:03:32] [ItemDataManager [DEBUG]] createItem called for: GIB_FLESH
+[19:03:32] [LOOT_DROP] Dropped Kobold Flesh
+[19:03:32] [COMBAT_FLOW] State -> VICTORY (Monster Dead)
+[19:03:32] [COMBAT_END] Result: VICTORY | Turns: 1 | Total Dmg Taken: 0
+[19:03:32] [CombatManager] Combat ended.
+[19:03:33] [ECONOMY] PICKUP: Kobold Flesh (Val/Amt: 1)
+[19:03:39] [Player] Attempting pickup at (17, 12). Items before: 28
+[19:03:39] [Player] Items after: 28
+[19:03:39] [ECONOMY] PICKUP: Kobold Flesh (Val/Amt: 1)
+[19:03:41] [Player] Attempting pickup at (17, 13). Items before: 27
+[19:03:41] [Player] Items after: 27
+[19:03:41] [ECONOMY] PICKUP: Ankus (Elephant Goad) (Val/Amt: 10)
+[19:03:43] [Player] Attempting pickup at (16, 14). Items before: 26
+[19:03:43] [Player] Items after: 26
+[19:03:43] [ECONOMY] PICKUP: Flint (Val/Amt: 0)
+[19:03:47] [Player] Attempting pickup at (13, 15). Items before: 25
+[19:03:47] [Player] Items after: 25
+[19:03:47] [ECONOMY] PICKUP: Leather Helm (Val/Amt: 1)

@@ -380,15 +380,102 @@ public class SoundManager {
         }
     }
 
+    public void playSpellSound(com.bpm.minotaur.gamedata.spells.VisualArchetype archetype) {
+        if (archetype == null) return;
+
+        // Check if modern audio asset exists
+        String soundKey = archetype.getSoundKey();
+        if (modernSounds.containsKey(soundKey)) {
+            playSound(soundKey);
+            return;
+        }
+
+        // Procedural Audio Synthesis via retroAudioDevice
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    switch (archetype) {
+                        case FLAME_BOLT:
+                            for (int f : new int[] { 650, 520, 410, 300, 220 }) {
+                                playRetroSound(f, 0.035f, 0.55f);
+                            }
+                            break;
+                        case FROST_RAY:
+                            for (int f : new int[] { 880, 1175, 1318, 1760 }) {
+                                playRetroSound(f, 0.04f, 0.45f);
+                            }
+                            break;
+                        case LIGHTNING_ARC:
+                            for (int f : new int[] { 400, 1200, 250, 1400, 200, 950 }) {
+                                playRetroSound(f, 0.02f, 0.65f);
+                            }
+                            break;
+                        case FORCE_MISSILE:
+                            for (int f : new int[] { 523, 659, 784, 1046 }) {
+                                playRetroSound(f, 0.03f, 0.5f);
+                            }
+                            break;
+                        case EXPLOSIVE_BURST:
+                            for (int f : new int[] { 220, 160, 120, 85, 55, 40 }) {
+                                playRetroSound(f, 0.06f, 0.85f);
+                            }
+                            break;
+                        case HOLY_RADIANCE:
+                            for (int f : new int[] { 440, 554, 659, 880, 1108 }) {
+                                playRetroSound(f, 0.05f, 0.5f);
+                            }
+                            break;
+                        case NECROTIC_DRAIN:
+                            for (int f : new int[] { 440, 311, 260, 185, 130 }) {
+                                playRetroSound(f, 0.055f, 0.6f);
+                            }
+                            break;
+                        case TOXIC_CLOUD:
+                            for (int f : new int[] { 280, 330, 260, 350, 240, 310 }) {
+                                playRetroSound(f, 0.04f, 0.5f);
+                            }
+                            break;
+                        case SPATIAL_WARP:
+                            for (int f : new int[] { 880, 660, 440, 660, 990, 1320 }) {
+                                playRetroSound(f, 0.04f, 0.6f);
+                            }
+                            break;
+                        case ARCANE_WARD:
+                            for (int f : new int[] { 330, 494, 659, 988 }) {
+                                playRetroSound(f, 0.05f, 0.55f);
+                            }
+                            break;
+                        case PSYCHIC_SHOCK:
+                            for (int f : new int[] { 700, 850, 680, 890, 720, 920 }) {
+                                playRetroSound(f, 0.025f, 0.5f);
+                            }
+                            break;
+                        case THUNDER_CONCUSSION:
+                            for (int f : new int[] { 110, 85, 65, 50, 40, 32 }) {
+                                playRetroSound(f, 0.07f, 0.9f);
+                            }
+                            break;
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            // Headless / fallback
+            playSound("player_spiritual_attack");
+        }
+    }
+
     private void playRetroSound(int frequency, float duration, float volume) {
         int numSamples = (int) (duration * SAMPLE_RATE);
         short[] samples = new short[numSamples];
-        int wavelength = SAMPLE_RATE / frequency;
+        int wavelength = Math.max(1, SAMPLE_RATE / Math.max(1, frequency));
         for (int i = 0; i < numSamples; i++) {
             samples[i] = (short) ((i % wavelength < wavelength / 2) ? (Short.MAX_VALUE * volume)
                     : (-Short.MAX_VALUE * volume));
         }
-        retroAudioDevice.writeSamples(samples, 0, numSamples);
+        if (retroAudioDevice != null) {
+            retroAudioDevice.writeSamples(samples, 0, numSamples);
+        }
     }
 
     private void playRetroArpeggio(int[] frequencies, float noteDuration) {

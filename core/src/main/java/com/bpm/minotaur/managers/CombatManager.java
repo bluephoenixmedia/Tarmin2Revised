@@ -20,6 +20,7 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
+import com.bpm.minotaur.screens.GameScreen;
 
 import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.dice.DieResult;
@@ -81,6 +82,17 @@ public class CombatManager {
 
     public AnimationManager getAnimationManager() {
         return animationManager;
+    }
+
+    public SoundManager getSoundManager() {
+        return soundManager;
+    }
+
+    public GameScreen getGameScreen() {
+        if (game != null && game.getScreen() instanceof GameScreen) {
+            return (GameScreen) game.getScreen();
+        }
+        return null;
     }
 
     private float monsterAttackDelay = 0f;

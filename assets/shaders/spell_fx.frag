@@ -17,16 +17,10 @@ uniform float u_vignetteIntensity;
 uniform float u_glitchFactor;
 uniform float u_spellChromatic;
 
-// --- TWEAKED VALUES FOR SUBTLE CRT ---
-const float curvature = 0.0;        // WAS 3.0. Now 0.3 for very slight curve. Set to 0.0 for perfectly flat.
-const float scanlineIntensity = 0.12;
-const float scanlineCount = 800.0;
-const float vignetteStrength = 0.9; // WAS 1.2. Reduced dark corners.
-
 void main() {
     vec2 uv = v_texCoords;
 
-    // 0. Spatial Glitch / Dimensional Tear
+    // 1. Spatial Glitch / Dimensional Tear
     if (u_glitchFactor > 0.001) {
         float slice = sin(uv.y * 50.0 + u_time * 35.0);
         if (slice > 0.6) {
@@ -34,7 +28,7 @@ void main() {
         }
     }
 
-    // 1. Radial Shockwave
+    // 2. Radial Shockwave
     if (u_shockwaveProgress > 0.001 && u_shockwaveProgress < 1.0) {
         vec2 diff = uv - u_shockwaveCenter;
         diff.x *= 1.777; // Aspect ratio correction
@@ -49,40 +43,17 @@ void main() {
         }
     }
 
-    // 2. Curvature Distortion
-    // Transform UVs to -1.0 to 1.0 range
-    vec2 dc = abs(0.5 - uv);
-    // Apply slight curve based on distance from center
-    dc *= dc;
+    // Bounds clamp
+    uv = clamp(uv, vec2(0.0), vec2(1.0));
 
-    // Warp the UV coordinates
-    uv.x -= 0.5; uv.x *= 1.0 + (dc.y * (0.3 * curvature)); uv.x += 0.5;
-    uv.y -= 0.5; uv.y *= 1.0 + (dc.x * (0.4 * curvature)); uv.y += 0.5;
-
-    // Cutoff pixels outside the curve (black borders)
-    if (uv.y > 1.0 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-    }
-
-    // 3. Chromatic Aberration (RGB Shift) with dynamic spell shift
-    float chromOffset = 0.001 + u_spellChromatic * 0.018;
+    // 3. Chromatic Aberration
+    float chromOffset = u_spellChromatic * 0.018;
     float r = texture2D(u_texture, uv + vec2(chromOffset, 0.0)).r;
     float g = texture2D(u_texture, uv).g;
     float b = texture2D(u_texture, uv - vec2(chromOffset, 0.0)).b;
     vec3 color = vec3(r, g, b);
 
-    // 4. Scanlines
-    float scanline = sin(uv.y * scanlineCount) * 0.5 + 0.5;
-    color -= scanline * scanlineIntensity;
-
-    // 5. CRT Base Vignette
-    float vignette = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
-    vignette = pow(vignette * 15.0, 0.25);
-    vignette = mix(1.0, vignette, vignetteStrength);
-    color *= vignette;
-
-    // 6. Spell Vignette / Elemental Tint
+    // 4. Vignette / Elemental Tint
     if (u_vignetteIntensity > 0.001) {
         vec2 vUv = uv - vec2(0.5);
         float edge = length(vUv) * 1.414;

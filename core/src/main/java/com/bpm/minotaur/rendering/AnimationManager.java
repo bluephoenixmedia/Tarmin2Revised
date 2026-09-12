@@ -132,9 +132,51 @@ public class AnimationManager {
         float vx = com.badlogic.gdx.math.MathUtils.random(-0.5f, 0.5f);
         float vy = com.badlogic.gdx.math.MathUtils.random(-0.5f, 0.5f);
         float vz = com.badlogic.gdx.math.MathUtils.random(-0.5f, 0.5f);
-        p.init(position, new com.badlogic.gdx.math.Vector3(vx, vy, vz), color.cpy(), 0.5f, 0.02f); // Size reduced to
-                                                                                                   // 0.02
+        p.init(position, new com.badlogic.gdx.math.Vector3(vx, vy, vz), color.cpy(), 0.5f, 0.02f); // Size reduced to 0.02
         activeParticles.add(p);
+    }
+
+    public void spawnSpellCascade(com.badlogic.gdx.math.Vector3 position, Color color, int count, float speed, float size) {
+        for (int i = 0; i < count; i++) {
+            SpellParticle p = particlePool.obtain();
+            float vx = com.badlogic.gdx.math.MathUtils.random(-speed, speed);
+            float vy = com.badlogic.gdx.math.MathUtils.random(-speed, speed);
+            float vz = com.badlogic.gdx.math.MathUtils.random(-speed, speed);
+            float life = com.badlogic.gdx.math.MathUtils.random(0.3f, 0.7f);
+            p.init(position.cpy(), new com.badlogic.gdx.math.Vector3(vx, vy, vz), color.cpy(), life, size);
+            activeParticles.add(p);
+        }
+    }
+
+    public void spawnArchetypeCascade(com.badlogic.gdx.math.Vector3 position, com.bpm.minotaur.gamedata.spells.VisualArchetype archetype, int count) {
+        if (archetype == null) return;
+        Color prim = archetype.getPrimaryColor();
+        Color sec = archetype.getSecondaryColor();
+
+        float speed = 0.8f;
+        float baseSize = 0.035f;
+
+        if (archetype == com.bpm.minotaur.gamedata.spells.VisualArchetype.EXPLOSIVE_BURST) {
+            speed = 1.4f;
+            baseSize = 0.05f;
+        } else if (archetype == com.bpm.minotaur.gamedata.spells.VisualArchetype.FROST_RAY) {
+            speed = 0.6f;
+            baseSize = 0.03f;
+        } else if (archetype == com.bpm.minotaur.gamedata.spells.VisualArchetype.THUNDER_CONCUSSION) {
+            speed = 1.6f;
+            baseSize = 0.045f;
+        }
+
+        for (int i = 0; i < count; i++) {
+            SpellParticle p = particlePool.obtain();
+            Color pColor = (i % 2 == 0) ? prim.cpy() : sec.cpy();
+            float vx = com.badlogic.gdx.math.MathUtils.random(-speed, speed);
+            float vy = com.badlogic.gdx.math.MathUtils.random(-speed * 0.4f, speed * 1.1f);
+            float vz = com.badlogic.gdx.math.MathUtils.random(-speed, speed);
+            float life = com.badlogic.gdx.math.MathUtils.random(0.4f, 0.9f);
+            p.init(position.cpy(), new com.badlogic.gdx.math.Vector3(vx, vy, vz), pColor, life, baseSize);
+            activeParticles.add(p);
+        }
     }
 
     private void renderSpellParticles(ShapeRenderer shapeRenderer, Player player, Viewport viewport,

@@ -20,6 +20,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.rendering.SpellPostProcessor;
+import com.bpm.minotaur.rendering.SpellCastOverlay;
 
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -89,6 +91,8 @@ public class GameScreen extends BaseScreen {
     private FrameBuffer fbo;
     private ShaderProgram crtShader;
     private boolean useCrtFilter = true;
+    private SpellPostProcessor spellPostProcessor;
+    private SpellCastOverlay spellCastOverlay;
     private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
 
@@ -193,6 +197,13 @@ public class GameScreen extends BaseScreen {
                 Gdx.app.error("Shader", "Compilation failed:\n" + crtShader.getLog());
                 useCrtFilter = false;
             }
+        }
+
+        if (spellPostProcessor == null) {
+            spellPostProcessor = new SpellPostProcessor();
+        }
+        if (spellCastOverlay == null) {
+            spellCastOverlay = new SpellCastOverlay();
         }
 
         if (!hasLoadedLevel) {
@@ -499,7 +510,15 @@ public class GameScreen extends BaseScreen {
         // Advance render mode transition every frame, regardless of game state
         debugManager.update(delta);
 
-        if (useCrtFilter) {
+        if (spellPostProcessor != null) {
+            spellPostProcessor.update(delta);
+        }
+        if (spellCastOverlay != null) {
+            spellCastOverlay.update(delta);
+        }
+
+        boolean renderToFbo = useCrtFilter || (spellPostProcessor != null && spellPostProcessor.isActive());
+        if (renderToFbo) {
             fbo.begin();
             fboViewport.apply();
             shapeRenderer.setProjectionMatrix(fboViewport.getCamera().combined);
@@ -507,7 +526,7 @@ public class GameScreen extends BaseScreen {
 
         ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(com.badlogic.gdx.graphics.GL20.GL_DEPTH_BUFFER_BIT);
-        Viewport currentViewport = useCrtFilter ? fboViewport : game.getViewport();
+        Viewport currentViewport = renderToFbo ? fboViewport : game.getViewport();
 
         boolean isShaking = (player != null && trauma > 0.01f);
         if (isShaking) {
@@ -525,13 +544,8 @@ public class GameScreen extends BaseScreen {
             // Apply a gentle sway/roll
             float dizzyAngle = 2.0f * com.badlogic.gdx.math.MathUtils.sin(time * 2.0f);
 
-            if (useCrtFilter) {
-                // If using FBO, we can rotate the sprite batch projection or the FBO rendering?
-                // Rotating the 2D projection is easiest for "whole screen spin"
-                // But wait, EntityRenderer and FirstPersonRenderer use their own cameras?
-                // FirstPersonRenderer uses `currentViewport.getCamera()` (which is fboViewport
-                // if CRT is on).
-                // Let's rotate the FBO viewport camera UP vector.
+            if (renderToFbo) {
+                // If using FBO, rotate FBO viewport camera UP vector.
                 fboViewport.getCamera().up.set(0, 1, 0); // Reset first
                 fboViewport.getCamera().up.rotate(fboViewport.getCamera().direction, dizzyAngle);
                 fboViewport.getCamera().update();
@@ -542,7 +556,7 @@ public class GameScreen extends BaseScreen {
             }
         } else {
             // Reset Camera Up to ensure it doesn't get stuck
-            if (useCrtFilter) {
+            if (renderToFbo) {
                 fboViewport.getCamera().up.set(0, 1, 0);
                 fboViewport.getCamera().update();
             } else {
@@ -604,6 +618,13 @@ public class GameScreen extends BaseScreen {
                 game.getBatch().end();
             }
 
+            if (spellCastOverlay != null && spellCastOverlay.isActive()) {
+                shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                spellCastOverlay.render(shapeRenderer, game.getViewport());
+                shapeRenderer.end();
+            }
+
             if (debugManager.isDebugOverlayVisible()) {
                 debugRenderer.render(shapeRenderer, player, maze, currentViewport);
                 if (needsAsciiRender) {
@@ -628,17 +649,28 @@ public class GameScreen extends BaseScreen {
 
         // Moved CombatDiceOverlay to end of frame
 
-        if (useCrtFilter) {
+        if (renderToFbo) {
             fbo.end();
             game.getViewport().apply();
             ScreenUtils.clear(0, 0, 0, 1);
             postProcessBatch.setProjectionMatrix(game.getViewport().getCamera().combined);
             postProcessBatch.begin();
-            postProcessBatch.setShader(crtShader);
-            crtShader.setUniformf("u_time", time);
-            // Draw FBO offset by HUD_HEIGHT (180)
-            postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
+            if (useCrtFilter) {
+                postProcessBatch.setShader(crtShader);
+                crtShader.setUniformf("u_time", time);
+                if (spellPostProcessor != null) {
+                    spellPostProcessor.applyUniforms(crtShader, time);
+                }
+                // Draw FBO offset by HUD_HEIGHT (180)
+                postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
+            } else if (spellPostProcessor != null && spellPostProcessor.isActive()) {
+                spellPostProcessor.renderModern(postProcessBatch, fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+            } else {
+                postProcessBatch.setShader(null);
+                postProcessBatch.draw(fbo.getColorBufferTexture(), 0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT, 0, 0, 1, 1);
+            }
             postProcessBatch.end();
+            postProcessBatch.setShader(null);
             // --- CRT FIX: Reset view when CRT is off ---
             game.getViewport().apply();
         }
@@ -2016,6 +2048,9 @@ public class GameScreen extends BaseScreen {
             fbo.dispose();
         if (crtShader != null)
             crtShader.dispose();
+        if (spellPostProcessor != null) {
+            spellPostProcessor.dispose();
+        }
         if (stochasticManager != null)
             stochasticManager.dispose();
         postProcessBatch.dispose();
@@ -2350,6 +2385,14 @@ public class GameScreen extends BaseScreen {
 
     public WorldManager getWorldManager() {
         return worldManager;
+    }
+
+    public SpellPostProcessor getSpellPostProcessor() {
+        return spellPostProcessor;
+    }
+
+    public SpellCastOverlay getSpellCastOverlay() {
+        return spellCastOverlay;
     }
 
     public void killPlayer() {

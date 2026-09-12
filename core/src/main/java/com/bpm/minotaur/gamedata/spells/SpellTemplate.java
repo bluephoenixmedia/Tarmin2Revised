@@ -16,7 +16,10 @@ public class SpellTemplate {
     public String domain = "SPIRITUAL";
     public String duration = "Instantaneous";
     public String statusEffect;
-    public String visualArchetype = "PROJECTILE"; // PROJECTILE, BURST, BEAM, SELF_BUFF, MELEE_TOUCH
+    public String visualArchetype = "FORCE_MISSILE";
+    public String secondaryArchetype = "PROJECTILE";
+    public String runeSchool = "EVOCATION";
+    public String bespokeEffect;
     public String description;
 
     public SpellTemplate() {
@@ -71,7 +74,27 @@ public class SpellTemplate {
     }
 
     public String getVisualArchetype() {
-        return visualArchetype;
+        return visualArchetype != null ? visualArchetype : "FORCE_MISSILE";
+    }
+
+    public VisualArchetype getVisualArchetypeEnum() {
+        return VisualArchetype.fromString(visualArchetype);
+    }
+
+    public String getSecondaryArchetype() {
+        return secondaryArchetype != null ? secondaryArchetype : targetType;
+    }
+
+    public String getRuneSchool() {
+        return runeSchool != null ? runeSchool : (school != null ? school.toUpperCase() : "EVOCATION");
+    }
+
+    public String getBespokeEffect() {
+        return bespokeEffect;
+    }
+
+    public boolean hasBespokeEffect() {
+        return bespokeEffect != null && !bespokeEffect.isEmpty();
     }
 
     public String getDescription() {
