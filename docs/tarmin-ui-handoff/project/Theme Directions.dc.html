@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"Intellivision";src:url("assets/fonts/intellivision.ttf") format("truetype");font-display:swap}
+body{margin:0;background:#f0eee9;font-family:"IBM Plex Sans",system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#14508f}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 "IBM Plex Sans",system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.4 "IBM Plex Sans",system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:1160px}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 "IBM Plex Sans",system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.dv-brief{max-width:980px;margin:0 0 28px;font:400 13px/1.65 "IBM Plex Sans",system-ui,sans-serif;color:#39362f}
+.dv-brief h3{font:600 12px/1.2 "IBM Plex Sans",system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#8a7b56;margin:0 0 8px}
+.dv-brief ul{margin:0 0 18px;padding-left:18px}
+</style></helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Fantasy-dungeon riffs on <a class="dv-oid" href="#1a">1a</a> — same pixel discipline, no sci-fi</span></div>
+<div class="dv-brief"><p>Keeping <a class="dv-oid" href="#1a">1a</a>'s <code>intellivision.ttf</code>, hard 4px borders and grid snapping. Removing the cyan/teal (the sci-fi tell) and swapping the flat void black for lit stone: torch-amber and gold for interactives, blood red for blocked, moss green for gain, cut-stone and mortar textures behind panels, a torchlight vignette instead of scanlines.</p></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a><span><strong>Torchlit Masonry</strong> — panels sit on pixel-cut stone with mortar lines; gold type, iron-band borders, torch vignette. Colours: amber, gold, blood, moss, stone.</span></div>
+<div class="dv-card" style="width:1160px;background:#100c08;font-family:'Intellivision',monospace;color:#e8b34a;position:relative">
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(120% 85% at 50% 18%,rgba(255,190,90,.10) 0%,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%)"></div>
+  <div style="position:absolute;inset:0;z-index:0;background-color:#181209;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.55) 0 2px,transparent 2px 34px),repeating-linear-gradient(90deg,rgba(0,0,0,.55) 0 2px,transparent 2px 66px),repeating-linear-gradient(0deg,rgba(255,220,150,.035) 0 1px,transparent 1px 6px)"></div>
+  <div style="position:relative;z-index:2;padding:26px 28px 24px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:4px solid #8a5a1c;padding-bottom:12px">
+      <div><div style="font-size:26px;letter-spacing:.06em;color:#ffcf5e;text-shadow:0 0 14px rgba(255,170,60,.35)">THE ARTISAN'S WORKSHOP</div>
+      <div style="font-size:14px;color:#9a7233;margin-top:6px;letter-spacing:.04em">FORGE &middot; SALVAGE &middot; OSSUARY</div></div>
+      <div style="font-size:14px;color:#b08a3a;letter-spacing:.04em">SHELTER HUB &nbsp; DUNGEON LVL 1</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+      <div style="background:linear-gradient(#e8a63a,#b9792a);color:#1a0f06;padding:13px 0;text-align:center;font-size:16px;letter-spacing:.04em;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)">1 FORGE</div>
+      <div style="border:4px solid #5a3d18;border-left:none;padding:13px 0;text-align:center;font-size:16px;color:#8a6428;letter-spacing:.04em;background:rgba(0,0,0,.35)">2 SALVAGE</div>
+      <div style="border:4px solid #5a3d18;border-left:none;padding:13px 0;text-align:center;font-size:16px;color:#8a6428;letter-spacing:.04em;background:rgba(0,0,0,.35)">3 OSSUARY</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);border:4px solid #5a3d18;background:rgba(12,9,5,.85)">
+      <div style="padding:12px 14px;border-right:4px solid #5a3d18"><div style="font-size:12px;color:#9a7233">SCRAP</div><div style="font-size:20px;color:#ffcf5e;font-variant-numeric:tabular-nums">01</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #5a3d18"><div style="font-size:12px;color:#9a7233">LEATHER</div><div style="font-size:20px;color:#6a4f22;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #5a3d18"><div style="font-size:12px;color:#9a7233">BONES</div><div style="font-size:20px;color:#6a4f22;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #5a3d18"><div style="font-size:12px;color:#9a7233">CHITIN</div><div style="font-size:20px;color:#6a4f22;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px"><div style="font-size:12px;color:#9a7233">STRANGE</div><div style="font-size:20px;color:#6a4f22;font-variant-numeric:tabular-nums">00</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:352px 1fr;gap:20px;min-height:318px">
+      <div style="border:4px solid #5a3d18;background:rgba(12,9,5,.88);display:flex;flex-direction:column">
+        <div style="padding:11px 14px;background:linear-gradient(#5a3d18,#3e2a10);color:#ffcf5e;font-size:14px;letter-spacing:.04em">EQUIPMENT [2]</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:linear-gradient(90deg,#e8a63a,#c8862c);color:#1a0f06">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#1a0f06 0 3px,transparent 3px 6px);border:2px solid #1a0f06"></div>
+            <div><div style="font-size:15px">RUSTY SWORD</div><div style="font-size:12px">1d6 &middot; R.HAND</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:4px solid #5a3d18">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#5a3d18 0 3px,transparent 3px 6px);border:2px solid #5a3d18"></div>
+            <div><div style="font-size:15px;color:#e8b34a">WOODEN CROSS</div><div style="font-size:12px;color:#9a7233">1d4 &middot; L.HAND</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="border:4px solid #5a3d18;background:rgba(12,9,5,.88);display:flex;flex-direction:column;gap:16px;padding:16px">
+        <div style="font-size:14px;color:#9a7233;letter-spacing:.04em">EQUIPMENT ANVIL</div>
+        <div style="display:flex;gap:18px;align-items:center">
+          <div style="width:76px;height:76px;flex:none;background:repeating-linear-gradient(45deg,#5a3d18 0 4px,transparent 4px 8px);border:4px solid #5a3d18"></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:22px;color:#ffcf5e">RUSTY SWORD</div>
+            <div style="font-size:15px">DMG 1d6 <span style="color:#7fb04a">&rarr; 1d8</span> &nbsp; WEIGHT 3 &nbsp; TIER COMMON</div>
+          </div>
+        </div>
+        <div style="border-top:4px solid #5a3d18;padding-top:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;color:#9a7233">HONE EDGE REQUIRES</div>
+          <div style="display:flex;gap:12px;font-size:15px">
+            <div style="padding:9px 13px;border:4px solid #4a6a28;color:#a8cc72;background:rgba(60,90,30,.25)">2 SCRAP [HAVE 1]</div>
+            <div style="padding:9px 13px;border:4px solid #7a2a20;color:#d98a78;background:rgba(100,30,20,.25)">1 KINDLING [HAVE 0]</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:auto">
+          <div style="flex:1;background:linear-gradient(#e8a63a,#b9792a);color:#1a0f06;padding:15px 0;text-align:center;font-size:16px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.3)">HONE EDGE</div>
+          <div style="flex:1;border:4px solid #4a3316;color:#6a4f22;padding:11px 0;text-align:center;font-size:16px">REINFORCE [LOCKED]</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;border-top:4px solid #8a5a1c;padding-top:12px;font-size:13px;color:#9a7233">
+      <div>[1-3] TAB &nbsp; [ENTER] FORGE &nbsp; [ESC] BACK</div><div style="color:#7fb04a">THE FORGE IS HOT</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a><span><strong>Carved Frame &amp; Parchment Inset</strong> — same pixel font, but panels are stone frames with a parchment scroll inset for anything you read. Dungeon-crawler prop feel; ties to your existing book screen.</span></div>
+<div class="dv-card" style="width:1160px;background:#0c0a07;font-family:'Intellivision',monospace;color:#e8b34a;position:relative">
+  <div style="position:absolute;inset:0;z-index:0;background-color:#1a140c;background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.45) 0 3px,transparent 3px 9px),repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 3px,transparent 3px 44px)"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(110% 80% at 50% 10%,rgba(255,200,110,.09),rgba(0,0,0,.6) 100%)"></div>
+  <div style="position:relative;z-index:2;padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.8);padding:18px 22px;display:flex;align-items:flex-end;justify-content:space-between">
+      <div><div style="font-size:26px;color:#ffcf5e;letter-spacing:.06em">THE ARTISAN'S WORKSHOP</div>
+      <div style="font-size:14px;color:#9a7233;margin-top:6px">SHELTER FORGE, SALVAGE STATION &amp; BONE OSSUARY</div></div>
+      <div style="font-size:14px;color:#b08a3a">TORCH LIT &nbsp; LVL 1</div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;text-align:center;padding:13px 0;font-size:16px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c">I FORGE</div>
+      <div style="flex:1;text-align:center;padding:13px 0;font-size:16px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316">II SALVAGE</div>
+      <div style="flex:1;text-align:center;padding:13px 0;font-size:16px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316">III OSSUARY</div>
+    </div>
+    <div style="display:grid;grid-template-columns:352px 1fr;gap:16px;min-height:340px">
+      <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:14px;color:#9a7233;letter-spacing:.04em">EQUIPMENT &amp; TROPHIES [2]</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:4px solid #f0c96a;background:rgba(240,201,106,.12)">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#8a5a1c 0 3px,transparent 3px 6px);border:2px solid #8a5a1c"></div>
+            <div style="flex:1"><div style="font-size:15px;color:#ffcf5e">RUSTY SWORD</div><div style="font-size:12px;color:#b08a3a">1d6 &middot; R.HAND</div></div>
+            <div style="font-size:12px;color:#f0c96a">&#9654;</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:4px solid #4a3316">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#4a3316 0 3px,transparent 3px 6px);border:2px solid #4a3316"></div>
+            <div><div style="font-size:15px">WOODEN CROSS</div><div style="font-size:12px;color:#9a7233">1d4 &middot; L.HAND</div></div>
+          </div>
+        </div>
+        <div style="margin-top:auto;border-top:4px solid #4a3316;padding-top:12px;display:flex;flex-direction:column;gap:7px;font-size:13px;color:#9a7233">
+          <div>STORES</div>
+          <div style="display:flex;justify-content:space-between"><span>SCRAP</span><span style="color:#ffcf5e;font-variant-numeric:tabular-nums">01</span></div>
+          <div style="display:flex;justify-content:space-between"><span>LEATHER</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+          <div style="display:flex;justify-content:space-between"><span>BONES</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+          <div style="display:flex;justify-content:space-between"><span>CHITIN / STRANGE</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00 / 00</span></div>
+        </div>
+      </div>
+      <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:16px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:14px;color:#9a7233;letter-spacing:.04em">EQUIPMENT ANVIL</div>
+        <div style="display:flex;gap:18px;align-items:center">
+          <div style="width:80px;height:80px;flex:none;background:repeating-linear-gradient(45deg,#8a5a1c 0 4px,transparent 4px 8px);border:4px solid #8a5a1c"></div>
+          <div><div style="font-size:22px;color:#ffcf5e">RUSTY SWORD</div>
+          <div style="font-size:15px;margin-top:8px">DMG 1d6 <span style="color:#7fb04a">&rarr; 1d8</span> &nbsp; WT 3 &nbsp; COMMON</div></div>
+        </div>
+        <div style="background:linear-gradient(#e6d3a8,#cbb385);border:4px solid #8a5a1c;color:#3a2a12;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:15px;color:#6a2318">HONE THE EDGE</div>
+          <div style="font-size:14px;line-height:1.6;max-width:58ch">GRIND THE BLADE ON THE WHETSTONE TO RAISE ITS DAMAGE ONE DIE STEP.</div>
+          <div style="display:flex;gap:14px;font-size:14px"><span style="color:#2f5a22">2 SCRAP [HAVE 1]</span><span style="color:#7a2318">1 KINDLING [HAVE 0]</span></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:auto">
+          <div style="flex:1;text-align:center;padding:15px 0;font-size:16px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c">HONE EDGE</div>
+          <div style="flex:1;text-align:center;padding:15px 0;font-size:16px;color:#6a4f22;border:4px solid #4a3316">REINFORCE [LOCKED]</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#9a7233;padding:0 4px">
+      <div>[I-III] BENCH &nbsp; [ENTER] WORK &nbsp; [ESC] LEAVE</div><div style="color:#7fb04a">THE FORGE IS HOT</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "go with <a class="dv-oid" href="#2a">2a</a>, build the HUD and hearth screens" · "<a class="dv-oid" href="#2a">2a</a> but darker stone and less glow" · "put <a class="dv-oid" href="#2b">2b</a>'s parchment inset into <a class="dv-oid" href="#2a">2a</a>"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Four aesthetic directions — same screen, four skins</span></div>
+
+<div class="dv-brief">
+<h3>What I read from the build</h3>
+<p>The screenshots show three different visual languages fighting each other: an amber pixel-terminal (workshop, hearth), a painted parchment grimoire (inventory/paperdoll), and an undressed default UI (Shelter Stash Chest). On top of that, the terminal screens have concrete layout faults — tab labels overlap and clip, buttons are truncated mid-word, body copy has no measure limit, right-hand panels sit 80% empty, and every panel is the same flat charcoal so nothing reads as primary.</p>
+<h3>What each mockup holds constant</h3>
+<ul>
+<li>The same screen — Artisan's Workshop, Forge tab — so you judge only the aesthetic.</li>
+<li>The same structural fixes: tabs on a real grid, a resource ledger with aligned numerals, a left inventory column with a clear selected state, a right panel that always shows the selected item + its recipe + cost, affordance-aware buttons (affordable vs. blocked), and a persistent key-hint footer.</li>
+<li>Type floors: no UI text under 13px at this scale, numerals tabular, one column measure for prose.</li>
+</ul>
+<p>Pick a direction (or a hybrid — e.g. <a class="dv-oid" href="#1d">1d</a>'s layout discipline with <a class="dv-oid" href="#1b">1b</a>'s palette) and I'll build the full screen set: HUD, workshop, hearth, inventory, chest, combat overlay.</p>
+</div>
+
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span><strong>Intellivision Faithful</strong> — the real <code>intellivision.ttf</code>, a locked 8-hue palette, 4px hard borders, everything snapped to a chunky grid. Most honest to the Tarmin tribute; least forgiving of dense text.</span></div>
+<div class="dv-card" style="width:1160px;background:#0a0806;font-family:'Intellivision',monospace;color:#f0b323;position:relative;padding:0">
+  <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);z-index:5"></div>
+  <div style="padding:26px 28px 24px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:4px solid #f0b323;padding-bottom:12px">
+      <div><div style="font-size:26px;letter-spacing:.06em;color:#ffd75e">THE ARTISAN'S WORKSHOP</div>
+      <div style="font-size:14px;color:#8a6a1c;margin-top:6px;letter-spacing:.04em">FORGE &middot; SALVAGE &middot; OSSUARY</div></div>
+      <div style="font-size:14px;color:#4ec9b0;letter-spacing:.04em">SHELTER HUB &nbsp; LVL 1</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0">
+      <div style="background:#f0b323;color:#0a0806;padding:13px 0;text-align:center;font-size:16px;letter-spacing:.04em">1 FORGE</div>
+      <div style="border:4px solid #4a3a10;border-left:none;padding:13px 0;text-align:center;font-size:16px;color:#8a6a1c;letter-spacing:.04em">2 SALVAGE</div>
+      <div style="border:4px solid #4a3a10;border-left:none;padding:13px 0;text-align:center;font-size:16px;color:#8a6a1c;letter-spacing:.04em">3 OSSUARY</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);border:4px solid #4a3a10;background:#14100a">
+      <div style="padding:12px 14px;border-right:4px solid #4a3a10"><div style="font-size:12px;color:#8a6a1c">SCRAP</div><div style="font-size:20px;color:#ffd75e;font-variant-numeric:tabular-nums">01</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #4a3a10"><div style="font-size:12px;color:#8a6a1c">LEATHER</div><div style="font-size:20px;color:#5a4a20;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #4a3a10"><div style="font-size:12px;color:#8a6a1c">BONES</div><div style="font-size:20px;color:#5a4a20;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px;border-right:4px solid #4a3a10"><div style="font-size:12px;color:#8a6a1c">CHITIN</div><div style="font-size:20px;color:#5a4a20;font-variant-numeric:tabular-nums">00</div></div>
+      <div style="padding:12px 14px"><div style="font-size:12px;color:#8a6a1c">STRANGE</div><div style="font-size:20px;color:#5a4a20;font-variant-numeric:tabular-nums">00</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:352px 1fr;gap:20px;min-height:318px">
+      <div style="border:4px solid #4a3a10;background:#14100a;display:flex;flex-direction:column">
+        <div style="padding:11px 14px;background:#4a3a10;color:#ffd75e;font-size:14px;letter-spacing:.04em">EQUIPMENT [2]</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#f0b323;color:#0a0806">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#0a0806 0 3px,transparent 3px 6px);border:2px solid #0a0806"></div>
+            <div><div style="font-size:15px">RUSTY SWORD</div><div style="font-size:12px">1d6 &middot; R.HAND</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:4px solid #4a3a10">
+            <div style="width:32px;height:32px;background:repeating-linear-gradient(45deg,#4a3a10 0 3px,transparent 3px 6px);border:2px solid #4a3a10"></div>
+            <div><div style="font-size:15px;color:#f0b323">WOODEN CROSS</div><div style="font-size:12px;color:#8a6a1c">1d4 &middot; L.HAND</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="border:4px solid #4a3a10;background:#14100a;display:flex;flex-direction:column;gap:16px;padding:16px">
+        <div style="font-size:14px;color:#8a6a1c;letter-spacing:.04em">EQUIPMENT ANVIL</div>
+        <div style="display:flex;gap:18px;align-items:center">
+          <div style="width:76px;height:76px;background:repeating-linear-gradient(45deg,#4a3a10 0 4px,transparent 4px 8px);border:4px solid #4a3a10;flex:none"></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:22px;color:#ffd75e">RUSTY SWORD</div>
+            <div style="font-size:15px">DMG 1d6 <span style="color:#4ec9b0">&rarr; 1d8</span> &nbsp; WEIGHT 3</div>
+          </div>
+        </div>
+        <div style="border-top:4px solid #4a3a10;padding-top:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;color:#8a6a1c">RECIPE</div>
+          <div style="font-size:15px">2 SCRAP <span style="color:#4ec9b0">[HAVE 1]</span> &nbsp;+&nbsp; 1 KINDLING <span style="color:#e05a3c">[HAVE 0]</span></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:auto">
+          <div style="flex:1;background:#f0b323;color:#0a0806;padding:15px 0;text-align:center;font-size:16px">HONE EDGE</div>
+          <div style="flex:1;border:4px solid #4a3a10;color:#5a4a20;padding:11px 0;text-align:center;font-size:16px">REINFORCE</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;border-top:4px solid #4a3a10;padding-top:12px;font-size:13px;color:#8a6a1c">
+      <div>[1-3] TAB &nbsp; [ENTER] FORGE &nbsp; [ESC] BACK</div><div style="color:#4ec9b0">FORGE TAB READY</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><span><strong>Forged Iron &amp; Ember</strong> — warm charcoal plate with bevels and soot gradients, ember orange for anything actionable, condensed display caps over a mono body. Reads as a physical workbench.</span></div>
+<div class="dv-card" style="width:1160px;background:linear-gradient(160deg,#1c1714 0%,#120e0c 60%,#0d0a09 100%);font-family:'IBM Plex Mono',monospace;color:#d8cbb8;padding:0">
+  <div style="padding:26px 30px 24px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between">
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:30px;letter-spacing:.1em;color:#f2e3c8;text-transform:uppercase">The Artisan's Workshop</div>
+        <div style="font-size:13px;color:#8c7c66;margin-top:7px">Hone gear, salvage scrap, carve bone relics — draws from pack and chest</div>
+      </div>
+      <div style="font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.16em;color:#c4703a;text-transform:uppercase">Shelter Hub</div>
+    </div>
+    <div style="display:flex;gap:10px;border-bottom:1px solid #332a24;padding-bottom:0">
+      <div style="font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.12em;text-transform:uppercase;padding:12px 22px;background:linear-gradient(#2a211b,#1d1713);border:1px solid #4a392c;border-bottom:3px solid #e08a3c;color:#f2d9a8;border-radius:3px 3px 0 0">1 · Forge &amp; Refine</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.12em;text-transform:uppercase;padding:12px 22px;color:#7a6a58;border:1px solid transparent">2 · Salvage</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.12em;text-transform:uppercase;padding:12px 22px;color:#7a6a58;border:1px solid transparent">3 · Ossuary</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0;background:linear-gradient(#211a15,#181310);border:1px solid #352b23;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)">
+      <div style="padding:13px 20px;font-size:11.5px;letter-spacing:.18em;color:#8c7c66;text-transform:uppercase;border-right:1px solid #352b23">Storage</div>
+      <div style="display:flex;flex:1">
+        <div style="flex:1;padding:11px 20px;display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:#a8978a">Metal Scrap</span><span style="font-size:17px;color:#e08a3c;font-variant-numeric:tabular-nums">1</span></div>
+        <div style="flex:1;padding:11px 20px;display:flex;justify-content:space-between;align-items:baseline;border-left:1px solid #2a221c"><span style="font-size:13px;color:#a8978a">Leather</span><span style="font-size:17px;color:#5f564c;font-variant-numeric:tabular-nums">0</span></div>
+        <div style="flex:1;padding:11px 20px;display:flex;justify-content:space-between;align-items:baseline;border-left:1px solid #2a221c"><span style="font-size:13px;color:#a8978a">Bones</span><span style="font-size:17px;color:#5f564c;font-variant-numeric:tabular-nums">0</span></div>
+        <div style="flex:1;padding:11px 20px;display:flex;justify-content:space-between;align-items:baseline;border-left:1px solid #2a221c"><span style="font-size:13px;color:#a8978a">Chitin</span><span style="font-size:17px;color:#5f564c;font-variant-numeric:tabular-nums">0</span></div>
+        <div style="flex:1;padding:11px 20px;display:flex;justify-content:space-between;align-items:baseline;border-left:1px solid #2a221c"><span style="font-size:13px;color:#a8978a">Strange Metal</span><span style="font-size:17px;color:#5f564c;font-variant-numeric:tabular-nums">0</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:344px 1fr;gap:20px;min-height:318px">
+      <div style="background:linear-gradient(#1a1511,#141010);border:1px solid #352b23;border-radius:4px;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:13px 16px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#c9b494;border-bottom:1px solid #352b23;background:linear-gradient(#241d17,#1b1612);display:flex;justify-content:space-between"><span>Equipment &amp; Trophies</span><span style="color:#7a6a58">2</span></div>
+        <div style="display:flex;flex-direction:column;padding:10px;gap:8px">
+          <div style="display:flex;align-items:center;gap:13px;padding:12px;border-radius:3px;background:linear-gradient(90deg,rgba(224,138,60,.18),rgba(224,138,60,.04));border:1px solid #e08a3c;box-shadow:inset 0 0 18px rgba(224,138,60,.12)">
+            <div style="width:36px;height:36px;flex:none;border-radius:3px;border:1px solid #6a5238;background:repeating-linear-gradient(45deg,#3a2d21 0 3px,#241c15 3px 6px)"></div>
+            <div style="flex:1"><div style="font-size:14.5px;color:#f2d9a8">Rusty Sword</div><div style="font-size:12px;color:#8c7c66;margin-top:3px">1d6 · equipped R.hand</div></div>
+            <div style="font-size:11px;letter-spacing:.1em;color:#e08a3c">SELECTED</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:13px;padding:12px;border-radius:3px;border:1px solid #2c241e">
+            <div style="width:36px;height:36px;flex:none;border-radius:3px;border:1px solid #40352a;background:repeating-linear-gradient(45deg,#2c241c 0 3px,#1e1813 3px 6px)"></div>
+            <div style="flex:1"><div style="font-size:14.5px;color:#d8cbb8">Wooden Cross</div><div style="font-size:12px;color:#8c7c66;margin-top:3px">1d4 · equipped L.hand</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:linear-gradient(#1a1511,#141010);border:1px solid #352b23;border-radius:4px;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:13px 16px;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#c9b494;border-bottom:1px solid #352b23;background:linear-gradient(#241d17,#1b1612)">Equipment Anvil</div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:18px;flex:1">
+          <div style="display:flex;gap:18px;align-items:center">
+            <div style="width:84px;height:84px;flex:none;border-radius:4px;border:1px solid #6a5238;background:repeating-linear-gradient(45deg,#3a2d21 0 4px,#241c15 4px 8px)"></div>
+            <div>
+              <div style="font-family:'Oswald',sans-serif;font-size:24px;letter-spacing:.05em;color:#f2e3c8;text-transform:uppercase">Rusty Sword</div>
+              <div style="display:flex;gap:24px;margin-top:10px;font-size:13.5px">
+                <span style="color:#a8978a">Damage <span style="color:#d8cbb8">1d6</span> <span style="color:#7ec96a">→ 1d8</span></span>
+                <span style="color:#a8978a">Weight <span style="color:#d8cbb8">3</span></span>
+                <span style="color:#a8978a">Tier <span style="color:#d8cbb8">Common</span></span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #2c241e;padding-top:16px;display:flex;flex-direction:column;gap:11px">
+            <div style="font-size:11.5px;letter-spacing:.18em;color:#8c7c66;text-transform:uppercase">Hone edge — requires</div>
+            <div style="display:flex;gap:10px">
+              <div style="padding:9px 14px;border-radius:3px;border:1px solid #4a5f3c;background:rgba(126,201,106,.08);font-size:13px;color:#bfe0b0">2 Metal Scrap <span style="color:#7ec96a">· have 1</span></div>
+              <div style="padding:9px 14px;border-radius:3px;border:1px solid #5f3a30;background:rgba(224,90,60,.07);font-size:13px;color:#e0b0a4">1 Kindling <span style="color:#e0603c">· have 0</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;margin-top:auto">
+            <div style="flex:1;text-align:center;padding:15px 0;border-radius:3px;background:linear-gradient(#f0a14a,#c4703a);color:#1a1108;font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.14em;text-transform:uppercase;box-shadow:0 2px 0 #7d451f">Hone Edge</div>
+            <div style="flex:1;text-align:center;padding:15px 0;border-radius:3px;border:1px solid #3a2f26;color:#6b5e50;font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:.14em;text-transform:uppercase">Reinforce — locked</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #2c241e;padding-top:13px;font-size:12.5px;color:#8c7c66">
+      <div style="display:flex;gap:20px"><span><span style="color:#c9b494">1–3</span> switch bench</span><span><span style="color:#c9b494">Enter</span> forge</span><span><span style="color:#c9b494">Esc</span> back to shelter</span></div>
+      <div style="color:#7ec96a">Forge ready · 1 recipe available</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><span><strong>Grimoire Vellum</strong> — extends the painted book already in your inventory screen to every menu: aged paper, ink-brown type, rubric red, gold rules. Warmest and most diegetic; heaviest art dependency.</span></div>
+<div class="dv-card" style="width:1160px;background:radial-gradient(120% 90% at 50% 0%,#efe0c2 0%,#e2d0ad 55%,#cdb88f 100%);font-family:'EB Garamond',Georgia,serif;color:#3b2d1c;padding:0">
+  <div style="padding:28px 34px 26px;display:flex;flex-direction:column;gap:18px">
+    <div style="text-align:center;border-bottom:2px solid #8a6a35;padding-bottom:14px">
+      <div style="font-family:'IM Fell English SC',serif;font-size:32px;color:#5a2018;letter-spacing:.02em">The Artisan's Workshop</div>
+      <div style="font-size:15px;font-style:italic;color:#6b5637;margin-top:5px">Shelter forge, salvage station &amp; bone ossuary</div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:0;border-bottom:1px solid #b19a6f">
+      <div style="font-family:'IM Fell English SC',serif;font-size:17px;padding:11px 28px;color:#5a2018;border:1px solid #b19a6f;border-bottom:2px solid #efe0c2;background:rgba(255,250,235,.6);border-radius:4px 4px 0 0">I · Forge &amp; Refine</div>
+      <div style="font-family:'IM Fell English SC',serif;font-size:17px;padding:11px 28px;color:#8a7550">II · Salvage</div>
+      <div style="font-family:'IM Fell English SC',serif;font-size:17px;padding:11px 28px;color:#8a7550">III · Ossuary</div>
+    </div>
+    <div style="display:flex;align-items:center;background:rgba(255,250,235,.5);border:1px solid #b19a6f;border-radius:3px">
+      <div style="padding:12px 18px;font-family:'IM Fell English SC',serif;font-size:14px;color:#6b5637;border-right:1px solid #c3ae85">Stores</div>
+      <div style="display:flex;flex:1;font-size:15px">
+        <div style="flex:1;padding:11px 18px;display:flex;justify-content:space-between"><span>Metal scrap</span><span style="color:#5a2018;font-variant-numeric:tabular-nums">i</span></div>
+        <div style="flex:1;padding:11px 18px;display:flex;justify-content:space-between;border-left:1px solid #cdb992;color:#8a7550"><span>Leather</span><span style="font-variant-numeric:tabular-nums">—</span></div>
+        <div style="flex:1;padding:11px 18px;display:flex;justify-content:space-between;border-left:1px solid #cdb992;color:#8a7550"><span>Bones</span><span style="font-variant-numeric:tabular-nums">—</span></div>
+        <div style="flex:1;padding:11px 18px;display:flex;justify-content:space-between;border-left:1px solid #cdb992;color:#8a7550"><span>Chitin</span><span style="font-variant-numeric:tabular-nums">—</span></div>
+        <div style="flex:1;padding:11px 18px;display:flex;justify-content:space-between;border-left:1px solid #cdb992;color:#8a7550"><span>Strange metal</span><span style="font-variant-numeric:tabular-nums">—</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:344px 1fr;gap:26px;min-height:318px;position:relative">
+      <div style="display:flex;flex-direction:column;gap:12px;padding-right:24px;border-right:2px solid #b19a6f">
+        <div style="font-family:'IM Fell English SC',serif;font-size:17px;color:#5a2018;display:flex;justify-content:space-between;align-items:baseline"><span>Equipment &amp; Trophies</span><span style="font-size:14px;color:#8a7550">ii</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:13px;padding:12px;background:rgba(255,250,235,.75);border:1px solid #8a6a35;border-left:4px solid #5a2018;border-radius:3px">
+            <div style="width:36px;height:36px;flex:none;border:1px solid #8a6a35;background:repeating-linear-gradient(45deg,#c9b58c 0 3px,#e2d3b0 3px 6px)"></div>
+            <div style="flex:1"><div style="font-size:17px;color:#3b2d1c">Rusty Sword</div><div style="font-size:13.5px;font-style:italic;color:#6b5637">1d6 · right hand</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:13px;padding:12px;border:1px solid #c3ae85;border-radius:3px">
+            <div style="width:36px;height:36px;flex:none;border:1px solid #b19a6f;background:repeating-linear-gradient(45deg,#cdbc98 0 3px,#ded0ae 3px 6px)"></div>
+            <div style="flex:1"><div style="font-size:17px;color:#3b2d1c">Wooden Cross</div><div style="font-size:13.5px;font-style:italic;color:#6b5637">1d4 · left hand</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="font-family:'IM Fell English SC',serif;font-size:17px;color:#5a2018">The Equipment Anvil</div>
+        <div style="display:flex;gap:20px;align-items:center">
+          <div style="width:88px;height:88px;flex:none;border:1px solid #8a6a35;background:repeating-linear-gradient(45deg,#c9b58c 0 4px,#e2d3b0 4px 8px)"></div>
+          <div>
+            <div style="font-family:'IM Fell English SC',serif;font-size:26px;color:#3b2d1c">Rusty Sword</div>
+            <div style="font-size:15.5px;margin-top:8px;color:#5b4930">Damage 1d6 <span style="color:#2f5d34">→ 1d8</span> &nbsp;·&nbsp; Weight 3 &nbsp;·&nbsp; Common tier</div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #b19a6f;padding-top:16px;display:flex;flex-direction:column;gap:10px;max-width:62ch">
+          <div style="font-family:'IM Fell English SC',serif;font-size:15px;color:#6b5637">Hone the edge</div>
+          <div style="font-size:15.5px;line-height:1.55">Grinding the blade against the whetstone sharpens it one die step. Consumes <strong style="color:#2f5d34">2 metal scrap (you hold 1)</strong> and <strong style="color:#8a2f20">1 kindling (you hold none)</strong>.</div>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:auto">
+          <div style="padding:13px 30px;background:#5a2018;color:#f4e8cf;font-family:'IM Fell English SC',serif;font-size:17px;border-radius:3px;box-shadow:0 2px 0 #3a130e">Hone Edge</div>
+          <div style="padding:13px 30px;border:1px solid #b19a6f;color:#9a8663;font-family:'IM Fell English SC',serif;font-size:17px;border-radius:3px">Reinforce — lacking materials</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;border-top:2px solid #8a6a35;padding-top:13px;font-size:14px;font-style:italic;color:#6b5637">
+      <div>I–III turn the page &nbsp;·&nbsp; Enter to work &nbsp;·&nbsp; Esc to close the book</div><div style="color:#2f5d34">The forge is hot.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a><span><strong>Cold Archive</strong> — slate-black, hairline rules, one amber accent, mono numerals, data-dense tabular layout. Most legible and cheapest to build; least "retro", reads as a modern roguelike.</span></div>
+<div class="dv-card" style="width:1160px;background:#0e1114;font-family:'IBM Plex Mono',monospace;color:#c3cbd2;padding:0">
+  <div style="padding:24px 28px 22px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid #232a30;padding-bottom:14px">
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <div style="font-size:11px;letter-spacing:.22em;color:#6b7780">SHELTER / BENCH</div>
+        <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:22px;letter-spacing:-.01em;color:#eef2f5">Artisan's Workshop</div>
+      </div>
+      <div style="font-size:12px;color:#6b7780">day 1 · 08:08 · lvl 1</div>
+    </div>
+    <div style="display:flex;gap:2px;background:#151a1e;padding:3px;border-radius:3px;width:fit-content">
+      <div style="font-size:13px;padding:9px 20px;background:#e3a13c;color:#12161a;border-radius:2px;font-weight:500">Forge</div>
+      <div style="font-size:13px;padding:9px 20px;color:#8994a0">Salvage</div>
+      <div style="font-size:13px;padding:9px 20px;color:#8994a0">Ossuary</div>
+    </div>
+    <div style="display:flex;gap:28px;padding:12px 16px;background:#12171b;border:1px solid #1f262c;border-radius:3px;font-size:12.5px">
+      <span style="letter-spacing:.18em;color:#6b7780">STORAGE</span>
+      <span style="color:#8994a0">scrap <span style="color:#e3a13c;font-variant-numeric:tabular-nums">1</span></span>
+      <span style="color:#8994a0">leather <span style="color:#4a545d;font-variant-numeric:tabular-nums">0</span></span>
+      <span style="color:#8994a0">bones <span style="color:#4a545d;font-variant-numeric:tabular-nums">0</span></span>
+      <span style="color:#8994a0">chitin <span style="color:#4a545d;font-variant-numeric:tabular-nums">0</span></span>
+      <span style="color:#8994a0">strange <span style="color:#4a545d;font-variant-numeric:tabular-nums">0</span></span>
+      <span style="margin-left:auto;color:#6b7780">pack 4/30 · chest 0/30</span>
+    </div>
+    <div style="display:grid;grid-template-columns:336px 1fr;gap:1px;background:#1f262c;border:1px solid #1f262c;border-radius:3px;min-height:322px">
+      <div style="background:#12171b;display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:11px 14px;font-size:11px;letter-spacing:.18em;color:#6b7780;border-bottom:1px solid #1f262c">SOURCE ITEMS<span style="color:#8994a0">2</span></div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#182028;border-left:2px solid #e3a13c">
+          <div style="width:34px;height:34px;flex:none;border-radius:2px;background:repeating-linear-gradient(45deg,#26303a 0 3px,#1b232b 3px 6px)"></div>
+          <div style="flex:1"><div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#eef2f5">Rusty Sword</div><div style="font-size:11.5px;color:#6b7780;margin-top:2px">weapon · 1d6</div></div>
+          <div style="font-size:11px;color:#e3a13c">▸</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid #1a2126">
+          <div style="width:34px;height:34px;flex:none;border-radius:2px;background:repeating-linear-gradient(45deg,#20272e 0 3px,#171d23 3px 6px)"></div>
+          <div style="flex:1"><div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#c3cbd2">Wooden Cross</div><div style="font-size:11.5px;color:#6b7780;margin-top:2px">weapon · 1d4</div></div>
+        </div>
+      </div>
+      <div style="background:#12171b;display:flex;flex-direction:column">
+        <div style="padding:11px 16px;font-size:11px;letter-spacing:.18em;color:#6b7780;border-bottom:1px solid #1f262c">EQUIPMENT ANVIL</div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:18px;flex:1">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="width:72px;height:72px;flex:none;border-radius:2px;background:repeating-linear-gradient(45deg,#26303a 0 4px,#1b232b 4px 8px)"></div>
+            <div>
+              <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:20px;color:#eef2f5">Rusty Sword</div>
+              <div style="display:flex;gap:22px;margin-top:9px;font-size:12.5px;color:#8994a0">
+                <span>dmg <span style="color:#eef2f5">1d6</span> <span style="color:#6fc07a">→1d8</span></span><span>wt <span style="color:#eef2f5">3</span></span><span>tier <span style="color:#eef2f5">common</span></span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:11px;letter-spacing:.18em;color:#6b7780">OPERATIONS</div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:#161d23;border:1px solid #2a343d;border-radius:3px">
+              <div style="flex:1"><div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#eef2f5">Hone edge</div><div style="font-size:12px;color:#8994a0;margin-top:3px">+1 die step · 2 scrap <span style="color:#6fc07a">(1 held)</span>, 1 kindling <span style="color:#d9694f">(0 held)</span></div></div>
+              <div style="padding:9px 18px;background:#e3a13c;color:#12161a;border-radius:2px;font-size:12.5px;font-weight:600;letter-spacing:.04em">FORGE</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid #1f262c;border-radius:3px;opacity:.55">
+              <div style="flex:1"><div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#c3cbd2">Reinforce</div><div style="font-size:12px;color:#8994a0;margin-top:3px">+2 armour · 3 leather <span style="color:#d9694f">(0 held)</span></div></div>
+              <div style="padding:9px 18px;border:1px solid #2a343d;color:#6b7780;border-radius:2px;font-size:12.5px;letter-spacing:.04em">LOCKED</div>
+            </div>
+          </div>
+          <div style="margin-top:auto;font-size:12px;color:#6b7780;max-width:70ch">Salvaging this item instead would return 1 metal scrap.</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7780">
+      <div style="display:flex;gap:20px"><span><span style="color:#c3cbd2">1–3</span> tab</span><span><span style="color:#c3cbd2">↑↓</span> select</span><span><span style="color:#c3cbd2">enter</span> forge</span><span><span style="color:#c3cbd2">esc</span> back</span></div>
+      <div style="color:#6fc07a">forge ready</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "build the full screen set in <a class="dv-oid" href="#1b">1b</a>" · "<a class="dv-oid" href="#1d">1d</a> layout with <a class="dv-oid" href="#1a">1a</a>'s pixel font" · "show the HUD and combat overlay in two of these"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

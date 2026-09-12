@@ -1,0 +1,9 @@
+# Tarmin2 Repository Rules
+
+You are an AI assistant working on the Tarmin2 codebase. This repository uses Spec-Driven Design.
+
+Before you begin implementing any new feature, bug fix, or refactor, you MUST:
+1. Read `spec.md` to understand the overarching product and architectural design.
+2. Read `agent.md` to understand the mandatory coding conventions, tech stack specifics (LibGDX), and internal lexicon (e.g., War/Spiritual Strength, Satiety).
+
+Do not proceed with generating code until you have verified how your proposed changes fit into the rules established in these two documents.

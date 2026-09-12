@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<style>
+@font-face{font-family:"Intellivision";src:url("assets/fonts/intellivision.ttf") format("truetype");font-display:block}
+body{margin:0;background:#0a0806;font-family:"Intellivision",monospace}
+a{color:#f0c96a}a:hover{color:#ffe7a8}
+</style></helmet>
+
+<div style="padding:28px 32px 40px;display:flex;flex-direction:column;gap:18px;background:#0a0806;min-height:100vh">
+
+  <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+    <div style="font-family:'Intellivision',monospace;font-size:22px;color:#ffcf5e;letter-spacing:.05em">TARMIN2 &mdash; CARVED FRAME UI KIT</div>
+    <div style="font-family:'Intellivision',monospace;font-size:13px;color:#9a7233">DIRECTION 2B &middot; 1920&times;1080 VIRTUAL CANVAS &middot; INTELLIVISION.TTF</div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div onClick="{{ goHud }}" style="cursor:pointer;font-family:'Intellivision',monospace;font-size:15px;padding:11px 20px;border:4px solid #8a5a1c;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c)" style-hover="filter:brightness(1.08)">1 DUNGEON HUD</div>
+    <div onClick="{{ goForge }}" style="cursor:pointer;font-family:'Intellivision',monospace;font-size:15px;padding:11px 20px;border:4px solid #4a3316;color:#b08a3a;background:#15100a" style-hover="border-color:#8a5a1c;color:#ffcf5e">2 ARTISAN'S WORKSHOP</div>
+    <div onClick="{{ goHearth }}" style="cursor:pointer;font-family:'Intellivision',monospace;font-size:15px;padding:11px 20px;border:4px solid #4a3316;color:#b08a3a;background:#15100a" style-hover="border-color:#8a5a1c;color:#ffcf5e">3 COOKING HEARTH</div>
+    <div onClick="{{ goChest }}" style="cursor:pointer;font-family:'Intellivision',monospace;font-size:15px;padding:11px 20px;border:4px solid #4a3316;color:#b08a3a;background:#15100a" style-hover="border-color:#8a5a1c;color:#ffcf5e">4 SHELTER STASH</div>
+    <div style="margin-left:auto;font-family:'Intellivision',monospace;font-size:13px;color:#6a4f22;align-self:center">SHOWING: {{ screenLabel }}</div>
+  </div>
+
+  <div style="width:1920px;height:1080px;position:relative;background:#0c0a07;border:4px solid #3a2a12;overflow:hidden;flex:none">
+
+    <div style="position:absolute;inset:0;z-index:0;background-color:#1a140c;background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.45) 0 3px,transparent 3px 9px),repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 3px,transparent 3px 44px)"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;z-index:9;background:radial-gradient(110% 80% at 50% 12%,rgba(255,200,110,.07),rgba(0,0,0,.62) 100%)"></div>
+
+    <sc-if value="{{ isHud }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="01 Dungeon HUD" style="position:absolute;inset:0;z-index:3;display:flex;flex-direction:column">
+      <div style="position:relative;height:900px;background:linear-gradient(#191206,#0d0a06 60%,#080604);overflow:hidden">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,rgba(140,100,40,.16) 0 2px,transparent 2px 74px),repeating-linear-gradient(0deg,rgba(140,100,40,.13) 0 2px,transparent 2px 58px)"></div>
+        <div style="position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:760px;height:300px;background:repeating-linear-gradient(45deg,rgba(138,90,28,.30) 0 8px,rgba(20,14,8,.30) 8px 16px);border:4px solid rgba(138,90,28,.55);display:flex;align-items:center;justify-content:center;color:#c79a4a;font-size:16px;letter-spacing:.06em;text-align:center;line-height:1.8">FIRST-PERSON RAYCAST VIEW<br><span style="font-size:13px;color:#8a6428">WALLS / ENTITIES / GIBS RENDER HERE</span></div>
+
+        <div style="position:absolute;top:24px;left:28px;border:4px solid #5a3d18;background:rgba(8,6,4,.85);padding:10px 16px;font-size:16px;color:#e8b34a">DUNGEON LVL 1 &nbsp;[MAZE]</div>
+
+        <div style="position:absolute;top:24px;left:50%;transform:translateX(-50%);border:4px solid #5a3d18;background:rgba(8,6,4,.85);padding:10px 18px;display:flex;align-items:center;gap:14px">
+          <span style="font-size:15px;color:#9a7233">BRIDGE INTEGRITY</span>
+          <div style="width:220px;height:16px;border:2px solid #5a3d18;background:#120d07"><div style="width:6%;height:100%;background:linear-gradient(#d9a23a,#a06a1e)"></div></div>
+          <span style="font-size:15px;color:#ffcf5e;font-variant-numeric:tabular-nums">06%</span>
+        </div>
+
+        <div style="position:absolute;top:24px;right:28px;width:300px;border:6px double #8a5a1c;background:rgba(8,6,4,.88);padding:12px">
+          <div style="font-size:13px;color:#9a7233;margin-bottom:8px">MAZE CHART</div>
+          <div style="height:206px;background:repeating-linear-gradient(90deg,rgba(138,90,28,.35) 0 2px,transparent 2px 26px),repeating-linear-gradient(0deg,rgba(138,90,28,.35) 0 2px,transparent 2px 26px),#100c07;display:flex;align-items:center;justify-content:center;color:#8a6428;font-size:13px">MINIMAP TILES</div>
+        </div>
+
+        <div style="position:absolute;left:50%;bottom:34px;transform:translateX(-50%);width:820px;border:6px double #8a5a1c;background:linear-gradient(#e6d3a8,#cbb385);padding:18px 20px;color:#3a2a12">
+          <div style="font-size:13px;color:#6a2318;letter-spacing:.04em">[SHELTER HUB] [ARTISAN WORKBENCH]</div>
+          <div style="font-size:22px;color:#2a1a08;margin-top:8px">ARTISAN'S CRAFTING BENCH &amp; FORGE</div>
+          <div style="font-size:14px;line-height:1.65;margin-top:8px;max-width:62ch">HONE WEAPONS AND ARMOR, SALVAGE DUNGEON SCRAP, AND CARVE BONE RELICS. DRAWS FROM PACK AND CHEST.</div>
+          <div style="margin-top:14px;display:inline-block;padding:11px 22px;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c;font-size:16px;color:#2a1a08">[ O ] OPEN CRAFTING BENCH</div>
+        </div>
+      </div>
+
+      <div style="height:180px;border-top:6px double #8a5a1c;background:rgba(8,6,4,.92);display:grid;grid-template-columns:300px 380px 300px 1fr;gap:0">
+        <div style="border-right:4px solid #4a3316;padding:14px;display:flex;gap:14px;align-items:center">
+          <div style="width:96px;height:120px;border:4px solid #8a5a1c;background:repeating-linear-gradient(45deg,#3a2a12 0 4px,#241a0c 4px 8px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;color:#9a7233;font-size:11px">PORTRAIT</div>
+          <div style="display:flex;flex-direction:column;gap:9px;flex:1">
+            <div><div style="font-size:12px;color:#9a7233">HP 12/16</div><div style="height:14px;border:2px solid #5a3d18;background:#120d07;margin-top:4px"><div style="width:75%;height:100%;background:linear-gradient(#c24a34,#8a2a1c)"></div></div></div>
+            <div><div style="font-size:12px;color:#9a7233">MP 8/8</div><div style="height:14px;border:2px solid #5a3d18;background:#120d07;margin-top:4px"><div style="width:100%;height:100%;background:linear-gradient(#4a7ac2,#2a4a8a)"></div></div></div>
+            <div><div style="font-size:12px;color:#9a7233">EXP 161/510</div><div style="height:10px;border:2px solid #5a3d18;background:#120d07;margin-top:4px"><div style="width:31%;height:100%;background:linear-gradient(#f0c96a,#c99a3c)"></div></div></div>
+            <div style="font-size:12px;color:#b08a3a">LVL 1 &nbsp; DIV 3 &nbsp; DOOM 3 [6%]</div>
+          </div>
+        </div>
+
+        <div style="border-right:4px solid #4a3316;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#9a7233"><span>HANDS</span><span style="color:#ffcf5e">RUSTY SWORD [1d6]</span></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="width:62px;height:62px;border:4px solid #8a5a1c;background:repeating-linear-gradient(45deg,#3a2a12 0 4px,#241a0c 4px 8px);display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#9a7233">L</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1">
+              <div style="height:28px;border:2px solid #f0c96a;background:rgba(240,201,106,.14);font-size:11px;color:#ffcf5e;display:flex;align-items:center;justify-content:center">1</div>
+              <div style="height:28px;border:2px solid #4a3316;font-size:11px;color:#6a4f22;display:flex;align-items:center;justify-content:center">2</div>
+              <div style="height:28px;border:2px solid #4a3316;font-size:11px;color:#6a4f22;display:flex;align-items:center;justify-content:center">3</div>
+              <div style="height:28px;border:2px solid #4a3316;font-size:11px;color:#6a4f22;display:flex;align-items:center;justify-content:center">4</div>
+              <div style="height:28px;border:2px solid #4a3316;font-size:11px;color:#6a4f22;display:flex;align-items:center;justify-content:center">5</div>
+              <div style="height:28px;border:2px solid #4a3316;font-size:11px;color:#6a4f22;display:flex;align-items:center;justify-content:center">6</div>
+            </div>
+            <div style="width:62px;height:62px;border:4px solid #8a5a1c;background:repeating-linear-gradient(45deg,#3a2a12 0 4px,#241a0c 4px 8px);display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#9a7233">R</div>
+          </div>
+        </div>
+
+        <div style="border-right:4px solid #4a3316;padding:14px;display:flex;flex-direction:column;gap:9px">
+          <div style="font-size:13px;color:#9a7233">BODY</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b08a3a"><span style="width:44px">FOOD</span><div style="flex:1;height:12px;border:2px solid #5a3d18;background:#120d07"><div style="width:76%;height:100%;background:linear-gradient(#7fb04a,#4a6a28)"></div></div><span style="width:34px;text-align:right;font-variant-numeric:tabular-nums">76</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b08a3a"><span style="width:44px">H2O</span><div style="flex:1;height:12px;border:2px solid #5a3d18;background:#120d07"><div style="width:73%;height:100%;background:linear-gradient(#4a7ac2,#2a4a8a)"></div></div><span style="width:34px;text-align:right;font-variant-numeric:tabular-nums">73</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b08a3a"><span style="width:44px">TEMP</span><div style="flex:1;height:12px;border:2px solid #5a3d18;background:#120d07"><div style="width:55%;height:100%;background:linear-gradient(#e8a63a,#b9792a)"></div></div><span style="width:56px;text-align:right;font-variant-numeric:tabular-nums">98.6F</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b08a3a"><span style="width:44px">TOX</span><div style="flex:1;height:12px;border:2px solid #5a3d18;background:#120d07"><div style="width:0%;height:100%;background:#7a2a20"></div></div><span style="width:34px;text-align:right;font-variant-numeric:tabular-nums">0</span></div>
+        </div>
+
+        <div style="padding:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#9a7233"><span>CHRONICLE</span><span style="color:#6a4f22">8:08 AM &middot; MORNING</span></div>
+          <sc-for list="{{ chronicle }}" as="line" hint-placeholder-count="4">
+            <div style="font-size:13px;color:#c79a4a;line-height:1.5">&gt; {{ line }}</div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isForge }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="02 Artisan's Workshop" style="position:absolute;inset:0;z-index:3;padding:40px 44px;display:flex;flex-direction:column;gap:22px">
+      <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.8);padding:24px 28px;display:flex;align-items:flex-end;justify-content:space-between">
+        <div>
+          <div style="font-size:36px;color:#ffcf5e;letter-spacing:.05em">THE ARTISAN'S WORKSHOP</div>
+          <div style="font-size:17px;color:#9a7233;margin-top:10px">SHELTER FORGE, SALVAGE STATION &amp; BONE OSSUARY</div>
+        </div>
+        <div style="font-size:17px;color:#b08a3a">TORCH LIT &nbsp; SHELTER HUB &nbsp; LVL 1</div>
+      </div>
+
+      <div style="display:flex;gap:16px">
+        <div onClick="{{ tabForge }}" style="cursor:pointer;flex:1;text-align:center;padding:18px 0;font-size:21px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c">I &nbsp;FORGE &amp; REFINE</div>
+        <div onClick="{{ tabSalvage }}" style="cursor:pointer;flex:1;text-align:center;padding:18px 0;font-size:21px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316" style-hover="border-color:#8a5a1c;color:#ffcf5e">II &nbsp;SALVAGE &amp; SCRAP</div>
+        <div onClick="{{ tabOssuary }}" style="cursor:pointer;flex:1;text-align:center;padding:18px 0;font-size:21px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316" style-hover="border-color:#8a5a1c;color:#ffcf5e">III &nbsp;OSSUARY &amp; RELICS</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:560px 1fr;gap:24px;flex:1;min-height:0">
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;font-size:17px;color:#9a7233"><span>EQUIPMENT &amp; TROPHIES</span><span style="color:#e8b34a">[2]</span></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:4px solid #f0c96a;background:rgba(240,201,106,.12)">
+              <div style="width:52px;height:52px;flex:none;border:2px solid #8a5a1c;background:repeating-linear-gradient(45deg,#8a5a1c 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:20px;color:#ffcf5e">RUSTY SWORD</div><div style="font-size:14px;color:#b08a3a;margin-top:5px">1d6 &middot; EQUIPPED R.HAND</div></div>
+              <div style="font-size:15px;color:#f0c96a">&#9654;</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:4px solid #4a3316" style-hover="border-color:#8a5a1c">
+              <div style="width:52px;height:52px;flex:none;border:2px solid #5a3d18;background:repeating-linear-gradient(45deg,#5a3d18 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:20px;color:#e8b34a">WOODEN CROSS</div><div style="font-size:14px;color:#9a7233;margin-top:5px">1d4 &middot; EQUIPPED L.HAND</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:4px solid #4a3316" style-hover="border-color:#8a5a1c">
+              <div style="width:52px;height:52px;flex:none;border:2px solid #5a3d18;background:repeating-linear-gradient(45deg,#5a3d18 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:20px;color:#e8b34a">METAL SCRAP</div><div style="font-size:14px;color:#9a7233;margin-top:5px">DEBRIS &middot; IN CHEST</div></div>
+            </div>
+          </div>
+          <div style="margin-top:auto;border-top:4px solid #4a3316;padding-top:16px;display:flex;flex-direction:column;gap:10px;font-size:16px;color:#9a7233">
+            <div style="font-size:15px">UNIFIED STORAGE</div>
+            <div style="display:flex;justify-content:space-between"><span>METAL SCRAP</span><span style="color:#ffcf5e;font-variant-numeric:tabular-nums">01</span></div>
+            <div style="display:flex;justify-content:space-between"><span>LEATHER</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+            <div style="display:flex;justify-content:space-between"><span>BONES</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+            <div style="display:flex;justify-content:space-between"><span>CHITIN</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+            <div style="display:flex;justify-content:space-between"><span>STRANGE METAL</span><span style="color:#6a4f22;font-variant-numeric:tabular-nums">00</span></div>
+          </div>
+        </div>
+
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:24px;display:flex;flex-direction:column;gap:22px">
+          <div style="font-size:17px;color:#9a7233">EQUIPMENT ANVIL &amp; TROPHY FORGE</div>
+          <div style="display:flex;gap:24px;align-items:center">
+            <div style="width:120px;height:120px;flex:none;border:4px solid #8a5a1c;background:repeating-linear-gradient(45deg,#8a5a1c 0 5px,transparent 5px 10px)"></div>
+            <div>
+              <div style="font-size:30px;color:#ffcf5e">RUSTY SWORD</div>
+              <div style="font-size:18px;margin-top:12px;color:#e8b34a">DMG 1d6 <span style="color:#7fb04a">&rarr; 1d8</span> &nbsp;&middot;&nbsp; WT 3 &nbsp;&middot;&nbsp; TIER COMMON</div>
+            </div>
+          </div>
+          <div style="border:4px solid #8a5a1c;background:linear-gradient(#e6d3a8,#cbb385);color:#3a2a12;padding:22px;display:flex;flex-direction:column;gap:14px">
+            <div style="font-size:20px;color:#6a2318">HONE THE EDGE</div>
+            <div style="font-size:16px;line-height:1.7;max-width:64ch">GRIND THE BLADE AGAINST THE WHETSTONE TO RAISE ITS DAMAGE ONE DIE STEP. THE WORK TAKES 30 MINUTES OF SHELTER TIME.</div>
+            <div style="display:flex;gap:18px;font-size:16px">
+              <span style="padding:8px 14px;border:3px solid #2f5a22;color:#2f5a22">2 METAL SCRAP &middot; HAVE 1</span>
+              <span style="padding:8px 14px;border:3px solid #7a2318;color:#7a2318">1 KINDLING &middot; HAVE 0</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:18px">
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c;cursor:pointer" style-hover="filter:brightness(1.08)">HONE EDGE</div>
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#6a4f22;border:4px solid #4a3316">REINFORCE [LOCKED]</div>
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#6a4f22;border:4px solid #4a3316">INFUSE TROPHY [LOCKED]</div>
+          </div>
+          <div style="margin-top:auto;display:flex;justify-content:space-between;font-size:15px;color:#9a7233;border-top:4px solid #4a3316;padding-top:16px">
+            <div>[I-III] BENCH &nbsp; [&uarr;&darr;] SELECT &nbsp; [ENTER] WORK &nbsp; [ESC] LEAVE</div>
+            <div style="color:#7fb04a">THE FORGE IS HOT</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isHearth }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="03 Cooking Hearth" style="position:absolute;inset:0;z-index:3;padding:40px 44px;display:flex;flex-direction:column;gap:22px">
+      <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.8);padding:24px 28px;display:flex;align-items:flex-end;justify-content:space-between">
+        <div>
+          <div style="font-size:36px;color:#ffcf5e;letter-spacing:.05em">THE SHELTER COOKING HEARTH</div>
+          <div style="font-size:17px;color:#9a7233;margin-top:10px">SIMMER HARVESTED GIBS, PREPARE EXPEDITION MEALS, DISCOVER CULINARY BOONS</div>
+        </div>
+        <div style="display:flex;gap:26px;font-size:16px;color:#b08a3a">
+          <span>KINDLING <span style="color:#ffcf5e;font-variant-numeric:tabular-nums">5</span></span>
+          <span>WATER <span style="color:#ffcf5e;font-variant-numeric:tabular-nums">5</span></span>
+          <span>COOK SKILL <span style="color:#ffcf5e;font-variant-numeric:tabular-nums">0</span></span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px">
+        <div style="flex:1;text-align:center;padding:18px 0;font-size:20px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316;cursor:pointer" style-hover="border-color:#8a5a1c;color:#ffcf5e">I &nbsp;QUICK MEAL</div>
+        <div style="flex:1;text-align:center;padding:18px 0;font-size:20px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c">II &nbsp;IRON CAULDRON</div>
+        <div style="flex:1;text-align:center;padding:18px 0;font-size:20px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316;cursor:pointer" style-hover="border-color:#8a5a1c;color:#ffcf5e">III &nbsp;COOKBOOK</div>
+        <div style="flex:1;text-align:center;padding:18px 0;font-size:20px;color:#8a6428;background:rgba(8,6,4,.8);border:4px solid #4a3316;cursor:pointer" style-hover="border-color:#8a5a1c;color:#ffcf5e">IV &nbsp;REST BY HEARTH</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:560px 1fr;gap:24px;flex:1;min-height:0">
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div style="font-size:17px;color:#9a7233">UNIFIED PANTRY &nbsp;<span style="color:#6a4f22;font-size:14px">PACK + CHEST</span></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:4px solid #f0c96a;background:rgba(240,201,106,.12)">
+              <div style="width:52px;height:52px;flex:none;border:2px solid #8a5a1c;background:repeating-linear-gradient(45deg,#8a5a1c 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:20px;color:#ffcf5e">GIANT ANT BONE</div><div style="font-size:14px;color:#b08a3a;margin-top:5px">GIB_BONE &middot; PACK &middot; IN SLOT 1</div></div>
+              <div style="font-size:15px;color:#f0c96a">&#9654;</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:4px solid #4a3316;cursor:pointer" style-hover="border-color:#8a5a1c">
+              <div style="width:52px;height:52px;flex:none;border:2px solid #5a3d18;background:repeating-linear-gradient(45deg,#5a3d18 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:20px;color:#e8b34a">GIANT SNAKE FLESH</div><div style="font-size:14px;color:#9a7233;margin-top:5px">GIB_FLESH &middot; PACK &middot; UNIDENTIFIED</div></div>
+            </div>
+          </div>
+          <div style="margin-top:auto;border:4px solid #4a3316;padding:16px;font-size:15px;color:#9a7233;line-height:1.7">UNIDENTIFIED GIBS REVEAL THEIR PROPERTIES ONLY AFTER BEING COOKED ONCE.</div>
+        </div>
+
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:24px;display:flex;flex-direction:column;gap:22px">
+          <div style="font-size:17px;color:#9a7233">THE IRON CAULDRON &mdash; CUSTOM COMBINATION</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
+            <div style="border:4px solid #f0c96a;background:rgba(240,201,106,.10);padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px">
+              <div style="width:56px;height:56px;border:2px solid #8a5a1c;background:repeating-linear-gradient(45deg,#8a5a1c 0 4px,transparent 4px 8px)"></div>
+              <div style="font-size:15px;color:#ffcf5e">SLOT I</div><div style="font-size:14px;color:#b08a3a">ANT BONE</div>
+            </div>
+            <div style="border:4px solid #4a3316;padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px">
+              <div style="width:56px;height:56px;border:2px dashed #5a3d18"></div>
+              <div style="font-size:15px;color:#9a7233">SLOT II</div><div style="font-size:14px;color:#6a4f22">[ EMPTY ]</div>
+            </div>
+            <div style="border:4px solid #4a3316;padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px">
+              <div style="width:56px;height:56px;border:2px dashed #5a3d18"></div>
+              <div style="font-size:15px;color:#9a7233">SLOT III</div><div style="font-size:14px;color:#6a4f22">[ EMPTY ]</div>
+            </div>
+          </div>
+          <div style="border:4px solid #8a5a1c;background:linear-gradient(#e6d3a8,#cbb385);color:#3a2a12;padding:22px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:20px;color:#6a2318">CAMPFIRE HEARTY STEW</div>
+            <div style="font-size:16px;line-height:1.7;max-width:62ch">INGREDIENTS: GIANT ANT BONE. A THIN BUT HONEST BROTH &mdash; ADD FLESH OR ORGAN TO DISCOVER A NEW RECIPE.</div>
+            <div style="display:flex;gap:18px;font-size:16px;flex-wrap:wrap">
+              <span style="padding:8px 14px;border:3px solid #2f5a22;color:#2f5a22">BOONS: HEALTHY, RECOVERING &middot; 120 TURNS</span>
+              <span style="padding:8px 14px;border:3px solid #6a2318;color:#6a2318">COST: 1 KINDLING + 1 WATER</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:18px">
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#2a1a08;background:linear-gradient(#f0c96a,#c99a3c);border:4px solid #8a5a1c;cursor:pointer" style-hover="filter:brightness(1.08)">EAT AT HEARTH</div>
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#e8b34a;border:4px solid #8a5a1c;background:rgba(8,6,4,.6);cursor:pointer" style-hover="color:#ffcf5e">PACK FIELD RATIONS</div>
+            <div style="flex:1;text-align:center;padding:20px 0;font-size:20px;color:#6a4f22;border:4px solid #4a3316">EMPTY CAULDRON</div>
+          </div>
+          <div style="margin-top:auto;display:flex;justify-content:space-between;font-size:15px;color:#9a7233;border-top:4px solid #4a3316;padding-top:16px">
+            <div>[I-IV] STATION &nbsp; [CLICK] ADD INGREDIENT &nbsp; [ESC] BACK TO SHELTER</div>
+            <div style="color:#7fb04a">READY TO COOK</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isChest }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="04 Shelter Stash" style="position:absolute;inset:0;z-index:3;padding:40px 44px;display:flex;flex-direction:column;gap:22px">
+      <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.8);padding:24px 28px;text-align:center">
+        <div style="font-size:36px;color:#ffcf5e;letter-spacing:.05em">THE SHELTER STASH CHEST</div>
+        <div style="font-size:17px;color:#9a7233;margin-top:10px">ITEMS STORED HERE PERSIST ACROSS EXPEDITIONS AND SURVIVE DEATH</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 132px 1fr;gap:20px;flex:1;min-height:0">
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;font-size:18px;color:#9a7233"><span>STASH CHEST</span><span style="color:#e8b34a;font-variant-numeric:tabular-nums">00 / 30</span></div>
+          <div style="flex:1;border:4px solid #4a3316;display:flex;align-items:center;justify-content:center;color:#6a4f22;font-size:17px">EMPTY STASH</div>
+          <div style="font-size:15px;color:#9a7233;line-height:1.7">STORE GIBS AND SPARE GEAR BEFORE DESCENDING &mdash; THE FORGE AND HEARTH DRAW FROM THIS CHEST AS WELL AS YOUR PACK.</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:18px">
+          <div style="border:4px solid #8a5a1c;background:linear-gradient(#f0c96a,#c99a3c);color:#2a1a08;padding:16px 0;text-align:center;font-size:18px;cursor:pointer" style-hover="filter:brightness(1.08)">&larr; STORE</div>
+          <div style="border:4px solid #4a3316;color:#6a4f22;padding:16px 0;text-align:center;font-size:18px">TAKE &rarr;</div>
+          <div style="border:4px solid #8a5a1c;color:#e8b34a;background:rgba(8,6,4,.6);padding:16px 0;text-align:center;font-size:16px;cursor:pointer" style-hover="color:#ffcf5e">STORE ALL GIBS</div>
+        </div>
+
+        <div style="border:6px double #8a5a1c;background:rgba(8,6,4,.82);padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;font-size:18px;color:#9a7233"><span>BACKPACK</span><span style="color:#e8b34a;font-variant-numeric:tabular-nums">04 / 30</span></div>
+          <sc-for list="{{ pack }}" as="row" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:16px;padding:14px;border:4px solid #4a3316;cursor:pointer" style-hover="border-color:#8a5a1c">
+              <div style="width:48px;height:48px;flex:none;border:2px solid #5a3d18;background:repeating-linear-gradient(45deg,#5a3d18 0 4px,transparent 4px 8px)"></div>
+              <div style="flex:1"><div style="font-size:19px;color:#e8b34a">{{ row.name }}</div><div style="font-size:14px;color:#9a7233;margin-top:5px">{{ row.code }}</div></div>
+              <div style="font-size:15px;color:#9a7233">{{ row.tag }}</div>
+            </div>
+          </sc-for>
+          <div style="margin-top:auto;font-size:15px;color:#9a7233">CLICK AN ITEM, THEN [STORE] &mdash; OR DOUBLE-CLICK TO TRANSFER.</div>
+        </div>
+      </div>
+
+      <div style="border:4px solid #4a3316;background:rgba(8,6,4,.7);padding:16px 22px;display:flex;justify-content:space-between;font-size:16px;color:#9a7233">
+        <div>[&uarr;&darr;] SELECT &nbsp; [ENTER] TRANSFER &nbsp; [A] STORE ALL GIBS &nbsp; [ESC] CLOSE CHEST</div>
+        <div style="color:#7fb04a">CHEST SECURED</div>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;chronicleLines&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;min&quot;:2,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;HUD&quot;}}">
+class Component extends DCLogic {
+  state = { screen: "hud" };
+  go(s) { return () => this.setState({ screen: s }); }
+  renderVals() {
+    const s = this.state.screen;
+    const labels = { hud: "01 DUNGEON HUD", forge: "02 ARTISAN'S WORKSHOP", hearth: "03 COOKING HEARTH", chest: "04 SHELTER STASH" };
+    return {
+      isHud: s === "hud", isForge: s === "forge", isHearth: s === "hearth", isChest: s === "chest",
+      screenLabel: labels[s],
+      goHud: this.go("hud"), goForge: this.go("forge"), goHearth: this.go("hearth"), goChest: this.go("chest"),
+      tabForge: this.go("forge"), tabSalvage: this.go("forge"), tabOssuary: this.go("forge"),
+      chronicle: (this.props.chronicle ?? [
+        "+1 DIVINITIES",
+        "PICKED UP GIANT SNAKE FLESH",
+        "PICKED UP METAL SCRAP",
+        "YOU CLOSE THE DOOR"
+      ]).slice(0, this.props.chronicleLines ?? 4),
+      pack: [
+        { name: "CORPSE", code: "CORPSE", tag: "BULKY" },
+        { name: "GIANT ANT BONE", code: "GIB_BONE", tag: "GIB" },
+        { name: "GIANT SNAKE FLESH", code: "GIB_FLESH", tag: "GIB" },
+        { name: "METAL SCRAP", code: "METAL_SCRAP", tag: "DEBRIS" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -181,6 +181,10 @@ gradlew_build.log
 replay_pid*.log
 run_log*.txt
 .claude/
+.gemini/
+/*.png
+/*.jpg
+/*.pdf
 *.blend
 *.blend1
 *.xcf

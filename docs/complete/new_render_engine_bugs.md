@@ -1,0 +1,1 @@
+- The new render pipeline is not rendering the Gates between chunks, we need a dedicated /grill-me session to correct this.
