@@ -104,6 +104,15 @@ public class Inventory {
         return allItems;
     }
 
+    public boolean hasItemOfType(Item.ItemType type) {
+        for (Item item : getAllItems()) {
+            if (item != null && item.getType() == type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void rotatePack() {
         // Rotates only the Quick Slots
         if (quickSlots.length < 6)

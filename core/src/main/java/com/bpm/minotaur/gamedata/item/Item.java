@@ -134,6 +134,9 @@ public class Item implements Renderable {
         // Home Props
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN,
 
+        // Portable Field Kits
+        CRAFTING_TOOLKIT, COOKING_KIT,
+
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
         MONSTER_EYE, MEAL,

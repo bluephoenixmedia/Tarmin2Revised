@@ -45,6 +45,20 @@ public class CraftingManager {
     private final AssetManager assetManager;
     private final OssuaryManager ossuaryManager;
 
+    /**
+     * When true, this workshop is operating as a portable field kit: materials are drawn
+     * and consumed from the carried Inventory only, never the Shelter Chest.
+     */
+    private boolean fieldMode = false;
+
+    public void setFieldMode(boolean fieldMode) {
+        this.fieldMode = fieldMode;
+    }
+
+    public boolean isFieldMode() {
+        return fieldMode;
+    }
+
     public CraftingManager(ItemDataManager itemDataManager, AssetManager assetManager) {
         this.itemDataManager = itemDataManager;
         this.assetManager = assetManager;
@@ -121,11 +135,13 @@ public class CraftingManager {
                 }
             }
         }
-        ShelterChest chest = ShelterChest.getInstance();
-        if (chest != null) {
-            for (Item item : chest.getItems()) {
-                if (item != null && item.getType() == type) {
-                    count++;
+        if (!fieldMode) {
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest != null) {
+                for (Item item : chest.getItems()) {
+                    if (item != null && item.getType() == type) {
+                        count++;
+                    }
                 }
             }
         }
@@ -154,8 +170,8 @@ public class CraftingManager {
             }
         }
 
-        // 2. Consume from shelter chest if needed
-        if (remaining > 0) {
+        // 2. Consume from shelter chest if needed (not available to portable field kits)
+        if (remaining > 0 && !fieldMode) {
             ShelterChest chest = ShelterChest.getInstance();
             if (chest != null) {
                 List<Item> chestItems = new ArrayList<>(chest.getItems());
@@ -183,9 +199,11 @@ public class CraftingManager {
                 return true;
             }
         }
-        ShelterChest chest = ShelterChest.getInstance();
-        if (chest != null && !chest.isFull()) {
-            return chest.addItem(item);
+        if (!fieldMode) {
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest != null && !chest.isFull()) {
+                return chest.addItem(item);
+            }
         }
         return false;
     }
@@ -363,9 +381,11 @@ public class CraftingManager {
         if (inventory != null) {
             inventory.removeItem(item);
         }
-        ShelterChest chest = ShelterChest.getInstance();
-        if (chest != null) {
-            chest.removeItem(item);
+        if (!fieldMode) {
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest != null) {
+                chest.removeItem(item);
+            }
         }
 
         // Create and deposit yields
@@ -395,11 +415,13 @@ public class CraftingManager {
             }
         }
 
-        ShelterChest chest = ShelterChest.getInstance();
-        if (chest != null) {
-            for (Item item : chest.getItems()) {
-                if (isJunkDebris(item)) {
-                    toScrap.add(item);
+        if (!fieldMode) {
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest != null) {
+                for (Item item : chest.getItems()) {
+                    if (isJunkDebris(item)) {
+                        toScrap.add(item);
+                    }
                 }
             }
         }

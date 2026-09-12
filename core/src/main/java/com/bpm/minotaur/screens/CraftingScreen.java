@@ -64,11 +64,20 @@ public class CraftingScreen extends BaseScreen {
     private TextButton tabBtnSalvage;
     private TextButton tabBtnOssuary;
 
+    private final boolean fieldMode;
+
     public CraftingScreen(Tarmin2 game, GameScreen parentScreen, Player player, CraftingManager craftingManager) {
+        this(game, parentScreen, player, craftingManager, false);
+    }
+
+    public CraftingScreen(Tarmin2 game, GameScreen parentScreen, Player player, CraftingManager craftingManager,
+            boolean fieldMode) {
         super(game);
         this.parentScreen = parentScreen;
         this.player = player;
         this.craftingManager = craftingManager;
+        this.fieldMode = fieldMode;
+        this.craftingManager.setFieldMode(fieldMode);
         this.hudSkin = new HudSkin();
     }
 
@@ -88,17 +97,28 @@ public class CraftingScreen extends BaseScreen {
     private void buildScreenLayout() {
         stage.clear();
 
+        Table backdrop = new Table();
+        backdrop.setFillParent(true);
+        backdrop.setBackground(hudSkin.getScreenBackdrop());
+        stage.addActor(backdrop);
+
         Table root = new Table();
         root.setFillParent(true);
         root.top().pad(25);
 
         // --- 1. HEADER ---
         Table header = new Table();
-        Label titleLabel = new Label("THE ARTISAN'S WORKSHOP", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        header.setBackground(hudSkin.getDoubleBorderPanel());
+        header.pad(18, 24, 18, 24);
+        Label titleLabel = new Label(fieldMode ? "FIELD CRAFTING TOOLKIT" : "THE ARTISAN'S WORKSHOP",
+                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         titleLabel.setFontScale(1.3f);
         header.add(titleLabel).center().row();
 
-        Label subLabel = new Label("Shelter Hub Forge, Salvage Station & Bone Ossuary", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+        Label subLabel = new Label(fieldMode
+                ? "Working with what's in your pack. The Shelter Chest is out of reach."
+                : "Shelter Hub Forge, Salvage Station & Bone Ossuary",
+                new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
         header.add(subLabel).center().padTop(4).row();
 
         root.add(header).fillX().padBottom(15).row();
@@ -109,9 +129,9 @@ public class CraftingScreen extends BaseScreen {
         tabBtnSalvage = createTabButton("[ 2 : SALVAGE & SCRAP ]", 1);
         tabBtnOssuary = createTabButton("[ 3 : OSSUARY & RELICS ]", 2);
 
-        tabBar.add(tabBtnForge).size(360, 50).padRight(20);
-        tabBar.add(tabBtnSalvage).size(360, 50).padRight(20);
-        tabBar.add(tabBtnOssuary).size(360, 50);
+        tabBar.add(tabBtnForge).size(400, 50).padRight(20);
+        tabBar.add(tabBtnSalvage).size(400, 50).padRight(20);
+        tabBar.add(tabBtnOssuary).size(400, 50);
 
         root.add(tabBar).center().padBottom(15).row();
 
@@ -168,6 +188,7 @@ public class CraftingScreen extends BaseScreen {
         style.over = hudSkin.getTooltipBg();
 
         final TextButton btn = new TextButton(text, style);
+        btn.getLabel().setFontScale(0.78f);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -175,6 +196,22 @@ public class CraftingScreen extends BaseScreen {
             }
         });
         return btn;
+    }
+
+    /** Applies the mockup's filled-gold active tab / dark inactive tab look. */
+    private void applyTabButtonState(TextButton btn, boolean active) {
+        TextButton.TextButtonStyle style = btn.getStyle();
+        if (active) {
+            style.up = hudSkin.getPrimaryButtonUp();
+            style.down = hudSkin.getPrimaryButtonDown();
+            style.over = hudSkin.getPrimaryButtonUp();
+            btn.getLabel().setColor(HudSkin.COL_TEXT_ON_GOLD);
+        } else {
+            style.up = hudSkin.getSlotRecessed();
+            style.down = hudSkin.getSlotActive();
+            style.over = hudSkin.getTooltipBg();
+            btn.getLabel().setColor(HudSkin.COL_GOLD_MUTED);
+        }
     }
 
     private void switchTab(int index) {
@@ -197,9 +234,9 @@ public class CraftingScreen extends BaseScreen {
     }
 
     private void updateTabButtonStyles() {
-        tabBtnForge.getLabel().setColor(currentTab == 0 ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY);
-        tabBtnSalvage.getLabel().setColor(currentTab == 1 ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY);
-        tabBtnOssuary.getLabel().setColor(currentTab == 2 ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY);
+        applyTabButtonState(tabBtnForge, currentTab == 0);
+        applyTabButtonState(tabBtnSalvage, currentTab == 1);
+        applyTabButtonState(tabBtnOssuary, currentTab == 2);
     }
 
     private void updateResourceBar() {
@@ -225,9 +262,11 @@ public class CraftingScreen extends BaseScreen {
         String sectionTitle;
         List<Item> displayItems = new ArrayList<>();
         List<Item> allAvailable = new ArrayList<>(player.getInventory().getAllItems());
-        ShelterChest chest = ShelterChest.getInstance();
-        if (chest != null) {
-            allAvailable.addAll(chest.getItems());
+        if (!fieldMode) {
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest != null) {
+                allAvailable.addAll(chest.getItems());
+            }
         }
 
         if (currentTab == 0) { // Forge
@@ -261,7 +300,8 @@ public class CraftingScreen extends BaseScreen {
         leftPanelContent.add(sectionLabel).left().padBottom(15).row();
 
         if (displayItems.isEmpty()) {
-            leftPanelContent.add(new Label("No eligible items found in pack or chest.", new Label.LabelStyle(hudSkin.getFontSmall(), Color.GRAY))).padTop(20);
+            String emptyMsg = fieldMode ? "No eligible items found in your pack." : "No eligible items found in pack or chest.";
+            leftPanelContent.add(new Label(emptyMsg, new Label.LabelStyle(hudSkin.getFontSmall(), Color.GRAY))).padTop(20);
             return;
         }
 
@@ -410,14 +450,22 @@ public class CraftingScreen extends BaseScreen {
 
             String costText = "Cost: " + cost + "x " + (mat == ItemType.LEATHER_SCRAP ? "Leather Scrap" : "Metal Scrap")
                     + " (Have: " + availableMat + ")" + (needsStrange ? " + 1x Strange Metal (Have: " + availableStrange + ")" : "");
-            Label costLabel = new Label(costText, new Label.LabelStyle(hudSkin.getFontSmall(), canAfford ? Color.GREEN : Color.RED));
-            honeSection.add(costLabel).left().padTop(6).row();
 
             String previewText = selectedTargetItem.isWeapon()
                     ? "Preview: Increases base damage bonus by +1 (Target: +" + (currentLvl + 1) + ")"
                     : "Preview: Increases Armor Class by +1 (Target: +" + (currentLvl + 1) + " AC)";
-            Label previewLabel = new Label(previewText, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-            honeSection.add(previewLabel).left().padTop(4).padBottom(10).row();
+
+            Table honeCard = new Table();
+            honeCard.setBackground(hudSkin.getParchmentCard());
+            honeCard.pad(16);
+            Label honeCardHeading = new Label("HONE THE EDGE", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_PARCHMENT_HEADING));
+            honeCard.add(honeCardHeading).left().row();
+            Label previewLabel = new Label(previewText, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_TEXT));
+            previewLabel.setWrap(true);
+            honeCard.add(previewLabel).left().width(1050).padTop(8).row();
+            Label costLabel = new Label(costText, new Label.LabelStyle(hudSkin.getFontSmall(), canAfford ? HudSkin.COL_PARCHMENT_AFFORD : HudSkin.COL_PARCHMENT_DENY));
+            honeCard.add(costLabel).left().padTop(6).row();
+            honeSection.add(honeCard).expandX().fillX().padTop(6).padBottom(14).row();
 
             TextButton honeBtn = createActionButton("Hone Equipment to +" + (currentLvl + 1), canAfford);
             honeBtn.addListener(new ClickListener() {
@@ -433,7 +481,7 @@ public class CraftingScreen extends BaseScreen {
                     }
                 }
             });
-            honeSection.add(honeBtn).size(300, 45).left();
+            honeSection.add(honeBtn).size(340, 45).left();
         }
 
         rightPanelContent.add(honeSection).expandX().fillX().padBottom(20).row();
@@ -479,7 +527,7 @@ public class CraftingScreen extends BaseScreen {
                         }
                     }
                 });
-                infuseSection.add(infuseBtn).size(300, 45).left();
+                infuseSection.add(infuseBtn).size(380, 45).left();
             }
         }
 
@@ -522,7 +570,7 @@ public class CraftingScreen extends BaseScreen {
                     refreshAll();
                 }
             });
-            singleSalvage.add(scrapBtn).size(320, 48).left();
+            singleSalvage.add(scrapBtn).size(400, 48).left();
         }
 
         rightPanelContent.add(singleSalvage).expandX().fillX().padBottom(30).row();
@@ -550,7 +598,7 @@ public class CraftingScreen extends BaseScreen {
                 refreshAll();
             }
         });
-        batchScrap.add(quickScrapBtn).size(340, 50).left();
+        batchScrap.add(quickScrapBtn).size(480, 50).left();
 
         rightPanelContent.add(batchScrap).expandX().fillX();
     }
@@ -595,9 +643,11 @@ public class CraftingScreen extends BaseScreen {
                     player.getInventory().removeItem(boneStructure);
                     player.getInventory().removeItem(boneEdge);
                     player.getInventory().removeItem(boneCore);
-                    ShelterChest.getInstance().removeItem(boneStructure);
-                    ShelterChest.getInstance().removeItem(boneEdge);
-                    ShelterChest.getInstance().removeItem(boneCore);
+                    if (!fieldMode) {
+                        ShelterChest.getInstance().removeItem(boneStructure);
+                        ShelterChest.getInstance().removeItem(boneEdge);
+                        ShelterChest.getInstance().removeItem(boneCore);
+                    }
                     feedbackLabel.setText("Carved " + die.getName() + " and added to your Combat Dice Pool!");
                     feedbackLabel.setColor(Color.GREEN);
                     boneStructure = null;
@@ -607,7 +657,7 @@ public class CraftingScreen extends BaseScreen {
                 }
             }
         });
-        diceBtnRow.add(carveBtn).size(260, 45).padRight(15);
+        diceBtnRow.add(carveBtn).size(320, 45).padRight(15);
 
         TextButton clearBonesBtn = createActionButton("Clear Bone Slots", true);
         clearBonesBtn.addListener(new ClickListener() {
@@ -619,7 +669,7 @@ public class CraftingScreen extends BaseScreen {
                 refreshAll();
             }
         });
-        diceBtnRow.add(clearBonesBtn).size(200, 45);
+        diceBtnRow.add(clearBonesBtn).size(260, 45);
 
         diceSection.add(diceBtnRow).left();
         rightPanelContent.add(diceSection).expandX().fillX().padBottom(25).row();
@@ -655,7 +705,7 @@ public class CraftingScreen extends BaseScreen {
                 }
             }
         });
-        talismanSection.add(forgeBtn).size(280, 45).left();
+        talismanSection.add(forgeBtn).size(320, 45).left();
 
         rightPanelContent.add(talismanSection).expandX().fillX();
     }
@@ -663,14 +713,24 @@ public class CraftingScreen extends BaseScreen {
     private TextButton createActionButton(String text, boolean enabled) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font = hudSkin.getFontHeader();
-        style.fontColor = enabled ? Color.WHITE : Color.DARK_GRAY;
-        style.overFontColor = enabled ? HudSkin.COL_GOLD_BRIGHT : Color.DARK_GRAY;
-        style.up = hudSkin.getSlotRecessed();
-        style.down = hudSkin.getSlotActive();
-        style.over = enabled ? hudSkin.getTooltipBg() : hudSkin.getSlotRecessed();
+        if (enabled) {
+            style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+            style.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
+            style.up = hudSkin.getPrimaryButtonUp();
+            style.down = hudSkin.getPrimaryButtonDown();
+            style.over = hudSkin.getPrimaryButtonDown();
+        } else {
+            style.fontColor = HudSkin.COL_GOLD_MUTED;
+            style.overFontColor = HudSkin.COL_GOLD_MUTED;
+            style.up = hudSkin.getSlotRecessed();
+            style.down = hudSkin.getSlotRecessed();
+            style.over = hudSkin.getSlotRecessed();
+        }
         style.disabled = hudSkin.getSlotRecessed();
 
         TextButton btn = new TextButton(text, style);
+        btn.getLabel().setFontScale(0.8f);
+        btn.getLabel().setWrap(false);
         btn.setDisabled(!enabled);
         return btn;
     }

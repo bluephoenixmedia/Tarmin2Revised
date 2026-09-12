@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import com.badlogic.gdx.utils.Disposable;
 
 import java.util.ArrayList;
@@ -18,32 +19,44 @@ import java.util.List;
 
 /**
  * Programmatically generates textures, drawables, and fonts for the
- * Carved Stone & Wrought Iron HUD dashboard. Zero external asset files needed.
+ * "Forged Iron & Ember" HUD dashboard (carved iron frames, ember-gold accents,
+ * fantasy dungeon-crawler retro palette). Zero external asset files needed.
  */
 public class HudSkin implements Disposable {
 
-    // Palette: Slate Stone & Iron
-    public static final Color COL_DASHBOARD_BG     = Color.valueOf("14171AEE");
-    public static final Color COL_PANEL_BG         = Color.valueOf("101316F0");
-    public static final Color COL_STONE_HIGHLIGHT  = Color.valueOf("48535D");
-    public static final Color COL_STONE_MID        = Color.valueOf("2D343B");
-    public static final Color COL_STONE_DARK       = Color.valueOf("181C20");
-    public static final Color COL_SHADOW_DEEP      = Color.valueOf("090B0D");
+    // Palette: Charcoal & Iron
+    public static final Color COL_DASHBOARD_BG     = Color.valueOf("080604F0");
+    public static final Color COL_PANEL_BG         = Color.valueOf("0A0806E6");
+    public static final Color COL_STONE_HIGHLIGHT  = Color.valueOf("8A5A1C");
+    public static final Color COL_STONE_MID        = Color.valueOf("5A3D18");
+    public static final Color COL_STONE_DARK       = Color.valueOf("3A2A12");
+    public static final Color COL_SHADOW_DEEP      = Color.valueOf("120D07");
 
     // Palette: Metals & Accents
-    public static final Color COL_GOLD_BRIGHT      = Color.valueOf("FFD700");
-    public static final Color COL_GOLD_ANTIQUE     = Color.valueOf("D4AF37");
-    public static final Color COL_GOLD_MUTED       = Color.valueOf("997D32");
-    public static final Color COL_IRON_RIVET       = Color.valueOf("58626C");
+    public static final Color COL_GOLD_BRIGHT      = Color.valueOf("FFCF5E");
+    public static final Color COL_GOLD_ANTIQUE     = Color.valueOf("F0C96A");
+    public static final Color COL_GOLD_MUTED       = Color.valueOf("9A7233");
+    public static final Color COL_IRON_RIVET       = Color.valueOf("C99A3C");
+    /** Dark text drawn on top of gold CTA buttons/badges, matching the mockup's #2a1a08. */
+    public static final Color COL_TEXT_ON_GOLD     = Color.valueOf("2A1A08");
 
     // Palette: Vitals & Meters
-    public static final Color COL_HP_RED           = Color.valueOf("D92525");
-    public static final Color COL_HP_CRITICAL      = Color.valueOf("FF1A1A");
-    public static final Color COL_MP_BLUE          = Color.valueOf("2566D9");
-    public static final Color COL_EXP_AMBER        = Color.valueOf("D9A225");
-    public static final Color COL_FOOD_GREEN       = Color.valueOf("2CB84B");
-    public static final Color COL_WATER_CYAN       = Color.valueOf("259BD9");
-    public static final Color COL_TEMP_ORANGE      = Color.valueOf("D97325");
+    public static final Color COL_HP_RED           = Color.valueOf("C24A34");
+    public static final Color COL_HP_CRITICAL      = Color.valueOf("FF4B36");
+    public static final Color COL_MP_BLUE          = Color.valueOf("4A7AC2");
+    public static final Color COL_EXP_AMBER        = Color.valueOf("F0C96A");
+    public static final Color COL_FOOD_GREEN       = Color.valueOf("7FB04A");
+    public static final Color COL_WATER_CYAN       = Color.valueOf("4A7AC2");
+    public static final Color COL_TEMP_ORANGE      = Color.valueOf("E8A63A");
+    public static final Color COL_TOX              = Color.valueOf("7A2A20");
+
+    // Palette: Parchment/Vellum cards (recipes, instructions, shelter-hub prompts)
+    public static final Color COL_PARCHMENT_TOP     = Color.valueOf("E6D3A8");
+    public static final Color COL_PARCHMENT_BOTTOM  = Color.valueOf("CBB385");
+    public static final Color COL_PARCHMENT_TEXT    = Color.valueOf("3A2A12");
+    public static final Color COL_PARCHMENT_HEADING = Color.valueOf("6A2318");
+    public static final Color COL_PARCHMENT_AFFORD  = Color.valueOf("2F5A22");
+    public static final Color COL_PARCHMENT_DENY    = Color.valueOf("7A2318");
 
     private final List<Texture> ownedTextures = new ArrayList<>();
 
@@ -57,6 +70,12 @@ public class HudSkin implements Disposable {
     private Drawable portraitCameo;
     private Drawable gaugeTrack;
     private Drawable tooltipBg;
+    private Drawable doubleBorderPanel;
+    private Drawable parchmentCard;
+    private Drawable primaryButtonUp;
+    private Drawable primaryButtonDown;
+    private Drawable hazardStripeIcon;
+    private Drawable screenBackdrop;
 
     // Textures for direct rendering or bars
     private Texture whitePixel;
@@ -79,12 +98,31 @@ public class HudSkin implements Disposable {
         buildGaugeTrack();
         buildTooltipBg();
         buildCompassDial();
+        buildDoubleBorderPanel();
+        buildParchmentCard();
+        buildPrimaryButton();
+        buildHazardStripeIcon();
+        buildScreenBackdrop();
         loadFonts();
     }
 
     private Texture register(Texture t) {
         ownedTextures.add(t);
         return t;
+    }
+
+    /** Interpolates a vertical gradient fill (top -> bottom) into a pixmap region. */
+    private static void fillVerticalGradient(Pixmap p, int x, int y, int w, int h, Color top, Color bottom) {
+        for (int row = 0; row < h; row++) {
+            float t = h <= 1 ? 0f : row / (float) (h - 1);
+            p.setColor(
+                    top.r + (bottom.r - top.r) * t,
+                    top.g + (bottom.g - top.g) * t,
+                    top.b + (bottom.b - top.b) * t,
+                    top.a + (bottom.a - top.a) * t
+            );
+            p.drawLine(x, y + row, x + w - 1, y + row);
+        }
     }
 
     private void buildWhitePixel() {
@@ -95,7 +133,7 @@ public class HudSkin implements Disposable {
         p.dispose();
     }
 
-    /** 1920x200 Stone Dashboard background with carved 10px top and bottom bevels. */
+    /** 1920x200 Iron Dashboard background with carved 10px top and bottom bevels. */
     private void buildDashboardBg() {
         int w = 64;
         int h = 200;
@@ -105,7 +143,7 @@ public class HudSkin implements Disposable {
         p.setColor(COL_DASHBOARD_BG);
         p.fill();
 
-        // Top Stone Bevel (10px)
+        // Top Bevel (10px)
         p.setColor(COL_STONE_HIGHLIGHT);
         p.drawLine(0, 0, w - 1, 0);
         p.drawLine(0, 1, w - 1, 1);
@@ -118,11 +156,11 @@ public class HudSkin implements Disposable {
         p.setColor(COL_SHADOW_DEEP);
         p.drawLine(0, 6, w - 1, 6);
         p.drawLine(0, 7, w - 1, 7);
-        p.setColor(new Color(0.05f, 0.06f, 0.07f, 0.5f));
+        p.setColor(new Color(0.05f, 0.04f, 0.03f, 0.5f));
         p.drawLine(0, 8, w - 1, 8);
         p.drawLine(0, 9, w - 1, 9);
 
-        // Bottom Stone Bevel (10px)
+        // Bottom Bevel (10px)
         int bStart = h - 10;
         p.setColor(COL_SHADOW_DEEP);
         p.drawLine(0, bStart, w - 1, bStart);
@@ -162,7 +200,7 @@ public class HudSkin implements Disposable {
         p.drawLine(1, 1, 1, sz - 2);
 
         // Bottom & Right rim highlight
-        p.setColor(new Color(0.3f, 0.35f, 0.4f, 0.4f));
+        p.setColor(new Color(0.35f, 0.25f, 0.1f, 0.4f));
         p.drawLine(1, sz - 2, sz - 2, sz - 2);
         p.drawLine(sz - 2, 1, sz - 2, sz - 2);
 
@@ -173,7 +211,7 @@ public class HudSkin implements Disposable {
         panelBg = new NinePatchDrawable(np);
     }
 
-    /** Vertical Wrought Iron Divider bar (6px wide) with brass rivets. */
+    /** Vertical Wrought Iron Divider bar (6px wide) with gold rivets. */
     private void buildDivider() {
         int w = 6;
         int h = 180;
@@ -188,10 +226,10 @@ public class HudSkin implements Disposable {
         p.setColor(COL_STONE_MID);
         p.drawLine(3, 0, 3, h - 1);
 
-        // Draw 3 brass rivets
+        // Draw 3 gold rivets
         int[] rivetYs = { 20, h / 2, h - 20 };
         for (int ry : rivetYs) {
-            p.setColor(COL_GOLD_ANTIQUE);
+            p.setColor(COL_IRON_RIVET);
             p.fillRectangle(1, ry - 2, 4, 4);
             p.setColor(COL_GOLD_BRIGHT);
             p.drawPixel(2, ry - 1);
@@ -204,13 +242,13 @@ public class HudSkin implements Disposable {
         dividerIron = new TextureRegionDrawable(new TextureRegion(tex));
     }
 
-    /** 56x56 Recessed Stone Slot with 3D drop-shadow (for backpack and hands). */
+    /** 56x56 Recessed Slot with 3D drop-shadow (for backpack and hands). */
     private void buildSlotDrawables() {
         int sz = 56;
         Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
 
         // Fill deep recessed dark
-        p.setColor(new Color(0.06f, 0.07f, 0.08f, 0.95f));
+        p.setColor(new Color(0.05f, 0.04f, 0.03f, 0.95f));
         p.fill();
 
         // Outer beveled frame
@@ -235,9 +273,9 @@ public class HudSkin implements Disposable {
         NinePatch np = new NinePatch(tex, 4, 4, 4, 4);
         slotRecessed = new NinePatchDrawable(np);
 
-        // Active slot (pulsing gold border)
+        // Active slot (gold border, selected)
         Pixmap pa = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
-        pa.setColor(new Color(0.12f, 0.14f, 0.16f, 0.95f));
+        pa.setColor(new Color(0.94f, 0.79f, 0.42f, 0.14f));
         pa.fill();
         pa.setColor(COL_GOLD_ANTIQUE);
         pa.drawRectangle(0, 0, sz, sz);
@@ -253,7 +291,7 @@ public class HudSkin implements Disposable {
 
         // Hand slot (metallic rimmed)
         Pixmap ph = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
-        ph.setColor(new Color(0.08f, 0.09f, 0.11f, 0.95f));
+        ph.setColor(new Color(0.06f, 0.05f, 0.04f, 0.95f));
         ph.fill();
         ph.setColor(COL_STONE_HIGHLIGHT);
         ph.drawRectangle(0, 0, sz, sz);
@@ -269,15 +307,15 @@ public class HudSkin implements Disposable {
         slotHand = new NinePatchDrawable(npH);
     }
 
-    /** Cameo Stone Frame for Portrait (104x104 px). */
+    /** Cameo Iron Frame for Portrait (104x104 px). */
     private void buildPortraitCameo() {
         int sz = 104;
         Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
 
-        p.setColor(new Color(0.07f, 0.08f, 0.10f, 0.95f));
+        p.setColor(new Color(0.05f, 0.04f, 0.03f, 0.95f));
         p.fill();
 
-        // Multi-tier stone and brass frame
+        // Multi-tier iron and gold frame
         p.setColor(COL_STONE_HIGHLIGHT);
         p.drawRectangle(0, 0, sz, sz);
         p.setColor(COL_STONE_MID);
@@ -307,13 +345,13 @@ public class HudSkin implements Disposable {
         int h = 24;
         Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
 
-        p.setColor(new Color(0.06f, 0.07f, 0.08f, 0.95f));
+        p.setColor(COL_SHADOW_DEEP);
         p.fill();
 
         p.setColor(COL_STONE_MID);
         p.drawRectangle(0, 0, w, h);
 
-        p.setColor(COL_SHADOW_DEEP);
+        p.setColor(new Color(0.03f, 0.02f, 0.01f, 1f));
         p.drawLine(1, 1, w - 2, 1);
         p.drawLine(1, 1, 1, h - 2);
 
@@ -323,11 +361,11 @@ public class HudSkin implements Disposable {
         gaugeTrack = new NinePatchDrawable(np);
     }
 
-    /** Floating dark slate tooltip card. */
+    /** Floating dark card (tooltips, dark info panels). */
     private void buildTooltipBg() {
         int sz = 32;
         Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
-        p.setColor(new Color(0.08f, 0.10f, 0.12f, 0.96f));
+        p.setColor(new Color(0.06f, 0.05f, 0.04f, 0.96f));
         p.fill();
         p.setColor(COL_GOLD_ANTIQUE);
         p.drawRectangle(0, 0, sz, sz);
@@ -344,7 +382,7 @@ public class HudSkin implements Disposable {
     private void buildCompassDial() {
         int sz = 40;
         Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
-        p.setColor(new Color(0, 0, 0, 0));
+        p.setColor(0, 0, 0, 0);
         p.fill();
 
         int cx = sz / 2;
@@ -355,7 +393,7 @@ public class HudSkin implements Disposable {
         p.setColor(COL_STONE_DARK);
         p.fillCircle(cx, cy, r);
 
-        // Brass ring
+        // Gold ring
         p.setColor(COL_GOLD_ANTIQUE);
         p.drawCircle(cx, cy, r);
         p.drawCircle(cx, cy, r - 1);
@@ -369,6 +407,103 @@ public class HudSkin implements Disposable {
 
         compassDial = register(new Texture(p));
         p.dispose();
+    }
+
+    /** Header/panel frame replicating a CSS "6px double border" — two thin gold rings with a gap. */
+    private void buildDoubleBorderPanel() {
+        int sz = 24;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        p.setColor(COL_PANEL_BG);
+        p.fill();
+
+        p.setColor(COL_STONE_HIGHLIGHT);
+        // Outer ring (2px, insets 0-1)
+        p.drawRectangle(0, 0, sz, sz);
+        p.drawRectangle(1, 1, sz - 2, sz - 2);
+        // Gap at insets 2-3 left as panel bg
+        // Inner ring (2px, insets 4-5)
+        p.drawRectangle(4, 4, sz - 8, sz - 8);
+        p.drawRectangle(5, 5, sz - 10, sz - 10);
+
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        NinePatch np = new NinePatch(tex, 6, 6, 6, 6);
+        doubleBorderPanel = new NinePatchDrawable(np);
+    }
+
+    /** Tan/vellum parchment card for recipe text, forge instructions, and shelter-hub prompts. */
+    private void buildParchmentCard() {
+        int sz = 32;
+        int border = 4;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        p.setColor(COL_STONE_HIGHLIGHT);
+        p.fill();
+        fillVerticalGradient(p, border, border, sz - border * 2, sz - border * 2, COL_PARCHMENT_TOP, COL_PARCHMENT_BOTTOM);
+
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        NinePatch np = new NinePatch(tex, border, border, border, border);
+        parchmentCard = new NinePatchDrawable(np);
+    }
+
+    /** Gold-gradient call-to-action button (up + pressed states). */
+    private void buildPrimaryButton() {
+        int sz = 32;
+        int border = 4;
+
+        Pixmap pUp = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        pUp.setColor(COL_STONE_HIGHLIGHT);
+        pUp.fill();
+        fillVerticalGradient(pUp, border, border, sz - border * 2, sz - border * 2, COL_GOLD_ANTIQUE, Color.valueOf("C99A3C"));
+        Texture texUp = register(new Texture(pUp));
+        pUp.dispose();
+        primaryButtonUp = new NinePatchDrawable(new NinePatch(texUp, border, border, border, border));
+
+        Pixmap pDown = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        pDown.setColor(COL_STONE_MID);
+        pDown.fill();
+        fillVerticalGradient(pDown, border, border, sz - border * 2, sz - border * 2, Color.valueOf("D9AF52"), Color.valueOf("A87E2E"));
+        Texture texDown = register(new Texture(pDown));
+        pDown.dispose();
+        primaryButtonDown = new NinePatchDrawable(new NinePatch(texDown, border, border, border, border));
+    }
+
+    /** Diagonal hazard-stripe placeholder texture for items without a real icon. */
+    private void buildHazardStripeIcon() {
+        int sz = 64;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        Color base = new Color(COL_STONE_DARK.r, COL_STONE_DARK.g, COL_STONE_DARK.b, 0.55f);
+        Color stripe = new Color(COL_STONE_HIGHLIGHT.r, COL_STONE_HIGHLIGHT.g, COL_STONE_HIGHLIGHT.b, 0.9f);
+        for (int y = 0; y < sz; y++) {
+            for (int x = 0; x < sz; x++) {
+                p.setColor(((x + y) % 8) < 4 ? stripe : base);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        hazardStripeIcon = new TextureRegionDrawable(new TextureRegion(tex));
+    }
+
+    /** Tileable dark diagonal-hatch canvas backdrop for full-screen shelter menus. */
+    private void buildScreenBackdrop() {
+        int sz = 48;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        Color baseCol = Color.valueOf("1A140C");
+        Color hatchCol = new Color(0f, 0f, 0f, 0.30f);
+        for (int y = 0; y < sz; y++) {
+            for (int x = 0; x < sz; x++) {
+                p.setColor(((x + y) % 12) < 3 ? hatchCol : baseCol);
+                p.drawPixel(x, y);
+            }
+        }
+        p.setColor(new Color(0f, 0f, 0f, 0.25f));
+        p.drawLine(0, 0, sz - 1, 0);
+
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        tex.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        screenBackdrop = new TiledDrawable(new TextureRegion(tex));
     }
 
     private void loadFonts() {
@@ -415,6 +550,12 @@ public class HudSkin implements Disposable {
     public Drawable getPortraitCameo() { return portraitCameo; }
     public Drawable getGaugeTrack() { return gaugeTrack; }
     public Drawable getTooltipBg() { return tooltipBg; }
+    public Drawable getDoubleBorderPanel() { return doubleBorderPanel; }
+    public Drawable getParchmentCard() { return parchmentCard; }
+    public Drawable getPrimaryButtonUp() { return primaryButtonUp; }
+    public Drawable getPrimaryButtonDown() { return primaryButtonDown; }
+    public Drawable getHazardStripeIcon() { return hazardStripeIcon; }
+    public Drawable getScreenBackdrop() { return screenBackdrop; }
     public Texture getWhitePixel() { return whitePixel; }
     public Texture getCompassDial() { return compassDial; }
 

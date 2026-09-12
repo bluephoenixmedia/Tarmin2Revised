@@ -40,6 +40,10 @@ public class WorldManager {
         return SaveManager.getInstance().getActiveChunkSaveDirectory();
     }
 
+    private static String getChunkFileName(int level, int x, int y) {
+        return "chunk_L" + level + "_" + x + "_" + y + ".json";
+    }
+
     private final MonsterDataManager dataManager;
     private final ItemDataManager itemDataManager;
     private final AssetManager assetManager;
@@ -304,7 +308,7 @@ public class WorldManager {
             }
         }
 
-        String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
+        String fileName = getChunkFileName(this.currentLevel, chunkId.x, chunkId.y);
         FileHandle file = Gdx.files.local(getChunkSaveDir() + fileName);
         if (file.exists()) {
             try {
@@ -448,7 +452,7 @@ public class WorldManager {
             if (this.goreManager != null) {
                 this.goreManager.exportChunkGore(chunkId, data);
             }
-            String fileName = "chunk_L" + this.currentLevel + "_" + chunkId.x + "_" + chunkId.y + ".json";
+            String fileName = getChunkFileName(this.currentLevel, chunkId.x, chunkId.y);
             FileHandle file = Gdx.files.local(getChunkSaveDir() + fileName);
             SaveManager.getInstance().atomicWriteJson(file, data);
             Gdx.app.log("WorldManager", "Saved chunk state to " + file.path());
@@ -599,6 +603,27 @@ public class WorldManager {
 
     public void clearLoadedChunks() {
         loadedChunks.clear();
+    }
+
+    /**
+     * Fully wipes the explored world following a death: every generated chunk is discarded
+     * except the persistent Starting Shelter (Level 1, Chunk 0,0), and a new world seed is
+     * rolled so the next expedition generates entirely fresh terrain and dungeons.
+     */
+    public void wipeExploredWorldOnDeath() {
+        loadedChunks.clear();
+        levelThemes.clear();
+        String shelterFileName = getChunkFileName(1, 0, 0);
+        FileHandle dir = Gdx.files.local(getChunkSaveDir());
+        if (dir.exists()) {
+            for (FileHandle f : dir.list()) {
+                if (!f.name().equals(shelterFileName)) {
+                    f.delete();
+                }
+            }
+        }
+        this.worldSeed = new java.util.Random().nextLong();
+        Gdx.app.log("WorldManager", "Explored world wiped on death. New world seed: " + this.worldSeed);
     }
 
     public BiomeManager getBiomeManager() {

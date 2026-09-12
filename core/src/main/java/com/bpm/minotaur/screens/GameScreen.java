@@ -362,58 +362,9 @@ public class GameScreen extends BaseScreen {
             hud.addMessage("+" + gained + " " + DivinityManager.DIVINITY_NAME + " (new area)");
         }
 
-        int lostAmount = dm.checkForLostDivinities(key);
-        if (lostAmount > 0) {
-            hud.addMessage("You sense " + lostAmount + " lost " + DivinityManager.DIVINITY_NAME + " nearby...");
-            GridPoint2 tile = dm.getLostDivinityTile();
-            if (tile == null) {
-                tile = findRandomPassableTile();
-            }
-            if (tile != null) {
-                dm.setLostDivinityTile(tile);
-                if (!maze.getItems().containsKey(tile) || maze.getItems().get(tile).getType() != Item.ItemType.LOST_DIVINITIES) {
-                    maze.getItems().put(tile, new Item(Item.ItemType.LOST_DIVINITIES, tile.x, tile.y,
-                            com.bpm.minotaur.gamedata.item.ItemColor.GOLD,
-                            game.getItemDataManager(), game.getAssetManager()));
-                }
-            }
-        }
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
         }
-    }
-
-    private void checkLostDivinitiesPickup() {
-        DivinityManager dm = DivinityManager.getInstance();
-        GridPoint2 lostTile = dm.getLostDivinityTile();
-        if (lostTile == null || maze == null || player == null) return;
-        int px = (int) player.getPosition().x;
-        int py = (int) player.getPosition().y;
-        if (px == lostTile.x && py == lostTile.y) {
-            Item item = maze.getItems().get(lostTile);
-            if (item != null && item.getType() == Item.ItemType.LOST_DIVINITIES) {
-                maze.getItems().remove(lostTile);
-                int amount = dm.collectLostDivinities();
-                hud.addMessage("Reclaimed " + amount + " lost " + DivinityManager.DIVINITY_NAME + "!");
-                eventManager.addEvent(new GameEvent("Reclaimed " + amount + " lost " + DivinityManager.DIVINITY_NAME + "!", 3f));
-            }
-        }
-    }
-
-    private GridPoint2 findRandomPassableTile() {
-        if (maze == null) return null;
-        java.util.List<GridPoint2> candidates = new java.util.ArrayList<>();
-        for (int y = 0; y < maze.getHeight(); y++) {
-            for (int x = 0; x < maze.getWidth(); x++) {
-                if (maze.isPassable(x, y)
-                        && maze.getMonsters().get(new GridPoint2(x, y)) == null
-                        && maze.getItems().get(new GridPoint2(x, y)) == null) {
-                    candidates.add(new GridPoint2(x, y));
-                }
-            }
-        }
-        if (candidates.isEmpty()) return null;
-        return candidates.get(new java.util.Random().nextInt(candidates.size()));
     }
 
     // ---- End Divinity helpers ----
@@ -1006,51 +957,30 @@ public class GameScreen extends BaseScreen {
                 combatManager.endCombat();
             }
 
-            // 3. Record Death Location & Lost Divinities
-            GridPoint2 deathChunk = worldManager.getCurrentPlayerChunkId();
-            int deathLevel = worldManager.getCurrentLevel();
-            GridPoint2 deathTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
-            String deathKey = DivinityManager.buildChunkKey(deathLevel, deathChunk.x, deathChunk.y);
-            DivinityManager.getInstance().onPlayerDeath(deathKey, deathTile);
-
-            // 4. Create Corpse Container at deathTile containing carried items
-            if (maze != null) {
-                Item corpse = game.getItemDataManager().createItem(Item.ItemType.CORPSE, deathTile.x, deathTile.y,
-                        ItemColor.GRAY, game.getAssetManager());
-                List<Item> lostItems = new ArrayList<>();
-                // Collect backpack items
-                lostItems.addAll(player.getInventory().getMainInventory());
-                player.getInventory().getMainInventory().clear();
-                // Collect quickslot items
-                Item[] quickSlots = player.getInventory().getQuickSlots();
-                for (int i = 0; i < quickSlots.length; i++) {
-                    if (quickSlots[i] != null) {
-                        lostItems.add(quickSlots[i]);
-                        quickSlots[i] = null;
-                    }
+            // 3. Lose unequipped items (capped by the Loot Retention upgrade); equipped
+            //    weapon/offhand and worn equipment are protected and simply carry over.
+            int retentionCap = DivinityManager.getInstance().getLootRetentionCap();
+            List<Item> atRiskItems = new ArrayList<>(player.getInventory().getMainInventory());
+            Item[] quickSlots = player.getInventory().getQuickSlots();
+            for (int i = 0; i < quickSlots.length; i++) {
+                if (quickSlots[i] != null) {
+                    atRiskItems.add(quickSlots[i]);
+                    quickSlots[i] = null;
                 }
-                // Collect hands if any
-                if (player.getInventory().getRightHand() != null) {
-                    lostItems.add(player.getInventory().getRightHand());
-                    player.getInventory().setRightHand(null);
-                }
-                if (player.getInventory().getLeftHand() != null) {
-                    lostItems.add(player.getInventory().getLeftHand());
-                    player.getInventory().setLeftHand(null);
-                }
-                // Add bone drop
-                Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, deathTile.x, deathTile.y,
-                        ItemColor.WHITE, game.getAssetManager());
-                lostItems.add(bone);
-
-                corpse.setContents(lostItems);
-                maze.addItem(corpse);
-
-                // Save current chunk with the corpse
-                worldManager.saveCurrentChunk(maze);
             }
+            player.getInventory().getMainInventory().clear();
+            int retainedCount = Math.min(retentionCap, atRiskItems.size());
+            for (int i = 0; i < retainedCount; i++) {
+                player.getInventory().pickupToBackpack(atRiskItems.get(i));
+            }
+            int lostCount = atRiskItems.size() - retainedCount;
 
-            // 5. Restore Player & Grant starter weapon
+            // 4. Wipe the explored world -- a brand new expedition awaits. Divinities are
+            //    never at risk, so only the per-world chunk-entry bonus tracking resets.
+            worldManager.wipeExploredWorldOnDeath();
+            DivinityManager.getInstance().onWorldReset();
+
+            // 5. Restore Player
             com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
             debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
             debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
@@ -1061,10 +991,16 @@ public class GameScreen extends BaseScreen {
             player.getStats().setHydration(80.0f);
             player.getStats().setToxicity(0);
             player.getStatusManager().clearEffects();
-            Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setRightHand(starterWeapon);
-            Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setLeftHand(starterCross);
+            // Only re-arm a starter weapon/cross if the player somehow has nothing equipped;
+            // an already-equipped weapon/offhand is protected and was never removed.
+            if (player.getInventory().getRightHand() == null) {
+                Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
+                player.getInventory().setRightHand(starterWeapon);
+            }
+            if (player.getInventory().getLeftHand() == null) {
+                Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
+                player.getInventory().setLeftHand(starterCross);
+            }
 
             // 6. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
             worldManager.setCurrentLevel(1);
@@ -1096,9 +1032,13 @@ public class GameScreen extends BaseScreen {
 
             // 7. Feedback
             hud.addMessage("You died! Returned to Shelter Bed.");
+            if (lostCount > 0) {
+                hud.addMessage("Lost " + lostCount + " unequipped item" + (lostCount == 1 ? "" : "s") + " to the fall."
+                        + (retainedCount > 0 ? " Kept " + retainedCount + " (Loot Retention)." : ""));
+            }
+            hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
             hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
-            eventManager.addEvent(new GameEvent("Equipped: Rusty Sword (Right) & Wooden Cross (Left). Press [S] to swap hands.", 5f));
             soundManager.playDoorOpenSound();
             return;
         }
@@ -1128,7 +1068,6 @@ public class GameScreen extends BaseScreen {
             turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
         }
         combatManager.checkForAdjacentMonsters();
-        checkLostDivinitiesPickup();
 
         // --- Periodic Spawning Hook ---
         turnCount++;
@@ -1682,6 +1621,12 @@ public class GameScreen extends BaseScreen {
                     player.rest(eventManager);
                     playerTurnTakesAction();
                     return true;
+                case Input.Keys.C:
+                    openFieldCrafting();
+                    return true;
+                case Input.Keys.K:
+                    openFieldCooking();
+                    return true;
             }
         }
 
@@ -2137,6 +2082,43 @@ public class GameScreen extends BaseScreen {
         player.interact(maze, eventManager, soundManager, gameMode, worldManager);
         playerTurnTakesAction();
         needsAsciiRender = true;
+    }
+
+    /**
+     * Opens the crafting workshop in portable field-kit mode: requires a Crafting Toolkit
+     * in the pack, and works with carried materials only (no Shelter Chest access).
+     */
+    public void openFieldCrafting() {
+        if (!player.getInventory().hasItemOfType(Item.ItemType.CRAFTING_TOOLKIT)) {
+            hud.addMessage("You need a Crafting Toolkit in your pack to work materials in the field.");
+            return;
+        }
+        try {
+            if (craftingManager == null) {
+                craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
+            }
+            CraftingScreen craftingScreen = new CraftingScreen(game, this, player, craftingManager, true);
+            game.setScreen(craftingScreen);
+        } catch (Exception e) {
+            Gdx.app.error("GameScreen", "Failed to open field crafting", e);
+        }
+    }
+
+    /**
+     * Opens the cooking hearth in portable field-kit mode: requires a Cooking Kit in the
+     * pack, and works with carried ingredients only (no Shelter Chest access).
+     */
+    public void openFieldCooking() {
+        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
+            hud.addMessage("You need a Cooking Kit in your pack to prepare meals in the field.");
+            return;
+        }
+        try {
+            CookingScreen cookingScreen = new CookingScreen(game, this, player, worldManager, true);
+            game.setScreen(cookingScreen);
+        } catch (Exception e) {
+            Gdx.app.error("GameScreen", "Failed to open field cooking", e);
+        }
     }
 
     public void pickupWorldItem() {

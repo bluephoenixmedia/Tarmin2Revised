@@ -744,6 +744,14 @@ public class ItemDataManager {
         createResourceTemplate(ItemType.ORGAN, "Organ", "Typically useful organ.", ItemType.FOOD);
         createResourceTemplate(ItemType.LEATHER_SCRAP, "Leather Scrap", "Scrap of hide.", ItemType.DIRTY_CLOTH);
 
+        // Portable Field Kits
+        createResourceTemplate(ItemType.CRAFTING_TOOLKIT, "Field Crafting Toolkit",
+                "A compact roll of tools. Lets you forge, salvage, and infuse gear from your pack while away from the shelter.",
+                ItemType.HOME_CRAFTING_BENCH);
+        createResourceTemplate(ItemType.COOKING_KIT, "Portable Cookware",
+                "A travel pot and fire-starter kit. Lets you cook meals from your pack while away from the shelter.",
+                ItemType.HOME_FIRE_POT);
+
         // Debris fallback (just in case)
         createResourceTemplate(ItemType.STICK, "Stick", "A wooden stick.", null);
         createResourceTemplate(ItemType.SMALL_ROCK, "Rock", "A small rock.", null);

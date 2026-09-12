@@ -2,31 +2,40 @@ package com.bpm.minotaur.managers;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Tracks the player's Divinities: a permanent-progression currency that is banked
+ * automatically as it is earned and is never lost, including on death. Divinities are
+ * spent at the Shelter on permanent upgrades (see the Loot Retention upgrade below);
+ * only a full Apocalypse wipe (see {@link SaveManager#wipeActiveSlotOnApocalypse()})
+ * ever resets them.
+ */
 public class DivinityManager {
 
     public static final String DIVINITY_NAME = "Divinities";
+
+    /** Loot Retention: a permanent upgrade letting the player keep a capped amount of
+     *  unequipped backpack/quickslot items through death instead of losing everything. */
+    private static final int MAX_LOOT_RETENTION_LEVEL = 5;
+    private static final int LOOT_RETENTION_ITEMS_PER_LEVEL = 2;
+    private static final int LOOT_RETENTION_BASE_COST = 20;
+
     private String getSaveFilePath() {
         return SaveManager.getInstance().getActiveSlotFilePath("divinities.json");
     }
 
     private static DivinityManager instance;
 
-    // Current run state
+    // Persistent, safe-from-death balance.
     private int currentDivinities = 0;
+    private int lootRetentionUpgradeLevel = 0;
+
+    // Per-world-generation tracking (reset whenever the explored world is wiped).
     private final Set<String> visitedChunksThisRun = new HashSet<>();
-
-    // Lost divinity state — persists across runs until retrieved or lost again
-    private int lostDivinityAmount = 0;
-    private String lostDivinityChunkKey = null;
-
-    // Set when the player enters the matching chunk; cleared on collection or next death
-    private GridPoint2 lostDivinityTile = null;
 
     private DivinityManager() {
         load();
@@ -52,6 +61,7 @@ public class DivinityManager {
         visitedChunksThisRun.add(chunkKey);
         int amount = Math.max(1, dungeonLevel);
         currentDivinities += amount;
+        save();
         return amount;
     }
 
@@ -61,86 +71,54 @@ public class DivinityManager {
     public int awardKillDivinities(int monsterBaseLevel, int dungeonLevel) {
         int amount = Math.max(1, (monsterBaseLevel + dungeonLevel) / 2);
         currentDivinities += amount;
-        return amount;
-    }
-
-    /**
-     * Returns the pending lost-divinity amount if the given chunk key matches the death location.
-     * Returns 0 otherwise.
-     */
-    public int checkForLostDivinities(String chunkKey) {
-        if (lostDivinityAmount > 0 && lostDivinityChunkKey != null
-                && lostDivinityChunkKey.equals(chunkKey)) {
-            return lostDivinityAmount;
-        }
-        return 0;
-    }
-
-    /**
-     * Called when the player physically reaches the lost-divinity tile and collects them.
-     * Returns the amount collected.
-     */
-    public int collectLostDivinities() {
-        int amount = lostDivinityAmount;
-        currentDivinities += amount;
-        lostDivinityAmount = 0;
-        lostDivinityChunkKey = null;
-        lostDivinityTile = null;
         save();
         return amount;
     }
 
     /**
-     * Called on player death. Stores current divinities as lost at the death chunk.
-     * Any previously uncollected lost divinities are overwritten (lost forever).
+     * Called when the explored world is wiped (currently: on every player death).
+     * Divinities themselves are never lost; only the per-world "new chunk" bonus
+     * tracking resets, since the wiped world's chunks no longer exist to revisit.
      */
-    public void onPlayerDeath(String deathChunkKey) {
-        onPlayerDeath(deathChunkKey, null);
+    public void onWorldReset() {
+        visitedChunksThisRun.clear();
     }
 
-    public void onPlayerDeath(String deathChunkKey, GridPoint2 deathTile) {
-        lostDivinityAmount = currentDivinities;
-        lostDivinityChunkKey = deathChunkKey;
-        this.lostDivinityTile = deathTile;
-        currentDivinities = 0;
-        visitedChunksThisRun.clear();
+    // ---- Loot Retention upgrade ----
+
+    public int getLootRetentionUpgradeLevel() {
+        return lootRetentionUpgradeLevel;
+    }
+
+    /** @return how many unequipped backpack/quickslot items survive death. */
+    public int getLootRetentionCap() {
+        return lootRetentionUpgradeLevel * LOOT_RETENTION_ITEMS_PER_LEVEL;
+    }
+
+    public boolean isLootRetentionMaxed() {
+        return lootRetentionUpgradeLevel >= MAX_LOOT_RETENTION_LEVEL;
+    }
+
+    /** @return the Divinity cost of the next Loot Retention upgrade, or -1 if maxed. */
+    public int getNextLootRetentionUpgradeCost() {
+        if (isLootRetentionMaxed()) return -1;
+        return LOOT_RETENTION_BASE_COST * (lootRetentionUpgradeLevel + 1);
+    }
+
+    public boolean purchaseLootRetentionUpgrade() {
+        if (isLootRetentionMaxed()) return false;
+        int cost = getNextLootRetentionUpgradeCost();
+        if (currentDivinities < cost) return false;
+        currentDivinities -= cost;
+        lootRetentionUpgradeLevel++;
         save();
-        Gdx.app.log("DivinityManager", "Player died with " + lostDivinityAmount
-                + " Divinities. Stored at chunk: " + deathChunkKey + " at tile: " + deathTile);
-    }
-
-    /**
-     * Called on portal reset. Clears run-progress state; lost divinities persist.
-     */
-    public void onRunReset() {
-        currentDivinities = 0;
-        visitedChunksThisRun.clear();
+        return true;
     }
 
     // ---- Accessors ----
 
-    public void setLostDivinityTile(GridPoint2 tile) {
-        this.lostDivinityTile = tile;
-    }
-
-    public GridPoint2 getLostDivinityTile() {
-        return lostDivinityTile;
-    }
-
     public int getCurrentDivinities() {
         return currentDivinities;
-    }
-
-    public boolean hasLostDivinities() {
-        return lostDivinityAmount > 0;
-    }
-
-    public int getLostDivinityAmount() {
-        return lostDivinityAmount;
-    }
-
-    public String getLostDivinityChunkKey() {
-        return lostDivinityChunkKey;
     }
 
     // ---- Persistence ----
@@ -151,9 +129,8 @@ public class DivinityManager {
             if (!dir.exists()) dir.mkdirs();
             FileHandle file = Gdx.files.local(getSaveFilePath());
             SaveData data = new SaveData();
-            data.lostDivinityAmount = lostDivinityAmount;
-            data.lostDivinityChunkKey = lostDivinityChunkKey;
-            data.lostDivinityTile = lostDivinityTile;
+            data.currentDivinities = currentDivinities;
+            data.lootRetentionUpgradeLevel = lootRetentionUpgradeLevel;
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             Gdx.app.error("DivinityManager", "Failed to save: " + e.getMessage());
@@ -168,14 +145,8 @@ public class DivinityManager {
                 json.setUsePrototypes(false);
                 SaveData data = json.fromJson(SaveData.class, file.readString());
                 if (data != null) {
-                    lostDivinityAmount = data.lostDivinityAmount;
-                    lostDivinityChunkKey = data.lostDivinityChunkKey;
-                    lostDivinityTile = data.lostDivinityTile;
-                    if (lostDivinityAmount > 0) {
-                        Gdx.app.log("DivinityManager", "Loaded lost Divinities: "
-                                + lostDivinityAmount + " at " + lostDivinityChunkKey
-                                + " tile " + lostDivinityTile);
-                    }
+                    currentDivinities = data.currentDivinities;
+                    lootRetentionUpgradeLevel = data.lootRetentionUpgradeLevel;
                 }
             }
         } catch (Exception e) {
@@ -184,8 +155,7 @@ public class DivinityManager {
     }
 
     public static class SaveData {
-        public int lostDivinityAmount = 0;
-        public String lostDivinityChunkKey = null;
-        public GridPoint2 lostDivinityTile = null;
+        public int currentDivinities = 0;
+        public int lootRetentionUpgradeLevel = 0;
     }
 }

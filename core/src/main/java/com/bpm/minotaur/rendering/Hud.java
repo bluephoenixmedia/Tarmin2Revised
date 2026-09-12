@@ -73,11 +73,13 @@ public class Hud implements Disposable {
     private final ModernStatBar foodBar;
     private final ModernStatBar waterBar;
     private final ModernStatBar tempBar;
+    private final ModernStatBar toxBar;
     private final ModernStatBar monsterHpBar;
 
     private final CompassMedallion compassMedallion;
     private final HudTooltip hudTooltip;
     private final WorldInteractionCard worldInteractionCard;
+    private final Table dungeonTagTable;
     private GameScreen gameScreen;
 
     public void setGameScreen(GameScreen gameScreen) {
@@ -449,17 +451,24 @@ public class Hud implements Disposable {
         waterBar = new ModernStatBar("H2O", HudSkin.COL_WATER_CYAN, hudSkin);
         tempBar = new ModernStatBar("TEMP", HudSkin.COL_TEMP_ORANGE, hudSkin);
         tempBar.setTemperatureMode(true);
+        toxBar = new ModernStatBar("TOX", HudSkin.COL_TOX, hudSkin);
 
         monsterStrengthLabel = new Label("", headerStyle);
         combatStatusLabel = new Label("", labelStyle);
         monsterHpBar = new ModernStatBar("HP", HudSkin.COL_HP_RED, hudSkin);
 
-        // Sub-table 1: Delve exploration info
+        // Sub-table 1: Delve exploration info (survival "BODY" bars)
         delveInfoTable.top().left();
-        delveInfoTable.add(dungeonLevelLabel).left().padBottom(4).row();
         delveInfoTable.add(foodBar).width(210).height(20).padBottom(4).row();
         delveInfoTable.add(waterBar).width(210).height(20).padBottom(4).row();
-        delveInfoTable.add(tempBar).width(210).height(20).row();
+        delveInfoTable.add(tempBar).width(210).height(20).padBottom(4).row();
+        delveInfoTable.add(toxBar).width(210).height(20).row();
+
+        // Floating dungeon-level tag over the 3D viewport (top-left), matching the
+        // mockup's corner tag instead of living inside the bottom dashboard.
+        dungeonTagTable = new Table();
+        dungeonTagTable.setBackground(hudSkin.getSlotRecessed());
+        dungeonTagTable.add(dungeonLevelLabel).pad(10f, 16f, 10f, 16f);
 
         // Sub-table 2: Combat monster card
         combatMonsterTable.top().left();
@@ -506,6 +515,7 @@ public class Hud implements Disposable {
         mainContainer.add(bottomBarTable).growX().height(200);
 
         stage.addActor(mainContainer);
+        stage.addActor(dungeonTagTable);
         stage.addActor(hudTooltip);
         stage.addActor(worldInteractionCard);
 
@@ -615,7 +625,7 @@ public class Hud implements Disposable {
 
         DivinityManager dm = DivinityManager.getInstance();
         divinitiesLabel.setText("DIV: " + dm.getCurrentDivinities());
-        divinitiesLabel.setColor(dm.hasLostDivinities() ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE);
+        divinitiesLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
 
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
@@ -676,6 +686,8 @@ public class Hud implements Disposable {
             tempBar.setBarColor(HudSkin.COL_TEMP_ORANGE);
         }
 
+        toxBar.setValue(player.getStats().getToxicity(), player.getStats().getMaxToxicity());
+
         String biomeName = "MAZE";
         if (worldManager != null && worldManager.getBiomeManager() != null) {
             GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
@@ -683,6 +695,8 @@ public class Hud implements Disposable {
             if (b != null) biomeName = b.name();
         }
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
+        dungeonTagTable.pack();
+        dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());
 
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
@@ -2095,17 +2109,6 @@ public class Hud implements Disposable {
             shapeRenderer.rectLine(px, py, px + (dir.x * cellSize * 0.6f), py + (dir.y * cellSize * 0.6f), 2f);
         }
 
-        // --- 3.7 Draw Lost Divinities Tile (Gold Diamond) ---
-        GridPoint2 lostTile = DivinityManager.getInstance().getLostDivinityTile();
-        if (lostTile != null) {
-            float ltx = startX + (lostTile.x * cellSize) + cellSize * 0.5f;
-            float lty = startY + (lostTile.y * cellSize) + cellSize * 0.5f;
-            float r = cellSize * 0.4f;
-            shapeRenderer.setColor(Color.GOLD);
-            shapeRenderer.triangle(ltx, lty + r, ltx + r, lty, ltx, lty - r);
-            shapeRenderer.triangle(ltx, lty + r, ltx - r, lty, ltx, lty - r);
-        }
-
         shapeRenderer.end();
 
         // --- 4. Draw Monsters (Red Dots) ---
@@ -2375,24 +2378,29 @@ public class Hud implements Disposable {
         float x = (viewport.getWorldWidth() - maxW) / 2;
         float y = viewport.getWorldHeight() - 40;
 
-        // 1. Draw Bar
+        // 1. Draw Bar (carved iron track, gold-gradient fill)
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // Background
-        shapeRenderer.setColor(Color.DARK_GRAY);
+        // Background track
+        shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
         shapeRenderer.rect(x, y, maxW, h);
 
-        // Foreground (Purple/Magical)
-        shapeRenderer.setColor(Color.PURPLE);
-        shapeRenderer.rect(x, y, maxW * (integrity / 100f), h);
+        // Foreground (gold gradient, approximated as top/bottom halves)
+        float fillW = maxW * (integrity / 100f);
+        if (fillW > 0) {
+            shapeRenderer.setColor(Color.valueOf("D9A23A"));
+            shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+            shapeRenderer.setColor(Color.valueOf("A06A1E"));
+            shapeRenderer.rect(x, y, fillW, h / 2f);
+        }
 
         shapeRenderer.end();
 
         // Border
         Gdx.gl.glLineWidth(2);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.setColor(HudSkin.COL_STONE_MID);
         shapeRenderer.rect(x, y, maxW, h);
         shapeRenderer.end();
         Gdx.gl.glLineWidth(1);
@@ -2400,14 +2408,14 @@ public class Hud implements Disposable {
         // 2. Draw Text
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
-        String text = String.format("Bridge Integrity: %.0f%%", integrity);
+        String text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
         glyphLayout.setText(font, text);
 
         // Center text on bar
         float textX = x + (maxW - glyphLayout.width) / 2;
         float textY = y + (h + glyphLayout.height) / 2 - 2; // -2 for visual alignment
 
-        font.setColor(Color.WHITE);
+        font.setColor(HudSkin.COL_GOLD_BRIGHT);
         font.draw(spriteBatch, text, textX, textY);
         spriteBatch.end();
         // --- Draw Attack Indicators ---

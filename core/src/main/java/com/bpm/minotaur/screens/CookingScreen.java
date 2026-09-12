@@ -72,12 +72,20 @@ public class CookingScreen extends BaseScreen {
     private TextButton tabBtnCookbook;
     private TextButton tabBtnRest;
 
+    private final boolean fieldMode;
+
     public CookingScreen(Tarmin2 game, GameScreen parentScreen, Player player, WorldManager worldManager) {
+        this(game, parentScreen, player, worldManager, false);
+    }
+
+    public CookingScreen(Tarmin2 game, GameScreen parentScreen, Player player, WorldManager worldManager,
+            boolean fieldMode) {
         super(game);
         this.parentScreen = parentScreen;
         this.player = player;
         this.worldManager = worldManager;
         this.cookingManager = worldManager != null ? worldManager.getCookingManager() : new CookingManager();
+        this.fieldMode = fieldMode;
         this.hudSkin = new HudSkin();
     }
 
@@ -97,18 +105,27 @@ public class CookingScreen extends BaseScreen {
     private void buildScreenLayout() {
         stage.clear();
 
+        Table backdrop = new Table();
+        backdrop.setFillParent(true);
+        backdrop.setBackground(hudSkin.getScreenBackdrop());
+        stage.addActor(backdrop);
+
         Table root = new Table();
         root.setFillParent(true);
         root.top().pad(25);
 
         // --- 1. HEADER ---
         Table header = new Table();
-        Label titleLabel = new Label("THE SHELTER COOKING HEARTH",
+        header.setBackground(hudSkin.getDoubleBorderPanel());
+        header.pad(16, 24, 16, 24);
+        Label titleLabel = new Label(fieldMode ? "PORTABLE COOKWARE" : "THE SHELTER COOKING HEARTH",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         titleLabel.setFontScale(1.3f);
         header.add(titleLabel).center().row();
 
-        Label subLabel = new Label("Simmer harvested beast gibs, prepare hearty expedition meals, and discover ancient culinary boons",
+        Label subLabel = new Label(fieldMode
+                ? "Cooking from your pack alone. The Shelter Chest is out of reach."
+                : "Simmer harvested beast gibs, prepare hearty expedition meals, and discover ancient culinary boons",
                 new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
         header.add(subLabel).center().padTop(4).row();
 
@@ -121,10 +138,10 @@ public class CookingScreen extends BaseScreen {
         tabBtnCookbook = createTabButton("[ 3 : COOKBOOK & CODEX ]", 2);
         tabBtnRest = createTabButton("[ 4 : REST BY HEARTH ]", 3);
 
-        tabBar.add(tabBtnWhipUp).size(340, 48).padRight(15);
-        tabBar.add(tabBtnCauldron).size(340, 48).padRight(15);
-        tabBar.add(tabBtnCookbook).size(340, 48).padRight(15);
-        tabBar.add(tabBtnRest).size(340, 48);
+        tabBar.add(tabBtnWhipUp).size(380, 48).padRight(15);
+        tabBar.add(tabBtnCauldron).size(380, 48).padRight(15);
+        tabBar.add(tabBtnCookbook).size(380, 48).padRight(15);
+        tabBar.add(tabBtnRest).size(380, 48);
 
         root.add(tabBar).center().padBottom(12).row();
 
@@ -177,7 +194,7 @@ public class CookingScreen extends BaseScreen {
                 game.setScreen(parentScreen);
             }
         });
-        footer.add(backBtn).size(320, 48).right().padRight(20);
+        footer.add(backBtn).size(400, 48).right().padRight(20);
 
         root.add(footer).fillX();
 
@@ -194,6 +211,7 @@ public class CookingScreen extends BaseScreen {
         style.over = hudSkin.getSlotActive();
 
         TextButton btn = new TextButton(text, style);
+        btn.getLabel().setFontScale(0.75f);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -206,14 +224,23 @@ public class CookingScreen extends BaseScreen {
     private TextButton createActionButton(String text, boolean enabled) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font = hudSkin.getFontHeader();
-        style.fontColor = enabled ? Color.WHITE : Color.DARK_GRAY;
-        style.overFontColor = enabled ? HudSkin.COL_GOLD_BRIGHT : Color.DARK_GRAY;
-        style.up = hudSkin.getSlotRecessed();
-        style.down = hudSkin.getSlotActive();
-        style.over = enabled ? hudSkin.getTooltipBg() : hudSkin.getSlotRecessed();
+        if (enabled) {
+            style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+            style.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
+            style.up = hudSkin.getPrimaryButtonUp();
+            style.down = hudSkin.getPrimaryButtonDown();
+            style.over = hudSkin.getPrimaryButtonDown();
+        } else {
+            style.fontColor = HudSkin.COL_GOLD_MUTED;
+            style.overFontColor = HudSkin.COL_GOLD_MUTED;
+            style.up = hudSkin.getSlotRecessed();
+            style.down = hudSkin.getSlotRecessed();
+            style.over = hudSkin.getSlotRecessed();
+        }
         style.disabled = hudSkin.getSlotRecessed();
 
         TextButton btn = new TextButton(text, style);
+        btn.getLabel().setFontScale(0.78f);
         btn.setDisabled(!enabled);
         return btn;
     }
@@ -224,11 +251,27 @@ public class CookingScreen extends BaseScreen {
         refreshRightPanel();
     }
 
+    /** Applies the mockup's filled-gold active tab / dark inactive tab look. */
+    private void applyTabButtonState(TextButton btn, boolean active) {
+        TextButton.TextButtonStyle style = btn.getStyle();
+        if (active) {
+            style.up = hudSkin.getPrimaryButtonUp();
+            style.down = hudSkin.getPrimaryButtonDown();
+            style.over = hudSkin.getPrimaryButtonUp();
+            btn.getLabel().setColor(HudSkin.COL_TEXT_ON_GOLD);
+        } else {
+            style.up = hudSkin.getSlotRecessed();
+            style.down = hudSkin.getSlotActive();
+            style.over = hudSkin.getSlotActive();
+            btn.getLabel().setColor(HudSkin.COL_GOLD_MUTED);
+        }
+    }
+
     private void updateTabButtonStyles() {
-        tabBtnWhipUp.getLabel().setColor(currentTab == 0 ? HudSkin.COL_GOLD_BRIGHT : Color.LIGHT_GRAY);
-        tabBtnCauldron.getLabel().setColor(currentTab == 1 ? HudSkin.COL_GOLD_BRIGHT : Color.LIGHT_GRAY);
-        tabBtnCookbook.getLabel().setColor(currentTab == 2 ? HudSkin.COL_GOLD_BRIGHT : Color.LIGHT_GRAY);
-        tabBtnRest.getLabel().setColor(currentTab == 3 ? HudSkin.COL_GOLD_BRIGHT : Color.LIGHT_GRAY);
+        applyTabButtonState(tabBtnWhipUp, currentTab == 0);
+        applyTabButtonState(tabBtnCauldron, currentTab == 1);
+        applyTabButtonState(tabBtnCookbook, currentTab == 2);
+        applyTabButtonState(tabBtnRest, currentTab == 3);
     }
 
     private void refreshAll() {
@@ -262,10 +305,12 @@ public class CookingScreen extends BaseScreen {
                 list.add(new PantryEntry(item, false));
             }
         }
-        // 2. Shelter Chest
-        for (Item item : ShelterChest.getInstance().getItems()) {
-            if (isCookable(item)) {
-                list.add(new PantryEntry(item, true));
+        // 2. Shelter Chest (not reachable from a portable field kit)
+        if (!fieldMode) {
+            for (Item item : ShelterChest.getInstance().getItems()) {
+                if (isCookable(item)) {
+                    list.add(new PantryEntry(item, true));
+                }
             }
         }
         return list;
@@ -280,11 +325,13 @@ public class CookingScreen extends BaseScreen {
     private void refreshLeftPanelPantry() {
         leftPanelContent.clear();
 
-        Label title = new Label("UNIFIED SHELTER PANTRY",
+        Label title = new Label(fieldMode ? "TRAIL PANTRY" : "UNIFIED SHELTER PANTRY",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         leftPanelContent.add(title).left().padBottom(6).row();
 
-        Label sub = new Label("Draws from Backpack & Shelter Chest. Click to add to Cauldron.",
+        Label sub = new Label(fieldMode
+                ? "Draws from your Backpack only. Click to add to Cauldron."
+                : "Draws from Backpack & Shelter Chest. Click to add to Cauldron.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), Color.GRAY));
         leftPanelContent.add(sub).left().padBottom(15).row();
 
@@ -380,16 +427,16 @@ public class CookingScreen extends BaseScreen {
         final List<Item> quickIngredients = cookingManager.findQuickCookIngredients(pantryItems);
 
         Table previewBox = new Table();
-        previewBox.setBackground(hudSkin.getSlotRecessed());
+        previewBox.setBackground(hudSkin.getParchmentCard());
         previewBox.pad(20);
 
         if (quickIngredients.isEmpty()) {
             Label noMeat = new Label("No basic meat, gibs, or forage available to whip up a meal.",
-                    new Label.LabelStyle(hudSkin.getFontMain(), Color.valueOf("E57373")));
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_PARCHMENT_DENY));
             previewBox.add(noMeat).center().row();
         } else {
             Label mealPreview = new Label("Dish: Campfire Hearty Stew",
-                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_ANTIQUE));
+                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_PARCHMENT_HEADING));
             previewBox.add(mealPreview).left().padBottom(8).row();
 
             StringBuilder sb = new StringBuilder("Ingredients: ");
@@ -397,13 +444,13 @@ public class CookingScreen extends BaseScreen {
                 if (i > 0) sb.append(", ");
                 sb.append(quickIngredients.get(i).getDisplayName());
             }
-            Label ingLbl = new Label(sb.toString(), new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
+            Label ingLbl = new Label(sb.toString(), new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_PARCHMENT_TEXT));
             previewBox.add(ingLbl).left().padBottom(8).row();
 
             int skill = player.getStats().getCookingSkill();
             int dur = cookingManager.calculateEffectDuration(skill, false);
             Label boonLbl = new Label("Guaranteed Boons: HEALTHY, RECOVERING (" + dur + " turns)\nRestores high Satiety (+45), Hydration, and HP.",
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_AFFORD));
             previewBox.add(boonLbl).left().row();
         }
 
@@ -421,7 +468,7 @@ public class CookingScreen extends BaseScreen {
                 cookMealAction(quickIngredients, true);
             }
         });
-        btnRow.add(feastBtn).size(420, 56).padRight(25);
+        btnRow.add(feastBtn).size(460, 56).padRight(25);
 
         TextButton packBtn = createActionButton("PACK FIELD RATIONS", canCook);
         packBtn.addListener(new ClickListener() {
@@ -430,7 +477,7 @@ public class CookingScreen extends BaseScreen {
                 cookMealAction(quickIngredients, false);
             }
         });
-        btnRow.add(packBtn).size(420, 56);
+        btnRow.add(packBtn).size(460, 56);
 
         rightPanelContent.add(btnRow).left().row();
     }
@@ -491,12 +538,12 @@ public class CookingScreen extends BaseScreen {
         int dur = cookingManager.calculateEffectDuration(skill, synergy);
 
         Table previewBox = new Table();
-        previewBox.setBackground(hudSkin.getSlotRecessed());
+        previewBox.setBackground(hudSkin.getParchmentCard());
         previewBox.pad(15);
 
         if (currentItems.isEmpty()) {
             Label hint = new Label("Select ingredients from the pantry to preview your meal.",
-                    new Label.LabelStyle(hudSkin.getFontMain(), Color.GRAY));
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_PARCHMENT_TEXT));
             previewBox.add(hint).center();
         } else {
             String dishName;
@@ -524,10 +571,10 @@ public class CookingScreen extends BaseScreen {
             }
 
             Label nameLbl = new Label("Dish: " + dishName,
-                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_PARCHMENT_HEADING));
             previewBox.add(nameLbl).left().row();
 
-            Label descLbl = new Label(dishDesc, new Label.LabelStyle(hudSkin.getFontMain(), Color.LIGHT_GRAY));
+            Label descLbl = new Label(dishDesc, new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_PARCHMENT_TEXT));
             previewBox.add(descLbl).left().padTop(4).padBottom(8).row();
 
             StringBuilder boons = new StringBuilder("Boons: ");
@@ -536,12 +583,12 @@ public class CookingScreen extends BaseScreen {
                 boons.append(previewEffects.get(i).name().replace('_', ' '));
             }
             boons.append(" (").append(dur).append(" turns)");
-            Label boonsLbl = new Label(boons.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+            Label boonsLbl = new Label(boons.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_AFFORD));
             previewBox.add(boonsLbl).left().row();
 
             if (synergy) {
                 Label synLbl = new Label("ESSENCE SYNERGY! Duration doubled by harmonious donor monster traits.",
-                        new Label.LabelStyle(hudSkin.getFontSmall(), Color.valueOf("FFD54F")));
+                        new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_HEADING));
                 previewBox.add(synLbl).left().padTop(6).row();
             }
         }
@@ -559,7 +606,7 @@ public class CookingScreen extends BaseScreen {
                 cookMealAction(currentItems, true);
             }
         });
-        btnRow.add(feastBtn).size(420, 56).padRight(25);
+        btnRow.add(feastBtn).size(460, 56).padRight(25);
 
         TextButton packBtn = createActionButton("PACK FIELD RATIONS", canCook);
         packBtn.addListener(new ClickListener() {
@@ -568,7 +615,7 @@ public class CookingScreen extends BaseScreen {
                 cookMealAction(currentItems, false);
             }
         });
-        btnRow.add(packBtn).size(420, 56);
+        btnRow.add(packBtn).size(460, 56);
 
         rightPanelContent.add(btnRow).left().row();
     }
@@ -686,7 +733,7 @@ public class CookingScreen extends BaseScreen {
                 performRestAction();
             }
         });
-        rightPanelContent.add(restBtn).size(480, 56).left().row();
+        rightPanelContent.add(restBtn).size(560, 56).left().row();
     }
 
     // -------------------------------------------------------------------------
@@ -741,9 +788,9 @@ public class CookingScreen extends BaseScreen {
         meal.setMealEffectDuration(duration);
         for (StatusEffectType eff : mealEffects) meal.addMealEffect(eff);
 
-        // 4. Consume ingredients from pack first, then chest
+        // 4. Consume ingredients from pack first, then chest (never in field mode)
         for (Item ingr : ingredients) {
-            if (!player.getInventory().removeItem(ingr)) {
+            if (!player.getInventory().removeItem(ingr) && !fieldMode) {
                 ShelterChest.getInstance().removeItem(ingr);
             }
         }
@@ -760,10 +807,12 @@ public class CookingScreen extends BaseScreen {
         } else {
             if (player.getInventory().pickupToBackpack(meal)) {
                 feedbackLabel.setText("Packed " + mealName + " into your trail rations.");
-            } else {
+            } else if (!fieldMode) {
                 ShelterChest.getInstance().addItem(meal);
                 ShelterChest.getInstance().save();
                 feedbackLabel.setText("Pack full! Packed " + mealName + " into Shelter Chest.");
+            } else {
+                feedbackLabel.setText("Pack full! " + mealName + " spoils on the ground.");
             }
             feedbackLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
         }

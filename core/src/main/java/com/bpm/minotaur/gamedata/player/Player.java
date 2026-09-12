@@ -147,6 +147,13 @@ public class Player {
         Item boots = itemDataManager.createItem(Item.ItemType.BOOTS, 0, 0, ItemColor.GRAY, assetManager);
         equipment.setWornBoots(boots);
 
+        // Portable field kits: available from the very first expedition so a shelter trip
+        // is never required before crafting/cooking on the road becomes possible.
+        Item craftingToolkit = itemDataManager.createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, assetManager);
+        inventory.pickupToBackpack(craftingToolkit);
+        Item cookingKit = itemDataManager.createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, assetManager);
+        inventory.pickupToBackpack(cookingKit);
+
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
 
         // Initialize Spells

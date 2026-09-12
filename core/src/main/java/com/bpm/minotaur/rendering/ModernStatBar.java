@@ -72,12 +72,28 @@ public class ModernStatBar extends Actor {
         float innerH = Math.max(0f, h - pad * 2);
 
         if (innerW > 0 && innerH > 0 && skin.getWhitePixel() != null) {
-            // Main bar fill
-            batch.setColor(barColor.r, barColor.g, barColor.b, barColor.a * parentAlpha);
-            batch.draw(skin.getWhitePixel(), x + pad, y + pad, innerW, innerH);
+            // Bottom shade: auto-darkened version of the bar color, approximating
+            // the mockup's top-to-bottom linear-gradient fills without needing a
+            // second color at every call site.
+            float shadeFactor = 0.62f;
+            float botR = barColor.r * shadeFactor;
+            float botG = barColor.g * shadeFactor;
+            float botB = barColor.b * shadeFactor;
+
+            int steps = Math.max(1, Math.round(innerH));
+            for (int i = 0; i < steps; i++) {
+                float t = steps <= 1 ? 0f : i / (float) (steps - 1);
+                float r = barColor.r + (botR - barColor.r) * t;
+                float g = barColor.g + (botG - barColor.g) * t;
+                float b = barColor.b + (botB - barColor.b) * t;
+                batch.setColor(r, g, b, barColor.a * parentAlpha);
+                float rowH = innerH / steps;
+                // Row 0 is the top of the bar (highest y), matching the mockup's top->bottom gradient.
+                batch.draw(skin.getWhitePixel(), x + pad, y + pad + innerH - (i + 1) * rowH, innerW, rowH + 0.5f);
+            }
 
             // Gloss highlight on top half
-            batch.setColor(1f, 1f, 1f, 0.18f * parentAlpha);
+            batch.setColor(1f, 1f, 1f, 0.14f * parentAlpha);
             batch.draw(skin.getWhitePixel(), x + pad, y + pad + innerH * 0.55f, innerW, innerH * 0.45f);
         }
 
