@@ -68,15 +68,17 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     private static final float PH = 1080f;
 
     // ── Portrait geometry ─────────────────────────────────────────────
-    // All four values are in stage pixels. Change PORTRAIT_X / PORTRAIT_Y
-    // to shift the portrait (and the frame / rune circle) together.
-    private static final float PORTRAIT_W = 380f; // portrait image width
-    private static final float PORTRAIT_H = 500f; // portrait image height
-    private static final float PORTRAIT_X = 300f; // left edge of portrait
-    private static final float PORTRAIT_Y = 426f; // bottom edge of portrait
-    // Derived centre — used to position the rune circle and frame overlay.
-    // private static final float PORTRAIT_CX = PORTRAIT_X + PORTRAIT_W / 2f; // 490
-    // private static final float PORTRAIT_CY = PORTRAIT_Y + PORTRAIT_H / 2f; // 676
+    // Inner golden frame in assets/images/new_inventory.png (2676 x 1568):
+    // X: 485..946 (w=461), Y: 222..1032 (h=810).
+    // Converted to 1920x1080 stage pixels (Y-up):
+    // PORTRAIT_X = 485 * (1920 / 2676) = 348.0f
+    // PORTRAIT_Y = (1568 - 1032) * (1080 / 1568) = 369.2f
+    // PORTRAIT_W = 461 * (1920 / 2676) = 330.8f
+    // PORTRAIT_H = 810 * (1080 / 1568) = 557.9f
+    private static final float PORTRAIT_W = 330.8f; // portrait image width
+    private static final float PORTRAIT_H = 557.9f; // portrait image height
+    private static final float PORTRAIT_X = 348.0f; // left edge of portrait
+    private static final float PORTRAIT_Y = 369.2f; // bottom edge of portrait
 
     private final Player player;
     private final InventorySkin skin;
@@ -95,7 +97,9 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     // Tooltip label shown in the panel footer
     private final Label tooltipLabel;
 
-    // Optional paper doll widget reference (set from ModernInventoryUI)
+    // 2D Paperdoll Widget (auto-snapping composite)
+    private com.bpm.minotaur.paperdoll.PaperDoll2DWidget paperDoll2DWidget;
+    // Legacy paper doll widget reference
     private PaperDollWidget paperDollWidget;
 
     // Frame overlay — stored so attachPaperDollWidget can insert before it
@@ -232,18 +236,22 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     // ── Public API ────────────────────────────────────────────────────
 
     /**
-     * Attaches an existing {@link PaperDollWidget} so it renders inside this panel.
-     * Call from ModernInventoryUI after constructing the widget.
+     * Attaches the 2D auto-snapping paper doll widget.
+     */
+    public void attachPaperDollWidget(com.bpm.minotaur.paperdoll.PaperDoll2DWidget widget) {
+        this.paperDoll2DWidget = widget;
+        widget.setPosition(PORTRAIT_X, PORTRAIT_Y);
+        widget.setSize(PORTRAIT_W, PORTRAIT_H);
+        addActorAt(0, widget);
+    }
+
+    /**
+     * Attaches an existing legacy {@link PaperDollWidget} so it renders inside this panel.
      */
     public void attachPaperDollWidget(PaperDollWidget widget) {
-        paperDollWidget = widget;
-        // Constrain widget to portrait bounds so equipped-item renders don't bleed onto
-        // the right page
+        this.paperDollWidget = widget;
         widget.setPosition(PORTRAIT_X - 20f, PORTRAIT_Y - 20f);
         widget.setSize(PORTRAIT_W + 40f, PORTRAIT_H + 40f);
-        // Insert between portrait and frame overlay so the frame renders on top of the
-        // doll
-        // addActorBefore(frameOverlayImage, widget);
     }
 
     public void refresh() {
@@ -293,23 +301,55 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     }
 
     private void syncPaperDoll(PlayerEquipment eq) {
-        if (paperDollWidget == null)
-            return;
-        paperDollWidget.clearEquipment();
-        if (eq.getWornHelmet() != null)
-            paperDollWidget.equip(eq.getWornHelmet());
-        if (eq.getWornChest() != null)
-            paperDollWidget.equip(eq.getWornChest());
-        if (eq.getWornArms() != null)
-            paperDollWidget.equip(eq.getWornArms());
-        if (eq.getWornGauntlets() != null)
-            paperDollWidget.equip(eq.getWornGauntlets());
-        if (eq.getWornLegs() != null)
-            paperDollWidget.equip(eq.getWornLegs());
-        if (eq.getWornBoots() != null)
-            paperDollWidget.equip(eq.getWornBoots());
-        if (eq.getWornBack() != null)
-            paperDollWidget.equip(eq.getWornBack());
+        if (paperDoll2DWidget != null) {
+            paperDoll2DWidget.clearEquipment();
+            if (eq.getWornHelmet() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.HELMET, eq.getWornHelmet());
+            if (eq.getWornChest() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CHEST, eq.getWornChest());
+            if (eq.getWornArms() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.ARMS, eq.getWornArms());
+            if (eq.getWornGauntlets() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.HANDS, eq.getWornGauntlets());
+            if (eq.getWornLegs() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.LEGS, eq.getWornLegs());
+            if (eq.getWornBoots() != null)
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.BOOTS, eq.getWornBoots());
+            if (eq.getWornBack() != null) {
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CLOAK_BACK, eq.getWornBack());
+                paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CLOAK_FRONT, eq.getWornBack());
+            }
+            if (player.getInventory() != null) {
+                if (player.getInventory().getRightHand() != null)
+                    paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.WEAPON_MAIN, player.getInventory().getRightHand());
+                if (player.getInventory().getLeftHand() != null)
+                    paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF, player.getInventory().getLeftHand());
+            }
+        }
+
+        if (paperDollWidget != null) {
+            paperDollWidget.clearEquipment();
+            if (eq.getWornHelmet() != null)
+                paperDollWidget.equip(eq.getWornHelmet());
+            if (eq.getWornChest() != null)
+                paperDollWidget.equip(eq.getWornChest());
+            if (eq.getWornArms() != null)
+                paperDollWidget.equip(eq.getWornArms());
+            if (eq.getWornGauntlets() != null)
+                paperDollWidget.equip(eq.getWornGauntlets());
+            if (eq.getWornLegs() != null)
+                paperDollWidget.equip(eq.getWornLegs());
+            if (eq.getWornBoots() != null)
+                paperDollWidget.equip(eq.getWornBoots());
+            if (eq.getWornBack() != null)
+                paperDollWidget.equip(eq.getWornBack());
+        }
+    }
+
+    public void dispose() {
+        if (paperDoll2DWidget != null) {
+            paperDoll2DWidget.dispose();
+        }
     }
 
     private String tooltipFor(Item item) {

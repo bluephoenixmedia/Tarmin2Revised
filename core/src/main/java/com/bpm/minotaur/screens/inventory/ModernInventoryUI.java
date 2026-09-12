@@ -85,22 +85,12 @@ public class ModernInventoryUI {
 
         paperDollTexture = loadPaperDollTexture();
 
-        // ── Paper doll widget (existing animated doll renderer) ───────
-        SkeletonData skeletonData = new SkeletonData();
-        if (Gdx.files.local("assets/data/skeleton.json").exists()) {
-            skeletonData.load(Gdx.files.local("assets/data/skeleton.json"));
-        } else {
-            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
-        }
-
-        TextureAtlas armorAtlas = assets.get("packed/armor.atlas", TextureAtlas.class);
-        TextureAtlas weaponAtlas = assets.get("packed/weapons.atlas", TextureAtlas.class);
-        FragmentResolver resolver = new FragmentResolver(armorAtlas, weaponAtlas);
-        PaperDollWidget dollWidget = new PaperDollWidget(skeletonData, resolver);
+        // ── 2D Auto-Snapping Paper Doll Widget ───────
+        com.bpm.minotaur.paperdoll.PaperDoll2DWidget doll2DWidget = new com.bpm.minotaur.paperdoll.PaperDoll2DWidget();
 
         // ── Panels ────────────────────────────────────────────────────
         paperDoll = new PaperDollPanel(player, skin, dnd, idm, paperDollTexture);
-        paperDoll.attachPaperDollWidget(dollWidget);
+        paperDoll.attachPaperDollWidget(doll2DWidget);
 
         coreStats = new CoreStatsPanel(player, skin);
         spellbook = new SpellbookPanel(player, skin);
@@ -332,6 +322,8 @@ public class ModernInventoryUI {
     /** Disposes skin (fonts + textures) and any textures we own. */
     public void dispose() {
         skin.dispose();
+        if (paperDoll != null)
+            paperDoll.dispose();
         if (paperDollTexture != null)
             paperDollTexture.dispose();
         if (headTexture != null)
