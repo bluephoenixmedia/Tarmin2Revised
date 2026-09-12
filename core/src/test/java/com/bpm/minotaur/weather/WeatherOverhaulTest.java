@@ -110,6 +110,7 @@ public class WeatherOverhaulTest {
 
     @Test
     public void testTornadoVortexStateAndPosition() {
+        weatherManager.setCurrentWeather(WeatherType.CLEAR);
         WeatherRenderer renderer = new WeatherRenderer(weatherManager);
         assertFalse("Tornado should not be active initially", renderer.isTornadoActive());
 

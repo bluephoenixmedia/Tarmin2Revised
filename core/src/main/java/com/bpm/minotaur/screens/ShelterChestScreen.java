@@ -240,22 +240,34 @@ public class ShelterChestScreen extends BaseScreen {
 
     private Table createItemRow(final Item item, final Side side) {
         Table row = new Table();
+        if (item == null) {
+            return row;
+        }
+
         boolean isSelected = (item == selectedItem && side == selectedSide);
         row.setBackground(isSelected ? hudSkin.getSlotActive() : hudSkin.getSlotRecessed());
         row.pad(10);
 
         Stack iconStack = new Stack();
         iconStack.add(new Image(hudSkin.getHazardStripeIcon()));
-        if (item.getTextureRegion() != null) {
-            iconStack.add(new Image(item.getTextureRegion()));
-        } else if (item.getTexture() != null) {
-            iconStack.add(new Image(item.getTexture()));
+        try {
+            if (item.getTextureRegion() != null) {
+                iconStack.add(new Image(item.getTextureRegion()));
+            } else if (item.getTexture() != null) {
+                iconStack.add(new Image(item.getTexture()));
+            }
+        } catch (Exception e) {
+            Gdx.app.error("ShelterChestScreen", "Could not render icon for item", e);
         }
         row.add(iconStack).size(48).padRight(16);
 
         Table infoCol = new Table();
         infoCol.left();
-        Label nameLbl = new Label(item.getDisplayName(),
+        String displayName = item.getDisplayName();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = item.getType() != null ? item.getType().name() : "Unknown Item";
+        }
+        Label nameLbl = new Label(displayName,
                 new Label.LabelStyle(hudSkin.getFontMain(), isSelected ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_GOLD_ANTIQUE));
         String typeInfo = item.getType() != null ? item.getType().name() : "";
         Label codeLbl = new Label(typeInfo, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -289,7 +301,9 @@ public class ShelterChestScreen extends BaseScreen {
             chestRows.add(new Label("EMPTY STASH", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED))).pad(30);
         } else {
             for (Item item : chestItems) {
-                chestRows.add(createItemRow(item, Side.CHEST)).expandX().fillX().padBottom(8).row();
+                if (item != null) {
+                    chestRows.add(createItemRow(item, Side.CHEST)).expandX().fillX().padBottom(8).row();
+                }
             }
         }
 
@@ -298,7 +312,9 @@ public class ShelterChestScreen extends BaseScreen {
             packRows.add(new Label("BACKPACK IS EMPTY", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_MUTED))).pad(30);
         } else {
             for (Item item : packItems) {
-                packRows.add(createItemRow(item, Side.PACK)).expandX().fillX().padBottom(8).row();
+                if (item != null) {
+                    packRows.add(createItemRow(item, Side.PACK)).expandX().fillX().padBottom(8).row();
+                }
             }
         }
 

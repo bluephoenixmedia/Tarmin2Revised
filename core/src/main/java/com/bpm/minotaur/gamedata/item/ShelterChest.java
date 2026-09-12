@@ -5,6 +5,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
 
+import com.badlogic.gdx.assets.AssetManager;
+import com.bpm.minotaur.gamedata.save.ItemSaveData;
 import com.bpm.minotaur.managers.SaveManager;
 
 import java.util.ArrayList;
@@ -98,36 +100,76 @@ public class ShelterChest {
     }
 
     /**
-     * Serializes chest items to disk.
+     * Serializes chest items to disk via lightweight ItemSaveData DTOs.
      */
     public void save() {
         try {
             FileHandle file = Gdx.files.local(getSaveFilePath());
             file.parent().mkdirs();
-            SaveManager.getInstance().atomicWriteJson(file, items);
-            Gdx.app.log("ShelterChest", "Saved " + items.size() + " items to " + getSaveFilePath());
+            List<ItemSaveData> saveData = new ArrayList<>();
+            for (Item item : items) {
+                if (item != null && item.getType() != null) {
+                    saveData.add(new ItemSaveData(item));
+                }
+            }
+            SaveManager.getInstance().atomicWriteJson(file, saveData);
+            Gdx.app.log("ShelterChest", "Saved " + saveData.size() + " items to " + getSaveFilePath());
         } catch (Exception e) {
             Gdx.app.error("ShelterChest", "Failed to save shelter chest", e);
         }
     }
 
     /**
-     * Deserializes chest items from disk.
+     * Deserializes chest items from disk and re-hydrates textures and templates.
      */
-    public void load() {
+    public void load(ItemDataManager dataManager, AssetManager assetManager) {
         try {
             FileHandle file = Gdx.files.local(getSaveFilePath());
             if (file.exists()) {
                 items.clear();
+                try {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<ItemSaveData> loaded = json.fromJson(ArrayList.class, ItemSaveData.class, file);
+                    if (loaded != null) {
+                        for (ItemSaveData isd : loaded) {
+                            if (isd != null) {
+                                Item item = isd.toItem(dataManager, assetManager);
+                                if (item != null) {
+                                    items.add(item);
+                                }
+                            }
+                        }
+                        Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
+                        return;
+                    }
+                } catch (Exception parseException) {
+                    Gdx.app.log("ShelterChest", "Attempting fallback load for legacy chest data: " + parseException.getMessage());
+                }
+
+                // Legacy format fallback
                 @SuppressWarnings("unchecked")
-                ArrayList<Item> loaded = json.fromJson(ArrayList.class, Item.class, file);
-                if (loaded != null) {
-                    items.addAll(loaded);
-                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
+                ArrayList<Item> legacy = json.fromJson(ArrayList.class, Item.class, file);
+                if (legacy != null) {
+                    for (Item it : legacy) {
+                        if (it != null && it.getType() != null) {
+                            Item rehydrated = dataManager != null
+                                    ? dataManager.createItem(it.getType(), 0, 0, it.getItemColor(), assetManager)
+                                    : it;
+                            items.add(rehydrated);
+                        }
+                    }
+                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " legacy items from " + getSaveFilePath());
                 }
             }
         } catch (Exception e) {
             Gdx.app.error("ShelterChest", "Failed to load shelter chest", e);
         }
+    }
+
+    /**
+     * Parameterless fallback load for tests or un-initialized managers.
+     */
+    public void load() {
+        load(null, null);
     }
 }

@@ -606,18 +606,19 @@ public class WorldManager {
     }
 
     /**
-     * Fully wipes the explored world following a death: every generated chunk is discarded
-     * except the persistent Starting Shelter (Level 1, Chunk 0,0), and a new world seed is
-     * rolled so the next expedition generates entirely fresh terrain and dungeons.
+     * Fully wipes the explored world following a death: every generated chunk is deleted
+     * (including chunk 0,0), and a new world seed is rolled so the next expedition generates
+     * an entirely fresh maze and world. The starting shelter room itself is procedurally
+     * generated inside the fresh chunk (0,0), while persistent shelter chest items survive
+     * in shelter_chest.json.
      */
     public void wipeExploredWorldOnDeath() {
         loadedChunks.clear();
         levelThemes.clear();
-        String shelterFileName = getChunkFileName(1, 0, 0);
         FileHandle dir = Gdx.files.local(getChunkSaveDir());
         if (dir.exists()) {
             for (FileHandle f : dir.list()) {
-                if (!f.name().equals(shelterFileName)) {
+                if (!f.isDirectory() && f.name().endsWith(".json")) {
                     f.delete();
                 }
             }

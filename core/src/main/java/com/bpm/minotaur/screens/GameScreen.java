@@ -1007,73 +1007,94 @@ public class GameScreen extends BaseScreen {
             }
             int lostCount = atRiskItems.size() - retainedCount;
 
-            // 4. Wipe the explored world -- a brand new expedition awaits. Divinities are
-            //    never at risk, so only the per-world chunk-entry bonus tracking resets.
-            worldManager.wipeExploredWorldOnDeath();
-            DivinityManager.getInstance().onWorldReset();
+            // 4. Play visceral death audio and transition to PlayerDeathScreen
+            soundManager.playPlayerDeathSound();
+            PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
+                    lostCount, retainedCount, "Slain in the Labyrinth");
+            game.setScreen(deathScreen);
+            return;
+        }
+    }
 
-            // 5. Restore Player
-            com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
-            debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
-            debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
-            player.getStats().setCurrentHP(player.getStats().getMaxHP());
-            player.getStats().setCurrentMP(player.getStats().getMaxMP());
-            player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
-            player.getStats().setSatiety(80.0f);
-            player.getStats().setHydration(80.0f);
-            player.getStats().setToxicity(0);
-            player.getStatusManager().clearEffects();
-            // Only re-arm a starter weapon/cross if the player somehow has nothing equipped;
-            // an already-equipped weapon/offhand is protected and was never removed.
-            if (player.getInventory().getRightHand() == null) {
-                Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
-                player.getInventory().setRightHand(starterWeapon);
-            }
-            if (player.getInventory().getLeftHand() == null) {
-                Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
-                player.getInventory().setLeftHand(starterCross);
-            }
+    /**
+     * Awakens the player in the Starting Shelter bed following death:
+     * fully regenerates the entire world from a new seed, restores vitals,
+     * rehydrates the shelter chest, and switches the display back to GameScreen.
+     */
+    public void respawnInShelter(int lostCount, int retainedCount, int deaths, float bridge) {
+        // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
+        worldManager.wipeExploredWorldOnDeath();
+        DivinityManager.getInstance().onWorldReset();
 
-            // 6. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
-            worldManager.setCurrentLevel(1);
-            worldManager.setCurrentChunk(new GridPoint2(0, 0));
-            Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
-            swapToChunk(shelterMaze);
+        // 2. Restore Player
+        com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
+        debugManager.setRenderEngine(com.bpm.minotaur.managers.DebugManager.RenderEngine.PLANAR_3D);
+        debugManager.setRenderModeDirect(com.bpm.minotaur.managers.DebugManager.RenderMode.MODERN);
+        player.getStats().setCurrentHP(player.getStats().getMaxHP());
+        player.getStats().setCurrentMP(player.getStats().getMaxMP());
+        player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
+        player.getStats().setSatiety(80.0f);
+        player.getStats().setHydration(80.0f);
+        player.getStats().setToxicity(0);
+        player.getStatusManager().clearEffects();
 
-            // Position player at bed / safe start point in shelter
-            GridPoint2 bedPos = null;
-            for (Item item : shelterMaze.getItems().values()) {
-                if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-                    int bx = (int) item.getPosition().x;
-                    int by = (int) item.getPosition().y;
-                    if (shelterMaze.isPassable(bx - 1, by)) {
-                        bedPos = new GridPoint2(bx - 1, by);
-                    } else if (shelterMaze.isPassable(bx, by + 1)) {
-                        bedPos = new GridPoint2(bx, by + 1);
-                    } else {
-                        bedPos = new GridPoint2(bx, by);
-                    }
-                    break;
+        // Only re-arm a starter weapon/cross if the player somehow has nothing equipped
+        if (player.getInventory().getRightHand() == null) {
+            Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().setRightHand(starterWeapon);
+        }
+        if (player.getInventory().getLeftHand() == null) {
+            Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().setLeftHand(starterCross);
+        }
+
+        // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
+        worldManager.setCurrentLevel(1);
+        worldManager.setCurrentChunk(new GridPoint2(0, 0));
+        Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+        swapToChunk(shelterMaze);
+
+        // Position player at bed / safe start point in shelter
+        GridPoint2 bedPos = null;
+        for (Item item : shelterMaze.getItems().values()) {
+            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                int bx = (int) item.getPosition().x;
+                int by = (int) item.getPosition().y;
+                if (shelterMaze.isPassable(bx - 1, by)) {
+                    bedPos = new GridPoint2(bx - 1, by);
+                } else if (shelterMaze.isPassable(bx, by + 1)) {
+                    bedPos = new GridPoint2(bx, by + 1);
+                } else {
+                    bedPos = new GridPoint2(bx, by);
                 }
+                break;
             }
-            if (bedPos == null) {
-                bedPos = worldManager.getInitialPlayerStartPos();
-            }
-            player.setPosition(bedPos);
-            worldManager.saveCurrentChunk(shelterMaze);
+        }
+        if (bedPos == null) {
+            bedPos = worldManager.getInitialPlayerStartPos();
+        }
+        player.setPosition(bedPos);
+        worldManager.saveCurrentChunk(shelterMaze);
 
-            // 7. Feedback
-            hud.addMessage("You died! Returned to Shelter Bed.");
+        // Re-hydrate Shelter Chest
+        ShelterChest.getInstance().load(game.getItemDataManager(), game.getAssetManager());
+
+        // 4. Feedback & return to game screen
+        if (hud != null) {
+            hud.addMessage("You awaken back in the Shelter Bed.");
             if (lostCount > 0) {
                 hud.addMessage("Lost " + lostCount + " unequipped item" + (lostCount == 1 ? "" : "s") + " to the fall."
                         + (retainedCount > 0 ? " Kept " + retainedCount + " (Loot Retention)." : ""));
             }
             hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
             hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
-            eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
-            soundManager.playDoorOpenSound();
-            return;
         }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
+        }
+        soundManager.playDoorOpenSound();
+
+        game.setScreen(this);
     }
 
     private void swapToChunk(Maze newMaze) {
@@ -2214,7 +2235,11 @@ public class GameScreen extends BaseScreen {
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
-            ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, ShelterChest.getInstance());
+            ShelterChest chest = ShelterChest.getInstance();
+            if (chest.isEmpty()) {
+                chest.load(game.getItemDataManager(), game.getAssetManager());
+            }
+            ShelterChestScreen chestScreen = new ShelterChestScreen(game, this, player, chest);
             game.setScreen(chestScreen);
             return;
         }

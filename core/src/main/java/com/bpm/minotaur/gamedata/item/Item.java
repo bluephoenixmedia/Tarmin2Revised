@@ -350,51 +350,51 @@ public class Item implements Renderable {
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.itemColor = color;
 
-        ItemTemplate template = dataManager.getTemplate(type);
+        ItemTemplate template = (dataManager != null) ? dataManager.getTemplate(type) : null;
 
-        this.friendlyName = template.friendlyName;
-        this.description = template.description; // Initialize new field
-        this.spriteData = template.spriteData;
-        this.baseValue = template.baseValue;
-        this.damageDice = template.damageDice;
-        this.armorClassBonus = template.armorClassBonus;
-        this.isWeapon = template.isWeapon;
-        this.isRanged = template.isRanged;
-        this.isArmor = template.isArmor;
-        this.isPotion = template.isPotion;
-        this.isFood = template.isFood;
-        this.isTreasure = template.isTreasure;
-        this.isKey = template.isKey;
-        this.isUsable = template.isUsable;
-        this.isContainer = template.isContainer;
-        this.isRing = template.isRing;
-        this.isShield = template.isShield;
-        this.isHelmet = template.isHelmet;
-        this.isGauntlets = template.isGauntlets;
-        this.isBoots = template.isBoots;
-        this.isLegs = template.isLegs;
-        this.isTorso = template.isTorso;
-        this.isArms = template.isArms;
-        this.isCloak = template.isCloak;
-        this.isAmulet = template.isAmulet;
-        this.range = template.range;
-        this.isImpassable = template.isImpassable; // Assign from template
-        this.isLocked = template.locked; // Initialize from template
-        this.ringEffect = template.ringEffect; // Initialize from template
-
-        this.dataManager = dataManager;
-
-        if (template.scale != null) {
-            this.scale = new Vector2(template.scale.x, template.scale.y);
+        if (template != null) {
+            this.friendlyName = template.friendlyName;
+            this.description = template.description; // Initialize new field
+            this.spriteData = template.spriteData;
+            this.baseValue = template.baseValue;
+            this.damageDice = template.damageDice;
+            this.armorClassBonus = template.armorClassBonus;
+            this.isWeapon = template.isWeapon;
+            this.isRanged = template.isRanged;
+            this.isArmor = template.isArmor;
+            this.isPotion = template.isPotion;
+            this.isFood = template.isFood;
+            this.isTreasure = template.isTreasure;
+            this.isKey = template.isKey;
+            this.isUsable = template.isUsable;
+            this.isContainer = template.isContainer;
+            this.isRing = template.isRing;
+            this.isShield = template.isShield;
+            this.isHelmet = template.isHelmet;
+            this.isGauntlets = template.isGauntlets;
+            this.isBoots = template.isBoots;
+            this.isLegs = template.isLegs;
+            this.isTorso = template.isTorso;
+            this.isArms = template.isArms;
+            this.isCloak = template.isCloak;
+            this.isAmulet = template.isAmulet;
+            this.range = template.range;
+            this.isImpassable = template.isImpassable; // Assign from template
+            this.isLocked = template.locked; // Initialize from template
+            this.ringEffect = template.ringEffect; // Initialize from template
+            this.scale = (template.scale != null) ? new Vector2(template.scale.x, template.scale.y) : new Vector2(1.0f, 1.0f);
         } else {
+            this.friendlyName = (type != null) ? toTitleCase(type.name()) : "Unknown Item";
             this.scale = new Vector2(1.0f, 1.0f);
         }
+
+        this.dataManager = dataManager;
 
         Texture tempTexture = null;
         TextureRegion tempRegion = null;
 
-        if (template.texturePath != null && !template.texturePath.isEmpty()
-                && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
+        if (template != null && template.texturePath != null && !template.texturePath.isEmpty()
+                && Gdx.app != null && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
 
             // Check for Debris Atlas (Hardcoded for now)
             if (template.texturePath.contains("images/debris") && assetManager.isLoaded("packed/debris.atlas")) {
@@ -473,7 +473,7 @@ public class Item implements Renderable {
 
         if (this.dataManager != null) {
             this.template = this.dataManager.getTemplate(this.type);
-        } else {
+        } else if (Gdx.app != null) {
             Gdx.app.error("Item", "Item created with a NULL ItemDataManager: " + this.type);
         }
     }
@@ -484,7 +484,7 @@ public class Item implements Renderable {
     }
 
     public String getTypeName() {
-        return type.name();
+        return type != null ? type.name() : "UNKNOWN";
     }
 
     public String getFriendlyName() {
@@ -497,7 +497,7 @@ public class Item implements Renderable {
 
     public String getDisplayName() {
         if (isPotion)
-            return this.friendlyName;
+            return this.friendlyName != null ? this.friendlyName : "Potion";
 
         // NEW: Dynamic Bone Naming
         if (this.type == ItemType.BONE && this.corpseSource != null) {
@@ -506,7 +506,7 @@ public class Item implements Renderable {
         }
 
         // NEW: Dynamic Gib Naming
-        if (this.type.name().startsWith("GIB_") && this.corpseSource != null) {
+        if (this.type != null && this.type.name().startsWith("GIB_") && this.corpseSource != null) {
             String sourceName = toTitleCase(this.corpseSource.name());
             String partName = "Flesh";
             if (type == ItemType.GIB_BILE)
@@ -521,13 +521,18 @@ public class Item implements Renderable {
             return sourceName + " " + partName;
         }
 
+        String baseName = this.friendlyName != null ? this.friendlyName
+                : (this.type != null ? toTitleCase(this.type.name()) : "Unknown Item");
+
         if (!isModified())
-            return this.friendlyName;
+            return baseName;
+
         StringBuilder nameBuilder = new StringBuilder();
         String prefix = null;
         String suffix = null;
         String bonus = null;
         for (ItemModifier mod : modifiers) {
+            if (mod == null || mod.displayName == null) continue;
             if (mod.type == ModifierType.BONUS_DAMAGE || mod.type == ModifierType.BONUS_AC) {
                 bonus = mod.displayName;
             } else if (mod.displayName.startsWith("of ")) {
@@ -538,7 +543,7 @@ public class Item implements Renderable {
         }
         if (prefix != null)
             nameBuilder.append(prefix).append(" ");
-        nameBuilder.append(this.friendlyName);
+        nameBuilder.append(baseName);
         if (bonus != null)
             nameBuilder.append(" ").append(bonus);
         if (suffix != null)
@@ -546,12 +551,26 @@ public class Item implements Renderable {
         return nameBuilder.toString();
     }
 
-    // Helper for Title Case
+    // Helper for Title Case (capitalizes each underscore-separated word)
     private String toTitleCase(String input) {
         if (input == null || input.isEmpty()) {
             return input;
         }
-        return input.charAt(0) + input.substring(1).toLowerCase().replace('_', ' ');
+        String[] words = input.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+            if (!word.isEmpty()) {
+                sb.append(Character.toUpperCase(word.charAt(0)));
+                if (word.length() > 1) {
+                    sb.append(word.substring(1).toLowerCase());
+                }
+            }
+            if (i < words.length - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 
     public boolean isWeapon() {
@@ -776,6 +795,9 @@ public class Item implements Renderable {
     }
 
     public ItemCategory getCategory() {
+        if (type == null)
+            return ItemCategory.MISC;
+
         // Fix: Ensure Scrolls are always treated as USEFUL (Readable), never as Weapons
         if (type.name().startsWith("SCROLL"))
             return ItemCategory.USEFUL;

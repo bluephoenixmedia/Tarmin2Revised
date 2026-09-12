@@ -374,6 +374,9 @@ public class SaveSlotSelectScreen extends BaseScreen {
         if (playerData != null && gameScreen.getPlayer() != null) {
             playerData.applyToPlayer(gameScreen.getPlayer(), game.getItemDataManager(), game.getAssetManager());
         }
+
+        // Load persistent shelter chest for the active slot
+        com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().load(game.getItemDataManager(), game.getAssetManager());
     }
 
     private void close() {

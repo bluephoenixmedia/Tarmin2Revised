@@ -358,20 +358,20 @@ public class FirstPersonWeaponOverlay {
             rotation = state.rotation;
         } else {
             // Idle ready posture: comfortably anchored in lower corners
-            drawX = (worldW * 0.75f) + bobX;
+            drawX = (worldW * 0.72f) + bobX;
             drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + bobY;
-            rotation = -22f;
+            rotation = -5f; // Vertically aligned starting posture per user test notes
 
             if (mainHandArchetype == AnimationArchetype.SLASHING_2H) {
                 // Two-handed grip stance (slightly centered, lower-right)
                 drawX = (worldW * 0.65f) + (bobX * 0.6f);
-                rotation = -16f;
+                rotation = -4f;
             } else if (mainHandArchetype == AnimationArchetype.THRUSTING_PIERCE) {
-                drawX = (worldW * 0.72f) + bobX;
-                rotation = -28f;
+                drawX = (worldW * 0.71f) + bobX;
+                rotation = -8f;
             } else if (mainHandArchetype == AnimationArchetype.RANGED_BOW || mainHandArchetype == AnimationArchetype.RANGED_FIREARM) {
                 drawX = (worldW * 0.70f) + bobX;
-                rotation = -12f;
+                rotation = -6f;
             }
         }
 

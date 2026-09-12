@@ -47,4 +47,35 @@ public class ShelterChestTest {
         assertEquals(1, chest.getItemCount());
         assertSame(item2, chest.getItem(0)); // Shifts or clears slot
     }
+
+    @Test
+    public void testItemDisplayNameNullSafety() {
+        Item item = new Item();
+        // Should not throw NullPointerException even when type and friendlyName are null
+        assertNotNull(item.getDisplayName());
+        assertEquals("UNKNOWN", item.getTypeName());
+        assertEquals(ItemCategory.MISC, item.getCategory());
+
+        // Test with null friendlyName but valid type
+        ItemTemplate template = new ItemTemplate();
+        template.friendlyName = null;
+        Item typedItem = Item.fromTemplate(Item.ItemType.RUSTY_SWORD, template);
+        assertNotNull(typedItem.getDisplayName());
+        assertEquals("Rusty Sword", typedItem.getDisplayName());
+    }
+
+    @Test
+    public void testItemSaveDataConversion() {
+        ItemTemplate template = new ItemTemplate();
+        template.friendlyName = "Test Sword";
+        template.isWeapon = true;
+        Item item = Item.fromTemplate(Item.ItemType.SWORD, template);
+
+        com.bpm.minotaur.gamedata.save.ItemSaveData isd = new com.bpm.minotaur.gamedata.save.ItemSaveData(item);
+        assertEquals(Item.ItemType.SWORD, isd.type);
+
+        Item rehydrated = isd.toItem(null, null);
+        assertNotNull(rehydrated);
+        assertEquals(Item.ItemType.SWORD, rehydrated.getType());
+    }
 }
