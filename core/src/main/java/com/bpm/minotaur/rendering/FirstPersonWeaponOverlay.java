@@ -357,22 +357,25 @@ public class FirstPersonWeaponOverlay {
             drawY = (worldH * state.yRel) + (bobY * 0.3f);
             rotation = state.rotation;
         } else {
-            // Idle ready posture: moved down just off-screen
-            drawX = (worldW * 0.76f) + bobX;
+            // Idle ready posture: comfortably anchored in lower corners
+            drawX = (worldW * 0.75f) + bobX;
             drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + bobY;
             rotation = -22f;
 
             if (mainHandArchetype == AnimationArchetype.SLASHING_2H) {
-                // Centered two-handed grip stance
-                drawX = (worldW * 0.60f) + (bobX * 0.6f);
-                rotation = -12f;
+                // Two-handed grip stance (slightly centered, lower-right)
+                drawX = (worldW * 0.65f) + (bobX * 0.6f);
+                rotation = -16f;
             } else if (mainHandArchetype == AnimationArchetype.THRUSTING_PIERCE) {
+                drawX = (worldW * 0.72f) + bobX;
+                rotation = -28f;
+            } else if (mainHandArchetype == AnimationArchetype.RANGED_BOW || mainHandArchetype == AnimationArchetype.RANGED_FIREARM) {
                 drawX = (worldW * 0.70f) + bobX;
-                rotation = -32f;
+                rotation = -12f;
             }
         }
 
-        float targetHeight = worldH * 0.46f;
+        float targetHeight = worldH * 0.44f;
         float ratio = (float) mainHandTexture.getRegionWidth() / (float) mainHandTexture.getRegionHeight();
         float targetWidth = targetHeight * ratio;
 
@@ -442,10 +445,10 @@ public class FirstPersonWeaponOverlay {
             drawY = (worldH * 0.02f) + bobY;
             rotation = 8f;
         } else {
-            // Idle offhand: moved down just off-screen
+            // Idle offhand: comfortably anchored in lower-left corner
             drawX = (worldW * 0.12f) - (bobX * 0.5f);
             drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + (bobY * 0.8f);
-            rotation = 18f;
+            rotation = 16f;
         }
 
         float targetHeight = worldH * 0.36f;

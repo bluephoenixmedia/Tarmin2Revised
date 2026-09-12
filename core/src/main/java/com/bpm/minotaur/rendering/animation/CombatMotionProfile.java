@@ -75,7 +75,7 @@ public class CombatMotionProfile {
      * - Phase 2 (anticipationRatio -> impactRatio): Explosive forward snap towards impact.
      * - Phase 3 (impactRatio -> 1.0): Snappy follow-through and recovery back to ready stance.
      */
-    public static final float IDLE_Y_REL = -0.36f;
+    public static final float IDLE_Y_REL = -0.12f;
 
     public MotionState evaluate(float progress) {
         progress = MathUtils.clamp(progress, 0f, 1f);
