@@ -1,75 +1,105 @@
 {
   "LADDER": {
     "friendlyName": "Ladder",
-    "description": "A ladder leading down.",
     "texturePath": "images/items/ladder.png",
-    "isImpassable": true,
     "spriteData": [
       "........................",
       "........................",
       "........................",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".......############.....",
+      ".......############.....",
+      ".........########.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
       "........................"
     ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "range": 0,
     "scale": {
-      "x": 1.0,
-      "y": 1.0
-    }
+      "x": 3.0,
+      "y": 0.5
+    },
+    "offsetX": 0.0,
+    "offsetY": -0.9,
+    "isPotionAppearance": false,
+    "variants": []
   },
   "LADDER_UP": {
     "friendlyName": "Ladder Up",
-    "description": "A ladder leading up.",
     "texturePath": "images/items/ladder_up.png",
-    "isImpassable": true,
     "spriteData": [
       "........................",
       "........................",
       "........................",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
-      ".......#########........",
-      ".......#.......#........",
-      ".......#.......#........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".........##....##.......",
+      ".........########.......",
+      ".......############.....",
+      ".......############.....",
+      ".........########.......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
       "........................"
     ],
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "range": 0,
     "scale": {
       "x": 1.0,
       "y": 1.0
-    }
+    },
+    "isPotionAppearance": false,
+    "variants": []
   },
   "SCROLL": {
     "friendlyName": "Scroll",
@@ -180,7 +210,7 @@
   "GIB_BILE": {
     "friendlyName": "Bile",
     "description": "A sac of bile.",
-    "texturePath": "images/items/potion_blue.png",
+    "texturePath": "images/debris/slime_residue.png",
     "baseValue": 5,
     "scale": {
       "x": 1.0,
@@ -447,7 +477,7 @@
   },
   "BRASS_LANTERN": {
     "friendlyName": "Brass Lantern",
-    "texturePath": "images/items/lamp.png",
+    "texturePath": "images/items/brass_lantern.png",
     "isImpassable": false,
     "spriteData": [
       "........................",
@@ -489,7 +519,7 @@
     "isUsable": true,
     "isContainer": false,
     "isRing": false,
-    "critChanceBonus": 0.10,
+    "critChanceBonus": 0.1,
     "fireDamage": 1,
     "scale": {
       "x": 1.0,
@@ -724,7 +754,7 @@
   },
   "RING_BLUE": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/ring.png",
+    "texturePath": "images/items/blue_ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -805,7 +835,7 @@
   },
   "RING_PINK": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/ring.png",
+    "texturePath": "images/items/pink_ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -886,7 +916,7 @@
   },
   "RING_GREEN": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/ring.png",
+    "texturePath": "images/items/green_ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -967,7 +997,7 @@
   },
   "RING_PURPLE": {
     "friendlyName": "Ring",
-    "texturePath": "images/items/ring.png",
+    "texturePath": "images/items/purple_ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -1274,7 +1304,7 @@
   "POTION_GREEN": {
     "friendlyName": "Green Potion",
     "description": "A murky green liquid.",
-    "texturePath": "images/items/potion_blue.png",
+    "texturePath": "images/items/potion_green.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2766,7 +2796,7 @@
   },
   "UNKNOWN": {
     "friendlyName": "Unknown",
-    "texturePath": "",
+    "texturePath": "images/items/unknown.png",
     "spriteData": [
       "........................",
       "........................",
@@ -2818,108 +2848,6 @@
         "weight": 1
       }
     ]
-  },
-  "LADDER": {
-    "friendlyName": "Ladder",
-    "texturePath": "images/items/ladder.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".........##....##.......",
-      ".........########.......",
-      ".........##....##.......",
-      ".........########.......",
-      ".........##....##.......",
-      ".........########.......",
-      ".......############.....",
-      ".......############.....",
-      ".........########.......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "damageDice": 0,
-    "armorClassBonus": 0,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "range": 0,
-    "scale": {
-      "x": 3.0,
-      "y": 0.5
-    },
-    "offsetX": 0.0,
-    "offsetY": -0.9,
-    "isPotionAppearance": false,
-    "variants": []
-  },
-  "LADDER_UP": {
-    "friendlyName": "Ladder Up",
-    "texturePath": "images/items/ladder_up.png",
-    "spriteData": [
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      ".........##....##.......",
-      ".........########.......",
-      ".........##....##.......",
-      ".........########.......",
-      ".........##....##.......",
-      ".........########.......",
-      ".......############.....",
-      ".......############.....",
-      ".........########.......",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................",
-      "........................"
-    ],
-    "baseValue": 0,
-    "damageDice": 0,
-    "armorClassBonus": 0,
-    "isWeapon": false,
-    "isRanged": false,
-    "isArmor": false,
-    "isPotion": false,
-    "isFood": false,
-    "isTreasure": false,
-    "isKey": false,
-    "isUsable": false,
-    "isContainer": false,
-    "isRing": false,
-    "range": 0,
-    "scale": {
-      "x": 1.0,
-      "y": 1.0
-    },
-    "isPotionAppearance": false,
-    "variants": []
   },
   "LEAVES": {
     "friendlyName": "Pile of Leaves",
@@ -3442,9 +3370,17 @@
     "isUsable": false,
     "isContainer": false,
     "variants": [
-      { "color": "ORANGE", "minLevel": 1, "maxLevel": 99, "weight": 1 }
+      {
+        "color": "ORANGE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
     ],
-    "scale": { "x": 0.5, "y": 0.5 },
+    "scale": {
+      "x": 0.5,
+      "y": 0.5
+    },
     "texturePath": "images/weapons/rusty_weapon.png"
   },
   "RUSTY_ARMOR": {
@@ -4909,7 +4845,7 @@
   },
   "RING_GOLD": {
     "friendlyName": "Gold Ring",
-    "texturePath": "images/items/blue_ring.png",
+    "texturePath": "images/items/ring.png",
     "spriteData": [
       "........................",
       "........................",
@@ -4964,7 +4900,7 @@
   },
   "LARGE_PACK": {
     "friendlyName": "Large Pack",
-    "texturePath": "images/items/small_bag.png",
+    "texturePath": "images/items/pack.png",
     "spriteData": [
       "........................",
       "........................",
@@ -5005,8 +4941,8 @@
     "isContainer": true,
     "isRing": false,
     "scale": {
-      "x": 0.5,
-      "y": 0.5
+      "x": 0.7,
+      "y": 0.7
     },
     "variants": [
       {
@@ -5114,7 +5050,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "RED", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "RED",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_YELLOW": {
     "friendlyName": "Ring",
@@ -5158,7 +5101,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "GOLD", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GOLD",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_WHITE": {
     "friendlyName": "Ring",
@@ -5202,7 +5152,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "WHITE", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_BLACK": {
     "friendlyName": "Ring",
@@ -5246,7 +5203,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "DARK_SPIRITUAL", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "DARK_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_ORANGE": {
     "friendlyName": "Ring",
@@ -5290,7 +5254,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "PINK", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "PINK",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_SILVER": {
     "friendlyName": "Ring",
@@ -5334,7 +5305,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "GRAY_SPIRITUAL", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "GRAY_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_BRONZE": {
     "friendlyName": "Ring",
@@ -5378,7 +5356,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "TAN", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "TAN",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "RING_IVORY": {
     "friendlyName": "Ring",
@@ -5422,7 +5407,14 @@
     "isUsable": false,
     "isContainer": false,
     "isRing": true,
-    "variants": [{ "color": "WHITE_SPIRITUAL", "minLevel": 1, "maxLevel": 99, "weight": 1 }]
+    "variants": [
+      {
+        "color": "WHITE_SPIRITUAL",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
   },
   "LOST_DIVINITIES": {
     "friendlyName": "Lost Divinities",
