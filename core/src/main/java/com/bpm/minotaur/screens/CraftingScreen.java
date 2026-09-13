@@ -30,6 +30,7 @@ import com.bpm.minotaur.rendering.HudSkin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Fullscreen Scene2D screen for the Shelter Artisan Workshop.
@@ -65,6 +66,8 @@ public class CraftingScreen extends BaseScreen {
     private TextButton tabBtnForge;
     private TextButton tabBtnSalvage;
     private TextButton tabBtnOssuary;
+    private TextButton tabBtnAlchemy;
+    private CraftingManager.AlchemyRecipe selectedRecipe;
 
     private final boolean fieldMode;
 
@@ -130,10 +133,12 @@ public class CraftingScreen extends BaseScreen {
         tabBtnForge = createTabButton("[ 1 : FORGE & REFINE ]", 0);
         tabBtnSalvage = createTabButton("[ 2 : SALVAGE & SCRAP ]", 1);
         tabBtnOssuary = createTabButton("[ 3 : OSSUARY & RELICS ]", 2);
+        tabBtnAlchemy = createTabButton("[ 4 : ALCHEMY CAULDRON ]", 3);
 
         tabBar.add(tabBtnForge).size(400, 50).padRight(20);
         tabBar.add(tabBtnSalvage).size(400, 50).padRight(20);
-        tabBar.add(tabBtnOssuary).size(400, 50);
+        tabBar.add(tabBtnOssuary).size(400, 50).padRight(20);
+        tabBar.add(tabBtnAlchemy).size(400, 50);
 
         root.add(tabBar).center().padBottom(15).row();
 
@@ -224,6 +229,7 @@ public class CraftingScreen extends BaseScreen {
         boneStructure = null;
         boneEdge = null;
         boneCore = null;
+        selectedRecipe = null;
         feedbackLabel.setText("Tab switched.");
         refreshAll();
     }
@@ -239,6 +245,7 @@ public class CraftingScreen extends BaseScreen {
         applyTabButtonState(tabBtnForge, currentTab == 0);
         applyTabButtonState(tabBtnSalvage, currentTab == 1);
         applyTabButtonState(tabBtnOssuary, currentTab == 2);
+        applyTabButtonState(tabBtnAlchemy, currentTab == 3);
     }
 
     private void updateResourceBar() {
@@ -260,6 +267,11 @@ public class CraftingScreen extends BaseScreen {
 
     private void populateLeftBrowser() {
         leftPanelContent.clear();
+
+        if (currentTab == 3) {
+            populateAlchemyRecipeCodex();
+            return;
+        }
 
         String sectionTitle;
         List<Item> displayItems = new ArrayList<>();
@@ -384,9 +396,131 @@ public class CraftingScreen extends BaseScreen {
             renderForgeWorkbench();
         } else if (currentTab == 1) {
             renderSalvageWorkbench();
-        } else {
+        } else if (currentTab == 2) {
             renderOssuaryWorkbench();
+        } else {
+            renderAlchemyWorkbench();
         }
+    }
+
+    // =========================================================================
+    // TAB 4: ALCHEMY CAULDRON
+    // =========================================================================
+
+    private void populateAlchemyRecipeCodex() {
+        Label sectionLabel = new Label("Recipe Codex", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        leftPanelContent.add(sectionLabel).left().padBottom(15).row();
+
+        CraftingManager.AlchemyCategory[] categories = CraftingManager.AlchemyCategory.values();
+        for (CraftingManager.AlchemyCategory category : categories) {
+            Label catLabel = new Label(category.name(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            leftPanelContent.add(catLabel).left().padTop(10).padBottom(4).row();
+
+            for (final CraftingManager.AlchemyRecipe recipe : craftingManager.getAlchemyRecipes()) {
+                if (recipe.category != category) continue;
+
+                Table row = new Table();
+                boolean isSelected = (recipe == selectedRecipe);
+                row.setBackground(isSelected ? hudSkin.getSlotActive() : hudSkin.getSlotRecessed());
+
+                boolean canBrew = craftingManager.canBrew(player, recipe);
+                Label nameLabel = new Label(recipe.name,
+                        new Label.LabelStyle(hudSkin.getFontSmall(), isSelected ? HudSkin.COL_GOLD_BRIGHT
+                                : (canBrew ? Color.WHITE : Color.GRAY)));
+                nameLabel.setWrap(true);
+                row.add(nameLabel).left().expandX().fillX().pad(8, 12, 8, 12);
+
+                row.setTouchable(Touchable.enabled);
+                row.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        selectedRecipe = recipe;
+                        feedbackLabel.setText("Selected recipe: " + recipe.name);
+                        refreshAll();
+                    }
+                });
+
+                leftPanelContent.add(row).expandX().fillX().padBottom(6).row();
+            }
+        }
+    }
+
+    private void renderAlchemyWorkbench() {
+        Label title = new Label("THE BUBBLING CAULDRON", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        rightPanelContent.add(title).center().padBottom(20).row();
+
+        // Reagent stock card: what's available from pack + Shelter Chest
+        Table stockCard = new Table();
+        stockCard.setBackground(hudSkin.getSlotRecessed());
+        stockCard.pad(15);
+        Label stockTitle = new Label("Reagents On Hand", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        stockCard.add(stockTitle).left().row();
+        String stockText = String.format(
+                "Bile: %d   |   Organ: %d   |   Flesh: %d   |   Bone: %d   |   Water: %d",
+                craftingManager.countMaterial(player, ItemType.GIB_BILE),
+                craftingManager.countMaterial(player, ItemType.GIB_ORGAN),
+                craftingManager.countMaterial(player, ItemType.GIB_FLESH),
+                craftingManager.countMaterial(player, ItemType.GIB_BONE),
+                craftingManager.countMaterial(player, ItemType.PUDDLE_WATER));
+        Label stockLabel = new Label(stockText, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+        stockCard.add(stockLabel).left().padTop(6);
+        rightPanelContent.add(stockCard).expandX().fillX().padBottom(25).row();
+
+        if (selectedRecipe == null) {
+            Label hint = new Label("Select a recipe from the codex to begin brewing.", new Label.LabelStyle(hudSkin.getFontMain(), Color.GRAY));
+            hint.setAlignment(Align.center);
+            rightPanelContent.add(hint).padTop(60);
+            return;
+        }
+
+        // Potion preview card
+        Table previewCard = new Table();
+        previewCard.setBackground(hudSkin.getTooltipBg());
+        previewCard.pad(18);
+
+        Label nameLabel = new Label(selectedRecipe.name, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        nameLabel.setFontScale(1.1f);
+        previewCard.add(nameLabel).left().row();
+
+        Label catLabel = new Label("Category: " + selectedRecipe.category.name(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        previewCard.add(catLabel).left().padTop(4).row();
+
+        Label descLabel = new Label(selectedRecipe.description, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+        descLabel.setWrap(true);
+        previewCard.add(descLabel).left().width(1050).padTop(8).row();
+
+        StringBuilder reagentText = new StringBuilder("Reagent Slots: ");
+        int i = 0;
+        for (Map.Entry<ItemType, Integer> entry : selectedRecipe.reagents.entrySet()) {
+            if (i++ > 0) reagentText.append(",  ");
+            int have = craftingManager.countMaterial(player, entry.getKey());
+            reagentText.append(entry.getValue()).append("x ").append(entry.getKey().name())
+                    .append(" (have ").append(have).append(")");
+        }
+        Label reagentLabel = new Label(reagentText.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE));
+        reagentLabel.setWrap(true);
+        previewCard.add(reagentLabel).left().width(1050).padTop(10).row();
+
+        rightPanelContent.add(previewCard).expandX().fillX().padBottom(25).row();
+
+        boolean canBrew = craftingManager.canBrew(player, selectedRecipe);
+        TextButton brewBtn = createActionButton("[ BREW POTION ]", canBrew);
+        brewBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (brewBtn.isDisabled()) return;
+                Item potion = craftingManager.brewPotion(player, selectedRecipe);
+                if (potion != null) {
+                    feedbackLabel.setText("Brewed " + potion.getDisplayName() + "! Deposited into storage.");
+                    feedbackLabel.setColor(Color.GREEN);
+                } else {
+                    feedbackLabel.setText("Failed to brew: missing reagents.");
+                    feedbackLabel.setColor(Color.RED);
+                }
+                refreshAll();
+            }
+        });
+        rightPanelContent.add(brewBtn).size(320, 50);
     }
 
     // --- TAB 0: FORGE & REFINE ---
@@ -840,6 +974,10 @@ public class CraftingScreen extends BaseScreen {
         }
         if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
             switchTab(2);
+            return true;
+        }
+        if (keycode == Input.Keys.NUM_4 || keycode == Input.Keys.NUMPAD_4) {
+            switchTab(3);
             return true;
         }
         return false;

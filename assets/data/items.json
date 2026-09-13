@@ -1670,6 +1670,246 @@
       }
     ]
   },
+  "POTION_OF_HEALING": {
+    "friendlyName": "Potion of Healing",
+    "description": "A carefully brewed restorative tonic.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 60,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_GREATER_HEALING": {
+    "friendlyName": "Potion of Greater Healing",
+    "description": "A potent restorative brew, stronger than common healing tonics.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 120,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_SUPERIOR_HEALING": {
+    "friendlyName": "Potion of Superior Healing",
+    "description": "A rare, potent draught that mends grievous wounds.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 250,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_SUPREME_HEALING": {
+    "friendlyName": "Potion of Supreme Healing",
+    "description": "A legendary elixir said to restore even the dying.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 500,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_SPEED": {
+    "friendlyName": "Potion of Speed",
+    "description": "Quickens the drinker's reflexes and stride.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 150,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_GIANT_STRENGTH": {
+    "friendlyName": "Potion of Giant Strength",
+    "description": "Floods the drinker's muscles with crude, monstrous power.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 200,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_HILL_GIANT": {
+    "friendlyName": "Potion of Hill Giant Strength",
+    "description": "Grants the raw might of a hill giant.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 180,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_FIRE_GIANT": {
+    "friendlyName": "Potion of Fire Giant Strength",
+    "description": "Molten fury courses through the drinker's sinews.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 260,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_STORM_GIANT": {
+    "friendlyName": "Potion of Storm Giant Strength",
+    "description": "Crackling lightning pulses through the drinker's limbs.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 350,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_INVULNERABILITY": {
+    "friendlyName": "Potion of Invulnerability",
+    "description": "Hardens the drinker's body like diamond, resisting all harm.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 600,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_HEROISM": {
+    "friendlyName": "Potion of Heroism",
+    "description": "Infuses the drinker's spirit with bravery and holy vigor.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 150,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_INVISIBILITY_5E": {
+    "friendlyName": "Potion of Invisibility",
+    "description": "Fades the drinker from sight completely for a time.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 400,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_FLYING": {
+    "friendlyName": "Potion of Flying",
+    "description": "Grants the drinker the power of unaided flight.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 300,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_CLIMBING": {
+    "friendlyName": "Potion of Climbing",
+    "description": "Grants effortless grip on sheer dungeon rock.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 40,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_DIMINUTION": {
+    "friendlyName": "Potion of Diminution",
+    "description": "Shrinks the drinker down to half their size.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 200,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_GROWTH": {
+    "friendlyName": "Potion of Growth",
+    "description": "Expands the drinker to giant proportions.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 220,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE": {
+    "friendlyName": "Potion of Resistance",
+    "description": "Wards the drinker against a broad range of harm.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 150,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE_FIRE": {
+    "friendlyName": "Elixir of Fire Resistance",
+    "description": "Cools the drinker's blood against scorching heat.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 130,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE_COLD": {
+    "friendlyName": "Elixir of Cold Resistance",
+    "description": "Kindles a warm inner flame against freezing frost.",
+    "texturePath": "images/items/potion_blue.png",
+    "baseValue": 130,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE_LIGHTNING": {
+    "friendlyName": "Elixir of Lightning Resistance",
+    "description": "Grounds electrical static safely across the drinker's skin.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 130,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE_ACID": {
+    "friendlyName": "Elixir of Acid Resistance",
+    "description": "Coats the drinker in a protective sheen against corrosion.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 130,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_RESISTANCE_NECROTIC": {
+    "friendlyName": "Elixir of Necrotic Resistance",
+    "description": "Wards the drinker's spirit against withering decay.",
+    "texturePath": "images/items/potion_gold.png",
+    "baseValue": 150,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_VITALITY": {
+    "friendlyName": "Potion of Vitality",
+    "description": "Cleanses exhaustion and weakness with pure vitality.",
+    "texturePath": "images/items/potion_green.png",
+    "baseValue": 100,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
+  "POTION_CLARITY": {
+    "friendlyName": "Potion of Clarity",
+    "description": "Clears the mind of all fog and confusion.",
+    "texturePath": "images/items/potion_pink.png",
+    "baseValue": 80,
+    "isPotion": true,
+    "isPotionAppearance": true,
+    "isUsable": true,
+    "scale": { "x": 1.0, "y": 1.0 }
+  },
   "KEY": {
     "friendlyName": "Key",
     "texturePath": "images/items/key.png",

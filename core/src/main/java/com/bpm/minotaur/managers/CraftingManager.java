@@ -79,6 +79,112 @@ public class CraftingManager {
         return legacyRecipes;
     }
 
+    // =========================================================================
+    // ALCHEMY CAULDRON PILLAR
+    // =========================================================================
+
+    public enum AlchemyCategory {
+        RESTORATIVE, ENHANCEMENT, PROTECTIVE, TOXIC
+    }
+
+    public static class AlchemyRecipe {
+        public final String name;
+        public final AlchemyCategory category;
+        public final Map<ItemType, Integer> reagents;
+        public final ItemType output;
+        public final String description;
+
+        public AlchemyRecipe(String name, AlchemyCategory category, Map<ItemType, Integer> reagents,
+                ItemType output, String description) {
+            this.name = name;
+            this.category = category;
+            this.reagents = reagents;
+            this.output = output;
+            this.description = description;
+        }
+    }
+
+    private final List<AlchemyRecipe> alchemyRecipes = buildAlchemyRecipes();
+
+    private static Map<ItemType, Integer> reagentMap(Object... pairs) {
+        Map<ItemType, Integer> map = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < pairs.length; i += 2) {
+            map.put((ItemType) pairs[i], (Integer) pairs[i + 1]);
+        }
+        return map;
+    }
+
+    private static List<AlchemyRecipe> buildAlchemyRecipes() {
+        List<AlchemyRecipe> list = new ArrayList<>();
+        list.add(new AlchemyRecipe("Potion of Healing", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.GIB_FLESH, 2, ItemType.PUDDLE_WATER, 1),
+                ItemType.POTION_OF_HEALING, "A simple restorative brew rendered from fresh flesh and clean water."));
+        list.add(new AlchemyRecipe("Potion of Greater Healing", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.GIB_ORGAN, 2, ItemType.GIB_FLESH, 1, ItemType.PUDDLE_WATER, 1),
+                ItemType.POTION_GREATER_HEALING, "Vital organs concentrate the restorative essence into something stronger."));
+        list.add(new AlchemyRecipe("Potion of Vitality", AlchemyCategory.RESTORATIVE,
+                reagentMap(ItemType.GIB_ORGAN, 1, ItemType.PUDDLE_WATER, 2),
+                ItemType.POTION_VITALITY, "A cleansing tonic that scours away exhaustion and weakness."));
+
+        list.add(new AlchemyRecipe("Potion of Giant Strength", AlchemyCategory.ENHANCEMENT,
+                reagentMap(ItemType.GIB_BONE, 2, ItemType.GIB_FLESH, 2),
+                ItemType.POTION_GIANT_STRENGTH, "Rendered marrow and sinew brewed into a draught of monstrous power."));
+        list.add(new AlchemyRecipe("Potion of Speed", AlchemyCategory.ENHANCEMENT,
+                reagentMap(ItemType.GIB_ORGAN, 1, ItemType.GIB_BILE, 1),
+                ItemType.POTION_SPEED, "A caustic, quickening brew that sets the heart racing."));
+        list.add(new AlchemyRecipe("Potion of Climbing", AlchemyCategory.ENHANCEMENT,
+                reagentMap(ItemType.GIB_BONE, 1, ItemType.PUDDLE_WATER, 1),
+                ItemType.POTION_CLIMBING, "Ground bone dust suspended in water grants sure footing."));
+
+        list.add(new AlchemyRecipe("Elixir of Fire Resistance", AlchemyCategory.PROTECTIVE,
+                reagentMap(ItemType.GIB_BILE, 2, ItemType.PUDDLE_WATER, 1),
+                ItemType.POTION_RESISTANCE_FIRE, "Bile rendered down until it cools the blood against flame."));
+        list.add(new AlchemyRecipe("Elixir of Cold Resistance", AlchemyCategory.PROTECTIVE,
+                reagentMap(ItemType.GIB_FLESH, 1, ItemType.GIB_BILE, 1, ItemType.PUDDLE_WATER, 1),
+                ItemType.POTION_RESISTANCE_COLD, "A warming tincture that wards off the deepest chill."));
+        list.add(new AlchemyRecipe("Potion of Resistance", AlchemyCategory.PROTECTIVE,
+                reagentMap(ItemType.GIB_ORGAN, 2, ItemType.GIB_BONE, 1),
+                ItemType.POTION_RESISTANCE, "A broad-spectrum ward brewed from a menagerie of monster parts."));
+
+        list.add(new AlchemyRecipe("Potion of Poison", AlchemyCategory.TOXIC,
+                reagentMap(ItemType.GIB_BILE, 3),
+                ItemType.POTION_GREEN, "Concentrated bile, foul and dangerous to drink."));
+        list.add(new AlchemyRecipe("Potion of Confusion", AlchemyCategory.TOXIC,
+                reagentMap(ItemType.GIB_BILE, 1, ItemType.GIB_ORGAN, 1),
+                ItemType.POTION_SWIRLY, "An unstable mixture that muddles the mind of anyone foolish enough to drink it."));
+        return list;
+    }
+
+    public List<AlchemyRecipe> getAlchemyRecipes() {
+        return alchemyRecipes;
+    }
+
+    public boolean canBrew(Player player, AlchemyRecipe recipe) {
+        if (player == null || recipe == null) return false;
+        for (Map.Entry<ItemType, Integer> req : recipe.reagents.entrySet()) {
+            if (countMaterial(player, req.getKey()) < req.getValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Consumes the recipe's reagents (pooled from pack + Shelter Chest) and
+     * produces the resulting potion, depositing it into the same pool.
+     */
+    public Item brewPotion(Player player, AlchemyRecipe recipe) {
+        if (!canBrew(player, recipe)) return null;
+        for (Map.Entry<ItemType, Integer> req : recipe.reagents.entrySet()) {
+            consumeMaterial(player, req.getKey(), req.getValue());
+        }
+        Item potion = itemDataManager.createItem(recipe.output, 0, 0, null, assetManager);
+        if (potion != null) {
+            depositItem(player, potion);
+        }
+        return potion;
+    }
+
     public boolean canCraft(Inventory inventory, Recipe recipe) {
         if (inventory == null || recipe == null) return false;
         Map<ItemType, Integer> invCounts = new HashMap<>();

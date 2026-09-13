@@ -392,6 +392,114 @@
       "weight": 3
     },
     {
+      "type": "POTION_OF_HEALING",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 10
+    },
+    {
+      "type": "POTION_GREATER_HEALING",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 6
+    },
+    {
+      "type": "POTION_VITALITY",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 6
+    },
+    {
+      "type": "POTION_CLIMBING",
+      "minLevel": 1,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "POTION_GIANT_STRENGTH",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "POTION_SPEED",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "POTION_HEROISM",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 5
+    },
+    {
+      "type": "POTION_RESISTANCE_FIRE",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_RESISTANCE_COLD",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_RESISTANCE_LIGHTNING",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_RESISTANCE_ACID",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_RESISTANCE_NECROTIC",
+      "minLevel": 6,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_SUPERIOR_HEALING",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 4
+    },
+    {
+      "type": "POTION_SUPREME_HEALING",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 2
+    },
+    {
+      "type": "POTION_INVULNERABILITY",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 2
+    },
+    {
+      "type": "POTION_INVISIBILITY_5E",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "POTION_GROWTH",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
+      "type": "POTION_DIMINUTION",
+      "minLevel": 11,
+      "maxLevel": 99,
+      "weight": 3
+    },
+    {
       "type": "FOOD",
       "minLevel": 1,
       "maxLevel": 99,
