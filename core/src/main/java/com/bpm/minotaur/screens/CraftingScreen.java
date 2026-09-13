@@ -17,7 +17,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.gamedata.dice.BoneTrait;
 import com.bpm.minotaur.gamedata.dice.Die;
+import com.bpm.minotaur.gamedata.dice.DieFace;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
 import com.bpm.minotaur.gamedata.item.ItemModifier;
@@ -606,12 +608,12 @@ public class CraftingScreen extends BaseScreen {
     // --- TAB 2: OSSUARY & RELICS ---
     private void renderOssuaryWorkbench() {
         Label title = new Label("OSSUARY CARVING & BONE RELICS", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        rightPanelContent.add(title).center().padBottom(20).row();
+        rightPanelContent.add(title).center().padBottom(15).row();
 
         // Section A: Custom Combat Die (3 Bones)
         Table diceSection = new Table();
         diceSection.setBackground(hudSkin.getSlotRecessed());
-        diceSection.pad(20);
+        diceSection.pad(16);
 
         Label dTitle = new Label("1. Carve Custom Combat Die (3 Bones)", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         diceSection.add(dTitle).left().row();
@@ -621,14 +623,64 @@ public class CraftingScreen extends BaseScreen {
         String slot3 = boneCore != null ? boneCore.getDisplayName() : "[ Empty Core Bone ]";
 
         Label slotsLabel = new Label("Slots: 1. Structure: " + slot1 + "   |   2. Edge: " + slot2 + "   |   3. Core: " + slot3, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-        diceSection.add(slotsLabel).left().padTop(6).padBottom(10).row();
+        diceSection.add(slotsLabel).left().padTop(4).padBottom(8).row();
+
+        // Fetch bone traits for previewing the 6-sided net
+        BoneTrait traitStruct = (boneStructure != null) ? BoneTrait.get(boneStructure.getCorpseSource()) : null;
+        BoneTrait traitEdge = (boneEdge != null) ? BoneTrait.get(boneEdge.getCorpseSource()) : null;
+        BoneTrait traitCore = (boneCore != null) ? BoneTrait.get(boneCore.getCorpseSource()) : null;
+
+        DieFace f1 = (traitStruct != null) ? traitStruct.faces[0] : null;
+        DieFace f6 = (traitStruct != null) ? traitStruct.faces[1] : null;
+        DieFace f2 = (traitEdge != null) ? traitEdge.faces[0] : null;
+        DieFace f5 = (traitEdge != null) ? traitEdge.faces[1] : null;
+        DieFace f3 = (traitCore != null) ? traitCore.faces[0] : null;
+        DieFace f4 = (traitCore != null) ? traitCore.faces[1] : null;
+
+        // Visual 6-Sided Unfolded Die Net Diagram (Cross Pattern)
+        Table netTable = new Table();
+        netTable.pad(6);
+        // Row 1: Top Pole (F1)
+        netTable.add().size(130, 48); // Left spacer
+        netTable.add(createFaceBox("F1 (Top Pole)", f1, traitStruct != null ? traitStruct.boneColor : null)).size(150, 48).pad(2);
+        netTable.add().size(130, 48); // Right spacer
+        netTable.add().size(130, 48).row(); // Far right spacer
+
+        // Row 2: Equator (F4 Core, F2 Edge, F3 Core, F5 Edge)
+        netTable.add(createFaceBox("F4 (Core)", f4, traitCore != null ? traitCore.boneColor : null)).size(130, 48).pad(2);
+        netTable.add(createFaceBox("F2 (Edge)", f2, traitEdge != null ? traitEdge.boneColor : null)).size(130, 48).pad(2);
+        netTable.add(createFaceBox("F3 (Core)", f3, traitCore != null ? traitCore.boneColor : null)).size(130, 48).pad(2);
+        netTable.add(createFaceBox("F5 (Edge)", f5, traitEdge != null ? traitEdge.boneColor : null)).size(130, 48).pad(2).row();
+
+        // Row 3: Bottom Pole (F6)
+        netTable.add().size(130, 48); // Left spacer
+        netTable.add(createFaceBox("F6 (Bottom Pole)", f6, traitStruct != null ? traitStruct.boneColor : null)).size(150, 48).pad(2);
+        netTable.add().size(130, 48); // Right spacer
+        netTable.add().size(130, 48).row(); // Far right spacer
+
+        diceSection.add(netTable).center().padTop(4).padBottom(6).row();
+
+        // Anatomy Legend
+        Label guideLbl = new Label("Structure sets Poles (Faces 1 & 6) | Edge sets Striking Facets (Faces 2 & 5) | Core sets Balance (Faces 3 & 4)",
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        diceSection.add(guideLbl).center().padBottom(6).row();
+
+        // Check Pure Resonance
+        boolean isResonant = (traitStruct != null && traitEdge != null && traitCore != null
+                && traitStruct.source == traitEdge.source && traitEdge.source == traitCore.source);
+        if (isResonant) {
+            String resTitle = "★ PURE " + traitStruct.source.name().replace('_', ' ') + " RESONANCE ACTIVE: "
+                    + (traitStruct.resonanceName != null ? traitStruct.resonanceName : "+25% Potency") + " ★";
+            Label resLabel = new Label(resTitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            diceSection.add(resLabel).center().padBottom(8).row();
+        }
 
         boolean canCarveDie = (boneStructure != null && boneEdge != null && boneCore != null);
         if (canCarveDie) {
             Die previewDie = craftingManager.craftBoneDie(boneStructure, boneEdge, boneCore);
             if (previewDie != null) {
                 Label preview = new Label("Resulting Die: " + previewDie.getName(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-                diceSection.add(preview).left().padBottom(10).row();
+                diceSection.add(preview).left().padBottom(8).row();
             }
         }
 
@@ -714,6 +766,22 @@ public class CraftingScreen extends BaseScreen {
         talismanSection.add(forgeBtn).size(320, 45).left();
 
         rightPanelContent.add(talismanSection).expandX().fillX();
+    }
+
+    private Table createFaceBox(String roleTitle, DieFace face, Color boneColor) {
+        Table box = new Table();
+        box.setBackground(hudSkin.getDoubleBorderPanel());
+        box.pad(4, 6, 4, 6);
+
+        Label titleLbl = new Label(roleTitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        box.add(titleLbl).center().row();
+
+        String traitText = (face != null) ? face.getLabel() + " (" + face.getType().name() + " " + face.getValue() + ")" : "[ Empty ]";
+        Color textColor = (face != null && boneColor != null) ? boneColor : Color.GRAY;
+        Label traitLbl = new Label(traitText, new Label.LabelStyle(hudSkin.getFontSmall(), textColor));
+        box.add(traitLbl).center().padTop(2);
+
+        return box;
     }
 
     private TextButton createActionButton(String text, boolean enabled) {

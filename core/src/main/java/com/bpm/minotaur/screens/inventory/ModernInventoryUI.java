@@ -21,6 +21,8 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.managers.DiscoveryManager;
+import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.paperdoll.PaperDollWidget;
 import com.bpm.minotaur.paperdoll.data.FragmentResolver;
 import com.bpm.minotaur.paperdoll.data.SkeletonData;
@@ -74,9 +76,20 @@ public class ModernInventoryUI {
     private final InventoryLayoutConfig config;
 
     private final Player player;
+    private final Maze maze;
+    private final GameEventManager eventManager;
+    private final DiscoveryManager discoveryManager;
 
     public ModernInventoryUI(Player player, Maze maze, AssetManager assets, ItemDataManager idm) {
+        this(player, maze, assets, idm, null, null);
+    }
+
+    public ModernInventoryUI(Player player, Maze maze, AssetManager assets, ItemDataManager idm,
+                             GameEventManager eventManager, DiscoveryManager discoveryManager) {
         this.player = player;
+        this.maze = maze;
+        this.eventManager = eventManager;
+        this.discoveryManager = discoveryManager;
         config = new InventoryLayoutConfig();
 
         skin = new InventorySkin();
@@ -99,6 +112,15 @@ public class ModernInventoryUI {
         quickSlots = new QuickSlotsPanel(player.getInventory().getQuickSlots(), skin, idm, dnd);
         attributes = new AttributesPanel(player, skin);
         inspector = new ItemInspectorPanel(player, skin);
+
+        // Wire Action Button in Inspector to execute item usage
+        inspector.setUseItemCallback(item -> {
+            if (item != null) {
+                this.player.useItem(item, this.eventManager, this.discoveryManager, this.maze);
+                refresh();
+                inspector.showDefaultHint();
+            }
+        });
 
         // ── Connect slots to event bus for hover/click inspection ─────
         backpack.setBus(bus);

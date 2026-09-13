@@ -276,7 +276,8 @@ public class Skybox3DRenderer {
         if (castleInstance != null) {
             com.badlogic.gdx.math.GridPoint2 chunk = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new com.badlogic.gdx.math.GridPoint2(0, 0);
             float chunkY = chunk.y + (player.getPosition().y / 16f);
-            float northProgress = Math.min(Math.max(chunkY / 5.0f, 0f), 1.0f);
+            // Reduced progress rate towards Castle Tarmin by 80% (paced over 25 chunks north)
+            float northProgress = Math.min(Math.max(chunkY / 25.0f, 0f), 1.0f);
             float currentDist = LANDMARK_DISTANCE - (northProgress * 55f); // 140f down to 85f
             float currentScale = 2.025f * (1.0f + (northProgress * 0.85f));
             float castleX = (chunk.x * 2.5f);

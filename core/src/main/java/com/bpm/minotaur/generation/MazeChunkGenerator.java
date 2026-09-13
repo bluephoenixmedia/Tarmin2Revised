@@ -303,6 +303,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             placed.add(forcedUpLadderPos);
         }
 
+        int downLaddersPlaced = 0;
         for (int i = 0; i < targetLadders && !candidates.isEmpty(); i++) {
             GridPoint2 best = null;
             float maxMinDist = -1;
@@ -329,21 +330,29 @@ public class MazeChunkGenerator implements IChunkGenerator {
             candidates.remove(best);
             placed.add(best);
             maze.addLadder(new Ladder(best.x, best.y, Ladder.LadderType.DOWN, downStyle));
+            downLaddersPlaced++;
         }
 
-        if (placed.isEmpty()) {
-            // Fallback: original unbounded loop (guards against pathological layouts)
-            int x, y;
-            do {
-                x = random.nextInt(maze.getWidth());
-                y = random.nextInt(maze.getHeight());
-            } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
-                    maze.getItems().containsKey(new GridPoint2(x, y)) ||
-                    maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
-                    currentChunkHomeTiles.contains(new GridPoint2(x, y)) ||
-                    (forcedUpLadderPos != null && x == forcedUpLadderPos.x && y == forcedUpLadderPos.y));
-            Gdx.app.log("MazeChunkGenerator", "WARN: No reachable ladder candidate, using fallback at " + x + "," + y);
-            maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN, downStyle));
+        if (downLaddersPlaced == 0) {
+            // Fallback: MUST choose from reachable tiles to avoid marooned ladders
+            List<GridPoint2> fallbackCandidates = new ArrayList<>();
+            for (GridPoint2 pos : reachable) {
+                int layoutY = height - 1 - pos.y;
+                if (layoutY >= 0 && layoutY < layout.length && pos.x >= 0 && pos.x < maze.getWidth()) {
+                    if (layout[layoutY].charAt(pos.x) == '.' &&
+                        !currentChunkHomeTiles.contains(pos) &&
+                        (forcedUpLadderPos == null || pos.x != forcedUpLadderPos.x || pos.y != forcedUpLadderPos.y)) {
+                        fallbackCandidates.add(pos);
+                    }
+                }
+            }
+            if (!fallbackCandidates.isEmpty()) {
+                GridPoint2 chosen = fallbackCandidates.get(random.nextInt(fallbackCandidates.size()));
+                maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN, downStyle));
+                Gdx.app.log("MazeChunkGenerator", "Reachable fallback down ladder placed at " + chosen.x + "," + chosen.y);
+            } else {
+                Gdx.app.error("MazeChunkGenerator", "CRITICAL: No reachable floor tile available for down ladder in chunk!");
+            }
         }
 
         if (forcedUpLadderPos != null) {
@@ -756,18 +765,55 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * Wall bits in wallData block traversal; '#' characters are hard stops.
      */
     private Set<GridPoint2> computeReachableTiles(Maze maze) {
-        GridPoint2 seed = findFirstFloorTile(maze);
-        if (seed == null) return Collections.emptySet();
+        int height = maze.getHeight();
+        int width = maze.getWidth();
 
-        Set<GridPoint2> reachable = new HashSet<>();
+        // 1. If we have a forced UP ladder, start flood fill directly from it
+        if (forcedUpLadderPos != null) {
+            int layoutY = height - 1 - forcedUpLadderPos.y;
+            if (forcedUpLadderPos.x >= 0 && forcedUpLadderPos.x < width
+                    && forcedUpLadderPos.y >= 0 && forcedUpLadderPos.y < height
+                    && finalLayout[layoutY].charAt(forcedUpLadderPos.x) != '#') {
+                Set<GridPoint2> fromEntrance = floodFillComponent(maze, forcedUpLadderPos);
+                if (!fromEntrance.isEmpty()) {
+                    Gdx.app.log("MazeChunkGenerator", "Reachability: " + fromEntrance.size() + " tiles reachable from UP ladder " + forcedUpLadderPos);
+                    return fromEntrance;
+                }
+            }
+        }
+
+        // 2. Otherwise find the largest connected component of traversable floor tiles
+        Set<GridPoint2> visited = new HashSet<>();
+        Set<GridPoint2> largestComponent = new HashSet<>();
+
+        for (int y = 0; y < height; y++) {
+            int layoutY = height - 1 - y;
+            for (int x = 0; x < width; x++) {
+                if (finalLayout[layoutY].charAt(x) == '#') continue;
+                GridPoint2 pt = new GridPoint2(x, y);
+                if (visited.contains(pt)) continue;
+
+                Set<GridPoint2> component = floodFillComponent(maze, pt);
+                visited.addAll(component);
+                if (component.size() > largestComponent.size()) {
+                    largestComponent = component;
+                }
+            }
+        }
+
+        Gdx.app.log("MazeChunkGenerator", "Reachability: " + largestComponent.size() + " tiles in largest connected component");
+        return largestComponent;
+    }
+
+    private Set<GridPoint2> floodFillComponent(Maze maze, GridPoint2 seed) {
+        Set<GridPoint2> component = new HashSet<>();
         Queue<GridPoint2> queue = new LinkedList<>();
-        reachable.add(seed);
+        component.add(seed);
         queue.add(seed);
 
         while (!queue.isEmpty()) {
             GridPoint2 cur = queue.poll();
             for (Direction dir : Direction.values()) {
-                // Solid wall bit set on current tile → can't leave this side
                 if ((maze.getWallDataAt(cur.x, cur.y) & dir.getWallMask()) != 0) continue;
 
                 int nx = cur.x + (int) dir.getVector().x;
@@ -775,33 +821,16 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 if (nx < 0 || nx >= maze.getWidth() || ny < 0 || ny >= maze.getHeight()) continue;
 
                 GridPoint2 next = new GridPoint2(nx, ny);
-                if (reachable.contains(next)) continue;
+                if (component.contains(next)) continue;
 
-                // Target must not be a solid wall character
                 int layoutY = maze.getHeight() - 1 - ny;
                 if (finalLayout[layoutY].charAt(nx) == '#') continue;
 
-                reachable.add(next);
+                component.add(next);
                 queue.add(next);
             }
         }
-
-        Gdx.app.log("MazeChunkGenerator", "Reachability: " + reachable.size() + " tiles reachable from " + seed);
-        return reachable;
-    }
-
-    private GridPoint2 findFirstFloorTile(Maze maze) {
-        int height = maze.getHeight();
-        int width = maze.getWidth();
-        for (int y = 0; y < height; y++) {
-            int layoutY = height - 1 - y;
-            for (int x = 0; x < width; x++) {
-                if (finalLayout[layoutY].charAt(x) == '.') {
-                    return new GridPoint2(x, y);
-                }
-            }
-        }
-        return null;
+        return component;
     }
 
     private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,

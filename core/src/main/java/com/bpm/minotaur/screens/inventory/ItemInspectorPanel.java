@@ -1,8 +1,11 @@
 package com.bpm.minotaur.screens.inventory;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemCategory;
@@ -19,6 +22,15 @@ public class ItemInspectorPanel extends Table {
     private final Player player;
     private final InventorySkin skin;
     private final Table contentTable = new Table();
+
+    public interface UseItemCallback {
+        void onUseItem(Item item);
+    }
+    private UseItemCallback useItemCallback;
+
+    public void setUseItemCallback(UseItemCallback callback) {
+        this.useItemCallback = callback;
+    }
 
     private static final Color COL_INK_DARK = Color.valueOf("1C1208FF");
     private static final Color COL_INK_MUTED = Color.valueOf("5C4A30FF");
@@ -123,8 +135,46 @@ public class ItemInspectorPanel extends Table {
         String footerHint = getFooterHint(item);
         if (footerHint != null) {
             Label footer = new Label(footerHint, new Label.LabelStyle(skin.getFontSmall(), COL_INK_MUTED));
-            contentTable.add(footer).left().padTop(4);
+            contentTable.add(footer).left().padTop(4).row();
         }
+
+        // Action Button for Consumables & Tomes
+        if (isUsableConsumable(item)) {
+            String btnText = getActionVerb(item);
+            TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+            btnStyle.font = skin.getFontSmall();
+            btnStyle.fontColor = Color.valueOf("F0E6D2FF");
+            btnStyle.up = skin.getNormalSlotDrawable();
+            btnStyle.over = skin.getHighlightValidDrawable();
+            btnStyle.down = skin.getEquipSlotDrawable();
+
+            TextButton actionBtn = new TextButton("[ " + btnText + " ]", btnStyle);
+            actionBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (useItemCallback != null) {
+                        useItemCallback.onUseItem(item);
+                    }
+                }
+            });
+            contentTable.add(actionBtn).width(240).height(38).padTop(8).center().row();
+        }
+    }
+
+    public boolean isUsableConsumable(Item item) {
+        if (item == null) return false;
+        if (item.isFood() || item.isPotion() || item.isScroll()) return true;
+        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return true;
+        return item.isUsable() && !item.isWeapon() && !item.isArmor();
+    }
+
+    public String getActionVerb(Item item) {
+        if (item == null) return "USE ITEM";
+        if (item.getType() != null && item.getType().name().startsWith("TOME_")) return "STUDY TOME";
+        if (item.isScroll()) return "READ SCROLL";
+        if (item.isPotion()) return "DRINK POTION";
+        if (item.isFood()) return "EAT FOOD";
+        return "USE ITEM";
     }
 
     private int parseMaxDamage(Item item) {

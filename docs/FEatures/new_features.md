@@ -1,0 +1,2 @@
+- Should be able to spnd divinities on upgrading the shelter
+- The castle in the distance grows too quickyl when you move north, we need to reduce the progress towards the castle by about 80% 

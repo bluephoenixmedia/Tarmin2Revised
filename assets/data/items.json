@@ -180,7 +180,7 @@
   "GIB_FLESH": {
     "friendlyName": "Flesh",
     "description": "A chunk of raw flesh.",
-    "texturePath": "images/items/cooked__meat.png",
+    "texturePath": "images/gore/gib1.png",
     "baseValue": 1,
     "scale": {
       "x": 1.0,
@@ -190,7 +190,7 @@
   "MEAT": {
     "friendlyName": "Flesh",
     "description": "Raw flesh harvested from a butchered corpse. Best cooked before eating -- devouring it raw risks poison or worse.",
-    "texturePath": "images/items/cooked__meat.png",
+    "texturePath": "images/gore/gib1.png",
     "baseValue": 2,
     "damageDice": 0,
     "armorClassBonus": 0,
@@ -224,7 +224,7 @@
   "GIB_ORGAN": {
     "friendlyName": "Organ",
     "description": "A visceral organ.",
-    "texturePath": "images/items/bat_guano.png",
+    "texturePath": "images/gore/gib4.png",
     "baseValue": 2,
     "scale": {
       "x": 1.0,
@@ -234,7 +234,7 @@
   "GIB_BILE": {
     "friendlyName": "Bile",
     "description": "A sac of bile.",
-    "texturePath": "images/debris/slime_residue.png",
+    "texturePath": "images/gore/gib8.png",
     "baseValue": 5,
     "scale": {
       "x": 1.0,

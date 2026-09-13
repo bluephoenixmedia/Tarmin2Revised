@@ -1585,12 +1585,17 @@ public class CombatManager {
 
         GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
-        // 1. Determine Gib Count based on Damage and Overkill Tier
-        int gibCount = 1 + random.nextInt(2); // 1-2 gibs default
+        // 1. Determine Gib Count based on Damage and Overkill Tier (Stochastic Pacing)
+        int dropChance = 20; // 20% base chance for normal kill
         if (overkillTier >= 2) {
-            gibCount = 3 + random.nextInt(3); // 3-5 gib items on Tier 2 obliteration
+            dropChance = 45; // 45% on Tier 2 obliteration
         } else if (overkillTier == 1 || lastDamageDealt > 10) {
-            gibCount = 2 + random.nextInt(2);
+            dropChance = 30;
+        }
+
+        int gibCount = 0;
+        if (random.nextInt(100) < dropChance) {
+            gibCount = (overkillTier >= 2) ? (1 + random.nextInt(3)) : 1;
         }
 
         // 2. Spawn Gibs

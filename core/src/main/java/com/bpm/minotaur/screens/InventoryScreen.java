@@ -213,7 +213,9 @@ public class InventoryScreen extends BaseScreen {
             tooltipLabel = new Label("", new Label.LabelStyle(font, Color.WHITE));
 
             modernUI = new ModernInventoryUI(
-                    player, maze, game.getAssetManager(), game.getItemDataManager());
+                    player, maze, game.getAssetManager(), game.getItemDataManager(),
+                    (parentScreen != null) ? parentScreen.getEventManager() : null,
+                    (parentScreen != null) ? parentScreen.getDiscoveryManager() : null);
             modernUI.addToStage(stage);
             modernUI.refresh();
             return;
@@ -1234,6 +1236,15 @@ public class InventoryScreen extends BaseScreen {
         Item item = slot.getItem();
         if (item == null)
             return;
+
+        // Direct usage for consumables, potions, scrolls, food, and tomes
+        if (item.isFood() || item.isPotion() || item.isScroll() || (item.getType() != null && item.getType().name().startsWith("TOME_"))) {
+            com.bpm.minotaur.managers.GameEventManager em = (parentScreen != null) ? parentScreen.getEventManager() : null;
+            com.bpm.minotaur.managers.DiscoveryManager dm = (parentScreen != null) ? parentScreen.getDiscoveryManager() : null;
+            player.useItem(item, em, dm, maze);
+            refreshSlots();
+            return;
+        }
 
         if (slot.type == SlotType.EQUIPMENT) {
             for (InventorySlot packSlot : allSlots) {

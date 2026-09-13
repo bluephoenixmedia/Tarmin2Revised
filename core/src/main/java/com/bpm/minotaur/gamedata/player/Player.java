@@ -1981,25 +1981,40 @@ public class Player {
                 eventManager.addEvent(new GameEvent("You butcher the corpse.", 2f));
                 maze.getItems().remove(targetTile);
 
-                // Loot Generation
-                Item meat = itemDataManager.createItem(Item.ItemType.MEAT, targetX, targetY, ItemColor.RED,
-                        assetManager);
-                meat.setCorpseSource(itemInFront.getCorpseSource());
-                if (inventory.pickupToBackpack(meat)) {
-                    eventManager.addEvent(new GameEvent("You harvest some " + meat.getDisplayName() + ".", 2f));
-                } else {
-                    maze.addItem(meat);
-                    eventManager.addEvent(new GameEvent("Inventory full! " + meat.getDisplayName() + " dropped.", 2f));
+                // Probabilistic Loot Generation scaled by Player Luck
+                int luck = stats != null ? stats.getLuck() : 0;
+                int meatChance = Math.min(75, 35 + (luck * 2));
+                int boneChance = Math.min(70, 30 + (luck * 2));
+                boolean harvestedAny = false;
+
+                if (Math.random() * 100 < meatChance) {
+                    Item meat = itemDataManager.createItem(Item.ItemType.MEAT, targetX, targetY, ItemColor.RED,
+                            assetManager);
+                    meat.setCorpseSource(itemInFront.getCorpseSource());
+                    harvestedAny = true;
+                    if (inventory.pickupToBackpack(meat)) {
+                        eventManager.addEvent(new GameEvent("You harvest some " + meat.getDisplayName() + ".", 2f));
+                    } else {
+                        maze.addItem(meat);
+                        eventManager.addEvent(new GameEvent("Inventory full! " + meat.getDisplayName() + " dropped.", 2f));
+                    }
                 }
 
-                Item bone = itemDataManager.createItem(Item.ItemType.BONE, targetX, targetY, ItemColor.WHITE,
-                        assetManager);
-                bone.setCorpseSource(itemInFront.getCorpseSource());
-                if (inventory.pickupToBackpack(bone)) {
-                    eventManager.addEvent(new GameEvent("You harvest a " + bone.getDisplayName() + ".", 2f));
-                } else {
-                    maze.addItem(bone);
-                    eventManager.addEvent(new GameEvent("Inventory full! " + bone.getDisplayName() + " dropped.", 2f));
+                if (Math.random() * 100 < boneChance) {
+                    Item bone = itemDataManager.createItem(Item.ItemType.BONE, targetX, targetY, ItemColor.WHITE,
+                            assetManager);
+                    bone.setCorpseSource(itemInFront.getCorpseSource());
+                    harvestedAny = true;
+                    if (inventory.pickupToBackpack(bone)) {
+                        eventManager.addEvent(new GameEvent("You harvest a " + bone.getDisplayName() + ".", 2f));
+                    } else {
+                        maze.addItem(bone);
+                        eventManager.addEvent(new GameEvent("Inventory full! " + bone.getDisplayName() + " dropped.", 2f));
+                    }
+                }
+
+                if (!harvestedAny) {
+                    eventManager.addEvent(new GameEvent("You butcher the corpse, but harvest nothing of value.", 2f));
                 }
             } else {
                 eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));

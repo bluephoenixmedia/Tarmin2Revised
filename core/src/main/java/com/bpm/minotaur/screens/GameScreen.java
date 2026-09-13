@@ -262,6 +262,10 @@ public class GameScreen extends BaseScreen {
         return eventManager;
     }
 
+    public com.bpm.minotaur.managers.DiscoveryManager getDiscoveryManager() {
+        return discoveryManager;
+    }
+
     @Override
     public void hide() {
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {

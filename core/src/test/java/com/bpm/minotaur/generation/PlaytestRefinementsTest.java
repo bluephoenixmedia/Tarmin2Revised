@@ -135,6 +135,11 @@ public class PlaytestRefinementsTest {
 
         assertTrue("MazeChunkGenerator must place 2 to 3 DOWN ladders per chunk, but placed: " + downLadderCount,
                 downLadderCount >= 2 && downLadderCount <= 3);
+        for (Ladder ladder : maze.getLadders().values()) {
+            GridPoint2 ladderGrid = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
+            assertTrue("Ladder at " + ladderGrid + " must be on a reachable tile",
+                    reachable.contains(ladderGrid));
+        }
     }
 
     @Test
@@ -167,6 +172,58 @@ public class PlaytestRefinementsTest {
 
         assertTrue("ForestChunkGenerator must place 2 to 3 DOWN ladders per chunk, but placed: " + downLadderCount,
                 downLadderCount >= 2 && downLadderCount <= 3);
+        for (Ladder ladder : maze.getLadders().values()) {
+            GridPoint2 ladderGrid = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
+            assertTrue("Ladder at " + ladderGrid + " must be on a reachable tile",
+                    reachable.contains(ladderGrid));
+        }
+    }
+
+    @Test
+    public void testLaddersNeverSpawnInUnreachablePockets() {
+        MazeChunkGenerator mazeGen = new MazeChunkGenerator();
+        ForestChunkGenerator forestGen = new ForestChunkGenerator();
+        Maze maze1 = new Maze(1, new int[24][24]);
+        Maze maze2 = new Maze(1, new int[24][24]);
+
+        String[] layout = new String[24];
+        Set<GridPoint2> reachable = new HashSet<>();
+        Set<GridPoint2> isolatedPocket = new HashSet<>();
+
+        // Create main reachable area and an isolated 3x3 pocket at (18, 18)
+        for (int y = 0; y < 24; y++) {
+            StringBuilder row = new StringBuilder();
+            for (int x = 0; x < 24; x++) {
+                if (x >= 18 && x <= 20 && y >= 18 && y <= 20) {
+                    row.append('.');
+                    isolatedPocket.add(new GridPoint2(x, y));
+                } else if (x == 0 || x == 23 || y == 0 || y == 23 || x == 17 || y == 17) {
+                    row.append('#');
+                } else {
+                    row.append('.');
+                    reachable.add(new GridPoint2(x, y));
+                }
+            }
+            layout[y] = row.toString();
+        }
+
+        mazeGen.spawnLadder(maze1, layout, reachable);
+        for (Ladder ladder : maze1.getLadders().values()) {
+            GridPoint2 ladderGrid = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
+            assertFalse("Maze ladder must never generate in isolated unreachable pocket",
+                    isolatedPocket.contains(ladderGrid));
+            assertTrue("Maze ladder must be on a reachable tile",
+                    reachable.contains(ladderGrid));
+        }
+
+        forestGen.spawnLadder(maze2, layout, reachable);
+        for (Ladder ladder : maze2.getLadders().values()) {
+            GridPoint2 ladderGrid = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
+            assertFalse("Forest ladder must never generate in isolated unreachable pocket",
+                    isolatedPocket.contains(ladderGrid));
+            assertTrue("Forest ladder must be on a reachable tile",
+                    reachable.contains(ladderGrid));
+        }
     }
 
     @Test
@@ -184,5 +241,33 @@ public class PlaytestRefinementsTest {
                 CombatManager.CombatState.INACTIVE, combatManager.getCurrentState());
         assertNull("Pending combat monster should remain null when target is out of melee range",
                 combatManager.getMonster());
+    }
+
+    @Test
+    public void testTeleportEffectNeverMaroonedInEnclosedPocket() {
+        int[][] walls = new int[5][5];
+        // Enclose (3, 3) completely with walls using Direction bitmasks
+        int allFourWalls = com.bpm.minotaur.gamedata.Direction.NORTH.getWallMask()
+                | com.bpm.minotaur.gamedata.Direction.SOUTH.getWallMask()
+                | com.bpm.minotaur.gamedata.Direction.EAST.getWallMask()
+                | com.bpm.minotaur.gamedata.Direction.WEST.getWallMask();
+        walls[3][3] = allFourWalls;
+        walls[4][3] |= com.bpm.minotaur.gamedata.Direction.SOUTH.getWallMask();
+        walls[2][3] |= com.bpm.minotaur.gamedata.Direction.NORTH.getWallMask();
+        walls[3][4] |= com.bpm.minotaur.gamedata.Direction.WEST.getWallMask();
+        walls[3][2] |= com.bpm.minotaur.gamedata.Direction.EAST.getWallMask();
+
+        Maze maze = new Maze(1, walls);
+        Player player = new Player(1.5f, 1.5f);
+        GameEventManager eventManager = new GameEventManager();
+        com.bpm.minotaur.gamedata.spells.effects.TeleportEffect teleport = new com.bpm.minotaur.gamedata.spells.effects.TeleportEffect();
+
+        for (int i = 0; i < 20; i++) {
+            player.setPosition(new GridPoint2(1, 1));
+            teleport.execute(player, null, eventManager, null, maze, null);
+            GridPoint2 target = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+            assertNotEquals("Teleport must never land on the walled-off enclosed tile (3, 3)",
+                    new GridPoint2(3, 3), target);
+        }
     }
 }

@@ -18,11 +18,16 @@ public class TeleportEffect implements SpellEffect {
     @Override
     public void execute(Player player, CombatManager combatManager, GameEventManager eventManager, AnimationManager animationManager, Maze maze, Tarmin2 game) {
         if (maze != null && player != null) {
+            GridPoint2 startTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
             List<GridPoint2> validTiles = new ArrayList<>();
             for (int x = 0; x < maze.getWidth(); x++) {
                 for (int y = 0; y < maze.getHeight(); y++) {
-                    if (maze.isPassable(x, y) && !maze.getMonsters().containsKey(new GridPoint2(x, y))) {
-                        validTiles.add(new GridPoint2(x, y));
+                    GridPoint2 p = new GridPoint2(x, y);
+                    if (maze.isPassable(x, y) && !maze.getMonsters().containsKey(p)) {
+                        if (p.equals(startTile)
+                                || !com.bpm.minotaur.gamedata.Pathfinder.findPath(maze, player, startTile, p).isEmpty()) {
+                            validTiles.add(p);
+                        }
                     }
                 }
             }
