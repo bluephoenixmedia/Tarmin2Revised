@@ -247,7 +247,33 @@ public class PlayerStats {
         return currentHP;
     }
 
+    private int temporaryHP = 0;
+
+    public int getTemporaryHP() {
+        return temporaryHP;
+    }
+
+    public void setTemporaryHP(int temporaryHP) {
+        this.temporaryHP = Math.max(0, temporaryHP);
+    }
+
+    public void addTemporaryHP(int amount) {
+        this.temporaryHP = Math.max(this.temporaryHP, amount);
+    }
+
     public void setCurrentHP(int currentHP) {
+        if (currentHP < this.currentHP && temporaryHP > 0) {
+            int diff = this.currentHP - currentHP;
+            if (temporaryHP >= diff) {
+                temporaryHP -= diff;
+                return;
+            } else {
+                diff -= temporaryHP;
+                temporaryHP = 0;
+                this.currentHP = Math.max(0, this.currentHP - diff);
+                return;
+            }
+        }
         this.currentHP = Math.max(0, currentHP);
     }
 
@@ -269,7 +295,7 @@ public class PlayerStats {
     }
 
     public void setWarStrength(int val) {
-        this.currentHP = Math.max(0, val);
+        setCurrentHP(val);
     }
 
     public void setSpiritualStrength(int val) {

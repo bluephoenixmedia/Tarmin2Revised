@@ -82,6 +82,7 @@ public class ItemTemplate {
     public int probability = 0; // Relative spawn weight
     public float critChanceBonus = 0.0f;
     public int fireDamage = 0;
+    public int maxCharges = 0;
 
     // --- Collision Logic ---
     public boolean isImpassable = false; // New Flag

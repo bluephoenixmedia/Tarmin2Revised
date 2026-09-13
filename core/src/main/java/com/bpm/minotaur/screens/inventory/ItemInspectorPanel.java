@@ -235,8 +235,12 @@ public class ItemInspectorPanel extends Table {
         addStatRow(table, "Slot:", "Finger Ring", COL_INK_DARK);
         addStatRow(table, "Base Value:", item.getBaseValue() + " Gold", COL_INK_DARK);
         Item wornRing = player.getEquipment().getWornRing();
+        Item wornRing2 = player.getEquipment().getWornRing2();
         if (wornRing == item) {
-            Label eq = new Label("Currently Worn on Ring Slot", new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
+            Label eq = new Label("Currently Worn on Left Hand", new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
+            table.add(eq).colspan(2).left().padTop(4).row();
+        } else if (wornRing2 == item) {
+            Label eq = new Label("Currently Worn on Right Hand", new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
             table.add(eq).colspan(2).left().padTop(4).row();
         }
     }

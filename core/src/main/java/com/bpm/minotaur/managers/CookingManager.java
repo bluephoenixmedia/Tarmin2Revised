@@ -33,10 +33,16 @@ public class CookingManager {
         public final List<ItemType> ingredients;
         public final List<StatusEffectType> guaranteedEffects;
         public final String description;
+        public final ItemType resultItemType; // If non-null, produces this item instead of MEAL
 
         public CookingRecipe(String name, String description, List<StatusEffectType> effects, ItemType... ingredients) {
+            this(name, description, null, effects, ingredients);
+        }
+
+        public CookingRecipe(String name, String description, ItemType resultItemType, List<StatusEffectType> effects, ItemType... ingredients) {
             this.name = name;
             this.description = description;
+            this.resultItemType = resultItemType;
             this.guaranteedEffects = new ArrayList<>(effects);
             this.ingredients = new ArrayList<>(Arrays.asList(ingredients));
             Collections.sort(this.ingredients, (a, b) -> a.name().compareTo(b.name()));
@@ -58,6 +64,8 @@ public class CookingManager {
         // Starter recipes unlocked by default
         discoveredRecipes.add("Hearty Stew");
         discoveredRecipes.add("Warrior's Stew");
+        discoveredRecipes.add("Potion of Healing");
+        discoveredRecipes.add("Quickstep Tonic");
     }
 
     private void initializeRecipes() {
@@ -149,6 +157,71 @@ public class CookingManager {
             "A barbaric trifecta of beast essence granting relentless combat instincts.",
             Arrays.asList(StatusEffectType.TEMP_STRENGTH, StatusEffectType.BLOOD_SURGE, StatusEffectType.CARAPACE_HARDENING),
             ItemType.GIB_FLESH, ItemType.GIB_BONE, ItemType.GIB_GLAZE
+        ));
+
+        // --- Camp Alchemy: Open5e Potions from Harvested Reagents ---
+        recipes.add(new CookingRecipe(
+            "Potion of Healing",
+            "A standard restorative draught brewed from harvested blood and nourishing flesh.",
+            ItemType.POTION_OF_HEALING,
+            Arrays.asList(StatusEffectType.HEALTHY),
+            ItemType.BLOOD_VIAL, ItemType.MEAT
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Greater Healing Draught",
+            "A potent crimson brew enhanced with rich organ extract.",
+            ItemType.POTION_GREATER_HEALING,
+            Arrays.asList(StatusEffectType.HEALTHY),
+            ItemType.BLOOD_VIAL, ItemType.MEAT, ItemType.GIB_ORGAN
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Quickstep Tonic",
+            "A sharp, effervescent concoction distilled from beast bile and meat. Grants Haste.",
+            ItemType.POTION_SPEED,
+            Arrays.asList(StatusEffectType.HASTED),
+            ItemType.GIB_BILE, ItemType.MEAT
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Titan Draught",
+            "A heavy mineral draught brewed from crushed bone, flesh, and meat. Grants Giant Strength.",
+            ItemType.POTION_GIANT_STRENGTH,
+            Arrays.asList(StatusEffectType.GIANT_STRENGTH),
+            ItemType.GIB_BONE, ItemType.GIB_FLESH, ItemType.MEAT
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Valiant Cordial",
+            "A heroic elixir distilled from marrow, organ tissue, and fresh blood. Grants Temp HP and To-Hit bonus.",
+            ItemType.POTION_HEROISM,
+            Arrays.asList(StatusEffectType.HEROISM),
+            ItemType.BLOOD_VIAL, ItemType.GIB_ORGAN, ItemType.GIB_BONE
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Ironward Elixir",
+            "A shimmering alchemical emulsion of chitin glaze, bone, and organ essence. Grants 50% damage reduction.",
+            ItemType.POTION_INVULNERABILITY,
+            Arrays.asList(StatusEffectType.INVULNERABILITY),
+            ItemType.GIB_GLAZE, ItemType.GIB_BONE, ItemType.GIB_ORGAN
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Flameguard Tonic",
+            "A fiery reactive tincture that creates a heat-dispersing barrier.",
+            ItemType.POTION_RESISTANCE_FIRE,
+            Arrays.asList(StatusEffectType.RESIST_FIRE),
+            ItemType.GIB_GLAZE, ItemType.GIB_BILE
+        ));
+
+        recipes.add(new CookingRecipe(
+            "Frostward Tonic",
+            "An insulating lipid reduction that protects against biting subterranean cold.",
+            ItemType.POTION_RESISTANCE_COLD,
+            Arrays.asList(StatusEffectType.RESIST_COLD),
+            ItemType.GIB_FLESH, ItemType.GIB_GLAZE
         ));
 
         if (Gdx.app != null) {

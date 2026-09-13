@@ -1221,6 +1221,44 @@ public class CombatManager {
                 showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor);
                 lastDamageDealt = actualDamage;
 
+                // --- Open5e Ring of the Ram Trigger ---
+                if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.RAM) > 0) {
+                    player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.RAM);
+                    int forceDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d10");
+                    int ramActual = monster.takeDamage(forceDmg, DamageType.PHYSICAL, false);
+                    eventManager.addEvent(new GameEvent("RAM FORCE! A spectral ram head batters the " + monster.getType() + " for +" + ramActual + " force dmg!", 2.0f));
+                    showDamageText(ramActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "RAM! ", com.badlogic.gdx.graphics.Color.CYAN);
+
+                    if (maze != null && monster.getCurrentHP() > 0) {
+                        int tileX = (int) monster.getPosition().x;
+                        int tileY = (int) monster.getPosition().y;
+                        Direction pushDir = player.getFacing();
+                        com.badlogic.gdx.math.Vector2 pushVec = pushDir.getVector();
+
+                        maze.getMonsters().remove(new GridPoint2(tileX, tileY));
+                        for (int p = 0; p < 2; p++) {
+                            int nextX = tileX + (int) pushVec.x;
+                            int nextY = tileY + (int) pushVec.y;
+                            if (maze.isWallBlocking(tileX, tileY, pushDir) || !maze.isPassable(nextX, nextY) || maze.getMonsters().containsKey(new GridPoint2(nextX, nextY))) {
+                                break;
+                            }
+                            tileX = nextX;
+                            tileY = nextY;
+                        }
+                        monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
+                        maze.getMonsters().put(new GridPoint2(tileX, tileY), monster);
+                    }
+                }
+
+                // --- Open5e Ring of Shooting Stars Trigger ---
+                if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS) > 0) {
+                    player.getEquipment().expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.SHOOTING_STARS);
+                    int starDmg = com.bpm.minotaur.utils.DiceRoller.roll("2d6");
+                    int starActual = monster.takeDamage(starDmg, DamageType.LIGHT, false);
+                    eventManager.addEvent(new GameEvent("SHOOTING STARS! Dazzling motes of light strike " + monster.getType() + " for +" + starActual + " light dmg!", 2.0f));
+                    showDamageText(starActual, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), "STARS! ", com.badlogic.gdx.graphics.Color.YELLOW);
+                }
+
                 // --- VISCERAL: Feedback ---
                 float damageRatio = (float) totalDamage / (float) monster.getMaxHP();
                 boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;

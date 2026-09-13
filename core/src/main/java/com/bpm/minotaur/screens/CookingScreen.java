@@ -780,13 +780,20 @@ public class CookingScreen extends BaseScreen {
             }
         }
 
-        // 3. Create Meal Item
-        Item meal = game.getItemDataManager().createItem(Item.ItemType.MEAL,
-                (int) player.getPosition().x, (int) player.getPosition().y,
-                ItemColor.WHITE, game.getAssetManager());
-        meal.setName(mealName);
-        meal.setMealEffectDuration(duration);
-        for (StatusEffectType eff : mealEffects) meal.addMealEffect(eff);
+        // 3. Create Item (Meal or Potion)
+        Item cookedItem;
+        if (recipe != null && recipe.resultItemType != null) {
+            cookedItem = game.getItemDataManager().createItem(recipe.resultItemType,
+                    (int) player.getPosition().x, (int) player.getPosition().y,
+                    ItemColor.WHITE, game.getAssetManager());
+        } else {
+            cookedItem = game.getItemDataManager().createItem(Item.ItemType.MEAL,
+                    (int) player.getPosition().x, (int) player.getPosition().y,
+                    ItemColor.WHITE, game.getAssetManager());
+            cookedItem.setName(mealName);
+            cookedItem.setMealEffectDuration(duration);
+            for (StatusEffectType eff : mealEffects) cookedItem.addMealEffect(eff);
+        }
 
         // 4. Consume ingredients from pack first, then chest (never in field mode)
         for (Item ingr : ingredients) {
@@ -800,19 +807,19 @@ public class CookingScreen extends BaseScreen {
         player.getStats().incrementCookingSkill();
 
         // 5. Feast or Pack
-        if (feastImmediately) {
-            player.feastOnMeal(meal);
+        if (feastImmediately && cookedItem.getType() == Item.ItemType.MEAL) {
+            player.feastOnMeal(cookedItem);
             feedbackLabel.setText("Feasted upon " + mealName + "! Metabolizing active boons.");
             feedbackLabel.setColor(HudSkin.COL_FOOD_GREEN);
         } else {
-            if (player.getInventory().pickupToBackpack(meal)) {
-                feedbackLabel.setText("Packed " + mealName + " into your trail rations.");
+            if (player.getInventory().pickupToBackpack(cookedItem)) {
+                feedbackLabel.setText("Prepared " + cookedItem.getDisplayName() + " into pack.");
             } else if (!fieldMode) {
-                ShelterChest.getInstance().addItem(meal);
+                ShelterChest.getInstance().addItem(cookedItem);
                 ShelterChest.getInstance().save();
-                feedbackLabel.setText("Pack full! Packed " + mealName + " into Shelter Chest.");
+                feedbackLabel.setText("Pack full! Stored " + cookedItem.getDisplayName() + " in Shelter Chest.");
             } else {
-                feedbackLabel.setText("Pack full! " + mealName + " spoils on the ground.");
+                feedbackLabel.setText("Pack full! " + cookedItem.getDisplayName() + " spoils on the ground.");
             }
             feedbackLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
         }
@@ -836,6 +843,11 @@ public class CookingScreen extends BaseScreen {
 
         // Warm body temperature to 37.0°C
         player.getStats().setBodyTemperature(com.bpm.minotaur.gamedata.player.PlayerStats.BODY_TEMP_NORMAL);
+
+        // Recharging magic rings upon resting by the hearth fire
+        if (player.getEquipment() != null) {
+            player.getEquipment().fullyRechargeRings();
+        }
 
         // Advance Day/Night time by 45 minutes
         if (worldManager != null && worldManager.getDayNightManager() != null) {

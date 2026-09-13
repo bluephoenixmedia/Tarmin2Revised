@@ -15,6 +15,8 @@ public enum ModifierType {
     BONUS_CHARISMA,
 
     // --- Basic Stats ---
+    /** +N to hit chance / attack roll */
+    BONUS_TO_HIT,
     /** +N to base damage (War & Spiritual) */
     BONUS_DAMAGE,
     /** +N to base armor (Armor & Rings) */

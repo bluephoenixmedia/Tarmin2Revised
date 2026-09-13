@@ -35,6 +35,28 @@ public class StatusManager {
      * @param stackable If true, adds duration. If false, resets duration.
      */
     public void addEffect(StatusEffectType type, int duration, int potency, boolean stackable) {
+        if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
+            com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
+            if (p.getEquipment() != null) {
+                if (p.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.FREE_ACTION)) {
+                    if (type == StatusEffectType.SLOWED || type == StatusEffectType.SLOW || type == StatusEffectType.PARALYZED) {
+                        if (eventManager != null) {
+                            eventManager.addEvent(new GameEvent("Your Ring of Free Action shields you from being slowed or paralyzed!", 2.0f));
+                        }
+                        return;
+                    }
+                }
+                if (p.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WARMTH)) {
+                    if (type == StatusEffectType.FROZEN || type == StatusEffectType.COLD) {
+                        if (eventManager != null) {
+                            eventManager.addEvent(new GameEvent("Your Ring of Warmth radiates gentle heat, repelling the freezing cold!", 2.0f));
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
         if (activeEffects.containsKey(type) && stackable) {
             // Stack or refresh existing effect
             ActiveStatusEffect existing = activeEffects.get(type);
@@ -72,6 +94,13 @@ public class StatusManager {
                             new com.bpm.minotaur.gamedata.GameEvent("The rage fades, leaving you exhausted!", 2.5f));
                     eventManager
                             .addEvent(new com.bpm.minotaur.gamedata.GameEvent("You collapse (-" + dmg + " HP)", 2.0f));
+                }
+            } else if (type == StatusEffectType.HASTED && owner instanceof com.bpm.minotaur.gamedata.player.Player) {
+                // 5e Haste Comedown: 2 turns of SLOWED
+                addEffect(StatusEffectType.SLOWED, 2, 1, false);
+                if (eventManager != null) {
+                    eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
+                            "A wave of lethargy sweeps over you as Haste ends! You are Slowed!", 2.5f));
                 }
             }
             // ----------------------------------------------------

@@ -29,7 +29,7 @@ public class PlayerEquipment {
         int total = 0;
         Item[] equippedItems = {
                 wornHelmet, wornEyes, wornNeck, wornBack, wornChest,
-                wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornShield
+                wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornRing2, wornShield
         };
 
         // Debug Log Builder
@@ -307,5 +307,43 @@ public class PlayerEquipment {
             return true;
         }
         return false;
+    }
+
+    public int countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType type) {
+        int count = 0;
+        if (wornRing != null && wornRing.getRingEffect() == type) count++;
+        if (wornRing2 != null && wornRing2.getRingEffect() == type) count++;
+        return count;
+    }
+
+    public int getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType type) {
+        int total = 0;
+        if (wornRing != null && wornRing.getRingEffect() == type) {
+            total += wornRing.getCurrentCharges();
+        }
+        if (wornRing2 != null && wornRing2.getRingEffect() == type) {
+            total += wornRing2.getCurrentCharges();
+        }
+        return total;
+    }
+
+    public boolean expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType type) {
+        if (wornRing != null && wornRing.getRingEffect() == type && wornRing.hasCharges()) {
+            return wornRing.decrementCharges();
+        }
+        if (wornRing2 != null && wornRing2.getRingEffect() == type && wornRing2.hasCharges()) {
+            return wornRing2.decrementCharges();
+        }
+        return false;
+    }
+
+    public void rechargeRings(int amount) {
+        if (wornRing != null) wornRing.recharge(amount);
+        if (wornRing2 != null) wornRing2.recharge(amount);
+    }
+
+    public void fullyRechargeRings() {
+        if (wornRing != null) wornRing.fullyRecharge();
+        if (wornRing2 != null) wornRing2.fullyRecharge();
     }
 }

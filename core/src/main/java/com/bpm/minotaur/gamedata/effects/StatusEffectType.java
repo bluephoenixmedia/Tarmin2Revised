@@ -31,6 +31,8 @@ public enum StatusEffectType {
     BERZERK,
     SLEEP,
     RECOVERING,
+    PARALYZED,
+    FROZEN,
 
     // Positive Effects (Buffs)
     FOCUSED,
@@ -63,7 +65,19 @@ public enum StatusEffectType {
     BLOOD_SURGE,
     SPIRITUAL_WARD,
     CARAPACE_HARDENING,
-    NIGHT_HUNTER;
+    NIGHT_HUNTER,
+
+    // Open5e Tactical Buffs & Intrinsics
+    HASTED,
+    HEROISM,
+    GIANT_STRENGTH,
+    INVULNERABILITY,
+    DIMINUTIVE,
+    ENLARGED,
+    RESIST_ACID,
+    RESIST_NECROTIC,
+    FREE_ACTION,
+    WARMTH;
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;

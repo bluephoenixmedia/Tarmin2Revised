@@ -590,6 +590,154 @@ public class ItemDataManager {
                 item.addModifier(new ItemModifier(ModifierType.RESIST_POISON, 8, "Antidotal"));
                 item.addModifier(new ItemModifier(ModifierType.BONUS_CONSTITUTION, 2, "Hardy"));
                 break;
+
+            // --- Open5e Potions ---
+            case POTION_GREATER_HEALING:
+                item.setName("Potion of Greater Healing"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.GREATER_HEALING);
+                break;
+            case POTION_SUPERIOR_HEALING:
+                item.setName("Potion of Superior Healing"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.SUPERIOR_HEALING);
+                break;
+            case POTION_SUPREME_HEALING:
+                item.setName("Potion of Supreme Healing"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.SUPREME_HEALING);
+                break;
+            case POTION_SPEED:
+                item.setName("Potion of Speed"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.SPEED);
+                break;
+            case POTION_GIANT_STRENGTH:
+                item.setName("Potion of Giant Strength"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.GIANT_STRENGTH);
+                break;
+            case POTION_INVULNERABILITY:
+                item.setName("Potion of Invulnerability"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.INVULNERABILITY);
+                break;
+            case POTION_HEROISM:
+                item.setName("Potion of Heroism"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.HEROISM);
+                break;
+            case POTION_INVISIBILITY_5E:
+                item.setName("Potion of Invisibility"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.INVISIBILITY);
+                break;
+            case POTION_FLYING:
+                item.setName("Potion of Flying"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.LEVITATION);
+                break;
+            case POTION_CLIMBING:
+                item.setName("Potion of Climbing"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.CLIMBING);
+                break;
+            case POTION_DIMINUTION:
+                item.setName("Potion of Diminution"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.DIMINUTION);
+                break;
+            case POTION_GROWTH:
+                item.setName("Potion of Growth"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.GROWTH);
+                break;
+            case POTION_RESISTANCE_FIRE:
+                item.setName("Potion of Fire Resistance"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.RESISTANCE_FIRE);
+                break;
+            case POTION_RESISTANCE_COLD:
+                item.setName("Potion of Cold Resistance"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.RESISTANCE_COLD);
+                break;
+            case POTION_RESISTANCE_LIGHTNING:
+                item.setName("Potion of Lightning Resistance"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.RESISTANCE_LIGHTNING);
+                break;
+            case POTION_RESISTANCE_ACID:
+                item.setName("Potion of Acid Resistance"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.RESISTANCE_ACID);
+                break;
+            case POTION_RESISTANCE_NECROTIC:
+                item.setName("Potion of Necrotic Resistance"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.RESISTANCE_NECROTIC);
+                break;
+            case POTION_VITALITY:
+                item.setName("Potion of Vitality"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.VITALITY);
+                break;
+            case POTION_CLARITY:
+                item.setName("Potion of Clarity"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.CLARITY);
+                break;
+            case OIL_SLIPPERINESS:
+                item.setName("Oil of Slipperiness"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.SLIPPERINESS);
+                break;
+            case OIL_ETHEREALNESS:
+                item.setName("Oil of Etherealness"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.ETHEREALNESS);
+                break;
+            case ELIXIR_HEALTH:
+                item.setName("Elixir of Health"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.ELIXIR_HEALTH);
+                break;
+
+            // --- Open5e Magic Rings ---
+            case RING_FREE_ACTION:
+                item.setName("Ring of Free Action"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.FREE_ACTION);
+                break;
+            case RING_WARMTH:
+                item.setName("Ring of Warmth"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.WARMTH);
+                break;
+            case RING_RESISTANCE_FIRE:
+                item.setName("Ring of Fire Resistance"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RESISTANCE_FIRE);
+                break;
+            case RING_RESISTANCE_COLD:
+                item.setName("Ring of Cold Resistance"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RESISTANCE_COLD);
+                break;
+            case RING_RESISTANCE_LIGHTNING:
+                item.setName("Ring of Lightning Resistance"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RESISTANCE_LIGHTNING);
+                break;
+            case RING_RESISTANCE_ACID:
+                item.setName("Ring of Acid Resistance"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RESISTANCE_ACID);
+                break;
+            case RING_RESISTANCE_NECROTIC:
+                item.setName("Ring of Necrotic Resistance"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RESISTANCE_NECROTIC);
+                break;
+            case RING_RAM:
+                item.setName("Ring of the Ram"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.RAM);
+                item.setMaxCharges(3);
+                item.setCurrentCharges(3);
+                break;
+            case RING_EVASION_CHARGED:
+                item.setName("Ring of Evasion"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.EVASION_CHARGED);
+                item.setMaxCharges(3);
+                item.setCurrentCharges(3);
+                break;
+            case RING_SPELL_STORING:
+                item.setName("Ring of Spell Storing"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.SPELL_STORING);
+                item.setMaxCharges(1);
+                item.setCurrentCharges(0);
+                break;
+            case RING_SHOOTING_STARS:
+                item.setName("Ring of Shooting Stars"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.SHOOTING_STARS);
+                item.setMaxCharges(6);
+                item.setCurrentCharges(6);
+                break;
+            case RING_FEATHER_FALLING:
+                item.setName("Ring of Feather Falling"); item.setIdentified(true);
+                item.setRingEffect(RingEffectType.FEATHER_FALLING);
+                break;
             default:
                 break;
         }
@@ -873,6 +1021,86 @@ public class ItemDataManager {
                 "A heavy iron-clasped grimoire containing high arcanum formulas. Heavy cargo. Unlocks Spell Slot 4.", 30.0f);
         registerTomeTemplate(ItemType.TOME_OF_TARMIN, "Tome of Tarmin",
                 "The legendary grand grimoire of Castle Tarmin itself, radiating forbidden power. Heavy cargo. Unlocks Spell Slot 5.", 35.0f);
+
+        // --- Open5e Potions ---
+        registerPotionTemplate(ItemType.POTION_GREATER_HEALING, "Potion of Greater Healing", "Restores 4d4+4 HP (min 35%).", 150);
+        registerPotionTemplate(ItemType.POTION_SUPERIOR_HEALING, "Potion of Superior Healing", "Restores 8d4+8 HP (min 55%).", 300);
+        registerPotionTemplate(ItemType.POTION_SUPREME_HEALING, "Potion of Supreme Healing", "Restores 10d4+20 HP (min 80%).", 600);
+        registerPotionTemplate(ItemType.POTION_SPEED, "Potion of Speed", "Grants Haste for 20 turns. Beware the lethargic comedown!", 250);
+        registerPotionTemplate(ItemType.POTION_GIANT_STRENGTH, "Potion of Giant Strength", "Sets effective Strength to 21 for 150 turns.", 200);
+        registerPotionTemplate(ItemType.POTION_INVULNERABILITY, "Potion of Invulnerability", "Grants 50% resistance to all damage types for 20 turns.", 500);
+        registerPotionTemplate(ItemType.POTION_HEROISM, "Potion of Heroism", "Grants 10 Temp HP and +2 to-hit for 150 turns.", 180);
+        registerPotionTemplate(ItemType.POTION_INVISIBILITY_5E, "Potion of Invisibility", "Shrouds you from sight for 150 turns.", 220);
+        registerPotionTemplate(ItemType.POTION_FLYING, "Potion of Flying", "Allows levitation above pits and traps for 150 turns.", 180);
+        registerPotionTemplate(ItemType.POTION_CLIMBING, "Potion of Climbing", "Boosts agility and footwork for 150 turns.", 100);
+        registerPotionTemplate(ItemType.POTION_DIMINUTION, "Potion of Diminution", "Shrinks user: +15% dodge chance for 150 turns.", 150);
+        registerPotionTemplate(ItemType.POTION_GROWTH, "Potion of Growth", "Enlarges user: +2 bonus melee damage for 150 turns.", 150);
+        registerPotionTemplate(ItemType.POTION_RESISTANCE_FIRE, "Potion of Fire Resistance", "Grants 50% fire damage reduction for 150 turns.", 120);
+        registerPotionTemplate(ItemType.POTION_RESISTANCE_COLD, "Potion of Cold Resistance", "Grants 50% cold damage reduction for 150 turns.", 120);
+        registerPotionTemplate(ItemType.POTION_RESISTANCE_LIGHTNING, "Potion of Lightning Resistance", "Grants 50% lightning damage reduction for 150 turns.", 120);
+        registerPotionTemplate(ItemType.POTION_RESISTANCE_ACID, "Potion of Acid Resistance", "Grants 50% acid damage reduction for 150 turns.", 120);
+        registerPotionTemplate(ItemType.POTION_RESISTANCE_NECROTIC, "Potion of Necrotic Resistance", "Grants 50% necrotic damage reduction for 150 turns.", 120);
+        registerPotionTemplate(ItemType.POTION_VITALITY, "Potion of Vitality", "Cures exhaustion, disease, and poison.", 160);
+        registerPotionTemplate(ItemType.POTION_CLARITY, "Potion of Clarity", "Restores 35 MP and sharpens arcane intellect.", 140);
+        registerPotionTemplate(ItemType.OIL_SLIPPERINESS, "Oil of Slipperiness", "Grants Freedom of Movement and web immunity for 400 turns.", 150);
+        registerPotionTemplate(ItemType.OIL_ETHEREALNESS, "Oil of Etherealness", "Grants ghostly evasion and phase-defense for 400 turns.", 250);
+        registerPotionTemplate(ItemType.ELIXIR_HEALTH, "Elixir of Health", "Cures all afflictions and restores 20 HP.", 120);
+
+        // --- Open5e Magic Rings ---
+        registerRingTemplate(ItemType.RING_FREE_ACTION, "Ring of Free Action", "Grants permanent immunity to paralysis and movement slow.", 300, 0);
+        registerRingTemplate(ItemType.RING_WARMTH, "Ring of Warmth", "Grants cold resistance and heavy thermal insulation.", 250, 0);
+        registerRingTemplate(ItemType.RING_RESISTANCE_FIRE, "Ring of Fire Resistance", "Reduces incoming fire damage by 50%.", 250, 0);
+        registerRingTemplate(ItemType.RING_RESISTANCE_COLD, "Ring of Cold Resistance", "Reduces incoming cold damage by 50%.", 250, 0);
+        registerRingTemplate(ItemType.RING_RESISTANCE_LIGHTNING, "Ring of Lightning Resistance", "Reduces incoming lightning damage by 50%.", 250, 0);
+        registerRingTemplate(ItemType.RING_RESISTANCE_ACID, "Ring of Acid Resistance", "Reduces incoming acid damage by 50%.", 250, 0);
+        registerRingTemplate(ItemType.RING_RESISTANCE_NECROTIC, "Ring of Necrotic Resistance", "Reduces incoming dark/necrotic damage by 50%.", 250, 0);
+        registerRingTemplate(ItemType.RING_RAM, "Ring of the Ram", "Strikes target with 2d10 force damage and 2-tile knockback on bump attack (3 charges).", 400, 3);
+        registerRingTemplate(ItemType.RING_EVASION_CHARGED, "Ring of Evasion", "Cheat-death: Automatically negates fatal blow when struck (3 charges).", 500, 3);
+        registerRingTemplate(ItemType.RING_SPELL_STORING, "Ring of Spell Storing", "Imbue 1 known spell for 0-MP free casting (1 charge).", 350, 1);
+        registerRingTemplate(ItemType.RING_SHOOTING_STARS, "Ring of Shooting Stars", "Fires 2d6 light damage star motes during combat (6 charges).", 300, 6);
+        registerRingTemplate(ItemType.RING_FEATHER_FALLING, "Ring of Feather Falling", "Slows falls and prevents pit trap drop damage.", 150, 0);
+    }
+
+    private void registerPotionTemplate(ItemType type, String name, String desc, int baseValue) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = name;
+            t.description = desc;
+            t.isPotion = true;
+            t.isUsable = true;
+            t.baseValue = baseValue;
+            t.scale = createDefaultScale();
+            ItemTemplate basePotion = itemTemplates.get(ItemType.POTION_BLUE);
+            if (basePotion == null) basePotion = itemTemplates.get(ItemType.POTION_OF_HEALING);
+            if (basePotion != null) {
+                t.texturePath = basePotion.texturePath;
+                t.spriteData = basePotion.spriteData;
+            } else {
+                t.spriteData = new String[] { "..##..", ".####.", "######" };
+            }
+            itemTemplates.put(type, t);
+        }
+    }
+
+    private void registerRingTemplate(ItemType type, String name, String desc, int baseValue, int maxCharges) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = name;
+            t.description = desc;
+            t.isRing = true;
+            t.isUsable = true;
+            t.baseValue = baseValue;
+            t.maxCharges = maxCharges;
+            t.scale = createDefaultScale();
+            ItemTemplate baseRing = itemTemplates.get(ItemType.SMALL_RING);
+            if (baseRing != null) {
+                t.texturePath = baseRing.texturePath;
+                t.spriteData = baseRing.spriteData;
+            } else {
+                t.spriteData = new String[] { ".####.", "##..##", ".####." };
+            }
+            itemTemplates.put(type, t);
+        }
     }
 
     private void registerTomeTemplate(ItemType type, String name, String desc, float weight) {

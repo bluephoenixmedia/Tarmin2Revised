@@ -31,7 +31,21 @@ public enum RingEffectType {
     /** +6 flat spell power (stacks with INT and BONUS_SPELL_POWER). */
     SPELL_MASTERY("Spell Mastery"),
     /** Shifts toxicity tier thresholds up by +15, delaying penalties. */
-    FORTITUDE("Fortitude");
+    FORTITUDE("Fortitude"),
+
+    // --- Open5e Magic Rings ---
+    FREE_ACTION("Free Action"),
+    WARMTH("Warmth"),
+    RESISTANCE_FIRE("Fire Resistance"),
+    RESISTANCE_COLD("Cold Resistance"),
+    RESISTANCE_LIGHTNING("Lightning Resistance"),
+    RESISTANCE_ACID("Acid Resistance"),
+    RESISTANCE_NECROTIC("Necrotic Resistance"),
+    RAM("the Ram"),
+    EVASION_CHARGED("Evasion"),
+    SPELL_STORING("Spell Storing"),
+    SHOOTING_STARS("Shooting Stars"),
+    FEATHER_FALLING("Feather Falling");
 
     private final String baseName;
 

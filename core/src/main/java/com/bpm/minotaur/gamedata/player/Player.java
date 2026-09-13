@@ -54,6 +54,16 @@ public class Player {
     }
 
     private final StatusManager statusManager;
+    private GameEventManager eventManager;
+
+    public void setEventManager(GameEventManager eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    public GameEventManager getEventManager() {
+        return eventManager;
+    }
+
     private final List<StatusEffectType> activeMealEffects = new ArrayList<>();
 
     // --- Position and Movement ---
@@ -194,6 +204,7 @@ public class Player {
         this.assetManager = null;
         this.stats = new PlayerStats(Difficulty.MEDIUM);
         this.statusManager = new StatusManager();
+        this.statusManager.initialize(null, this);
         initStartingSpells();
     }
 
@@ -226,6 +237,7 @@ public class Player {
 
         this.stats = new PlayerStats(difficulty);
         this.statusManager = new StatusManager();
+        this.statusManager.initialize(null, this);
 
         Item knife = itemDataManager.createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, assetManager);
         inventory.setRightHand(knife);
@@ -734,6 +746,15 @@ public class Player {
             }
         }
 
+        // Check Ring of Free Action
+        if (equipment != null && equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.FREE_ACTION)) {
+            if (type == com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOWED ||
+                type == com.bpm.minotaur.gamedata.effects.StatusEffectType.SLOW ||
+                type == com.bpm.minotaur.gamedata.effects.StatusEffectType.PARALYZED) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -1127,10 +1148,18 @@ public class Player {
             eventManager.addEvent(new GameEvent("Take off what?", 1.0f));
             return;
         }
-        // Check if it is equipped
-        // We need a way to check if 'armor' is currently equipped.
-        // And remove it to inventory.
-        // TODO: Implement unequip logic
+        if (equipment.getWornRing() == armor) {
+            equipment.setWornRing(null);
+            inventory.addItem(armor);
+            eventManager.addEvent(new GameEvent("You remove the " + armor.getDisplayName() + " from your left hand.", 1.0f));
+            return;
+        }
+        if (equipment.getWornRing2() == armor) {
+            equipment.setWornRing2(null);
+            inventory.addItem(armor);
+            eventManager.addEvent(new GameEvent("You remove the " + armor.getDisplayName() + " from your right hand.", 1.0f));
+            return;
+        }
         eventManager.addEvent(new GameEvent("You remove the " + armor.getDisplayName() + ".", 1.0f));
     }
 
@@ -1138,10 +1167,31 @@ public class Player {
         if (ring.getCategory() != ItemCategory.RING)
             return;
 
-        eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName(), 2f));
-        Item previouslyWornRing = this.equipment.getWornRing();
-        this.equipment.setWornRing(ring);
-        inventory.setRightHand(previouslyWornRing);
+        if (this.equipment.getWornRing() == null) {
+            this.equipment.setWornRing(ring);
+            if (inventory.getRightHand() == ring) inventory.setRightHand(null);
+            else if (inventory.getLeftHand() == ring) inventory.setLeftHand(null);
+            else inventory.removeItem(ring);
+            eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName() + " (Left Hand).", 2f));
+        } else if (this.equipment.getWornRing2() == null) {
+            this.equipment.setWornRing2(ring);
+            if (inventory.getRightHand() == ring) inventory.setRightHand(null);
+            else if (inventory.getLeftHand() == ring) inventory.setLeftHand(null);
+            else inventory.removeItem(ring);
+            eventManager.addEvent(new GameEvent("Equipped " + ring.getDisplayName() + " (Right Hand).", 2f));
+        } else {
+            Item previouslyWornRing = this.equipment.getWornRing();
+            this.equipment.setWornRing(ring);
+            if (inventory.getRightHand() == ring) {
+                inventory.setRightHand(previouslyWornRing);
+            } else if (inventory.getLeftHand() == ring) {
+                inventory.setLeftHand(previouslyWornRing);
+            } else {
+                inventory.removeItem(ring);
+                inventory.addItem(previouslyWornRing);
+            }
+            eventManager.addEvent(new GameEvent("Replaced Left Ring with " + ring.getDisplayName() + ".", 2f));
+        }
     }
 
     // --- REPLACED: Flexible Equip Logic (Allows Swapping) ---
@@ -1357,10 +1407,11 @@ public class Player {
                         Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
                 stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
                         stats.getSpiritualStrength() + spiritualStrengthGained));
+                equipment.fullyRechargeRings();
 
                 eventManager.addEvent(new GameEvent(
                         ("WS restored to " + stats.getWarStrength() + ", SS restored to "
-                                + stats.getSpiritualStrength()),
+                                + stats.getSpiritualStrength() + ". Magic rings recharged."),
                         2f));
             }
 
@@ -1379,13 +1430,30 @@ public class Player {
 
     public int takeDamage(int amount, DamageType type) {
         // Dodge check: AGI-based chance to avoid a connected hit entirely.
-        // 4% per AGI point above 10, plus equipment BONUS_DODGE, plus Ring of Evasion.
-        int agiMod = Math.max(0, (stats.getAgility() - 10) / 2);
-        float dodgeChance = agiMod * 0.04f + equipment.getEquippedModifierSum(ModifierType.BONUS_DODGE) / 100f;
-        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION)) dodgeChance += 0.12f;
+        float dodgeChance = getDodgeChance();
         if (dodgeChance > 0f && new java.util.Random().nextFloat() < dodgeChance) {
             com.badlogic.gdx.Gdx.app.log("Player", "Dodged! (dodge chance: " + dodgeChance + ")");
             return 0;
+        }
+
+        // 5e Elemental Resistances (50% reduction)
+        boolean hasResist = false;
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.INVULNERABILITY)) {
+            hasResist = true;
+        } else if (type == DamageType.FIRE && ((statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.RESISTANCE_FIRE))) {
+            hasResist = true;
+        } else if (type == DamageType.ICE && ((statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.RESISTANCE_COLD) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WARMTH))) {
+            hasResist = true;
+        } else if (type == DamageType.LIGHT && ((statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_LIGHTNING)) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.RESISTANCE_LIGHTNING))) {
+            hasResist = true;
+        } else if (type == DamageType.POISON && ((statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_ACID)) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.RESISTANCE_ACID))) {
+            hasResist = true;
+        } else if (type == DamageType.DARK && ((statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_NECROTIC)) || equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.RESISTANCE_NECROTIC))) {
+            hasResist = true;
+        }
+
+        if (hasResist) {
+            amount = Math.max(1, amount / 2);
         }
 
         if (type == DamageType.PHYSICAL) {
@@ -1399,6 +1467,16 @@ public class Player {
         if (amount < 1) amount = 1;
 
         int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier()));
+
+        // Cheat-Death check: Ring of Evasion (Charged)
+        if (finalDamage >= (stats.getCurrentHP() + stats.getTemporaryHP()) && equipment.getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED) > 0) {
+            equipment.expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED);
+            com.badlogic.gdx.Gdx.app.log("Player", "Ring of Evasion triggered! Negated fatal blow.");
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Your Ring of Evasion flashes brilliantly, negating the fatal blow!", 3.0f));
+            }
+            return 0;
+        }
 
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
@@ -1918,7 +1996,10 @@ public class Player {
     public float getDodgeChance() {
         int agiMod = Math.max(0, (stats.getAgility() - 10) / 2);
         float chance = agiMod * 0.04f + equipment.getEquippedModifierSum(ModifierType.BONUS_DODGE) / 100f;
-        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION)) chance += 0.12f;
+        chance += 0.12f * equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION);
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.DIMINUTIVE)) {
+            chance += 0.15f;
+        }
         return chance;
     }
 
@@ -1943,46 +2024,57 @@ public class Player {
         stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 
-    /** To-hit bonus: quarter level + DEX modifier, delegated to PlayerStats. */
+    /** To-hit bonus: quarter level + DEX modifier, delegated to PlayerStats, plus equipment and Heroism. */
     public int getToHitBonus() {
-        return stats.getToHitBonus();
+        int bonus = stats.getToHitBonus() + equipment.getEquippedModifierSum(ModifierType.BONUS_TO_HIT);
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HEROISM)) {
+            bonus += 2;
+        }
+        return bonus;
     }
 
     // --- Equipment-adjusted primary attributes ---
 
-    /** Strength including toxicity bonus (threshold-shifted by Fortitude), plus equipment BONUS_STRENGTH. */
+    /** Strength including toxicity bonus (threshold-shifted by Fortitude), plus equipment BONUS_STRENGTH, stacked rings, and Giant Strength override. */
     public int getEffectiveStrength() {
-        return stats.getEffectiveStrength(getToxicityThresholdShift())
-                + equipment.getEquippedModifierSum(ModifierType.BONUS_STRENGTH);
+        int baseStr = stats.getEffectiveStrength(getToxicityThresholdShift())
+                + equipment.getEquippedModifierSum(ModifierType.BONUS_STRENGTH)
+                + equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.STRENGTH) * 5;
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.GIANT_STRENGTH)) {
+            com.bpm.minotaur.gamedata.effects.ActiveStatusEffect eff = statusManager.getEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.GIANT_STRENGTH);
+            int giantStr = (eff != null && eff.getPotency() > 0) ? eff.getPotency() : 21;
+            return Math.max(baseStr, giantStr);
+        }
+        return baseStr;
     }
 
-    /** Dexterity including equipment BONUS_DEXTERITY and Ring of Dexterity. */
+    /** Dexterity including equipment BONUS_DEXTERITY and stacked Rings of Dexterity. */
     public int getEffectiveDexterity() {
-        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) ? 5 : 0;
+        int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) * 5;
         return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus;
     }
 
-    /** Constitution including equipment BONUS_CONSTITUTION and Ring of Constitution. */
+    /** Constitution including equipment BONUS_CONSTITUTION and stacked Rings of Constitution. */
     public int getEffectiveConstitution() {
-        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CONSTITUTION) ? 5 : 0;
+        int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CONSTITUTION) * 5;
         return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus;
     }
 
-    /** Intelligence including equipment BONUS_INTELLIGENCE and Ring of Intelligence. */
+    /** Intelligence including equipment BONUS_INTELLIGENCE and stacked Rings of Intelligence. */
     public int getEffectiveIntelligence() {
-        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INTELLIGENCE) ? 5 : 0;
+        int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INTELLIGENCE) * 5;
         return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus;
     }
 
-    /** Wisdom including equipment BONUS_WISDOM and Ring of Wisdom. */
+    /** Wisdom including equipment BONUS_WISDOM and stacked Rings of Wisdom. */
     public int getEffectiveWisdom() {
-        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WISDOM) ? 5 : 0;
+        int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WISDOM) * 5;
         return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus;
     }
 
-    /** Agility including equipment BONUS_AGILITY and Ring of Agility. */
+    /** Agility including equipment BONUS_AGILITY and stacked Rings of Agility. */
     public int getEffectiveAgility() {
-        int bonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.AGILITY) ? 5 : 0;
+        int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.AGILITY) * 5;
         return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus;
     }
 
@@ -1992,22 +2084,26 @@ public class Player {
 
     /**
      * How many points to shift toxicity tier thresholds upward.
-     * Sources: BONUS_TOXICITY_THRESHOLD from equipment + Ring of Fortitude (+15).
+     * Sources: BONUS_TOXICITY_THRESHOLD from equipment + stacked Rings of Fortitude (+15 each).
      * A shift of 15 means medium tier activates at 41+ instead of 26+.
      */
     public int getToxicityThresholdShift() {
         int shift = equipment.getEquippedModifierSum(ModifierType.BONUS_TOXICITY_THRESHOLD);
-        if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.FORTITUDE)) shift += 15;
+        shift += equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.FORTITUDE) * 15;
         return shift;
     }
 
     /**
-     * Damage bonus: (effectiveStr - 10) / 2 plus flat BONUS_DAMAGE from equipment.
+     * Damage bonus: (effectiveStr - 10) / 2 plus flat BONUS_DAMAGE from equipment, plus Growth bonus.
      * Uses player-level effective strength so BONUS_STRENGTH items flow through.
      */
     public int getDamageBonus() {
         int strDmg = Math.max(0, (getEffectiveStrength() - 10) / 2);
-        return strDmg + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+        int bonus = strDmg + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.ENLARGED)) {
+            bonus += 2;
+        }
+        return bonus;
     }
 
     public int getEffectiveStrengthModifier() {
@@ -2017,19 +2113,45 @@ public class Player {
     public int getFinesseDamageBonus() {
         int stat = Math.max(getEffectiveStrength(), getEffectiveDexterity());
         int statMod = Math.max(0, (stat - 10) / 2);
-        return statMod + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+        int bonus = statMod + equipment.getEquippedModifierSum(ModifierType.BONUS_DAMAGE);
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.ENLARGED)) {
+            bonus += 2;
+        }
+        return bonus;
     }
 
     public int getFinesseToHitBonus() {
         int stat = Math.max(getEffectiveStrength(), getEffectiveDexterity());
-        return (stat - 10) / 2;
+        int bonus = (stat - 10) / 2 + equipment.getEquippedModifierSum(ModifierType.BONUS_TO_HIT);
+        if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HEROISM)) {
+            bonus += 2;
+        }
+        return bonus;
     }
 
-    /** Flat spell damage bonus: INT modifier + equipment BONUS_SPELL_POWER + Ring of Spell Mastery. */
+    /** Flat spell damage bonus: INT modifier + equipment BONUS_SPELL_POWER + stacked Rings of Spell Mastery. */
     public int getSpellPower() {
         int intMod = (getEffectiveIntelligence() - 10) / 2;
-        int ringBonus = equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SPELL_MASTERY) ? 6 : 0;
+        int ringBonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.SPELL_MASTERY) * 6;
         return intMod + equipment.getEquippedModifierSum(ModifierType.BONUS_SPELL_POWER) + ringBonus;
+    }
+
+    public boolean imbueRingOfSpellStoring(Item ring, String spellId) {
+        if (ring == null || ring.getRingEffect() != com.bpm.minotaur.gamedata.item.RingEffectType.SPELL_STORING) {
+            return false;
+        }
+        if (spellId == null || !knownSpellIds.contains(spellId.toUpperCase())) {
+            return false;
+        }
+        if (ring.getMaxCharges() < 1) {
+            ring.setMaxCharges(1);
+        }
+        ring.setStoredSpellId(spellId.toUpperCase());
+        ring.setCurrentCharges(1);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("Inscribed " + spellId.toUpperCase() + " into Ring of Spell Storing!", 2.0f));
+        }
+        return true;
     }
 
     /**

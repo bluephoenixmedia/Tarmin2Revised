@@ -58,6 +58,10 @@ public class Inventory {
         return false; // Inventory Full
     }
 
+    public boolean addItem(Item item) {
+        return pickup(item);
+    }
+
     /**
      * Tries to add an item to the Main Inventory (Backpack) FIRST, then Quick
      * Slots.

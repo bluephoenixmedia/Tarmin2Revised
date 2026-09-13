@@ -19,6 +19,7 @@ public class TurnManager {
     private static final float SATIETY_DECAY = 0.02f; // ~5000 turns to starve
     private static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate
     private static final float TEMP_ADJUST_RATE = 0.05f; // Speed of body temp adjustment
+    private int ringRechargeCounter = 0;
 
     public TurnManager() {
     }
@@ -46,11 +47,19 @@ public class TurnManager {
         // --- RING EFFECTS ---
         // (Moved after metabolism so we can heal starvation damage if we have regen
         // ring?)
-        // Actually Regeneration ring logic was duplicated. Fixed here.
+        // --- RING RECHARGE (Every 120 turns) ---
+        ringRechargeCounter++;
+        if (ringRechargeCounter >= 120) {
+            ringRechargeCounter = 0;
+            if (player.getEquipment() != null) {
+                player.getEquipment().rechargeRings(1);
+            }
+        }
+
         if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.REGENERATION)) {
-            // Regeneration: 1 HP per turn
+            int regenRate = player.getEquipment().countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.REGENERATION);
             if (player.getCurrentHP() < player.getMaxHP()) {
-                player.heal(1);
+                player.heal(regenRate);
             }
         }
 
@@ -137,6 +146,9 @@ public class TurnManager {
                 for (com.bpm.minotaur.gamedata.item.Item i : player.getEquipment().getAllEquipped()) {
                     if (i != null)
                         totalWarmth += i.getWarmthBonus();
+                }
+                if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WARMTH)) {
+                    totalWarmth += 20f;
                 }
             }
 

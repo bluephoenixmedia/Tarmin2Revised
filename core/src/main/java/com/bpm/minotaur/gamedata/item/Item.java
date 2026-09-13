@@ -51,6 +51,48 @@ public class Item implements Renderable {
         // NEW: Alchemy Potions
         POTION_FERAL_DRAUGHT, POTION_TITAN_SLUDGE,
 
+        // Open5e Potions & Oils
+        POTION_OF_HEALING,
+        POTION_GREATER_HEALING,
+        POTION_SUPERIOR_HEALING,
+        POTION_SUPREME_HEALING,
+        POTION_SPEED,
+        POTION_GIANT_STRENGTH,
+        POTION_HILL_GIANT, POTION_FIRE_GIANT, POTION_STORM_GIANT,
+        POTION_INVULNERABILITY,
+        POTION_HEROISM,
+        POTION_INVISIBILITY_5E,
+        POTION_FLYING,
+        POTION_CLIMBING,
+        POTION_DIMINUTION,
+        POTION_GROWTH,
+        POTION_RESISTANCE,
+        POTION_RESISTANCE_FIRE,
+        POTION_RESISTANCE_COLD,
+        POTION_RESISTANCE_LIGHTNING,
+        POTION_RESISTANCE_ACID,
+        POTION_RESISTANCE_NECROTIC,
+        POTION_VITALITY,
+        POTION_CLARITY,
+        OIL_OF_SHARPNESS,
+        OIL_SLIPPERINESS,
+        OIL_ETHEREALNESS,
+        ELIXIR_HEALTH,
+
+        // Open5e Magic Rings
+        RING_FREE_ACTION, RING_OF_FREE_ACTION,
+        RING_WARMTH, RING_OF_WARMTH,
+        RING_RESISTANCE_FIRE, RING_OF_RESISTANCE_FIRE,
+        RING_RESISTANCE_COLD, RING_OF_RESISTANCE_COLD,
+        RING_RESISTANCE_LIGHTNING, RING_OF_RESISTANCE_LIGHTNING,
+        RING_RESISTANCE_ACID, RING_OF_RESISTANCE_ACID,
+        RING_RESISTANCE_NECROTIC, RING_OF_RESISTANCE_NECROTIC,
+        RING_RAM, RING_OF_THE_RAM,
+        RING_EVASION_CHARGED, RING_OF_EVASION,
+        RING_SPELL_STORING, RING_OF_SPELL_STORING,
+        RING_SHOOTING_STARS, RING_OF_SHOOTING_STARS,
+        RING_FEATHER_FALLING, RING_OF_FEATHER_FALLING,
+
         // NEW WEAPONS (Generated)
         ALHULAK, ANKUS_ELEPHANT_GOAD, ARQUEBUS, ARROW_DAIKYU, ARROW_FLIGHT, ARROW_FORGET, ARROW_GIANT_KIN, ARROW_KENYAN,
         ARROW_MAIL_PIERCER, ARROW_SHEAF, ARROW_SLEEP, ARROW_STONE_FLIGHT, ARROW_WAR, ASSEGAI, AXE_BATTLE, AXE_FOREARM,
@@ -256,6 +298,58 @@ public class Item implements Renderable {
         return this.mealEffectDuration;
     }
 
+    // --- Charged Item & Spell Storing Properties ---
+    private int maxCharges = 0;
+    private int currentCharges = 0;
+    private String storedSpellId = null;
+
+    public int getMaxCharges() {
+        return maxCharges;
+    }
+
+    public void setMaxCharges(int maxCharges) {
+        this.maxCharges = maxCharges;
+    }
+
+    public int getCurrentCharges() {
+        return currentCharges;
+    }
+
+    public void setCurrentCharges(int currentCharges) {
+        this.currentCharges = Math.max(0, Math.min(maxCharges, currentCharges));
+    }
+
+    public boolean hasCharges() {
+        return currentCharges > 0;
+    }
+
+    public boolean decrementCharges() {
+        if (this.charges > 0) {
+            this.charges--;
+        }
+        if (this.currentCharges > 0) {
+            this.currentCharges--;
+            return true;
+        }
+        return this.charges > 0;
+    }
+
+    public void recharge(int amount) {
+        this.currentCharges = Math.min(maxCharges, this.currentCharges + amount);
+    }
+
+    public void fullyRecharge() {
+        this.currentCharges = this.maxCharges;
+    }
+
+    public String getStoredSpellId() {
+        return storedSpellId;
+    }
+
+    public void setStoredSpellId(String storedSpellId) {
+        this.storedSpellId = storedSpellId;
+    }
+
     private ItemTemplate template;
     private final ItemDataManager dataManager;
 
@@ -338,6 +432,8 @@ public class Item implements Renderable {
         item.hydrationValue = template.hydrationValue;
         item.nutrition = template.nutrition;
         item.warmthBonus = template.warmthBonus;
+        item.maxCharges = template.maxCharges;
+        item.currentCharges = template.maxCharges;
 
         item.scale = new Vector2(template.scaleX, template.scaleY);
         item.offsetX = template.offsetX;
@@ -387,6 +483,8 @@ public class Item implements Renderable {
             this.isImpassable = template.isImpassable; // Assign from template
             this.isLocked = template.locked; // Initialize from template
             this.ringEffect = template.ringEffect; // Initialize from template
+            this.maxCharges = template.maxCharges;
+            this.currentCharges = template.maxCharges;
             this.scale = (template.scale != null) ? new Vector2(template.scale.x, template.scale.y) : new Vector2(1.0f, 1.0f);
         } else {
             this.friendlyName = (type != null) ? toTitleCase(type.name()) : "Unknown Item";
@@ -614,7 +712,7 @@ public class Item implements Renderable {
         if (isPotion || isFood) return true;
         if (type != null) {
             String name = type.name();
-            if (name.contains("POTION") || name.contains("SCROLL") || name.contains("FOOD") || name.contains("MEAT")) return true;
+            if (name.contains("POTION") || name.contains("SCROLL") || name.contains("FOOD") || name.contains("MEAT") || name.contains("OIL")) return true;
             if (name.equals("LAMP") || name.startsWith("WAND_")) return true;
         }
         return isUsable && !isWeapon && !isArmor && !isRing && !isContainer && !isTreasure;
@@ -818,10 +916,10 @@ public class Item implements Renderable {
             }
             return ItemCategory.WAR_WEAPON;
         }
-        if (isArmor)
-            return ItemCategory.ARMOR;
         if (isRing)
             return ItemCategory.RING;
+        if (isArmor)
+            return ItemCategory.ARMOR;
         if (isTreasure)
             return ItemCategory.TREASURE;
         if (isFood)
@@ -962,10 +1060,6 @@ public class Item implements Renderable {
 
     public void setCharges(int charges) {
         this.charges = charges;
-    }
-
-    public void decrementCharges() {
-        this.charges--;
     }
 
     public void setCorpseSource(com.bpm.minotaur.gamedata.monster.Monster.MonsterType source) {
