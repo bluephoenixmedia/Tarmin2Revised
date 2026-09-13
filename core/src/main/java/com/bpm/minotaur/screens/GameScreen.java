@@ -2563,7 +2563,7 @@ public class GameScreen extends BaseScreen {
     }
 
     public void pickupWorldItem() {
-        player.interactWithItem(maze, eventManager, soundManager);
+        player.interactWithItem(maze, eventManager, soundManager, discoveryManager);
         playerTurnTakesAction();
     }
 

@@ -477,11 +477,12 @@ public class Player {
             return true;
         }
 
-        interactWithItem(maze, eventManager, soundManager);
+        interactWithItem(maze, eventManager, soundManager, discoveryManager);
         return true;
     }
 
-    public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager) {
+    public void interactWithItem(Maze maze, GameEventManager eventManager, SoundManager soundManager,
+            DiscoveryManager discoveryManager) {
         int playerGridX = (int) position.x;
         int playerGridY = (int) position.y;
         GridPoint2 playerTile2 = new GridPoint2(playerGridX, playerGridY);
@@ -528,7 +529,10 @@ public class Player {
             if (pickupItem(itemAtFeet)) {
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
-                eventManager.addEvent(new GameEvent("Picked up " + itemAtFeet.getDisplayName(), 2f));
+                String pickedName = discoveryManager != null
+                        ? discoveryManager.getGroundItemDisplayName(itemAtFeet)
+                        : itemAtFeet.getDisplayName();
+                eventManager.addEvent(new GameEvent("Picked up " + pickedName, 2f));
 
                 // --- LOGGING ---
                 BalanceLogger.getInstance().logEconomy("PICKUP", itemAtFeet.getDisplayName(),
@@ -610,7 +614,10 @@ public class Player {
                     maze.removeLightAt(targetTile.x + 0.5f, targetTile.y + 0.5f);
                 }
                 soundManager.playPickupItemSound();
-                eventManager.addEvent(new GameEvent("Picked up " + itemInFront.getDisplayName(), 2f));
+                String pickedName = discoveryManager != null
+                        ? discoveryManager.getGroundItemDisplayName(itemInFront)
+                        : itemInFront.getDisplayName();
+                eventManager.addEvent(new GameEvent("Picked up " + pickedName, 2f));
 
                 // --- LOGGING ---
                 Gdx.app.log("Player",

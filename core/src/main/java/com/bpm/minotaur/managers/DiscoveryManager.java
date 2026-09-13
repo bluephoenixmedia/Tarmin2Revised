@@ -271,8 +271,23 @@ public class DiscoveryManager {
     public void identifyDedicatedScroll(ItemType type, String spellDisplayName) {
         if (type != null && identifiedDedicatedScrolls.add(type) && eventManager != null) {
             eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
-                    "Identified Scroll of " + spellDisplayName, 2.5f));
+                    "Identified Scroll of " + titleCase(spellDisplayName), 2.5f));
         }
+    }
+
+    /** "MAGIC_MISSILE" -> "Magic Missile". Callers pass the raw spellId, not a pre-formatted name. */
+    private String titleCase(String snakeUpper) {
+        if (snakeUpper == null || snakeUpper.isEmpty()) {
+            return snakeUpper;
+        }
+        String[] words = snakeUpper.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1).toLowerCase());
+        }
+        return sb.toString();
     }
 
     // --- Wand Logic ---
@@ -387,6 +402,20 @@ public class DiscoveryManager {
             }
         }
         return item.getFriendlyName();
+    }
+
+    /**
+     * Name to show for an item lying on the ground or just picked up — routes
+     * through identification for the categories that hide their true name
+     * (potions, rings, scrolls, wands) and falls back to the item's own name
+     * otherwise. Shared by pickup notifications and the ground-item info card
+     * so both surfaces agree on what "identified" means.
+     */
+    public String getGroundItemDisplayName(Item item) {
+        boolean needsDiscovery = item.isPotion() || item.isRing()
+                || (item.getType() != null && (item.getType().name().startsWith("SCROLL_")
+                        || item.getType().name().startsWith("WAND_")));
+        return needsDiscovery ? getDisplayName(item) : item.getDisplayName();
     }
 
     // Fix for Ring Display Name

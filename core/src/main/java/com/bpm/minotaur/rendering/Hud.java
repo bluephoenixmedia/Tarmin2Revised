@@ -1888,13 +1888,7 @@ public class Hud implements Disposable {
      * dynamic Bone/Gib/Flesh corpse-source naming) keeps using Item's own name.
      */
     private String groundItemDisplayName(Item item) {
-        if (discoveryManager == null) {
-            return item.getDisplayName();
-        }
-        boolean needsDiscovery = item.isPotion() || item.isRing()
-                || (item.getType() != null && (item.getType().name().startsWith("SCROLL_")
-                        || item.getType().name().startsWith("WAND_")));
-        return needsDiscovery ? discoveryManager.getDisplayName(item) : item.getDisplayName();
+        return discoveryManager != null ? discoveryManager.getGroundItemDisplayName(item) : item.getDisplayName();
     }
 
     private String formatItemStatDescription(Item item) {
