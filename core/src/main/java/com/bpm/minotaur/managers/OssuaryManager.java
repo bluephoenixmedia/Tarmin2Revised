@@ -19,7 +19,8 @@ public class OssuaryManager {
     private boolean isValidBone(Item item) {
         if (item == null) return false;
         Item.ItemType type = item.getType();
-        return type == Item.ItemType.BONE || type == Item.ItemType.BONES || type == Item.ItemType.RAT_SKULL;
+        return type == Item.ItemType.BONE || type == Item.ItemType.BONES || type == Item.ItemType.RAT_SKULL
+                || type == Item.ItemType.GIB_BONE;
     }
 
     public Die craftBoneDie(Item boneStructure, Item boneEdge, Item boneCore) {

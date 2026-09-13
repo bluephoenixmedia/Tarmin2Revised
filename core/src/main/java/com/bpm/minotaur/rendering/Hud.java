@@ -535,14 +535,18 @@ public class Hud implements Disposable {
             spellSlots[i].top().left();
 
             Label badge = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            badge.setFontScale(0.7f);
             spellSlots[i].add(badge).padLeft(1).padTop(1).row();
 
             spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontSmall(), Color.CYAN));
+            spellNameLabels[i].setFontScale(0.62f);
             spellNameLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellNameLabels[i]).width(44).padLeft(1).row();
+            spellSlots[i].add(spellNameLabels[i]).width(52).padLeft(1).row();
 
             spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-            spellSlots[i].add(spellCostLabels[i]).padLeft(1);
+            spellCostLabels[i].setFontScale(0.62f);
+            spellCostLabels[i].setEllipsis(true);
+            spellSlots[i].add(spellCostLabels[i]).width(52).padLeft(1);
 
             spellSlots[i].addListener(new ClickListener() {
                 @Override
@@ -571,7 +575,7 @@ public class Hud implements Disposable {
                 }
             });
 
-            spellHotbarTable.add(spellSlots[i]).size(48, 30).pad(1);
+            spellHotbarTable.add(spellSlots[i]).size(56, 40).pad(1);
         }
 
         spellHotbarTable.pack();

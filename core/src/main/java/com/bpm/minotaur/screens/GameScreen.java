@@ -441,6 +441,7 @@ public class GameScreen extends BaseScreen {
             sleepTimer += delta;
             if (sleepTimer > 0.5f) {
                 sleepTimer = 0f;
+                tryDreamDimensionShift();
                 // Force Pass Turn
                 if (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
                         || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU) {
@@ -1077,6 +1078,37 @@ public class GameScreen extends BaseScreen {
             return new Color(0.4f, 0.9f, 1f, 1f); // Cyan speed
         }
         return null;
+    }
+
+    /** Chance per potion-sleep "Zzz" tick of slipping into the Ancient Void while dreaming. */
+    private static final float DREAM_SHIFT_CHANCE_PER_SLEEP_TICK = 0.01f;
+    /** Chance per full night's rest in the shelter bed of the same dream-shift event. */
+    private static final float DREAM_SHIFT_CHANCE_PER_BED_REST = 0.02f;
+
+    /**
+     * While asleep -- either from a sleep-inducing potion or resting in the shelter
+     * bed -- there is a small chance of slipping through the veil into the Ancient
+     * Void, exactly as if a Mysterious Portal had been triggered. The player keeps
+     * their mortal body (not a Hollow Shade) and can find their way back the same
+     * way any other Void visit ends.
+     */
+    private void tryDreamDimensionShift(float chance) {
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
+            return; // Already elsewhere; nothing to slip into.
+        }
+        if (rng.nextFloat() >= chance) {
+            return;
+        }
+        eventManager.addEvent(new GameEvent("Your dreams pull you through the veil...", 2.5f));
+        com.bpm.minotaur.managers.DimensionalManager.getInstance().enterVoid(
+                false, player.getPosition(), currentLevel, worldManager.getCurrentPlayerChunkId());
+        debugManager.triggerDimensionalWarp(true);
+        soundManager.playDimensionalWarpSound();
+        hud.addMessage("Reality shears! You slip into the Ancient Void of Tarmin-Zul.");
+    }
+
+    private void tryDreamDimensionShift() {
+        tryDreamDimensionShift(DREAM_SHIFT_CHANCE_PER_SLEEP_TICK);
     }
 
     /**
@@ -2442,6 +2474,7 @@ public class GameScreen extends BaseScreen {
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
             playerTurnTakesAction();
             needsAsciiRender = true;
+            tryDreamDimensionShift(DREAM_SHIFT_CHANCE_PER_BED_REST);
             return;
         }
 

@@ -111,6 +111,16 @@ public class World3DRenderer implements Disposable {
     public static final float DEFAULT_FOV = DebugManager.DEFAULT_FOV_3D;
     private float totalTime = 0f;
 
+    // Strata darkness scaling: each dungeon level below the surface dims ambient
+    // light and closes in fog further, down to a floor so it's never pitch black.
+    private static final float DEPTH_DARKNESS_PER_LEVEL = 0.05f;
+    private static final float DEPTH_DARKNESS_FLOOR = 0.35f;
+
+    /** @return a 0..1 darkening multiplier that shrinks with every strata level descended. */
+    private static float getDepthDarknessFactor(int level) {
+        return MathUtils.clamp(1.0f - (level - 1) * DEPTH_DARKNESS_PER_LEVEL, DEPTH_DARKNESS_FLOOR, 1.0f);
+    }
+
     // Smooth eye adaptation and celestial lighting state
     private final Color currentAmbientColor = new Color(LightingManager.COLOR_SHELTER_AMBIENT);
     private final Color targetAmbientColor = new Color();
@@ -241,7 +251,9 @@ public class World3DRenderer implements Disposable {
             }
         } else if (gameMode == GameMode.ADVANCED && biome != null && biome.hasFogOfWar()) {
             fogEnabled = true;
-            fogDistance = biome.getFogDistance();
+            // Strata deepen the dark: fog closes in the farther underground you go,
+            // matching the difficulty curve (deeper == harder == blinder).
+            fogDistance = biome.getFogDistance() * getDepthDarknessFactor(currentLevel);
             fogColor.set(biome.getFogColor());
         }
 
@@ -288,8 +300,9 @@ public class World3DRenderer implements Disposable {
             targetAmbientColor.set(LightingManager.COLOR_SHELTER_AMBIENT);
             targetDirLightColor.set(0f, 0f, 0f, 1f); // Roof blocks direct sun/moon
         } else if (currentLevel > 1 || (isIndoors && !isInsideHome)) {
-            // Dungeon / Underground Void
-            targetAmbientColor.set(LightingManager.COLOR_COLD_VOID);
+            // Dungeon / Underground Void: darkens further with every strata descended,
+            // mirroring the difficulty curve so deeper levels are also blinder.
+            targetAmbientColor.set(LightingManager.COLOR_COLD_VOID).mul(getDepthDarknessFactor(currentLevel));
             targetDirLightColor.set(0f, 0f, 0f, 1f);
         } else {
             // Level 1 Outdoors: dynamically calibrated from Day/Night cycle and Weather

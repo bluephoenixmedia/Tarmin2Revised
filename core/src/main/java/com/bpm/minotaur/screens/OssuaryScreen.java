@@ -161,9 +161,11 @@ public class OssuaryScreen extends BaseScreen {
         inventoryTable.clear();
         List<Item> bones = new ArrayList<>();
 
-        // Filter inventory for Bones
+        // Filter inventory for Bones. Most bones players actually carry come from
+        // GIB_BONE (violent combat kills spawn gibs directly), not the rarer BONE
+        // type from manually butchering a corpse, so both must be recognized here.
         for (Item item : player.getInventory().getMainInventory()) {
-            if (item.getType() == ItemType.BONE) {
+            if (item.getType() == ItemType.BONE || item.getType() == ItemType.GIB_BONE) {
                 bones.add(item);
             }
         }
