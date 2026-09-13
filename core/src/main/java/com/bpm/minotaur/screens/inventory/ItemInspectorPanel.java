@@ -32,6 +32,15 @@ public class ItemInspectorPanel extends Table {
         this.useItemCallback = callback;
     }
 
+    public interface InscribeItemCallback {
+        void onInscribeItem(Item item);
+    }
+    private InscribeItemCallback inscribeItemCallback;
+
+    public void setInscribeItemCallback(InscribeItemCallback callback) {
+        this.inscribeItemCallback = callback;
+    }
+
     private static final Color COL_INK_DARK = Color.valueOf("1C1208FF");
     private static final Color COL_INK_MUTED = Color.valueOf("5C4A30FF");
     private static final Color COL_UPGRADE = Color.valueOf("2E8B2EFF");
@@ -138,17 +147,51 @@ public class ItemInspectorPanel extends Table {
             contentTable.add(footer).left().padTop(4).row();
         }
 
-        // Action Button for Consumables & Tomes
-        if (isUsableConsumable(item)) {
-            String btnText = getActionVerb(item);
-            TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-            btnStyle.font = skin.getFontSmall();
-            btnStyle.fontColor = Color.valueOf("F0E6D2FF");
-            btnStyle.up = skin.getNormalSlotDrawable();
-            btnStyle.over = skin.getHighlightValidDrawable();
-            btnStyle.down = skin.getEquipSlotDrawable();
+        // Dual buttons for spell scrolls: free single READ vs permanent INSCRIBE
+        if (item.isScroll() && player.canInscribeScroll(item)) {
+            Table scrollBtnRow = new Table();
 
-            TextButton actionBtn = new TextButton("[ " + btnText + " ]", btnStyle);
+            TextButton readBtn = buildActionButton("READ SCROLL");
+            readBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (useItemCallback != null) {
+                        useItemCallback.onUseItem(item);
+                    }
+                }
+            });
+            scrollBtnRow.add(readBtn).width(200).height(38).padRight(10);
+
+            com.bpm.minotaur.gamedata.spells.SpellTemplate spell = getSpellTemplateForScroll(item);
+            int mpCost = spell != null ? spell.getMpCost() : 0;
+            boolean hasOpenSlot = hasOpenSpellSlot();
+            boolean hasEnoughMp = player.hasEnoughMana(mpCost);
+            TextButton inscribeBtn = buildActionButton("INSCRIBE (" + mpCost + " MP)");
+            inscribeBtn.setDisabled(!hasOpenSlot || !hasEnoughMp);
+            inscribeBtn.setTouchable(inscribeBtn.isDisabled() ? com.badlogic.gdx.scenes.scene2d.Touchable.disabled
+                    : com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+            inscribeBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (inscribeItemCallback != null) {
+                        inscribeItemCallback.onInscribeItem(item);
+                    }
+                }
+            });
+            scrollBtnRow.add(inscribeBtn).width(220).height(38);
+            contentTable.add(scrollBtnRow).padTop(8).center().row();
+
+            String tooltipHint = !hasOpenSlot
+                    ? "No open spell slot — attune a new slot at the Shelter Altar."
+                    : (!hasEnoughMp ? "Not enough MP to inscribe (need " + mpCost + ")." : "Permanently learns the spell and consumes the scroll.");
+            Label tooltip = new Label(tooltipHint, new Label.LabelStyle(skin.getFontSmall(), COL_INK_MUTED));
+            tooltip.setWrap(true);
+            contentTable.add(tooltip).width(320).padTop(4).center().row();
+        }
+        // Action Button for other Consumables & Tomes
+        else if (isUsableConsumable(item)) {
+            String btnText = getActionVerb(item);
+            TextButton actionBtn = buildActionButton(btnText);
             actionBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -159,6 +202,32 @@ public class ItemInspectorPanel extends Table {
             });
             contentTable.add(actionBtn).width(240).height(38).padTop(8).center().row();
         }
+    }
+
+    private TextButton buildActionButton(String text) {
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+        btnStyle.font = skin.getFontSmall();
+        btnStyle.fontColor = Color.valueOf("F0E6D2FF");
+        btnStyle.disabledFontColor = COL_INK_MUTED;
+        btnStyle.up = skin.getNormalSlotDrawable();
+        btnStyle.over = skin.getHighlightValidDrawable();
+        btnStyle.down = skin.getEquipSlotDrawable();
+        btnStyle.disabled = skin.getNormalSlotDrawable();
+        return new TextButton("[ " + text + " ]", btnStyle);
+    }
+
+    private boolean hasOpenSpellSlot() {
+        String[] prepared = player.getPreparedSpells();
+        for (int i = 0; i < player.getUnlockedSpellSlots() && i < prepared.length; i++) {
+            if (prepared[i] == null) return true;
+        }
+        return false;
+    }
+
+    private com.bpm.minotaur.gamedata.spells.SpellTemplate getSpellTemplateForScroll(Item item) {
+        String spellId = player.resolveScrollSpellId(item);
+        if (spellId == null || spellId.isEmpty()) return null;
+        return com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId.toUpperCase());
     }
 
     public boolean isUsableConsumable(Item item) {

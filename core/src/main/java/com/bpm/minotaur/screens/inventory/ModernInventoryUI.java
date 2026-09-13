@@ -121,6 +121,13 @@ public class ModernInventoryUI {
                 inspector.showDefaultHint();
             }
         });
+        inspector.setInscribeItemCallback(item -> {
+            if (item != null) {
+                this.player.inscribeScroll(item, this.eventManager, this.discoveryManager);
+                refresh();
+                inspector.showDefaultHint();
+            }
+        });
 
         // ── Connect slots to event bus for hover/click inspection ─────
         backpack.setBus(bus);

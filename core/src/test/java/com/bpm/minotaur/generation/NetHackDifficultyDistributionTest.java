@@ -11,8 +11,6 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spells.SpellDataManager;
-import com.bpm.minotaur.gamedata.spells.SpellTemplate;
-import com.bpm.minotaur.managers.DivinityManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.WorldManager;
@@ -241,10 +239,11 @@ public class NetHackDifficultyDistributionTest {
         assertTrue(scrollEdl1.getValue().friendlyName.startsWith("Scroll of "));
         assertTrue(scrollEdl1.getValue().friendlyName.contains("("));
 
-        // 2. Test Scribing dynamic scroll into Player spellbook
+        // 2. Test Inscribing dynamic scroll into Player spellbook
         Player player = new Player(100, 10);
         GameEventManager eventManager = new GameEventManager();
-        DivinityManager.getInstance().addDivinities(50);
+        player.getStats().setCurrentMP(player.getStats().getMaxMP());
+        player.setUnlockedSpellSlots(2); // slot 0 holds the starting cantrip; open slot 1 for inscription
 
         Item scrollItem = new Item(Item.ItemType.SCROLL, 0, 0, ItemColor.WHITE, itemDataManager, null);
         scrollItem.setName("Scroll of Magic Arrow (MAGIC_ARROW)");
@@ -252,8 +251,8 @@ public class NetHackDifficultyDistributionTest {
         player.getInventory().pickup(scrollItem);
 
         assertFalse(player.getKnownSpellIds().contains("MAGIC_ARROW"));
-        boolean scribed = player.scribeScroll(scrollItem, eventManager);
-        assertTrue("Player should successfully transcribe dynamic spell scroll", scribed);
+        boolean inscribed = player.inscribeScroll(scrollItem, eventManager, null);
+        assertTrue("Player should successfully inscribe dynamic spell scroll", inscribed);
         assertTrue("Player spellbook should now contain MAGIC_ARROW", player.getKnownSpellIds().contains("MAGIC_ARROW"));
     }
 

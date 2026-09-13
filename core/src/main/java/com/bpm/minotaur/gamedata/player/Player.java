@@ -167,12 +167,31 @@ public class Player {
         return null;
     }
 
-    public boolean scribeScroll(Item scrollItem, GameEventManager eventManager) {
+    /** Whether this item is a scroll carrying a resolvable, not-yet-known spell. */
+    public boolean canInscribeScroll(Item item) {
+        if (item == null || !item.isScroll()) return false;
+        String spellId = resolveSpellIdFromScroll(item);
+        return spellId != null && !knownSpellIds.contains(spellId);
+    }
+
+    /** Public accessor for UI panels that need to preview a scroll's underlying spell. */
+    public String resolveScrollSpellId(Item item) {
+        if (item == null) return null;
+        return resolveSpellIdFromScroll(item);
+    }
+
+    /**
+     * Permanently commits a spell scroll into an open prepared spell slot, at the
+     * cost of 100% of the spell's MP (as opposed to {@link #read} which is a free
+     * single emergency cast). Requires an unlocked, empty spell slot and enough
+     * current MP to pay the spell's full cost.
+     */
+    public boolean inscribeScroll(Item scrollItem, GameEventManager eventManager, DiscoveryManager discoveryManager) {
         if (scrollItem == null) return false;
         String spellId = resolveSpellIdFromScroll(scrollItem);
 
         if (spellId == null) {
-            eventManager.addEvent(new GameEvent("This scroll cannot be transcribed.", 1.5f));
+            eventManager.addEvent(new GameEvent("This scroll cannot be inscribed.", 1.5f));
             return false;
         }
 
@@ -181,16 +200,34 @@ public class Player {
             return false;
         }
 
-        int divinityCost = 10;
-        if (com.bpm.minotaur.managers.DivinityManager.getInstance().getCurrentDivinities() < divinityCost) {
-            eventManager.addEvent(new GameEvent("Need " + divinityCost + " Divinity to transcribe!", 1.5f));
+        int openSlot = -1;
+        for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
+            if (preparedSpells[i] == null) {
+                openSlot = i;
+                break;
+            }
+        }
+        if (openSlot == -1) {
+            eventManager.addEvent(new GameEvent("No open spell slot! Free one up or attune a new slot at the Altar.", 2.0f));
             return false;
         }
 
-        com.bpm.minotaur.managers.DivinityManager.getInstance().spendDivinities(divinityCost);
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spellTemplate = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+        int mpCost = (spellTemplate != null) ? spellTemplate.getMpCost() : 0;
+        if (!hasEnoughMana(mpCost)) {
+            eventManager.addEvent(new GameEvent("Not enough MP to inscribe (need " + mpCost + ")!", 2.0f));
+            return false;
+        }
+
+        deductMana(mpCost);
         learnSpellId(spellId);
+        prepareSpell(openSlot, spellId);
         inventory.removeItem(scrollItem);
-        eventManager.addEvent(new GameEvent("Transcribed " + spellId + " into Spellbook!", 2.0f));
+        if (discoveryManager != null) {
+            discoveryManager.identifyDedicatedScroll(scrollItem.getType(), spellId);
+        }
+        eventManager.addEvent(new GameEvent(
+                "Inscribed " + spellId + " into spell slot " + (openSlot + 1) + "! (-" + mpCost + " MP)", 2.5f));
         if (soundManager != null) soundManager.playPickupItemSound();
         return true;
     }

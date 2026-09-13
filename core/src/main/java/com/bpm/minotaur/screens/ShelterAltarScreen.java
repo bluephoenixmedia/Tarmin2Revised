@@ -53,9 +53,11 @@ public class ShelterAltarScreen extends BaseScreen {
     private Label provisionsTierLabel;
     private Label repertoireTierLabel;
     private Label monumentTierLabel;
+    private Label arcaneTierLabel;
     private TextButton provisionsBtn;
     private TextButton repertoireBtn;
     private TextButton monumentBtn;
+    private TextButton arcaneBtn;
 
     public ShelterAltarScreen(Tarmin2 game, GameScreen parentScreen, Player player) {
         super(game);
@@ -324,11 +326,26 @@ public class ShelterAltarScreen extends BaseScreen {
             }
         });
         monumentCard.add(monumentBtn).width(320).height(52).padTop(16).row();
-        body.add(monumentCard).width(380).expandY().fillY();
+        body.add(monumentCard).width(380).expandY().fillY().padRight(20);
+
+        Table arcaneCard = buildTreeCard("ARCANE ATTUNEMENT",
+                "Unseals higher spell circles into loot and attunes a new prepared spell slot at each tier.");
+        arcaneTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
+        arcaneCard.add(arcaneTierLabel).left().padTop(10).row();
+        arcaneBtn = createActionButton("UPGRADE ATTUNEMENT");
+        arcaneBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                purchaseTree(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
+            }
+        });
+        arcaneCard.add(arcaneBtn).width(320).height(52).padTop(16).row();
+        body.add(arcaneCard).width(380).expandY().fillY();
 
         refreshTree(altar, ShelterAltar.Tree.PROVISIONS, provisionsTierLabel, provisionsBtn, divinities);
         refreshTree(altar, ShelterAltar.Tree.REPERTOIRE, repertoireTierLabel, repertoireBtn, divinities);
         refreshTree(altar, ShelterAltar.Tree.MONUMENT, monumentTierLabel, monumentBtn, divinities);
+        refreshTree(altar, ShelterAltar.Tree.ARCANE_ATTUNEMENT, arcaneTierLabel, arcaneBtn, divinities);
 
         bodyContainer.add(body).expand().fill();
     }
@@ -364,7 +381,10 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private void purchaseTree(ShelterAltar.Tree tree) {
         ShelterAltar altar = ShelterAltar.getInstance();
-        if (!altar.purchaseUpgrade(tree)) {
+        boolean purchased = (tree == ShelterAltar.Tree.ARCANE_ATTUNEMENT)
+                ? altar.purchaseArcaneAttunement(player)
+                : altar.purchaseUpgrade(tree);
+        if (!purchased) {
             statusLabel.setText("Not enough Divinities for that upgrade.");
             refresh();
             return;
@@ -381,6 +401,10 @@ public class ShelterAltarScreen extends BaseScreen {
             case MONUMENT:
                 message = "Monument upgraded! Statue encounters now appear "
                         + Math.round(altar.getStatueEventFrequency() * 100) + "% of the time per chunk.";
+                break;
+            case ARCANE_ATTUNEMENT:
+                message = "Attunement deepened! Spell slot " + player.getUnlockedSpellSlots()
+                        + " unlocked. Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
                 break;
             default:
                 message = "Upgrade purchased.";

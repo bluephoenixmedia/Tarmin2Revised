@@ -46,6 +46,24 @@ public class ItemSpawner {
     }
 
     /**
+     * Filters out spells belonging to an Arcane Attunement circle that hasn't been
+     * unsealed at the Shelter Altar yet. Spells outside the attunement circles are
+     * always eligible.
+     */
+    private List<com.bpm.minotaur.gamedata.spells.SpellTemplate> filterUnsealed(
+            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> spells) {
+        if (spells == null) return null;
+        com.bpm.minotaur.gamedata.progression.ShelterAltar altar = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+        List<com.bpm.minotaur.gamedata.spells.SpellTemplate> result = new ArrayList<>();
+        for (com.bpm.minotaur.gamedata.spells.SpellTemplate spell : spells) {
+            if (!altar.isSpellSealed(spell.id)) {
+                result.add(spell);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Spawns a dynamic spell scroll from spells.json matching the floor's EDL bracket.
      */
     public Map.Entry<String, ItemTemplate> spawnDynamicSpellScroll(int edl) {
@@ -57,9 +75,9 @@ public class ItemSpawner {
         else spellLevel = 5;
 
         com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
-        List<com.bpm.minotaur.gamedata.spells.SpellTemplate> spells = sdm.getSpellsByLevel(spellLevel);
+        List<com.bpm.minotaur.gamedata.spells.SpellTemplate> spells = filterUnsealed(sdm.getSpellsByLevel(spellLevel));
         if (spells == null || spells.isEmpty()) {
-            spells = sdm.getSpellsByLevel(1);
+            spells = filterUnsealed(sdm.getSpellsByLevel(1));
         }
         if (spells == null || spells.isEmpty()) {
             return null;

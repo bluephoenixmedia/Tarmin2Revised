@@ -6,7 +6,6 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
-import com.bpm.minotaur.managers.DivinityManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -192,20 +191,21 @@ public class SpellSystemTest {
         player.prepareSpell(4, "FIREBALL");
         assertEquals("FIREBALL", player.getPreparedSpell(4));
 
-        // Test Scroll Scribing with Divinity
-        DivinityManager.getInstance().addDivinities(20);
+        // Test Scroll Inscription (permanently learns the spell, costs 100% of its MP,
+        // and requires an open prepared spell slot -- slot 1 is free at this point)
         ItemTemplate scrollTmpl = new ItemTemplate();
         scrollTmpl.friendlyName = "Scroll of Misty Step";
         Item scroll = Item.fromTemplate(Item.ItemType.SCROLL_MISTY_STEP, scrollTmpl);
         player.getInventory().pickup(scroll);
+        player.getStats().setCurrentMP(player.getStats().getMaxMP());
 
         assertFalse(player.getKnownSpellIds().contains("MISTY_STEP"));
-        int divBefore = DivinityManager.getInstance().getCurrentDivinities();
+        assertTrue("Player should be able to inscribe this scroll", player.canInscribeScroll(scroll));
 
-        boolean scribed = player.scribeScroll(scroll, eventManager);
-        assertTrue("Scroll should be scribed successfully", scribed);
+        boolean inscribed = player.inscribeScroll(scroll, eventManager, null);
+        assertTrue("Scroll should be inscribed successfully", inscribed);
         assertTrue(player.getKnownSpellIds().contains("MISTY_STEP"));
-        assertEquals(divBefore - 10, DivinityManager.getInstance().getCurrentDivinities());
+        assertEquals("MISTY_STEP", player.getPreparedSpell(1));
         assertFalse("Scroll should be consumed from inventory", player.getInventory().getMainInventory().contains(scroll));
     }
 }

@@ -13,7 +13,7 @@ import com.bpm.minotaur.managers.SaveManager;
  */
 public class ShelterAltar {
 
-    public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT }
+    public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT, ARCANE_ATTUNEMENT }
 
     public enum Station {
         BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG),
@@ -51,6 +51,14 @@ public class ShelterAltar {
     private int provisionsTier = 0;
     private int repertoireTier = 0;
     private int monumentTier = 0;
+    private int arcaneTier = 0;
+
+    private static final int[] ARCANE_COSTS = { 15, 25, 40 };
+    private static final String[][] ARCANE_UNLOCKED_SPELLS = {
+            { "MAGIC_MISSILE", "SHIELD", "BURNING_HANDS" },
+            { "MISTY_STEP", "ACID_ARROW", "SCORCHING_RAY" },
+            { "FIREBALL", "LIGHTNING_BOLT" }
+    };
 
     private final java.util.Set<Station> unlockedStations = new java.util.HashSet<>();
     private final java.util.Map<Station, java.util.List<com.badlogic.gdx.math.GridPoint2>> stationLocations = new java.util.EnumMap<>(Station.class);
@@ -71,6 +79,7 @@ public class ShelterAltar {
         provisionsTier = 0;
         repertoireTier = 0;
         monumentTier = 0;
+        arcaneTier = 0;
         unlockedStations.clear();
         canCommune = true;
     }
@@ -225,6 +234,7 @@ public class ShelterAltar {
             case PROVISIONS: return provisionsTier;
             case REPERTOIRE: return repertoireTier;
             case MONUMENT: return monumentTier;
+            case ARCANE_ATTUNEMENT: return arcaneTier;
             default: return 0;
         }
     }
@@ -237,6 +247,9 @@ public class ShelterAltar {
     public int getNextUpgradeCost(Tree tree) {
         if (isMaxed(tree)) {
             return -1;
+        }
+        if (tree == Tree.ARCANE_ATTUNEMENT) {
+            return ARCANE_COSTS[getTier(tree)];
         }
         return BASE_COST * (getTier(tree) + 1);
     }
@@ -253,9 +266,59 @@ public class ShelterAltar {
             case PROVISIONS: provisionsTier++; break;
             case REPERTOIRE: repertoireTier++; break;
             case MONUMENT: monumentTier++; break;
+            case ARCANE_ATTUNEMENT: arcaneTier++; break;
         }
         save();
         return true;
+    }
+
+    /**
+     * Purchases the next Arcane Attunement tier for the given player, unlocking
+     * their next spell slot in addition to the altar-side tracking.
+     */
+    public boolean purchaseArcaneAttunement(com.bpm.minotaur.gamedata.player.Player player) {
+        if (!purchaseUpgrade(Tree.ARCANE_ATTUNEMENT)) {
+            return false;
+        }
+        if (player != null) {
+            player.unlockNextSpellSlot();
+        }
+        return true;
+    }
+
+    /** Spell ids unsealed for loot spawning by the current Arcane Attunement tier. */
+    public java.util.List<String> getUnsealedSpellIds() {
+        java.util.List<String> unsealed = new java.util.ArrayList<>();
+        for (int i = 0; i < arcaneTier && i < ARCANE_UNLOCKED_SPELLS.length; i++) {
+            java.util.Collections.addAll(unsealed, ARCANE_UNLOCKED_SPELLS[i]);
+        }
+        return unsealed;
+    }
+
+    /** Spell ids that the next Arcane Attunement tier purchase would unseal. */
+    public java.util.List<String> getNextTierSpells() {
+        if (isMaxed(Tree.ARCANE_ATTUNEMENT)) {
+            return java.util.Collections.emptyList();
+        }
+        return java.util.List.of(ARCANE_UNLOCKED_SPELLS[arcaneTier]);
+    }
+
+    /**
+     * True if the given spell id belongs to one of the Arcane Attunement circles
+     * but hasn't been unsealed yet by the current tier. Spells outside the
+     * attunement circles entirely are never considered sealed.
+     */
+    public boolean isSpellSealed(String spellId) {
+        if (spellId == null) return false;
+        String upper = spellId.toUpperCase();
+        for (int tier = 0; tier < ARCANE_UNLOCKED_SPELLS.length; tier++) {
+            for (String id : ARCANE_UNLOCKED_SPELLS[tier]) {
+                if (id.equals(upper)) {
+                    return tier >= arcaneTier;
+                }
+            }
+        }
+        return false;
     }
 
     /** Extra bread/waterskin/bandages granted at the start of each expedition. */
@@ -285,6 +348,7 @@ public class ShelterAltar {
             data.provisionsTier = provisionsTier;
             data.repertoireTier = repertoireTier;
             data.monumentTier = monumentTier;
+            data.arcaneTier = arcaneTier;
             data.canCommune = canCommune;
             data.unlockedStations = new java.util.ArrayList<>();
             for (Station s : unlockedStations) {
@@ -309,6 +373,7 @@ public class ShelterAltar {
                     provisionsTier = data.provisionsTier;
                     repertoireTier = data.repertoireTier;
                     monumentTier = data.monumentTier;
+                    arcaneTier = data.arcaneTier;
                     canCommune = data.canCommune;
                     unlockedStations.clear();
                     if (data.unlockedStations != null) {
@@ -331,6 +396,7 @@ public class ShelterAltar {
         public int provisionsTier = 0;
         public int repertoireTier = 0;
         public int monumentTier = 0;
+        public int arcaneTier = 0;
         public java.util.List<String> unlockedStations = new java.util.ArrayList<>();
         public boolean canCommune = true;
     }
