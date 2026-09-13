@@ -90,8 +90,8 @@ public class PlayerStats {
     public SatiationState getSatiationState() {
         if (satiety <= 0f) return SatiationState.STARVING;
         if (satiety <= 25f) return SatiationState.HUNGRY;
-        if (satiety <= 85f) return SatiationState.NORMAL;
-        if (satiety <= 105f) return SatiationState.SATIATED;
+        if (satiety <= 80f) return SatiationState.NORMAL;
+        if (satiety <= 110f) return SatiationState.SATIATED;
         return SatiationState.CHOKING;
     }
 

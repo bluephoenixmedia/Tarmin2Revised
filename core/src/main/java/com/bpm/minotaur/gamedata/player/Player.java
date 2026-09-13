@@ -695,9 +695,10 @@ public class Player {
             String dName = item.getDisplayName().toLowerCase();
             if (dName.contains("scorpion") || dName.contains("spider") || dName.contains("ghoul")
                     || dName.contains("zombie") || dName.contains("kobold") || dName.contains("bile")
-                    || dName.contains("flesh")) {
+                    || dName.contains("snake") || dName.contains("flesh")) {
                 if (dName.contains("scorpion") || dName.contains("spider") || dName.contains("ghoul")
-                        || dName.contains("zombie") || dName.contains("kobold") || dName.contains("bile")) {
+                        || dName.contains("zombie") || dName.contains("kobold") || dName.contains("bile")
+                        || dName.contains("snake")) {
                     statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED, 15, 1, false);
                     if (eventManager != null) {
                         eventManager.addEvent(new GameEvent("Tainted raw flesh! You feel poisoned and nauseated.", 2.5f));
@@ -717,11 +718,19 @@ public class Player {
                         eventManager.addEvent(new GameEvent("A static tingling numbs your skin! (Gained Shock Resistance)", 3.5f));
                     }
                 }
-                if (dName.contains("fire") && Math.random() < 0.30f
+                // 20% chance to grant Fire Resistance from elemental beast flesh (e.g. Fire Beetle / Fire Giant)
+                if (dName.contains("fire") && Math.random() < 0.20f
                         && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)) {
                     statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE, -1, 1, false);
                     if (eventManager != null) {
                         eventManager.addEvent(new GameEvent("A warm barrier settles within you! (Gained Fire Resistance)", 3.5f));
+                    }
+                }
+                if ((dName.contains("frost") || dName.contains("ice") || dName.contains("white dragon")) && Math.random() < 0.30f
+                        && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)) {
+                    statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD, -1, 1, false);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("A chill settles comfortably in your bones! (Gained Cold Resistance)", 3.5f));
                     }
                 }
             }

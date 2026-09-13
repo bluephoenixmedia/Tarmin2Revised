@@ -93,12 +93,6 @@ public class ShelterAltar {
         return provisionsTier;
     }
 
-    /** Dungeon-level discount applied to advanced weapon unlock thresholds (Composite Bows,
-     *  Heavy Crossbows, Warhammers, Morningstars), letting them appear in earlier strata. */
-    public int getRepertoireLevelDiscount() {
-        return repertoireTier * 2;
-    }
-
     /** Per-chunk chance of a statue encounter event, scaling from a 15% baseline to 35% at max tier. */
     public float getStatueEventFrequency() {
         return STATUE_FREQUENCY_BASE + (STATUE_FREQUENCY_MAX - STATUE_FREQUENCY_BASE) * ((float) monumentTier / MAX_TIER);

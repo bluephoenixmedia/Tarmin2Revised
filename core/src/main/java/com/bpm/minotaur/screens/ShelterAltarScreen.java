@@ -90,7 +90,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
         Table provisionsCard = buildTreeCard("PROVISIONS",
                 "Extra bread, waterskins, and bandages at the start of every expedition.");
-        provisionsTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), Color()));
+        provisionsTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         provisionsCard.add(provisionsTierLabel).left().padTop(10).row();
         provisionsBtn = createActionButton("UPGRADE PROVISIONS");
         provisionsBtn.addListener(new ClickListener() {
@@ -104,7 +104,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
         Table repertoireCard = buildTreeCard("REPERTOIRE",
                 "Unseals advanced weaponry -- Composite Bows, Heavy Crossbows, Warhammers, and Morning Stars -- directly into the Stash Chest.");
-        repertoireTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), Color()));
+        repertoireTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         repertoireCard.add(repertoireTierLabel).left().padTop(10).row();
         repertoireBtn = createActionButton("UPGRADE REPERTOIRE");
         repertoireBtn.addListener(new ClickListener() {
@@ -118,7 +118,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
         Table monumentCard = buildTreeCard("MONUMENT",
                 "Raises the frequency of statue encounter events from a 15% baseline up to 35% per chunk.");
-        monumentTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), Color()));
+        monumentTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         monumentCard.add(monumentTierLabel).left().padTop(10).row();
         monumentBtn = createActionButton("UPGRADE MONUMENT");
         monumentBtn.addListener(new ClickListener() {
@@ -146,10 +146,6 @@ public class ShelterAltarScreen extends BaseScreen {
         stage.addActor(root);
 
         refresh();
-    }
-
-    private com.badlogic.gdx.graphics.Color Color() {
-        return HudSkin.COL_GOLD_ANTIQUE;
     }
 
     private Table buildTreeCard(String name, String description) {

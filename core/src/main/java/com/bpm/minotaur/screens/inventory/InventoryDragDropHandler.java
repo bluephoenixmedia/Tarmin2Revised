@@ -178,6 +178,10 @@ public class InventoryDragDropHandler {
             slot.setItem(null);
             eventBus.fireItemDropped(item);
             eventBus.fireStatsChanged();
+            if (player.getEventManager() != null) {
+                player.getEventManager().addEvent(
+                        new com.bpm.minotaur.gamedata.GameEvent("Dropped " + item.getDisplayName(), 2f));
+            }
         }
         return ok;
     }

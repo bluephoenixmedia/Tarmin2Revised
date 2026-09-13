@@ -86,6 +86,20 @@ public class NetHackSatiationTest {
     }
 
     @Test
+    public void testEatingSnakeFleshAppliesPoison() {
+        // The plan explicitly names SNAKE_FLESH as a poison trigger alongside scorpion/ghoul/etc.
+        Player player = new Player(2, 2);
+        player.getStats().setSatiety(50f);
+
+        Item flesh = tenderFlesh(Monster.MonsterType.GIANT_SNAKE);
+        GameEventManager eventManager = new GameEventManager();
+        player.useItem(flesh, eventManager, null, null);
+
+        assertTrue("Raw snake flesh should poison the eater",
+                player.getStatusManager().hasEffect(StatusEffectType.POISONED));
+    }
+
+    @Test
     public void testTaintedFleshCarriesAChanceOfPoisonResistance() {
         int trials = 300;
         int grantedCount = 0;
