@@ -69,6 +69,21 @@ public class Player {
     private final List<com.bpm.minotaur.gamedata.spells.SpellType> knownSpells = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
+    private int unlockedSpellSlots = 5;
+
+    public int getUnlockedSpellSlots() {
+        return unlockedSpellSlots;
+    }
+
+    public void setUnlockedSpellSlots(int slots) {
+        this.unlockedSpellSlots = Math.max(1, Math.min(5, slots));
+    }
+
+    public void unlockNextSpellSlot() {
+        if (unlockedSpellSlots < 5) {
+            unlockedSpellSlots++;
+        }
+    }
 
     public List<com.bpm.minotaur.gamedata.spells.SpellType> getKnownSpells() {
         return knownSpells;
@@ -95,7 +110,7 @@ public class Player {
     }
 
     public void prepareSpell(int slot, String spellId) {
-        if (slot >= 0 && slot < preparedSpells.length) {
+        if (slot >= 0 && slot < unlockedSpellSlots && slot < preparedSpells.length) {
             preparedSpells[slot] = spellId != null ? spellId.toUpperCase() : null;
         }
     }
@@ -120,7 +135,9 @@ public class Player {
         if (scrollItem == null) return false;
         String name = scrollItem.getFriendlyName();
         String spellId = null;
-        if (scrollItem.getType() == Item.ItemType.SCROLL_FIREBALL) spellId = "FIREBALL";
+        if (scrollItem.getSpellId() != null && !scrollItem.getSpellId().isEmpty()) {
+            spellId = scrollItem.getSpellId().toUpperCase();
+        } else if (scrollItem.getType() == Item.ItemType.SCROLL_FIREBALL) spellId = "FIREBALL";
         else if (scrollItem.getType() == Item.ItemType.SCROLL_MISTY_STEP) spellId = "MISTY_STEP";
         else if (scrollItem.getType() == Item.ItemType.SCROLL_MAGIC_MISSILE) spellId = "MAGIC_MISSILE";
         else if (scrollItem.getType() == Item.ItemType.SCROLL_LIGHTNING_BOLT) spellId = "LIGHTNING_BOLT";
@@ -569,6 +586,29 @@ public class Player {
     public void useItem(Item item, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze) {
         if (item == null) {
             eventManager.addEvent(new GameEvent("You have nothing to use.", 2f));
+            return;
+        }
+
+        // --- Tarmin Milestone Tomes (Spell Slot Unlocks) ---
+        if (item.getType() == Item.ItemType.TOME_OF_THE_INITIATE) {
+            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 2));
+            eventManager.addEvent(new GameEvent("Studied the Tome of the Initiate! Spell Slot 2 Unlocked!", 3.0f));
+            inventory.removeItem(item);
+            return;
+        } else if (item.getType() == Item.ItemType.TOME_OF_ELEMENTS) {
+            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 3));
+            eventManager.addEvent(new GameEvent("Studied the Tome of Elements! Spell Slot 3 Unlocked!", 3.0f));
+            inventory.removeItem(item);
+            return;
+        } else if (item.getType() == Item.ItemType.TOME_OF_THE_ARCANE) {
+            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 4));
+            eventManager.addEvent(new GameEvent("Studied the Tome of the Arcane! Spell Slot 4 Unlocked!", 3.0f));
+            inventory.removeItem(item);
+            return;
+        } else if (item.getType() == Item.ItemType.TOME_OF_TARMIN) {
+            setUnlockedSpellSlots(5);
+            eventManager.addEvent(new GameEvent("Mastered the Tome of Tarmin! Spell Slot 5 Unlocked!", 3.0f));
+            inventory.removeItem(item);
             return;
         }
 

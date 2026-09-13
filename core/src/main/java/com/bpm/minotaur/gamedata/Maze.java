@@ -54,6 +54,16 @@ public class Maze {
         return corpses;
     }
 
+    private GridPoint2 chunkId = new GridPoint2(0, 0);
+
+    public GridPoint2 getChunkId() {
+        return chunkId;
+    }
+
+    public void setChunkId(GridPoint2 chunkId) {
+        this.chunkId = (chunkId != null) ? new GridPoint2(chunkId) : new GridPoint2(0, 0);
+    }
+
     public void addHomeTile(GridPoint2 pos) {
         homeTiles.add(pos);
     }

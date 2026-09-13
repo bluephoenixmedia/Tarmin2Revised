@@ -59,13 +59,20 @@ public class MonsterSpawner {
                 continue;
             }
 
-            // Depth Check: Skip if baseLevel < depth / 6
-            if (template.baseLevel < ctx.depth() / 6) {
+            // NetHack lower-bound pruning: Skip if baseLevel < max(1, ctx.edl() / 4)
+            int minLevel = Math.max(1, ctx.edl() / 4);
+            if (template.baseLevel < minLevel) {
                 continue;
             }
 
-            // Depth Check: Skip if baseLevel > (depth + playerLevel) / 2
-            if (template.baseLevel > (ctx.depth() + ctx.playerLevel()) / 2) {
+            // NetHack Out-of-Depth (OOD) generation:
+            // Surface (Z <= 1): 0% OOD chance (baseLevel <= ctx.edl())
+            // Subterranean (Z >= 2): 15% OOD chance allowing baseLevel <= ctx.edl() + 1 + rng.rn2(3)
+            int maxLevel = ctx.edl();
+            if (ctx.isSubterranean() && rng.rn2(100) < 15) {
+                maxLevel = ctx.edl() + 1 + rng.rn2(3);
+            }
+            if (template.baseLevel > maxLevel) {
                 continue;
             }
 

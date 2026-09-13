@@ -185,14 +185,27 @@ public class WorldManager {
     private int difficultyOffset = 0;
 
     /**
-     * Calculates difficulty based on Depth + Horizontal Distance + Offset.
-     * Moving 2 chunks away is roughly equivalent to descending 1 floor.
+     * Calculates difficulty based on NetHack EL & EDL formulas:
+     * EL = depth + floor(D_xy / 2)
+     * EDL = floor((EL + playerLevel) / 2)
+     * Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
      */
-    private int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
-        int horizontalDistance = Math.abs(chunkId.x) + Math.abs(chunkId.y);
-        int distancePenalty = (int) (horizontalDistance * 0.5f);
-        int depthScale = Math.max(0, depth - 1) * 3;
-        return 1 + depthScale + distancePenalty + difficultyOffset;
+    public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth) {
+        int playerLevel = (playerReference != null) ? playerReference.getLevel() : 1;
+        return calculateEffectiveDifficulty(chunkId, depth, playerLevel);
+    }
+
+    public int calculateEffectiveDifficulty(GridPoint2 chunkId, int depth, int playerLevel) {
+        int horizontalDistance = (chunkId != null) ? (Math.abs(chunkId.x) + Math.abs(chunkId.y)) : 0;
+        int el = depth + (horizontalDistance / 2);
+        int edl = (el + playerLevel) / 2;
+
+        // Sanctuary Buffer: Any chunk within D_xy <= 1 on Z = 1 capped at EDL = 2
+        if (chunkId != null && Math.abs(chunkId.x) <= 1 && Math.abs(chunkId.y) <= 1 && depth <= 1) {
+            edl = Math.min(edl, 2);
+        }
+
+        return Math.max(1, edl + difficultyOffset);
     }
 
     public void resetWorldKeepDifficulty() {
@@ -389,6 +402,7 @@ public class WorldManager {
                 playerReference != null ? playerReference.getLuck() : 0);
 
         newMaze.setGoreManager(this.goreManager);
+        newMaze.setChunkId(chunkId);
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -769,14 +783,19 @@ public class WorldManager {
         if (currentLevel <= 1)
             return;
 
-        // Periodic Spawn Check (e.g., every 300 turns)
-        if (turnCount > 0 && turnCount % 300 == 0) {
+        DoomManager doom = DoomManager.getInstance();
+        doom.advanceExpeditionTurn();
+        int interval = doom.getSpawnInterval();
+
+        // Periodic Spawn Check using dynamic Doom Clock interval
+        if (turnCount > 0 && turnCount % interval == 0) {
+            int edlWithDoom = calculateEffectiveDifficulty(currentPlayerChunkId, currentLevel) + doom.getDoomEDLBonus();
             SpawnManager sm = new SpawnManager(dataManager, itemDataManager, assetManager,
-                    loadedChunks.get(currentPlayerChunkId), difficulty, currentLevel, player.getLevel(),
+                    loadedChunks.get(currentPlayerChunkId), difficulty, edlWithDoom, player.getLevel(),
                     player.getLuck(), null, spawnTableData, System.nanoTime(), null); // null = no reachability filter for periodic respawns
 
             sm.spawnPeriodicMonster(player);
-            Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount);
+            Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount + " (Doom Stage " + doom.getDoomStage() + ")");
         }
     }
 

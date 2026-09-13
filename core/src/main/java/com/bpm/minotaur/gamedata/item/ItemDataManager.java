@@ -674,6 +674,60 @@ public class ItemDataManager {
         return validVariants.get(0);
     }
 
+    /**
+     * Maps Effective Difficulty Level (EDL) to a NetHack Color Tier index (0..5):
+     * 0: TAN (EDL 1-3)
+     * 1: ORANGE (EDL 4-6)
+     * 2: BLUE (EDL 7-9)
+     * 3: WHITE (EDL 10-12)
+     * 4: PINK (EDL 13-15)
+     * 5: PURPLE (EDL 16+)
+     */
+    public static int getTierIndexForEDL(int edl) {
+        if (edl <= 3) return 0;
+        if (edl <= 6) return 1;
+        if (edl <= 9) return 2;
+        if (edl <= 12) return 3;
+        if (edl <= 15) return 4;
+        return 5;
+    }
+
+    /**
+     * Rolls Out-Of-Depth (OOD) tier bonuses:
+     * 1% chance for +2 tiers, 10% chance for +1 tier.
+     */
+    public int rollColorTierWithOOD(int baseTierIndex) {
+        int tier = baseTierIndex;
+        int oodRoll = random.nextInt(100);
+        if (oodRoll == 0) {
+            tier += 2;
+        } else if (oodRoll < 11) {
+            tier += 1;
+        }
+        return Math.min(5, tier);
+    }
+
+    /**
+     * Returns an ItemColor corresponding to the given EDL, factoring in Out-Of-Depth chances.
+     */
+    public ItemColor getColorForEDL(int edl) {
+        return getColorForEDL(edl, false);
+    }
+
+    public ItemColor getColorForEDL(int edl, boolean isSpiritual) {
+        int baseTier = getTierIndexForEDL(edl);
+        int rolledTier = rollColorTierWithOOD(baseTier);
+        switch (rolledTier) {
+            case 0: return ItemColor.TAN;
+            case 1: return ItemColor.ORANGE;
+            case 2: return isSpiritual ? ItemColor.BLUE : ItemColor.BLUE_STEEL;
+            case 3: return isSpiritual ? ItemColor.WHITE_SPIRITUAL : ItemColor.WHITE;
+            case 4: return ItemColor.PINK;
+            case 5:
+            default: return ItemColor.PURPLE;
+        }
+    }
+
     private void initializeMissingTemplates() {
         // --- NEW: Generate Templates for Corpses & Resources if missing ---
         if (!itemTemplates.containsKey(ItemType.WOODEN_CROSS)) {
@@ -808,6 +862,43 @@ public class ItemDataManager {
             t.armorClassBonus = 2;
             t.baseValue = 40;
             itemTemplates.put(ItemType.CLOSED_FACE, t);
+        }
+
+        // Milestone Tarmin Tomes
+        registerTomeTemplate(ItemType.TOME_OF_THE_INITIATE, "Tome of the Initiate",
+                "An ancient bound treatise on cantrips and foundational sorcery. Heavy cargo. Unlocks Spell Slot 2.", 20.0f);
+        registerTomeTemplate(ItemType.TOME_OF_ELEMENTS, "Tome of Elements",
+                "A dense parchment codex crackling with primal elemental energy. Heavy cargo. Unlocks Spell Slot 3.", 25.0f);
+        registerTomeTemplate(ItemType.TOME_OF_THE_ARCANE, "Tome of the Arcane",
+                "A heavy iron-clasped grimoire containing high arcanum formulas. Heavy cargo. Unlocks Spell Slot 4.", 30.0f);
+        registerTomeTemplate(ItemType.TOME_OF_TARMIN, "Tome of Tarmin",
+                "The legendary grand grimoire of Castle Tarmin itself, radiating forbidden power. Heavy cargo. Unlocks Spell Slot 5.", 35.0f);
+    }
+
+    private void registerTomeTemplate(ItemType type, String name, String desc, float weight) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate tome = new ItemTemplate();
+            tome.friendlyName = name;
+            tome.description = desc;
+            tome.isUsable = true;
+            tome.baseValue = 300;
+            tome.weight = weight;
+            tome.scale = createDefaultScale();
+            ItemTemplate bookRef = itemTemplates.get(ItemType.BOOK);
+            if (bookRef == null) bookRef = itemTemplates.get(ItemType.WAR_BOOK);
+            if (bookRef != null) {
+                tome.texturePath = bookRef.texturePath;
+                tome.spriteData = bookRef.spriteData;
+            } else {
+                tome.spriteData = new String[] {
+                    "################",
+                    "#..............#",
+                    "#..T O M E.....#",
+                    "#..............#",
+                    "################"
+                };
+            }
+            itemTemplates.put(type, tome);
         }
     }
 

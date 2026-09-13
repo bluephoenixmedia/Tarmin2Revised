@@ -2271,6 +2271,7 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentHP(player.getStats().getMaxHP());
             player.getStats().setCurrentMP(player.getStats().getMaxMP());
             player.getStatusManager().clearEffects();
+            DoomManager.getInstance().resetExpeditionTurns();
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
             SaveManager.getInstance().backupActiveSlot();
             soundManager.playDoorOpenSound();

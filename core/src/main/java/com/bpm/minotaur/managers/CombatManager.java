@@ -578,6 +578,7 @@ public class CombatManager {
             DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
         }
         DivinityOrbManager.getInstance().spawnOrb();
+        spawnCorpseEffects(m, 0);
 
         // Caves of Qud Night Hunter trigger
         if (player != null && player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.NIGHT_HUNTER)) {
@@ -1539,30 +1540,26 @@ public class CombatManager {
 
         // 3. Drop Inventory Contents
         if (monster.getInventory() != null) {
-            for (Item item : monster.getInventory().getAllItems()) {
-                if (item != null) {
-                    item.setPosition(monster.getPosition().x, monster.getPosition().y);
+            Item rHand = monster.getInventory().getRightHand();
+            Item lHand = monster.getInventory().getLeftHand();
 
-                    if (!maze.getItems().containsKey(pos)) {
-                        maze.getItems().put(pos, item);
-                    } else {
-                        // Scatter
-                        boolean placed = false;
-                        for (int dx = -1; dx <= 1; dx++) {
-                            for (int dy = -1; dy <= 1; dy++) {
-                                GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
-                                if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH)
-                                        && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) {
-                                    item.setPosition(p.x + 0.5f, p.y + 0.5f);
-                                    maze.getItems().put(p, item);
-                                    placed = true;
-                                    break;
-                                }
-                            }
-                            if (placed)
-                                break;
-                        }
-                    }
+            // Equipped slots drop at 25% chance per slot
+            if (rHand != null && random.nextInt(100) < 25) {
+                dropSingleItem(rHand, pos, monster);
+            }
+            if (lHand != null && random.nextInt(100) < 25) {
+                dropSingleItem(lHand, pos, monster);
+            }
+
+            // Other non-equipped inventory contents
+            for (Item item : monster.getInventory().getMainInventory()) {
+                if (item != null) {
+                    dropSingleItem(item, pos, monster);
+                }
+            }
+            for (Item item : monster.getInventory().getQuickSlots()) {
+                if (item != null) {
+                    dropSingleItem(item, pos, monster);
                 }
             }
         }
@@ -1578,6 +1575,34 @@ public class CombatManager {
             SaveManager.getInstance().unlockClassicMode();
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("THE MINOTAUR HAS FALLEN! Classic Mode and Pact of Torment unlocked!", 5.0f));
+            }
+        }
+    }
+
+    private void dropSingleItem(Item item, GridPoint2 pos, Monster monster) {
+        if (item == null || maze == null) return;
+        item.setPosition(monster.getPosition().x, monster.getPosition().y);
+
+        if (!maze.getItems().containsKey(pos)) {
+            maze.getItems().put(pos, item);
+        } else {
+            // Scatter
+            boolean placed = false;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0)
+                        continue;
+                    GridPoint2 p = new GridPoint2(pos.x + dx, pos.y + dy);
+                    if (!maze.isWallBlocking(pos.x, pos.y, Direction.NORTH)
+                            && !maze.getItems().containsKey(p) && maze.getWallDataAt(p.x, p.y) == 0) {
+                        item.setPosition(p.x + 0.5f, p.y + 0.5f);
+                        maze.getItems().put(p, item);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (placed)
+                    break;
             }
         }
     }

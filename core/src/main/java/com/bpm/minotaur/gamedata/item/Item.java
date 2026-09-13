@@ -157,7 +157,10 @@ public class Item implements Renderable {
         RING_OF_PROTECTION, BOOTS_OF_ELVENKIND, CLOAK_OF_PROTECTION,
         WAND_OF_MAGIC_MISSILES, PERIAPT_OF_WOUND_CLOSURE, BAG_OF_HOLDING,
         POTION_OF_INVISIBILITY, POTION_OF_HEROISM,
-        SCROLL_FIREBALL, SCROLL_MISTY_STEP, SCROLL_MAGIC_MISSILE, SCROLL_LIGHTNING_BOLT
+        SCROLL_FIREBALL, SCROLL_MISTY_STEP, SCROLL_MAGIC_MISSILE, SCROLL_LIGHTNING_BOLT,
+
+        // Milestone Tarmin Tomes
+        TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN
     }
 
     // --- Core Item Properties (Dynamic) ---
@@ -175,6 +178,8 @@ public class Item implements Renderable {
     private String damageDice; // Removed final
     private int armorClassBonus; // Removed final
     private String description;
+    private String spellId;
+    private String material;
 
     // --- Type Flags ---
     private boolean isWeapon; // Removed final
@@ -826,6 +831,33 @@ public class Item implements Renderable {
         if (isUsable || isPotion || isKey)
             return ItemCategory.USEFUL;
         return ItemCategory.MISC;
+    }
+
+    public String getSpellId() {
+        return spellId;
+    }
+
+    public void setSpellId(String spellId) {
+        this.spellId = spellId;
+    }
+
+    public String getMaterial() {
+        if (material != null) return material;
+        ItemTemplate tmpl = getTemplate();
+        return tmpl != null ? tmpl.material : "wood";
+    }
+
+    public void setMaterial(String material) {
+        this.material = material;
+    }
+
+    public boolean isSpiritual() {
+        return getCategory() == ItemCategory.SPIRITUAL_WEAPON || (type != null && type.name().contains("SPIRIT"));
+    }
+
+    public boolean isCargo() {
+        return type == ItemType.TOME_OF_THE_INITIATE || type == ItemType.TOME_OF_ELEMENTS
+                || type == ItemType.TOME_OF_THE_ARCANE || type == ItemType.TOME_OF_TARMIN;
     }
 
     public boolean isLocked() {

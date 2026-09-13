@@ -65,14 +65,16 @@ public class MonsterFactory {
         if (t == null)
             return;
 
+        int tier = (ctx != null) ? ctx.edl() : difficulty;
+
         // 4.1 Weapons
         // Weighted chance based on monster type logic/family
         boolean userOfWeapons = isUserOfWeapons(monster);
 
         if (userOfWeapons) {
-            generateWeapon(monster);
+            generateWeapon(monster, tier);
             if (rng.rn2(2) == 0) { // 50% chance for armor if it uses weapons
-                generateArmor(monster);
+                generateArmor(monster, tier);
             }
         }
 
@@ -80,10 +82,10 @@ public class MonsterFactory {
         // Intelligent monsters get tools
         if (monster.getIntelligence() >= 8) { // Assuming 0-20 scale
             if (rng.rn2(6) == 0) {
-                generateMiscItem(monster, ItemCategory.POTION);
+                generateMiscItem(monster, ItemCategory.POTION, tier);
             }
             if (rng.rn2(10) == 0) {
-                generateMiscItem(monster, ItemCategory.WAND);
+                generateMiscItem(monster, ItemCategory.WAND, tier);
             }
         }
 
@@ -94,7 +96,7 @@ public class MonsterFactory {
             // item type or currency.
             // Assuming ItemCategory.GOLD exists and spawns a gold pile.
             if (rng.rn2(3) == 0) {
-                generateMiscItem(monster, ItemCategory.GOLD);
+                generateMiscItem(monster, ItemCategory.GOLD, tier);
                 // Note: Ideally set quantity here, but ItemSpawner just gives template.
             }
         }
@@ -111,50 +113,55 @@ public class MonsterFactory {
                 || name.contains("GIANT") || name.contains("HOBGOBLIN") || name.contains("TROGLODYTE");
     }
 
-    private void generateWeapon(Monster monster) {
+    private void generateWeapon(Monster monster, int tier) {
         Map.Entry<String, ItemTemplate> entry = itemSpawner.spawnItemByCategory(ItemCategory.WAR_WEAPON);
         if (entry != null) {
-            addItemToMonster(monster, entry);
+            Item item = createMonsterItem(entry, tier);
+            if (item != null) {
+                monster.getInventory().setRightHand(item);
+            }
         }
     }
 
-    private void generateArmor(Monster monster) {
+    private void generateArmor(Monster monster, int tier) {
         Map.Entry<String, ItemTemplate> entry = itemSpawner.spawnItemByCategory(ItemCategory.ARMOR);
         if (entry != null) {
-            addItemToMonster(monster, entry);
+            Item item = createMonsterItem(entry, tier);
+            if (item != null) {
+                monster.getInventory().setLeftHand(item);
+            }
         }
     }
 
-    private void generateMiscItem(Monster monster, ItemCategory category) {
+    private void generateMiscItem(Monster monster, ItemCategory category, int tier) {
         Map.Entry<String, ItemTemplate> entry = itemSpawner.spawnItemByCategory(category);
         if (entry != null) {
-            addItemToMonster(monster, entry);
+            Item item = createMonsterItem(entry, tier);
+            if (item != null) {
+                monster.getInventory().pickup(item);
+            }
         }
     }
 
-    private void addItemToMonster(Monster monster, Map.Entry<String, ItemTemplate> entry) {
+    private Item createMonsterItem(Map.Entry<String, ItemTemplate> entry, int tier) {
         if (entry == null)
-            return;
+            return null;
 
         ItemType type;
         try {
             type = ItemType.valueOf(entry.getKey());
         } catch (Exception e) {
-            return;
+            return null;
         }
 
-        // Logic to instantiate item
-        // We use ItemDataManager to create the actual item instance
-        // Note: Position is irrelevant for inventory
-        ItemVariant variant = itemDataManager.getRandomVariantForItem(type, 1);
-        ItemColor c = (variant != null) ? variant.color : ItemColor.TAN; // Changed WOOD to TAN
+        ItemVariant variant = itemDataManager.getRandomVariantForItem(type, tier);
+        ItemColor c = (variant != null) ? variant.color : itemDataManager.getColorForEDL(tier);
 
         Item item = itemDataManager.createItem(type, 0, 0, c, assetManager);
         if (item != null) {
-            // Apply Enchantment Logic (NetHack Style)
             applyEnchantment(item);
-            monster.getInventory().pickup(item); // Changed from addItem to pickup
         }
+        return item;
     }
 
     private void applyEnchantment(Item item) {

@@ -67,6 +67,90 @@ public class DoomManager {
         return deathCount;
     }
 
+    // --- 4-Stage Expedition Escalation Clock ("Tarmin's Hunger") ---
+    private int expeditionTurns = 0;
+
+    public void advanceExpeditionTurn() {
+        expeditionTurns++;
+    }
+
+    public void resetExpeditionTurns() {
+        expeditionTurns = 0;
+    }
+
+    public int getExpeditionTurns() {
+        return expeditionTurns;
+    }
+
+    /**
+     * Returns the current Doom stage (1..4) based on both expedition turn count and total deaths.
+     * - Stage 1: Quiescent (Turns 0–400, 0 deaths)
+     * - Stage 2: Restless (Turns 401–800, or 1st Death)
+     * - Stage 3: Corrupted (Turns 801–1200, or 2nd Death)
+     * - Stage 4: Tarmin's Wrath (Turns 1201+, or 3+ Deaths)
+     */
+    public int getDoomStage() {
+        int deathStage = 1;
+        if (deathCount >= 3) {
+            deathStage = 4;
+        } else if (deathCount == 2) {
+            deathStage = 3;
+        } else if (deathCount == 1) {
+            deathStage = 2;
+        }
+
+        int turnStage = 1;
+        if (expeditionTurns > 1200) {
+            turnStage = 4;
+        } else if (expeditionTurns > 800) {
+            turnStage = 3;
+        } else if (expeditionTurns > 400) {
+            turnStage = 2;
+        }
+
+        return Math.max(deathStage, turnStage);
+    }
+
+    /**
+     * Periodic spawn interval in turns for the current Doom Stage.
+     */
+    public int getSpawnInterval() {
+        switch (getDoomStage()) {
+            case 2: return 200;
+            case 3: return 120;
+            case 4: return 80;
+            case 1:
+            default: return 300;
+        }
+    }
+
+    /**
+     * Bonus Effective Difficulty Level (EDL) applied by Doom escalation.
+     */
+    public int getDoomEDLBonus() {
+        switch (getDoomStage()) {
+            case 2: return 1;
+            case 3: return 2;
+            case 4: return 3;
+            case 1:
+            default: return 0;
+        }
+    }
+
+    /**
+     * Speed multiplier for monsters under restless/corrupted escalation.
+     */
+    public float getEscalationSpeedMultiplier() {
+        return getDoomStage() >= 2 ? 1.05f : 1.0f;
+    }
+
+    /**
+     * True if monsters should roll Shadow/Darkness affixes under Corrupted/Wrath stages.
+     */
+    public boolean shouldSpawnShadowAffixes() {
+        return getDoomStage() >= 3;
+    }
+
     private int currentLevel = 1;
 
     public void setCurrentLevel(int level) {

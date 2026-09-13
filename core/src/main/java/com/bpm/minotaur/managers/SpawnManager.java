@@ -199,18 +199,43 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Reduced global multiplier to avoid excessive density
-        float globalMultiplier = 1.0f;
-
-        spawnMonsters((int) (budget.monsterBudget * globalMultiplier)); // 1.0x monsters
+        // Cap monster budget at fixed density (7-10 monsters per chunk)
+        int monsterBudget = Math.max(7, Math.min(10, (int) budget.monsterBudget));
+        spawnMonsters(monsterBudget);
 
         // 1.2x keeps item density roughly 1:1 with monsters (Nethack-style scarcity).
-        spawnItems((int) (budget.itemBudget * 1.2f * globalMultiplier));
+        spawnItems((int) (budget.itemBudget * 1.2f));
 
-        spawnContainers((int) (budget.containerBudget * 0.5f * globalMultiplier));
+        spawnContainers((int) (budget.containerBudget * 0.5f));
 
         // Debris was non-existent. Increased from 0.02 to 0.5.
-        spawnDebris((int) (budget.debrisBudget * 0.5f * globalMultiplier));
+        spawnDebris((int) (budget.debrisBudget * 0.5f));
+
+        // Milestone Tarmin Tomes placed in designated subterranean strata chunks (x=0, y=0)
+        spawnMilestoneTomes();
+    }
+
+    private void spawnMilestoneTomes() {
+        if (maze == null || maze.getChunkId() == null) return;
+        if (maze.getChunkId().x == 0 && maze.getChunkId().y == 0) {
+            ItemType tomeType = null;
+            int depth = maze.getLevel();
+            if (depth == 2) tomeType = ItemType.TOME_OF_THE_INITIATE;
+            else if (depth == 4) tomeType = ItemType.TOME_OF_ELEMENTS;
+            else if (depth == 6) tomeType = ItemType.TOME_OF_THE_ARCANE;
+            else if (depth >= 8) tomeType = ItemType.TOME_OF_TARMIN;
+
+            if (tomeType != null) {
+                GridPoint2 pt = getEmptySpawnPoint();
+                if (pt != null) {
+                    Item tome = itemDataManager.createItem(tomeType, pt.x, pt.y, ItemColor.PURPLE, assetManager);
+                    if (tome != null) {
+                        maze.addItem(tome);
+                        SpawnLogger.getInstance().logItemSpawn(tome, "Milestone Tarmin Tome");
+                    }
+                }
+            }
+        }
     }
 
     // --- Helpers ---
@@ -242,15 +267,21 @@ public class SpawnManager {
         com.bpm.minotaur.gamedata.Alignment alignment = com.bpm.minotaur.gamedata.Alignment.NEUTRAL;
         boolean isGehennom = (level >= 25);
         boolean isContainer = false;
+        int depth = (maze != null) ? maze.getLevel() : level;
+        GridPoint2 cid = (maze != null && maze.getChunkId() != null) ? maze.getChunkId() : new GridPoint2(0, 0);
+        int doomStage = DoomManager.getInstance().getDoomStage();
 
         return new SpawnContext(
-                level,
+                depth,
                 playerLevel,
                 isGehennom,
                 alignment,
                 playerLuck,
                 uniqueMonstersSpawned,
-                isContainer);
+                isContainer,
+                level,
+                cid,
+                doomStage);
     }
 
     private void spawnDebris(int budget) {
@@ -437,10 +468,20 @@ public class SpawnManager {
                 continue;
 
             Item item = itemDataManager.createItem(type, spawnPoint.x, spawnPoint.y, variant.color, assetManager);
-            attemptToModifyItem(item, variant.color);
-            maze.addItem(item);
+            if (item != null) {
+                ItemTemplate t = result.getValue();
+                if (t != null && t.friendlyName != null && t.friendlyName.startsWith("Scroll of ")) {
+                    item.setName(t.friendlyName);
+                    if (t.friendlyName.contains("(") && t.friendlyName.contains(")")) {
+                        String sId = t.friendlyName.substring(t.friendlyName.indexOf('(') + 1, t.friendlyName.indexOf(')'));
+                        item.setSpellId(sId);
+                    }
+                }
+                attemptToModifyItem(item, variant.color);
+                maze.addItem(item);
 
-            SpawnLogger.getInstance().logItemSpawn(item, "Level Generation (Budget)");
+                SpawnLogger.getInstance().logItemSpawn(item, "Level Generation (Budget)");
+            }
         }
     }
 
@@ -542,18 +583,36 @@ public class SpawnManager {
             }
         }
 
-        // Luck shifts modifier probability: each luck point = ±1% base modifier chance.
-        // Max luck (13) = +13%, min luck (-13) = -13%. Negative luck makes good items rarer.
-        float luckBonus = playerLuck * 0.01f;
-        float spawnChance = BASE_MODIFIER_CHANCE + ((color.getMultiplier() - 1.0f) * COLOR_MULTIPLIER_BONUS) + luckBonus;
-        if (!DEBUG_FORCE_MODIFIERS && random.nextFloat() > spawnChance)
+        if (!item.isWeapon() && !item.isArmor() && !item.isRing()) {
             return;
+        }
 
-        addRandomModifier(item);
-        if (random.nextFloat() < SECOND_MODIFIER_CHANCE + luckBonus)
+        // Color Tier Affix Budgets:
+        // TAN: 0 affixes (1.0x)
+        // ORANGE: 1 affix (Tier-1)
+        // BLUE / BLUE_STEEL: 1-2 affixes (guaranteed elemental/resistance)
+        // WHITE / WHITE_SPIRITUAL: 2 affixes (material Steel/Silver)
+        // PINK: 2-3 affixes (material Mithril)
+        // PURPLE: 3-4 affixes (material Adamantine)
+        int affixCount = 0;
+        if (color == ItemColor.ORANGE || color == ItemColor.CONTAINER_ORANGE) {
+            affixCount = 1;
+        } else if (color == ItemColor.BLUE || color == ItemColor.BLUE_STEEL || color == ItemColor.CONTAINER_BLUE) {
+            affixCount = 1 + random.nextInt(2);
+        } else if (color == ItemColor.WHITE || color == ItemColor.WHITE_SPIRITUAL) {
+            affixCount = 2;
+            item.setMaterial(item.isSpiritual() ? "Silver" : "Steel");
+        } else if (color == ItemColor.PINK) {
+            affixCount = 2 + random.nextInt(2);
+            item.setMaterial("Mithril");
+        } else if (color == ItemColor.PURPLE) {
+            affixCount = 3 + random.nextInt(2);
+            item.setMaterial("Adamantine");
+        }
+
+        for (int i = 0; i < affixCount; i++) {
             addRandomModifier(item);
-        if (random.nextFloat() < THIRD_MODIFIER_CHANCE + luckBonus)
-            addRandomModifier(item);
+        }
     }
 
     private void addRandomModifier(Item item) {
