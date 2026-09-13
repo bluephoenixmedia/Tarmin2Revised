@@ -45,6 +45,27 @@ public class ChunkData {
     public ChunkData() {
     }
 
+    /** True if this chunk's saved data marks it as containing the player's home shelter. */
+    public boolean hasShelter() {
+        return homeTiles != null && !homeTiles.isEmpty();
+    }
+
+    public boolean hasUpLadder() {
+        return hasLadderOfType(Ladder.LadderType.UP);
+    }
+
+    public boolean hasDownLadder() {
+        return hasLadderOfType(Ladder.LadderType.DOWN);
+    }
+
+    private boolean hasLadderOfType(Ladder.LadderType type) {
+        if (ladders == null) return false;
+        for (LadderData ladder : ladders) {
+            if (ladder.type == type) return true;
+        }
+        return false;
+    }
+
     public ChunkData(Maze maze) {
         this.level = maze.getLevel();
         this.wallData = maze.getWallData();

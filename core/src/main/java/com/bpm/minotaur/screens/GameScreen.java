@@ -1844,9 +1844,19 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        if (keycode == SettingsManager.getInstance().getKey("MAP")) {
+            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                game.setScreen(new CastleMapScreen(game, player, maze, this));
+            }
+            return true;
+        }
+
         switch (keycode)
 
         {
+            case Input.Keys.TAB:
+                hud.toggleControlsLegend();
+                return true;
             case Input.Keys.F1:
                 debugManager.toggleOverlay();
                 return true;
@@ -1857,11 +1867,6 @@ public class GameScreen extends BaseScreen {
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
                 eventManager.addEvent(new GameEvent(
                         "Debug Force Modifiers: " + (SpawnManager.DEBUG_FORCE_MODIFIERS ? "ON" : "OFF"), 2f));
-                return true;
-            case Input.Keys.M:
-                if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-                    game.setScreen(new CastleMapScreen(game, player, maze, this));
-                }
                 return true;
             case Input.Keys.I:
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||

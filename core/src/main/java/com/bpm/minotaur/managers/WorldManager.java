@@ -23,9 +23,14 @@ import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 import com.bpm.minotaur.weather.WeatherManager;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WorldManager {
 
@@ -405,6 +410,70 @@ public class WorldManager {
 
     public Maze getChunk(GridPoint2 chunkId) {
         return loadedChunks.get(chunkId);
+    }
+
+    private static final Pattern CHUNK_FILE_PATTERN = Pattern.compile("chunk_L(-?\\d+)_(-?\\d+)_(-?\\d+)\\.json");
+
+    /**
+     * A FileHandle rooted at a plain java.io.File, bypassing the Gdx.files backend so chunk-file
+     * queries also work in headless unit tests where no LibGDX application backend is running.
+     */
+    private static FileHandle localFile(String path) {
+        return new FileHandle(new File(path));
+    }
+
+    /** Visits every saved chunk file's (level, chunkId), regardless of which level. */
+    private void forEachSavedChunk(BiConsumer<Integer, GridPoint2> visitor) {
+        FileHandle dir = localFile(getChunkSaveDir());
+        if (!dir.exists()) return;
+        for (FileHandle f : dir.list()) {
+            Matcher m = CHUNK_FILE_PATTERN.matcher(f.name());
+            if (m.matches()) {
+                int level = Integer.parseInt(m.group(1));
+                GridPoint2 chunkId = new GridPoint2(Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)));
+                visitor.accept(level, chunkId);
+            }
+        }
+    }
+
+    /**
+     * Chunk coordinates for a given level that have a save file on disk, i.e. have actually
+     * been entered by the player at some point. Read-only; does not touch {@link #loadedChunks}.
+     */
+    public Set<GridPoint2> getVisitedChunkIds(int level) {
+        Set<GridPoint2> result = new HashSet<>();
+        forEachSavedChunk((fileLevel, chunkId) -> {
+            if (fileLevel == level) result.add(chunkId);
+        });
+        return result;
+    }
+
+    /**
+     * Deepest level for which any chunk save file exists, or 1 if the player has never
+     * descended below the surface.
+     */
+    public int getMaxVisitedLevel() {
+        int[] max = {1};
+        forEachSavedChunk((fileLevel, chunkId) -> max[0] = Math.max(max[0], fileLevel));
+        return max[0];
+    }
+
+    /**
+     * Reads a chunk's saved data directly from disk for inspection (e.g. the map screen),
+     * without generating, caching, or otherwise affecting live gameplay state.
+     * Returns null if the chunk has never been saved.
+     */
+    public ChunkData loadChunkDataReadOnly(int level, GridPoint2 chunkId) {
+        FileHandle file = localFile(getChunkSaveDir() + getChunkFileName(level, chunkId.x, chunkId.y));
+        if (!file.exists()) return null;
+        try {
+            return json.fromJson(ChunkData.class, file);
+        } catch (Exception e) {
+            if (Gdx.app != null) {
+                Gdx.app.error("WorldManager", "Failed to read chunk data for map view: " + chunkId, e);
+            }
+            return null;
+        }
     }
 
     public void setCurrentChunk(GridPoint2 chunkId) {
