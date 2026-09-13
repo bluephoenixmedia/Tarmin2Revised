@@ -253,7 +253,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck, reachable);
 
-        spawnEncounters(maze, encounterManager, reachable);
+        spawnEncounters(maze, encounterManager, reachable, assetManager);
 
         spawnLadder(maze, this.finalLayout, reachable);
 
@@ -323,7 +323,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
     }
 
     private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
-            Set<GridPoint2> reachable) {
+            Set<GridPoint2> reachable, AssetManager assetManager) {
         if (encounterManager == null) return;
 
         List<GridPoint2> candidates = new ArrayList<>();
@@ -347,7 +347,20 @@ public class ForestChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                Gdx.app.log("ForestChunkGenerator", "Added event " + encounterId + " at " + pos.x + "," + pos.y);
+                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
+                String img = (enc != null) ? enc.imagePath : null;
+                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
+                if (img != null && assetManager != null) {
+                    if (Gdx.files != null && Gdx.files.internal(img).exists()) {
+                        if (!assetManager.isLoaded(img)) {
+                            assetManager.load(img, Texture.class);
+                            assetManager.finishLoading();
+                        }
+                        statue.setTexture(assetManager.get(img, Texture.class));
+                    }
+                }
+                maze.addScenery(statue);
+                Gdx.app.log("ForestChunkGenerator", "Added event " + encounterId + " with statue at " + pos.x + "," + pos.y);
                 placed++;
             }
         }

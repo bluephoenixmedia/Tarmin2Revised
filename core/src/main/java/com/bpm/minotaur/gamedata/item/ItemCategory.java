@@ -3,6 +3,7 @@ package com.bpm.minotaur.gamedata.item;
 public enum ItemCategory {
     WAR_WEAPON,
     SPIRITUAL_WEAPON,
+    AMMUNITION,
     ARMOR,
     RING,
     AMULET,

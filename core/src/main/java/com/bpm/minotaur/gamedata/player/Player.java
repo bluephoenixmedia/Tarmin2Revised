@@ -474,6 +474,35 @@ public class Player {
                 return;
             }
 
+            if (itemAtFeet.getType() == Item.ItemType.QUIVER || itemAtFeet.isAmmunition()) {
+                soundManager.playPickupItemSound();
+                int arrowsFound = new Random().nextInt(4) + 6;
+                stats.addArrows(arrowsFound);
+                maze.getItems().remove(playerTile2);
+                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " " + itemAtFeet.getDisplayName() + ".", 2f));
+                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
+                return;
+            }
+
+            if (itemAtFeet.getCategory() == ItemCategory.TREASURE) {
+                soundManager.playPickupItemSound();
+                stats.incrementTreasureScore(itemAtFeet.getBaseValue());
+                maze.getItems().remove(playerTile2);
+                eventManager.addEvent(new GameEvent("You found " + itemAtFeet.getDisplayName() + "!", 2f));
+                BalanceLogger.getInstance().logEconomy("TREASURE", itemAtFeet.getDisplayName(), itemAtFeet.getBaseValue());
+                return;
+            }
+
+            if (itemAtFeet.getType() == Item.ItemType.FLOUR_SACK) {
+                soundManager.playPickupItemSound();
+                int foodFound = new Random().nextInt(4) + 6;
+                stats.addFood(foodFound);
+                maze.getItems().remove(playerTile2);
+                eventManager.addEvent(new GameEvent("You found " + foodFound + " food.", 2f));
+                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Food", foodFound);
+                return;
+            }
+
             if (pickupItem(itemAtFeet)) {
                 maze.getItems().remove(playerTile2);
                 soundManager.playPickupItemSound();
@@ -509,12 +538,12 @@ public class Player {
                 // ---------------
                 return;
             }
-            if (itemInFront.getType() == Item.ItemType.QUIVER) {
+            if (itemInFront.getType() == Item.ItemType.QUIVER || itemInFront.isAmmunition()) {
                 soundManager.playPickupItemSound();
                 int arrowsFound = new Random().nextInt(4) + 6;
                 stats.addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " arrows.", 2f));
+                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " " + itemInFront.getDisplayName() + ".", 2f));
 
                 // --- LOGGING ---
                 BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
@@ -1833,6 +1862,23 @@ public class Player {
             } else {
                 eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));
             }
+            return;
+        }
+
+        // 5. Handle Encounter / Statues in front of the player or under feet
+        String targetEventId = maze.getEventAt(targetX, targetY);
+        if (targetEventId != null) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, targetEventId));
+            maze.removeEvent(targetX, targetY);
+            return;
+        }
+
+        int px = (int) position.x;
+        int py = (int) position.y;
+        String standingEventId = maze.getEventAt(px, py);
+        if (standingEventId != null) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, standingEventId));
+            maze.removeEvent(px, py);
             return;
         }
 

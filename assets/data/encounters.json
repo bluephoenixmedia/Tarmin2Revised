@@ -29,8 +29,8 @@
                     },
                     "successEffect": {
                         "type": "GIVE_ITEM",
-                        "itemId": "RUBY_EYE",
-                        "text": "You notice the eye is a loose gem. You pry it out."
+                        "itemId": "RING_GOLD",
+                        "text": "You notice a gleaming ring hidden in the basin stones."
                     }
                 },
                 {
@@ -64,8 +64,8 @@
                     },
                     "successEffect": {
                         "type": "GIVE_ITEM",
-                        "itemId": "SCROLL_CLONING",
-                        "text": "The mirror spits out a scroll."
+                        "itemId": "SCROLL",
+                        "text": "The mirror spits out an ancient scroll."
                     }
                 },
                 {
@@ -82,6 +82,337 @@
                 },
                 {
                     "text": "Walk away.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_DRAGON_STATUE",
+            "title": "Shrine of the Ancient Wyrm",
+            "imagePath": "images/events/statue/dragon_statue.png",
+            "text": "A towering obsidian monument of a roaring dragon dominates the chamber. Heat radiates from deep within the stone throat.",
+            "choices": [
+                {
+                    "text": "Offer a prayer for martial vigor.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.8,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 20,
+                        "text": "Draconic fire warms your marrow, invigorating your life force!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 8,
+                        "text": "A jet of cinder and ash singes your armor!"
+                    }
+                },
+                {
+                    "text": "Reach into the dragon's maw.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.55,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "RING_RESISTANCE_FIRE",
+                        "text": "You pull a smoldering fire-forged ring from the stone fangs!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 15,
+                        "text": "The jaws snap shut! Fiery venom sears your flesh!"
+                    }
+                },
+                {
+                    "text": "Back away respectfully.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_TARMIN_STATUE",
+            "title": "Colossus of Minotaur Tarmin",
+            "imagePath": "images/events/statue/tarmin_statue.png",
+            "text": "A massive, horned effigy of Minotaur King Tarmin stands grim and watchful. A solemn labyrinth pulse vibrates through your chest.",
+            "choices": [
+                {
+                    "text": "Kneel and invoke the King's battle rite (Lose 4 HP).",
+                    "type": "TRADE",
+                    "cost": {
+                        "type": "HP",
+                        "amount": 4
+                    },
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 350,
+                        "text": "The stone eyes flare crimson; an ancient war fervor empowers you!"
+                    }
+                },
+                {
+                    "text": "Seek shelter beside the bastion.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.75,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 15,
+                        "text": "The sanctuary of the stone walls grants you a restorative respite."
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 6,
+                        "text": "Loose masonry falls from the horns, striking your helm!"
+                    }
+                },
+                {
+                    "text": "Pass in silence.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_SKELETON_STATUE",
+            "title": "The Ossuary Sentinel",
+            "imagePath": "images/events/statue/skeleton_statue.png",
+            "text": "A grim sentinel carved from calcified bone clutches a weathered broadsword. Chilling mist swirls around its feet.",
+            "choices": [
+                {
+                    "text": "Pry the blade from its stone grip.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.5,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "SWORD",
+                        "text": "The hilt breaks free into your hand, sharp and tempered!"
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "SKELETON",
+                        "text": "The bone sentinel animates with necromantic malice!"
+                    }
+                },
+                {
+                    "text": "Search the quiver at its hips.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.7,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "QUIVER",
+                        "text": "You scavenge a bundle of sturdy war arrows!"
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 4,
+                        "text": "A hidden bone needle pricks your thumb with numbing venom!"
+                    }
+                },
+                {
+                    "text": "Leave the dead to rest.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_DWARF_STATUE",
+            "title": "Monument of the Mountain Dwarf",
+            "imagePath": "images/events/statue/dwarf_statue.png",
+            "text": "A stout dwarven warrior cast in solid granite, raising a blacksmith hammer over an etched anvil.",
+            "choices": [
+                {
+                    "text": "Inspect the stonework and smithing runes.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.85,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 250,
+                        "text": "You glean secrets of dwarven craftsmanship and defensive resilience."
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 5,
+                        "text": "You trigger a small stone tripwire, grazing your hand."
+                    }
+                },
+                {
+                    "text": "Strike the stone anvil with your weapon.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.6,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "POTION_OF_HEALING",
+                        "text": "A hollow chime rings out, dislodging an iron flask of dwarven tonic!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 8,
+                        "text": "The shockwave rattles your arms and cracks against your chest!"
+                    }
+                },
+                {
+                    "text": "Salute and move on.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_GHOST_STATUE",
+            "title": "The Phantasmal Cairn",
+            "imagePath": "images/events/statue/ghost_statue.png",
+            "text": "An ethereal, semi-translucent alabaster statue of a weeping phantom. Eerie whispers echo through your mind.",
+            "choices": [
+                {
+                    "text": "Whisper a prayer for the restless spirit.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.65,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 16,
+                        "text": "The weeping ceases; a serene warmth cleanses your wounds."
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 5,
+                        "text": "A shiver of spectral frost bites into your chest!"
+                    }
+                },
+                {
+                    "text": "Commune with the specter (Requires: SPI > 12).",
+                    "requirement": {
+                        "stat": "SPIRITUAL_STRENGTH",
+                        "value": 12
+                    },
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "SCROLL",
+                        "text": "The phantom leaves a glowing incantation upon parchment in your hands."
+                    }
+                },
+                {
+                    "text": "Turn away.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_GHOUL_STATUE",
+            "title": "The Carrion Gargoyle",
+            "imagePath": "images/events/statue/ghoul_statue.png",
+            "text": "A crouching, predatory figure carved from slate, its jaws agape in eternal ravenous hunger.",
+            "choices": [
+                {
+                    "text": "Scrape dried marrow from its talons.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.5,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "POTION_OF_HEALING",
+                        "text": "Beneath the grime you discover an intact alchemical draft!"
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 6,
+                        "text": "Putrid toxins seep into your skin!"
+                    }
+                },
+                {
+                    "text": "Offer a solemn word of warding.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.75,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 200,
+                        "text": "Your resolve strengthens against the horrors of the dark."
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "GHOUL",
+                        "text": "A scavenger ghoul is drawn from the shadows by your voice!"
+                    }
+                },
+                {
+                    "text": "Walk by cautiously.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_SNAKE_STATUE",
+            "title": "The Serpentine Idol",
+            "imagePath": "images/events/statue/snake_statue.png",
+            "text": "Two intertwined vipers sculpted from emerald serpentine coil around an obsidian column.",
+            "choices": [
+                {
+                    "text": "Drink the emerald elixir pooling in the coil.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.6,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 22,
+                        "text": "The bitter draft numbs your pain and knits your flesh!"
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 8,
+                        "text": "Viper venom sears through your blood!"
+                    }
+                },
+                {
+                    "text": "Study the venomous runes.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.7,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 220,
+                        "text": "You learn the subtle motions of serpentine combat."
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "GIANT_SNAKE",
+                        "text": "The statue's curse summons a giant serpent from the walls!"
+                    }
+                },
+                {
+                    "text": "Steer clear.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_GIANT_STATUE",
+            "title": "The Titan's Pillar",
+            "imagePath": "images/events/statue/giant_statue.png",
+            "text": "A colossus carved into the bedrock, its massive stone shoulders bracing the vaulted dungeon roof.",
+            "choices": [
+                {
+                    "text": "Touch the titan's foot for endurance.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.85,
+                    "successEffect": {
+                        "type": "HEAL",
+                        "amount": 18,
+                        "text": "The unshakable endurance of granite steadies your pulse."
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 5,
+                        "text": "Falling gravel showers upon your shoulders."
+                    }
+                },
+                {
+                    "text": "Search the titan's rubble pile.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.65,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "WARHAMMER",
+                        "text": "You uncover a heavy warhammer buried beneath the stone!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 10,
+                        "text": "A heavy rock shifts, bruising your foot!"
+                    }
+                },
+                {
+                    "text": "Continue your journey.",
                     "type": "LEAVE"
                 }
             ]

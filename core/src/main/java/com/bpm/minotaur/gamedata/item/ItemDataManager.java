@@ -80,6 +80,10 @@ public class ItemDataManager {
                 if (template.probability == 0) {
                     template.probability = 10;
                 }
+                if (type == ItemType.QUIVER) {
+                    template.isAmmunition = true;
+                    template.probability = 15;
+                }
                 itemTemplates.put(type, template);
             }
         }
@@ -218,6 +222,14 @@ public class ItemDataManager {
 
             if (template.probability == 0) {
                 template.probability = 10;
+            }
+
+            if (typeName.startsWith("ARROW_") || typeName.startsWith("QUARREL_") || typeName.startsWith("SLING_BULLET_")
+                    || typeName.startsWith("BLOWGUN_") || typeName.startsWith("DART")) {
+                template.isAmmunition = true;
+                if (template.probability < 15) {
+                    template.probability = 15;
+                }
             }
 
             if (template.rotation != 0) {

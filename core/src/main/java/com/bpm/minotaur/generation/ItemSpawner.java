@@ -114,6 +114,7 @@ public class ItemSpawner {
             weights.put(ItemCategory.BOOK, 6);
             weights.put(ItemCategory.AMULET, 2);
             weights.put(ItemCategory.GOLD, 9);
+            weights.put(ItemCategory.AMMUNITION, 12);
 
         } else if (ctx.isGehennom()) {
             weights.put(ItemCategory.WAR_WEAPON, 10);
@@ -130,6 +131,7 @@ public class ItemSpawner {
             weights.put(ItemCategory.RING, 8);
             weights.put(ItemCategory.BOOK, 5);
             weights.put(ItemCategory.AMULET, 5);
+            weights.put(ItemCategory.AMMUNITION, 10);
             // weights.put(ItemCategory.GOLD, 0);
         } else {
             // Default Context - Balanced for "More Items/Weapons/Armor"
@@ -147,6 +149,7 @@ public class ItemSpawner {
             weights.put(ItemCategory.BOOK, 8); // 4 -> 8
             weights.put(ItemCategory.RING, 6); // 3 -> 6
             weights.put(ItemCategory.AMULET, 2); // 1 -> 2
+            weights.put(ItemCategory.AMMUNITION, 15); // Arrows, bolts, shot
         }
 
         // Subsistence shift: If ctx.edl() >= 6, drop prepared food spawn weight by 80%
@@ -232,8 +235,10 @@ public class ItemSpawner {
                 return t.isRing || t.isRingAppearance; // catch all
             case ARMOR:
                 return t.isArmor || t.isShield || t.isHelmet;
+            case AMMUNITION:
+                return t.isAmmunition || isAmmunitionFallback(t);
             case WAR_WEAPON:
-                return t.isWeapon && !"SPIRITUAL".equalsIgnoreCase(t.damageType);
+                return t.isWeapon && !t.isAmmunition && !isAmmunitionFallback(t) && !"SPIRITUAL".equalsIgnoreCase(t.damageType);
             case SPIRITUAL_WEAPON:
                 return (t.isWeapon && "SPIRITUAL".equalsIgnoreCase(t.damageType))
                         || (t.friendlyName != null && (t.friendlyName.contains("Cross") || t.friendlyName.contains("Book")
@@ -253,5 +258,15 @@ public class ItemSpawner {
             default:
                 return false;
         }
+    }
+
+    private boolean isAmmunitionFallback(ItemTemplate t) {
+        if (t == null) return false;
+        if (t.friendlyName != null) {
+            String name = t.friendlyName.toLowerCase();
+            return name.contains("arrow") || name.contains("quarrel") || name.contains("quiver")
+                    || name.contains("bullet") || name.contains("dart");
+        }
+        return false;
     }
 }

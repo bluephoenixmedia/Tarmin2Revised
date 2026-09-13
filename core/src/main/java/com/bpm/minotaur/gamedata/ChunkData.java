@@ -1,6 +1,8 @@
 package com.bpm.minotaur.gamedata;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Door.DoorState;
 import com.bpm.minotaur.gamedata.Gate.GateState;
@@ -101,6 +103,12 @@ public class ChunkData {
 
         for (Map.Entry<GridPoint2, String> entry : maze.getEventTriggers().entrySet()) {
             this.events.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
+        }
+
+        if (maze.getScenery() != null) {
+            for (Scenery s : maze.getScenery().values()) {
+                this.scenery.add(new SceneryData(s));
+            }
         }
     }
 
@@ -207,7 +215,17 @@ public class ChunkData {
         }
 
         for (SceneryData data : scenery) {
-            maze.addScenery(new Scenery(data.type, data.x, data.y));
+            Scenery s = new Scenery(data.type, data.x, data.y, data.texturePath);
+            if (data.texturePath != null && assetManager != null) {
+                if (Gdx.files != null && Gdx.files.internal(data.texturePath).exists()) {
+                    if (!assetManager.isLoaded(data.texturePath)) {
+                        assetManager.load(data.texturePath, Texture.class);
+                        assetManager.finishLoading();
+                    }
+                    s.setTexture(assetManager.get(data.texturePath, Texture.class));
+                }
+            }
+            maze.addScenery(s);
         }
 
         if (this.events != null) {
@@ -239,6 +257,7 @@ public class ChunkData {
         public Scenery.SceneryType type;
         public int x;
         public int y;
+        public String texturePath;
 
         public SceneryData() {
         }
@@ -247,6 +266,7 @@ public class ChunkData {
             this.type = s.getType();
             this.x = (int) s.getPosition().x;
             this.y = (int) s.getPosition().y;
+            this.texturePath = s.getTexturePath();
         }
     }
 

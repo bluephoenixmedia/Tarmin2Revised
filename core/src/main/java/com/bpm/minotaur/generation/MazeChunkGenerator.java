@@ -2,6 +2,7 @@ package com.bpm.minotaur.generation;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.item.Item;
@@ -184,7 +185,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck, reachable);
-        spawnEncounters(maze, encounterManager, reachable);
+        spawnEncounters(maze, encounterManager, reachable, assetManager);
         spawnLadder(maze, this.finalLayout, reachable);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -766,7 +767,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
     }
 
     private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager,
-            Set<GridPoint2> reachable) {
+            Set<GridPoint2> reachable, AssetManager assetManager) {
         if (encounterManager == null) return;
 
         // Build a shuffled pool of reachable, unoccupied floor tiles
@@ -791,7 +792,20 @@ public class MazeChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " at " + pos.x + "," + pos.y);
+                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
+                String img = (enc != null) ? enc.imagePath : null;
+                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
+                if (img != null && assetManager != null) {
+                    if (Gdx.files != null && Gdx.files.internal(img).exists()) {
+                        if (!assetManager.isLoaded(img)) {
+                            assetManager.load(img, Texture.class);
+                            assetManager.finishLoading();
+                        }
+                        statue.setTexture(assetManager.get(img, Texture.class));
+                    }
+                }
+                maze.addScenery(statue);
+                Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " with statue at " + pos.x + "," + pos.y);
                 placed++;
             }
         }

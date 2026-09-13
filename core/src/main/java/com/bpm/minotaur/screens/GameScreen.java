@@ -991,16 +991,32 @@ public class GameScreen extends BaseScreen {
 
             // 3. Lose unequipped items (capped by the Loot Retention upgrade); equipped
             //    weapon/offhand and worn equipment are protected and simply carry over.
+            //    Travel crafting kits (CRAFTING_TOOLKIT and COOKING_KIT) are permanently retained on death.
             int retentionCap = DivinityManager.getInstance().getLootRetentionCap();
-            List<Item> atRiskItems = new ArrayList<>(player.getInventory().getMainInventory());
+            List<Item> allUnequipped = new ArrayList<>(player.getInventory().getMainInventory());
             Item[] quickSlots = player.getInventory().getQuickSlots();
             for (int i = 0; i < quickSlots.length; i++) {
                 if (quickSlots[i] != null) {
-                    atRiskItems.add(quickSlots[i]);
+                    allUnequipped.add(quickSlots[i]);
                     quickSlots[i] = null;
                 }
             }
             player.getInventory().getMainInventory().clear();
+
+            List<Item> permanentKits = new ArrayList<>();
+            List<Item> atRiskItems = new ArrayList<>();
+            for (Item itm : allUnequipped) {
+                if (itm != null && (itm.getType() == Item.ItemType.CRAFTING_TOOLKIT || itm.getType() == Item.ItemType.COOKING_KIT)) {
+                    permanentKits.add(itm);
+                } else {
+                    atRiskItems.add(itm);
+                }
+            }
+
+            for (Item kit : permanentKits) {
+                player.getInventory().pickupToBackpack(kit);
+            }
+
             int retainedCount = Math.min(retentionCap, atRiskItems.size());
             for (int i = 0; i < retainedCount; i++) {
                 player.getInventory().pickupToBackpack(atRiskItems.get(i));
@@ -1046,6 +1062,16 @@ public class GameScreen extends BaseScreen {
         if (player.getInventory().getLeftHand() == null) {
             Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().setLeftHand(starterCross);
+        }
+
+        // Travel crafting kits: guarantee the player always retains the portable field kits
+        if (!player.getInventory().hasItemOfType(Item.ItemType.CRAFTING_TOOLKIT)) {
+            Item craftingToolkit = game.getItemDataManager().createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().pickupToBackpack(craftingToolkit);
+        }
+        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
+            Item cookingKit = game.getItemDataManager().createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
+            player.getInventory().pickupToBackpack(cookingKit);
         }
 
         // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)

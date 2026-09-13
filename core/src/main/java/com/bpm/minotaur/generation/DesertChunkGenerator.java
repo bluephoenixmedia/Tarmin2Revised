@@ -181,7 +181,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
         spawnEntities(maze, difficulty, layoutLevel, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck);
 
-        spawnEncounters(maze, encounterManager);
+        spawnEncounters(maze, encounterManager, assetManager);
 
         // --- 4. Place Gates ---
         spawnTransitionGates(maze, this.finalLayout, chunkId);
@@ -314,18 +314,38 @@ public class DesertChunkGenerator implements IChunkGenerator {
         spawnManager.spawnEntities();
     }
 
-    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager) {
+    private void spawnEncounters(Maze maze, com.bpm.minotaur.gamedata.encounters.EncounterManager encounterManager, AssetManager assetManager) {
         if (encounterManager == null)
             return;
         int numEncounters = 1 + random.nextInt(3);
-        for (int i = 0; i < numEncounters; i++) {
-            // Logic simplified for brevity, similar to Forest
+        int attempts = 0;
+        int placed = 0;
+        while (placed < numEncounters && attempts < 50) {
+            attempts++;
             int x = random.nextInt(maze.getWidth());
             int y = random.nextInt(maze.getHeight());
-            // ... checking ...
+            GridPoint2 pt = new GridPoint2(x, y);
+            if (maze.getScenery().containsKey(pt) || maze.getItems().containsKey(pt) || maze.getMonsters().containsKey(pt) || maze.getEventAt(x, y) != null) {
+                continue;
+            }
             String encounterId = encounterManager.getRandomEncounterId();
-            if (encounterId != null)
+            if (encounterId != null) {
                 maze.addEvent(x, y, encounterId);
+                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
+                String img = (enc != null) ? enc.imagePath : null;
+                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, x, y, img);
+                if (img != null && assetManager != null) {
+                    if (Gdx.files != null && Gdx.files.internal(img).exists()) {
+                        if (!assetManager.isLoaded(img)) {
+                            assetManager.load(img, Texture.class);
+                            assetManager.finishLoading();
+                        }
+                        statue.setTexture(assetManager.get(img, Texture.class));
+                    }
+                }
+                maze.addScenery(statue);
+                placed++;
+            }
         }
     }
 

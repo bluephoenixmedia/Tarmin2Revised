@@ -897,9 +897,22 @@ public class Item implements Renderable {
         return "Item{" + "type=" + type + ", name='" + friendlyName + '\'' + '}';
     }
 
+    public boolean isAmmunition() {
+        if (type == null)
+            return false;
+        if (type == ItemType.QUIVER)
+            return true;
+        String name = type.name();
+        return name.startsWith("ARROW_") || name.startsWith("QUARREL_") || name.startsWith("SLING_BULLET_")
+                || name.startsWith("BLOWGUN_") || name.equals("DART") || name.startsWith("DART_");
+    }
+
     public ItemCategory getCategory() {
         if (type == null)
             return ItemCategory.MISC;
+
+        if (isAmmunition())
+            return ItemCategory.AMMUNITION;
 
         // Fix: Ensure Scrolls are always treated as USEFUL (Readable), never as Weapons
         if (type.name().startsWith("SCROLL"))

@@ -14,7 +14,8 @@ public class Scenery implements Renderable {
         ROCK,
         BUSH,
         CACTUS,
-        SANDSTONE_ROCK
+        SANDSTONE_ROCK,
+        STATUE
     }
 
     private final SceneryType type;
@@ -23,17 +24,24 @@ public class Scenery implements Renderable {
     private final boolean impassable;
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
     private Texture texture; // Optional texture for Modern rendering
+    private String texturePath;
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
     private static final Color treeLeaves = new Color(0x3e7b4cff); // Dark Green
     private static final Color rockColor = new Color(0x7b7b7bff); // Gray
     private static final Color bushColor = new Color(0x2b5736ff); // Darker Green
+    private static final Color statueColor = new Color(0xd4af37ff); // Gold/Stone
 
     public Scenery(SceneryType type, int x, int y) {
+        this(type, x, y, null);
+    }
+
+    public Scenery(SceneryType type, int x, int y, String texturePath) {
         this.type = type;
         this.position = new Vector2(x + 0.5f, y + 0.5f);
         this.scale = new Vector2(1.0f, 1.0f); // <<<--- THIS IS THE FIX. It must be initialized here.
+        this.texturePath = texturePath;
 
         // Set impassable flag
         switch (type) {
@@ -50,6 +58,10 @@ public class Scenery implements Renderable {
             case BUSH:
                 this.impassable = false;
                 this.scale.set(1.0f, 0.75f); // <-- ADDED THIS (Shorter)
+                break;
+            case STATUE:
+                this.impassable = false;
+                this.scale.set(1.0f, 1.25f); // Elegant standing monument height
                 break;
             default:
                 this.impassable = false;
@@ -112,6 +124,8 @@ public class Scenery implements Renderable {
                 return rockColor;
             case BUSH:
                 return bushColor;
+            case STATUE:
+                return statueColor;
             default:
                 return rockColor;
         }
@@ -132,5 +146,13 @@ public class Scenery implements Renderable {
 
     public Texture getTexture() {
         return texture;
+    }
+
+    public String getTexturePath() {
+        return texturePath;
+    }
+
+    public void setTexturePath(String texturePath) {
+        this.texturePath = texturePath;
     }
 }
