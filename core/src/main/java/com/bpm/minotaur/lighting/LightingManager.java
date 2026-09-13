@@ -75,6 +75,21 @@ public class LightingManager {
         }
     }
 
+    private boolean lanternLit = true;
+
+    public boolean isLanternLit() {
+        return lanternLit;
+    }
+
+    public void setLanternLit(boolean lit) {
+        this.lanternLit = lit;
+    }
+
+    public boolean toggleLantern() {
+        this.lanternLit = !this.lanternLit;
+        return this.lanternLit;
+    }
+
     /**
      * Syncs player light coordinates and upgrades to Brass Lantern if equipped in either hand.
      */
@@ -87,11 +102,13 @@ public class LightingManager {
                 || (mainHand != null && mainHand.getType() == ItemType.BRASS_LANTERN);
 
         if (hasLantern) {
+            playerLight.setActive(lanternLit);
             playerLight.setBaseRadius(LANTERN_RADIUS);
             playerLight.setBaseIntensity(LANTERN_INTENSITY);
             playerLight.setBaseColor(COLOR_LANTERN);
             playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
         } else {
+            playerLight.setActive(true);
             playerLight.setBaseRadius(TORCH_RADIUS);
             playerLight.setBaseIntensity(TORCH_INTENSITY);
             playerLight.setBaseColor(COLOR_TORCH);

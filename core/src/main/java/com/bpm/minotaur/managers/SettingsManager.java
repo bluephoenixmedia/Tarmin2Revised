@@ -41,6 +41,9 @@ public class SettingsManager {
         keyBindingDescriptions.put("ROTATE_PACK", "Rotate Pack");
         keyBindingDescriptions.put("ATTACK", "Attack (Combat)");
         keyBindingDescriptions.put("MAP", "Castle Map");
+        keyBindingDescriptions.put("FIELD_CRAFTING", "Field Crafting");
+        keyBindingDescriptions.put("FIELD_COOKING", "Field Cooking");
+        keyBindingDescriptions.put("TOGGLE_LANTERN", "Toggle Lantern");
     }
 
     public static SettingsManager getInstance() {
@@ -147,6 +150,9 @@ public class SettingsManager {
             case "ROTATE_PACK": return Input.Keys.T;
             case "ATTACK": return Input.Keys.A;
             case "MAP": return Input.Keys.M;
+            case "FIELD_CRAFTING": return Input.Keys.C;
+            case "FIELD_COOKING": return Input.Keys.K;
+            case "TOGGLE_LANTERN": return Input.Keys.L;
             default: return Input.Keys.UNKNOWN;
         }
     }

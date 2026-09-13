@@ -55,6 +55,7 @@ public class Hud implements Disposable {
     private final Maze maze;
     private final CombatManager combatManager;
     private final GameEventManager eventManager;
+    private boolean noAmmoWarningActive = false;
     private final BitmapFont font;
     private final BitmapFont logFont; // Separate font for game log
     private BitmapFont debugFont; // Default font for debug overlay
@@ -80,7 +81,12 @@ public class Hud implements Disposable {
     private final HudTooltip hudTooltip;
     private final WorldInteractionCard worldInteractionCard;
     private final Table dungeonTagTable;
+    private final ControlsLegendOverlay controlsLegend;
     private GameScreen gameScreen;
+
+    public void toggleControlsLegend() {
+        controlsLegend.toggle();
+    }
 
     public void setGameScreen(GameScreen gameScreen) {
         this.gameScreen = gameScreen;
@@ -229,6 +235,7 @@ public class Hud implements Disposable {
         // Floating Tooltip Card
         hudTooltip = new HudTooltip(hudSkin);
         worldInteractionCard = new WorldInteractionCard(hudSkin);
+        controlsLegend = new ControlsLegendOverlay(hudSkin);
 
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE);
@@ -580,6 +587,7 @@ public class Hud implements Disposable {
         stage.addActor(spellHotbarTable);
         stage.addActor(dungeonTagTable);
         stage.addActor(hudTooltip);
+        stage.addActor(controlsLegend);
         stage.addActor(worldInteractionCard);
 
         // Initialize Combat Menu
@@ -705,6 +713,16 @@ public class Hud implements Disposable {
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
         directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
         treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
+
+        // --- Ranged Weapon / No Ammo Warning ---
+        Item equippedWeapon = player.getInventory().getRightHand();
+        boolean noAmmo = equippedWeapon != null && equippedWeapon.isRanged()
+                && equippedWeapon.getType() != Item.ItemType.DART && player.getArrows() <= 0;
+        arrowsValueLabel.setColor(noAmmo ? HudSkin.COL_HP_CRITICAL : Color.WHITE);
+        if (noAmmo && !noAmmoWarningActive) {
+            eventManager.addEvent(new GameEvent("No ammunition for your " + equippedWeapon.getDisplayName() + "!", 2.5f));
+        }
+        noAmmoWarningActive = noAmmo;
 
         // --- 2. Update Equipment Subtitle & Active Slot ---
         Item rItem = player.getInventory().getRightHand();

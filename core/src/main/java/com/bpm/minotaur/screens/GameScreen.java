@@ -1851,6 +1851,24 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        if (keycode == SettingsManager.getInstance().getKey("TOGGLE_LANTERN")) {
+            boolean hasLantern = player.getInventory() != null &&
+                    ((player.getInventory().getLeftHand() != null && player.getInventory().getLeftHand().getType() == Item.ItemType.BRASS_LANTERN)
+                            || (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().getType() == Item.ItemType.BRASS_LANTERN));
+            if (hasLantern) {
+                boolean lit = worldManager.getLightingManager().toggleLantern();
+                soundManager.playDoorOpenSound();
+                String msg = "Lantern flame " + (lit ? "kindled." : "snuffed out.");
+                eventManager.addEvent(new GameEvent(msg, 2f));
+                hud.addMessage(msg);
+                needsAsciiRender = true;
+            } else {
+                eventManager.addEvent(new GameEvent("You must equip a Brass Lantern to use it.", 2f));
+                hud.addMessage("You must equip a Brass Lantern to use it.");
+            }
+            return true;
+        }
+
         switch (keycode)
 
         {

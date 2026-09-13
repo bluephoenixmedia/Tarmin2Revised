@@ -15,8 +15,6 @@ import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.managers.SettingsManager;
 
-import java.util.Map;
-
 public class SettingsScreen extends BaseScreen {
 
     private final SettingsManager settingsManager;
@@ -27,17 +25,10 @@ public class SettingsScreen extends BaseScreen {
     // UI elements we need to update
     private TextButton difficultyButton;
     private TextButton modeButton;
-    private final Map<String, TextButton> keyBindingButtons;
-
-    // State for key binding
-    private boolean isListeningForKey = false;
-    private String actionToBind = null;
-    private TextButton listeningButton = null;
 
     public SettingsScreen(Tarmin2 game) {
         super(game);
         this.settingsManager = SettingsManager.getInstance();
-        this.keyBindingButtons = new java.util.HashMap<>();
     }
 
     @Override
@@ -114,19 +105,15 @@ public class SettingsScreen extends BaseScreen {
         table.add(modeButton).width(200);
         table.row().padTop(10);
 
-        // --- Key Bindings ---
-        table.add(new Label("Key Bindings", labelStyle)).colspan(2).padTop(30).padBottom(10);
-        table.row();
-
-        // Create a scrollable pane for all the key bindings
-        Table keyTable = new Table();
-        for (Map.Entry<String, String> entry : settingsManager.getKeyBindingDescriptions().entrySet()) {
-            addKeyBindingRow(keyTable, entry.getKey(), entry.getValue(), skin);
-        }
-        ScrollPane scrollPane = new ScrollPane(keyTable, skin);
-        scrollPane.setFadeScrollBars(false);
-
-        table.add(scrollPane).colspan(2).height(300).width(400);
+        // --- Controls ---
+        TextButton controlsButton = new TextButton("Controls", skin);
+        controlsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new ControlsScreen(game, SettingsScreen.this));
+            }
+        });
+        table.add(controlsButton).colspan(2).padTop(30).width(200);
         table.row();
 
         // --- Back Button ---
@@ -134,80 +121,19 @@ public class SettingsScreen extends BaseScreen {
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (isListeningForKey) {
-                    cancelListening(); // Cancel listening if we go back
-                }
                 game.setScreen(new MainMenuScreen(game));
             }
         });
-        table.add(backButton).colspan(2).padTop(30).width(200);
+        table.add(backButton).colspan(2).padTop(18).width(200);
 
         stage.addActor(table);
 
-        // We need to process input on BOTH the stage (for buttons)
-        // AND this screen (for the keyDown override to bind keys and ESC)
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
 
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-    }
-
-    private void addKeyBindingRow(Table table, final String action, String description, Skin skin) {
-        table.add(new Label(description, skin)).left().padRight(20);
-
-        String keyName = Input.Keys.toString(settingsManager.getKey(action));
-        final TextButton keyButton = new TextButton(keyName, skin);
-        keyButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                if (isListeningForKey) {
-                    cancelListening(); // Cancel previous one
-                }
-                startListening(action, keyButton);
-            }
-        });
-
-        table.add(keyButton).width(150);
-        table.row().padTop(5);
-        keyBindingButtons.put(action, keyButton);
-    }
-
-    private void startListening(String action, TextButton button) {
-        isListeningForKey = true;
-        actionToBind = action;
-        listeningButton = button;
-        button.setText("... Press a key ...");
-    }
-
-    private void cancelListening() {
-        isListeningForKey = false;
-        if (listeningButton != null) {
-            String keyName = Input.Keys.toString(settingsManager.getKey(actionToBind));
-            listeningButton.setText(keyName);
-        }
-        actionToBind = null;
-        listeningButton = null;
-    }
-
-    private void bindNewKey(int keycode) {
-        if (!isListeningForKey || actionToBind == null || listeningButton == null) {
-            return;
-        }
-
-        // Prevent binding Escape
-        if (keycode == Input.Keys.ESCAPE) {
-            cancelListening();
-            return;
-        }
-
-        settingsManager.setKey(actionToBind, keycode);
-        listeningButton.setText(Input.Keys.toString(keycode));
-
-        isListeningForKey = false;
-        actionToBind = null;
-        listeningButton = null;
     }
 
     private void cycleDifficulty() {
@@ -257,54 +183,10 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
-        if (isListeningForKey) {
-            bindNewKey(keycode);
-            return true; // Key was "consumed" for binding
-        }
         if (keycode == Input.Keys.ESCAPE) {
             game.setScreen(new MainMenuScreen(game));
             return true;
         }
         return false; // Let stage handle it
-    }
-
-    @Override
-    public boolean keyUp(int keycode) {
-        return false;
-    }
-
-    @Override
-    public boolean keyTyped(char character) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
-        return false;
-    }
-
-    @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        return false;
-    }
-
-    @Override
-    public boolean mouseMoved(int screenX, int screenY) {
-        return false;
-    }
-
-    @Override
-    public boolean scrolled(float amountX, float amountY) {
-        return false;
     }
 }

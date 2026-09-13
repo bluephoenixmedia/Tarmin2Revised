@@ -16,11 +16,15 @@ public class OssuaryManager {
      * @param boneEdge      The bone determining Faces 2 & 5.
      * @param boneCore      The bone determining Faces 3 & 4.
      */
+    private boolean isValidBone(Item item) {
+        if (item == null) return false;
+        Item.ItemType type = item.getType();
+        return type == Item.ItemType.BONE || type == Item.ItemType.BONES || type == Item.ItemType.RAT_SKULL;
+    }
+
     public Die craftBoneDie(Item boneStructure, Item boneEdge, Item boneCore) {
         // 1. Validate Inputs
-        if (boneStructure.getType() != Item.ItemType.BONE ||
-                boneEdge.getType() != Item.ItemType.BONE ||
-                boneCore.getType() != Item.ItemType.BONE) {
+        if (!isValidBone(boneStructure) || !isValidBone(boneEdge) || !isValidBone(boneCore)) {
             return null; // Invalid ingredients
         }
 

@@ -637,6 +637,9 @@ public class CraftingScreen extends BaseScreen {
         carveBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (carveBtn.isDisabled() || boneStructure == null || boneEdge == null || boneCore == null) {
+                    return;
+                }
                 Die die = craftingManager.craftBoneDie(boneStructure, boneEdge, boneCore);
                 if (die != null) {
                     player.getStats().getDicePool().add(die);
@@ -692,6 +695,9 @@ public class CraftingScreen extends BaseScreen {
         forgeBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (forgeBtn.isDisabled()) {
+                    return;
+                }
                 Item tal = craftingManager.forgeBoneTalisman(player, selectedBone, selectedTrophy);
                 if (tal != null) {
                     feedbackLabel.setText("Forged " + tal.getDisplayName() + "! Deposited into storage.");
@@ -732,6 +738,7 @@ public class CraftingScreen extends BaseScreen {
         btn.getLabel().setFontScale(0.8f);
         btn.getLabel().setWrap(false);
         btn.setDisabled(!enabled);
+        btn.setTouchable(enabled ? Touchable.enabled : Touchable.disabled);
         return btn;
     }
 
