@@ -15713,7 +15713,7 @@
 	"WARHAMMER": {
 		"friendlyName": "Warhammer",
 		"description": null,
-		"texturePath": "images/weapons/LucernHammer.png",
+		"texturePath": "images/weapons/warhammer.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24032,7 +24032,7 @@
 	"MACE_BLADEBACK": {
 		"friendlyName": "Mace, Bladeback",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24131,7 +24131,7 @@
 	"MACE_FOOTMAN_S": {
 		"friendlyName": "Mace, Footman's",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24230,7 +24230,7 @@
 	"MACE_FOOTMAN_S_WHISTLING": {
 		"friendlyName": "Mace, Footman's Whistling",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24329,7 +24329,7 @@
 	"MACE_GIANT_KIN": {
 		"friendlyName": "Mace, Giant-kin",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24428,7 +24428,7 @@
 	"MACE_HORSEMAN_S": {
 		"friendlyName": "Mace, Horseman's",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24527,7 +24527,7 @@
 	"MACE_HORSEMAN_S_WHISTLING": {
 		"friendlyName": "Mace, Horseman's Whistling",
 		"description": null,
-		"texturePath": "images/weapons/great_mace.png",
+		"texturePath": "images/weapons/mace_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
