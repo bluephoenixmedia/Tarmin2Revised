@@ -2,6 +2,7 @@ package com.bpm.minotaur.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.GL20;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -628,6 +629,12 @@ public class GameScreen extends BaseScreen {
                 game.getBatch().end();
             }
 
+            if (combatManager.getAttackIndicatorMonster() != null
+                    && combatManager.getAttackIndicatorVariant() == CombatManager.AttackIndicatorVariant.SCREEN_SLASH) {
+                shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+                renderScreenSlashOverlay(combatManager.getAttackIndicatorProgress());
+            }
+
             if (spellCastOverlay != null && spellCastOverlay.isActive()) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -815,6 +822,31 @@ public class GameScreen extends BaseScreen {
      * @param peakFactor  0–1 how close we are to the transition midpoint (drives scanline intensity)
      * @param toRetro     true when transitioning MODERN→RETRO
      */
+    /**
+     * Ultra-fast screen-space slash overlay (claw scratches / blade arc) that flashes
+     * across the viewport as one of the randomized monster attack telegraph variants.
+     */
+    private void renderScreenSlashOverlay(float progress) {
+        float alpha = Math.max(0f, 1f - progress);
+        if (alpha <= 0f) return;
+
+        float w = game.getViewport().getWorldWidth();
+        float h = game.getViewport().getWorldHeight();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.85f, 0.05f, 0.05f, alpha * 0.6f);
+
+        float thickness = h * 0.02f;
+        for (int i = -1; i <= 1; i++) {
+            float offset = i * h * 0.12f;
+            shapeRenderer.rectLine(0, h * 0.65f + offset, w, h * 0.35f + offset, thickness);
+        }
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
     private void renderModeTransitionOverlay(float blackAlpha, float peakFactor, boolean toRetro, boolean isWarp) {
         Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA,
@@ -2191,11 +2223,21 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (button == Input.Buttons.RIGHT && combatManager != null) {
+            combatManager.setPlayerGuardStance(true);
+            if (weaponOverlay != null) weaponOverlay.setGuarding(true);
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if (button == Input.Buttons.RIGHT && combatManager != null) {
+            combatManager.setPlayerGuardStance(false);
+            if (weaponOverlay != null) weaponOverlay.setGuarding(false);
+            return true;
+        }
         return false;
     }
 

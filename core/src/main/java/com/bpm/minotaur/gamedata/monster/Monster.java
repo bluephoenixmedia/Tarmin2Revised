@@ -355,7 +355,27 @@ public class Monster implements Renderable {
         if (this.currentHP < 0) {
             this.currentHP = 0;
         }
+        lastHitTimeMillis = System.currentTimeMillis();
         return taken;
+    }
+
+    // --- Hit Recoil / Flash Feedback ---
+    private long lastHitTimeMillis = -1L;
+    private static final float HIT_FLASH_DURATION_SEC = 0.12f;
+    private static final float HIT_RECOIL_DISTANCE = 0.18f;
+
+    /** 0.0 = just hit, 1.0 = flash fully faded (or never hit). */
+    public float getHitFlashProgress() {
+        if (lastHitTimeMillis < 0) return 1f;
+        float elapsed = (System.currentTimeMillis() - lastHitTimeMillis) / 1000f;
+        return Math.min(1f, elapsed / HIT_FLASH_DURATION_SEC);
+    }
+
+    /** Spring-back displacement magnitude for the current moment, easing to 0. */
+    public float getHitRecoilOffset() {
+        float progress = getHitFlashProgress();
+        if (progress >= 1f) return 0f;
+        return HIT_RECOIL_DISTANCE * (1f - progress);
     }
 
     public int takeDamage(int amount) {

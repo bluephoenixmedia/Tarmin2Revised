@@ -120,6 +120,74 @@ public class CombatManager {
     private final MonsterAiManager monsterAiManager;
     private final WorldManager worldManager;
 
+    // --- Active Parrying / Guard Stance (right-click hold) ---
+    private boolean playerGuarding = false;
+    private long guardStartTimeMillis = 0L;
+    private static final long PERFECT_PARRY_WINDOW_MS = 200L;
+
+    public void setPlayerGuardStance(boolean guarding) {
+        if (guarding && !this.playerGuarding) {
+            this.guardStartTimeMillis = System.currentTimeMillis();
+        }
+        this.playerGuarding = guarding;
+    }
+
+    public boolean isPlayerGuarding() {
+        return playerGuarding;
+    }
+
+    /** Applies active-parry mitigation: full negation on perfect timing, else flat DR. */
+    private int applyGuardMitigation(int dmg) {
+        if (!playerGuarding || dmg <= 0) return dmg;
+
+        long elapsed = System.currentTimeMillis() - guardStartTimeMillis;
+        if (elapsed <= PERFECT_PARRY_WINDOW_MS) {
+            eventManager.addEvent(new GameEvent("PERFECT PARRY! You negate the attack entirely!", 1.5f));
+            return 0;
+        }
+
+        Item offHand = player.getInventory().getLeftHand();
+        boolean shieldRaised = offHand != null && offHand.isShield();
+        int dr = shieldRaised ? 4 : 2;
+        int mitigated = Math.max(0, dmg - dr);
+        if (mitigated < dmg) {
+            eventManager.addEvent(new GameEvent("Guard stance absorbs " + (dmg - mitigated) + " dmg!", 1.2f));
+        }
+        return mitigated;
+    }
+
+    // --- Twitchy Monster Attack Indicator (Component 5) ---
+    public enum AttackIndicatorVariant { EYE_FLARE_LUNGE, RETRO_AURA, SCREEN_SLASH }
+
+    private Monster attackIndicatorMonster;
+    private AttackIndicatorVariant attackIndicatorVariant;
+    private float attackIndicatorElapsed = 0f;
+    private float attackIndicatorDuration = 0.1f;
+
+    /** Fires an ultra-fast (0.08-0.12s) randomized visual telegraph for a monster's melee attack. */
+    private void triggerAttackIndicator(Monster attacker) {
+        if (attacker == null) return;
+        AttackIndicatorVariant[] variants = AttackIndicatorVariant.values();
+        attackIndicatorMonster = attacker;
+        attackIndicatorVariant = variants[random.nextInt(variants.length)];
+        attackIndicatorElapsed = 0f;
+        attackIndicatorDuration = 0.08f + random.nextFloat() * 0.04f;
+    }
+
+    public Monster getAttackIndicatorMonster() {
+        return (attackIndicatorMonster != null && attackIndicatorElapsed < attackIndicatorDuration) ? attackIndicatorMonster : null;
+    }
+
+    public AttackIndicatorVariant getAttackIndicatorVariant() {
+        return attackIndicatorVariant;
+    }
+
+    /** 0 = just triggered, 1 = fully elapsed. */
+    public float getAttackIndicatorProgress() {
+        if (attackIndicatorDuration <= 0f) return 1f;
+        return Math.min(1f, attackIndicatorElapsed / attackIndicatorDuration);
+    }
+
     public CombatManager(Player player, Maze maze, Tarmin2 game, AnimationManager animationManager,
             GameEventManager eventManager, SoundManager soundManager,
             ItemDataManager itemDataManager, StochasticManager stochasticManager,
@@ -281,6 +349,7 @@ public class CombatManager {
 
     public void monsterMeleeStrike(Monster attacker) {
         soundManager.playMonsterAttackSound(attacker);
+        triggerAttackIndicator(attacker);
 
         int attackBonus = 2;
         MonsterTemplate t = attacker.getTemplate();
@@ -299,6 +368,7 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent("Blocked " + blocked + " dmg", 1f));
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(blocked);
             }
+            dmg = applyGuardMitigation(dmg);
             int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
@@ -1528,6 +1598,10 @@ public class CombatManager {
     }
 
     public void update(float delta) {
+        if (attackIndicatorMonster != null && attackIndicatorElapsed < attackIndicatorDuration) {
+            attackIndicatorElapsed += delta;
+        }
+
         // 1. ROLLING STATE
         if (currentState == CombatState.PHYSICS_RESOLUTION) {
             physicsTimer += delta;
@@ -1831,6 +1905,7 @@ public class CombatManager {
     }
 
     private void performMonsterMeleeAttack() {
+        triggerAttackIndicator(monster);
         float dist = monster.getPosition().dst(player.getPosition());
         float animDuration = dist / PROJECTILE_SPEED;
 
@@ -1872,6 +1947,7 @@ public class CombatManager {
                 int blocked = baseDmg - dmg;
                 eventManager.addEvent(new GameEvent("Blocked " + blocked + " dmg", 1f));
             }
+            dmg = applyGuardMitigation(dmg);
 
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);

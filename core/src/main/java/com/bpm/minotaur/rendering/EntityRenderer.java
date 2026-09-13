@@ -809,6 +809,15 @@ public class EntityRenderer {
             float maxBright = Math.max(monsterLight.r, Math.max(monsterLight.g, monsterLight.b));
             boolean inPitchDarkness = maxBright < 0.12f;
 
+            // Hit recoil flash: bright red/white tint that fades over ~0.12s
+            float hitFlash = monster.getHitFlashProgress();
+            if (hitFlash < 1f) {
+                float flashStrength = 1f - hitFlash;
+                monsterLight.r = Math.min(1f, monsterLight.r + flashStrength * 0.8f);
+                monsterLight.g = Math.max(0f, monsterLight.g - flashStrength * 0.5f);
+                monsterLight.b = Math.max(0f, monsterLight.b - flashStrength * 0.5f);
+            }
+
             if (inPitchDarkness) {
                 spriteBatch.setColor(Math.max(0.04f, monsterLight.r * 0.4f), Math.max(0.04f, monsterLight.g * 0.4f), Math.max(0.05f, monsterLight.b * 0.4f), 1f);
             } else {

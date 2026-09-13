@@ -911,7 +911,43 @@ public class World3DRenderer implements Disposable {
                         w = maxMonsterW;
                         h *= scale;
                     }
-                    dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);
+
+                    // Hit recoil: spring backward away from the player, fading over ~0.12s
+                    float mex = ex, mwz = wz;
+                    float hitFlash = m.getHitFlashProgress();
+                    if (hitFlash < 1f) {
+                        float recoil = m.getHitRecoilOffset();
+                        float dx = ex - player.getPosition().x;
+                        float dy = ey - player.getPosition().y;
+                        float len = (float) Math.sqrt(dx * dx + dy * dy);
+                        if (len > 0.0001f) {
+                            mex += (dx / len) * recoil;
+                            mwz += -(dy / len) * recoil;
+                        }
+                    }
+                    Color tint = (hitFlash < 1f)
+                            ? new Color(1f, 1f - (1f - hitFlash) * 0.4f, 1f - (1f - hitFlash) * 0.4f, 1f)
+                            : Color.WHITE;
+
+                    // Twitchy monster attack telegraph (Eye Flare + Lunge / Retro Threat Aura)
+                    if (combatManager != null && combatManager.getAttackIndicatorMonster() == m) {
+                        float progress = combatManager.getAttackIndicatorProgress();
+                        CombatManager.AttackIndicatorVariant variant = combatManager.getAttackIndicatorVariant();
+                        if (progress < 1f) {
+                            float pulse = 1f - progress;
+                            if (variant == CombatManager.AttackIndicatorVariant.EYE_FLARE_LUNGE) {
+                                float surge = 1f + 0.35f * pulse;
+                                w *= surge;
+                                h *= surge;
+                                Color eyeColor = getMonsterEyeFlareColor(m);
+                                tint = new Color(eyeColor).lerp(tint, 1f - pulse);
+                            } else if (variant == CombatManager.AttackIndicatorVariant.RETRO_AURA) {
+                                tint = new Color(1f, 0.15f * (1f - pulse), 0.15f * (1f - pulse), 1f);
+                            }
+                        }
+                    }
+
+                    dynamicBatcher.addBillboard(mex, 0.0f, mwz, w, h, region, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
 
                     // Overhead Health Bar
@@ -1099,6 +1135,18 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.flush(shader, tex);
             }
         }
+    }
+
+    /** Signature eye-flare color by monster family, mirroring EntityRenderer's palette. */
+    private static Color getMonsterEyeFlareColor(Monster monster) {
+        if (monster == null || monster.getType() == null) return Color.RED;
+        String name = monster.getType().name();
+        if (name.contains("SKELETON") || name.contains("WRAITH") || name.contains("GHOST") || name.contains("UNDEAD") || name.contains("SPIRIT")) {
+            return new Color(0.75f, 0.30f, 1.0f, 1.0f); // Ethereal Violet
+        } else if (name.contains("TROGLODYTE") || name.contains("SPIDER") || name.contains("SNAKE") || name.contains("SLIME")) {
+            return new Color(0.15f, 1.0f, 0.25f, 1.0f); // Venom Green
+        }
+        return new Color(1.0f, 0.15f, 0.15f, 1.0f); // Ruby Red
     }
 
     public void invalidateMeshCache() {
