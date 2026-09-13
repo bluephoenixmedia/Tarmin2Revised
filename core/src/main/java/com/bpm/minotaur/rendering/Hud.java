@@ -1855,7 +1855,7 @@ public class Hud implements Disposable {
         if (groundItem != null) {
             String loc = atFeet ? "[GROUND (FEET)]" : "[GROUND (AHEAD)]";
             String cat = groundItem.getCategory() != null ? "[" + groundItem.getCategory().name().replace('_', ' ') + "]" : "[ITEM]";
-            String title = groundItem.getDisplayName();
+            String title = groundItemDisplayName(groundItem);
             String statDesc = formatItemStatDescription(groundItem);
             String actionText = "Pick Up [P]";
             if (groundItem.isWeapon() || groundItem.isArmor() || groundItem.isShield()) {
@@ -1877,6 +1877,24 @@ public class Hud implements Disposable {
 
         // 8. Nothing interactive found
         worldInteractionCard.hide();
+    }
+
+    /**
+     * Identification-aware display name for the ground-item info card. Potions,
+     * scrolls, wands, and rings must route through DiscoveryManager so an
+     * unidentified item shows its cryptic/generic appearance rather than the
+     * resolved effect name -- Item#getDisplayName() alone has no notion of
+     * identification for those categories. Everything else (including the
+     * dynamic Bone/Gib/Flesh corpse-source naming) keeps using Item's own name.
+     */
+    private String groundItemDisplayName(Item item) {
+        if (discoveryManager == null) {
+            return item.getDisplayName();
+        }
+        boolean needsDiscovery = item.isPotion() || item.isRing()
+                || (item.getType() != null && (item.getType().name().startsWith("SCROLL_")
+                        || item.getType().name().startsWith("WAND_")));
+        return needsDiscovery ? discoveryManager.getDisplayName(item) : item.getDisplayName();
     }
 
     private String formatItemStatDescription(Item item) {

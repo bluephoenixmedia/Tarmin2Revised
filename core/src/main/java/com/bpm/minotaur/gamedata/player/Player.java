@@ -1078,6 +1078,9 @@ public class Player {
             // reporting the scroll as blank.
             String spellId = resolveSpellIdFromScroll(scroll);
             if (spellId != null) {
+                if (discoveryManager != null) {
+                    discoveryManager.identifyDedicatedScroll(scroll.getType(), spellId);
+                }
                 com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(spellId, this, maze, eventManager, null);
                 inventory.removeItem(scroll);
                 return;

@@ -31,6 +31,36 @@ public class NetHackSatiationTest {
     }
 
     @Test
+    public void testSatietyDecaysAtTheSamePaceAsHydration() {
+        // Settled during the balance grill session: satiety previously decayed at
+        // half hydration's rate (0.02 vs 0.04/turn), so a player could go an entire
+        // expedition without ever feeling hunger pressure. They must now match.
+        assertEquals("Satiety and hydration should decay at the same per-turn rate",
+                com.bpm.minotaur.managers.TurnManager.HYDRATION_DECAY,
+                com.bpm.minotaur.managers.TurnManager.SATIETY_DECAY, 0.0001f);
+
+        PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
+        stats.setSatiety(PlayerStats.MAX_SATIETY);
+        stats.setHydration(PlayerStats.MAX_HYDRATION);
+
+        // Drain both using the real TurnManager decay constants over the same
+        // number of simulated turns and compare how close to empty each lands,
+        // proportional to their differing max capacities (120 vs 100).
+        int turns = 2500;
+        for (int i = 0; i < turns; i++) {
+            stats.modifySatiety(-com.bpm.minotaur.managers.TurnManager.SATIETY_DECAY);
+            stats.modifyHydration(-com.bpm.minotaur.managers.TurnManager.HYDRATION_DECAY);
+        }
+
+        // At turn 2500: hydration (100 max, 0.04/turn) should be fully drained;
+        // satiety (120 max, 0.04/turn) should have drained the same absolute
+        // amount (100), landing at HUNGRY territory rather than still NORMAL.
+        assertEquals(0f, stats.getHydrationFloat(), 0.01f);
+        assertTrue("Satiety should have drained substantially by the same turn hydration bottoms out",
+                stats.getSatietyFloat() <= 25f);
+    }
+
+    @Test
     public void testSatiationStateThresholds() {
         PlayerStats stats = new PlayerStats(Difficulty.MEDIUM);
 

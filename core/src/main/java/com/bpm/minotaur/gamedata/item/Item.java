@@ -884,6 +884,10 @@ public class Item implements Renderable {
         return itemColor;
     }
 
+    public void setItemColor(ItemColor itemColor) {
+        this.itemColor = itemColor;
+    }
+
     public String[] getSpriteData() {
         return spriteData;
     }

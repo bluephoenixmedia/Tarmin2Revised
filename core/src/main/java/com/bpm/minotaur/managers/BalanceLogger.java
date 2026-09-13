@@ -171,7 +171,7 @@ public class BalanceLogger {
     /**
      * A heuristic to determine how strong the player is.
      */
-    private int calculatePlayerPowerScore(Player player) {
+    public static int calculatePlayerPowerScore(Player player) {
         int score = 0;
         // Base Stats
         score += player.getMaxHP();
@@ -191,13 +191,16 @@ public class BalanceLogger {
         if (player.getEquipment().getWornShield() != null)
             score += player.getEquipment().getWornShield().getArmorClassBonus() * 2;
 
-        // Weapon
-        if (player.getInventory().getRightHand() != null) {
-            String dice = player.getInventory().getRightHand().getDamageDice();
-            // Estimate average damage? sides/2 * num + bonus?
-            // DiceRoller doesn't expose parse.
-            // Just roll it once as a sample.
-            score += DiceRoller.roll(dice) * 3;
+        // Weapon: base dice sample, plus the player's own STR/ring damage bonus and
+        // the weapon's rarity-tier multiplier -- a magic or rare-color weapon (or a
+        // strong STR bonus) previously scored identically to a plain one with the
+        // same base dice, silently under-rating well-equipped players.
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon != null) {
+            String dice = weapon.getDamageDice();
+            int baseDamage = DiceRoller.roll(dice) + player.getDamageBonus();
+            float rarityMultiplier = (weapon.getItemColor() != null) ? weapon.getItemColor().getMultiplier() : 1.0f;
+            score += Math.round(baseDamage * rarityMultiplier * 3);
         }
 
         return score;

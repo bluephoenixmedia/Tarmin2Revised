@@ -1,0 +1,6 @@
+- tornado visual effects should not happen while in the shelter.
+- Scrolls are still auto identified in the notification window when first discovered.
+- Attempting to use a Special book correctly states it's not usable but the book then disappeared from the game
+- We need 2 - 3 ladders generating per chunk
+- All enemies in all modes should be showing their health bar above them.
+- Long weapons should no longer be able to hit enemies more then 1 tile away

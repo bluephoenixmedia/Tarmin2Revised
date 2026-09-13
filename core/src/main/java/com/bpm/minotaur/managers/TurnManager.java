@@ -15,9 +15,11 @@ public class TurnManager {
 
     private final float BASE_TURN_COST = 12.0f;
 
-    // Metabolic Constants (Per 1.0 Time Unit)
-    private static final float SATIETY_DECAY = 0.02f; // ~5000 turns to starve
-    private static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate
+    // Metabolic Constants (Per 1.0 Time Unit). Satiety now decays at the same
+    // pace as hydration (previously half as fast, 0.02f) so it can actually bind
+    // as a real resource pressure across an expedition instead of never mattering.
+    public static final float SATIETY_DECAY = 0.04f; // ~3000 turns to starve from full (120)
+    public static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate from full (100)
     private static final float TEMP_ADJUST_RATE = 0.05f; // Speed of body temp adjustment
     private int ringRechargeCounter = 0;
     private int turnCounter = 0;

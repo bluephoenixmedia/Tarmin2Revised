@@ -16,7 +16,9 @@ import com.bpm.minotaur.gamedata.player.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Manages the global discovery/identification state of items.
@@ -39,6 +41,10 @@ public class DiscoveryManager {
     private ObjectMap<ScrollEffectType, Boolean> scrollIdentified = new ObjectMap<>();
     /** Randomized cryptic rune label shown on each unidentified scroll appearance, e.g. "XEL'NAGA". */
     private ObjectMap<ItemType, String> scrollRuneNames = new ObjectMap<>();
+    /** Dedicated spell scrolls (SCROLL_FIREBALL etc.) aren't part of the randomized
+     *  appearance pool -- each ItemType IS the spell 1:1, so identification is
+     *  tracked per-type here rather than per-ScrollEffectType. */
+    private final Set<ItemType> identifiedDedicatedScrolls = new HashSet<>();
 
     private static final String[] SCROLL_RUNE_POOL = {
             "XEL'NAGA", "ZIRUVOX", "KATHA-RIN", "MORR'GLYPH", "NUL-DRATH", "VELKHAAR",
@@ -144,6 +150,8 @@ public class DiscoveryManager {
             scrollIdentified.put(effect, false);
         }
 
+        identifiedDedicatedScrolls.clear();
+
         // Assign each unidentified scroll appearance a randomized cryptic rune label
         // for this run, e.g. "Scroll labeled XEL'NAGA" -- stable for the session,
         // re-rolled on every new game/apocalypse reset.
@@ -156,9 +164,20 @@ public class DiscoveryManager {
         }
     }
 
-    /** The randomized cryptic rune label for an unidentified scroll appearance type. */
+    /**
+     * The cryptic rune label for an unidentified scroll. Appearance types
+     * (SCROLL_A-H) get one of the session's randomly-shuffled runes; any other
+     * scroll type (e.g. a dedicated spell scroll like SCROLL_MAGIC_MISSILE, which
+     * never enters the appearance pool) still gets a stable, deterministic rune
+     * derived from its own type name, so no scroll ever falls back to a bare,
+     * unmysterious "Scroll" before it's identified.
+     */
     public String getScrollRuneLabel(ItemType appearanceType) {
         String rune = scrollRuneNames.get(appearanceType);
+        if (rune == null && appearanceType != null) {
+            int idx = Math.floorMod(appearanceType.name().hashCode(), SCROLL_RUNE_POOL.length);
+            rune = SCROLL_RUNE_POOL[idx];
+        }
         return rune != null ? "Scroll labeled " + rune : "Scroll";
     }
 
@@ -240,6 +259,19 @@ public class DiscoveryManager {
                 eventManager.addEvent(
                         new com.bpm.minotaur.gamedata.GameEvent("Identified Scroll of " + effect.getBaseName(), 2.5f));
             updateInventory(player);
+        }
+    }
+
+    public boolean isDedicatedScrollIdentified(ItemType type) {
+        return type != null && identifiedDedicatedScrolls.contains(type);
+    }
+
+    /** Identifies a dedicated spell scroll (e.g. SCROLL_MAGIC_MISSILE) by its own
+     *  ItemType, since it has no shared ScrollEffectType appearance mapping. */
+    public void identifyDedicatedScroll(ItemType type, String spellDisplayName) {
+        if (type != null && identifiedDedicatedScrolls.add(type) && eventManager != null) {
+            eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent(
+                    "Identified Scroll of " + spellDisplayName, 2.5f));
         }
     }
 
@@ -333,11 +365,18 @@ public class DiscoveryManager {
         }
         if (item.getType().name().startsWith("SCROLL_")) {
             ScrollEffectType effect = item.getScrollEffect();
-            if (item.isIdentified() || isScrollIdentified(effect)) {
-                return "Scroll of " + (effect != null ? effect.getBaseName() : "Unknown");
-            } else {
+            if (effect != null) {
+                if (item.isIdentified() || isScrollIdentified(effect)) {
+                    return "Scroll of " + effect.getBaseName();
+                }
                 return getScrollRuneLabel(item.getType());
             }
+            // Dedicated spell scroll (SCROLL_FIREBALL, etc.): identified per its own
+            // ItemType rather than a shared ScrollEffectType appearance.
+            if (item.isIdentified() || isDedicatedScrollIdentified(item.getType())) {
+                return item.getFriendlyName();
+            }
+            return getScrollRuneLabel(item.getType());
         }
         if (item.getType().name().startsWith("WAND_")) {
             WandEffectType effect = item.getWandEffect();
@@ -367,6 +406,7 @@ public class DiscoveryManager {
         public ObjectMap<String, String> scrollMapString;
         public ObjectMap<String, Boolean> scrollIdentifiedString;
         public ObjectMap<String, String> scrollRuneNamesString;
+        public List<String> identifiedDedicatedScrollsString;
         public ObjectMap<String, String> wandMapString;
         public ObjectMap<String, Boolean> wandIdentifiedString;
         public ObjectMap<String, String> ringMapString;
@@ -400,6 +440,10 @@ public class DiscoveryManager {
             state.scrollRuneNamesString = new ObjectMap<>();
             for (ObjectMap.Entry<ItemType, String> entry : scrollRuneNames.entries()) {
                 state.scrollRuneNamesString.put(entry.key.name(), entry.value);
+            }
+            state.identifiedDedicatedScrollsString = new ArrayList<>();
+            for (ItemType type : identifiedDedicatedScrolls) {
+                state.identifiedDedicatedScrollsString.add(type.name());
             }
 
             // Wands
@@ -472,6 +516,16 @@ public class DiscoveryManager {
                     for (ObjectMap.Entry<String, String> entry : state.scrollRuneNamesString.entries()) {
                         try {
                             scrollRuneNames.put(ItemType.valueOf(entry.key), entry.value);
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+
+                identifiedDedicatedScrolls.clear();
+                if (state.identifiedDedicatedScrollsString != null) {
+                    for (String typeName : state.identifiedDedicatedScrollsString) {
+                        try {
+                            identifiedDedicatedScrolls.add(ItemType.valueOf(typeName));
                         } catch (Exception e) {
                         }
                     }

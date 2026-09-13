@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.*;
+import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterColor;
@@ -33,6 +34,7 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
     private GameEventManager eventManager;
     private DoomManager doomManager;
     private AssetManager assetManager;
+    private DiscoveryManager discoveryManager;
 
     private int turns = 0;
     private int maxTurns = 2000;
@@ -41,6 +43,15 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
     private int encounters = 0;
     private int victories = 0;
     private int deaths = 0;
+
+    // Minimal bot upgrades: escalating challenge, self-preservation, and looting.
+    private int consecutiveVictories = 0;
+    private static final int VICTORIES_PER_TIER = 3;
+    private static final MonsterType[] DIFFICULTY_TIERS = {
+            MonsterType.GOBLIN, MonsterType.HOBGOBLIN, MonsterType.SKELETON,
+            MonsterType.GHOUL, MonsterType.ORC, MonsterType.TROLL, MonsterType.OGRE
+    };
+    private static final float LOW_HP_RETREAT_THRESHOLD = 0.3f;
 
     public static void main(String[] arg) {
         HeadlessApplicationConfiguration config = new HeadlessApplicationConfiguration();
@@ -66,6 +77,19 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         monsterDataManager.load();
         System.out.println("Monster Templates Loaded.");
 
+        eventManager = new GameEventManager();
+
+        // Discovery: without this, potions never get a real effect assigned at
+        // creation time (ItemDataManager silently skips it when null), so the bot's
+        // "quaff to heal" logic would otherwise always be a no-op.
+        discoveryManager = new DiscoveryManager(eventManager);
+        discoveryManager.initializeNewGame(java.util.List.of(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.POTION_BLUE,
+                com.bpm.minotaur.gamedata.item.Item.ItemType.POTION_PINK,
+                com.bpm.minotaur.gamedata.item.Item.ItemType.POTION_GREEN,
+                com.bpm.minotaur.gamedata.item.Item.ItemType.POTION_GOLD));
+        itemDataManager.setDiscoveryManager(discoveryManager);
+
         // QUEUE ASSETS from Managers (if they weren't already queued by load())
         // ItemDataManager.load() usually parses JSON.
         // We need to ensure referenced assets are queue/loaded.
@@ -78,7 +102,6 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         // 3. Null/Stub Managers
         soundManager = new HeadlessSoundManager();
         animationManager = new HeadlessAnimationManager();
-        eventManager = new GameEventManager();
 
         // Physics
         try {
@@ -91,6 +114,11 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
 
         // Doom Manager
         doomManager = DoomManager.getInstance();
+
+        // Telemetry: one exported run per simulation session (spans every simulated
+        // life, not just the first), so headless runs are directly comparable to the
+        // logs/telemetry/*.json produced by real playtests.
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
         // 4. Create World/Player
         spawnPlayer();
@@ -126,6 +154,7 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         }
 
         turns++;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setTurnsLived(turns);
 
         try {
             // --- Simulation Logic ---
@@ -152,19 +181,33 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         if (state == CombatManager.CombatState.PLAYER_MENU ||
                 state == CombatManager.CombatState.PLAYER_TURN) {
 
-            // Bot Logic: Instant Attack
-            combatManager.playerAttackInstant();
+            // Bot Logic: self-preservation first -- quaff a potion when badly hurt
+            // instead of trading blows, otherwise attack.
+            boolean isLowHp = player.getCurrentHP() < player.getStats().getMaxHP() * LOW_HP_RETREAT_THRESHOLD;
+            if (isLowHp && quaffAnyPotion()) {
+                // Spent this turn healing instead of attacking.
+            } else {
+                combatManager.playerAttackInstant();
+            }
         }
+
+        // Re-fetch: the attack above can resolve the fight synchronously (e.g. a
+        // killing blow sets VICTORY inside playerAttackInstant itself), so the
+        // pre-attack snapshot in `state` is stale by this point -- checking it here
+        // instead of the fresh state meant victories/deaths were never counted.
+        state = combatManager.getCurrentState();
 
         if (state == CombatManager.CombatState.VICTORY) {
             victories++;
             encounters++;
+            consecutiveVictories++;
             System.out.println("Victory! Total: " + victories);
         }
 
         if (state == CombatManager.CombatState.DEFEAT) {
             deaths++;
             encounters++;
+            consecutiveVictories = 0;
             System.out.println("DEATH! Total: " + deaths + " | Doom Count: " + doomManager.getDeathCount());
 
             // Respawn Player
@@ -174,6 +217,25 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
             combatManager = new CombatManager(player, maze, null, animationManager, eventManager, soundManager,
                     itemDataManager, stochasticManager, null, null, null);
         }
+    }
+
+    /** Quaffs the first potion found in the backpack, if any. @return true if one was found and used. */
+    private boolean quaffAnyPotion() {
+        for (com.bpm.minotaur.gamedata.item.Item item : player.getInventory().getMainInventory()) {
+            if (item != null && item.isPotion()) {
+                player.quaff(item, discoveryManager, eventManager);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Proxy for "descending": the bot fights progressively tougher monster types
+     *  after strings of consecutive victories, standing in for real strata depth
+     *  since this harness runs a single static maze rather than the full world. */
+    private MonsterType currentDifficultyTier() {
+        int tierIndex = Math.min(DIFFICULTY_TIERS.length - 1, consecutiveVictories / VICTORIES_PER_TIER);
+        return DIFFICULTY_TIERS[tierIndex];
     }
 
     private void handleExploration() {
@@ -192,16 +254,68 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         // Assumes Player.move() is public now
         player.move(d, maze, eventManager, GameMode.CLASSIC);
 
-        // Force encounter logic
-        if (MathUtils.randomBoolean(0.1f)) { // 10% chance per turn
-            System.out.println("Encounter triggered at turn " + turns);
+        // Loot: a small chance per turn of stumbling on a potion or weapon, picked
+        // up immediately (and equipped, if it's a clear weapon upgrade).
+        if (MathUtils.randomBoolean(0.05f)) {
+            pickUpRandomLoot();
+        }
 
-            // Spawn a Goblin
-            // Note: x, y are floats in Constructor
-            Monster m = new Monster(MonsterType.GOBLIN, player.getPosition().x, player.getPosition().y,
+        // Force encounter logic -- monster toughness escalates with consecutive
+        // victories, standing in for descending strata depth.
+        if (MathUtils.randomBoolean(0.1f)) { // 10% chance per turn
+            MonsterType tier = currentDifficultyTier();
+            System.out.println("Encounter triggered at turn " + turns + " (" + tier + ")");
+
+            Monster m = new Monster(tier, player.getPosition().x, player.getPosition().y,
                     MonsterColor.GREEN, monsterDataManager, assetManager);
 
             combatManager.startCombat(m);
+        }
+    }
+
+    private static final Item.ItemType[] LOOTABLE_POTIONS = {
+            Item.ItemType.POTION_BLUE, Item.ItemType.POTION_PINK,
+            Item.ItemType.POTION_GREEN, Item.ItemType.POTION_GOLD
+    };
+    private static final Item.ItemType[] LOOTABLE_WEAPONS = {
+            Item.ItemType.RUSTY_SWORD, Item.ItemType.AXE_BATTLE, Item.ItemType.MACE_GREAT
+    };
+
+    /** Spawns a random potion or weapon "underfoot" and immediately picks it up
+     *  (equipping the weapon if it out-damages whatever is currently wielded). */
+    private void pickUpRandomLoot() {
+        boolean wantsWeapon = MathUtils.randomBoolean(0.4f);
+        Item.ItemType[] pool = wantsWeapon ? LOOTABLE_WEAPONS : LOOTABLE_POTIONS;
+        Item.ItemType type = pool[MathUtils.random(pool.length - 1)];
+        Item item = itemDataManager.createItem(type, (int) player.getPosition().x, (int) player.getPosition().y,
+                com.bpm.minotaur.gamedata.item.ItemColor.TAN, assetManager);
+        if (item == null) {
+            return;
+        }
+
+        if (item.isWeapon()) {
+            Item current = player.getInventory().getRightHand();
+            if (current == null || averageDice(item.getDamageDice()) > averageDice(current.getDamageDice())) {
+                player.getInventory().setRightHand(item);
+            }
+        } else {
+            player.pickupItem(item);
+        }
+    }
+
+    /** Rough average value of a dice string like "2d6", used only to compare weapon upgrades. */
+    private float averageDice(String dice) {
+        if (dice == null || dice.isEmpty()) {
+            return 0f;
+        }
+        try {
+            int total = 0;
+            for (int i = 0; i < 5; i++) {
+                total += com.bpm.minotaur.utils.DiceRoller.roll(dice);
+            }
+            return total / 5f;
+        } catch (Exception e) {
+            return 0f;
         }
     }
 
@@ -213,6 +327,14 @@ public class HeadlessSimulationLauncher implements ApplicationListener {
         System.out.println("Deaths: " + deaths);
         System.out.println("End Doom Count: " + doomManager.getDeathCount());
         System.out.println("=========================");
+
+        // Export the whole session (every simulated life, not just the last one) as
+        // one telemetry run, directly comparable to logs/telemetry/*.json from real
+        // playtests.
+        String cause = String.format("Headless simulation completed: %d turns, %d victories, %d deaths",
+                turns, victories, deaths);
+        String json = com.bpm.minotaur.telemetry.TelemetryManager.getInstance().exportRun(cause);
+        System.out.println("Telemetry exported:\n" + json);
     }
 
     @Override

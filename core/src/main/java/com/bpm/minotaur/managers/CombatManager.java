@@ -262,7 +262,7 @@ public class CombatManager {
 
         this.pendingWeapon = weapon;
         soundManager.playWeaponSwing();
-        if (weapon != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+        if (weapon != null && game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(weapon);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
@@ -641,7 +641,7 @@ public class CombatManager {
 
         // --- VISCERAL: Trigger Weapon Animation & Sound ---
         soundManager.playWeaponSwing();
-        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerAttack(pendingWeapon);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
@@ -853,7 +853,7 @@ public class CombatManager {
         if (shield == null || !shield.isShield()) return;
 
         soundManager.playWeaponSwing();
-        if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
             com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
             gs.getWeaponOverlay().triggerShieldBash(shield);
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
@@ -1338,7 +1338,7 @@ public class CombatManager {
                 soundManager.playMonsterReaction(monster, damageRatio); // Grunts/Roars
 
                 // 2. Screen Shake & Hit Pause
-                if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                     com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
 
                     // Coat blade with blood
@@ -1384,7 +1384,7 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Miss!", 1f));
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
                     com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
-            if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
                 gs.getWeaponOverlay().triggerWhiff();
             }
