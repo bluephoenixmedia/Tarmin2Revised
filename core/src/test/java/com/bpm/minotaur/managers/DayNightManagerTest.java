@@ -118,7 +118,7 @@ public class DayNightManagerTest {
     @Test
     public void testUpdateCycleWrap() {
         manager.setTimeOfDay(0.999f);
-        // Advance by 10 seconds of 600s cycle (~0.0167)
+        // Advance by 10 seconds of the 1500s cycle (~0.0067)
         manager.update(10f);
         assertTrue("Cycle should wrap smoothly past midnight", manager.getTimeOfDay() < 0.1f);
     }

@@ -65,7 +65,7 @@ public class LightingManager {
      */
     public void update(float delta, Player player, Maze maze) {
         if (player != null) {
-            updatePlayerLight(player);
+            updatePlayerLight(player, maze);
         }
 
         playerLight.update(delta);
@@ -90,10 +90,14 @@ public class LightingManager {
         return this.lanternLit;
     }
 
+    // Underground chunks (any level below the overworld) get a brighter carried lantern,
+    // since natural light is entirely absent there.
+    private static final float UNDERGROUND_LANTERN_BOOST = 1.5f;
+
     /**
      * Syncs player light coordinates and upgrades to Brass Lantern if equipped in either hand.
      */
-    private void updatePlayerLight(Player player) {
+    private void updatePlayerLight(Player player, Maze maze) {
         playerLight.setPosition(player.getPosition().x, player.getPosition().y);
 
         Item offHand = (player.getInventory() != null) ? player.getInventory().getLeftHand() : null;
@@ -101,10 +105,13 @@ public class LightingManager {
         boolean hasLantern = (offHand != null && offHand.getType() == ItemType.BRASS_LANTERN)
                 || (mainHand != null && mainHand.getType() == ItemType.BRASS_LANTERN);
 
+        boolean isUnderground = maze != null && maze.getLevel() > 1;
+
         if (hasLantern) {
             playerLight.setActive(lanternLit);
-            playerLight.setBaseRadius(LANTERN_RADIUS);
-            playerLight.setBaseIntensity(LANTERN_INTENSITY);
+            float boost = isUnderground ? UNDERGROUND_LANTERN_BOOST : 1.0f;
+            playerLight.setBaseRadius(LANTERN_RADIUS * boost);
+            playerLight.setBaseIntensity(LANTERN_INTENSITY * boost);
             playerLight.setBaseColor(COLOR_LANTERN);
             playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
         } else {

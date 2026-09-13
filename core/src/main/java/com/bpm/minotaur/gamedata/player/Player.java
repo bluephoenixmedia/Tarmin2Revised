@@ -147,19 +147,29 @@ public class Player {
         return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(id, this, maze, eventManager, combatManager);
     }
 
+    /**
+     * Resolves the spell a dedicated spell-scroll item (SCROLL_FIREBALL, SCROLL_MAGIC_MISSILE,
+     * etc.) represents, independent of the unidentified-appearance ScrollEffectType system.
+     * Shared by {@link #scribeScroll} (learn permanently) and {@link #read} (cast immediately).
+     */
+    private String resolveSpellIdFromScroll(Item scrollItem) {
+        if (scrollItem.getSpellId() != null && !scrollItem.getSpellId().isEmpty()) {
+            return scrollItem.getSpellId().toUpperCase();
+        }
+        if (scrollItem.getType() == Item.ItemType.SCROLL_FIREBALL) return "FIREBALL";
+        if (scrollItem.getType() == Item.ItemType.SCROLL_MISTY_STEP) return "MISTY_STEP";
+        if (scrollItem.getType() == Item.ItemType.SCROLL_MAGIC_MISSILE) return "MAGIC_MISSILE";
+        if (scrollItem.getType() == Item.ItemType.SCROLL_LIGHTNING_BOLT) return "LIGHTNING_BOLT";
+        String name = scrollItem.getFriendlyName();
+        if (name != null && name.contains("(") && name.contains(")")) {
+            return name.substring(name.indexOf('(') + 1, name.indexOf(')')).replace(' ', '_').toUpperCase();
+        }
+        return null;
+    }
+
     public boolean scribeScroll(Item scrollItem, GameEventManager eventManager) {
         if (scrollItem == null) return false;
-        String name = scrollItem.getFriendlyName();
-        String spellId = null;
-        if (scrollItem.getSpellId() != null && !scrollItem.getSpellId().isEmpty()) {
-            spellId = scrollItem.getSpellId().toUpperCase();
-        } else if (scrollItem.getType() == Item.ItemType.SCROLL_FIREBALL) spellId = "FIREBALL";
-        else if (scrollItem.getType() == Item.ItemType.SCROLL_MISTY_STEP) spellId = "MISTY_STEP";
-        else if (scrollItem.getType() == Item.ItemType.SCROLL_MAGIC_MISSILE) spellId = "MAGIC_MISSILE";
-        else if (scrollItem.getType() == Item.ItemType.SCROLL_LIGHTNING_BOLT) spellId = "LIGHTNING_BOLT";
-        else if (name != null && name.contains("(") && name.contains(")")) {
-            spellId = name.substring(name.indexOf('(') + 1, name.indexOf(')')).replace(' ', '_').toUpperCase();
-        }
+        String spellId = resolveSpellIdFromScroll(scrollItem);
 
         if (spellId == null) {
             eventManager.addEvent(new GameEvent("This scroll cannot be transcribed.", 1.5f));
@@ -1063,6 +1073,15 @@ public class Player {
 
         ScrollEffectType effect = scroll.getScrollEffect();
         if (effect == null) {
+            // Dedicated spell scrolls (Fireball, Magic Missile, etc.) carry a spellId
+            // instead of a ScrollEffectType -- cast that spell directly rather than
+            // reporting the scroll as blank.
+            String spellId = resolveSpellIdFromScroll(scroll);
+            if (spellId != null) {
+                com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(spellId, this, maze, eventManager, null);
+                inventory.removeItem(scroll);
+                return;
+            }
             eventManager.addEvent(new GameEvent("The scroll is blank.", 1.5f));
             inventory.removeItem(scroll);
             return;

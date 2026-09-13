@@ -180,7 +180,7 @@
   "GIB_FLESH": {
     "friendlyName": "Flesh",
     "description": "A chunk of raw flesh.",
-    "texturePath": "images/items/food.png",
+    "texturePath": "images/items/cooked__meat.png",
     "baseValue": 1,
     "scale": {
       "x": 1.0,
@@ -190,7 +190,7 @@
   "MEAT": {
     "friendlyName": "Flesh",
     "description": "Raw flesh harvested from a butchered corpse. Best cooked before eating -- devouring it raw risks poison or worse.",
-    "texturePath": "images/items/food.png",
+    "texturePath": "images/items/cooked__meat.png",
     "baseValue": 2,
     "damageDice": 0,
     "armorClassBonus": 0,

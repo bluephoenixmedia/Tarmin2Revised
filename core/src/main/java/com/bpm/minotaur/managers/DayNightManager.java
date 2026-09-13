@@ -20,8 +20,8 @@ public class DayNightManager {
 
     public enum Phase { NIGHT, DAWN, DAY, DUSK }
 
-    // 10 real minutes = one full game day
-    public static final float CYCLE_DURATION = 600f;
+    // 25 real minutes = one full game day (slowed 150% from the original 10-minute cycle per player feedback)
+    public static final float CYCLE_DURATION = 1500f;
 
     // Phase boundaries (as fractions of the cycle)
     private static final float DAWN_START  = 0.22f;

@@ -1673,6 +1673,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_ALTAR) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[DIVINITY ALTAR]",
+                        "Shelter Altar",
+                        "An ancient stone altar humming with banked Divinities. Spend them on permanent Provisions, Repertoire, and Monument upgrades.",
+                        "[ O ]",
+                        "Open Shelter Altar",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.BRASS_LANTERN) {
                 worldInteractionCard.show(
                         "[SHELTER HAVEN]",

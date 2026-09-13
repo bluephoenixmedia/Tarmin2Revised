@@ -1259,6 +1259,36 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /**
+     * Resting (R) advances 5 world ticks at once instead of just 1, so hunting
+     * monsters have a real chance to close in and interrupt the player rather
+     * than letting them spam free heals in perfect safety. The rest is cut
+     * short the moment the player takes damage or combat starts.
+     */
+    private static final int REST_TICKS_PER_PRESS = 5;
+
+    private void performRest() {
+        player.rest(eventManager);
+
+        int hpBeforeTick = player.getCurrentHP();
+        for (int i = 0; i < REST_TICKS_PER_PRESS; i++) {
+            playerTurnTakesAction();
+
+            if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+                eventManager.addEvent(new GameEvent("Your rest is interrupted!", 2f));
+                break;
+            }
+            if (player.getCurrentHP() < hpBeforeTick) {
+                eventManager.addEvent(new GameEvent("Something attacks you as you rest!", 2f));
+                break;
+            }
+            if (player.getCurrentHP() <= 0) {
+                break;
+            }
+            hpBeforeTick = player.getCurrentHP();
+        }
+    }
+
     private void performChunkTransition(Gate transitionGate) {
         if (player == null)
             return;
@@ -1960,8 +1990,7 @@ public class GameScreen extends BaseScreen {
                     ascendOrDescendLadder();
                     return true;
                 case Input.Keys.R:
-                    player.rest(eventManager);
-                    playerTurnTakesAction();
+                    performRest();
                     return true;
                 case Input.Keys.C:
                     openFieldCrafting();
