@@ -259,6 +259,9 @@ public class WorldManager {
         // Update Deepest Level Tracking
         UnlockManager.getInstance().updateDeepestLevel(this.currentLevel);
 
+        // Rearm Shelter Altar commune on venturing into deeper strata
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+
         Gdx.app.log("WorldManager",
                 "Descending to Level " + currentLevel + " at chunk " + currentPlayerChunkId + ". Pending UP Ladder at " + pendingUpLadderPos);
 
@@ -753,6 +756,9 @@ public class WorldManager {
                 return;
         }
         this.currentPlayerChunkId = newChunkId;
+        if (Math.abs(newChunkId.x) >= 2 || Math.abs(newChunkId.y) >= 2 || currentLevel >= 2) {
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().rearmCommune();
+        }
         player.setMaze(newMaze);
         player.setPosition(newPlayerPos);
         setPlayerReference(player);

@@ -633,30 +633,55 @@ public class MazeChunkGenerator implements IChunkGenerator {
                                     assetManager));
                     }
                     // ---------------------------------------
-                } else if (c == 'C')
-                    maze.addItem(
-                            itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
-                else if (c == 'N')
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
-                            assetManager));
-                else if (c == 'A')
+                } else if (c == 'C') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST)) {
+                        maze.addItem(
+                                itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
+                    }
+                } else if (c == 'N') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH)) {
+                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
+                                assetManager));
+                    }
+                } else if (c == 'A') {
                     maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
                             assetManager));
-                else if (c == 'B')
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
-                            assetManager));
-                else if (c == 'F') {
-                    maze.addItem(
-                            itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
-                    maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
-                            LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
-                            LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                } else if (c == 'B') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED)) {
+                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
+                                assetManager));
+                    }
+                } else if (c == 'F') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE)) {
+                        maze.addItem(
+                                itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
+                        maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
+                                LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                                LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                    }
                 } else if (c == 'L') {
-                    maze.addItem(
-                            itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
-                    maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
-                            LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
-                            LightSource.FlickerProfile.LANTERN_BREATH));
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
+                        maze.addItem(
+                                itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
+                        maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
+                                LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
+                                LightSource.FlickerProfile.LANTERN_BREATH));
+                    }
                 }
             }
         }

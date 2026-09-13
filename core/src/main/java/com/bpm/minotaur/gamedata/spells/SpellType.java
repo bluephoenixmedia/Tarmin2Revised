@@ -4,7 +4,8 @@ public enum SpellType {
     MAGIC_ARROW("Magic Arrow", 4, true, "Shoots a magical bolt of energy."),
     HEAL("Heal", 8, false, "Restores health."),
     TELEPORT("Teleport", 12, false, "Teleports you to a random location."),
-    IRON_SKIN("Iron Skin", 10, false, "Temporarily increases defense.");
+    IRON_SKIN("Iron Skin", 10, false, "Temporarily increases defense."),
+    MOTE_OF_LIGHT("Mote of Light", 0, false, "Conjures an orbiting wisp of light that illuminates darkness.");
 
     private final String displayName;
     private final int mpCost;

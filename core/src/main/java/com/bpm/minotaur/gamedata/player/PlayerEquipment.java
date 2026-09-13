@@ -110,6 +110,18 @@ public class PlayerEquipment {
         return getACBonus();
     }
 
+    public int getTotalDamageReduction() {
+        int dr = 0;
+        if (wornHelmet != null) dr += wornHelmet.getDamageReduction();
+        if (wornChest != null) dr += wornChest.getDamageReduction();
+        if (wornGauntlets != null) dr += wornGauntlets.getDamageReduction();
+        if (wornBoots != null) dr += wornBoots.getDamageReduction();
+        if (wornLegs != null) dr += wornLegs.getDamageReduction();
+        if (wornArms != null) dr += wornArms.getDamageReduction();
+        if (wornShield != null) dr += wornShield.getDamageReduction();
+        return dr;
+    }
+
     public String getArmorTier() {
         if (wornChest != null && wornChest.getArmorCategory() != null) {
             return wornChest.getArmorCategory();

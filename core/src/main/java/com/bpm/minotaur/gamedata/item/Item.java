@@ -838,6 +838,58 @@ public class Item implements Renderable {
         return totalBonus;
     }
 
+    public int getDamageReduction() {
+        if (type == null) return 0;
+        String typeName = type.name().toUpperCase();
+
+        // Cloth / Padded / Robes grant 0 DR
+        if (typeName.contains("PADDED") || typeName.contains("CLOTH")
+                || typeName.contains("TUNIC") || typeName.contains("ROBE")) {
+            return 0;
+        }
+
+        // Shields grant 1 DR
+        if (typeName.contains("SHIELD") || typeName.contains("BUCKLER")) {
+            return 1;
+        }
+
+        // Only armor pieces grant DR
+        if (!isArmor && !typeName.contains("MAIL") && !typeName.contains("PLATE")
+                && !typeName.contains("LEATHER") && !typeName.contains("HELM")
+                && !typeName.contains("BOOTS") && !typeName.contains("GAUNTLET")) {
+            return 0;
+        }
+
+        int dr = 0;
+        // Heavy / Plate: 3 DR
+        if (typeName.contains("PLATE") || typeName.contains("BRONZE_PLATE") || armorClassBonus >= 6) {
+            dr = 3;
+        }
+        // Medium / Chain / Scale / Lamellar: 2 DR
+        else if (typeName.contains("CHAIN") || typeName.contains("SCALE")
+                || typeName.contains("LAMELLAR") || typeName.contains("HAUBERK")
+                || typeName.contains("SPLINT") || typeName.contains("BRIGANDINE")
+                || typeName.contains("BANDED") || armorClassBonus >= 3) {
+            dr = 2;
+        }
+        // Light / Leather / Boots / Hide: 1 DR
+        else if (typeName.contains("LEATHER") || typeName.contains("HIDE")
+                || typeName.contains("BOOTS") || typeName.contains("STUDDED")
+                || typeName.contains("WOOD_BONE") || typeName.contains("CORD") || armorClassBonus >= 1) {
+            dr = 1;
+        }
+
+        // Factor BONUS_ABSORB modifiers if present on this item
+        if (modifiers != null) {
+            for (ItemModifier mod : modifiers) {
+                if (mod.type == ModifierType.BONUS_ABSORB) {
+                    dr += mod.value;
+                }
+            }
+        }
+        return dr;
+    }
+
     public boolean isModified() {
         return modifiers != null && !modifiers.isEmpty();
     }

@@ -77,7 +77,8 @@ public enum StatusEffectType {
     RESIST_ACID,
     RESIST_NECROTIC,
     FREE_ACTION,
-    WARMTH;
+    WARMTH,
+    MOTE_OF_LIGHT;
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;

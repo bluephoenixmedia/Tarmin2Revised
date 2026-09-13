@@ -1,2 +1,3 @@
-- Should be able to spnd divinities on upgrading the shelter
-- The castle in the distance grows too quickyl when you move north, we need to reduce the progress towards the castle by about 80% 
+- Should be able to spend divinities on upgrading the shelter, the shelter should have nothing on start of the game.
+
+ 

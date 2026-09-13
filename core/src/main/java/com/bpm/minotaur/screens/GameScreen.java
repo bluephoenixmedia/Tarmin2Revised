@@ -2634,6 +2634,10 @@ public class GameScreen extends BaseScreen {
         return spellCastOverlay;
     }
 
+    public SoundManager getSoundManager() {
+        return soundManager;
+    }
+
     public void killPlayer() {
         if (player != null && player.getStats() != null) {
             player.getStats().setCurrentHP(0);

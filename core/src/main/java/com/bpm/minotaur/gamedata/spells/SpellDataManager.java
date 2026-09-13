@@ -37,14 +37,18 @@ public class SpellDataManager {
 
         FileHandle file = null;
         if (Gdx.files != null) {
-            file = Gdx.files.local("assets/data/spells.json");
-            if (!file.exists()) {
-                file = Gdx.files.internal("data/spells.json");
+            try {
+                file = Gdx.files.local("assets/data/spells.json");
+                if (file == null || !file.exists()) {
+                    file = Gdx.files.internal("data/spells.json");
+                }
+                if (file == null || !file.exists()) {
+                    file = Gdx.files.local("../assets/data/spells.json");
+                }
+            } catch (Exception ignored) {
             }
-            if (!file.exists()) {
-                file = Gdx.files.local("../assets/data/spells.json");
-            }
-        } else {
+        }
+        if (file == null || !file.exists()) {
             // Non-Gdx fallback (e.g. headless / plain java tests)
             java.io.File diskFile = new java.io.File("assets/data/spells.json");
             if (!diskFile.exists()) {

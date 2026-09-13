@@ -181,10 +181,10 @@ public class SpellSystemTest {
     @Test
     public void testSpellPreparationAndScribing() {
         // Verify default prepared spells
-        assertEquals("MAGIC_MISSILE", player.getPreparedSpell(0));
-        assertEquals("FIRE_BOLT", player.getPreparedSpell(1));
-        assertEquals("CURE_WOUNDS", player.getPreparedSpell(2));
-        assertEquals("SHIELD", player.getPreparedSpell(3));
+        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertNull(player.getPreparedSpell(1));
+        assertNull(player.getPreparedSpell(2));
+        assertNull(player.getPreparedSpell(3));
 
         // Prepare a new spell in slot 4 (requires all 5 spell slots unlocked)
         player.setUnlockedSpellSlots(5);

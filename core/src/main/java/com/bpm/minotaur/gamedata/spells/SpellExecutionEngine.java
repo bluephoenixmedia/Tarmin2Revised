@@ -338,6 +338,11 @@ public class SpellExecutionEngine {
         if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()) {
             try {
                 StatusEffectType effect = StatusEffectType.valueOf(spell.getStatusEffect().toUpperCase());
+                if (effect == StatusEffectType.MOTE_OF_LIGHT) {
+                    player.getStatusManager().addEffect(effect, 150, 1, false);
+                    eventManager.addEvent(new GameEvent("A warm mote of light orbits you, banishing the darkness!", 2.5f));
+                    return;
+                }
                 player.getStatusManager().addEffect(effect, 15, 1, false);
                 eventManager.addEvent(new GameEvent("Gained " + effect.name() + "!", 2.0f));
                 return;

@@ -76,6 +76,16 @@ public class MonsterSpawner {
                 continue;
             }
 
+            // Strata 1 Near-Shelter Threat Bounding (within 2 chunks of shelter 0,0)
+            // Strictly bounds foes to Tier 1 (MCR <= 55, baseLevel <= 2)
+            if (ctx.depth() <= 1 && ctx.chunkId() != null
+                    && Math.abs(ctx.chunkId().x) <= 2 && Math.abs(ctx.chunkId().y) <= 2) {
+                int mcr = calculateMCR(template);
+                if (mcr > 55 || template.baseLevel > 2) {
+                    continue;
+                }
+            }
+
             // Gehennom Logic
             boolean noHell = (template.generationFlags & MonsterTemplate.G_NOHELL) != 0;
             boolean hellOnly = (template.generationFlags & MonsterTemplate.G_HELL) != 0;
@@ -121,5 +131,18 @@ public class MonsterSpawner {
         }
 
         return Optional.of(selectedEntry.getValue());
+    }
+
+    public static int calculateMCR(MonsterTemplate template) {
+        if (template == null) return 0;
+        int score = 0;
+        score += template.maxHP;
+        score += template.maxMP;
+        score += template.armorClass * 3;
+        score += template.dexterity;
+        if (template.hasRangedAttack) {
+            score += 15;
+        }
+        return score;
     }
 }

@@ -1,4 +1,23 @@
 {
+  "MOTE_OF_LIGHT": {
+    "id": "MOTE_OF_LIGHT",
+    "name": "Mote of Light",
+    "level": 0,
+    "school": "evocation",
+    "mpCost": 0,
+    "range": 0,
+    "targetType": "SELF",
+    "damageDice": "0",
+    "damageType": "RADIANT",
+    "domain": "SPIRITUAL",
+    "duration": "150 turns",
+    "statusEffect": "MOTE_OF_LIGHT",
+    "visualArchetype": "HOLY_RADIANCE",
+    "description": "Conjures an orbiting wisp of light that illuminates an 8.5 tile radius around the caster for 150 turns.",
+    "secondaryArchetype": "HOLY_RADIANCE",
+    "runeSchool": "EVOCATION",
+    "bespokeEffect": null
+  },
   "ACID_ARROW": {
     "id": "ACID_ARROW",
     "name": "Acid Arrow",

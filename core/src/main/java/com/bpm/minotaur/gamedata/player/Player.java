@@ -225,18 +225,14 @@ public class Player {
     }
 
     private void initStartingSpells() {
-        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
-        learnSpellId("MAGIC_MISSILE");
-        learnSpellId("FIRE_BOLT");
-        learnSpellId("CURE_WOUNDS");
-        learnSpellId("SHIELD");
-        // Written directly (bypassing prepareSpell's unlocked-slot gate): the
-        // starting kit is always fully stocked, but only slot 1 is castable
-        // until Tomes of the Initiate/Elements/Arcane/Tarmin unlock the rest.
-        preparedSpells[0] = "MAGIC_MISSILE";
-        preparedSpells[1] = "FIRE_BOLT";
-        preparedSpells[2] = "CURE_WOUNDS";
-        preparedSpells[3] = "SHIELD";
+        knownSpells.clear();
+        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MOTE_OF_LIGHT);
+        knownSpellIds.clear();
+        learnSpellId("MOTE_OF_LIGHT");
+        for (int i = 0; i < preparedSpells.length; i++) {
+            preparedSpells[i] = null;
+        }
+        preparedSpells[0] = "MOTE_OF_LIGHT";
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -265,45 +261,19 @@ public class Player {
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
 
-        Item cross = itemDataManager.createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, assetManager);
-        inventory.setLeftHand(cross);
-        if (cross.getGrantedDie() != null) {
-            stats.getDicePool().add(cross.getGrantedDie());
-            BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + cross.getGrantedDie().getName());
-        }
+        Item tunic = itemDataManager.createItem(Item.ItemType.PADDED_ARMOR, 0, 0, ItemColor.TAN, assetManager);
+        equipment.setWornChest(tunic);
 
-        Item pack = itemDataManager.createItem(Item.ItemType.MEDIUM_PACK, 0, 0, ItemColor.GRAY, assetManager);
-        equipment.setWornBack(pack);
-        // Packs don't usually grant dice, but good to be consistent if we expand
-        if (pack.getGrantedDie() != null) {
-            stats.getDicePool().add(pack.getGrantedDie());
-        }
+        Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
+        inventory.pickupToBackpack(ration);
 
-        Item boots = itemDataManager.createItem(Item.ItemType.BOOTS, 0, 0, ItemColor.GRAY, assetManager);
-        equipment.setWornBoots(boots);
-
-        // Portable field kits: available from the very first expedition so a shelter trip
-        // is never required before crafting/cooking on the road becomes possible.
-        Item craftingToolkit = itemDataManager.createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, assetManager);
-        inventory.pickupToBackpack(craftingToolkit);
-        Item cookingKit = itemDataManager.createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, assetManager);
-        inventory.pickupToBackpack(cookingKit);
+        Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
+        inventory.pickupToBackpack(waterskin);
 
         Gdx.app.log("Player [DEBUG]", "Constructor: Finished creating items.");
 
         // Initialize Spells
-        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW);
-        learnSpellId("MAGIC_MISSILE");
-        learnSpellId("FIRE_BOLT");
-        learnSpellId("CURE_WOUNDS");
-        learnSpellId("SHIELD");
-        // Written directly (bypassing prepareSpell's unlocked-slot gate): the
-        // starting kit is always fully stocked, but only slot 1 is castable
-        // until Tomes of the Initiate/Elements/Arcane/Tarmin unlock the rest.
-        preparedSpells[0] = "MAGIC_MISSILE";
-        preparedSpells[1] = "FIRE_BOLT";
-        preparedSpells[2] = "CURE_WOUNDS";
-        preparedSpells[3] = "SHIELD";
+        initStartingSpells();
     }
 
     public interface ItemPickupListener {
@@ -1537,6 +1507,17 @@ public class Player {
         return getArmorClass();
     }
 
+    public int getTotalDamageReduction() {
+        int dr = (equipment != null) ? equipment.getTotalDamageReduction() : 0;
+        if (inventory != null && inventory.getLeftHand() != null) {
+            Item offhand = inventory.getLeftHand();
+            if (offhand.isShield() && (equipment == null || equipment.getWornShield() != offhand)) {
+                dr += offhand.getDamageReduction();
+            }
+        }
+        return dr;
+    }
+
     // Deprecated Aliases
     public int getWarStrength() {
         return getCurrentHP();
@@ -1627,9 +1608,17 @@ public class Player {
 
         if (type == DamageType.PHYSICAL) {
             // AC bonus = evasion threshold used in the to-hit roll, not a damage absorber.
-            // BONUS_ABSORB is the separate flat mitigation on connected hits.
+            // Flat Armor Damage Reduction (DR) + BONUS_ABSORB mitigates connected hits
+            int dr = getTotalDamageReduction();
             int absorb = equipment.getEquippedModifierSum(ModifierType.BONUS_ABSORB);
-            amount = Math.max(0, amount - absorb);
+            int totalMitigation = dr + absorb;
+            if (totalMitigation > 0 && amount > 0) {
+                int mitigated = Math.min(totalMitigation, amount - 1);
+                if (mitigated > 0) {
+                    amount -= mitigated;
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(mitigated);
+                }
+            }
         }
 
         // Chip damage: always take at least 1 on a connected, non-dodged hit.

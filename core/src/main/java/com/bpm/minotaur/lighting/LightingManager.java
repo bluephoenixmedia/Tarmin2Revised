@@ -32,6 +32,7 @@ public class LightingManager {
     public static final Color COLOR_CAMPFIRE = new Color(1.0f, 0.45f, 0.16f, 1.0f);  // Deep ember orange-red
     public static final Color COLOR_COLD_VOID = new Color(0.04f, 0.045f, 0.08f, 1f); // Chilling unlit dungeon darkness
     public static final Color COLOR_SHELTER_AMBIENT = new Color(0.35f, 0.28f, 0.22f, 1.0f); // Warm safe haven shelter glow
+    public static final Color COLOR_MOTE = new Color(0.85f, 0.92f, 1.0f, 1.0f); // Warm mystical wisp radiance
 
     private final LightSource playerLight;
     private final Array<LightSource> worldLights = new Array<>(false, 32);
@@ -107,7 +108,16 @@ public class LightingManager {
 
         boolean isUnderground = maze != null && maze.getLevel() > 1;
 
-        if (hasLantern) {
+        boolean hasMote = player != null && player.getStatusManager() != null
+                && player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.MOTE_OF_LIGHT);
+
+        if (hasMote) {
+            playerLight.setActive(true);
+            playerLight.setBaseRadius(8.5f);
+            playerLight.setBaseIntensity(1.35f);
+            playerLight.setBaseColor(COLOR_MOTE);
+            playerLight.setProfile(LightSource.FlickerProfile.STEADY);
+        } else if (hasLantern) {
             playerLight.setActive(lanternLit);
             float boost = isUnderground ? UNDERGROUND_LANTERN_BOOST : 1.0f;
             playerLight.setBaseRadius(LANTERN_RADIUS * boost);

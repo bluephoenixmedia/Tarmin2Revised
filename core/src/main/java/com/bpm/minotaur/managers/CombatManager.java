@@ -328,6 +328,15 @@ public class CombatManager {
                     attacker.takeDamage(retaliateDmg, DamageType.SPIRITUAL);
                     eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Spiritual Ward retributively shocks " + attacker.getMonsterType() + " for " + retaliateDmg + "!", 2.0f));
                 }
+
+                // Tactical Venom DoT: Snakes & Spiders
+                String mType = (attacker.getMonsterType() != null) ? attacker.getMonsterType().toUpperCase() : "";
+                if (mType.contains("SNAKE") || mType.contains("SPIDER")) {
+                    if (Math.random() < 0.30f && !player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
+                        player.getStatusManager().addEffect(StatusEffectType.POISONED, 10, 1, false);
+                        eventManager.addEvent(new GameEvent("VENOMOUS BITE! " + attacker.getMonsterType() + " injects deadly venom!", 2.0f));
+                    }
+                }
             }
         } else {
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses!", 1f));

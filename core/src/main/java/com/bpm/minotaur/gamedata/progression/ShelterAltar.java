@@ -15,6 +15,31 @@ public class ShelterAltar {
 
     public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT }
 
+    public enum Station {
+        BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG),
+        STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST),
+        CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT),
+        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH),
+        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN);
+
+        private final String displayName;
+        private final String description;
+        private final int cost;
+        private final com.bpm.minotaur.gamedata.item.Item.ItemType itemType;
+
+        Station(String displayName, String description, int cost, com.bpm.minotaur.gamedata.item.Item.ItemType itemType) {
+            this.displayName = displayName;
+            this.description = description;
+            this.cost = cost;
+            this.itemType = itemType;
+        }
+
+        public String getDisplayName() { return displayName; }
+        public String getDescription() { return description; }
+        public int getCost() { return cost; }
+        public com.bpm.minotaur.gamedata.item.Item.ItemType getItemType() { return itemType; }
+    }
+
     public static final int MAX_TIER = 3;
     private static final int BASE_COST = 30;
 
@@ -27,6 +52,10 @@ public class ShelterAltar {
     private int repertoireTier = 0;
     private int monumentTier = 0;
 
+    private final java.util.Set<Station> unlockedStations = new java.util.HashSet<>();
+    private final java.util.Map<Station, java.util.List<com.badlogic.gdx.math.GridPoint2>> stationLocations = new java.util.EnumMap<>(Station.class);
+    private boolean canCommune = true;
+
     private ShelterAltar() {
         load();
     }
@@ -36,6 +65,147 @@ public class ShelterAltar {
             instance = new ShelterAltar();
         }
         return instance;
+    }
+
+    public void reset() {
+        provisionsTier = 0;
+        repertoireTier = 0;
+        monumentTier = 0;
+        unlockedStations.clear();
+        canCommune = true;
+    }
+
+    public boolean hasStation(Station station) {
+        return unlockedStations.contains(station);
+    }
+
+    public void setStationUnlocked(Station station, boolean unlocked) {
+        if (unlocked) {
+            unlockedStations.add(station);
+        } else {
+            unlockedStations.remove(station);
+        }
+    }
+
+    public java.util.Set<Station> getUnlockedStations() {
+        return java.util.Collections.unmodifiableSet(unlockedStations);
+    }
+
+    public boolean canCommune() {
+        return canCommune;
+    }
+
+    public void setCanCommune(boolean canCommune) {
+        this.canCommune = canCommune;
+    }
+
+    public void rearmCommune() {
+        if (!this.canCommune) {
+            this.canCommune = true;
+            save();
+        }
+    }
+
+    public void registerStationLocation(Station station, int x, int y) {
+        stationLocations.computeIfAbsent(station, k -> new java.util.ArrayList<>())
+                .add(new com.badlogic.gdx.math.GridPoint2(x, y));
+    }
+
+    public java.util.List<com.badlogic.gdx.math.GridPoint2> getStationLocations(Station station) {
+        return stationLocations.getOrDefault(station, java.util.Collections.emptyList());
+    }
+
+    public boolean unlockStation(Station station, com.bpm.minotaur.gamedata.Maze currentMaze,
+                                 com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                                 com.badlogic.gdx.assets.AssetManager am) {
+        if (hasStation(station)) {
+            return false;
+        }
+        if (!DivinityManager.getInstance().spendDivinities(station.getCost())) {
+            return false;
+        }
+        unlockedStations.add(station);
+        save();
+
+        if (currentMaze != null && idm != null && am != null) {
+            java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
+            if (points != null) {
+                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                    com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN)
+                            ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
+                            : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
+                    com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
+                    currentMaze.addItem(item);
+
+                    if (station == Station.CAMPFIRE) {
+                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
+                                pt.x + 0.5f, pt.y + 0.5f,
+                                com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                    } else if (station == Station.LANTERN) {
+                        currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + pt.x + "_" + pt.y,
+                                pt.x + 0.5f, pt.y + 0.5f,
+                                com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
+                                com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
+                                com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean commune(com.bpm.minotaur.gamedata.player.Player player, com.bpm.minotaur.managers.WorldManager worldManager) {
+        if (!canCommune) {
+            return false;
+        }
+        if (player != null && player.getStats() != null) {
+            player.getStats().setCurrentHP(player.getStats().getMaxHP());
+            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            if (player.getStatusManager() != null) {
+                player.getStatusManager().clearEffects();
+            }
+            com.bpm.minotaur.managers.DoomManager.getInstance().resetExpeditionTurns();
+            if (worldManager != null) {
+                SaveManager.getInstance().saveActiveSlot(player, worldManager);
+                SaveManager.getInstance().backupActiveSlot();
+            }
+        }
+        canCommune = false;
+        save();
+        return true;
+    }
+
+    public static int getSacrificeValue(com.bpm.minotaur.gamedata.item.Item item) {
+        if (item == null) return 0;
+        if (item.getType() != null && item.getType().name().startsWith("GIB_")) {
+            return 1;
+        }
+        com.bpm.minotaur.gamedata.item.ItemColor col = item.getItemColor();
+        if (col == null) col = com.bpm.minotaur.gamedata.item.ItemColor.TAN;
+        switch (col) {
+            case TAN: return 1;
+            case GRAY: return 2;
+            case GREEN: {
+                int base = 4;
+                int mods = (item.getModifiers() != null) ? item.getModifiers().size() : 0;
+                return base + (mods * 2);
+            }
+            case BLUE: return 8;
+            case GOLD: return 15;
+            default: return 1;
+        }
+    }
+
+    public boolean sacrificeItem(com.bpm.minotaur.gamedata.player.Player player, com.bpm.minotaur.gamedata.item.Item item) {
+        if (player == null || item == null) return false;
+        if (player.getInventory() != null && player.getInventory().getMainInventory().contains(item)) {
+            player.getInventory().removeItem(item);
+            int value = getSacrificeValue(item);
+            DivinityManager.getInstance().addDivinities(value);
+            return true;
+        }
+        return false;
     }
 
     public int getProvisionsTier() {
@@ -115,6 +285,11 @@ public class ShelterAltar {
             data.provisionsTier = provisionsTier;
             data.repertoireTier = repertoireTier;
             data.monumentTier = monumentTier;
+            data.canCommune = canCommune;
+            data.unlockedStations = new java.util.ArrayList<>();
+            for (Station s : unlockedStations) {
+                data.unlockedStations.add(s.name());
+            }
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             if (Gdx.app != null) {
@@ -134,6 +309,15 @@ public class ShelterAltar {
                     provisionsTier = data.provisionsTier;
                     repertoireTier = data.repertoireTier;
                     monumentTier = data.monumentTier;
+                    canCommune = data.canCommune;
+                    unlockedStations.clear();
+                    if (data.unlockedStations != null) {
+                        for (String s : data.unlockedStations) {
+                            try {
+                                unlockedStations.add(Station.valueOf(s));
+                            } catch (Exception ignored) {}
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -147,5 +331,7 @@ public class ShelterAltar {
         public int provisionsTier = 0;
         public int repertoireTier = 0;
         public int monumentTier = 0;
+        public java.util.List<String> unlockedStations = new java.util.ArrayList<>();
+        public boolean canCommune = true;
     }
 }
