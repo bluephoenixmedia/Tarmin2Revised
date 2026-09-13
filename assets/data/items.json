@@ -2765,6 +2765,75 @@
       }
     ]
   },
+  "RUBY": {
+    "friendlyName": "Ruby",
+    "texturePath": "images/items/ruby.png",
+    "baseValue": 150,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": true,
+    "isGem": true,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.4,
+      "y": 0.4
+    },
+    "variants": []
+  },
+  "SAPPHIRE": {
+    "friendlyName": "Sapphire",
+    "texturePath": "images/items/sapphire.png",
+    "baseValue": 125,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": true,
+    "isGem": true,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.4,
+      "y": 0.4
+    },
+    "variants": []
+  },
+  "EMERALD": {
+    "friendlyName": "Emerald",
+    "texturePath": "images/items/emerald.png",
+    "baseValue": 175,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": true,
+    "isGem": true,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 0.4,
+      "y": 0.4
+    },
+    "variants": []
+  },
   "CROWN": {
     "friendlyName": "Crown",
     "texturePath": "images/items/crown.png",

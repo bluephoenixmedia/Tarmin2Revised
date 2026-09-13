@@ -453,7 +453,7 @@ public class GameScreen extends BaseScreen {
                     eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent("Zzz...", 1f));
                 } else if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                     player.getStatusManager().updateTurn();
-                    turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
+                    turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager, game.getItemDataManager(), game.getAssetManager());
                     eventManager.addEvent(new com.bpm.minotaur.gamedata.GameEvent("Zzz...", 1f));
 
                     // Update World
@@ -955,6 +955,20 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.SHOPKEEPER_INTERACTION)) != null) {
+            if (event.payload instanceof com.bpm.minotaur.gamedata.ShopkeeperNpc) {
+                com.bpm.minotaur.gamedata.ShopkeeperNpc shopkeeper = (com.bpm.minotaur.gamedata.ShopkeeperNpc) event.payload;
+                if (hud != null && hud.getShopkeeperWindow() != null) {
+                    if (weaponOverlay != null) {
+                        weaponOverlay.reset();
+                    }
+                    hud.getShopkeeperWindow().configure(player, shopkeeper, eventManager,
+                            game.getItemDataManager(), () -> {});
+                    hud.getShopkeeperWindow().show();
+                }
+            }
+        }
+
         // --- Portal & Dimensional Warp Handling ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
             boolean toVoid = !com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid();
@@ -1282,7 +1296,7 @@ public class GameScreen extends BaseScreen {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
-            turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager);
+            turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager, game.getItemDataManager(), game.getAssetManager());
         }
         combatManager.checkForAdjacentMonsters();
 
@@ -1457,6 +1471,12 @@ public class GameScreen extends BaseScreen {
         // --- Forward keyboard input to active EncounterWindow modal ---
         if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
             hud.getEncounterWindow().handleInput(keycode);
+            return true;
+        }
+
+        // --- Forward keyboard input to active ShopkeeperWindow modal ---
+        if (hud != null && hud.getShopkeeperWindow() != null && hud.getShopkeeperWindow().isVisible()) {
+            hud.getShopkeeperWindow().handleInput(keycode);
             return true;
         }
 

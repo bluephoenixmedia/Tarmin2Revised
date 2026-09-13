@@ -40,6 +40,15 @@ public class Maze {
     private GoreManager goreManager;
 
     private RetroTheme.Theme theme;
+    private ShopkeeperNpc shopkeeper;
+
+    public ShopkeeperNpc getShopkeeper() {
+        return shopkeeper;
+    }
+
+    public void setShopkeeper(ShopkeeperNpc shopkeeper) {
+        this.shopkeeper = shopkeeper;
+    }
 
     public Maze(int level, int[][] wallData) {
         this.level = level;

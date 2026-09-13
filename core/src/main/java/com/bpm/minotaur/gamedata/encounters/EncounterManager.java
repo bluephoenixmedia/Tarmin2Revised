@@ -161,9 +161,10 @@ public class EncounterManager {
 
                             int px = (int) player.getPosition().x;
                             int py = (int) player.getPosition().y;
+                            com.badlogic.gdx.math.GridPoint2 spawnTile = findOpenAdjacentTile(maze, px, py);
 
                             com.bpm.minotaur.gamedata.monster.Monster monster = new com.bpm.minotaur.gamedata.monster.Monster(
-                                    mType, px, py, color, monsterDataManager, assetManager);
+                                    mType, spawnTile.x, spawnTile.y, color, monsterDataManager, assetManager);
 
                             monster.scaleStats(level);
 
@@ -179,6 +180,34 @@ public class EncounterManager {
             default:
                 break;
         }
+    }
+
+    /**
+     * Finds an open, reachable floor tile adjacent to the given origin so
+     * SPAWN_MONSTER results don't materialize a monster on top of the player.
+     * Searches outward ring by ring, falling back to the origin if nothing is free.
+     */
+    private com.badlogic.gdx.math.GridPoint2 findOpenAdjacentTile(com.bpm.minotaur.gamedata.Maze maze, int px, int py) {
+        for (int radius = 1; radius <= 3; radius++) {
+            List<com.badlogic.gdx.math.GridPoint2> ring = new ArrayList<>();
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                    int tx = px + dx;
+                    int ty = py + dy;
+                    if (maze.isPassable(tx, ty)) {
+                        com.badlogic.gdx.math.GridPoint2 tile = new com.badlogic.gdx.math.GridPoint2(tx, ty);
+                        com.bpm.minotaur.gamedata.Scenery s = maze.getScenery().get(tile);
+                        if (s != null && s.isImpassable()) continue;
+                        ring.add(tile);
+                    }
+                }
+            }
+            if (!ring.isEmpty()) {
+                return ring.get(random.nextInt(ring.size()));
+            }
+        }
+        return new com.badlogic.gdx.math.GridPoint2(px, py);
     }
 
     public String getRandomEncounterId() {

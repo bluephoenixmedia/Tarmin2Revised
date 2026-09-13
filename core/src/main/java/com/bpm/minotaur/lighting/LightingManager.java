@@ -43,6 +43,7 @@ public class LightingManager {
     private final Comparator<LightSource> distanceComparator;
 
     private Vector2 currentQueryOrigin = new Vector2();
+    private final LightSource shopkeeperLight;
 
     public LightingManager() {
         this.playerLight = new LightSource(
@@ -53,6 +54,16 @@ public class LightingManager {
                 TORCH_INTENSITY,
                 LightSource.FlickerProfile.TORCH_FLUTTER
         );
+
+        this.shopkeeperLight = new LightSource(
+                "shopkeeper_light",
+                0f, 0f,
+                COLOR_LANTERN,
+                LANTERN_RADIUS * 0.9f,
+                LANTERN_INTENSITY * 0.95f,
+                LightSource.FlickerProfile.LANTERN_BREATH
+        );
+        this.shopkeeperLight.setActive(false);
 
         this.distanceComparator = (l1, l2) -> {
             float d1 = l1.getPosition().dst2(currentQueryOrigin);
@@ -70,6 +81,14 @@ public class LightingManager {
         }
 
         playerLight.update(delta);
+
+        if (maze != null && maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
+            shopkeeperLight.setActive(true);
+            shopkeeperLight.setPosition(maze.getShopkeeper().getPosition().x, maze.getShopkeeper().getPosition().y);
+            shopkeeperLight.update(delta);
+        } else {
+            shopkeeperLight.setActive(false);
+        }
 
         for (int i = 0; i < worldLights.size; i++) {
             worldLights.get(i).update(delta);
@@ -251,6 +270,11 @@ public class LightingManager {
             LightSource light = worldLights.get(i);
             if (!light.isActive()) continue;
             applyLightSource(light, x, y, maze, outColor);
+        }
+
+        // 3. Evaluate traveling merchant light
+        if (shopkeeperLight.isActive()) {
+            applyLightSource(shopkeeperLight, x, y, maze, outColor);
         }
 
         // Clamp values to valid visual HDR range

@@ -5,12 +5,16 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 
+import com.badlogic.gdx.graphics.Color;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * ShopkeeperNpc — a traveling merchant NPC that wanders the maze,
  * fights monsters it encounters, and opens a shop when the player is adjacent.
  * This is NOT a Monster subtype — it lives on Maze as a separate entity.
  */
-public class ShopkeeperNpc {
+public class ShopkeeperNpc implements Renderable {
 
     public enum ShopkeeperState {
         WANDERING,
@@ -82,10 +86,6 @@ public class ShopkeeperNpc {
         return maxHP;
     }
 
-    public Texture getTexture() {
-        return texture;
-    }
-
     public Inventory getInventory() {
         return inventory;
     }
@@ -136,5 +136,41 @@ public class ShopkeeperNpc {
 
     public String getDisplayName() {
         return "Traveling Merchant";
+    }
+
+    @Override
+    public Color getColor() {
+        return Color.WHITE;
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
+    public List<com.bpm.minotaur.gamedata.item.Item> createDeathDrops(
+            com.bpm.minotaur.gamedata.item.ItemDataManager idm, AssetManager am) {
+        List<com.bpm.minotaur.gamedata.item.Item> drops = new ArrayList<>();
+        if (idm != null) {
+            try {
+                com.bpm.minotaur.gamedata.item.Item goldPouch = idm.createItem(
+                        com.bpm.minotaur.gamedata.item.Item.ItemType.COINS,
+                        (int) position.x, (int) position.y, null, am);
+                if (goldPouch != null) drops.add(goldPouch);
+            } catch (Exception ignored) {}
+        }
+        List<com.bpm.minotaur.gamedata.item.Item> stock = inventory.getAllItems();
+        if (!stock.isEmpty()) {
+            List<com.bpm.minotaur.gamedata.item.Item> copy = new ArrayList<>(stock);
+            java.util.Collections.shuffle(copy);
+            int count = Math.min(3, copy.size());
+            for (int i = 0; i < count; i++) {
+                drops.add(copy.get(i));
+            }
+        }
+        return drops;
     }
 }

@@ -1,12 +1,17 @@
 package com.bpm.minotaur.managers;
 
 import com.bpm.minotaur.gamedata.Maze;
+import com.bpm.minotaur.gamedata.ShopkeeperNpc;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.gamedata.GameEvent;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.utils.DiceRoller;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.math.GridPoint2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +30,7 @@ public class TurnManager {
     private int turnCounter = 0;
     private PlayerStats.SatiationState lastSatiationState = PlayerStats.SatiationState.NORMAL;
     private boolean wasParched = false;
+    private final ShopkeeperAiManager shopkeeperAiManager = new ShopkeeperAiManager();
 
     public TurnManager() {
     }
@@ -36,6 +42,12 @@ public class TurnManager {
      */
     public void processTurn(Maze maze, Player player, MonsterAiManager aiManager, CombatManager combatManager,
             WorldManager worldManager, GameEventManager eventManager) {
+        processTurn(maze, player, aiManager, combatManager, worldManager, eventManager, null, null);
+    }
+
+    public void processTurn(Maze maze, Player player, MonsterAiManager aiManager, CombatManager combatManager,
+            WorldManager worldManager, GameEventManager eventManager, ItemDataManager itemDataManager,
+            AssetManager assetManager) {
         if (maze == null || player == null)
             return;
 
@@ -109,6 +121,16 @@ public class TurnManager {
                 // Consume Energy
                 monster.setEnergy(monster.getEnergy() - BASE_TURN_COST);
 
+                // --- Traveling Merchant Combat Safety ---
+                // A roaming monster adjacent to the merchant attacks it instead of
+                // idling, so the merchant can actually be run down and killed.
+                if (attackShopkeeperIfAdjacent(monster, maze, eventManager, itemDataManager, assetManager)) {
+                    safetyCounter++;
+                    if (safetyCounter > 10)
+                        break;
+                    continue;
+                }
+
                 // Act
                 aiManager.updateMonster(monster, maze, player, true, combatManager);
 
@@ -117,6 +139,61 @@ public class TurnManager {
                     break; // Prevent infinite loops
             }
         }
+
+        // 4. Traveling Merchant AI (wanders, defends itself, flees)
+        if (maze.getShopkeeper() != null) {
+            shopkeeperAiManager.update(maze.getShopkeeper(), maze, player, eventManager);
+        }
+    }
+
+    /**
+     * If the given monster is adjacent to a living traveling merchant, it attacks
+     * the merchant instead of the player. Returns true if an attack (or the
+     * merchant's death) consumed the monster's action this tick.
+     */
+    private boolean attackShopkeeperIfAdjacent(Monster monster, Maze maze, GameEventManager eventManager,
+            ItemDataManager itemDataManager, AssetManager assetManager) {
+        ShopkeeperNpc shopkeeper = maze.getShopkeeper();
+        if (shopkeeper == null || !shopkeeper.isAlive())
+            return false;
+
+        GridPoint2 monsterPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+        GridPoint2 shopPos = shopkeeper.getGridPosition();
+        int dist = Math.abs(monsterPos.x - shopPos.x) + Math.abs(monsterPos.y - shopPos.y);
+        if (dist != 1)
+            return false;
+
+        int dmg = Math.max(1, DiceRoller.roll(monster.getDamageDice()));
+        shopkeeper.takeDamage(dmg);
+
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(
+                    "The " + monster.getMonsterType() + " strikes the Traveling Merchant! (-" + dmg + ")", 1.5f));
+        }
+
+        if (!shopkeeper.isAlive()) {
+            List<com.bpm.minotaur.gamedata.item.Item> drops = shopkeeper.createDeathDrops(itemDataManager, assetManager);
+            for (com.bpm.minotaur.gamedata.item.Item drop : drops) {
+                drop.getPosition().set(shopPos.x + 0.5f, shopPos.y + 0.5f);
+                if (!maze.getItems().containsKey(shopPos)) {
+                    maze.addItem(drop);
+                } else {
+                    // Tile occupied; scatter to an adjacent free tile if possible
+                    GridPoint2 alt = new GridPoint2(shopPos.x + 1, shopPos.y);
+                    if (!maze.getItems().containsKey(alt)) {
+                        drop.getPosition().set(alt.x + 0.5f, alt.y + 0.5f);
+                        maze.addItem(drop);
+                    }
+                }
+            }
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "The Traveling Merchant has fallen! Their wares scatter across the floor.", 3f));
+            }
+            maze.setShopkeeper(null);
+        }
+
+        return true;
     }
 
     private void updateMetabolism(Player player, WorldManager worldManager, GameEventManager eventManager, float time) {

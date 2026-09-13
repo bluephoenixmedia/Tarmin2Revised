@@ -1781,6 +1781,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("You phase through the ethereal Ghost Wall...", 1.2f));
         }
 
+        boolean bumpedDormantStatue = false;
         if (maze.getScenery().containsKey(nextTile)) {
             Scenery s = maze.getScenery().get(nextTile);
             if (s.isImpassable()) {
@@ -1788,6 +1789,10 @@ public class Player {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by SCENERY at (" + nextX + "," + nextY + ")");
                 }
                 return;
+            }
+            if (s.getType() == Scenery.SceneryType.STATUE && maze.getEventAt(nextX, nextY) == null) {
+                // Depleted statue: its encounter has already been resolved
+                bumpedDormantStatue = true;
             }
         }
 
@@ -1806,6 +1811,9 @@ public class Player {
         if (eventId != null) {
             eventManager.addEvent(new GameEvent(GameEvent.EventType.ENCOUNTER_TRIGGERED, eventId));
             maze.removeEvent(nextX, nextY);
+        } else if (bumpedDormantStatue) {
+            eventManager.addEvent(new GameEvent(
+                    "An ancient carved monument. The residual magic has gone dormant.", 2.5f));
         }
     }
 

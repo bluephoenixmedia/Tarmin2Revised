@@ -163,6 +163,7 @@ public class Hud implements Disposable {
 
     private final WorldManager worldManager;
     private final EncounterWindow encounterWindow;
+    private final ShopkeeperWindow shopkeeperWindow;
 
     private String equippedWeapon = "NOTHING";
     private String damage = "0";
@@ -613,16 +614,27 @@ public class Hud implements Disposable {
         encounterWindow.setPosition((viewport.getWorldWidth() - 1000) / 2f, (viewport.getWorldHeight() - 800) / 2f);
         stage.addActor(encounterWindow);
 
-        // --- Global Input Listener for EncounterWindow ---
+        // Traveling Merchant trading window
+        shopkeeperWindow = new ShopkeeperWindow(font);
+        stage.addActor(shopkeeperWindow);
+
+        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
                 if (encounterWindow.isVisible()) {
                     return encounterWindow.handleInput(keycode);
                 }
+                if (shopkeeperWindow.isVisible()) {
+                    return shopkeeperWindow.handleInput(keycode);
+                }
                 return false;
             }
         });
+    }
+
+    public ShopkeeperWindow getShopkeeperWindow() {
+        return shopkeeperWindow;
     }
 
     private void updatePortrait() {

@@ -416,6 +416,210 @@
                     "type": "LEAVE"
                 }
             ]
+        },
+        {
+            "id": "EVENT_ANT_STATUE",
+            "title": "The Colony Hive",
+            "imagePath": "images/events/statue/ant_statue.png",
+            "text": "A mound-shaped monument riddled with tunnels swarms faintly with carved ant-form reliefs. A resinous, acrid scent lingers in the air.",
+            "choices": [
+                {
+                    "text": "Reach into the hollowed tunnels.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.6,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "BAG_OF_HOLDING",
+                        "text": "You pull free a strangely capacious chitin satchel, woven to hold far more than its size suggests!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 9,
+                        "text": "A jet of caustic acid spray erupts from the tunnel, searing your arm!"
+                    }
+                },
+                {
+                    "text": "Disturb the hive's core (Requires: DEX > 12).",
+                    "requirement": {
+                        "stat": "DEXTERITY",
+                        "value": 12
+                    },
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 240,
+                        "text": "You navigate the brittle tunnels deftly, learning the colony's hidden paths."
+                    }
+                },
+                {
+                    "text": "Leave the hive undisturbed.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_CROC_STATUE",
+            "title": "Shrine of the Sunken Mire",
+            "imagePath": "images/events/statue/croc_statue.png",
+            "text": "A squat, algae-slicked statue of a crocodilian ambusher lurks half-submerged at the edge of a stagnant pool.",
+            "choices": [
+                {
+                    "text": "Wade in and search the murk.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.6,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "RING_OF_PROTECTION",
+                        "text": "Your fingers close around a mud-caked ring, its ward still humming faintly!"
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "ALLIGATOR",
+                        "text": "Something ancient and hungry surges up from beneath the mire!"
+                    }
+                },
+                {
+                    "text": "Study the ambush wards carved into its hide.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.75,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 230,
+                        "text": "You learn to read the water's stillness before a strike comes."
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 6,
+                        "text": "You slip on the slick stone, bruising your ribs."
+                    }
+                },
+                {
+                    "text": "Back away from the water's edge.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_SCORPION_STATUE",
+            "title": "The Venom Shrine",
+            "imagePath": "images/events/statue/scorpion_statue.png",
+            "text": "A hunched scorpion idol looms over a shallow basin of viscous, glistening ichor, its stinger poised and dripping.",
+            "choices": [
+                {
+                    "text": "Dip your weapon's edge into the ichor.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.55,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 260,
+                        "text": "A venomous sheen coats your blade; you commit the toxin's craft to memory."
+                    },
+                    "failEffect": {
+                        "type": "POISON",
+                        "amount": 7,
+                        "text": "The stinger lashes down! Envenomation burns through your veins!"
+                    }
+                },
+                {
+                    "text": "Search beneath the basin for relics.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.65,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "RING_RESISTANCE_ACID",
+                        "text": "Beneath the ichor you find a corroded but potent warding ring!"
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "GIANT_SCORPION",
+                        "text": "The idol's basin ripples as a real scorpion rears up to defend its shrine!"
+                    }
+                },
+                {
+                    "text": "Withdraw from the shrine.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_WRAITH_STATUE",
+            "title": "The Void Tomb",
+            "imagePath": "images/events/statue/wraith_statue.png",
+            "text": "A gaunt, hooded figure looms in cold stone, its hollow eyes seeming to drink the light from the chamber around it.",
+            "choices": [
+                {
+                    "text": "Reach through the tomb's shadow.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.55,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "POTION_OF_INVISIBILITY",
+                        "text": "A vial of bottled void-mist rests in the tomb's palm, cold to the touch!"
+                    },
+                    "failEffect": {
+                        "type": "SPAWN_MONSTER",
+                        "monsterId": "WRAITH",
+                        "text": "The shadow tears loose from the stone, hungry and vengeful!"
+                    }
+                },
+                {
+                    "text": "Commune with the void sight (Requires: SPI > 14).",
+                    "requirement": {
+                        "stat": "SPIRITUAL_STRENGTH",
+                        "value": 14
+                    },
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 300,
+                        "text": "For a moment you perceive the tomb's dimension, and your spirit sharpens."
+                    }
+                },
+                {
+                    "text": "Retreat from the tomb's chill.",
+                    "type": "LEAVE"
+                }
+            ]
+        },
+        {
+            "id": "EVENT_OLD_DWARF_STATUE",
+            "title": "The Ancient Forge",
+            "imagePath": "images/events/statue/old_dwarf_statue.png",
+            "text": "A weathered elder dwarf stands eternally hunched over a long-cold forge, hammer raised mid-strike over an anvil dusted with ash.",
+            "choices": [
+                {
+                    "text": "Rummage through the ash-choked forge.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.7,
+                    "successEffect": {
+                        "type": "GIVE_ITEM",
+                        "itemId": "INGOT",
+                        "text": "You uncover a masterwork ingot, still faintly warm despite the ages!"
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 6,
+                        "text": "A buried ember flares, scorching your hand as you dig!"
+                    }
+                },
+                {
+                    "text": "Study the old dwarf's smithing stance.",
+                    "type": "RISK_REWARD",
+                    "successChance": 0.8,
+                    "successEffect": {
+                        "type": "GIVE_XP",
+                        "amount": 220,
+                        "text": "You absorb generations of honing technique from the statue's frozen craft."
+                    },
+                    "failEffect": {
+                        "type": "DAMAGE",
+                        "amount": 4,
+                        "text": "You nick your fingers on a stray shard of slag."
+                    }
+                },
+                {
+                    "text": "Leave the old smith to his eternal work.",
+                    "type": "LEAVE"
+                }
+            ]
         }
     ]
 }

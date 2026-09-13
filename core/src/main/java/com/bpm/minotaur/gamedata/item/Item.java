@@ -31,6 +31,7 @@ public class Item implements Renderable {
         KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
         MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
+        RUBY, SAPPHIRE, EMERALD,
         REGULAR_CHEST, LAMP, UNKNOWN, LADDER, LADDER_UP, WAND, SHIELD, BACKPACK,
 
         // NEW TYPES FOR DICE INTEGRATION
@@ -230,6 +231,7 @@ public class Item implements Renderable {
     private boolean isPotion; // Removed final
     private boolean isFood; // Removed final
     private boolean isTreasure; // Removed final
+    private boolean isGem;
     private boolean isKey; // Removed final
     private boolean isUsable; // Removed final
     private boolean isContainer; // Removed final
@@ -413,6 +415,7 @@ public class Item implements Renderable {
         item.isPotion = template.isPotion;
         item.isFood = template.isFood;
         item.isTreasure = template.isTreasure;
+        item.isGem = template.isGem;
         item.isKey = template.isKey;
         item.isUsable = template.isUsable;
         item.isContainer = template.isContainer;
@@ -712,6 +715,10 @@ public class Item implements Renderable {
         return this.isTreasure;
     }
 
+    public boolean isGem() {
+        return this.isGem;
+    }
+
     public boolean isKey() {
         return this.isKey;
     }
@@ -1008,6 +1015,8 @@ public class Item implements Renderable {
             return ItemCategory.RING;
         if (isArmor)
             return ItemCategory.ARMOR;
+        if (isGem)
+            return ItemCategory.GEM;
         if (isTreasure)
             return ItemCategory.TREASURE;
         if (isFood)

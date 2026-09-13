@@ -205,7 +205,46 @@ public class MazeChunkGenerator implements IChunkGenerator {
             forcedUpLadderPos = null;
         }
 
+        spawnShopkeeper(maze, reachable, itemDataManager, assetManager);
+
         return maze;
+    }
+
+    /**
+     * Spawns exactly one traveling merchant on Strata 1 & 2 floors, placed on a
+     * reachable open corridor tile away from the player's spawn point.
+     */
+    private void spawnShopkeeper(Maze maze, Set<GridPoint2> reachable, ItemDataManager itemDataManager,
+            AssetManager assetManager) {
+        if (maze.getLevel() < 1 || maze.getLevel() > 2)
+            return;
+
+        List<GridPoint2> candidates = new ArrayList<>();
+        int height = maze.getHeight();
+        for (GridPoint2 tile : reachable) {
+            int layoutY = height - 1 - tile.y;
+            if (layoutY < 0 || layoutY >= finalLayout.length) continue;
+            if (finalLayout[layoutY].charAt(tile.x) != '.') continue;
+            if (maze.getScenery().containsKey(tile)) continue;
+            if (maze.getItems().containsKey(tile)) continue;
+            if (maze.getMonsters().containsKey(tile)) continue;
+            if (maze.getEventAt(tile.x, tile.y) != null) continue;
+            int distToPlayer = Math.abs(tile.x - playerSpawnPoint.x) + Math.abs(tile.y - playerSpawnPoint.y);
+            if (distToPlayer < 8) continue;
+            candidates.add(tile);
+        }
+
+        if (candidates.isEmpty()) {
+            Gdx.app.log("MazeChunkGenerator", "No valid tile found for shopkeeper spawn on level " + maze.getLevel());
+            return;
+        }
+
+        Collections.shuffle(candidates, random);
+        GridPoint2 pos = candidates.get(0);
+        ShopkeeperNpc shopkeeper = new ShopkeeperNpc(pos.x, pos.y, assetManager);
+        new ShopInventory().stock(shopkeeper, itemDataManager, assetManager, maze.getLevel());
+        maze.setShopkeeper(shopkeeper);
+        Gdx.app.log("MazeChunkGenerator", "Spawned traveling merchant at " + pos + " on level " + maze.getLevel());
     }
 
     @Override

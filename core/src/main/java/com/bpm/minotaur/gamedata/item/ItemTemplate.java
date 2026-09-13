@@ -59,6 +59,7 @@ public class ItemTemplate {
     public boolean isRingAppearance; // New
     public boolean isFood;
     public boolean isTreasure;
+    public boolean isGem;
     public boolean isKey;
     public boolean isUsable;
     public boolean isContainer;

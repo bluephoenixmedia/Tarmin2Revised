@@ -27,6 +27,7 @@ import com.bpm.minotaur.gamedata.Ladder;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Renderable;
 import com.bpm.minotaur.gamedata.Scenery;
+import com.bpm.minotaur.gamedata.ShopkeeperNpc;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.gore.BloodParticle;
 import com.bpm.minotaur.gamedata.gore.Gib;
@@ -878,6 +879,9 @@ public class World3DRenderer implements Disposable {
         }
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getScenery().values());
+        if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
+            entities.add(maze.getShopkeeper());
+        }
 
         // Sort entities back-to-front by distance to player
         entities.sort((a, b) -> Float.compare(
@@ -922,6 +926,38 @@ public class World3DRenderer implements Disposable {
                         dynamicBatcher.addBillboard(ex, barY, wz, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
 
                         // Health foreground
+                        if (hpRatio > 0f) {
+                            Color fgColor = (hpRatio > 0.5f) ? Color.GREEN : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
+                            float fgW = barW * hpRatio;
+                            float offset = -(barW - fgW) / 2.0f;
+                            float fgX = ex + camRight.x * offset;
+                            float fgY = barY + camRight.y * offset;
+                            float fgZ = wz + camRight.z * offset;
+                            dynamicBatcher.addBillboard(fgX, fgY, fgZ, fgW, barH, new TextureRegion(blankTexture), fgColor, camRight, camUp, camDir);
+                        }
+                        dynamicBatcher.flush(shader, blankTexture);
+                    }
+                }
+            } else if (r instanceof ShopkeeperNpc) {
+                ShopkeeperNpc sk = (ShopkeeperNpc) r;
+                Texture tex = sk.getTexture();
+                if (tex != null) {
+                    TextureRegion region = new TextureRegion(tex);
+                    float w = sk.scale.x;
+                    float h = sk.scale.y;
+                    dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);
+                    dynamicBatcher.flush(shader, tex);
+
+                    // Overhead Health Bar (mirrors Monster HP bar presentation)
+                    float dist = player.getPosition().dst(sk.getPosition());
+                    if (dist <= 25f && blankTexture != null) {
+                        float barY = (h / 2.0f) + 0.10f;
+                        float barW = Math.max(0.35f, w * 0.75f);
+                        float barH = 0.05f;
+                        float hpRatio = (sk.getMaxHP() > 0)
+                                ? Math.max(0f, Math.min(1f, (float) sk.getCurrentHP() / sk.getMaxHP())) : 0f;
+
+                        dynamicBatcher.addBillboard(ex, barY, wz, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
                         if (hpRatio > 0f) {
                             Color fgColor = (hpRatio > 0.5f) ? Color.GREEN : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
                             float fgW = barW * hpRatio;
@@ -1006,7 +1042,18 @@ public class World3DRenderer implements Disposable {
                 Texture tex = sc.getTexture();
                 if (tex != null) {
                     TextureRegion reg = new TextureRegion(tex);
-                    dynamicBatcher.addBillboard(ex, 0.0f, wz, 1.0f, 1.0f, reg, Color.WHITE, camRight, camUp, camDir);
+                    Vector2 sceneryScale = sc.getScale();
+                    float sw = (sceneryScale != null && sceneryScale.x > 0) ? sceneryScale.x : 1.0f;
+                    float sh = (sceneryScale != null && sceneryScale.y > 0) ? sceneryScale.y : 1.0f;
+
+                    Color tint = Color.WHITE;
+                    if (sc.getType() == Scenery.SceneryType.STATUE && maze != null
+                            && maze.getEventAt((int) sc.getPosition().x, (int) sc.getPosition().y) == null) {
+                        // Depleted statue: encounter already resolved, dim to convey dormancy
+                        tint = Color.GRAY;
+                    }
+
+                    dynamicBatcher.addBillboard(ex, 0.0f, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Ladder) {

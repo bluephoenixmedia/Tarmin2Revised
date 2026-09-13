@@ -1,0 +1,172 @@
+# Implementation Plan: Comprehensive Systems Overhaul & Feature Polish
+
+A holistic implementation roadmap completing and unifying the major partially-implemented and dormant systems in Tarmin 2: the Traveling NPC Merchant, Statue Encounters, Potions & Alchemy, Spell Inscription & Arcane Attunement, Twitchy Monster Attack Indicators & Active Parrying, and Weather Survival Exposure.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **Traveling Merchant Combat Safety**: The Traveling Merchant roams corridors fighting monsters. If killed by roaming mobs, he drops a gold pouch and 2–3 high-tier wares on the floor, and a fresh merchant arrives on subsequent delves.
+> - **Fast / Hectic Monster Attack Telegraphing**: Monster attack animations will be ultra-snappy (0.08s–0.12s total duration) so combat never stalls or feels sluggish, utilizing randomized variations (Eye Flare + Billboard Lunge, Retro Threat Aura pulse, or Screen-space Slash overlays).
+> - **Scroll Inscription**: Reading scrolls remains an emergency free single-cast, while Inscribing commits the spell permanently into an open spellbook slot at the cost of 100% of the spell's MP.
+
+---
+
+## Proposed Changes
+
+### Component 1: The Traveling NPC Merchant
+
+Wire the complete but previously dormant merchant system into active gameplay.
+
+#### [MODIFY] [Maze.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/Maze.java)
+- Add `ShopkeeperNpc shopkeeper` field with getter and setter.
+
+#### [MODIFY] [MazeChunkGenerator.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/generation/MazeChunkGenerator.java)
+- In Strata 1 & 2 dungeon generation, spawn exactly 1 `ShopkeeperNpc` per floor on an open reachable floor corridor away from the player spawn.
+- Stock merchant using `ShopInventory.stock()`.
+
+#### [MODIFY] [World3DRenderer.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/World3DRenderer.java)
+- Render `ShopkeeperNpc` billboard using `images/monsters/shopkeeper.png` with a warm local lantern light glow centered at his position.
+
+#### [MODIFY] [TurnManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/TurnManager.java)
+- Update `ShopkeeperAiManager.update(shopkeeper, maze, player, eventManager)` on world turns so the merchant explores corridors, engages hostile monsters, and flees when low on health.
+
+#### [MODIFY] [GameScreen.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/screens/GameScreen.java) & [Hud.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/Hud.java)
+- Instantiate and attach `ShopkeeperWindow` to the HUD.
+- Interacting with or bumping the merchant opens the two-panel trading window.
+- Add Gem-to-Gold exchange support in the merchant window (`RUBY`, `SAPPHIRE`, `EMERALD`).
+- If slain by monsters, spawn ground loot (Gold pouch + 2–3 random wares).
+
+---
+
+### Component 2: Statue Encounters & 3D Aspect Polish
+
+Complete missing encounter definitions, fix billboard rendering scale, and prevent player/monster overlap.
+
+#### [MODIFY] [encounters.json](file:///c:/Users/denni/Desktop/Tarmin2/assets/data/encounters.json)
+- Add complete encounter definitions for the 5 unused statue textures:
+  - `EVENT_ANT_STATUE` (`images/events/statue/ant_statue.png`): Colony Hive (carrying capacity vs acid spray).
+  - `EVENT_CROC_STATUE` (`images/events/statue/croc_statue.png`): Sunken Mire (+1 natural AC vs Lurker ambush).
+  - `EVENT_SCORPION_STATUE` (`images/events/statue/scorpion_statue.png`): Venom Shrine (temporary weapon poison coating vs envenomation).
+  - `EVENT_WRAITH_STATUE` (`images/events/statue/wraith_statue.png`): Void Tomb (temporary invisibility/void sight vs spectral shade).
+  - `EVENT_OLD_DWARF_STATUE` (`images/events/statue/old_dwarf_statue.png`): Ancient Forge (masterwork smithing ingots / honing materials).
+
+#### [MODIFY] [World3DRenderer.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/World3DRenderer.java)
+- Update Scenery billboard rendering to respect `sc.scale.x` and `sc.scale.y` instead of hardcoding `1.0f, 1.0f`.
+- Dim depleted statues to `Color.GRAY`.
+
+#### [MODIFY] [EncounterManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/encounters/EncounterManager.java)
+- For `SPAWN_MONSTER` encounter results, find an adjacent open, reachable floor tile rather than spawning the monster on top of the player.
+
+#### [MODIFY] [Player.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/player/Player.java)
+- When bumping a depleted statue tile, output: *"An ancient carved monument. The residual magic has gone dormant."*
+
+---
+
+### Component 3: Potions & Alchemy Cauldron Tab
+
+Unify potions, distribute 25+ effects across depth loot, and integrate brewing into the Shelter workshop.
+
+#### [DELETE] [PotionManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/PotionManager.java)
+- Remove abandoned duplicate file.
+
+#### [MODIFY] [items.json](file:///c:/Users/denni/Desktop/Tarmin2/assets/data/items.json)
+- Add missing `POTION_OF_HEALING` and ensure all 25+ potion templates have proper icons and parameters.
+
+#### [MODIFY] [spawntables.json](file:///c:/Users/denni/Desktop/Tarmin2/assets/data/spawntables.json)
+- Distribute potion varieties across strata depths:
+  - Strata 1: Healing, Greater Healing, Vitality, Antidote, Climbing, Randomized color potions.
+  - Strata 2: Giant Strength, Speed, Heroism, Resistance Elixirs (Fire, Cold, Lightning, Acid, Necrotic).
+  - Strata 3 / Overland Bosses: Superior/Supreme Healing, Invulnerability, Invisibility, Growth, Diminution.
+
+#### [MODIFY] [CraftingScreen.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/screens/CraftingScreen.java) & [CraftingManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/CraftingManager.java)
+- Add Tab 4: `[ ALCHEMY CAULDRON ]` to the Crafting screen.
+- Left panel: Recipe codex categorized by Restorative, Enhancement, Protective, and Toxic families.
+- Center panel: Animated bubbling cauldron with reagent slots.
+- Right panel: Potion preview card with effect duration and **`[ BREW POTION ]`** button.
+- Seamlessly pool monster gibs (`GIB_BILE`, `GIB_ORGAN`, `GIB_FLESH`, `GIB_BONE`, herbs, waterskins) from both player inventory and the Shelter Stash Chest.
+
+---
+
+### Component 4: Spell Inscription & Arcane Attunement
+
+Enable players to build permanent spellbooks and unseal higher spell circles.
+
+#### [MODIFY] [ItemInspectorPanel.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/screens/inventory/ItemInspectorPanel.java)
+- For spell scrolls, display dual buttons:
+  - **`[ READ SCROLL ]`** (Instant single cast, 0 MP).
+  - **`[ INSCRIBE ]`** (Permanently learns spell, consumes scroll, costs spell's MP cost).
+  - Validate open spell slots and current MP with informative tooltips.
+
+#### [MODIFY] [Player.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/player/Player.java)
+- Add `inscribeScroll(Item scroll, GameEventManager eventManager, DiscoveryManager discoveryManager)` to commit spells into `knownSpellIds` and equip to the next open prepared spell slot.
+
+#### [MODIFY] [ShelterAltar.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/progression/ShelterAltar.java) & [ShelterAltarScreen.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/screens/ShelterAltarScreen.java)
+- Add `ARCANE_ATTUNEMENT` progression tree:
+  - Tier 1 (15 Div): Unlocks Spell Slot 2, unseals Circle 1 spells in loot (`MAGIC_MISSILE`, `SHIELD`, `BURNING_HANDS`).
+  - Tier 2 (25 Div): Unlocks Spell Slot 3, unseals Circle 2 spells (`MISTY_STEP`, `ACID_ARROW`, `SCORCHING_RAY`).
+  - Tier 3 (40 Div): Unlocks Spell Slot 4, unseals Circle 3 spells (`FIREBALL`, `LIGHTNING_BOLT`).
+
+---
+
+### Component 5: Twitchy Combat Animations, Monster Attack Indicators & Active Parrying
+
+Deliver high-impact, fast-paced combat visuals and responsive active defense.
+
+#### [MODIFY] [CombatManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/CombatManager.java)
+- When a monster executes a melee attack, trigger an ultra-fast (0.08s–0.12s) randomized visual indicator:
+  - **Var 1: Eye Flare + Billboard Lunge**: Monster eyes flare in their signature color ([violet, green, red](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/EntityRenderer.java#L90-L99)), followed by a +35% scale surge toward the camera.
+  - **Var 2: Retro Threat Aura**: Jagged red/black pulsing outline on the billboard.
+  - **Var 3: Screen Slash Overlay**: Dire claw scratches, steel blade arc, or venom puncture marks slicing across the player's viewport.
+- Active Parrying / Guarding: Right-clicking raises the equipped weapon or shield into guard stance, granting +2 DR (weapons) or +4 DR (shields) and negating damage on perfect timing.
+
+#### [MODIFY] [FirstPersonWeaponOverlay.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/FirstPersonWeaponOverlay.java)
+- Add first-person hand and bowstring draw animation overlay for ranged weapons (bows and crossbows).
+
+#### [MODIFY] [EntityRenderer.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/EntityRenderer.java) & [World3DRenderer.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/World3DRenderer.java)
+- Render monster billboard hit recoil (0.18 unit spring backward displacement with a 0.12s bright red/white hit-flash tint).
+
+---
+
+### Component 6: Weather Survival Exposure
+
+Make dynamic weather and extreme climates a tangible survival factor.
+
+#### [MODIFY] [TurnManager.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/managers/TurnManager.java)
+- Implement tiered exposure debuffs:
+  - Body temp < 35.0°C: `CHILLED` (-20% move/attack speed).
+  - Body temp < 32.0°C: `HYPOTHERMIA` (1 damage every 10 turns, shivers, blurred vision).
+  - Body temp > 38.0°C: `HEATSTROKE` (double thirst decay, stamina exhaustion).
+
+#### [MODIFY] [FirstPersonRenderer.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/rendering/FirstPersonRenderer.java)
+- Render dynamic icy frosted screen border vignette when body temp drops below 35.0°C.
+- Render heat shimmer distortion waves when body temp exceeds 38.0°C.
+
+#### [MODIFY] [Player.java](file:///c:/Users/denni/Desktop/Tarmin2/core/src/main/java/com/bpm/minotaur/gamedata/player/Player.java)
+- Support warming up near Campfires, lit lanterns, hot cooked meals, or drinking cold waterskins during desert heat.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+Run command: `.\gradlew.bat test`
+- Build new test suite: `core/src/test/java/com/bpm/minotaur/features/ComprehensiveSystemsOverhaulTest.java` verifying:
+  - Exactly 1 `ShopkeeperNpc` spawns per floor in Strata 1 & 2.
+  - Merchant AI wanders, defends against monsters, and drops wares/gold upon death.
+  - All 15 statue encounter definitions load correctly and offer valid choices.
+  - Statues render with proper scale aspect ratio and show dormant text when depleted.
+  - Alchemy Cauldron crafts potions using monster organs, bile, and flesh.
+  - Inscribing scrolls requires open spell slot and MP, successfully adding to known spells.
+  - Altar Arcane Attunement unlocks spell circles and spell slots.
+  - Temperature exposure triggers `CHILLED` and `HYPOTHERMIA` below thresholds.
+
+### Manual Verification
+- Launch game via `.\gradlew.bat lwjgl3:run`.
+- Delve into Strata 1, locate the Traveling Merchant, bump to trade, buy wares using gold and gems.
+- Find and interact with a statue; verify billboard aspect, choice resolution, and dormant bump text.
+- Gather monster organs, open the Shelter Crafting Screen Tab 4, and brew a Potion of Giant Strength or Fire Resistance.
+- Inspect a found spell scroll in the backpack; click `[ INSCRIBE ]` and verify it equips into the spellbook.
+- Engage in combat; verify the fast twitchy monster attack indicator (eye flare, lunge, screen slash) and test right-click parrying with a shield.
+- Venture out during a Blizzard or heavy snow; observe the frosted screen vignette and verify warming up near a campfire.

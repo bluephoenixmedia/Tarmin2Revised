@@ -122,6 +122,7 @@ public class ShopkeeperWindow extends Table {
         TextButton buyBtn = new TextButton("[B] BUY", btnStyle);
         TextButton sellBtn = new TextButton("[V] SELL", btnStyle);
         TextButton tabBtn = new TextButton("[TAB] SWITCH PANEL", btnStyle);
+        TextButton gemBtn = new TextButton("[G] EXCHANGE GEMS", btnStyle);
         TextButton closeBtn = new TextButton("[ESC] CLOSE", btnStyle);
 
         buyBtn.addListener(new ClickListener() {
@@ -142,6 +143,12 @@ public class ShopkeeperWindow extends Table {
                 switchPanel();
             }
         });
+        gemBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                doExchangeGems();
+            }
+        });
         closeBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
@@ -152,6 +159,7 @@ public class ShopkeeperWindow extends Table {
         Table btnRow = new Table();
         btnRow.add(buyBtn).width(200).padRight(10);
         btnRow.add(sellBtn).width(200).padRight(10);
+        btnRow.add(gemBtn).width(220).padRight(10);
         btnRow.add(tabBtn).width(260).padRight(10);
         btnRow.add(closeBtn).width(200);
         this.add(btnRow).padTop(10).row();
@@ -196,7 +204,7 @@ public class ShopkeeperWindow extends Table {
         this.toFront();
 
         Gdx.input.setCursorCatched(false);
-        status("Walk up to the merchant to trade. B=Buy, V=Sell, TAB=Switch Panel");
+        status("B=Buy, V=Sell, G=Exchange Gems, TAB=Switch Panel");
     }
 
     // ── Keyboard input ────────────────────────────────────────────────────────
@@ -217,6 +225,9 @@ public class ShopkeeperWindow extends Table {
                 return true;
             case Input.Keys.V:
                 doSell();
+                return true;
+            case Input.Keys.G:
+                doExchangeGems();
                 return true;
             case Input.Keys.UP:
             case Input.Keys.W:
@@ -270,6 +281,36 @@ public class ShopkeeperWindow extends Table {
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + price);
         eventManager.addEvent(new GameEvent("Sold " + item.getDisplayName() + " for " + price + "g.", 2.5f));
         status("Sold " + item.getDisplayName() + " (+" + price + "g).");
+        refresh();
+    }
+
+    /**
+     * Exchanges every RUBY / SAPPHIRE / EMERALD in the player's inventory for gold
+     * at the merchant's stated base value (no markup on this particular trade).
+     */
+    private void doExchangeGems() {
+        java.util.List<Item> gems = new java.util.ArrayList<>();
+        for (Item it : player.getInventory().getMainInventory()) {
+            if (it.isGem()) {
+                gems.add(it);
+            }
+        }
+        if (gems.isEmpty()) {
+            status("You have no gems to exchange.");
+            return;
+        }
+
+        int totalGold = 0;
+        for (Item gem : gems) {
+            int value = ShopInventory.getSellPrice(gem, itemDataManager) * 2; // Full base value, not buyback-discounted
+            totalGold += value;
+            player.getInventory().removeItem(gem);
+        }
+
+        player.getStats().setTreasureScore(player.getStats().getTreasureScore() + totalGold);
+        eventManager.addEvent(new GameEvent(
+                "Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.", 2.5f));
+        status("Exchanged " + gems.size() + " gem(s) for " + totalGold + "g.");
         refresh();
     }
 

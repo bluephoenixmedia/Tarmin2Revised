@@ -253,6 +253,8 @@ public class ItemSpawner {
                 return t.isScrollAppearance;
             case WAND:
                 return t.isWandAppearance;
+            case GEM:
+                return t.isGem;
             // Book?
             // "isUsable"?
             default:
