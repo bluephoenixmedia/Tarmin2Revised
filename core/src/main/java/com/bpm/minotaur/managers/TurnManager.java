@@ -9,6 +9,7 @@ import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.utils.DiceRoller;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
@@ -62,7 +63,7 @@ public class TurnManager {
         float timeElapsed = BASE_TURN_COST / (float) playerSpeed;
 
         // --- NEW: SURVIVAL METABOLISM ---
-        updateMetabolism(player, worldManager, eventManager, timeElapsed);
+        updateMetabolism(player, maze, worldManager, eventManager, timeElapsed);
         // --------------------------------
 
         // --- RING EFFECTS ---
@@ -196,12 +197,81 @@ public class TurnManager {
         return true;
     }
 
-    private void updateMetabolism(Player player, WorldManager worldManager, GameEventManager eventManager, float time) {
+    /**
+     * Tiered exposure debuffs driven by current body temperature:
+     * - Below 35.0C: CHILLED (-20% move/attack speed, via Player#getEffectiveSpeed).
+     * - Below 32.0C: HYPOTHERMIA (1 damage every 10 turns, shivers, blurred vision).
+     * - Above 38.0C: HEATSTROKE (double thirst decay -- applied in updateMetabolism --
+     *   and stamina exhaustion).
+     * A small hysteresis band avoids the effect flickering on/off at the boundary.
+     */
+    private void applyExposureTiers(Player player, PlayerStats stats, GameEventManager eventManager, float bodyTemp) {
+        StatusManager sm = player.getStatusManager();
+
+        boolean chilled = bodyTemp < 35.0f;
+        boolean hypothermic = bodyTemp < 32.0f;
+        boolean heatstroke = bodyTemp > 38.0f;
+
+        if (chilled && !sm.hasEffect(StatusEffectType.CHILLED)) {
+            sm.addEffect(StatusEffectType.CHILLED, 999, 1, false);
+            if (eventManager != null) eventManager.addEvent(new GameEvent("The cold seeps into your bones. You feel CHILLED.", 2.0f));
+        } else if (!chilled && bodyTemp > 35.5f && sm.hasEffect(StatusEffectType.CHILLED)) {
+            sm.removeEffect(StatusEffectType.CHILLED);
+        }
+
+        if (hypothermic && !sm.hasEffect(StatusEffectType.HYPOTHERMIA)) {
+            sm.addEffect(StatusEffectType.HYPOTHERMIA, 999, 1, false);
+            if (eventManager != null) eventManager.addEvent(new GameEvent("HYPOTHERMIA sets in! Your body violently shivers.", 2.5f));
+        } else if (!hypothermic && bodyTemp > 32.5f && sm.hasEffect(StatusEffectType.HYPOTHERMIA)) {
+            sm.removeEffect(StatusEffectType.HYPOTHERMIA);
+        }
+
+        if (hypothermic && (turnCounter % 10 == 0)) {
+            player.takeTrueDamage(1);
+            if (eventManager != null) eventManager.addEvent(new GameEvent("The cold gnaws at your flesh.", 1.5f));
+        }
+
+        if (heatstroke && !sm.hasEffect(StatusEffectType.HEATSTROKE)) {
+            sm.addEffect(StatusEffectType.HEATSTROKE, 999, 1, false);
+            sm.addEffect(StatusEffectType.EXHAUSTED, 999, 1, false);
+            if (eventManager != null) eventManager.addEvent(new GameEvent("The heat overwhelms you! HEATSTROKE!", 2.5f));
+        } else if (!heatstroke && bodyTemp < 37.5f) {
+            if (sm.hasEffect(StatusEffectType.HEATSTROKE)) sm.removeEffect(StatusEffectType.HEATSTROKE);
+            if (sm.hasEffect(StatusEffectType.EXHAUSTED)) sm.removeEffect(StatusEffectType.EXHAUSTED);
+        }
+    }
+
+    private static final float HEAT_SOURCE_RADIUS = 3.5f;
+    private static final float HEAT_SOURCE_WARM_RATE = 0.4f; // deg C per time unit, within radius
+
+    /** Warms the player toward 37C when standing near a lit Campfire or Lantern light source. */
+    private float applyNearbyHeatSourceWarming(Player player, Maze maze, float currentTemp, float time) {
+        if (maze == null || currentTemp >= 37.0f) {
+            return currentTemp;
+        }
+        com.badlogic.gdx.utils.Array<com.bpm.minotaur.lighting.LightSource> lights = maze.getLights();
+        if (lights == null) return currentTemp;
+
+        for (com.bpm.minotaur.lighting.LightSource light : lights) {
+            if (!light.isActive() || light.getId() == null) continue;
+            String id = light.getId();
+            boolean isHeatSource = id.contains("campfire") || id.contains("cook_pot") || id.contains("lantern");
+            if (!isHeatSource) continue;
+
+            if (light.getPosition().dst(player.getPosition()) <= HEAT_SOURCE_RADIUS) {
+                return Math.min(37.0f, currentTemp + HEAT_SOURCE_WARM_RATE * time);
+            }
+        }
+        return currentTemp;
+    }
+
+    private void updateMetabolism(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager, float time) {
         PlayerStats stats = player.getStats();
 
-        // 1. Hunger & Thirst Decay
+        // 1. Hunger & Thirst Decay (HEATSTROKE doubles thirst decay)
+        boolean isHeatstroke = stats.getBodyTemperature() > 38.0f;
         stats.modifySatiety(-SATIETY_DECAY * time);
-        stats.modifyHydration(-HYDRATION_DECAY * time);
+        stats.modifyHydration(-HYDRATION_DECAY * (isHeatstroke ? 2.0f : 1.0f) * time);
 
         // 2. Temperature Logic
         if (worldManager != null && worldManager.getWeatherManager() != null) {
@@ -266,9 +336,16 @@ public class TurnManager {
                 }
             }
 
-            // Body temp clamped to non-lethal safe floor of 34.0°C (93.2°F)
-            float newTemp = Math.max(34.0f, Math.min(41.0f, currentTemp + (stress * time)));
+            // Body temp clamped to a non-lethal safe floor of 30.0°C -- low enough to
+            // sustain the Hypothermia exposure tier (< 32.0°C) without being fatal outright.
+            float newTemp = Math.max(30.0f, Math.min(41.0f, currentTemp + (stress * time)));
+
+            // Warming up near a lit Campfire / Shelter Lantern
+            newTemp = applyNearbyHeatSourceWarming(player, maze, newTemp, time);
+
             stats.setBodyTemperature(newTemp);
+
+            applyExposureTiers(player, stats, eventManager, newTemp);
         }
 
         // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)

@@ -203,6 +203,43 @@ public class FirstPersonRenderer {
         return depthBuffer;
     }
 
+    /**
+     * Weather Survival Exposure screen-space feedback: an icy frosted border
+     * vignette below 35.0C body temperature, or pulsing heat-shimmer waves above
+     * 38.0C. Intensity scales with how far from the comfort zone the body has drifted.
+     */
+    public void renderTemperatureVignette(ShapeRenderer shapeRenderer, Viewport viewport, float bodyTemperature, float time) {
+        float w = viewport.getWorldWidth();
+        float h = viewport.getWorldHeight();
+
+        com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        com.badlogic.gdx.Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        if (bodyTemperature < 35.0f) {
+            float chill = com.badlogic.gdx.math.MathUtils.clamp((35.0f - bodyTemperature) / 5.0f, 0f, 1f);
+            float borderThickness = h * (0.05f + 0.12f * chill);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0.75f, 0.9f, 1.0f, 0.10f + 0.30f * chill);
+            shapeRenderer.rect(0, 0, w, borderThickness); // bottom
+            shapeRenderer.rect(0, h - borderThickness, w, borderThickness); // top
+            shapeRenderer.rect(0, 0, borderThickness, h); // left
+            shapeRenderer.rect(w - borderThickness, 0, borderThickness, h); // right
+            shapeRenderer.end();
+        } else if (bodyTemperature > 38.0f) {
+            float heat = com.badlogic.gdx.math.MathUtils.clamp((bodyTemperature - 38.0f) / 3.0f, 0f, 1f);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(1.0f, 0.55f, 0.15f, 0.04f + 0.06f * heat);
+            int waveCount = 5;
+            for (int i = 0; i < waveCount; i++) {
+                float waveY = (h / waveCount) * i + (com.badlogic.gdx.math.MathUtils.sin(time * 1.5f + i) * h * 0.02f * heat);
+                shapeRenderer.rect(0, waveY, w, h * 0.01f * (1f + heat));
+            }
+            shapeRenderer.end();
+        }
+
+        com.badlogic.gdx.Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+    }
+
     public void renderWindowOverlays(SpriteBatch batch, Viewport viewport) {
         batch.begin();
         for (WindowOverlay overlay : windowOverlays) {

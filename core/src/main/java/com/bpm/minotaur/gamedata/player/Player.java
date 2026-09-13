@@ -44,6 +44,10 @@ public class Player {
                 || statusManager.hasEffect(StatusEffectType.SUPER_SPEED)) {
             speed *= 2;
         }
+        // Weather Survival Exposure: CHILLED saps 20% of move/attack speed
+        if (statusManager.hasEffect(StatusEffectType.CHILLED)) {
+            speed = (int) (speed * 0.8f);
+        }
         return Math.max(1, speed);
     }
 
@@ -719,6 +723,25 @@ public class Player {
             // Basic food value
             stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 8);
             stats.addHydration(item.getHydrationValue());
+
+            // Weather Survival Exposure: hot meals chase away cold; cold drinks cut through heat
+            String foodName = item.getDisplayName().toLowerCase();
+            float bodyTemp = stats.getBodyTemperature();
+            boolean isHotMeal = foodName.contains("cooked") || foodName.contains("roast")
+                    || foodName.contains("soup") || foodName.contains("stew") || foodName.contains("meal");
+            boolean isColdDrink = item.getHydrationValue() > 0
+                    && (foodName.contains("waterskin") || foodName.contains("water") || foodName.contains("snow"));
+            if (isHotMeal && bodyTemp < 37.0f) {
+                stats.setBodyTemperature(Math.min(37.0f, bodyTemp + 1.5f));
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("The warm meal chases away the chill.", 1.5f));
+                }
+            } else if (isColdDrink && bodyTemp > 37.0f) {
+                stats.setBodyTemperature(Math.max(37.0f, bodyTemp - 1.0f));
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("The cool water helps you shed some heat.", 1.5f));
+                }
+            }
 
             // NetHack-style Monster Flesh Intrinsics & Poison System
             String dName = item.getDisplayName().toLowerCase();

@@ -635,6 +635,10 @@ public class GameScreen extends BaseScreen {
                 renderScreenSlashOverlay(combatManager.getAttackIndicatorProgress());
             }
 
+            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+            firstPersonRenderer.renderTemperatureVignette(shapeRenderer, game.getViewport(),
+                    player.getStats().getBodyTemperature(), time);
+
             if (spellCastOverlay != null && spellCastOverlay.isActive()) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);

@@ -78,7 +78,12 @@ public enum StatusEffectType {
     RESIST_NECROTIC,
     FREE_ACTION,
     WARMTH,
-    MOTE_OF_LIGHT;
+    MOTE_OF_LIGHT,
+
+    // Weather Survival Exposure (tiered body-temperature debuffs)
+    CHILLED,
+    HYPOTHERMIA,
+    HEATSTROKE;
 
     // We can add fields here later, e.g.,
     // private final boolean isDebuff;
