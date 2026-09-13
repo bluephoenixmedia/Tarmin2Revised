@@ -77,11 +77,16 @@ public class MonsterSpawner {
             }
 
             // Strata 1 Near-Shelter Threat Bounding (within 2 chunks of shelter 0,0)
-            // Strictly bounds foes to Tier 1 (MCR <= 55, baseLevel <= 2)
+            // Strictly bounds foes to Tier 1 (MCR <= 100, baseLevel <= 2).
+            // NOTE: every real baseLevel<=2 monster in monsters.json scores between 58
+            // (Skeleton) and 98 (Hobgoblin) on this HP+MP+AC*3+DEX+ranged scale, so a
+            // cap of 55 rejected 100% of them -- silently zeroing monster spawns within
+            // 2 chunks of the shelter. 100 keeps every real Tier 1 monster eligible while
+            // still guarding against an unexpectedly high-stat baseLevel<=2 outlier.
             if (ctx.depth() <= 1 && ctx.chunkId() != null
                     && Math.abs(ctx.chunkId().x) <= 2 && Math.abs(ctx.chunkId().y) <= 2) {
                 int mcr = calculateMCR(template);
-                if (mcr > 55 || template.baseLevel > 2) {
+                if (mcr > 100 || template.baseLevel > 2) {
                     continue;
                 }
             }
