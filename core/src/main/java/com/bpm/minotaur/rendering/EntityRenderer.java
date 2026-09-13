@@ -153,10 +153,9 @@ public class EntityRenderer {
 
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
-        if (activeMonsterOnly != null) {
+        entities.addAll(maze.getMonsters().values());
+        if (activeMonsterOnly != null && !entities.contains(activeMonsterOnly)) {
             entities.add(activeMonsterOnly);
-        } else {
-            entities.addAll(maze.getMonsters().values());
         }
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getProjectiles());
@@ -1544,14 +1543,15 @@ public class EntityRenderer {
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        java.util.Collection<Monster> monsters = (activeMonsterOnly != null)
-                ? java.util.Collections.singletonList(activeMonsterOnly)
-                : maze.getMonsters().values();
+        java.util.Set<Monster> monsters = new java.util.HashSet<>(maze.getMonsters().values());
+        if (activeMonsterOnly != null) {
+            monsters.add(activeMonsterOnly);
+        }
 
         for (Monster m : monsters) {
             float dist = player.getPosition().dst(m.getPosition());
             if (fogEnabled && dist > fogDistance) continue;
-            if (dist > 12f) continue; // Only show bars for nearby monsters
+            if (dist > 25f) continue; // Only show bars for visible monsters within reasonable range
 
             float spriteX = m.getPosition().x - player.getPosition().x;
             float spriteY = m.getPosition().y - player.getPosition().y;

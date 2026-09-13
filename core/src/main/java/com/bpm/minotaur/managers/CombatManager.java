@@ -235,7 +235,14 @@ public class CombatManager {
     }
 
     public void playerMeleeStrike(Monster target) {
-        if (currentState != CombatState.INACTIVE) return;
+        if (currentState != CombatState.INACTIVE || target == null) return;
+
+        int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
+        int mx = (int) target.getPosition().x, my = (int) target.getPosition().y;
+        if (Math.abs(px - mx) + Math.abs(py - my) > 1) {
+            // Melee capped to 1 tile
+            return;
+        }
 
         Item weapon = player.getInventory().getRightHand();
         if (weapon != null && weapon.isRanged()) {
@@ -250,9 +257,6 @@ public class CombatManager {
 
         if (target.getStatusManager() != null && eventManager != null)
             target.getStatusManager().initialize(eventManager, target);
-
-        int px = (int) player.getPosition().x, py = (int) player.getPosition().y;
-        int mx = (int) target.getPosition().x, my = (int) target.getPosition().y;
         Direction dir = null;
         if (mx > px) dir = Direction.EAST;
         else if (mx < px) dir = Direction.WEST;

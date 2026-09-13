@@ -157,8 +157,12 @@ public class Monster implements Renderable {
 
     // Package-private constructor for unit testing combat mechanics without LibGDX asset loaders
     Monster(MonsterType type, int hp, int ac) {
+        this(type, hp, ac, 0f, 0f);
+    }
+
+    public Monster(MonsterType type, int hp, int ac, float startX, float startY) {
         this.type = type;
-        this.position = new Vector2(0, 0);
+        this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.monsterColor = MonsterColor.WHITE;
         this.dataManager = null;
         this.maxHP = hp;

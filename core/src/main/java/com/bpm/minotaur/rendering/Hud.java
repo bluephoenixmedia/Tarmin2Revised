@@ -1913,6 +1913,13 @@ public class Hud implements Disposable {
                 sb.append("Unidentified Potion   ");
             }
         }
+        if (item.isScroll()) {
+            if (item.isIdentified()) {
+                sb.append(item.getSpellId() != null ? "Spell: " + item.getSpellId() + "   " : "Read to cast   ");
+            } else {
+                sb.append("Unidentified Scroll   ");
+            }
+        }
         if (item.getGrantedDie() != null) {
             sb.append("Die: ").append(item.getGrantedDie().getName()).append("   ");
         }
@@ -1927,7 +1934,7 @@ public class Hud implements Disposable {
         toastTimer -= Gdx.graphics.getDeltaTime();
 
         float alpha = Math.min(1.0f, toastTimer * 2f);
-        String name = toastItem.getDisplayName();
+        String name = groundItemDisplayName(toastItem);
         String cat = toastItem.getCategory() != null ? "[" + toastItem.getCategory().name().replace('_', ' ') + "]" : "";
         String detail = "";
         if (toastItem.isWeapon()) {
@@ -1940,6 +1947,10 @@ public class Hud implements Disposable {
             detail = toastItem.isIdentified() && toastItem.getTrueEffect() != null
                     ? " (" + toastItem.getTrueEffect().getBaseName() + ")"
                     : " (Unknown Potion)";
+        } else if (toastItem.isScroll()) {
+            detail = toastItem.isIdentified()
+                    ? (toastItem.getSpellId() != null ? " (" + toastItem.getSpellId() + ")" : "")
+                    : " (Unread Scroll)";
         }
 
         String text = "Acquired: " + name + " " + cat + detail;

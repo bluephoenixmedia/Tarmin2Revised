@@ -241,7 +241,7 @@ public class World3DRenderer implements Disposable {
         Color fogColor = new Color(Color.WHITE);
         boolean fogEnabled = false;
 
-        if (wm != null && currentLevel == 1) {
+        if (wm != null && currentLevel == 1 && !isInsideHome) {
             fogEnabled = true;
             fogDistance = wm.getFogDistance();
             fogColor.set(wm.getFogColor());
@@ -249,6 +249,8 @@ public class World3DRenderer implements Disposable {
             if (dnm != null) {
                 fogColor.mul(dnm.getSkyTint());
             }
+        } else if (isInsideHome) {
+            fogEnabled = false;
         } else if (gameMode == GameMode.ADVANCED && biome != null && biome.hasFogOfWar()) {
             fogEnabled = true;
             // Strata deepen the dark: fog closes in the farther underground you go,
@@ -269,6 +271,7 @@ public class World3DRenderer implements Disposable {
         // --- PASS 0: 3D SKYBOX & HORIZON LANDMARKS (Outdoors Level 1) ---
         boolean canRender3DSky = (currentLevel == 1) && (!isIndoors || isInsideHome);
         if (canRender3DSky && skybox3DRenderer != null && skybox3DRenderer.isInitialized()) {
+            skybox3DRenderer.setInsideHome(isInsideHome);
             skybox3DRenderer.render(null, player, viewport, worldManager, DebugManager.getInstance().getRenderMode());
             // Clear depth buffer so the skybox & horizon landmarks remain purely background
             // and all maze geometry (walls, floors, ceilings, doors) renders OVER the skybox.
@@ -867,10 +870,11 @@ public class World3DRenderer implements Disposable {
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
 
+        entities.addAll(maze.getMonsters().values());
         if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE && combatManager.getMonster() != null) {
-            entities.add(combatManager.getMonster());
-        } else {
-            entities.addAll(maze.getMonsters().values());
+            if (!entities.contains(combatManager.getMonster())) {
+                entities.add(combatManager.getMonster());
+            }
         }
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getScenery().values());
@@ -905,6 +909,30 @@ public class World3DRenderer implements Disposable {
                     }
                     dynamicBatcher.addBillboard(ex, 0.0f, wz, w, h, region, Color.WHITE, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
+
+                    // Overhead Health Bar
+                    float dist = player.getPosition().dst(m.getPosition());
+                    if (dist <= 25f && blankTexture != null) {
+                        float barY = (h / 2.0f) + 0.10f;
+                        float barW = Math.max(0.35f, w * 0.75f);
+                        float barH = 0.05f;
+                        float hpRatio = (m.getMaxHP() > 0) ? Math.max(0f, Math.min(1f, (float) m.getCurrentHP() / m.getMaxHP())) : 0f;
+
+                        // Dark background
+                        dynamicBatcher.addBillboard(ex, barY, wz, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
+
+                        // Health foreground
+                        if (hpRatio > 0f) {
+                            Color fgColor = (hpRatio > 0.5f) ? Color.GREEN : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
+                            float fgW = barW * hpRatio;
+                            float offset = -(barW - fgW) / 2.0f;
+                            float fgX = ex + camRight.x * offset;
+                            float fgY = barY + camRight.y * offset;
+                            float fgZ = wz + camRight.z * offset;
+                            dynamicBatcher.addBillboard(fgX, fgY, fgZ, fgW, barH, new TextureRegion(blankTexture), fgColor, camRight, camUp, camDir);
+                        }
+                        dynamicBatcher.flush(shader, blankTexture);
+                    }
                 }
             } else if (r instanceof Item) {
                 Item it = (Item) r;

@@ -402,7 +402,7 @@ public class Player {
 
         if (item == null || item.isImpassable()) return false;
 
-        if (item.isWeapon()) {
+        if (item.isWeapon() || (item.getType() != null && item.getType().name().endsWith("_BOOK"))) {
             maze.getItems().remove(targetTile);
             Item oldWeapon = inventory.getRightHand();
             if (oldWeapon != null && oldWeapon.getGrantedDie() != null) {
@@ -472,6 +472,11 @@ public class Player {
         }
 
         if (item.isConsumableOrTool()) {
+            if (!item.isUsable() && !item.isPotion() && !item.isFood()
+                    && (item.getType() == null || (!item.getType().name().contains("SCROLL") && !item.getType().name().startsWith("WAND_")))) {
+                interactWithItem(maze, eventManager, soundManager, discoveryManager);
+                return true;
+            }
             maze.getItems().remove(targetTile);
             useItem(item, eventManager, discoveryManager, maze);
             return true;

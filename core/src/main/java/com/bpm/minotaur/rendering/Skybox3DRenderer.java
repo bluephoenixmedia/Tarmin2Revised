@@ -81,6 +81,11 @@ public class Skybox3DRenderer {
     private final Color tempColor = new Color();
 
     private boolean isInitialized = false;
+    private boolean isInsideHome = false;
+
+    public void setInsideHome(boolean isInsideHome) {
+        this.isInsideHome = isInsideHome;
+    }
 
     public Skybox3DRenderer() {
         // Perspective Camera matching game resolution & 70 deg FOV
@@ -210,7 +215,7 @@ public class Skybox3DRenderer {
             skyTint.set(currentSky);
             horizonFogColor.set(currentSky.r * 0.45f, currentSky.g * 0.45f, currentSky.b * 0.55f, 1f);
 
-            if (currentWeather == WeatherType.TORNADO) {
+            if (currentWeather == WeatherType.TORNADO && !isInsideHome) {
                 // Distinct sickly greenish-dark supercell atmosphere
                 skyTint.lerp(new Color(0.18f, 0.25f, 0.16f, 1f), 0.70f);
                 horizonFogColor.set(0.24f, 0.30f, 0.20f, 1f);

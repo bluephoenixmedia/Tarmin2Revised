@@ -471,11 +471,14 @@ public class SpawnManager {
             if (item != null) {
                 ItemTemplate t = result.getValue();
                 if (t != null && t.friendlyName != null && t.friendlyName.startsWith("Scroll of ")) {
-                    item.setName(t.friendlyName);
+                    String cleanName = t.friendlyName;
                     if (t.friendlyName.contains("(") && t.friendlyName.contains(")")) {
                         String sId = t.friendlyName.substring(t.friendlyName.indexOf('(') + 1, t.friendlyName.indexOf(')'));
                         item.setSpellId(sId);
+                        cleanName = t.friendlyName.substring(0, t.friendlyName.indexOf('(')).trim();
                     }
+                    item.setName(cleanName);
+                    item.setIdentified(false);
                 }
                 attemptToModifyItem(item, variant.color);
                 maze.addItem(item);

@@ -602,6 +602,10 @@ public class Item implements Renderable {
         if (isPotion)
             return this.friendlyName != null ? this.friendlyName : "Potion";
 
+        if (isScroll() && !isIdentified) {
+            return "Scroll";
+        }
+
         // NEW: Dynamic Bone Naming
         if (this.type == ItemType.BONE && this.corpseSource != null) {
             String sourceName = toTitleCase(this.corpseSource.name());
@@ -716,12 +720,19 @@ public class Item implements Renderable {
         return this.isUsable;
     }
 
+    public boolean isScroll() {
+        if (type != null && (type.name().startsWith("SCROLL") || type.name().endsWith("_SCROLL"))) return true;
+        if (template != null && template.isScrollAppearance) return true;
+        return false;
+    }
+
     public boolean isConsumableOrTool() {
         if (isPotion || isFood) return true;
         if (type != null) {
             String name = type.name();
             if (name.contains("POTION") || name.contains("SCROLL") || name.contains("FOOD") || name.contains("MEAT") || name.contains("OIL")) return true;
             if (name.equals("LAMP") || name.startsWith("WAND_")) return true;
+            if (name.endsWith("_BOOK") || name.startsWith("TOME_") || name.equals("SPECIAL_BOOK")) return false;
         }
         return isUsable && !isWeapon && !isArmor && !isRing && !isContainer && !isTreasure;
     }

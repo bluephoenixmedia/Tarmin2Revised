@@ -278,7 +278,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         spawnManager.spawnEntities();
     }
 
-    private void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
+    void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
         List<GridPoint2> candidates = new ArrayList<>();
         int height = maze.getHeight();
         for (int y = 0; y < height; y++) {
@@ -297,10 +297,41 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         Ladder.EntranceStyle downStyle = (maze.getLevel() == 1) ? Ladder.EntranceStyle.STONE_STAIRS : Ladder.EntranceStyle.LADDER;
 
-        if (!candidates.isEmpty()) {
-            GridPoint2 chosen = candidates.get(random.nextInt(candidates.size()));
-            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN, downStyle));
-        } else {
+        int targetLadders = 2 + random.nextInt(2); // 2 or 3
+        List<GridPoint2> placed = new ArrayList<>();
+        if (forcedUpLadderPos != null) {
+            placed.add(forcedUpLadderPos);
+        }
+
+        for (int i = 0; i < targetLadders && !candidates.isEmpty(); i++) {
+            GridPoint2 best = null;
+            float maxMinDist = -1;
+            int samples = Math.min(15, candidates.size());
+            for (int s = 0; s < samples; s++) {
+                GridPoint2 cand = candidates.get(random.nextInt(candidates.size()));
+                float minDist = Float.MAX_VALUE;
+                for (GridPoint2 p : placed) {
+                    float dist = Math.abs(cand.x - p.x) + Math.abs(cand.y - p.y);
+                    if (dist < minDist) minDist = dist;
+                }
+                if (minDist >= 8) {
+                    best = cand;
+                    break;
+                }
+                if (minDist > maxMinDist) {
+                    maxMinDist = minDist;
+                    best = cand;
+                }
+            }
+            if (best == null) {
+                best = candidates.get(random.nextInt(candidates.size()));
+            }
+            candidates.remove(best);
+            placed.add(best);
+            maze.addLadder(new Ladder(best.x, best.y, Ladder.LadderType.DOWN, downStyle));
+        }
+
+        if (placed.isEmpty()) {
             // Fallback: original unbounded loop (guards against pathological layouts)
             int x, y;
             do {

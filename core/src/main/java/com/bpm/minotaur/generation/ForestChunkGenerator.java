@@ -366,11 +366,12 @@ public class ForestChunkGenerator implements IChunkGenerator {
         }
     }
 
-    private void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
+    void spawnLadder(Maze maze, String[] layout, Set<GridPoint2> reachable) {
+        GridPoint2 upLadderPos = null;
         if (forcedUpLadderPos != null) {
+            upLadderPos = new GridPoint2(forcedUpLadderPos.x, forcedUpLadderPos.y);
             maze.addLadder(new Ladder(forcedUpLadderPos.x, forcedUpLadderPos.y, Ladder.LadderType.UP, Ladder.EntranceStyle.ROPE));
             forcedUpLadderPos = null;
-            return;
         }
 
         List<GridPoint2> candidates = new ArrayList<>();
@@ -383,17 +384,49 @@ public class ForestChunkGenerator implements IChunkGenerator {
                 if (!reachable.contains(pos)) continue;
                 if (maze.getItems().containsKey(pos)) continue;
                 if (maze.getMonsters().containsKey(pos)) continue;
+                if (upLadderPos != null && x == upLadderPos.x && y == upLadderPos.y) continue;
                 candidates.add(pos);
             }
         }
 
         Ladder.EntranceStyle style = (random.nextBoolean()) ? Ladder.EntranceStyle.SINKHOLE : Ladder.EntranceStyle.CAVE_MOUTH;
 
-        if (!candidates.isEmpty()) {
-            GridPoint2 chosen = candidates.get(random.nextInt(candidates.size()));
-            maze.addLadder(new Ladder(chosen.x, chosen.y, Ladder.LadderType.DOWN, style));
-            Gdx.app.log("ForestChunkGenerator", style.name() + " entrance spawned at (" + chosen.x + ", " + chosen.y + ")");
-        } else {
+        int targetLadders = 2 + random.nextInt(2); // 2 or 3
+        List<GridPoint2> placed = new ArrayList<>();
+        if (upLadderPos != null) {
+            placed.add(upLadderPos);
+        }
+
+        for (int i = 0; i < targetLadders && !candidates.isEmpty(); i++) {
+            GridPoint2 best = null;
+            float maxMinDist = -1;
+            int samples = Math.min(15, candidates.size());
+            for (int s = 0; s < samples; s++) {
+                GridPoint2 cand = candidates.get(random.nextInt(candidates.size()));
+                float minDist = Float.MAX_VALUE;
+                for (GridPoint2 p : placed) {
+                    float dist = Math.abs(cand.x - p.x) + Math.abs(cand.y - p.y);
+                    if (dist < minDist) minDist = dist;
+                }
+                if (minDist >= 8) {
+                    best = cand;
+                    break;
+                }
+                if (minDist > maxMinDist) {
+                    maxMinDist = minDist;
+                    best = cand;
+                }
+            }
+            if (best == null) {
+                best = candidates.get(random.nextInt(candidates.size()));
+            }
+            candidates.remove(best);
+            placed.add(best);
+            maze.addLadder(new Ladder(best.x, best.y, Ladder.LadderType.DOWN, style));
+            Gdx.app.log("ForestChunkGenerator", style.name() + " entrance spawned at (" + best.x + ", " + best.y + ")");
+        }
+
+        if (placed.isEmpty() || (upLadderPos != null && placed.size() == 1)) {
             // Fallback
             int x, y;
             do {
@@ -401,7 +434,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
                 y = random.nextInt(maze.getHeight());
             } while (layout[maze.getHeight() - 1 - y].charAt(x) != '.' ||
                     maze.getItems().containsKey(new GridPoint2(x, y)) ||
-                    maze.getMonsters().containsKey(new GridPoint2(x, y)));
+                    maze.getMonsters().containsKey(new GridPoint2(x, y)) ||
+                    (upLadderPos != null && x == upLadderPos.x && y == upLadderPos.y));
             Gdx.app.log("ForestChunkGenerator", "WARN: No reachable ladder candidate, fallback at (" + x + "," + y + ")");
             maze.addLadder(new Ladder(x, y, Ladder.LadderType.DOWN, style));
         }

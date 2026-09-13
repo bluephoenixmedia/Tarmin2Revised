@@ -378,7 +378,7 @@ public class DiscoveryManager {
                 return item.getFriendlyName(); // "Blue Potion"
             }
         }
-        if (item.getType().name().startsWith("SCROLL_")) {
+        if (item.isScroll() || (item.getType() != null && item.getType().name().startsWith("SCROLL"))) {
             ScrollEffectType effect = item.getScrollEffect();
             if (effect != null) {
                 if (item.isIdentified() || isScrollIdentified(effect)) {
@@ -389,7 +389,14 @@ public class DiscoveryManager {
             // Dedicated spell scroll (SCROLL_FIREBALL, etc.): identified per its own
             // ItemType rather than a shared ScrollEffectType appearance.
             if (item.isIdentified() || isDedicatedScrollIdentified(item.getType())) {
-                return item.getFriendlyName();
+                String fn = item.getFriendlyName();
+                if (fn != null && !fn.isEmpty()) {
+                    return fn;
+                }
+                if (item.getSpellId() != null) {
+                    return "Scroll of " + titleCase(item.getSpellId());
+                }
+                return "Scroll";
             }
             return getScrollRuneLabel(item.getType());
         }
@@ -413,7 +420,8 @@ public class DiscoveryManager {
      */
     public String getGroundItemDisplayName(Item item) {
         boolean needsDiscovery = item.isPotion() || item.isRing()
-                || (item.getType() != null && (item.getType().name().startsWith("SCROLL_")
+                || item.isScroll()
+                || (item.getType() != null && (item.getType().name().startsWith("SCROLL")
                         || item.getType().name().startsWith("WAND_")));
         return needsDiscovery ? getDisplayName(item) : item.getDisplayName();
     }

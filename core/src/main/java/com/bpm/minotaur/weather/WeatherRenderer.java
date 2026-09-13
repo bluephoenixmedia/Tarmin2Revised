@@ -77,7 +77,8 @@ public class WeatherRenderer {
      */
     public void update(float delta, Player player, Maze maze) {
         if (weatherManager == null || player == null) return;
-        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed()) {
+        boolean isShelter = maze != null && player != null && maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed() || isShelter) {
             if (particles.size > 0) particles.clear();
             if (splashDroplets.size > 0) splashDroplets.clear();
             tornadoInitialized = false;
@@ -88,7 +89,7 @@ public class WeatherRenderer {
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
 
         // 0. Tornado vortex state tracking
-        if (type == WeatherType.TORNADO) {
+        if (type == WeatherType.TORNADO && !isShelter) {
             tornadoAnimTime += delta;
             float px = player.getPosition().x;
             float py = player.getPosition().y;
@@ -549,7 +550,8 @@ public class WeatherRenderer {
         }
 
         // --- 3. RENDER 3D TORNADO SUPERCELL VORTEX ---
-        if (type == WeatherType.TORNADO) {
+        boolean isShelter = maze != null && player != null && maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
+        if (type == WeatherType.TORNADO && !isShelter) {
             render3DTornadoVortex(batcher, camera, player, maze, wm, isRetro);
         }
 

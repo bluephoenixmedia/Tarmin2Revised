@@ -1843,16 +1843,6 @@ public class GameScreen extends BaseScreen {
                     }
 
                     Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
-                    // 5e Reach Weapon check (2-tile strike)
-                    Item rightHand = player.getInventory().getRightHand();
-                    if (bumpTarget == null && rightHand != null && rightHand.isReach() && !maze.isWall(tx, ty)) {
-                        int rtx = (int) Math.floor(player.getPosition().x + dir.x * 2);
-                        int rty = (int) Math.floor(player.getPosition().y + dir.y * 2);
-                        Monster reachTarget = maze.getMonsters().get(new GridPoint2(rtx, rty));
-                        if (reachTarget != null) {
-                            bumpTarget = reachTarget;
-                        }
-                    }
 
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
