@@ -205,7 +205,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             forcedUpLadderPos = null;
         }
 
-        spawnShopkeeper(maze, reachable, itemDataManager, assetManager);
+        spawnShopkeeper(maze, this.finalLayout, reachable, itemDataManager, assetManager);
 
         return maze;
     }
@@ -214,7 +214,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
      * Spawns exactly one traveling merchant on Strata 1 & 2 floors, placed on a
      * reachable open corridor tile away from the player's spawn point.
      */
-    private void spawnShopkeeper(Maze maze, Set<GridPoint2> reachable, ItemDataManager itemDataManager,
+    public void spawnShopkeeper(Maze maze, String[] layout, Set<GridPoint2> reachable, ItemDataManager itemDataManager,
             AssetManager assetManager) {
         if (maze.getLevel() < 1 || maze.getLevel() > 2)
             return;
@@ -223,8 +223,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int height = maze.getHeight();
         for (GridPoint2 tile : reachable) {
             int layoutY = height - 1 - tile.y;
-            if (layoutY < 0 || layoutY >= finalLayout.length) continue;
-            if (finalLayout[layoutY].charAt(tile.x) != '.') continue;
+            if (layoutY < 0 || layoutY >= layout.length) continue;
+            if (layout[layoutY].charAt(tile.x) != '.') continue;
             if (maze.getScenery().containsKey(tile)) continue;
             if (maze.getItems().containsKey(tile)) continue;
             if (maze.getMonsters().containsKey(tile)) continue;

@@ -205,7 +205,7 @@ public class TurnManager {
      *   and stamina exhaustion).
      * A small hysteresis band avoids the effect flickering on/off at the boundary.
      */
-    private void applyExposureTiers(Player player, PlayerStats stats, GameEventManager eventManager, float bodyTemp) {
+    public void applyExposureTiers(Player player, PlayerStats stats, GameEventManager eventManager, float bodyTemp) {
         StatusManager sm = player.getStatusManager();
 
         boolean chilled = bodyTemp < 35.0f;
