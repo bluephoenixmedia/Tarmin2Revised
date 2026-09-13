@@ -28,6 +28,10 @@ public class PlayerDeathScreen extends BaseScreen {
     private final int lostItems;
     private final int retainedItems;
     private final String defeatLore;
+    private final String epitaphCause;
+    private final int depthReached;
+    private final int monstersSlain;
+    private final int divinitiesEarned;
     private final HudSkin hudSkin;
 
     private Stage stage;
@@ -35,6 +39,13 @@ public class PlayerDeathScreen extends BaseScreen {
 
     public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
                              float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore) {
+        this(game, parentScreen, deathCount, maxDeaths, bridgeIntegrity, lostItems, retainedItems, defeatLore,
+             "Fell in the Labyrinth", 1, 0, 0);
+    }
+
+    public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
+                             float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore,
+                             String epitaphCause, int depthReached, int monstersSlain, int divinitiesEarned) {
         super(game);
         this.parentScreen = parentScreen;
         this.deathCount = deathCount;
@@ -44,6 +55,11 @@ public class PlayerDeathScreen extends BaseScreen {
         this.retainedItems = retainedItems;
         this.defeatLore = (defeatLore != null && !defeatLore.trim().isEmpty())
                 ? defeatLore : "Your physical vessel collapsed in the labyrinth...";
+        this.epitaphCause = (epitaphCause != null && !epitaphCause.trim().isEmpty())
+                ? epitaphCause : "Slain in the Labyrinth";
+        this.depthReached = Math.max(1, depthReached);
+        this.monstersSlain = monstersSlain;
+        this.divinitiesEarned = divinitiesEarned;
         this.hudSkin = new HudSkin();
     }
 
@@ -67,32 +83,32 @@ public class PlayerDeathScreen extends BaseScreen {
 
         Table root = new Table();
         root.setFillParent(true);
-        root.pad(60);
+        root.pad(40, 50, 40, 50);
 
         // --- HEADER BANNER ---
         Table header = new Table();
         header.setBackground(hudSkin.getDoubleBorderPanel());
-        header.pad(26, 40, 26, 40);
+        header.pad(20, 40, 20, 40);
 
         Label perishedLabel = new Label("YOU HAVE FALLEN", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
         perishedLabel.setFontScale(1.8f);
         header.add(perishedLabel).center().row();
 
         Label loreLabel = new Label(defeatLore, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        header.add(loreLabel).center().padTop(10).row();
+        header.add(loreLabel).center().padTop(8).row();
 
-        root.add(header).fillX().padBottom(30).row();
+        root.add(header).fillX().padBottom(24).row();
 
-        // --- BODY: Two Column Overview Cards ---
+        // --- BODY: Three Column Overview Cards ---
         Table body = new Table();
 
-        // Left Card: Tarmin's Hunger / Doom Clock
+        // 1. Left Card: Tarmin's Hunger / Doom Clock
         Table doomCard = new Table();
         doomCard.setBackground(hudSkin.getDoubleBorderPanel());
-        doomCard.pad(24);
+        doomCard.pad(22);
 
         Label doomTitle = new Label("TARMIN'S HUNGER", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        doomCard.add(doomTitle).left().padBottom(16).row();
+        doomCard.add(doomTitle).left().padBottom(14).row();
 
         Label deathStat = new Label(String.format("EXPEDITION DEMISE:  %d  /  %d", deathCount, maxDeaths),
                 new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
@@ -100,43 +116,79 @@ public class PlayerDeathScreen extends BaseScreen {
 
         Label bridgeStat = new Label(String.format("BRIDGE INTEGRITY:  %d%%", (int) bridgeIntegrity),
                 new Label.LabelStyle(hudSkin.getFontMain(), bridgeIntegrity <= 30f ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_GOLD_ANTIQUE));
-        doomCard.add(bridgeStat).left().padBottom(20).row();
+        doomCard.add(bridgeStat).left().padBottom(16).row();
 
-        Label doomDesc = new Label("The Minotaur stirs beneath Castle Tarmin. With every failure, the boundary holding back the apocalyptic tide weakens. Should 50 deaths occur, the sacrificial ritual will consume all memory of your journey.",
+        Label doomDesc = new Label("The Minotaur stirs beneath Castle Tarmin. With every demise, the boundary holding back the apocalyptic tide weakens. Should 50 deaths occur, the sacrificial ritual will consume all memory of your journey.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         doomDesc.setWrap(true);
-        doomCard.add(doomDesc).width(580).left().expandY().top().row();
+        doomCard.add(doomDesc).width(500).left().expandY().top().row();
 
-        body.add(doomCard).width(640).expandY().fillY().padRight(30);
+        body.add(doomCard).width(560).expandY().fillY().padRight(20);
 
-        // Right Card: Casualties & Stash Status
+        // 2. Center Card: Expedition Epitaph & Milestones
+        Table epitaphCard = new Table();
+        epitaphCard.setBackground(hudSkin.getDoubleBorderPanel());
+        epitaphCard.pad(22);
+
+        Label epitaphTitle = new Label("EXPEDITION EPITAPH", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        epitaphCard.add(epitaphTitle).left().padBottom(14).row();
+
+        Label causeLbl = new Label("CAUSE: " + epitaphCause,
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_HP_CRITICAL));
+        causeLbl.setWrap(true);
+        epitaphCard.add(causeLbl).width(530).left().padBottom(10).row();
+
+        Label depthLbl = new Label(String.format("STRATA REACHED:  Depth %d", depthReached),
+                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
+        epitaphCard.add(depthLbl).left().padBottom(6).row();
+
+        Label killsLbl = new Label(String.format("FOES VANQUISHED:  %d", monstersSlain),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
+        epitaphCard.add(killsLbl).left().padBottom(6).row();
+
+        Label divEarnedLbl = new Label(String.format("DIVINITIES COLLECTED:  +%d", divinitiesEarned),
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
+        epitaphCard.add(divEarnedLbl).left().padBottom(14).row();
+
+        Label unlockDesc = new Label("Progression Note: Foes defeated and depths chartered have permanently attuned the procedural generation of future mazes. Spend banked Divinities at the Shelter Altar to unlock advanced supplies and relics.",
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        unlockDesc.setWrap(true);
+        epitaphCard.add(unlockDesc).width(530).left().expandY().top().row();
+
+        body.add(epitaphCard).width(590).expandY().fillY().padRight(20);
+
+        // 3. Right Card: Casualties & Stash Status
         Table lootCard = new Table();
         lootCard.setBackground(hudSkin.getDoubleBorderPanel());
-        lootCard.pad(24);
+        lootCard.pad(22);
 
         Label lootTitle = new Label("EXPEDITION CASUALTIES", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        lootCard.add(lootTitle).left().padBottom(16).row();
+        lootCard.add(lootTitle).left().padBottom(14).row();
 
         Label lostLbl = new Label(String.format("UNEQUIPPED ITEMS LOST:  %d", lostItems),
                 new Label.LabelStyle(hudSkin.getFontMain(), lostItems > 0 ? HudSkin.COL_HP_RED : HudSkin.COL_FOOD_GREEN));
-        lootCard.add(lostLbl).left().padBottom(8).row();
+        lootCard.add(lostLbl).left().padBottom(6).row();
 
-        Label keptLbl = new Label(String.format("ITEMS SECURED (Loot Retention):  %d", retainedItems),
+        Label keptLbl = new Label(String.format("ITEMS SECURED (Retention):  %d", retainedItems),
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
-        lootCard.add(keptLbl).left().padBottom(8).row();
+        lootCard.add(keptLbl).left().padBottom(6).row();
 
-        Label eqLbl = new Label("EQUIPPED GEAR & WEAPONS:  PRESERVED",
+        Label kitLbl = new Label("TRAVEL CRAFTING KITS:  PRESERVED",
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
+        lootCard.add(kitLbl).left().padBottom(6).row();
+
+        Label eqLbl = new Label("EQUIPPED WEAPONS & ARMOR:  PRESERVED",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
-        lootCard.add(eqLbl).left().padBottom(20).row();
+        lootCard.add(eqLbl).left().padBottom(14).row();
 
-        Label stashDesc = new Label("Your Stash Chest inside the Starting Shelter remains safe. The ruins and wilderness beyond the threshold will reconfigure from fresh Ley-lines, rolling new terrain, monsters, and treasures for your next delve.",
+        Label stashDesc = new Label("Your Stash Chest inside the Starting Shelter remains safe. The ruins and wilderness beyond will reconfigure from fresh Ley-lines, rolling new terrain, monsters, and treasures for your next delve.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         stashDesc.setWrap(true);
-        lootCard.add(stashDesc).width(580).left().expandY().top().row();
+        lootCard.add(stashDesc).width(500).left().expandY().top().row();
 
-        body.add(lootCard).width(640).expandY().fillY();
+        body.add(lootCard).width(560).expandY().fillY();
 
-        root.add(body).expand().fill().padBottom(30).row();
+        root.add(body).expand().fill().padBottom(24).row();
 
         // --- FOOTER: AWAKEN CTA BUTTON ---
         Table footer = new Table();

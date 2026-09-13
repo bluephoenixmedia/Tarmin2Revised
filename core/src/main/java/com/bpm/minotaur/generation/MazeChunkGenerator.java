@@ -94,7 +94,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "............",
             "...##D###...",
-            "...#L..C#...",
+            "...#L.AC#...",
             "...W...N#...",
             "...#F.BL#...",
             "...######...",
@@ -185,7 +185,11 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         spawnEntities(maze, difficulty, spawnDifficulty, this.finalLayout, dataManager, itemDataManager, assetManager,
                 spawnTableData, chunkSeed, playerLuck, reachable);
-        spawnEncounters(maze, encounterManager, reachable, assetManager);
+        // Statue/encounter events: baseline 15% per-chunk chance, scaling up to 35%
+        // as the Shelter Altar's Monument tier is upgraded.
+        if (random.nextFloat() < com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getStatueEventFrequency()) {
+            spawnEncounters(maze, encounterManager, reachable, assetManager);
+        }
         spawnLadder(maze, this.finalLayout, reachable);
 
         if (gameMode == GameMode.CLASSIC) {
@@ -594,6 +598,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
                             itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
                 else if (c == 'N')
                     maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
+                            assetManager));
+                else if (c == 'A')
+                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
                             assetManager));
                 else if (c == 'B')
                     maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,

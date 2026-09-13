@@ -174,7 +174,7 @@ public class Item implements Renderable {
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
 
         // Home Props
-        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN,
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
@@ -606,6 +606,14 @@ public class Item implements Renderable {
         if (this.type == ItemType.BONE && this.corpseSource != null) {
             String sourceName = toTitleCase(this.corpseSource.name());
             return sourceName + " Bone";
+        }
+
+        // Dynamic Meat Naming: butchered flesh is named after its source monster
+        // (e.g. "Scorpion Flesh"), matching the GIB naming convention below --
+        // this also drives the poisonous-flesh/intrinsic checks in Player#useItem.
+        if (this.type == ItemType.MEAT && this.corpseSource != null) {
+            String sourceName = toTitleCase(this.corpseSource.name());
+            return sourceName + " Flesh";
         }
 
         // NEW: Dynamic Gib Naming

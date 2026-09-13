@@ -293,8 +293,11 @@ public class CombatManager {
                 int blocked = Math.min(dmg, playerCurrentBlock);
                 dmg = Math.max(0, dmg - playerCurrentBlock);
                 eventManager.addEvent(new GameEvent("Blocked " + blocked + " dmg", 1f));
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(blocked);
             }
             int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
 
@@ -1111,26 +1114,62 @@ public class CombatManager {
         resolveAttack(d20Roll, false);
     }
 
+    /** Glancing Blow threshold: an otherwise-missed attack within this many points of AC still lands a partial hit. */
+    public static final int GLANCING_BLOW_MAX_DELTA = 3;
+    /** Glancing Blow damage fraction of the weapon's normal roll. */
+    public static final float GLANCING_BLOW_DAMAGE_MULTIPLIER = 0.35f;
+
+    public static boolean isHit(int attackRoll, int targetAC, boolean isCrit) {
+        return (attackRoll - targetAC >= 0) || isCrit;
+    }
+
+    public static boolean isGlancingBlow(int attackRoll, int targetAC, boolean isCrit) {
+        int delta = attackRoll - targetAC;
+        boolean hit = (delta >= 0) || isCrit;
+        return !hit && (delta >= -GLANCING_BLOW_MAX_DELTA);
+    }
+
+    public static int glancingBlowDamage(int fullDamage) {
+        return Math.max(1, (int) (fullDamage * GLANCING_BLOW_DAMAGE_MULTIPLIER));
+    }
+
+    /** Arcane Spark damage dice: rolled instead of a book's own damage dice on every attack. */
+    public static final String ARCANE_SPARK_DICE = "1d4";
+
+    public static boolean isBookWeapon(Item weapon) {
+        if (weapon == null || weapon.getType() == null) {
+            return false;
+        }
+        Item.ItemType type = weapon.getType();
+        return type == Item.ItemType.WAR_BOOK || type == Item.ItemType.SPIRITUAL_BOOK
+                || type == Item.ItemType.SPECIAL_BOOK;
+    }
+
+    /** Arcane Spark: 1d4 + INT modifier Spiritual damage, minimum 1. */
+    public static int arcaneSparkDamage(int intModifier, int d4Roll) {
+        return Math.max(1, d4Roll + intModifier);
+    }
+
     private void resolveAttack(int d20Roll, boolean stateless) {
         if (monster == null)
             return;
-
-        currentCombatTurns++;
 
         int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
         boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());
-        boolean isHit = (attackRoll >= targetAC) || isCrit;
+        boolean isHit = isHit(attackRoll, targetAC, isCrit);
+        boolean isGlancing = isGlancingBlow(attackRoll, targetAC, isCrit);
 
         // --- CONFUSION LOGIC (Instant) ---
         if (player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSION)) {
             if (random.nextFloat() > 0.5f) { // 50% Chance to Miss wildly
                 isHit = false;
+                isGlancing = false;
                 eventManager.addEvent(new GameEvent("You are confused and swing wildly and miss", 2f));
                 Gdx.app.log("CombatManager", "Confusion: Player swung wildly and missed.");
             } else {
-                if (isHit) { // Only add "somehow hit" if they actually hit
+                if (isHit || isGlancing) { // Only add "somehow hit" if they actually hit
                     eventManager.addEvent(new GameEvent("You are confused and swing wildly and somehow hit", 2f));
                 }
             }
@@ -1138,12 +1177,19 @@ public class CombatManager {
 
         // Log Check
         Gdx.app.log("CombatManger",
-                "Player Attack: Roll " + d20Roll + " + " + toHitBonus + " = " + attackRoll + " vs AC " + targetAC);
+                "Player Attack: Roll " + d20Roll + " + " + toHitBonus + " = " + attackRoll + " vs AC " + targetAC
+                        + " (Hit=" + isHit + ", Glance=" + isGlancing + ")");
 
-        if (isHit) {
+        if (isHit || isGlancing) {
             DamageType dmgType = DamageType.PHYSICAL;
             String damageDice = "1d2";
-            if (pendingWeapon != null) {
+            boolean isArcaneSpark = isBookWeapon(pendingWeapon);
+            if (isArcaneSpark) {
+                // Tome Weapon Attack: a Spiritual Arcane Spark replaces the book's own
+                // damage dice entirely -- see arcaneSparkDamage() for the 1d4+INT roll.
+                dmgType = DamageType.SPIRITUAL;
+                damageDice = ARCANE_SPARK_DICE;
+            } else if (pendingWeapon != null) {
                 damageDice = player.getInventory().getActiveDamageDice(pendingWeapon);
                 if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
                 if ("SPIRITUAL".equalsIgnoreCase(pendingWeapon.getDamageType()) ||
@@ -1159,13 +1205,24 @@ public class CombatManager {
                 lastDamageDealt = 0;
                 soundManager.playWeaponImpact(false);
             } else {
-                int baseDamage = DiceRoller.roll(damageDice);
-                int damageBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
-                int totalDamage = Math.max(1, baseDamage + damageBonus);
+                int totalDamage;
+                if (isArcaneSpark) {
+                    int intModifier = (player.getEffectiveIntelligence() - 10) / 2;
+                    totalDamage = arcaneSparkDamage(intModifier, DiceRoller.roll(damageDice));
+                } else {
+                    int baseDamage = DiceRoller.roll(damageDice);
+                    int damageBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                    totalDamage = Math.max(1, baseDamage + damageBonus);
+                }
 
                 // Combo Damage Multiplier
                 if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
                     totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
+                }
+
+                // Glancing Blow: 35% base damage
+                if (isGlancing) {
+                    totalDamage = glancingBlowDamage(totalDamage);
                 }
 
                 if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
@@ -1200,6 +1257,10 @@ public class CombatManager {
                 if (isCrit) {
                     dmgPrefix = comboTag + "CRIT! ";
                     textColor = com.badlogic.gdx.graphics.Color.RED;
+                } else if (isGlancing) {
+                    dmgPrefix = "GLANCE! ";
+                    textColor = com.badlogic.gdx.graphics.Color.CYAN;
+                    eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
                 } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
                     dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.GOLD;
@@ -1220,6 +1281,11 @@ public class CombatManager {
 
                 showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor);
                 lastDamageDealt = actualDamage;
+
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
+                        isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
+                                : com.bpm.minotaur.telemetry.TelemetryManager.HitType.HIT,
+                        actualDamage);
 
                 // --- Open5e Ring of the Ram Trigger ---
                 if (player.getEquipment() != null && player.getEquipment().getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.RAM) > 0) {
@@ -1264,7 +1330,7 @@ public class CombatManager {
                 boolean isHeavy = damageRatio > 0.2f || affinity == Monster.Affinity.WEAK || isCrit;
 
                 // 1. Audio
-                if (affinity == Monster.Affinity.RESISTANT && !isCrit) {
+                if (isGlancing || (affinity == Monster.Affinity.RESISTANT && !isCrit)) {
                     soundManager.playWeaponImpact(false); // Dull deflection
                 } else {
                     soundManager.playWeaponImpact(isHeavy); // Meat/Metal hit
@@ -1316,6 +1382,8 @@ public class CombatManager {
         } else {
             // Miss
             eventManager.addEvent(new GameEvent("Miss!", 1f));
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
+                    com.bpm.minotaur.telemetry.TelemetryManager.HitType.MISS, 0);
             if (game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
                 gs.getWeaponOverlay().triggerWhiff();
@@ -1914,6 +1982,7 @@ public class CombatManager {
         Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
         eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster.getMonsterType());
         int baseExp = monster.getBaseExperience();
         float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
         float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);
@@ -1923,6 +1992,7 @@ public class CombatManager {
         com.bpm.minotaur.gamedata.monster.MonsterTemplate killTemplate = monster.getTemplate();
         if (killTemplate != null) {
             int divAmount = DivinityManager.getInstance().awardKillDivinities(killTemplate.baseLevel, maze.getLevel());
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDivinitiesEarned(divAmount);
             eventManager.addEvent(new GameEvent("+" + divAmount + " " + DivinityManager.DIVINITY_NAME, 2f));
         }
 

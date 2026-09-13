@@ -187,6 +187,30 @@
       "y": 1.0
     }
   },
+  "MEAT": {
+    "friendlyName": "Flesh",
+    "description": "Raw flesh harvested from a butchered corpse. Best cooked before eating -- devouring it raw risks poison or worse.",
+    "texturePath": "images/items/food.png",
+    "baseValue": 2,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": true,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": true,
+    "isContainer": false,
+    "isRing": false,
+    "nutrition": 10,
+    "hydrationValue": 0,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    }
+  },
   "GIB_BONE": {
     "friendlyName": "Bone",
     "description": "A bone fragment.",
@@ -528,6 +552,63 @@
     "variants": [
       {
         "color": "YELLOW",
+        "minLevel": 1,
+        "maxLevel": 99,
+        "weight": 1
+      }
+    ]
+  },
+  "HOME_ALTAR": {
+    "friendlyName": "Shelter Altar",
+    "texturePath": "images/events/statue/tarmin_statue.png",
+    "isImpassable": true,
+    "spriteData": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "..........####..........",
+      "..........####..........",
+      ".........######.........",
+      ".........######.........",
+      "........########........",
+      "........########........",
+      "......############......",
+      "......############......",
+      "......############......",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "description": "An ancient stone altar humming with banked Divinities. Spend them here on permanent upgrades to your next expedition.",
+    "baseValue": 0,
+    "damageDice": 0,
+    "armorClassBonus": 0,
+    "isWeapon": false,
+    "isRanged": false,
+    "isArmor": false,
+    "isPotion": false,
+    "isFood": false,
+    "isTreasure": false,
+    "isKey": false,
+    "isUsable": false,
+    "isContainer": false,
+    "isRing": false,
+    "scale": {
+      "x": 1.0,
+      "y": 1.0
+    },
+    "variants": [
+      {
+        "color": "GOLD",
         "minLevel": 1,
         "maxLevel": 99,
         "weight": 1

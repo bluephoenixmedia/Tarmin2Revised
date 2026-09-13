@@ -93,6 +93,15 @@ public class GameEventManager {
     }
 
     /**
+     * Removes every queued event of the given type without returning them.
+     * Used to purge stray duplicate system events (e.g. multiple PLAYER_DIED
+     * events queued in the same frame from overlapping damage sources).
+     */
+    public void consumeAll(GameEvent.EventType type) {
+        events.removeIf(event -> event.type == type);
+    }
+
+    /**
      * Gets the list of active events, filtered to only include MESSAGE types
      * for the HUD to display.
      * 

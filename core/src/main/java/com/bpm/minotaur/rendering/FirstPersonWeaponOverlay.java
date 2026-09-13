@@ -74,6 +74,24 @@ public class FirstPersonWeaponOverlay {
     // Blood coating on weapon
     private float bloodLevel = 0f; // 0.0 to 1.0
 
+    // Buff Aura Glow: pulsating edge tint matching the active buff's element
+    // (strength/speed/holy), set externally each frame from player status effects.
+    private Color buffGlowColor = null;
+    private float buffGlowPulseTimer = 0f;
+    private static final float BUFF_GLOW_PULSE_SPEED = 4f;
+    private static final float BUFF_GLOW_MAX_STRENGTH = 0.4f;
+
+    // Tome Weapon Attack: page-flutter particles spawned when swinging a book.
+    private static class PageParticle {
+        float offsetX, offsetY;
+        float vx, vy;
+        float rotation, rotSpeed;
+        float life, maxLife;
+    }
+
+    private final List<PageParticle> pageParticles = new ArrayList<>();
+    private Texture pageParticleTexture;
+
     // Procedural weapon trail
     private final WeaponTrailRenderer trailRenderer = new WeaponTrailRenderer();
 
@@ -154,6 +172,11 @@ public class FirstPersonWeaponOverlay {
         configureTrailColor(weapon);
         trailRenderer.clear();
         trailRenderer.setEmitting(true);
+
+        // Tome Weapon Attack: fluttering pages instead of a normal weapon swing feel
+        if (com.bpm.minotaur.managers.CombatManager.isBookWeapon(weapon)) {
+            spawnPageFlutter();
+        }
     }
 
     /**
@@ -225,6 +248,85 @@ public class FirstPersonWeaponOverlay {
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }
 
+    /** Sets the active Buff Aura Glow tint, or null to clear it (no active buff). */
+    public void setBuffGlow(Color color) {
+        this.buffGlowColor = color;
+    }
+
+    /** Spawns a small burst of fluttering page particles near the weapon hand. */
+    private void spawnPageFlutter() {
+        for (int i = 0; i < 6; i++) {
+            PageParticle p = new PageParticle();
+            p.offsetX = MathUtils.random(-10f, 10f);
+            p.offsetY = MathUtils.random(-6f, 6f);
+            p.vx = MathUtils.random(-45f, 45f);
+            p.vy = MathUtils.random(35f, 95f);
+            p.rotation = MathUtils.random(360f);
+            p.rotSpeed = MathUtils.random(-220f, 220f);
+            p.maxLife = MathUtils.random(0.45f, 0.85f);
+            p.life = p.maxLife;
+            pageParticles.add(p);
+        }
+    }
+
+    private void updatePageFlutter(float delta) {
+        for (int i = pageParticles.size() - 1; i >= 0; i--) {
+            PageParticle p = pageParticles.get(i);
+            p.offsetX += p.vx * delta;
+            p.offsetY += p.vy * delta;
+            p.vy -= 30f * delta; // gentle arc back down as the flutter settles
+            p.rotation += p.rotSpeed * delta;
+            p.life -= delta;
+            if (p.life <= 0f) {
+                pageParticles.remove(i);
+            }
+        }
+    }
+
+    private Texture getPageParticleTexture() {
+        if (pageParticleTexture == null) {
+            com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1,
+                    com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+            pixmap.setColor(Color.WHITE);
+            pixmap.fill();
+            pageParticleTexture = new Texture(pixmap);
+            pixmap.dispose();
+        }
+        return pageParticleTexture;
+    }
+
+    private void renderPageFlutter(SpriteBatch batch, float worldW, float worldH) {
+        if (pageParticles.isEmpty()) {
+            return;
+        }
+        Texture tex = getPageParticleTexture();
+        Color originalColor = batch.getColor();
+        float anchorX = worldW * 0.72f;
+        float anchorY = worldH * (CombatMotionProfile.IDLE_Y_REL + 0.12f);
+        float size = worldH * 0.02f;
+        for (PageParticle p : pageParticles) {
+            float alpha = Math.max(0f, p.life / p.maxLife);
+            batch.setColor(0.96f, 0.93f, 0.78f, alpha); // parchment tint
+            batch.draw(tex,
+                    anchorX + p.offsetX - size * 0.5f, anchorY + p.offsetY - size * 0.5f,
+                    size * 0.5f, size * 0.5f,
+                    size, size,
+                    1f, 1f,
+                    p.rotation,
+                    0, 0, tex.getWidth(), tex.getHeight(),
+                    false, false);
+        }
+        batch.setColor(originalColor);
+    }
+
+    /** Disposes textures owned by this overlay (page-flutter particle texture). */
+    public void dispose() {
+        if (pageParticleTexture != null) {
+            pageParticleTexture.dispose();
+            pageParticleTexture = null;
+        }
+    }
+
     public void setWalking(boolean walking) {
         this.isWalking = walking;
     }
@@ -243,6 +345,14 @@ public class FirstPersonWeaponOverlay {
     }
 
     public void update(float delta) {
+        if (buffGlowColor != null) {
+            buffGlowPulseTimer += delta * BUFF_GLOW_PULSE_SPEED;
+        }
+
+        if (!pageParticles.isEmpty()) {
+            updatePageFlutter(delta);
+        }
+
         // Update persistent breathing and walking bob
         idleBobTimer += delta * 2.2f;
         if (isWalking) {
@@ -340,6 +450,9 @@ public class FirstPersonWeaponOverlay {
 
         // 2. Render Main Hand (Right Hand)
         renderMainHand(batch, viewport, worldW, worldH, totalBobX, totalBobY);
+
+        // 3. Render Tome Weapon Attack page-flutter particles, if any are active
+        renderPageFlutter(batch, worldW, worldH);
     }
 
     private void renderMainHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {
@@ -406,6 +519,14 @@ public class FirstPersonWeaponOverlay {
         if (bloodLevel > 0.05f) {
             // Blood-stained red tinting on blade
             batch.setColor(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
+        } else if (buffGlowColor != null) {
+            // Buff Aura Glow: pulsating edge tint matching the active buff's element
+            float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH;
+            batch.setColor(
+                    1f + (buffGlowColor.r - 1f) * pulse,
+                    1f + (buffGlowColor.g - 1f) * pulse,
+                    1f + (buffGlowColor.b - 1f) * pulse,
+                    1.0f);
         } else {
             batch.setColor(Color.WHITE);
         }

@@ -308,8 +308,8 @@ public class NetHackDifficultyDistributionTest {
         Player player = new Player(100, 10);
         GameEventManager eventManager = new GameEventManager();
 
-        // Initial unlocked slots
-        assertEquals(5, player.getUnlockedSpellSlots());
+        // Initial unlocked slots: only the first (cantrip) slot until Tomes are studied
+        assertEquals(1, player.getUnlockedSpellSlots());
 
         // Test using tomes
         Item tomeInitiate = new Item(Item.ItemType.TOME_OF_THE_INITIATE, 0, 0, ItemColor.PURPLE, itemDataManager, null);

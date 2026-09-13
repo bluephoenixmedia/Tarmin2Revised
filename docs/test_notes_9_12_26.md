@@ -13,3 +13,13 @@
 - When using a special book as a weapon, the attack animation should be spell based, not weapon strike. 
 - When you have buffs due to any potion, item, spell, enhanced weapon etc, weshould show a color glow on the weapon while it's in idel first person mode
 - Scrolls seem to be auto identified when I first see them but then when I use them they don't have the effect that is being displayed initially
+- Drag and drop on the inventory screen seems broken when moving between quick slots and inventory slots
+- We need to revisit MP and Health regeneration.
+- When find and using tomes, are they actually doing anything in regards to spell slots?
+- Inventory reported as full but it wasn't according to the inventory screen available slots.
+- Right clicking on items in inventory are NOT dropping them
+- We need a telemetry system that captures all pertinent data about individual runs that can be later analzyed to see how balance, item distribution, difficult and performance are working out.
+- In subterranean forest levels, there is a thick white fog, is this on purpose?
+- We need to overhaul and rebuild a comprehensive progression, achievement, unlock model which unlocks weapons, armor, items, spells, events, statues and anything else which could be gated by player progression or actions and which adds the unlocked items to future mazes, including full UX treatment for the notifications. They should be displayed in the death screen along with a summary of how the player died in the last run.
+- Battles in later levels often are just composed of long drawn out matches whcih 80% of strikes missing and it is boring.
+-When clicking the return to shelter button on the death screen, multiple deaths seem to be registered.

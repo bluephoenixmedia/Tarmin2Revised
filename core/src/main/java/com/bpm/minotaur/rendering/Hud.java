@@ -751,7 +751,14 @@ public class Hud implements Disposable {
         }
 
         // --- Update Spell Hotbar Slots ---
+        int unlockedSpellSlots = player.getUnlockedSpellSlots();
         for (int i = 0; i < 5; i++) {
+            if (i >= unlockedSpellSlots) {
+                spellNameLabels[i].setText("LOCKED");
+                spellCostLabels[i].setText("");
+                spellNameLabels[i].setColor(Color.DARK_GRAY);
+                continue;
+            }
             String spellId = player.getPreparedSpell(i);
             if (spellId != null && !spellId.isEmpty()) {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);

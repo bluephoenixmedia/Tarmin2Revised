@@ -110,6 +110,10 @@ public class GameScreen extends BaseScreen {
     private boolean hasLoadedLevel = false;
     private int turnCount = 0;
 
+    // --- Death Idempotency & Run Tracking (NetHack Progression Reboot) ---
+    private String activeExpeditionRunId = java.util.UUID.randomUUID().toString();
+    private boolean isDeathTransitionTriggered = false;
+
     private final TurnManager turnManager; // NEW
 
     // --- NEW: Visceral Feedback Components ---
@@ -502,6 +506,7 @@ public class GameScreen extends BaseScreen {
             // Update Overlay Animation and Equipment
             if (player != null && player.getInventory() != null) {
                 weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+                weaponOverlay.setBuffGlow(getActiveBuffGlowColor(player));
             }
             weaponOverlay.update(delta);
             DivinityOrbManager.getInstance().update(delta);
@@ -972,8 +977,18 @@ public class GameScreen extends BaseScreen {
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
             Gdx.app.log("GameScreen", "PLAYER_DIED event received.");
 
-            // 1. Advance Doom Clock ("Tarmin's Hunger")
-            DoomManager.getInstance().incrementDeaths();
+            if (isDeathTransitionTriggered) {
+                Gdx.app.log("GameScreen", "Duplicate PLAYER_DIED event suppressed; death transition already in progress.");
+                continue;
+            }
+            isDeathTransitionTriggered = true;
+            // Purge any further death events queued this frame (e.g. stray monster
+            // attacks or status ticks landing the same instant) so only one demise
+            // is ever processed per expedition run.
+            eventManager.consumeAll(GameEvent.EventType.PLAYER_DIED);
+
+            // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
+            DoomManager.getInstance().recordDeath(activeExpeditionRunId);
             int deaths = DoomManager.getInstance().getDeathCount();
             float bridge = DoomManager.getInstance().getBridgeIntegrity();
             Gdx.app.log("GameScreen", "Doom updated on death. Count: " + deaths + " (" + (int) bridge + "%)");
@@ -1023,13 +1038,87 @@ public class GameScreen extends BaseScreen {
             }
             int lostCount = atRiskItems.size() - retainedCount;
 
-            // 4. Play visceral death audio and transition to PlayerDeathScreen
+            // 4. Finalize run telemetry & build the run epitaph
+            com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+            String epitaphCause = buildEpitaph(telemetry);
+            int depthReached = Math.max(1, telemetry.getStrataReached());
+            int monstersSlain = telemetry.getTotalMonstersKilled();
+            int divinitiesEarnedThisRun = telemetry.getDivinitiesEarned();
+            telemetry.exportRun(epitaphCause);
+
+            // 5. Play visceral death audio and transition to PlayerDeathScreen
             soundManager.playPlayerDeathSound();
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
-                    lostCount, retainedCount, "Slain in the Labyrinth");
+                    lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
+                    divinitiesEarnedThisRun);
             game.setScreen(deathScreen);
             return;
         }
+    }
+
+    /**
+     * Buff Aura Glow: picks a pulsating weapon tint color matching the player's
+     * strongest active offensive buff (strength, speed, or a heroic/holy blessing),
+     * or null if none are active.
+     */
+    private Color getActiveBuffGlowColor(Player player) {
+        if (player == null || player.getStatusManager() == null) {
+            return null;
+        }
+        com.bpm.minotaur.managers.StatusManager sm = player.getStatusManager();
+        if (sm.hasEffect(StatusEffectType.HEROISM)) {
+            return new Color(1f, 0.85f, 0.3f, 1f); // Holy gold
+        }
+        if (sm.hasEffect(StatusEffectType.TEMP_STRENGTH) || sm.hasEffect(StatusEffectType.GIANT_STRENGTH)) {
+            return new Color(1f, 0.35f, 0.15f, 1f); // Fiery strength orange
+        }
+        if (sm.hasEffect(StatusEffectType.HASTED) || sm.hasEffect(StatusEffectType.SUPER_SPEED)
+                || sm.hasEffect(StatusEffectType.TEMP_SPEED)) {
+            return new Color(0.4f, 0.9f, 1f, 1f); // Cyan speed
+        }
+        return null;
+    }
+
+    /**
+     * Builds a NetHack-style epitaph line, e.g. "Fell to an Umber Hulk at Strata
+     * Depth 3 on turn 412 while parched", from the finalized run's telemetry.
+     */
+    private String buildEpitaph(com.bpm.minotaur.telemetry.TelemetryManager telemetry) {
+        StringBuilder sb = new StringBuilder();
+        String killer = telemetry.getKillerMonster();
+        if (killer != null && !killer.trim().isEmpty()) {
+            String niceName = formatMonsterName(killer);
+            String article = niceName.matches("^[AEIOU].*") ? "an" : "a";
+            sb.append("Fell to ").append(article).append(" ").append(niceName);
+        } else {
+            sb.append("Perished in the depths");
+        }
+        sb.append(" at Strata Depth ").append(Math.max(1, telemetry.getStrataReached()));
+        sb.append(" on turn ").append(telemetry.getTurnsLived());
+
+        if (player != null && player.getStats() != null) {
+            PlayerStats stats = player.getStats();
+            if (stats.getSatiationState() == PlayerStats.SatiationState.STARVING) {
+                sb.append(" while starving");
+            } else if (stats.getHydrationFloat() <= 0) {
+                sb.append(" while parched");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String formatMonsterName(String rawType) {
+        if (rawType == null || rawType.isEmpty()) {
+            return "unknown foe";
+        }
+        String[] parts = rawType.toLowerCase().split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
     }
 
     /**
@@ -1038,6 +1127,12 @@ public class GameScreen extends BaseScreen {
      * rehydrates the shelter chest, and switches the display back to GameScreen.
      */
     public void respawnInShelter(int lostCount, int retainedCount, int deaths, float bridge) {
+        // Begin a fresh expedition run: reset the death idempotency lock and start
+        // a new telemetry run so the next demise is tracked independently.
+        this.activeExpeditionRunId = java.util.UUID.randomUUID().toString();
+        this.isDeathTransitionTriggered = false;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
+
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
@@ -1072,6 +1167,13 @@ public class GameScreen extends BaseScreen {
         if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
             Item cookingKit = game.getItemDataManager().createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().pickupToBackpack(cookingKit);
+        }
+
+        // Shelter Altar Provisions tier: extra rations at the start of each expedition
+        int bonusProvisions = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getBonusProvisionCount();
+        for (int i = 0; i < bonusProvisions; i++) {
+            Item bonusFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
+            player.getInventory().pickupToBackpack(bonusFood);
         }
 
         // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
@@ -2280,6 +2382,12 @@ public class GameScreen extends BaseScreen {
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.CORPSE) {
             CorpseLootScreen corpseScreen = new CorpseLootScreen(game, this, player, itemInFront, maze);
             game.setScreen(corpseScreen);
+            return;
+        }
+
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_ALTAR) {
+            ShelterAltarScreen altarScreen = new ShelterAltarScreen(game, this, player);
+            game.setScreen(altarScreen);
             return;
         }
 

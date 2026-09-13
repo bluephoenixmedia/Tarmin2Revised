@@ -319,7 +319,7 @@ public class ShelterChestScreen extends BaseScreen {
         }
 
         chestCountLabel.setText(String.format("%02d / %02d", chest.getItemCount(), chest.getCapacity()));
-        packCountLabel.setText(String.format("%02d / 30", packItems.size()));
+        packCountLabel.setText(String.format("%02d / %02d", packItems.size(), player.getInventory().getMaxBackpackSize()));
 
         updateActionButtons();
         refreshDivinityBar();
@@ -358,7 +358,7 @@ public class ShelterChestScreen extends BaseScreen {
     private void updateActionButtons() {
         boolean canStore = selectedItem != null && selectedSide == Side.PACK && !chest.isFull();
         boolean canTake = selectedItem != null && selectedSide == Side.CHEST
-                && player.getInventory().getMainInventory().size() < 30;
+                && player.getInventory().getCarriedCount() < player.getInventory().getMaxBackpackSize();
 
         boolean anyGibs = false;
         for (Item it : player.getInventory().getMainInventory()) {
@@ -412,7 +412,7 @@ public class ShelterChestScreen extends BaseScreen {
     }
 
     private void withdrawItem(Item item) {
-        if (player.getInventory().getMainInventory().size() >= 30) {
+        if (player.getInventory().getCarriedCount() >= player.getInventory().getMaxBackpackSize()) {
             statusLabel.setText("Cannot withdraw: backpack is full!");
             return;
         }

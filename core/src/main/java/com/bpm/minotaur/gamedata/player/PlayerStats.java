@@ -68,16 +68,32 @@ public class PlayerStats {
 
     private final float vulnerabilityMultiplier;
 
+    public enum SatiationState {
+        STARVING,
+        HUNGRY,
+        NORMAL,
+        SATIATED,
+        CHOKING
+    }
+
     // --- Survival Stats ---
-    private float satiety = 80.0f; // 0-100, formerly 'food'
+    private float satiety = 80.0f; // 0-120 NetHack scale
     private float hydration = 80.0f; // 0-100
     private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
 
-    public static final float MAX_SATIETY = 100.0f;
+    public static final float MAX_SATIETY = 120.0f;
     public static final float MAX_HYDRATION = 100.0f;
     public static final float BODY_TEMP_NORMAL = 37.0f;
     public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
     public static final float BODY_TEMP_OVERHEAT = 41.0f; // Hyperthermia start
+
+    public SatiationState getSatiationState() {
+        if (satiety <= 0f) return SatiationState.STARVING;
+        if (satiety <= 25f) return SatiationState.HUNGRY;
+        if (satiety <= 85f) return SatiationState.NORMAL;
+        if (satiety <= 105f) return SatiationState.SATIATED;
+        return SatiationState.CHOKING;
+    }
 
     public int getSatiety() {
         return (int) satiety;
@@ -193,11 +209,20 @@ public class PlayerStats {
     }
 
     /**
-     * To-hit bonus: quarter level + DEX modifier. DEX 10 = no change from base.
-     * DEX 16 gives +3 to-hit on top of level contribution.
+     * To-hit bonus: Standard RPG bounded accuracy: Base bonus 2 + (level / 2) + DEX modifier.
      */
-    public int getToHitBonus() {
-        return Math.max(1, this.level / 4 + getDexModifier());
+     public int getToHitBonus() {
+         int baseBonus = 2 + (this.level / 2);
+         return Math.max(1, baseBonus + getDexModifier());
+     }
+
+    /**
+     * NetHack-style natural HP regeneration: interval in turns.
+     * Higher Constitution accelerates recovery from 20 turns down to 8 turns.
+     */
+    public int getRegenIntervalTurns() {
+        int conMod = getConModifier();
+        return Math.max(8, 20 - (conMod * 2));
     }
 
     /**

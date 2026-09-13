@@ -20,6 +20,9 @@ public class TurnManager {
     private static final float HYDRATION_DECAY = 0.04f; // ~2500 turns to dehydrate
     private static final float TEMP_ADJUST_RATE = 0.05f; // Speed of body temp adjustment
     private int ringRechargeCounter = 0;
+    private int turnCounter = 0;
+    private PlayerStats.SatiationState lastSatiationState = PlayerStats.SatiationState.NORMAL;
+    private boolean wasParched = false;
 
     public TurnManager() {
     }
@@ -33,6 +36,10 @@ public class TurnManager {
             WorldManager worldManager, GameEventManager eventManager) {
         if (maze == null || player == null)
             return;
+
+        turnCounter++;
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setTurnsLived(turnCounter);
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setStrataReached(maze.getLevel());
 
         // 1. Calculate Time Elapsed for Player Action
         // Time = Cost / Speed.
@@ -185,34 +192,74 @@ public class TurnManager {
             stats.setBodyTemperature(newTemp);
         }
 
-        // 3. Effects / Damage
-        // Starvation
-        if (stats.getSatietyFloat() <= 0) {
-            if (Math.random() < 0.1) { // Chance to take damage every turn
-                player.takeTrueDamage(1);
-                if (eventManager != null) {
-                    if (player.getCurrentHP() <= 0) {
-                        eventManager.addEvent(new GameEvent("You starved to death!", 2.0f));
-                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-                    } else {
-                        eventManager.addEvent(new GameEvent("You are starving!", 1.0f));
-                    }
-                }
+        // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
+        PlayerStats.SatiationState satState = stats.getSatiationState();
+        int regenInterval = stats.getRegenIntervalTurns();
+        if (satState != PlayerStats.SatiationState.STARVING && (turnCounter % regenInterval == 0)) {
+            if (player.getCurrentHP() < stats.getMaxHP()) {
+                stats.heal(1);
+            }
+        }
+        // MP natural recovery: 1 MP every 6 turns when hydrated
+        if (stats.getHydrationFloat() > 0 && (turnCounter % 6 == 0)) {
+            if (player.getCurrentMP() < stats.getMaxMP()) {
+                player.restoreMP(1);
             }
         }
 
-        // Dehydration
-        if (stats.getHydrationFloat() <= 0) {
-            if (Math.random() < 0.2) { // Thirst hurts more
-                player.takeTrueDamage(1);
-                if (eventManager != null) {
-                    if (player.getCurrentHP() <= 0) {
-                        eventManager.addEvent(new GameEvent("You died of thirst!", 2.0f));
-                        eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-                    } else {
-                        eventManager.addEvent(new GameEvent("You are parched!", 1.0f));
-                    }
+        // 4. Throttled Satiation & Thirst State Notifications (No per-step log spam)
+        if (satState != lastSatiationState) {
+            lastSatiationState = satState;
+            if (eventManager != null) {
+                switch (satState) {
+                    case HUNGRY:
+                        eventManager.addEvent(new GameEvent("You are starting to feel hungry.", 2.0f));
+                        break;
+                    case STARVING:
+                        eventManager.addEvent(new GameEvent("You are starving!", 2.5f));
+                        break;
+                    case SATIATED:
+                        eventManager.addEvent(new GameEvent("You are satiated.", 2.0f));
+                        break;
+                    case CHOKING:
+                        eventManager.addEvent(new GameEvent("You are choking from overeating!", 2.5f));
+                        break;
+                    default:
+                        break;
                 }
+            }
+        } else if (satState == PlayerStats.SatiationState.STARVING && (turnCounter % 50 == 0)) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You are starving!", 2.0f));
+            }
+        }
+
+        boolean isParched = stats.getHydrationFloat() <= 0;
+        if (isParched != wasParched) {
+            wasParched = isParched;
+            if (isParched && eventManager != null) {
+                eventManager.addEvent(new GameEvent("You are parched! Drink water or find a fountain.", 2.5f));
+            }
+        } else if (isParched && (turnCounter % 50 == 0)) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You are parched!", 2.0f));
+            }
+        }
+
+        // 5. Starvation & Dehydration Damage (Every 25 / 20 turns)
+        if (satState == PlayerStats.SatiationState.STARVING && (turnCounter % 25 == 0)) {
+            player.takeTrueDamage(1);
+            if (player.getCurrentHP() <= 0 && eventManager != null) {
+                eventManager.addEvent(new GameEvent("You starved to death!", 2.0f));
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+            }
+        }
+
+        if (isParched && (turnCounter % 20 == 0)) {
+            player.takeTrueDamage(1);
+            if (player.getCurrentHP() <= 0 && eventManager != null) {
+                eventManager.addEvent(new GameEvent("You died of thirst!", 2.0f));
+                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
             }
         }
 

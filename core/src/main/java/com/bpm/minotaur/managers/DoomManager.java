@@ -41,7 +41,19 @@ public class DoomManager {
         return instance;
     }
 
-    // --- Core Logic ---
+    private String lastDeathRunId = null;
+
+    public boolean recordDeath(String runId) {
+        if (runId != null && runId.equals(lastDeathRunId)) {
+            if (Gdx.app != null) {
+                Gdx.app.log("DoomManager", "Suppressed duplicate death record for run: " + runId);
+            }
+            return false;
+        }
+        this.lastDeathRunId = runId;
+        incrementDeaths();
+        return true;
+    }
 
     public void incrementDeaths() {
         this.deathCount++;

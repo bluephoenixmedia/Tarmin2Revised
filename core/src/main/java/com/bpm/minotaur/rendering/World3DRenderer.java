@@ -241,7 +241,7 @@ public class World3DRenderer implements Disposable {
             }
         } else if (gameMode == GameMode.ADVANCED && biome != null && biome.hasFogOfWar()) {
             fogEnabled = true;
-            fogDistance = (biome == Biome.FOREST) ? 2.0f : biome.getFogDistance();
+            fogDistance = biome.getFogDistance();
             fogColor.set(biome.getFogColor());
         }
 

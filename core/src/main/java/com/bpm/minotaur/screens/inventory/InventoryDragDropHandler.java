@@ -1,6 +1,8 @@
 package com.bpm.minotaur.screens.inventory;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Payload;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop.Source;
@@ -11,6 +13,9 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerEquipment;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Centralises drag-and-drop for the entire modern inventory.
@@ -27,6 +32,7 @@ public class InventoryDragDropHandler {
     private final InventoryEventBus eventBus;
     private final InventorySkin  skin;
     private final ItemDataManager idm;
+    private final List<InventorySlot> allSlots = new ArrayList<>();
 
     public InventoryDragDropHandler(Player player, Maze maze,
                                     InventoryEventBus eventBus,
@@ -46,6 +52,24 @@ public class InventoryDragDropHandler {
     // ── Slot registration ─────────────────────────────────────────────
 
     public void register(final InventorySlot slot) {
+        allSlots.add(slot);
+
+        // Right-click to drop; double-click (left button) to quick-equip/unequip.
+        ClickListener actionListener = new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (event.getButton() == Input.Buttons.RIGHT) {
+                    dropItem(slot);
+                    return;
+                }
+                if (event.getButton() == Input.Buttons.LEFT && getTapCount() == 2) {
+                    smartEquipToggle(slot);
+                }
+            }
+        };
+        actionListener.setButton(-1); // accept any button; branch on it above
+        slot.addListener(actionListener);
+
         dnd.addSource(new Source(slot) {
             @Override
             public Payload dragStart(InputEvent event, float x, float y, int pointer) {
@@ -90,7 +114,15 @@ public class InventoryDragDropHandler {
 
     // ── Public actions (also called by click listeners) ──────────────
 
-    /** Swaps items between two slots, updating both visuals and data model. */
+    /**
+     * Swaps items between two slots, updating both visuals and data model.
+     *
+     * The displaced item (if any) is written back at the SAME grid index/slot
+     * it came from rather than appended elsewhere -- this preserves backpack
+     * ordering across quick-slot <-> backpack and backpack <-> backpack drags
+     * (previously a remove-then-append strategy would silently relocate the
+     * displaced item to the end of the backpack list).
+     */
     public void moveItem(InventorySlot source, InventorySlot target) {
         Item srcItem = source.getItem();
         if (srcItem == null) return;
@@ -99,17 +131,40 @@ public class InventoryDragDropHandler {
         // Ensure the displaced item can also go back into the source slot.
         if (dstItem != null && !source.accepts(dstItem)) return;
 
-        removeFromModel(source, srcItem);
-        if (dstItem != null) removeFromModel(target, dstItem);
-
-        addToModel(target, srcItem);
-        if (dstItem != null) addToModel(source, dstItem);
+        setSlotModel(target, srcItem);
+        setSlotModel(source, dstItem);
 
         source.setItem(dstItem);
         target.setItem(srcItem);
 
         eventBus.fireItemMoved(source, target, srcItem);
         eventBus.fireStatsChanged();
+    }
+
+    /**
+     * Double-click / smart-activate: moves an equipped item back to the first
+     * empty backpack slot, or a backpack/quick-slot item into the first
+     * equipment slot that accepts it.
+     */
+    public void smartEquipToggle(InventorySlot slot) {
+        Item item = slot.getItem();
+        if (item == null) return;
+
+        if (slot.category == InventorySlot.SlotCategory.EQUIPMENT) {
+            for (InventorySlot candidate : allSlots) {
+                if (candidate.category == InventorySlot.SlotCategory.BACKPACK && candidate.isEmpty()) {
+                    moveItem(slot, candidate);
+                    return;
+                }
+            }
+        } else {
+            for (InventorySlot candidate : allSlots) {
+                if (candidate.category == InventorySlot.SlotCategory.EQUIPMENT && candidate.accepts(item)) {
+                    moveItem(slot, candidate);
+                    return;
+                }
+            }
+        }
     }
 
     /** Drops an item from a slot onto the maze floor. */
@@ -119,7 +174,7 @@ public class InventoryDragDropHandler {
 
         boolean ok = player.dropItem(maze, item);
         if (ok) {
-            removeFromModel(slot, item);
+            setSlotModel(slot, null);
             slot.setItem(null);
             eventBus.fireItemDropped(item);
             eventBus.fireStatsChanged();
@@ -129,32 +184,36 @@ public class InventoryDragDropHandler {
 
     // ── Data-model sync ───────────────────────────────────────────────
 
-    private void removeFromModel(InventorySlot slot, Item item) {
+    /**
+     * Writes {@code item} (possibly null, to clear) into the exact slot given,
+     * without disturbing any other slot's position. For BACKPACK this is an
+     * in-place {@code List.set}/{@code remove} at {@code slot.index} rather than
+     * a value-based remove + end-of-list append, so swaps preserve grid order.
+     */
+    private void setSlotModel(InventorySlot slot, Item item) {
         switch (slot.category) {
-            case BACKPACK:
-                player.getInventory().getMainInventory().remove(item);
+            case BACKPACK: {
+                List<Item> list = player.getInventory().getMainInventory();
+                if (slot.index < list.size()) {
+                    if (item == null) {
+                        list.remove(slot.index);
+                    } else {
+                        list.set(slot.index, item);
+                    }
+                } else if (item != null) {
+                    list.add(item);
+                }
                 break;
-            case QUICK_SLOT:
-                player.getInventory().getQuickSlots()[slot.index] = null;
-                break;
-            case EQUIPMENT:
-                unequipFromModel(slot.slotName);
-                break;
-            default:
-                break;
-        }
-    }
-
-    private void addToModel(InventorySlot slot, Item item) {
-        switch (slot.category) {
-            case BACKPACK:
-                player.getInventory().getMainInventory().add(item);
-                break;
+            }
             case QUICK_SLOT:
                 player.getInventory().getQuickSlots()[slot.index] = item;
                 break;
             case EQUIPMENT:
-                equipToModel(slot.slotName, item);
+                if (item == null) {
+                    unequipFromModel(slot.slotName);
+                } else {
+                    equipToModel(slot.slotName, item);
+                }
                 break;
             default:
                 break;

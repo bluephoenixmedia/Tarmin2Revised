@@ -163,18 +163,18 @@ public class SpellSystemTest {
 
     @Test
     public void testFinesseScaling() {
-        // High DEX, Low STR
+        // High DEX, Low STR: mod +4 plus base bonus 2 = 6 to-hit; mod +4 to damage
         player.getStats().setStrength(10);  // STR 10 -> mod 0
         player.getStats().setDexterity(18); // DEX 18 -> mod +4
 
-        assertEquals(4, player.getFinesseToHitBonus());
+        assertEquals(6, player.getFinesseToHitBonus());
         assertEquals(4, player.getFinesseDamageBonus());
 
-        // High STR, Low DEX
+        // High STR, Low DEX: mod +3 plus base bonus 2 = 5 to-hit; mod +3 to damage
         player.getStats().setStrength(16);  // STR 16 -> mod +3
         player.getStats().setDexterity(12); // DEX 12 -> mod +1
 
-        assertEquals(3, player.getFinesseToHitBonus());
+        assertEquals(5, player.getFinesseToHitBonus());
         assertEquals(3, player.getFinesseDamageBonus());
     }
 
@@ -186,7 +186,8 @@ public class SpellSystemTest {
         assertEquals("CURE_WOUNDS", player.getPreparedSpell(2));
         assertEquals("SHIELD", player.getPreparedSpell(3));
 
-        // Prepare a new spell in slot 4
+        // Prepare a new spell in slot 4 (requires all 5 spell slots unlocked)
+        player.setUnlockedSpellSlots(5);
         player.learnSpellId("FIREBALL");
         player.prepareSpell(4, "FIREBALL");
         assertEquals("FIREBALL", player.getPreparedSpell(4));

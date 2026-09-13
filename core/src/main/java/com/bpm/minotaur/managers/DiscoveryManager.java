@@ -37,6 +37,13 @@ public class DiscoveryManager {
     // --- SCROLLS ---
     private ObjectMap<ItemType, ScrollEffectType> scrollMap = new ObjectMap<>();
     private ObjectMap<ScrollEffectType, Boolean> scrollIdentified = new ObjectMap<>();
+    /** Randomized cryptic rune label shown on each unidentified scroll appearance, e.g. "XEL'NAGA". */
+    private ObjectMap<ItemType, String> scrollRuneNames = new ObjectMap<>();
+
+    private static final String[] SCROLL_RUNE_POOL = {
+            "XEL'NAGA", "ZIRUVOX", "KATHA-RIN", "MORR'GLYPH", "NUL-DRATH", "VELKHAAR",
+            "SEPH-ORUN", "THAAL-KESH", "GRIM VESSEL", "OBLIVION'S WHISPER", "AZH-KOTH", "PYRE-SIGIL"
+    };
 
     // --- WANDS ---
     private ObjectMap<ItemType, WandEffectType> wandMap = new ObjectMap<>();
@@ -136,6 +143,23 @@ public class DiscoveryManager {
         for (ScrollEffectType effect : ScrollEffectType.values()) {
             scrollIdentified.put(effect, false);
         }
+
+        // Assign each unidentified scroll appearance a randomized cryptic rune label
+        // for this run, e.g. "Scroll labeled XEL'NAGA" -- stable for the session,
+        // re-rolled on every new game/apocalypse reset.
+        scrollRuneNames.clear();
+        List<String> runes = new ArrayList<>();
+        Collections.addAll(runes, SCROLL_RUNE_POOL);
+        Collections.shuffle(runes);
+        for (int i = 0; i < types.size() && i < runes.size(); i++) {
+            scrollRuneNames.put(types.get(i), runes.get(i));
+        }
+    }
+
+    /** The randomized cryptic rune label for an unidentified scroll appearance type. */
+    public String getScrollRuneLabel(ItemType appearanceType) {
+        String rune = scrollRuneNames.get(appearanceType);
+        return rune != null ? "Scroll labeled " + rune : "Scroll";
     }
 
     private void initializeWands(List<ItemType> appearanceTypes) {
@@ -312,8 +336,7 @@ public class DiscoveryManager {
             if (item.isIdentified() || isScrollIdentified(effect)) {
                 return "Scroll of " + (effect != null ? effect.getBaseName() : "Unknown");
             } else {
-                return item.getFriendlyName(); // "Labeled SCROLL_A" -> "Scroll labeled ZELGO" (TODO: friendly names in
-                                               // template)
+                return getScrollRuneLabel(item.getType());
             }
         }
         if (item.getType().name().startsWith("WAND_")) {
@@ -343,6 +366,7 @@ public class DiscoveryManager {
         public ObjectMap<String, Boolean> potionIdentifiedString;
         public ObjectMap<String, String> scrollMapString;
         public ObjectMap<String, Boolean> scrollIdentifiedString;
+        public ObjectMap<String, String> scrollRuneNamesString;
         public ObjectMap<String, String> wandMapString;
         public ObjectMap<String, Boolean> wandIdentifiedString;
         public ObjectMap<String, String> ringMapString;
@@ -372,6 +396,10 @@ public class DiscoveryManager {
             state.scrollIdentifiedString = new ObjectMap<>();
             for (ObjectMap.Entry<ScrollEffectType, Boolean> entry : scrollIdentified.entries()) {
                 state.scrollIdentifiedString.put(entry.key.name(), entry.value);
+            }
+            state.scrollRuneNamesString = new ObjectMap<>();
+            for (ObjectMap.Entry<ItemType, String> entry : scrollRuneNames.entries()) {
+                state.scrollRuneNamesString.put(entry.key.name(), entry.value);
             }
 
             // Wands
@@ -434,6 +462,16 @@ public class DiscoveryManager {
                     for (ObjectMap.Entry<String, Boolean> entry : state.scrollIdentifiedString.entries()) {
                         try {
                             scrollIdentified.put(ScrollEffectType.valueOf(entry.key), entry.value);
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+
+                scrollRuneNames.clear();
+                if (state.scrollRuneNamesString != null) {
+                    for (ObjectMap.Entry<String, String> entry : state.scrollRuneNamesString.entries()) {
+                        try {
+                            scrollRuneNames.put(ItemType.valueOf(entry.key), entry.value);
                         } catch (Exception e) {
                         }
                     }

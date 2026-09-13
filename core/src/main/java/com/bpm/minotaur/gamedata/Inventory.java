@@ -9,9 +9,9 @@ public class Inventory {
     private final Item[] quickSlots = new Item[6];
 
     // "Main Inventory" - The expanded storage (Backpack Screen)
-    // For now, let's cap it at 30 to match the UI grid
+    // Matches the modern inventory UI's 8x6 backpack grid (BackpackPanel.SLOT_COUNT).
     private final List<Item> mainInventory = new ArrayList<>();
-    private final int MAX_BACKPACK_SIZE = 30;
+    private final int MAX_BACKPACK_SIZE = 48;
 
     private Item rightHand = null;
     private Item leftHand = null;
@@ -196,6 +196,16 @@ public class Inventory {
 
     public List<Item> getMainInventory() {
         return mainInventory;
+    }
+
+    /** Number of discrete backpack grid slots currently occupied. */
+    public int getCarriedCount() {
+        return mainInventory.size();
+    }
+
+    /** Total discrete backpack grid slots available, matching the UI grid size. */
+    public int getMaxBackpackSize() {
+        return MAX_BACKPACK_SIZE;
     }
 
     public boolean removeItem(Item item) {

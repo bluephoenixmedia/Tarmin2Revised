@@ -79,7 +79,9 @@ public class Player {
     private final List<com.bpm.minotaur.gamedata.spells.SpellType> knownSpells = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
-    private int unlockedSpellSlots = 5;
+    // Slot 1 (cantrips) is available from the start; Tomes of the Initiate/Elements/
+    // Arcane/Tarmin progressively unlock slots 2-5 (see Player#useItem).
+    private int unlockedSpellSlots = 1;
 
     public int getUnlockedSpellSlots() {
         return unlockedSpellSlots;
@@ -133,6 +135,10 @@ public class Player {
     }
 
     public boolean castPreparedSpell(int slot, Maze maze, GameEventManager eventManager, CombatManager combatManager) {
+        if (slot >= unlockedSpellSlots) {
+            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is locked! Study a Tome to unlock it.", 1.5f));
+            return false;
+        }
         String id = getPreparedSpell(slot);
         if (id == null || id.isEmpty()) {
             eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is empty! Assign in Spellbook.", 1.5f));
@@ -214,10 +220,13 @@ public class Player {
         learnSpellId("FIRE_BOLT");
         learnSpellId("CURE_WOUNDS");
         learnSpellId("SHIELD");
-        prepareSpell(0, "MAGIC_MISSILE");
-        prepareSpell(1, "FIRE_BOLT");
-        prepareSpell(2, "CURE_WOUNDS");
-        prepareSpell(3, "SHIELD");
+        // Written directly (bypassing prepareSpell's unlocked-slot gate): the
+        // starting kit is always fully stocked, but only slot 1 is castable
+        // until Tomes of the Initiate/Elements/Arcane/Tarmin unlock the rest.
+        preparedSpells[0] = "MAGIC_MISSILE";
+        preparedSpells[1] = "FIRE_BOLT";
+        preparedSpells[2] = "CURE_WOUNDS";
+        preparedSpells[3] = "SHIELD";
     }
 
     public Player(float startX, float startY, Difficulty difficulty,
@@ -278,10 +287,13 @@ public class Player {
         learnSpellId("FIRE_BOLT");
         learnSpellId("CURE_WOUNDS");
         learnSpellId("SHIELD");
-        prepareSpell(0, "MAGIC_MISSILE");
-        prepareSpell(1, "FIRE_BOLT");
-        prepareSpell(2, "CURE_WOUNDS");
-        prepareSpell(3, "SHIELD");
+        // Written directly (bypassing prepareSpell's unlocked-slot gate): the
+        // starting kit is always fully stocked, but only slot 1 is castable
+        // until Tomes of the Initiate/Elements/Arcane/Tarmin unlock the rest.
+        preparedSpells[0] = "MAGIC_MISSILE";
+        preparedSpells[1] = "FIRE_BOLT";
+        preparedSpells[2] = "CURE_WOUNDS";
+        preparedSpells[3] = "SHIELD";
     }
 
     public interface ItemPickupListener {
@@ -655,15 +667,64 @@ public class Player {
 
         // --- NEW: Handle Food & Meal Eating ---
         if (item.isFood()) {
+            if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
+                }
+                takeTrueDamage(3);
+                inventory.removeItem(item);
+                return;
+            }
+
             if (item.getType() == Item.ItemType.MEAL || (item.getMealEffects() != null && !item.getMealEffects().isEmpty())) {
                 feastOnMeal(item, eventManager);
                 inventory.removeItem(item);
                 return;
             }
 
+            com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFoodConsumed();
+            if (item.getHydrationValue() > 0) {
+                com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
+            }
+
             // Basic food value
-            stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 5);
+            stats.addFood(item.getNutrition() > 0 ? item.getNutrition() : 8);
             stats.addHydration(item.getHydrationValue());
+
+            // NetHack-style Monster Flesh Intrinsics & Poison System
+            String dName = item.getDisplayName().toLowerCase();
+            if (dName.contains("scorpion") || dName.contains("spider") || dName.contains("ghoul")
+                    || dName.contains("zombie") || dName.contains("kobold") || dName.contains("bile")
+                    || dName.contains("flesh")) {
+                if (dName.contains("scorpion") || dName.contains("spider") || dName.contains("ghoul")
+                        || dName.contains("zombie") || dName.contains("kobold") || dName.contains("bile")) {
+                    statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED, 15, 1, false);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("Tainted raw flesh! You feel poisoned and nauseated.", 2.5f));
+                    }
+                    // NetHack Intrinsic: 25% chance to permanently gain Poison Resistance
+                    if (Math.random() < 0.25f && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_POISON)) {
+                        statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_POISON, -1, 1, false);
+                        if (eventManager != null) {
+                            eventManager.addEvent(new GameEvent("Your constitution hardens against venoms! (Gained Poison Resistance)", 3.5f));
+                        }
+                    }
+                }
+                if (dName.contains("gelatinous") && Math.random() < 0.30f
+                        && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_LIGHTNING)) {
+                    statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_LIGHTNING, -1, 1, false);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("A static tingling numbs your skin! (Gained Shock Resistance)", 3.5f));
+                    }
+                }
+                if (dName.contains("fire") && Math.random() < 0.30f
+                        && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)) {
+                    statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE, -1, 1, false);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("A warm barrier settles within you! (Gained Fire Resistance)", 3.5f));
+                    }
+                }
+            }
 
             // Apply Random Effect if present (e.g. Cooked Meat)
             if (item.getTrueEffect() != null) {
@@ -671,15 +732,17 @@ public class Player {
 
                 // Show effect message
                 String msg = item.getTrueEffect().getConsumeMessage();
-                if (msg != null) {
+                if (msg != null && eventManager != null) {
                     eventManager.addEvent(new GameEvent(msg, 2f));
                 }
                 // Identification check
                 if (!discoveryManager.isPotionIdentified(item.getTrueEffect())
                         && item.getTrueEffect().doesSelfIdentify()) {
                     discoveryManager.identifyPotion(this, item.getTrueEffect());
-                    eventManager.addEvent(
-                            new GameEvent("You discovered it was " + item.getTrueEffect().getBaseName() + "!", 2.0f));
+                    if (eventManager != null) {
+                        eventManager.addEvent(
+                                new GameEvent("You discovered it was " + item.getTrueEffect().getBaseName() + "!", 2.0f));
+                    }
                 }
             }
 
@@ -688,21 +751,27 @@ public class Player {
                 com.bpm.minotaur.gamedata.effects.StatusEffectType intrinsic = item.getGrantedIntrinsic();
                 if (!statusManager.hasEffect(intrinsic)) {
                     statusManager.addEffect(intrinsic, -1, 1, false);
-                    eventManager.addEvent(new GameEvent("You feel a change in your nature.", 2.5f));
-                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)
-                        eventManager.addEvent(new GameEvent("You feel cool.", 2f));
-                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)
-                        eventManager.addEvent(new GameEvent("You feel warm.", 2f));
-                    if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.TELEPATHY)
-                        eventManager.addEvent(new GameEvent("You feel mental waves.", 2f));
-                } else {
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent("You feel a change in your nature.", 2.5f));
+                        if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_FIRE)
+                            eventManager.addEvent(new GameEvent("You feel cool.", 2f));
+                        if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.RESIST_COLD)
+                            eventManager.addEvent(new GameEvent("You feel warm.", 2f));
+                        if (intrinsic == com.bpm.minotaur.gamedata.effects.StatusEffectType.TELEPATHY)
+                            eventManager.addEvent(new GameEvent("You feel mental waves.", 2f));
+                    }
+                } else if (eventManager != null) {
                     eventManager.addEvent(new GameEvent("You feel nothing new.", 1.5f));
                 }
             }
 
             inventory.removeItem(item); // Consume it
-            eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
-            soundManager.playPickupItemSound(); // Re-using pickup sound for eating for now
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
+            }
+            if (soundManager != null) {
+                soundManager.playPickupItemSound();
+            }
 
             // Log the meal
             BalanceLogger.getInstance().logEconomy("RES_GAIN", "Food (Item)", 5);
@@ -817,12 +886,22 @@ public class Player {
     public void feastOnMeal(Item meal, GameEventManager eventManager) {
         if (meal == null) return;
 
-        // 1. Satiety, Food, Hydration & Healing
+        // Choking check if already over-satiated
+        if (stats.getSatiationState() == com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
+            }
+            takeTrueDamage(3);
+            return;
+        }
+
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFoodConsumed();
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordWaterConsumed();
+
+        // 1. Satiety, Food, Hydration & Temperature (NetHack model: 0 direct HP heal)
         stats.modifySatiety(45f);
         stats.addFood(meal.getNutrition() > 0 ? meal.getNutrition() : 25);
         stats.addHydration(meal.getHydrationValue() > 0 ? meal.getHydrationValue() : 15);
-        int healAmt = 15 + (stats.getCookingSkill() * 3);
-        stats.heal(healAmt);
 
         // 2. Warm body temperature toward cozy normal (37°C)
         float temp = stats.getBodyTemperature();
@@ -906,6 +985,8 @@ public class Player {
             return;
         }
 
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordPotionQuaffed();
+
         // NEW: Toxic Alchemy Potions
         if (potion.getType() == ItemType.POTION_FERAL_DRAUGHT) {
             drinkToxicConcoction(potion, 30, 1, 0, 15, "Strength surges through you, but it burns!", eventManager);
@@ -969,6 +1050,8 @@ public class Player {
             return;
         }
 
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordScrollRead();
+
         ScrollEffectType effect = scroll.getScrollEffect();
         if (effect == null) {
             eventManager.addEvent(new GameEvent("The scroll is blank.", 1.5f));
@@ -995,22 +1078,32 @@ public class Player {
                 }
                 eventManager.addEvent(new GameEvent("Your possessions glow with understanding!", 2.0f));
                 break;
-            case TELEPORT:
-                // Random position
+            case TELEPORT: {
+                // Random position, rejecting any candidate that can't actually path
+                // back to the player's current corridor network (prevents landing
+                // in a walled-off pocket disconnected from the rest of the level).
+                GridPoint2 startTile = new GridPoint2((int) this.position.x, (int) this.position.y);
+                boolean teleported = false;
                 int tries = 0;
                 while (tries < 20) {
                     int tx = (int) (Math.random() * maze.getWidth());
                     int ty = (int) (Math.random() * maze.getHeight());
-                    if (maze.getWallDataAt(tx, ty) == 0 && maze.getGameObjectAt(tx, ty) == null) {
-                        this.position.set(tx + 0.5f, ty + 0.5f);
-                        eventManager.addEvent(new GameEvent("You teleport to a new location!", 2.0f));
-                        break;
+                    if (maze.isPassable(tx, ty) && maze.getGameObjectAt(tx, ty) == null) {
+                        GridPoint2 candidate = new GridPoint2(tx, ty);
+                        if (candidate.equals(startTile)
+                                || !com.bpm.minotaur.gamedata.Pathfinder.findPath(maze, this, startTile, candidate).isEmpty()) {
+                            this.position.set(tx + 0.5f, ty + 0.5f);
+                            eventManager.addEvent(new GameEvent("You teleport to a new location!", 2.0f));
+                            teleported = true;
+                            break;
+                        }
                     }
                     tries++;
                 }
-                if (tries >= 20)
+                if (!teleported)
                     eventManager.addEvent(new GameEvent("The chaotic energies fizzle...", 2.0f));
                 break;
+            }
             case MAGIC_MAPPING:
                 eventManager.addEvent(new GameEvent("A map is etched in your mind. (Mapping NYI)", 2.0f));
                 break;
@@ -1350,6 +1443,10 @@ public class Player {
 
     public void setCurrentMP(int mp) {
         stats.setCurrentMP(mp);
+    }
+
+    public void restoreMP(int amount) {
+        stats.setCurrentMP(Math.min(getEffectiveMaxMP(), stats.getCurrentMP() + amount));
     }
 
     public int getMaxMP() {
@@ -1844,20 +1941,22 @@ public class Player {
                 // Loot Generation
                 Item meat = itemDataManager.createItem(Item.ItemType.MEAT, targetX, targetY, ItemColor.RED,
                         assetManager);
+                meat.setCorpseSource(itemInFront.getCorpseSource());
                 if (inventory.pickupToBackpack(meat)) {
-                    eventManager.addEvent(new GameEvent("You harvest some Meat.", 2f));
+                    eventManager.addEvent(new GameEvent("You harvest some " + meat.getDisplayName() + ".", 2f));
                 } else {
                     maze.addItem(meat);
-                    eventManager.addEvent(new GameEvent("Inventory full! Meat dropped.", 2f));
+                    eventManager.addEvent(new GameEvent("Inventory full! " + meat.getDisplayName() + " dropped.", 2f));
                 }
 
                 Item bone = itemDataManager.createItem(Item.ItemType.BONE, targetX, targetY, ItemColor.WHITE,
                         assetManager);
+                bone.setCorpseSource(itemInFront.getCorpseSource());
                 if (inventory.pickupToBackpack(bone)) {
-                    eventManager.addEvent(new GameEvent("You harvest a Bone.", 2f));
+                    eventManager.addEvent(new GameEvent("You harvest a " + bone.getDisplayName() + ".", 2f));
                 } else {
                     maze.addItem(bone);
-                    eventManager.addEvent(new GameEvent("Inventory full! Bone dropped.", 2f));
+                    eventManager.addEvent(new GameEvent("Inventory full! " + bone.getDisplayName() + " dropped.", 2f));
                 }
             } else {
                 eventManager.addEvent(new GameEvent("You need a sharp tool (Axe/Knife) to butcher this.", 2f));
@@ -2167,8 +2266,9 @@ public class Player {
     }
 
     public int getFinesseToHitBonus() {
+        int baseBonus = 2 + (stats.getLevel() / 2);
         int stat = Math.max(getEffectiveStrength(), getEffectiveDexterity());
-        int bonus = (stat - 10) / 2 + equipment.getEquippedModifierSum(ModifierType.BONUS_TO_HIT);
+        int bonus = baseBonus + (stat - 10) / 2 + equipment.getEquippedModifierSum(ModifierType.BONUS_TO_HIT);
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HEROISM)) {
             bonus += 2;
         }
