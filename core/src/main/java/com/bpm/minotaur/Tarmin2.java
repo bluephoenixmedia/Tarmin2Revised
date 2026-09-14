@@ -138,6 +138,11 @@ public class Tarmin2 extends Game {
         itemDataManager.queueAssets(assetManager);
         encounterManager.queueAssets(assetManager);
 
+        // Queue traveling merchant texture (never queued anywhere else, so it
+        // never finished loading and ShopkeeperNpc.getTexture() stayed null)
+        assetManager.load(com.bpm.minotaur.gamedata.ShopkeeperNpc.TEXTURE_PATH,
+                com.badlogic.gdx.graphics.Texture.class);
+
         // Queue 3D Skybox models if present
         if (Gdx.files.internal("models/skybox/castle_tarmin.obj").exists()) {
             assetManager.load("models/skybox/castle_tarmin.obj", com.badlogic.gdx.graphics.g3d.Model.class);
