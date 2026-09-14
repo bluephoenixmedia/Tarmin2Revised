@@ -74,6 +74,13 @@ public class FirstPersonWeaponOverlay {
     // Blood coating on weapon
     private float bloodLevel = 0f; // 0.0 to 1.0
 
+    // Discrete blood decals on the weapon, reusing the exact same SurfaceDecal
+    // class (expand/oxidize/fade) as the world gore system, so the blade
+    // accumulates visible splats in step with how much blood a hit dispersed.
+    public static final int MAX_WEAPON_BLOOD_DECALS = 24;
+    private final List<com.bpm.minotaur.gamedata.gore.SurfaceDecal> weaponBloodDecals = new ArrayList<>();
+    private TextureRegion blankDecalTexture;
+
     // Buff Aura Glow: pulsating edge tint matching the active buff's element
     // (strength/speed/holy), set externally each frame from player status effects.
     private Color buffGlowColor = null;
@@ -248,6 +255,49 @@ public class FirstPersonWeaponOverlay {
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }
 
+    /**
+     * Spawns {@code count} blood decals onto the equipped weapon -- one real
+     * {@link com.bpm.minotaur.gamedata.gore.SurfaceDecal} per decal, so each
+     * splat expands, oxidizes, and fades exactly like a world floor decal.
+     * Callers pass the same intensity/color/texture used for the matching
+     * world blood spray so the weapon stays in sync with what was dispersed.
+     */
+    public void addBloodDecals(int count, Color color, TextureRegion texture) {
+        Color splatColor = (color != null) ? color : Color.RED;
+        for (int i = 0; i < count; i++) {
+            if (weaponBloodDecals.size() >= MAX_WEAPON_BLOOD_DECALS) {
+                weaponBloodDecals.remove(0);
+            }
+            com.bpm.minotaur.gamedata.gore.SurfaceDecal decal = new com.bpm.minotaur.gamedata.gore.SurfaceDecal();
+            // Local offset within the weapon sprite's unrotated rect, normalized
+            // around its center; reuses Vector3.x/z purely as 2D local coordinates
+            // since the weapon overlay is a flat screen quad, not world space.
+            float localX = MathUtils.random(-0.4f, 0.4f);
+            float localY = MathUtils.random(-0.4f, 0.4f);
+            // texture may be null here (e.g. atlas not loaded yet); render time
+            // substitutes a blank fallback rather than dropping the decal.
+            decal.init(new com.badlogic.gdx.math.Vector3(localX, 0f, localY), splatColor,
+                    MathUtils.random(0.08f, 0.16f), texture);
+            weaponBloodDecals.add(decal);
+        }
+    }
+
+    private TextureRegion getBlankDecalTexture() {
+        if (blankDecalTexture == null) {
+            com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1,
+                    com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
+            pixmap.setColor(Color.WHITE);
+            pixmap.fill();
+            blankDecalTexture = new TextureRegion(new Texture(pixmap));
+            pixmap.dispose();
+        }
+        return blankDecalTexture;
+    }
+
+    public int getBloodDecalCount() {
+        return weaponBloodDecals.size();
+    }
+
     /** Sets the active Buff Aura Glow tint, or null to clear it (no active buff). */
     public void setBuffGlow(Color color) {
         this.buffGlowColor = color;
@@ -319,11 +369,15 @@ public class FirstPersonWeaponOverlay {
         batch.setColor(originalColor);
     }
 
-    /** Disposes textures owned by this overlay (page-flutter particle texture). */
+    /** Disposes textures owned by this overlay (page-flutter and blood-decal fallback textures). */
     public void dispose() {
         if (pageParticleTexture != null) {
             pageParticleTexture.dispose();
             pageParticleTexture = null;
+        }
+        if (blankDecalTexture != null) {
+            blankDecalTexture.getTexture().dispose();
+            blankDecalTexture = null;
         }
     }
 
@@ -365,6 +419,16 @@ public class FirstPersonWeaponOverlay {
         // Decay blood coating on blade
         if (bloodLevel > 0f) {
             bloodLevel = Math.max(0f, bloodLevel - (delta * 0.08f));
+        }
+
+        // Age blood decals using SurfaceDecal's own update() -- identical
+        // expand/oxidize/fade timeline as the world gore system.
+        for (int i = weaponBloodDecals.size() - 1; i >= 0; i--) {
+            com.bpm.minotaur.gamedata.gore.SurfaceDecal decal = weaponBloodDecals.get(i);
+            decal.update(delta);
+            if (decal.lifeTimer <= 0) {
+                weaponBloodDecals.remove(i);
+            }
         }
 
         // Decay guard flinch
@@ -538,7 +602,40 @@ public class FirstPersonWeaponOverlay {
                 1f, 1f,
                 rotation);
 
+        renderWeaponBloodDecals(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, rotation);
+
         batch.setColor(originalColor);
+    }
+
+    /**
+     * Stamps each accumulated blood decal on top of the weapon sprite, rotated
+     * with it exactly like the trail sampling above. Each decal draws with its
+     * own SurfaceDecal.color, which already carries the expand/oxidize/fade
+     * state computed in update() -- no separate weapon-specific fade logic.
+     */
+    private void renderWeaponBloodDecals(SpriteBatch batch, float drawX, float drawY,
+            float originX, float originY, float targetWidth, float targetHeight, float rotation) {
+        if (weaponBloodDecals.isEmpty()) return;
+
+        float rad = rotation * MathUtils.degreesToRadians;
+        float cos = MathUtils.cos(rad);
+        float sin = MathUtils.sin(rad);
+
+        for (com.bpm.minotaur.gamedata.gore.SurfaceDecal decal : weaponBloodDecals) {
+            // World decals fall back to a plain colored quad when no atlas
+            // texture was available (see World3DRenderer's blankTexture)
+            // rather than disappearing; match that instead of skipping.
+            TextureRegion tex = (decal.textureRegion != null) ? decal.textureRegion : getBlankDecalTexture();
+
+            float localX = targetWidth * (0.5f + decal.position.x) - originX;
+            float localY = targetHeight * (0.5f + decal.position.z) - originY;
+            float dx = drawX + originX + (localX * cos - localY * sin);
+            float dy = drawY + originY + (localX * sin + localY * cos);
+
+            float decalSize = decal.size * targetWidth;
+            batch.setColor(decal.color);
+            batch.draw(tex, dx - decalSize * 0.5f, dy - decalSize * 0.5f, decalSize, decalSize);
+        }
     }
 
     private void renderOffHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {

@@ -1454,21 +1454,27 @@ public class CombatManager {
                 Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
                 GoreProfile profile = GoreProfile.fromMonster(monster);
 
+                int bloodIntensity;
                 if (damageRatio < 0.15f) {
                     // Chip damage
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 2, profile);
+                    bloodIntensity = 2;
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
                 } else if (damageRatio < 0.35f) {
                     // Solid Hit
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 5, profile);
+                    bloodIntensity = 5;
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.1f);
                 } else {
                     // Massive Hit
-                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, 8, profile);
+                    bloodIntensity = 8;
+                    maze.getGoreManager().spawnBloodSpray(hitPos, exitDir, bloodIntensity, profile);
                     if (profile.hasGibs) {
                         maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 1, profile);
                     }
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
                 }
+
+                applyWeaponBlood(bloodIntensity, profile);
             }
 
         } else {
@@ -2143,23 +2149,48 @@ public class CombatManager {
             }
         }
 
+        int killBloodIntensity;
         if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO) {
             String[] spriteData = monster.getSpriteData();
             if (spriteData != null) {
                 maze.getGoreManager().spawnRetroGibs(gibOrigin, spriteData, monster.getColor());
+                killBloodIntensity = 0;
             } else {
                 maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, Math.max(1, overkillTier), profile);
+                killBloodIntensity = 0;
             }
         } else {
             if (overkillTier > 0) {
                 maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
-                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, overkillTier == 2 ? 8 : 5, profile);
+                killBloodIntensity = (overkillTier == 2) ? 8 : 5;
+                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
             } else {
-                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, 2, profile);
+                killBloodIntensity = 2;
+                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
             }
         }
 
+        // Weapon shares in the killing blow's blood, same as every other
+        // player-caused hit above.
+        applyWeaponBlood(killBloodIntensity, profile);
+
         spawnCorpseEffects(monster, overkillTier);
         DivinityOrbManager.getInstance().spawnOrb();
+    }
+
+    /**
+     * Bloodies the equipped weapon in sync with the same intensity dispersed
+     * into the world by a player-caused hit -- same decal class, color, and
+     * texture family as the floor/wall splats it's landing alongside.
+     */
+    private void applyWeaponBlood(int intensity, GoreProfile profile) {
+        if (intensity <= 0 || game == null || !(game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)) {
+            return;
+        }
+        com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+        com.badlogic.gdx.graphics.Color bloodColor = (profile.primaryColor != null)
+                ? profile.primaryColor
+                : com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
+        gs.getWeaponOverlay().addBloodDecals(intensity, bloodColor, maze.getGoreManager().getRandomBloodTexture());
     }
 }

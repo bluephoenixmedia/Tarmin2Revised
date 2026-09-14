@@ -283,6 +283,22 @@ public class GoreManager {
         activeGibs.add(g);
     }
 
+    /**
+     * Same texture-selection weighting used internally by {@link #spawnWallDecal},
+     * exposed so other systems (e.g. the first-person weapon overlay) can stamp a
+     * blood decal that looks like it belongs to the same family as world decals.
+     */
+    public TextureRegion getRandomBloodTexture() {
+        if (spatterTexture != null && MathUtils.randomBoolean(0.35f)) {
+            return spatterTexture;
+        } else if (smearTextures.size > 0) {
+            return smearTextures.random();
+        } else if (dropTextures.size > 0) {
+            return dropTextures.random();
+        }
+        return null;
+    }
+
     // --- Decal Spawning ---
 
     public void spawnSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
