@@ -152,4 +152,59 @@ public class Weather3DTest {
         com.bpm.minotaur.gamedata.Maze mazeL2 = new com.bpm.minotaur.gamedata.Maze(2, new int[16][16]);
         assertTrue("Level 2 tile must always be indoors", mazeL2.isIndoors(0, 0));
     }
+
+    @Test
+    public void testPrecipitationAnimatesWhileInsideShelterAndNeverSpawnsIndoors() {
+        weatherManager.setCurrentWeather(WeatherType.RAIN);
+        weatherManager.setCurrentIntensity(WeatherIntensity.MEDIUM);
+
+        com.bpm.minotaur.gamedata.Maze maze = new com.bpm.minotaur.gamedata.Maze(1, new int[24][24]);
+        java.util.List<com.badlogic.gdx.math.GridPoint2> shelterTiles = java.util.Arrays.asList(
+                new com.badlogic.gdx.math.GridPoint2(10, 10),
+                new com.badlogic.gdx.math.GridPoint2(10, 11),
+                new com.badlogic.gdx.math.GridPoint2(11, 10),
+                new com.badlogic.gdx.math.GridPoint2(11, 11)
+        );
+        maze.setHomeTiles(shelterTiles);
+
+        // Position player squarely inside the shelter
+        com.bpm.minotaur.gamedata.player.Player player = new com.bpm.minotaur.gamedata.player.Player(10.5f, 10.5f);
+        assertTrue("Player must be on a home tile", maze.isHomeTile(10, 10));
+        assertTrue("Player must be considered indoors", maze.isIndoors(10, 10));
+
+        WeatherRenderer renderer = new WeatherRenderer(weatherManager);
+        assertEquals("Should start with 0 particles", 0, renderer.getParticles().size);
+
+        // First update must spawn particles outside despite player standing inside
+        renderer.update(0.05f, player, maze);
+        assertTrue("Precipitation must spawn and animate while player is inside shelter", renderer.getParticles().size > 0);
+
+        // Verify every initial particle is outdoor
+        for (WeatherRenderer.WeatherParticle p : renderer.getParticles()) {
+            int tx = (int) Math.floor(p.x);
+            int ty = (int) Math.floor(p.y);
+            assertFalse("Rain particle must not spawn on home tile (" + tx + ", " + ty + ")", maze.isHomeTile(tx, ty));
+            assertFalse("Rain particle must not spawn indoors (" + tx + ", " + ty + ")", maze.isIndoors(tx, ty));
+        }
+
+        // Simulate 40 updates (~2 seconds of rainfall)
+        for (int frame = 0; frame < 40; frame++) {
+            renderer.update(0.05f, player, maze);
+            assertTrue("Particles must continuously replenish", renderer.getParticles().size > 0);
+
+            for (WeatherRenderer.WeatherParticle p : renderer.getParticles()) {
+                int tx = (int) Math.floor(p.x);
+                int ty = (int) Math.floor(p.y);
+                assertFalse("Rain particle must never drift into home tile (" + tx + ", " + ty + ")", maze.isHomeTile(tx, ty));
+                assertFalse("Rain particle must never drift indoors (" + tx + ", " + ty + ")", maze.isIndoors(tx, ty));
+            }
+
+            for (WeatherRenderer.SplashDroplet s : renderer.getSplashDroplets()) {
+                int tx = (int) Math.floor(s.x);
+                int ty = (int) Math.floor(s.y);
+                assertFalse("Micro-splash must never spawn on home tile (" + tx + ", " + ty + ")", maze.isHomeTile(tx, ty));
+                assertFalse("Micro-splash must never spawn indoors (" + tx + ", " + ty + ")", maze.isIndoors(tx, ty));
+            }
+        }
+    }
 }

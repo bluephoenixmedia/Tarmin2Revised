@@ -77,8 +77,7 @@ public class WeatherRenderer {
      */
     public void update(float delta, Player player, Maze maze) {
         if (weatherManager == null || player == null) return;
-        boolean isShelter = maze != null && player != null && maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
-        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed() || isShelter) {
+        if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isWeatherSuppressed()) {
             if (particles.size > 0) particles.clear();
             if (splashDroplets.size > 0) splashDroplets.clear();
             tornadoInitialized = false;
@@ -89,7 +88,7 @@ public class WeatherRenderer {
         WeatherIntensity intensity = weatherManager.getCurrentIntensity();
 
         // 0. Tornado vortex state tracking
-        if (type == WeatherType.TORNADO && !isShelter) {
+        if (type == WeatherType.TORNADO) {
             tornadoAnimTime += delta;
             float px = player.getPosition().x;
             float py = player.getPosition().y;
@@ -231,12 +230,24 @@ public class WeatherRenderer {
      */
     private void initParticle(WeatherParticle p, float playerX, float playerY, float viewAngle,
                               Maze maze, WeatherType type, boolean initialScatter) {
-        for (int attempt = 0; attempt < 5; attempt++) {
+        boolean playerIndoors = (maze != null && maze.isIndoors((int) playerX, (int) playerY));
+        int maxAttempts = playerIndoors ? 15 : 5;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
             // Uniform visual distribution across player's field of view:
             // Counteracts foreshortening and shorter travel time of near particles by weighting near/mid spawns
             float tierRoll = MathUtils.random();
             float radius;
-            if (tierRoll < 0.36f) {
+            if (playerIndoors) {
+                // When standing indoors (e.g. shelter), immediate interior (< 1.5m) is roofed.
+                // Favor mid-to-far ranges (1.5m - 12.0m) to populate the exterior scene visible through doors/windows.
+                if (tierRoll < 0.42f) {
+                    radius = MathUtils.random(1.5f, 4.2f);
+                } else if (tierRoll < 0.76f) {
+                    radius = MathUtils.random(4.2f, 7.5f);
+                } else {
+                    radius = MathUtils.random(7.5f, CYLINDER_RADIUS);
+                }
+            } else if (tierRoll < 0.36f) {
                 // Immediate Foreground: 0.4m - 1.8m (directly in front of player's face and corridor)
                 radius = MathUtils.random(0.4f, 1.8f);
             } else if (tierRoll < 0.68f) {
@@ -450,6 +461,7 @@ public class WeatherRenderer {
         for (int i = 0; i < particles.size; i++) {
             WeatherParticle p = particles.get(i);
             if (p.isDead) continue;
+            if (maze != null && maze.isIndoors(MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
 
             // World coords: X = p.x, Y = p.z, Z = -p.y
             float worldX = p.x;
@@ -550,8 +562,7 @@ public class WeatherRenderer {
         }
 
         // --- 3. RENDER 3D TORNADO SUPERCELL VORTEX ---
-        boolean isShelter = maze != null && player != null && maze.isHomeTile((int) player.getPosition().x, (int) player.getPosition().y);
-        if (type == WeatherType.TORNADO && !isShelter) {
+        if (type == WeatherType.TORNADO) {
             render3DTornadoVortex(batcher, camera, player, maze, wm, isRetro);
         }
 
@@ -716,6 +727,14 @@ public class WeatherRenderer {
         if (out == null) out = new Vector3();
         out.set(tornadoWorldX, 0f, tornadoWorldZ);
         return out;
+    }
+
+    public Array<WeatherParticle> getParticles() {
+        return particles;
+    }
+
+    public Array<SplashDroplet> getSplashDroplets() {
+        return splashDroplets;
     }
 
     /**

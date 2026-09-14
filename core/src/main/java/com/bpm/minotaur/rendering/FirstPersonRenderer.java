@@ -505,7 +505,7 @@ public class FirstPersonRenderer {
         // --- RENDER PRECIPITATION & SPLASHES (Foreground with 3D Depth Occlusion) ---
         // Rain particles are occluded by dungeon walls/monsters via depthBuffer, allowing
         // exterior rain to be seen through open doorways/windows even when standing indoors.
-        if (this.weatherRenderer != null && currentLevel == 1 && !isInsideHome) {
+        if (this.weatherRenderer != null && currentLevel == 1) {
             spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
             spriteBatch.setShader(null);
             spriteBatch.begin();

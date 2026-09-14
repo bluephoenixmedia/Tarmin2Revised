@@ -437,10 +437,10 @@ public class World3DRenderer implements Disposable {
         renderEntities(maze, player, combatManager, isRetro, theme);
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
-        // Suppressed inside the Starting Shelter: it sits on Level 1 like the open
-        // wilderness, so without this check tornadoes/rain/snow rendered right
-        // through the shelter's walls.
-        if (currentLevel == 1 && !isInsideHome && wm != null && wm.isPrecipitation()) {
+        // Weather particles and splashes spawn strictly on outdoor tiles (never under indoor roofs/shelters).
+        // OpenGL depth testing against shelter wall/ceiling/doorframe geometry occludes outdoor particles
+        // behind solid surfaces while allowing them to animate through open doorways and barred windows.
+        if (currentLevel == 1 && wm != null && wm.isPrecipitation()) {
             if (this.weatherRenderer == null) {
                 this.weatherRenderer = new WeatherRenderer(wm);
             }
