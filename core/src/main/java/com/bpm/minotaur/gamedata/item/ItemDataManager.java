@@ -604,6 +604,44 @@ public class ItemDataManager {
                 break;
 
             // --- Open5e Potions ---
+            case POTION_OF_HEALING:
+                item.setName("Potion of Healing"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.HEALING);
+                break;
+            case POTION_HILL_GIANT:
+                item.setName("Potion of Hill Giant Strength"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.HILL_GIANT_STRENGTH);
+                break;
+            case POTION_FIRE_GIANT:
+                item.setName("Potion of Fire Giant Strength"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.FIRE_GIANT_STRENGTH);
+                break;
+            case POTION_STORM_GIANT:
+                item.setName("Potion of Storm Giant Strength"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.STORM_GIANT_STRENGTH);
+                break;
+            case POTION_OF_HEROISM:
+                item.setName("Potion of Heroism"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.HEROISM);
+                break;
+            case POTION_OF_INVISIBILITY:
+                item.setName("Potion of Invisibility"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.INVISIBILITY);
+                break;
+            case POTION_RESISTANCE: {
+                item.setName("Potion of Resistance"); item.setIdentified(true);
+                PotionEffectType[] resistances = {
+                        PotionEffectType.RESISTANCE_FIRE, PotionEffectType.RESISTANCE_COLD,
+                        PotionEffectType.RESISTANCE_LIGHTNING, PotionEffectType.RESISTANCE_ACID,
+                        PotionEffectType.RESISTANCE_NECROTIC
+                };
+                item.setTrueEffect(resistances[(int) (Math.random() * resistances.length)]);
+                break;
+            }
+            case OIL_OF_SHARPNESS:
+                item.setName("Oil of Sharpness"); item.setIdentified(true);
+                item.setTrueEffect(PotionEffectType.OIL_OF_SHARPNESS);
+                break;
             case POTION_GREATER_HEALING:
                 item.setName("Potion of Greater Healing"); item.setIdentified(true);
                 item.setTrueEffect(PotionEffectType.GREATER_HEALING);

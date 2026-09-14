@@ -131,7 +131,7 @@ public enum PotionEffectType {
                 break;
             }
             case GAIN_STRENGTH:
-                stats.modifyBaseHP(1);
+                stats.modifyStrength(1);
                 break;
             case BLINDNESS:
                 statusManager.addEffect(StatusEffectType.BLIND, 20, 1, false);
@@ -199,7 +199,8 @@ public enum PotionEffectType {
                 statusManager.addEffect(StatusEffectType.TEMP_SPEED, 150, 1, false);
                 break;
             case OIL_OF_SHARPNESS:
-                if (player.getInventory() != null && player.getInventory().getRightHand() != null) {
+                if (player.getInventory() != null && player.getInventory().getRightHand() != null
+                        && player.getInventory().getRightHand().isWeapon()) {
                     player.getInventory().getRightHand().addModifier(new ItemModifier(ModifierType.BONUS_TO_HIT, 3, "Sharpened"));
                     player.getInventory().getRightHand().addModifier(new ItemModifier(ModifierType.BONUS_DAMAGE, 3, "Keen"));
                 }

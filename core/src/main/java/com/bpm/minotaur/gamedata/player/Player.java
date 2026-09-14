@@ -1091,6 +1091,10 @@ public class Player {
         String msg = effect.getConsumeMessage();
         if (msg == null)
             msg = "You feel strange.";
+        if (effect == PotionEffectType.OIL_OF_SHARPNESS
+                && (inventory.getRightHand() == null || !inventory.getRightHand().isWeapon())) {
+            msg = "The oil has nothing to coat and drips uselessly.";
+        }
         eventManager.addEvent(new GameEvent(msg, 2.0f));
 
         // Identification check
@@ -1178,7 +1182,12 @@ public class Player {
                 break;
             }
             case MAGIC_MAPPING:
-                eventManager.addEvent(new GameEvent("A map is etched in your mind. (Mapping NYI)", 2.0f));
+                for (int mx = 0; mx < maze.getWidth(); mx++) {
+                    for (int my = 0; my < maze.getHeight(); my++) {
+                        maze.markVisited(mx, my);
+                    }
+                }
+                eventManager.addEvent(new GameEvent("A map is etched in your mind!", 2.0f));
                 break;
             case ENCHANT_WEAPON:
                 Item weapon = inventory.getRightHand();

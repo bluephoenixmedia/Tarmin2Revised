@@ -448,6 +448,10 @@ public class PlayerStats {
         this.strength = strength;
     }
 
+    public void modifyStrength(int amount) {
+        this.strength += amount;
+    }
+
     public int getConstitution() { return constitution; }
     public void setConstitution(int v) { this.constitution = v; }
     public void modifyConstitution(int amount) { this.constitution += amount; }
