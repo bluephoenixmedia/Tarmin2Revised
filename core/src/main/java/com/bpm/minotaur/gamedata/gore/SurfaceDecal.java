@@ -36,8 +36,8 @@ public class SurfaceDecal implements Pool.Poolable {
         this.driedColor.set(startColor.r * 0.42f, startColor.g * 0.15f, startColor.b * 0.15f, startColor.a);
 
         this.color.set(freshColor);
-        this.initialSize = Math.max(0.06f, targetRadius * 0.35f);
-        this.targetSize = Math.max(0.16f, targetRadius);
+        this.initialSize = targetRadius * 0.35f;
+        this.targetSize = targetRadius;
         this.size = initialSize;
         this.expandTimer = 0f;
         this.maxLife = MAX_DECAL_LIFE;

@@ -404,6 +404,7 @@ public class Item implements Renderable {
         item.type = type;
         item.friendlyName = template.friendlyName;
         item.description = template.description;
+        item.spriteData = template.spriteData;
         item.baseValue = template.baseValue;
         item.damageDice = template.damageDice;
         item.armorClassBonus = template.armorClassBonus;

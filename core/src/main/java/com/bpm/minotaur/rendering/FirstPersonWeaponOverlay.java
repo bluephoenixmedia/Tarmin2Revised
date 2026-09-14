@@ -10,6 +10,12 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.TextureData;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
@@ -17,6 +23,7 @@ import com.bpm.minotaur.rendering.animation.AnimationArchetype;
 import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
 import com.bpm.minotaur.rendering.animation.WeaponTrailRenderer;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +88,16 @@ public class FirstPersonWeaponOverlay {
     private final List<com.bpm.minotaur.gamedata.gore.SurfaceDecal> weaponBloodDecals = new ArrayList<>();
     private TextureRegion blankDecalTexture;
 
+    // Solid non-alpha pixel coordinates precomputed from the equipped weapon sprite.
+    // Each Vector2 is a normalized offset (x, y) relative to the sprite center, in [-0.5, 0.5].
+    private final List<Vector2> solidPixelPoints = new ArrayList<>();
+
+    // Offscreen FrameBuffer for strict destination-alpha silhouette masking
+    private static final int FBO_SIZE = 512;
+    private FrameBuffer weaponFbo;
+    private TextureRegion weaponFboRegion;
+    private SpriteBatch fboBatch;
+
     // Buff Aura Glow: pulsating edge tint matching the active buff's element
     // (strength/speed/holy), set externally each frame from player status effects.
     private Color buffGlowColor = null;
@@ -125,6 +142,9 @@ public class FirstPersonWeaponOverlay {
             }
             this.mainHandArchetype = AnimationArchetype.fromItem(rightHand);
             rebuildComboChain();
+            this.weaponBloodDecals.clear();
+            this.bloodLevel = 0f;
+            extractSolidWeaponPixels();
         }
 
         if (this.offHandItem != leftHand) {
@@ -256,38 +276,201 @@ public class FirstPersonWeaponOverlay {
     }
 
     /**
+     * Inspects the equipped weapon's texture or sprite data to find all non-alpha pixels
+     * (alpha > 32). Decals will be sampled exclusively from these coordinates so blood
+     * droplets land directly on the blade, guard, or handle rather than floating in empty air.
+     */
+    private void extractSolidWeaponPixels() {
+        solidPixelPoints.clear();
+
+        Pixmap pixmap = null;
+        boolean needsDispose = false;
+
+        // 1. Try loading Pixmap from item template texturePath via Gdx.files or direct assets file
+        // 1. Try reading weapon PNG file via ImageIO or FileHandle
+        if (mainHandItem != null && mainHandItem.getTemplate() != null
+                && mainHandItem.getTemplate().texturePath != null) {
+            String path = mainHandItem.getTemplate().texturePath;
+            File file = null;
+            if (Gdx.files != null) {
+                try {
+                    FileHandle h = Gdx.files.internal(path);
+                    if (h != null && h.exists()) {
+                        file = h.file();
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+            if (file == null || !file.exists()) {
+                File f = new File("assets/" + path);
+                if (!f.exists()) {
+                    f = new File("../assets/" + path);
+                }
+                if (f.exists()) {
+                    file = f;
+                }
+            }
+            if (file != null && file.exists()) {
+                try {
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+                    if (img != null) {
+                        int w = img.getWidth();
+                        int h = img.getHeight();
+                        int step = Math.max(2, Math.min(w, h) / 128);
+                        for (int py = 0; py < h; py += step) {
+                            for (int px = 0; px < w; px += step) {
+                                int argb = img.getRGB(px, py);
+                                int alpha = (argb >>> 24) & 0xFF;
+                                if (alpha > 32) {
+                                    float normX = ((float) px + 0.5f) / (float) w - 0.5f;
+                                    float normY = ((float) (h - 1 - py) + 0.5f) / (float) h - 0.5f;
+                                    solidPixelPoints.add(new Vector2(normX, normY));
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        // 2. Try inspecting TextureData if Pixmap was not loaded from file
+        if (solidPixelPoints.isEmpty() && mainHandTexture != null && mainHandTexture.getTexture() != null) {
+            try {
+                TextureData data = mainHandTexture.getTexture().getTextureData();
+                if (!data.isPrepared()) {
+                    data.prepare();
+                }
+                pixmap = data.consumePixmap();
+                needsDispose = data.disposePixmap();
+            } catch (Throwable ignored) {
+            }
+        }
+
+        // If a Pixmap is available, scan for solid non-alpha pixels (alpha > 32)
+        if (pixmap != null) {
+            try {
+                int regX = (mainHandTexture != null) ? mainHandTexture.getRegionX() : 0;
+                int regY = (mainHandTexture != null) ? mainHandTexture.getRegionY() : 0;
+                int regW = (mainHandTexture != null) ? mainHandTexture.getRegionWidth() : pixmap.getWidth();
+                int regH = (mainHandTexture != null) ? mainHandTexture.getRegionHeight() : pixmap.getHeight();
+
+                // Adaptive step size for smooth distribution across any image resolution
+                int step = Math.max(2, Math.min(regW, regH) / 128);
+                for (int py = 0; py < regH; py += step) {
+                    for (int px = 0; px < regW; px += step) {
+                        int pixel = pixmap.getPixel(regX + px, regY + py);
+                        int alpha = pixel & 0xFF; // RGBA8888 alpha
+                        if (alpha > 32) {
+                            // Normalized coordinates centered at (0, 0) in [-0.5, 0.5].
+                            // In Pixmap, py=0 is top; in SpriteBatch/GL, y=0 is bottom.
+                            float normX = ((float) px + 0.5f) / (float) regW - 0.5f;
+                            float normY = ((float) (regH - 1 - py) + 0.5f) / (float) regH - 0.5f;
+                            solidPixelPoints.add(new Vector2(normX, normY));
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            } finally {
+                if (needsDispose) {
+                    try {
+                        pixmap.dispose();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback: RETRO ASCII sprite data (# characters)
+        String[] spriteData = (mainHandSpriteData != null) ? mainHandSpriteData
+                : (mainHandItem != null && mainHandItem.getTemplate() != null ? mainHandItem.getTemplate().spriteData : null);
+        if (solidPixelPoints.isEmpty() && spriteData != null && spriteData.length > 0) {
+            int rows = spriteData.length;
+            int cols = spriteData[0].length();
+            for (int r = 0; r < rows; r++) {
+                String row = spriteData[r];
+                for (int c = 0; c < cols && c < row.length(); c++) {
+                    if (row.charAt(c) == '#') {
+                        float normX = ((float) c + 0.5f) / (float) cols - 0.5f;
+                        float normY = ((float) (rows - 1 - r) + 0.5f) / (float) rows - 0.5f;
+                        solidPixelPoints.add(new Vector2(normX, normY));
+                    }
+                }
+            }
+        }
+
+        // 4. Fallback for testing environments without graphics assets
+        if (solidPixelPoints.isEmpty()) {
+            for (int i = 0; i < 30; i++) {
+                float t = i / 29.0f;
+                float normX = MathUtils.random(-0.04f, 0.04f);
+                float normY = MathUtils.lerp(-0.25f, 0.40f, t);
+                solidPixelPoints.add(new Vector2(normX, normY));
+            }
+        }
+    }
+
+    public int getSolidPixelCount() {
+        return solidPixelPoints.size();
+    }
+
+    /**
      * Spawns {@code count} blood decals onto the equipped weapon -- one real
      * {@link com.bpm.minotaur.gamedata.gore.SurfaceDecal} per decal, so each
      * splat expands, oxidizes, and fades exactly like a world floor decal.
-     * Callers pass the same intensity/color/texture used for the matching
-     * world blood spray so the weapon stays in sync with what was dispersed.
+     * Decals are sampled strictly from detected non-alpha weapon pixels,
+     * scaled down by 80% (20% of previous size) to form fine blood droplets,
+     * and blended with realistic translucent opacity.
      */
     public void addBloodDecals(int count, Color color, TextureRegion texture) {
-        Color splatColor = (color != null) ? color : Color.RED;
+        Color baseColor = (color != null) ? color : com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
         for (int i = 0; i < count; i++) {
             if (weaponBloodDecals.size() >= MAX_WEAPON_BLOOD_DECALS) {
                 weaponBloodDecals.remove(0);
             }
             com.bpm.minotaur.gamedata.gore.SurfaceDecal decal = new com.bpm.minotaur.gamedata.gore.SurfaceDecal();
-            // Local offset within the weapon sprite's unrotated rect, normalized
-            // around its center; reuses Vector3.x/z purely as 2D local coordinates
-            // since the weapon overlay is a flat screen quad, not world space.
-            float localX = MathUtils.random(-0.4f, 0.4f);
-            float localY = MathUtils.random(-0.4f, 0.4f);
-            // texture may be null here (e.g. atlas not loaded yet); render time
-            // substitutes a blank fallback rather than dropping the decal.
-            decal.init(new com.badlogic.gdx.math.Vector3(localX, 0f, localY), splatColor,
-                    MathUtils.random(0.08f, 0.16f), texture);
+
+            // 1. Decal position: sample strictly from detected non-alpha weapon pixels
+            float localX, localY;
+            if (!solidPixelPoints.isEmpty()) {
+                Vector2 pt = solidPixelPoints.get(MathUtils.random(0, solidPixelPoints.size() - 1));
+                localX = pt.x;
+                localY = pt.y;
+            } else {
+                localX = MathUtils.random(-0.04f, 0.04f);
+                localY = MathUtils.random(-0.25f, 0.40f);
+            }
+
+            // 2. Opacity: translucent realistic blood (0.70f to 0.85f alpha)
+            float alpha = (baseColor.a > 0.01f ? baseColor.a : 1.0f) * MathUtils.random(0.70f, 0.85f);
+            Color splatColor = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+
+            // 3. Size: reduced by 80% (20% of previous 0.08f-0.16f -> 0.016f-0.032f)
+            float decalRadius = MathUtils.random(0.016f, 0.032f);
+
+            decal.init(new com.badlogic.gdx.math.Vector3(localX, 0f, localY), splatColor, decalRadius, texture);
             weaponBloodDecals.add(decal);
         }
     }
 
     private TextureRegion getBlankDecalTexture() {
-        if (blankDecalTexture == null) {
-            com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1,
-                    com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
-            pixmap.setColor(Color.WHITE);
+        if (blankDecalTexture == null && Gdx.gl != null) {
+            int sz = 16;
+            Pixmap pixmap = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+            pixmap.setColor(0f, 0f, 0f, 0f);
             pixmap.fill();
+            float center = (sz - 1) / 2.0f;
+            float radius = sz / 2.0f;
+            for (int y = 0; y < sz; y++) {
+                for (int x = 0; x < sz; x++) {
+                    float dist = (float) Math.hypot(x - center, y - center);
+                    if (dist <= radius) {
+                        float a = MathUtils.clamp(1.0f - (dist / radius) * 0.4f, 0f, 1f);
+                        pixmap.setColor(1f, 1f, 1f, a);
+                        pixmap.drawPixel(x, y);
+                    }
+                }
+            }
             blankDecalTexture = new TextureRegion(new Texture(pixmap));
             pixmap.dispose();
         }
@@ -296,6 +479,10 @@ public class FirstPersonWeaponOverlay {
 
     public int getBloodDecalCount() {
         return weaponBloodDecals.size();
+    }
+
+    public List<com.bpm.minotaur.gamedata.gore.SurfaceDecal> getWeaponBloodDecals() {
+        return java.util.Collections.unmodifiableList(weaponBloodDecals);
     }
 
     /** Sets the active Buff Aura Glow tint, or null to clear it (no active buff). */
@@ -369,13 +556,21 @@ public class FirstPersonWeaponOverlay {
         batch.setColor(originalColor);
     }
 
-    /** Disposes textures owned by this overlay (page-flutter and blood-decal fallback textures). */
+    /** Disposes textures and FrameBuffer owned by this overlay. */
     public void dispose() {
+        if (weaponFbo != null) {
+            weaponFbo.dispose();
+            weaponFbo = null;
+        }
+        if (fboBatch != null) {
+            fboBatch.dispose();
+            fboBatch = null;
+        }
         if (pageParticleTexture != null) {
             pageParticleTexture.dispose();
             pageParticleTexture = null;
         }
-        if (blankDecalTexture != null) {
+        if (blankDecalTexture != null && blankDecalTexture.getTexture() != null) {
             blankDecalTexture.getTexture().dispose();
             blankDecalTexture = null;
         }
@@ -580,31 +775,120 @@ public class FirstPersonWeaponOverlay {
 
         // Draw weapon sprite
         Color originalColor = batch.getColor();
+        Color weaponColor = Color.WHITE;
         if (bloodLevel > 0.05f) {
             // Blood-stained red tinting on blade
-            batch.setColor(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
+            weaponColor = new Color(1.0f, 1.0f - (bloodLevel * 0.45f), 1.0f - (bloodLevel * 0.55f), 1.0f);
         } else if (buffGlowColor != null) {
             // Buff Aura Glow: pulsating edge tint matching the active buff's element
             float pulse = (0.5f + 0.5f * MathUtils.sin(buffGlowPulseTimer)) * BUFF_GLOW_MAX_STRENGTH;
-            batch.setColor(
+            weaponColor = new Color(
                     1f + (buffGlowColor.r - 1f) * pulse,
                     1f + (buffGlowColor.g - 1f) * pulse,
                     1f + (buffGlowColor.b - 1f) * pulse,
                     1.0f);
-        } else {
-            batch.setColor(Color.WHITE);
         }
 
-        batch.draw(mainHandTexture,
+        if (!weaponBloodDecals.isEmpty() && Gdx.gl != null) {
+            renderMaskedWeaponWithDecals(batch, viewport, drawX, drawY, originX, originY,
+                    targetWidth, targetHeight, rotation, weaponColor);
+        } else {
+            batch.setColor(weaponColor);
+            batch.draw(mainHandTexture,
+                    drawX, drawY,
+                    originX, originY,
+                    targetWidth, targetHeight,
+                    1f, 1f,
+                    rotation);
+            if (!weaponBloodDecals.isEmpty()) {
+                renderWeaponBloodDecals(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, rotation);
+            }
+        }
+
+        batch.setColor(originalColor);
+    }
+
+    /**
+     * Dual-pass off-screen composite rendering: draws the weapon sprite into an off-screen FBO
+     * to establish the exact alpha silhouette mask, then stamps the blood decals using
+     * GL_DST_ALPHA destination alpha blending. Decals outside the non-alpha pixels of the weapon
+     * are multiplied by 0, ensuring zero blood ever displays in empty air outside the blade.
+     */
+    private void renderMaskedWeaponWithDecals(SpriteBatch batch, Viewport viewport,
+            float drawX, float drawY, float originX, float originY,
+            float targetWidth, float targetHeight, float rotation, Color weaponColor) {
+        if (weaponFbo == null) {
+            weaponFbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_SIZE, FBO_SIZE, false);
+            weaponFbo.getColorBufferTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            weaponFboRegion = new TextureRegion(weaponFbo.getColorBufferTexture());
+            weaponFboRegion.flip(false, true); // Flip Y because OpenGL FBOs have inverted Y
+            fboBatch = new SpriteBatch();
+        }
+
+        // 1. Temporarily flush and pause the main screen batch
+        boolean wasDrawing = batch.isDrawing();
+        if (wasDrawing) {
+            batch.end();
+        }
+
+        // 2. Render weapon sprite into FBO to establish alpha mask
+        weaponFbo.begin();
+        Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        fboBatch.getProjectionMatrix().setToOrtho2D(0, 0, FBO_SIZE, FBO_SIZE);
+        fboBatch.begin();
+
+        fboBatch.setColor(weaponColor);
+        fboBatch.draw(mainHandTexture, 0, 0, FBO_SIZE, FBO_SIZE);
+        fboBatch.flush();
+
+        // 3. Mask blood decals to the weapon's non-alpha pixels!
+        // GL_DST_ALPHA multiplies incoming decal color by destination (weapon) alpha.
+        // Where weapon alpha is 0 (outside blade), decal is multiplied by 0 (zero blood drawn outside blade).
+        // Where weapon alpha is 1 (on blade), decal is drawn with its opacity.
+        // GL_ZERO, GL_ONE preserves the weapon's alpha silhouette.
+        fboBatch.setBlendFunctionSeparate(
+                GL20.GL_DST_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA,
+                GL20.GL_ZERO, GL20.GL_ONE
+        );
+
+        float aspectFactor = (targetHeight > 0f) ? (targetWidth / targetHeight) : 1f;
+
+        for (com.bpm.minotaur.gamedata.gore.SurfaceDecal decal : weaponBloodDecals) {
+            TextureRegion tex = (decal.textureRegion != null) ? decal.textureRegion : getBlankDecalTexture();
+            if (tex == null) continue;
+
+            float fboX = (0.5f + decal.position.x) * FBO_SIZE;
+            float fboY = (0.5f + decal.position.z) * FBO_SIZE;
+            float decalW = decal.size * FBO_SIZE;
+            float decalH = decalW * aspectFactor;
+
+            fboBatch.setColor(decal.color);
+            fboBatch.draw(tex, fboX - decalW * 0.5f, fboY - decalH * 0.5f, decalW, decalH);
+        }
+
+        fboBatch.flush();
+        fboBatch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        fboBatch.end();
+        weaponFbo.end();
+
+        // 4. Restore viewport and resume main batch
+        if (viewport != null) {
+            viewport.apply();
+        }
+        if (wasDrawing) {
+            batch.begin();
+        }
+
+        // 5. Draw composite weapon with its world position, scale, origin, and rotation!
+        batch.setColor(Color.WHITE);
+        batch.draw(weaponFboRegion,
                 drawX, drawY,
                 originX, originY,
                 targetWidth, targetHeight,
                 1f, 1f,
                 rotation);
-
-        renderWeaponBloodDecals(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, rotation);
-
-        batch.setColor(originalColor);
     }
 
     /**
@@ -770,7 +1054,7 @@ public class FirstPersonWeaponOverlay {
     }
 
     private TextureRegion resolveTexture(Item item) {
-        if (item == null || item.getTemplate() == null) {
+        if (item == null || item.getTemplate() == null || assetManager == null) {
             return null;
         }
 
