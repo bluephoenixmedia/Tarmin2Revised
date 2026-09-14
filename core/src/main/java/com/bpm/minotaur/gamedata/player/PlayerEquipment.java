@@ -22,6 +22,11 @@ public class PlayerEquipment {
 
     private Item wornShield = null; // Kept for legacy compatibility / explicit shield slot logic
 
+    // Ceiling on the equipment-derived portion of Armor Class (base 10 + Dex is separate).
+    // Without this, summing AC from all 7 armor slots plus every BONUS_AC modifier lets a
+    // fully-geared player's AC climb past what monster to-hit rolls can ever clear.
+    public static final int MAX_EQUIPMENT_AC_BONUS = 15;
+
     public PlayerEquipment() {
     }
 
@@ -67,43 +72,49 @@ public class PlayerEquipment {
         int totalDefense = 0;
         StringBuilder log = new StringBuilder();
 
+        // Base (template-only) AC per slot. BONUS_AC modifiers are added exactly
+        // once below via getEquippedModifierSum() -- summing
+        // Item.getArmorClassBonus() here as well would double-count them, since
+        // that method already folds an item's own modifiers into its total.
         if (wornHelmet != null) {
-            totalDefense += wornHelmet.getArmorClassBonus();
-            log.append(" Head(").append(wornHelmet.getArmorClassBonus()).append(")");
+            totalDefense += wornHelmet.getBaseArmorClassBonus();
+            log.append(" Head(").append(wornHelmet.getBaseArmorClassBonus()).append(")");
         }
         if (wornChest != null) {
-            totalDefense += wornChest.getArmorClassBonus();
-            log.append(" Chest(").append(wornChest.getArmorClassBonus()).append(")");
+            totalDefense += wornChest.getBaseArmorClassBonus();
+            log.append(" Chest(").append(wornChest.getBaseArmorClassBonus()).append(")");
         }
         if (wornGauntlets != null) {
-            totalDefense += wornGauntlets.getArmorClassBonus();
-            log.append(" Hands(").append(wornGauntlets.getArmorClassBonus()).append(")");
+            totalDefense += wornGauntlets.getBaseArmorClassBonus();
+            log.append(" Hands(").append(wornGauntlets.getBaseArmorClassBonus()).append(")");
         }
         if (wornBoots != null) {
-            totalDefense += wornBoots.getArmorClassBonus();
-            log.append(" Feet(").append(wornBoots.getArmorClassBonus()).append(")");
+            totalDefense += wornBoots.getBaseArmorClassBonus();
+            log.append(" Feet(").append(wornBoots.getBaseArmorClassBonus()).append(")");
         }
         if (wornLegs != null) {
-            totalDefense += wornLegs.getArmorClassBonus();
-            log.append(" Legs(").append(wornLegs.getArmorClassBonus()).append(")");
+            totalDefense += wornLegs.getBaseArmorClassBonus();
+            log.append(" Legs(").append(wornLegs.getBaseArmorClassBonus()).append(")");
         }
         if (wornArms != null) {
-            totalDefense += wornArms.getArmorClassBonus();
-            log.append(" Arms(").append(wornArms.getArmorClassBonus()).append(")");
+            totalDefense += wornArms.getBaseArmorClassBonus();
+            log.append(" Arms(").append(wornArms.getBaseArmorClassBonus()).append(")");
         }
         if (wornShield != null) {
-            totalDefense += wornShield.getArmorClassBonus();
-            log.append(" Shield(").append(wornShield.getArmorClassBonus()).append(")");
+            totalDefense += wornShield.getBaseArmorClassBonus();
+            log.append(" Shield(").append(wornShield.getBaseArmorClassBonus()).append(")");
         }
 
-        // Add bonus defense from all equipped items
+        // Add bonus defense from all equipped items' modifiers (covers the 7 armor
+        // slots above, plus rings/eyes/neck/back, which have no base-AC term of
+        // their own).
         int modifierDefense = getEquippedModifierSum(ModifierType.BONUS_AC);
         if (modifierDefense > 0) {
             totalDefense += modifierDefense;
             log.append(" Mods(").append(modifierDefense).append(")");
         }
 
-        return totalDefense;
+        return Math.min(MAX_EQUIPMENT_AC_BONUS, totalDefense);
     }
 
     public int getArmorDefense() {

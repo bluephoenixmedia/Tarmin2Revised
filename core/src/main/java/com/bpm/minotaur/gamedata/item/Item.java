@@ -845,6 +845,11 @@ public class Item implements Renderable {
         return totalBonus;
     }
 
+    /** AC bonus from this item's base template only, excluding BONUS_AC modifiers. */
+    public int getBaseArmorClassBonus() {
+        return this.armorClassBonus;
+    }
+
     public int getDamageReduction() {
         if (type == null) return 0;
         String typeName = type.name().toUpperCase();
