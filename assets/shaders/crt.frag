@@ -16,6 +16,8 @@ uniform vec4 u_vignetteColor;
 uniform float u_vignetteIntensity;
 uniform float u_glitchFactor;
 uniform float u_spellChromatic;
+uniform float u_sonarProgress;
+uniform float u_wisdomIrisIntensity;
 
 // --- TWEAKED VALUES FOR SUBTLE CRT ---
 const float curvature = 0.0;        // WAS 3.0. Now 0.3 for very slight curve. Set to 0.0 for perfectly flat.
@@ -88,6 +90,31 @@ void main() {
         float edge = length(vUv) * 1.414;
         float vig = smoothstep(0.35, 1.0, edge) * u_vignetteIntensity;
         color = mix(color, u_vignetteColor.rgb, vig * u_vignetteColor.a);
+    }
+
+    // 7. Cartographic Sonar Pulse (Magic Mapping)
+    if (u_sonarProgress > 0.001 && u_sonarProgress < 1.0) {
+        vec2 sUv = uv - vec2(0.5);
+        sUv.x *= 1.777;
+        float dist = length(sUv);
+        float waveDist = abs(dist - u_sonarProgress);
+        if (waveDist < 0.035) {
+            float ring = (1.0 - waveDist / 0.035) * (1.0 - u_sonarProgress);
+            color += vec3(0.15, 0.95, 0.40) * ring * 0.75;
+        }
+        if (dist < u_sonarProgress) {
+            float grid = (step(0.96, fract(uv.x * 24.0)) + step(0.96, fract(uv.y * 24.0))) * 0.12 * (1.0 - u_sonarProgress);
+            color += vec3(0.1, 0.7, 0.3) * grid;
+        }
+    }
+
+    // 8. Arcane Wisdom Iris (Identify)
+    if (u_wisdomIrisIntensity > 0.001) {
+        vec2 iUv = uv - vec2(0.5);
+        iUv.x *= 1.777;
+        float dist = length(iUv);
+        float irisRing = smoothstep(0.32, 0.24, abs(dist - 0.28)) * u_wisdomIrisIntensity;
+        color += vec3(1.0, 0.85, 0.30) * irisRing * 0.65;
     }
 
     gl_FragColor = v_color * vec4(color, 1.0);

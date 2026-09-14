@@ -368,7 +368,7 @@ public class Hud implements Disposable {
                             || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
                         combatManager.playerUseItem(slotIdx, discoveryManager);
                     } else {
-                        player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze);
+                        player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze, combatManager);
                     }
                 }
             });

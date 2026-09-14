@@ -267,6 +267,10 @@ public class GameScreen extends BaseScreen {
         return discoveryManager;
     }
 
+    public CombatManager getCombatManager() {
+        return combatManager;
+    }
+
     @Override
     public void hide() {
         if (worldManager != null && maze != null && gameMode == GameMode.ADVANCED) {
@@ -2021,7 +2025,7 @@ public class GameScreen extends BaseScreen {
                         if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
                             playerTurnTakesAction();
                         }
-                    } else if (player.useQuickSlot(0, eventManager, this.discoveryManager, maze)) {
+                    } else if (player.useQuickSlot(0, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;
@@ -2031,7 +2035,7 @@ public class GameScreen extends BaseScreen {
                         if (player.castPreparedSpell(1, maze, eventManager, combatManager)) {
                             playerTurnTakesAction();
                         }
-                    } else if (player.useQuickSlot(1, eventManager, this.discoveryManager, maze)) {
+                    } else if (player.useQuickSlot(1, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;
@@ -2041,7 +2045,7 @@ public class GameScreen extends BaseScreen {
                         if (player.castPreparedSpell(2, maze, eventManager, combatManager)) {
                             playerTurnTakesAction();
                         }
-                    } else if (player.useQuickSlot(2, eventManager, this.discoveryManager, maze)) {
+                    } else if (player.useQuickSlot(2, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;
@@ -2051,7 +2055,7 @@ public class GameScreen extends BaseScreen {
                         if (player.castPreparedSpell(3, maze, eventManager, combatManager)) {
                             playerTurnTakesAction();
                         }
-                    } else if (player.useQuickSlot(3, eventManager, this.discoveryManager, maze)) {
+                    } else if (player.useQuickSlot(3, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;
@@ -2061,13 +2065,13 @@ public class GameScreen extends BaseScreen {
                         if (player.castPreparedSpell(4, maze, eventManager, combatManager)) {
                             playerTurnTakesAction();
                         }
-                    } else if (player.useQuickSlot(4, eventManager, this.discoveryManager, maze)) {
+                    } else if (player.useQuickSlot(4, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;
                 case Input.Keys.NUM_6:
                 case Input.Keys.NUMPAD_6:
-                    if (player.useQuickSlot(5, eventManager, this.discoveryManager, maze)) {
+                    if (player.useQuickSlot(5, eventManager, this.discoveryManager, maze, combatManager)) {
                         playerTurnTakesAction();
                     }
                     return true;

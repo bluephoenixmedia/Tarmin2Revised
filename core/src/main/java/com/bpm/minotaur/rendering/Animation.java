@@ -11,7 +11,8 @@ public class Animation {
         PROJECTILE_PLAYER,
         PROJECTILE_SPELL,
         DAMAGE_TEXT,
-        DRAIN_SPELL
+        DRAIN_SPELL,
+        SPRITE_EXPLOSION_3D
     }
 
     private float elapsedTime; // Changed from final so it can be updated
@@ -26,6 +27,34 @@ public class Animation {
 
     private String damageText;
     private GridPoint2 textPosition;
+
+    // 3D Sprite Explosion fields
+    private com.badlogic.gdx.math.Vector3 position3D;
+    private com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType;
+    private float scale3D = 1.6f;
+    private boolean additiveBlend = true;
+
+    // Constructor for 3D In-World Sprite Explosions (BearFX)
+    public Animation(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType,
+                     com.badlogic.gdx.math.Vector3 position3D, float scale, float duration) {
+        this.type = AnimationType.SPRITE_EXPLOSION_3D;
+        this.explosionType = explosionType;
+        this.position3D = (position3D != null) ? position3D.cpy() : new com.badlogic.gdx.math.Vector3();
+        this.scale3D = (scale > 0) ? scale : 1.6f;
+        this.duration = (duration > 0) ? duration : (explosionType != null ? explosionType.getDefaultDuration() : 0.6f);
+        this.color = Color.WHITE;
+        this.startPosition = new Vector2(this.position3D.x, this.position3D.z);
+        this.endPosition = new Vector2(this.position3D.x, this.position3D.z);
+        this.progress = 0f;
+        this.elapsedTime = 0f;
+        this.spriteData = null;
+        this.additiveBlend = true;
+    }
+
+    public Animation(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType,
+                     com.badlogic.gdx.math.Vector3 position3D) {
+        this(explosionType, position3D, 1.6f, -1f);
+    }
 
     // Existing constructor for projectiles
     public Animation(AnimationType type, Vector2 startPosition, Vector2 endPosition, Color color, float duration,
@@ -103,5 +132,25 @@ public class Animation {
 
     public float getElapsedTime() {
         return elapsedTime;
+    }
+
+    public float getDuration() {
+        return duration;
+    }
+
+    public com.badlogic.gdx.math.Vector3 getPosition3D() {
+        return position3D;
+    }
+
+    public com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType getExplosionType() {
+        return explosionType;
+    }
+
+    public float getScale3D() {
+        return scale3D;
+    }
+
+    public boolean isAdditiveBlend() {
+        return additiveBlend;
     }
 }

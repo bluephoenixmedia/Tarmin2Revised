@@ -48,6 +48,16 @@ public class SpellPostProcessor implements Disposable {
     private float chromaticDuration = 0f;
     private float chromaticTimer = 0f;
 
+    // Sonar wave state (Magic Mapping)
+    private float sonarProgress = 0f;
+    private float sonarDuration = 0f;
+    private float sonarTimer = 0f;
+
+    // Wisdom iris state (Identify)
+    private float wisdomIrisIntensity = 0f;
+    private float wisdomIrisDuration = 0f;
+    private float wisdomIrisTimer = 0f;
+
     private float elapsedTime = 0f;
 
     public SpellPostProcessor() {
@@ -126,6 +136,31 @@ public class SpellPostProcessor implements Disposable {
         } else {
             chromaticIntensity = 0f;
         }
+
+        // Sonar wave update
+        if (sonarTimer < sonarDuration) {
+            sonarTimer += delta;
+            if (sonarTimer >= sonarDuration) {
+                sonarProgress = 0f;
+            } else {
+                sonarProgress = MathUtils.clamp(sonarTimer / sonarDuration, 0f, 1f);
+            }
+        } else {
+            sonarProgress = 0f;
+        }
+
+        // Wisdom iris update
+        if (wisdomIrisTimer < wisdomIrisDuration) {
+            wisdomIrisTimer += delta;
+            if (wisdomIrisTimer >= wisdomIrisDuration) {
+                wisdomIrisIntensity = 0f;
+            } else {
+                float t = wisdomIrisTimer / wisdomIrisDuration;
+                wisdomIrisIntensity = 1.0f - (t * t);
+            }
+        } else {
+            wisdomIrisIntensity = 0f;
+        }
     }
 
     /**
@@ -143,6 +178,37 @@ public class SpellPostProcessor implements Disposable {
 
         shader.setUniformf("u_glitchFactor", glitchFactor);
         shader.setUniformf("u_spellChromatic", chromaticIntensity);
+        shader.setUniformf("u_sonarProgress", sonarProgress);
+        shader.setUniformf("u_wisdomIrisIntensity", wisdomIrisIntensity);
+    }
+
+    /** Triggers an expanding radar sonar wave for Magic Mapping. */
+    public void triggerSonarWave(float duration) {
+        this.sonarDuration = Math.max(0.2f, duration);
+        this.sonarTimer = 0f;
+        this.sonarProgress = 0.001f;
+        triggerVignette(new Color(0.1f, 0.8f, 0.35f, 0.6f), 0.6f, duration);
+    }
+
+    /** Triggers an arcane wisdom iris flash and chromatic focus for Identify. */
+    public void triggerWisdomIris(float duration) {
+        this.wisdomIrisDuration = Math.max(0.2f, duration);
+        this.wisdomIrisTimer = 0f;
+        this.wisdomIrisIntensity = 1.0f;
+        triggerChromaticAberration(0.6f, duration * 0.8f);
+        triggerVignette(new Color(1.0f, 0.85f, 0.3f, 0.7f), 0.65f, duration);
+    }
+
+    /** Triggers celestial azure blade shimmer for Enchant Weapon. */
+    public void triggerArcaneBladeGleam(float duration) {
+        triggerVignette(new Color(0.2f, 0.65f, 1.0f, 0.85f), 0.75f, duration);
+        triggerChromaticAberration(0.45f, duration * 0.7f);
+    }
+
+    /** Triggers radiant silver aegis flash for Enchant Armor. */
+    public void triggerAegisFlash(float duration) {
+        triggerVignette(new Color(0.85f, 0.92f, 1.0f, 0.95f), 0.85f, duration);
+        triggerShockwave(0.5f, 0.5f, duration * 0.6f, 0.04f);
     }
 
     /**
@@ -223,7 +289,8 @@ public class SpellPostProcessor implements Disposable {
     }
 
     public boolean isActive() {
-        return shockwaveProgress > 0f || vignetteIntensity > 0.01f || glitchFactor > 0.01f || chromaticIntensity > 0.01f;
+        return shockwaveProgress > 0f || vignetteIntensity > 0.01f || glitchFactor > 0.01f || chromaticIntensity > 0.01f
+                || sonarProgress > 0f || wisdomIrisIntensity > 0.01f;
     }
 
     public ShaderProgram getSpellShader() {

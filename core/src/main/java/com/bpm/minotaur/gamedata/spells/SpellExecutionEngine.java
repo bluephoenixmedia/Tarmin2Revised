@@ -17,6 +17,7 @@ import com.bpm.minotaur.managers.CombatManager.HitResult;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
+import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
 import com.bpm.minotaur.screens.GameScreen;
 
 import java.util.ArrayList;
@@ -145,9 +146,10 @@ public class SpellExecutionEngine {
             gs.addTrauma(0.45f);
         }
 
-        // 2. Fiery 3D Particle Cascade
+        // 2. Fiery 3D Particle Cascade & BearFX Explosion
         Vector3 impact3d = new Vector3(center.x + 0.5f, 0.5f, center.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnExplosion(ExplosionType.FIRE, impact3d, 1.8f, 0.65f);
             combatManager.getAnimationManager().spawnArchetypeCascade(impact3d, VisualArchetype.EXPLOSIVE_BURST, 40);
         }
 
@@ -186,6 +188,7 @@ public class SpellExecutionEngine {
             }
 
             Vector3 target3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
+            combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, target3d, 1.2f, 0.40f);
             combatManager.getAnimationManager().spawnArchetypeCascade(target3d, VisualArchetype.FORCE_MISSILE, 15);
         }
 
@@ -238,6 +241,7 @@ public class SpellExecutionEngine {
 
             if (combatManager != null && combatManager.getAnimationManager() != null) {
                 Vector3 dest3d = new Vector3(dest.x + 0.5f, 0.5f, dest.y + 0.5f);
+                combatManager.getAnimationManager().spawnExplosion(ExplosionType.WIND, dest3d, 1.5f, 0.50f);
                 combatManager.getAnimationManager().spawnArchetypeCascade(dest3d, VisualArchetype.SPATIAL_WARP, 25);
             }
         } else {
@@ -261,6 +265,7 @@ public class SpellExecutionEngine {
 
         Vector3 front3d = new Vector3(player.getPosition().x + fx * 1.2f, 0.5f, player.getPosition().y + fy * 1.2f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, front3d, 1.7f, 0.50f);
             combatManager.getAnimationManager().spawnArchetypeCascade(front3d, VisualArchetype.THUNDER_CONCUSSION, 30);
         }
 
@@ -374,6 +379,7 @@ public class SpellExecutionEngine {
                     new String[] { archetype.getParticleAscii() }));
 
             Vector3 hit3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
+            combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), hit3d, 1.4f, 0.45f);
             combatManager.getAnimationManager().spawnArchetypeCascade(hit3d, archetype, 18);
         }
 
@@ -427,6 +433,7 @@ public class SpellExecutionEngine {
 
         Vector3 center3d = new Vector3(center.x + 0.5f, 0.5f, center.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), center3d, 1.8f, 0.60f);
             combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 25);
         }
 
@@ -444,6 +451,11 @@ public class SpellExecutionEngine {
         int tx = (int) Math.floor(player.getPosition().x + facing.getVector().x);
         int ty = (int) Math.floor(player.getPosition().y + facing.getVector().y);
         GridPoint2 targetPos = new GridPoint2(tx, ty);
+
+        Vector3 touch3d = new Vector3(targetPos.x + 0.5f, 0.5f, targetPos.y + 0.5f);
+        if (combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), touch3d, 1.2f, 0.40f);
+        }
 
         Monster target = maze.getMonsters().get(targetPos);
         if (target != null && target.getCurrentHP() > 0) {
@@ -525,6 +537,33 @@ public class SpellExecutionEngine {
             case "FORCE":
             default:
                 return Color.SKY;
+        }
+    }
+
+    public static ExplosionType getExplosionForArchetype(VisualArchetype archetype) {
+        if (archetype == null) return ExplosionType.STANDARD;
+        switch (archetype) {
+            case FLAME_BOLT:
+            case EXPLOSIVE_BURST:
+                return ExplosionType.FIRE;
+            case LIGHTNING_ARC:
+                return ExplosionType.ELECTRIC;
+            case FROST_RAY:
+                return ExplosionType.ICE;
+            case TOXIC_CLOUD:
+            case NECROTIC_DRAIN:
+                return ExplosionType.TOXIC;
+            case SPATIAL_WARP:
+            case PSYCHIC_SHOCK:
+                return ExplosionType.VOID;
+            case FORCE_MISSILE:
+            case THUNDER_CONCUSSION:
+                return ExplosionType.CONCUSSIVE;
+            case HOLY_RADIANCE:
+                return ExplosionType.HOLY_CROSS;
+            case ARCANE_WARD:
+            default:
+                return ExplosionType.STANDARD;
         }
     }
 }

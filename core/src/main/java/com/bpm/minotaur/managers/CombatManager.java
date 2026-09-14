@@ -920,10 +920,10 @@ public class CombatManager {
 
         if (itemToUse != null) {
             if (itemToUse.isWeapon() || itemToUse.isShield()) {
-                player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze);
+                player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze, this);
                 closeMenuOrPassTurn();
             } else {
-                player.useItem(itemToUse, eventManager, discoveryManager, maze);
+                player.useItem(itemToUse, eventManager, discoveryManager, maze, this);
                 closeMenuOrPassTurn();
             }
         } else {

@@ -28,6 +28,12 @@ public class SpellCastOverlay {
         "  #  "
     };
 
+    public enum CastOverlayMode {
+        HAND_RAISE,
+        SCROLL_READ
+    }
+
+    private CastOverlayMode mode = CastOverlayMode.HAND_RAISE;
     private boolean active = false;
     private float timer = 0f;
     private float duration = 0.8f;
@@ -48,6 +54,7 @@ public class SpellCastOverlay {
 
     /** Full parameter trigger for hand-raise with custom hand color, school rune, and rune glow color. */
     public void triggerCast(float duration, Color handTint, String runeSchool, Color runeGlowColor) {
+        this.mode = CastOverlayMode.HAND_RAISE;
         this.active = true;
         this.timer = 0f;
         this.duration = Math.max(0.2f, duration);
@@ -56,6 +63,21 @@ public class SpellCastOverlay {
         } else {
             this.handColor.set(0.82f, 0.68f, 0.55f, 1f);
         }
+        this.runeSchool = (runeSchool != null) ? runeSchool.toUpperCase() : "EVOCATION";
+        if (runeGlowColor != null) {
+            this.runeColor.set(runeGlowColor);
+        } else {
+            this.runeColor.set(1f, 0.85f, 0.3f, 1f);
+        }
+    }
+
+    /** Triggers the first-person two-handed scroll unfurl and incineration animation. */
+    public void triggerScrollRead(float duration, Color runeGlowColor, String runeSchool) {
+        this.mode = CastOverlayMode.SCROLL_READ;
+        this.active = true;
+        this.timer = 0f;
+        this.duration = Math.max(0.5f, duration);
+        this.handColor.set(0.82f, 0.68f, 0.55f, 1f);
         this.runeSchool = (runeSchool != null) ? runeSchool.toUpperCase() : "EVOCATION";
         if (runeGlowColor != null) {
             this.runeColor.set(runeGlowColor);
@@ -85,6 +107,11 @@ public class SpellCastOverlay {
         if (!active) return;
 
         float progress = timer / duration;
+
+        if (mode == CastOverlayMode.SCROLL_READ) {
+            renderScrollUnfurl(shapeRenderer, viewport, progress);
+            return;
+        }
 
         // Three-phase animation:
         //   0.00 – 0.35 : raise (hand slides in from lower-right, eases in)
@@ -253,5 +280,129 @@ public class SpellCastOverlay {
                 shapeRenderer.rect(cx - u * 1.2f, cy - u * 1.2f, u * 2.4f, u * 2.4f); // Inner gem
                 break;
         }
+    }
+
+    /**
+     * Renders a first-person ancient parchment scroll held by two hands,
+     * flaring with elemental magic runes and incinerating into embers as the spell triggers.
+     */
+    private void renderScrollUnfurl(ShapeRenderer shapeRenderer, Viewport viewport, float progress) {
+        float w = viewport.getWorldWidth();
+        float h = viewport.getWorldHeight();
+        float cx = w * 0.5f;
+
+        float scrollW = w * 0.36f;
+        float maxScrollH = h * 0.28f;
+        float scrollH;
+        float targetY = h * 0.16f;
+        float currentY;
+        float alpha;
+
+        if (progress < 0.35f) {
+            float t = progress / 0.35f;
+            float ease = MathUtils.sin(t * MathUtils.PI * 0.5f);
+            currentY = MathUtils.lerp(h * -0.15f, targetY, ease);
+            scrollH = MathUtils.lerp(maxScrollH * 0.15f, maxScrollH, ease);
+            alpha = ease;
+        } else {
+            float t = (progress - 0.35f) / 0.65f;
+            currentY = targetY + MathUtils.sin(timer * 22f) * 2f; // Subtle casting tremor
+            scrollH = maxScrollH;
+            alpha = Math.max(0f, 1.0f - (t * t)); // Incinerates and fades
+        }
+
+        if (alpha <= 0.01f) return;
+
+        float left = cx - scrollW * 0.5f;
+        float right = cx + scrollW * 0.5f;
+        float bottom = currentY;
+        float top = currentY + scrollH;
+
+        // 1. Draw Wooden Rod Handles (Left and Right Spools)
+        float rodW = w * 0.018f;
+        float rodExtension = scrollH * 0.16f;
+        shapeRenderer.setColor(0.38f, 0.20f, 0.08f, alpha); // Dark polished wood
+        shapeRenderer.rect(left - rodW, bottom - rodExtension, rodW, scrollH + rodExtension * 2f);
+        shapeRenderer.rect(right, bottom - rodExtension, rodW, scrollH + rodExtension * 2f);
+
+        // Gold finials (caps)
+        shapeRenderer.setColor(0.85f, 0.70f, 0.25f, alpha);
+        shapeRenderer.rect(left - rodW * 1.2f, bottom - rodExtension * 1.2f, rodW * 1.4f, rodW * 1.2f);
+        shapeRenderer.rect(left - rodW * 1.2f, top + rodExtension, rodW * 1.4f, rodW * 1.2f);
+        shapeRenderer.rect(right - rodW * 0.2f, bottom - rodExtension * 1.2f, rodW * 1.4f, rodW * 1.2f);
+        shapeRenderer.rect(right - rodW * 0.2f, top + rodExtension, rodW * 1.4f, rodW * 1.2f);
+
+        // 2. Draw Aged Parchment Paper
+        shapeRenderer.setColor(0.89f, 0.82f, 0.68f, alpha); // Ancient vellum
+        shapeRenderer.rect(left, bottom, scrollW, scrollH);
+
+        // Burnt / aged edges (shadows at borders)
+        shapeRenderer.setColor(0.55f, 0.42f, 0.28f, alpha * 0.75f);
+        shapeRenderer.rect(left, bottom, scrollW, scrollH * 0.05f);
+        shapeRenderer.rect(left, top - scrollH * 0.05f, scrollW, scrollH * 0.05f);
+        shapeRenderer.rect(left, bottom, scrollW * 0.04f, scrollH);
+        shapeRenderer.rect(right - scrollW * 0.04f, bottom, scrollW * 0.04f, scrollH);
+
+        // 3. Ancient Runic Script Lines
+        shapeRenderer.setColor(0.32f, 0.22f, 0.14f, alpha * 0.65f); // Faded ink
+        int scriptRows = 5;
+        float rowSpacing = scrollH / (scriptRows + 1);
+        for (int r = 1; r <= scriptRows; r++) {
+            if (r == 3) continue; // Leave middle clear for main glowing magic rune
+            float lineY = bottom + r * rowSpacing;
+            float lineW = scrollW * 0.75f;
+            float lineX = cx - lineW * 0.5f;
+            shapeRenderer.rect(lineX, lineY, lineW, 2.5f);
+        }
+
+        // 4. Center Glowing Elemental Rune
+        float runeAlpha = (progress < 0.35f)
+                ? (progress / 0.35f)
+                : Math.min(1.0f, (1.0f - (progress - 0.35f) / 0.65f) * 1.4f);
+        float pulse = 0.88f + 0.12f * MathUtils.sin(timer * 26f);
+        float runeUnit = Math.min(scrollW, scrollH) * 0.08f;
+        float runeCy = bottom + scrollH * 0.52f;
+        renderSchoolRune(shapeRenderer, cx, runeCy, runeUnit, runeAlpha * pulse);
+
+        // 5. Incineration & Burning Ash Particles (Phase 2: progress >= 0.35f)
+        if (progress >= 0.35f) {
+            float burnT = (progress - 0.35f) / 0.65f;
+            float holeW = scrollW * burnT * 0.85f;
+            float holeH = scrollH * burnT * 0.85f;
+
+            // Burn hole cutout
+            shapeRenderer.setColor(0.08f, 0.04f, 0.02f, Math.min(1f, burnT * 1.5f));
+            shapeRenderer.rect(cx - holeW * 0.5f, runeCy - holeH * 0.5f, holeW, holeH);
+
+            // Flaming ember border
+            shapeRenderer.setColor(1.0f, 0.45f, 0.05f, (1f - burnT) * 0.9f);
+            float borderThick = 4f;
+            shapeRenderer.rect(cx - holeW * 0.5f - borderThick, runeCy - holeH * 0.5f - borderThick, holeW + borderThick * 2, borderThick);
+            shapeRenderer.rect(cx - holeW * 0.5f - borderThick, runeCy + holeH * 0.5f, holeW + borderThick * 2, borderThick);
+            shapeRenderer.rect(cx - holeW * 0.5f - borderThick, runeCy - holeH * 0.5f, borderThick, holeH);
+            shapeRenderer.rect(cx + holeW * 0.5f, runeCy - holeH * 0.5f, borderThick, holeH);
+
+            // Floating fiery embers/sparks
+            for (int i = 0; i < 8; i++) {
+                float angle = (i * 45f + timer * 180f) * MathUtils.degreesToRadians;
+                float dist = (holeW * 0.55f) + MathUtils.sin(timer * 12f + i) * 15f;
+                float ex = cx + MathUtils.cos(angle) * dist;
+                float ey = runeCy + MathUtils.sin(angle) * dist + (burnT * 40f);
+                shapeRenderer.setColor(1.0f, 0.8f, 0.2f, (1f - burnT) * 0.8f);
+                shapeRenderer.rect(ex, ey, 3.5f, 3.5f);
+            }
+        }
+
+        // 6. Two Hands Gripping the Spools
+        float handAlpha = alpha;
+        shapeRenderer.setColor(handColor.r, handColor.g, handColor.b, handAlpha);
+        float handW = w * 0.045f;
+        float handH = h * 0.075f;
+        float handY = bottom + (scrollH * 0.5f) - handH * 0.5f;
+
+        // Left Hand thumb & fingers
+        shapeRenderer.rect(left - rodW - handW * 0.5f, handY, handW, handH);
+        // Right Hand thumb & fingers
+        shapeRenderer.rect(right + rodW * 0.5f, handY, handW, handH);
     }
 }

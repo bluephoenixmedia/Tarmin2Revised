@@ -19,6 +19,10 @@ import com.bpm.minotaur.gamedata.item.ItemModifier; // NEW
 import com.bpm.minotaur.gamedata.ModifierType; // NEW
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Vector3;
+import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
+import com.bpm.minotaur.screens.GameScreen;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 
@@ -353,6 +357,10 @@ public class Player {
     }
 
     public boolean useQuickSlot(int slotIndex, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze) {
+        return useQuickSlot(slotIndex, eventManager, discoveryManager, maze, null);
+    }
+
+    public boolean useQuickSlot(int slotIndex, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze, CombatManager combatManager) {
         if (slotIndex < 0 || slotIndex >= inventory.getQuickSlots().length) return false;
         Item item = inventory.getQuickSlots()[slotIndex];
         if (item == null) {
@@ -390,7 +398,7 @@ public class Player {
             return true;
         }
 
-        useItem(item, eventManager, discoveryManager, maze);
+        useItem(item, eventManager, discoveryManager, maze, combatManager);
         return true;
     }
 
@@ -668,6 +676,10 @@ public class Player {
     }
 
     public void useItem(Item item, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze) {
+        useItem(item, eventManager, discoveryManager, maze, null);
+    }
+
+    public void useItem(Item item, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze, CombatManager combatManager) {
         if (item == null) {
             eventManager.addEvent(new GameEvent("You have nothing to use.", 2f));
             return;
@@ -840,7 +852,7 @@ public class Player {
 
         // --- SCROLL HANDLING (Moved before isUsable check and widened) ---
         if (item.getType().name().contains("SCROLL")) {
-            read(item, discoveryManager, eventManager, maze);
+            read(item, discoveryManager, eventManager, maze, combatManager);
             return;
         }
         // ----------------------------------------------------------------
@@ -1108,6 +1120,10 @@ public class Player {
     }
 
     public void read(Item scroll, DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze) {
+        read(scroll, discoveryManager, eventManager, maze, null);
+    }
+
+    public void read(Item scroll, DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze, CombatManager combatManager) {
         if (scroll == null) {
             eventManager.addEvent(new GameEvent("Read what?", 1.0f));
             return;
@@ -1125,7 +1141,16 @@ public class Player {
                 if (discoveryManager != null) {
                     discoveryManager.identifyDedicatedScroll(scroll.getType(), spellId);
                 }
-                com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(spellId, this, maze, eventManager, null);
+
+                GameScreen gs = (combatManager != null) ? combatManager.getGameScreen() : null;
+                if (gs != null && gs.getSpellCastOverlay() != null) {
+                    gs.getSpellCastOverlay().triggerScrollRead(0.6f, new Color(1f, 0.7f, 0.2f, 1f), "EVOCATION");
+                }
+                if (soundManager != null) {
+                    soundManager.playScrollUnfurl();
+                }
+
+                com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(spellId, this, maze, eventManager, combatManager);
                 inventory.removeItem(scroll);
                 return;
             }
@@ -1134,9 +1159,23 @@ public class Player {
             return;
         }
 
+        GameScreen gs = (combatManager != null) ? combatManager.getGameScreen() : null;
+        if (soundManager != null) {
+            soundManager.playScrollUnfurl();
+            soundManager.playScrollChime(effect);
+        }
+
         // Apply Effect
         switch (effect) {
             case IDENTIFY:
+                if (gs != null) {
+                    if (gs.getSpellCastOverlay() != null) {
+                        gs.getSpellCastOverlay().triggerScrollRead(0.65f, Color.GOLD, "DIVINATION");
+                    }
+                    if (gs.getSpellPostProcessor() != null) {
+                        gs.getSpellPostProcessor().triggerWisdomIris(0.70f);
+                    }
+                }
                 // Identify all items in inventory for now (simplification)
                 for (Item i : inventory.getAllItems()) {
                     if (!i.isIdentified()) {
@@ -1154,9 +1193,15 @@ public class Player {
                 eventManager.addEvent(new GameEvent("Your possessions glow with understanding!", 2.0f));
                 break;
             case TELEPORT: {
-                // Random position, rejecting any candidate that can't actually path
-                // back to the player's current corridor network (prevents landing
-                // in a walled-off pocket disconnected from the rest of the level).
+                if (gs != null) {
+                    if (gs.getSpellCastOverlay() != null) {
+                        gs.getSpellCastOverlay().triggerScrollRead(0.60f, Color.CYAN, "TRANSMUTATION");
+                    }
+                    if (gs.getSpellPostProcessor() != null) {
+                        gs.getSpellPostProcessor().triggerGlitch(0.85f, 0.40f);
+                        gs.getSpellPostProcessor().triggerChromaticAberration(0.80f, 0.45f);
+                    }
+                }
                 GridPoint2 startTile = new GridPoint2((int) this.position.x, (int) this.position.y);
                 boolean teleported = false;
                 int tries = 0;
@@ -1167,6 +1212,12 @@ public class Player {
                         GridPoint2 candidate = new GridPoint2(tx, ty);
                         if (candidate.equals(startTile)
                                 || !com.bpm.minotaur.gamedata.Pathfinder.findPath(maze, this, startTile, candidate).isEmpty()) {
+                            if (combatManager != null && combatManager.getAnimationManager() != null) {
+                                Vector3 depart3d = new Vector3(startTile.x + 0.5f, 0.5f, startTile.y + 0.5f);
+                                Vector3 arrive3d = new Vector3(tx + 0.5f, 0.5f, ty + 0.5f);
+                                combatManager.getAnimationManager().spawnExplosion(ExplosionType.VOID, depart3d, 1.4f, 0.45f);
+                                combatManager.getAnimationManager().spawnExplosion(ExplosionType.WIND, arrive3d, 1.5f, 0.50f);
+                            }
                             this.position.set(tx + 0.5f, ty + 0.5f);
                             eventManager.addEvent(new GameEvent("You teleport to a new location!", 2.0f));
                             teleported = true;
@@ -1180,6 +1231,14 @@ public class Player {
                 break;
             }
             case MAGIC_MAPPING:
+                if (gs != null) {
+                    if (gs.getSpellCastOverlay() != null) {
+                        gs.getSpellCastOverlay().triggerScrollRead(0.65f, Color.GREEN, "DIVINATION");
+                    }
+                    if (gs.getSpellPostProcessor() != null) {
+                        gs.getSpellPostProcessor().triggerSonarWave(0.85f);
+                    }
+                }
                 for (int mx = 0; mx < maze.getWidth(); mx++) {
                     for (int my = 0; my < maze.getHeight(); my++) {
                         maze.markVisited(mx, my);
@@ -1188,6 +1247,14 @@ public class Player {
                 eventManager.addEvent(new GameEvent("A map is etched in your mind!", 2.0f));
                 break;
             case ENCHANT_WEAPON:
+                if (gs != null) {
+                    if (gs.getSpellCastOverlay() != null) {
+                        gs.getSpellCastOverlay().triggerScrollRead(0.60f, Color.CYAN, "TRANSMUTATION");
+                    }
+                    if (gs.getSpellPostProcessor() != null) {
+                        gs.getSpellPostProcessor().triggerArcaneBladeGleam(0.75f);
+                    }
+                }
                 Item weapon = inventory.getRightHand();
                 if (weapon != null && weapon.isWeapon()) {
                     weapon.addModifier(new ItemModifier(ModifierType.BONUS_DAMAGE, 1, "Enchanted"));
@@ -1197,6 +1264,14 @@ public class Player {
                 }
                 break;
             case ENCHANT_ARMOR:
+                if (gs != null) {
+                    if (gs.getSpellCastOverlay() != null) {
+                        gs.getSpellCastOverlay().triggerScrollRead(0.60f, Color.WHITE, "ABJURATION");
+                    }
+                    if (gs.getSpellPostProcessor() != null) {
+                        gs.getSpellPostProcessor().triggerAegisFlash(0.70f);
+                    }
+                }
                 Item armor = getRandomWornArmorHelper();
                 if (armor != null) {
                     armor.addModifier(new ItemModifier(ModifierType.BONUS_AC, 1, "Blessed"));
@@ -1206,6 +1281,9 @@ public class Player {
                 }
                 break;
             case CREATE_MONSTER:
+                if (gs != null && gs.getSpellCastOverlay() != null) {
+                    gs.getSpellCastOverlay().triggerScrollRead(0.65f, Color.PURPLE, "CONJURATION");
+                }
                 int[][] dirs = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
                 boolean spawned = false;
                 for (int[] d : dirs) {
@@ -1224,6 +1302,10 @@ public class Player {
                                 Monster m = new Monster(mType, mx, my, variant.color, monsterDataManager, assetManager);
                                 m.scaleStats(getLevel());
                                 maze.getMonsters().put(new GridPoint2(mx, my), m);
+                                if (combatManager != null && combatManager.getAnimationManager() != null) {
+                                    Vector3 spawn3d = new Vector3(mx + 0.5f, 0.5f, my + 0.5f);
+                                    combatManager.getAnimationManager().spawnExplosion(ExplosionType.VOID, spawn3d, 1.5f, 0.55f);
+                                }
                                 eventManager.addEvent(new GameEvent("A monster appears from the void!", 2.0f));
                                 spawned = true;
                             }

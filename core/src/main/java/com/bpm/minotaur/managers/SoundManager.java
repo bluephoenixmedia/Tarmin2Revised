@@ -465,6 +465,78 @@ public class SoundManager {
         }
     }
 
+    /**
+     * Synthesizes high-frequency whispered flutter for unrolling an ancient parchment scroll.
+     */
+    public void playScrollUnfurl() {
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    for (int f : new int[] { 1400, 1650, 1850, 1550, 1900, 1350 }) {
+                        playRetroSound(f, 0.022f, 0.35f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("player_spiritual_attack");
+        }
+    }
+
+    /**
+     * Synthesizes resonant harmonic chords for roguelike utility scrolls.
+     */
+    public void playScrollChime(com.bpm.minotaur.gamedata.item.ScrollEffectType effect) {
+        if (effect == null) return;
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    switch (effect) {
+                        case IDENTIFY:
+                            // Ascending Golden Triad (C5 - E5 - G5 - C6)
+                            for (int f : new int[] { 523, 659, 784, 1046 }) {
+                                playRetroSound(f, 0.07f, 0.65f);
+                            }
+                            break;
+                        case MAGIC_MAPPING:
+                            // Sonar Ping Echo (A5 - E6 - A6)
+                            for (int f : new int[] { 880, 1318, 1760 }) {
+                                playRetroSound(f, 0.08f, 0.60f);
+                            }
+                            break;
+                        case ENCHANT_WEAPON:
+                            // Steel Singing Chime (D5 - A5 - F#6)
+                            for (int f : new int[] { 587, 880, 1480 }) {
+                                playRetroSound(f, 0.07f, 0.70f);
+                            }
+                            break;
+                        case ENCHANT_ARMOR:
+                            // Silver Resonant Aegis (E5 - B5 - G#6)
+                            for (int f : new int[] { 659, 988, 1661 }) {
+                                playRetroSound(f, 0.08f, 0.65f);
+                            }
+                            break;
+                        case TELEPORT:
+                            // Phasing Warp Sweep (B5 - G5 - E5 - C5 - A4 - F4)
+                            for (int f : new int[] { 988, 784, 659, 523, 440, 349 }) {
+                                playRetroSound(f, 0.04f, 0.60f);
+                            }
+                            break;
+                        case CREATE_MONSTER:
+                            // Low Eldritch Summoning Growl (160 - 130 - 100 - 75 - 55)
+                            for (int f : new int[] { 160, 130, 100, 75, 55 }) {
+                                playRetroSound(f, 0.08f, 0.85f);
+                            }
+                            break;
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("player_spiritual_attack");
+        }
+    }
+
     private void playRetroSound(int frequency, float duration, float volume) {
         int numSamples = (int) (duration * SAMPLE_RATE);
         short[] samples = new short[numSamples];

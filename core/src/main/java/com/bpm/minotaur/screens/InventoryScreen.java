@@ -215,7 +215,8 @@ public class InventoryScreen extends BaseScreen {
             modernUI = new ModernInventoryUI(
                     player, maze, game.getAssetManager(), game.getItemDataManager(),
                     (parentScreen != null) ? parentScreen.getEventManager() : null,
-                    (parentScreen != null) ? parentScreen.getDiscoveryManager() : null);
+                    (parentScreen != null) ? parentScreen.getDiscoveryManager() : null,
+                    (parentScreen != null) ? parentScreen.getCombatManager() : null);
             modernUI.addToStage(stage);
             modernUI.refresh();
             return;

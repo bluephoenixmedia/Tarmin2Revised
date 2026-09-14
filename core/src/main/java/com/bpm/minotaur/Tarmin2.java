@@ -137,6 +137,7 @@ public class Tarmin2 extends Game {
         monsterDataManager.queueAssets(assetManager);
         itemDataManager.queueAssets(assetManager);
         encounterManager.queueAssets(assetManager);
+        com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance().queueAssets(assetManager);
 
         // Queue traveling merchant texture (never queued anywhere else, so it
         // never finished loading and ShopkeeperNpc.getTexture() stayed null)
@@ -179,6 +180,7 @@ public class Tarmin2 extends Game {
     public void proceedToMainMenu() {
         // Now that assets are loaded, we can finish setting up managers
         MusicManager.getInstance().finishLoading();
+        com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance().init(assetManager);
 
         long elapsed = System.currentTimeMillis() - startupStartTime;
         Gdx.app.log("Tarmin2", "Startup completed to MainMenu in " + elapsed + " ms (" + String.format("%.2f", elapsed / 1000f) + "s)");
@@ -208,6 +210,7 @@ public class Tarmin2 extends Game {
         }
 
         MusicManager.getInstance().dispose();
+        com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance().dispose();
     }
 
     @Override

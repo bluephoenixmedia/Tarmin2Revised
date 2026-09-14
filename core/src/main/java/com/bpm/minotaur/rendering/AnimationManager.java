@@ -32,7 +32,21 @@ public class AnimationManager {
     }
 
     public void addAnimation(Animation animation) {
-        animations.add(animation);
+        if (animation != null) {
+            animations.add(animation);
+        }
+    }
+
+    public List<Animation> getAnimations() {
+        return animations;
+    }
+
+    public void spawnExplosion(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType type, com.badlogic.gdx.math.Vector3 position3D) {
+        addAnimation(new Animation(type, position3D));
+    }
+
+    public void spawnExplosion(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType type, com.badlogic.gdx.math.Vector3 position3D, float scale, float duration) {
+        addAnimation(new Animation(type, position3D, scale, duration));
     }
 
     public void update(float delta) {

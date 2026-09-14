@@ -1135,6 +1135,37 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.flush(shader, tex);
             }
         }
+
+        // ── Render 3D Sprite Explosions (BearFX) ───────────────────────────
+        if (combatManager != null && combatManager.getAnimationManager() != null) {
+            java.util.List<Animation> anims = combatManager.getAnimationManager().getAnimations();
+            com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry registry = com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance();
+            for (int i = 0; i < anims.size(); i++) {
+                Animation anim = anims.get(i);
+                if (anim.getType() == Animation.AnimationType.SPRITE_EXPLOSION_3D && anim.getExplosionType() != null) {
+                    TextureRegion frame = registry.getFrame(anim.getExplosionType(), anim.getProgress());
+                    if (frame != null && frame.getTexture() != null) {
+                        Vector3 p3d = anim.getPosition3D();
+                        float scale = anim.getScale3D();
+                        float feetY = Math.max(0.01f, p3d.y - (scale * 0.5f));
+                        float ex = p3d.x;
+                        float ez = -p3d.z;
+
+                        if (anim.isAdditiveBlend()) {
+                            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+                            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
+                        }
+
+                        dynamicBatcher.addBillboard(ex, feetY, ez, scale, scale, frame, Color.WHITE, camRight, camUp, camDir);
+                        dynamicBatcher.flush(shader, frame.getTexture());
+
+                        if (anim.isAdditiveBlend()) {
+                            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /** Signature eye-flare color by monster family, mirroring EntityRenderer's palette. */

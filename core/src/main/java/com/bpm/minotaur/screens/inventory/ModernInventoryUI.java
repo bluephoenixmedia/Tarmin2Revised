@@ -21,6 +21,7 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DiscoveryManager;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.paperdoll.PaperDollWidget;
@@ -79,17 +80,25 @@ public class ModernInventoryUI {
     private final Maze maze;
     private final GameEventManager eventManager;
     private final DiscoveryManager discoveryManager;
+    private final CombatManager combatManager;
 
     public ModernInventoryUI(Player player, Maze maze, AssetManager assets, ItemDataManager idm) {
-        this(player, maze, assets, idm, null, null);
+        this(player, maze, assets, idm, null, null, null);
     }
 
     public ModernInventoryUI(Player player, Maze maze, AssetManager assets, ItemDataManager idm,
                              GameEventManager eventManager, DiscoveryManager discoveryManager) {
+        this(player, maze, assets, idm, eventManager, discoveryManager, null);
+    }
+
+    public ModernInventoryUI(Player player, Maze maze, AssetManager assets, ItemDataManager idm,
+                             GameEventManager eventManager, DiscoveryManager discoveryManager,
+                             CombatManager combatManager) {
         this.player = player;
         this.maze = maze;
         this.eventManager = eventManager;
         this.discoveryManager = discoveryManager;
+        this.combatManager = combatManager;
         config = new InventoryLayoutConfig();
 
         skin = new InventorySkin();
@@ -116,7 +125,7 @@ public class ModernInventoryUI {
         // Wire Action Button in Inspector to execute item usage
         inspector.setUseItemCallback(item -> {
             if (item != null) {
-                this.player.useItem(item, this.eventManager, this.discoveryManager, this.maze);
+                this.player.useItem(item, this.eventManager, this.discoveryManager, this.maze, this.combatManager);
                 refresh();
                 inspector.showDefaultHint();
             }
