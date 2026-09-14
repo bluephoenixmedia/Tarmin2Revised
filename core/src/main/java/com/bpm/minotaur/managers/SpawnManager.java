@@ -199,8 +199,10 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Cap monster budget at fixed density (7-10 monsters per chunk)
-        int monsterBudget = Math.max(7, Math.min(10, (int) budget.monsterBudget));
+        // Dynamic Depth Scaling monster density: Level 1 has 14 monsters, scaling up with strata depth
+        int currentDepth = Math.max(1, this.level);
+        int scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+        int monsterBudget = Math.min(validSpawnPoints.size(), scaledBudget);
         spawnMonsters(monsterBudget);
 
         // 1.2x keeps item density roughly 1:1 with monsters (Nethack-style scarcity).

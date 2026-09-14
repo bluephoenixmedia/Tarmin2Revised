@@ -29,14 +29,17 @@ public class DiceRoller {
             return 0;
         }
 
+        // Sanitize whitespace (e.g. "2d6 + 3" -> "2d6+3")
+        String clean = notation.replaceAll("\\s+", "");
+
         // Handle static numbers (e.g. "5")
         try {
-            return Integer.parseInt(notation);
+            return Integer.parseInt(clean);
         } catch (NumberFormatException e) {
             // Not a static number, proceed to parse dice
         }
 
-        Matcher matcher = DICE_PATTERN.matcher(notation.toLowerCase());
+        Matcher matcher = DICE_PATTERN.matcher(clean.toLowerCase());
         if (matcher.matches()) {
             String numDiceStr = matcher.group(1);
             String numSidesStr = matcher.group(2);

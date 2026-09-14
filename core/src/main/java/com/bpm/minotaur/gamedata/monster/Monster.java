@@ -100,6 +100,7 @@ public class Monster implements Renderable {
     private int magicResistance; // 0-100%
     private int moveSpeed;
     private int baseExperience;
+    private int level = 1;
 
     private final String[] spriteData;
     private Texture texture = null;
@@ -138,6 +139,7 @@ public class Monster implements Renderable {
 
     private final StatusManager statusManager;
     private final MonsterDataManager dataManager; // Stored reference for template access
+    private MonsterTemplate testTemplate;
 
     // --- State Machine Fields ---
     public enum MonsterState {
@@ -155,8 +157,8 @@ public class Monster implements Renderable {
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
 
-    // Package-private constructor for unit testing combat mechanics without LibGDX asset loaders
-    Monster(MonsterType type, int hp, int ac) {
+    // Public constructor for unit testing combat mechanics without LibGDX asset loaders
+    public Monster(MonsterType type, int hp, int ac) {
         this(type, hp, ac, 0f, 0f);
     }
 
@@ -193,6 +195,7 @@ public class Monster implements Renderable {
         this.damageDice = template.damageDice != null ? template.damageDice : "1d4";
 
         this.baseExperience = template.baseExperience;
+        this.level = template.baseLevel;
         this.moveSpeed = template.moveSpeed; // Init speed
 
         this.family = template.family;
@@ -516,6 +519,16 @@ public class Monster implements Renderable {
         return damageDice;
     }
 
+    public int getLevel() {
+        if (level > 1) return level;
+        MonsterTemplate t = getTemplate();
+        return t != null ? t.baseLevel : level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
     // Deprecated: Compatibility
     public int getMaxWarStrength() {
         return maxHP;
@@ -599,9 +612,23 @@ public class Monster implements Renderable {
     }
 
     public MonsterTemplate getTemplate() {
+        if (testTemplate != null)
+            return testTemplate;
         if (dataManager != null)
             return dataManager.getTemplate(type);
         return null;
+    }
+
+    public void setTemplate(MonsterTemplate template) {
+        this.testTemplate = template;
+        if (template != null) {
+            this.level = template.baseLevel;
+            this.family = template.family;
+            this.maxHP = template.maxHP;
+            this.currentHP = template.maxHP;
+            this.armorClass = template.armorClass;
+            this.damageDice = template.damageDice;
+        }
     }
 
     public int getEffectiveSpeed() {

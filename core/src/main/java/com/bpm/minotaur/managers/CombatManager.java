@@ -361,9 +361,7 @@ public class CombatManager {
         soundManager.playMonsterAttackSound(attacker);
         triggerAttackIndicator(attacker);
 
-        int attackBonus = 2;
-        MonsterTemplate t = attacker.getTemplate();
-        if (t != null) attackBonus += (t.maxHP / 10);
+        int attackBonus = calculateMonsterAttackBonus(attacker);
 
         int d20Roll = DiceRoller.d20();
         boolean isHit = (d20Roll + attackBonus) >= player.getArmorClass();
@@ -432,6 +430,26 @@ public class CombatManager {
             this.monster = attacker;
             currentState = CombatState.DEFEAT;
         }
+    }
+
+    /**
+     * 5e Standard Monster To-Hit accuracy formula: Proficiency (2 + level/3) + Stat Modifier.
+     * Nimble beasts/skirmishers scale from DEX; brute humanoids/undead scale from STR/HP.
+     */
+    public static int calculateMonsterAttackBonus(Monster attacker) {
+        if (attacker == null) return 2;
+        int monsterLevel = Math.max(1, attacker.getLevel());
+        int profBonus = 2 + (monsterLevel / 3);
+        int statMod = 1;
+        MonsterTemplate t = attacker.getTemplate();
+        if (t != null) {
+            if (t.dexterity >= 12 && t.family == com.bpm.minotaur.gamedata.monster.MonsterFamily.BEAST) {
+                statMod = Math.max(2, (t.dexterity - 10) / 2);
+            } else {
+                statMod = Math.max(2, t.maxHP / 14);
+            }
+        }
+        return profBonus + statMod;
     }
 
     public boolean shouldTriggerDeathInversion(Monster attacker) {
@@ -1511,8 +1529,17 @@ public class CombatManager {
             // ---------------------
 
             Gdx.app.log("COMBAT_FLOW", "State -> MONSTER_TURN (Attack Resolved)");
+        } else {
+            // Synchronous Retaliation with Poise Stagger:
+            // In real-time bump combat, surviving monsters trade blows on the same tick
+            // unless staggered by a Critical Hit, Shield Bash, or Combo Finisher.
+            boolean isStaggered = isCrit || (currentMotionProfile != null && (currentMotionProfile.isFinisher || currentMotionProfile.isShieldBash));
+            if (!isStaggered) {
+                monsterMeleeStrike(monster);
+            } else {
+                eventManager.addEvent(new GameEvent(monster.getType() + " is staggered by the blow!", 1.0f));
+            }
         }
-        // stateless && monster survived: stays INACTIVE, monster attacks via its own AI turn
     }
 
     public boolean performMonsterRangedAttack(Monster attacker) {

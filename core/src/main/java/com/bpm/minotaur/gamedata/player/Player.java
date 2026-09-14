@@ -301,9 +301,7 @@ public class Player {
             stats.getDicePool().add(knife.getGrantedDie());
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
-
-        Item tunic = itemDataManager.createItem(Item.ItemType.PADDED_ARMOR, 0, 0, ItemColor.TAN, assetManager);
-        equipment.setWornChest(tunic);
+        // Player starts bare / unarmored (true scavenger start: 0 armor equipped, base AC = 10 + DEX)
 
         Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
         inventory.pickupToBackpack(ration);
