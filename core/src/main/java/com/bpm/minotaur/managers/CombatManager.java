@@ -318,10 +318,20 @@ public class CombatManager {
             return;
         }
 
+        // Only reset counters and log a fresh COMBAT_START when this is actually a
+        // new encounter. The stateless instant-attack flow never leaves INACTIVE
+        // while the monster survives (see the "stays INACTIVE" comment in
+        // resolveAttack()), so without this check every subsequent swing against
+        // the SAME monster would re-enter this INACTIVE guard and wipe the turn
+        // and damage counters mid-fight, making COMBAT_END always report 0/0.
+        boolean isNewEncounter = (this.monster != target);
         this.monster = target;
-        this.currentCombatTurns = 0;
-        this.damageTakenInCombat = 0;
-        BalanceLogger.getInstance().logCombatStart(player, target);
+        if (isNewEncounter) {
+            this.currentCombatTurns = 0;
+            this.damageTakenInCombat = 0;
+            BalanceLogger.getInstance().logCombatStart(player, target);
+        }
+        this.currentCombatTurns++;
 
         if (target.getStatusManager() != null && eventManager != null)
             target.getStatusManager().initialize(eventManager, target);
@@ -358,6 +368,7 @@ public class CombatManager {
         int d20Roll = DiceRoller.d20();
         boolean isHit = (d20Roll + attackBonus) >= player.getArmorClass();
 
+        int actualDamage = 0;
         if (isHit) {
             int baseDmg = DiceRoller.roll(attacker.getDamageDice());
             float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
@@ -369,7 +380,7 @@ public class CombatManager {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(blocked);
             }
             dmg = applyGuardMitigation(dmg);
-            int actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
@@ -412,16 +423,14 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses!", 1f));
         }
 
+        damageTakenInCombat += actualDamage;
+        BalanceLogger.getInstance().logCombatRound("MONSTER", "Melee", -1, actualDamage, player.getCurrentHP());
+
         playerCurrentBlock = 0;
 
         if (player.getCurrentHP() <= 0) {
             this.monster = attacker;
-            if (shouldTriggerDeathInversion(attacker)) {
-                triggerDeathInversion(attacker);
-            } else {
-                eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
-            }
-            endCombat();
+            currentState = CombatState.DEFEAT;
         }
     }
 
@@ -1819,6 +1828,14 @@ public class CombatManager {
 
     public Monster getMonster() {
         return monster;
+    }
+
+    public int getDamageTakenInCombat() {
+        return damageTakenInCombat;
+    }
+
+    public int getCurrentCombatTurns() {
+        return currentCombatTurns;
     }
 
     public void monsterAttack() {
