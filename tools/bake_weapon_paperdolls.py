@@ -53,22 +53,40 @@ def find_grip_point(img, is_bow=False, is_crossbow=False):
         return ((min_x + max_x) // 2, min_y + int(total_h * 0.85))
     return (sum(xs) // len(xs), sum(ys) // len(ys))
 
-def get_scale_and_rotation(name):
+def get_scale_and_rotation(name, ch_over_cw=1.0):
     n = name.lower()
-    # Rotation angle and target dimension
-    if 'bow' in n and 'cross' not in n:
-        return (760, 48, True, False)
-    if 'cross' in n:
-        return (520, 45, False, True)
-    if any(k in n for k in ['polearm', 'spear', 'lance', 'pike', 'staff', 'javelin', 'halberd']):
-        return (720, 45, False, False)
-    if any(k in n for k in ['two_handed', 'great', 'claymore', 'flamberge', 'battle_axe']):
-        return (660, 45, False, False)
-    if any(k in n for k in ['short', 'pixie', 'dagger', 'knife', 'dart', 'claw', 'spike']):
-        return (520, 45, False, False)
-    if 'rapier' in n:
-        return (600, 45, False, False)
-    return (580, 45, False, False)
+    is_bow = 'bow' in n and 'cross' not in n
+    is_cb = 'cross' in n
+
+    # Base scale
+    if is_bow:
+        scale_size = 760
+    elif is_cb:
+        scale_size = 520
+    elif any(k in n for k in ['polearm', 'spear', 'lance', 'pike', 'staff', 'javelin', 'halberd', 'trident']):
+        scale_size = 720
+    elif any(k in n for k in ['two_handed', 'great', 'claymore', 'flamberge', 'battle_axe']):
+        scale_size = 660
+    elif any(k in n for k in ['short', 'pixie', 'dagger', 'knife', 'dart', 'claw', 'spike']):
+        scale_size = 480
+    elif 'rapier' in n:
+        scale_size = 600
+    else:
+        scale_size = 560
+
+    # Rotation based on aspect ratio
+    if is_bow:
+        rot_angle = 48
+    elif is_cb:
+        rot_angle = 45
+    elif ch_over_cw > 1.8:
+        rot_angle = 5
+    elif ch_over_cw < 0.55:
+        rot_angle = 75
+    else:
+        rot_angle = 45
+
+    return (scale_size, rot_angle, is_bow, is_cb)
 
 def bake_weapon(src_path, dst_path):
     im = Image.open(src_path).convert('RGBA')
@@ -77,15 +95,20 @@ def bake_weapon(src_path, dst_path):
         return False
     
     name = os.path.splitext(os.path.basename(src_path))[0]
-    scale_size, rot_angle, is_bow, is_cb = get_scale_and_rotation(name)
-    
     cropped = im.crop(bbox)
     cw, ch = cropped.size
+    ratio = ch / max(1, cw)
+
+    scale_size, rot_angle, is_bow, is_cb = get_scale_and_rotation(name, ratio)
     
     if is_bow:
         scaled = cropped.resize((scale_size, int(scale_size * ch / max(1, cw))), Image.Resampling.LANCZOS)
     elif is_cb:
         scaled = cropped.resize((scale_size, int(scale_size * ch / max(1, cw))), Image.Resampling.LANCZOS)
+    elif ratio > 1.8:
+        scaled = cropped.resize((int(scale_size * cw / ch), scale_size), Image.Resampling.LANCZOS)
+    elif ratio < 0.55:
+        scaled = cropped.resize((scale_size, int(scale_size * ch / cw)), Image.Resampling.LANCZOS)
     else:
         scaled = cropped.resize((scale_size, scale_size), Image.Resampling.LANCZOS)
         

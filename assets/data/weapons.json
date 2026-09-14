@@ -2546,7 +2546,7 @@
 	"CLUB_DWARVEN_WAR": {
 		"friendlyName": "Club, Dwarven War",
 		"description": null,
-		"texturePath": "images/weapons/dwarven_war_club.png",
+		"texturePath": "images/weapons/club_great.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -3338,7 +3338,7 @@
 	"FLAIL_BLADEBACK": {
 		"friendlyName": "Flail, Bladeback",
 		"description": null,
-		"texturePath": "images/weapons/Bladebackflail.png",
+		"texturePath": "images/weapons/flail_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -3437,7 +3437,7 @@
 	"FLAIL_CHAIN": {
 		"friendlyName": "Flail, Chain",
 		"description": null,
-		"texturePath": "images/weapons/ChainFlail.png",
+		"texturePath": "images/weapons/flail_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -6803,7 +6803,7 @@
 	"POLEARM_BILL_GUISARME": {
 		"friendlyName": "Polearm, Bill-Guisarme",
 		"description": null,
-		"texturePath": "images/weapons/polearm_bill_guisarme.png",
+		"texturePath": "images/weapons/polearm_guisarme.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -15218,7 +15218,7 @@
 	"TRIDENT_ONE_HANDED": {
 		"friendlyName": "Trident, One-Handed",
 		"description": null,
-		"texturePath": "images/weapons/polearm_fauchard_fork.png",
+		"texturePath": "images/weapons/trident.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -15317,7 +15317,7 @@
 	"TRIDENT_TWO_HANDED": {
 		"friendlyName": "Trident, Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/polearm_fauchard_fork.png",
+		"texturePath": "images/weapons/trident.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18884,7 +18884,7 @@
 	"AXE_HAND_THROWING": {
 		"friendlyName": "Axe, Hand/Throwing",
 		"description": null,
-		"texturePath": "images/weapons/axe.png",
+		"texturePath": "images/weapons/hatchet.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -18983,7 +18983,7 @@
 	"AXE_TWO_HANDED_BATTLE": {
 		"friendlyName": "Axe, Two-Handed Battle",
 		"description": null,
-		"texturePath": "images/weapons/battle_axe.png",
+		"texturePath": "images/weapons/axe_two_handed_battle.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20270,7 +20270,7 @@
 	"CLUB_GREAT": {
 		"friendlyName": "Club, Great",
 		"description": null,
-		"texturePath": "images/weapons/dwarven_war_club.png",
+		"texturePath": "images/weapons/club_great.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20864,7 +20864,7 @@
 	"DAGGER_BONE": {
 		"friendlyName": "Dagger, Bone",
 		"description": null,
-		"texturePath": "images/weapons/dagger.png",
+		"texturePath": "images/weapons/dagger_bone.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21062,7 +21062,7 @@
 	"DAGGER_GIANT_KIN": {
 		"friendlyName": "Dagger, Giant-kin",
 		"description": null,
-		"texturePath": "images/weapons/dagger.png",
+		"texturePath": "images/weapons/dagger_bone.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21260,7 +21260,7 @@
 	"DAGGER_STONE": {
 		"friendlyName": "Dagger, Stone",
 		"description": null,
-		"texturePath": "images/weapons/dagger.png",
+		"texturePath": "images/weapons/dagger_stone.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21656,7 +21656,7 @@
 	"FLAIL_FOOTMAN_S": {
 		"friendlyName": "Flail, Footman's",
 		"description": null,
-		"texturePath": "images/weapons/ChainFlail.png",
+		"texturePath": "images/weapons/flail_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21755,7 +21755,7 @@
 	"FLAIL_GRAIN": {
 		"friendlyName": "Flail, Grain",
 		"description": null,
-		"texturePath": "images/weapons/ChainFlail.png",
+		"texturePath": "images/weapons/flail_footman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21854,7 +21854,7 @@
 	"FLAIL_HORSEMAN_S": {
 		"friendlyName": "Flail, Horseman's",
 		"description": null,
-		"texturePath": "images/weapons/Bladebackflail.png",
+		"texturePath": "images/weapons/flail_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22448,7 +22448,7 @@
 	"HATCHET": {
 		"friendlyName": "Hatchet",
 		"description": null,
-		"texturePath": "images/weapons/axe.png",
+		"texturePath": "images/weapons/hatchet.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22547,7 +22547,7 @@
 	"HATCHET_HAWK": {
 		"friendlyName": "Hatchet, Hawk",
 		"description": null,
-		"texturePath": "images/weapons/axe.png",
+		"texturePath": "images/weapons/hatchet.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22943,7 +22943,7 @@
 	"KNIFE_BONE": {
 		"friendlyName": "Knife, Bone",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/knife_bone.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23042,7 +23042,7 @@
 	"KNIFE_HARNESS": {
 		"friendlyName": "Knife, Harness",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/knife_throwing.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23141,7 +23141,7 @@
 	"KNIFE_STONE": {
 		"friendlyName": "Knife, Stone",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/knife_stone.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23240,7 +23240,7 @@
 	"KNIFE_THROWING": {
 		"friendlyName": "Knife, Throwing",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/knife_throwing.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23339,7 +23339,7 @@
 	"KNIFE_WIDOW_S": {
 		"friendlyName": "Knife, Widow's",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/knife_throwing.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24725,7 +24725,7 @@
 	"MORNING_STAR_DOUBLE_BALL": {
 		"friendlyName": "Morning Star, Double-Ball",
 		"description": null,
-		"texturePath": "images/weapons/morning_star.png",
+		"texturePath": "images/weapons/morning_star_double_ball.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25319,7 +25319,7 @@
 	"POLEARM_GUISARME": {
 		"friendlyName": "Polearm, Guisarme",
 		"description": null,
-		"texturePath": "images/weapons/polearm_bill_guisarme.png",
+		"texturePath": "images/weapons/polearm_guisarme.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
