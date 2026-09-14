@@ -271,6 +271,168 @@ public class CombatMotionProfile {
                 break;
             }
 
+            case AXE_CHOPPING: {
+                // 3-hit aggressive downward axe chops and hooking cleaves
+                CombatMotionProfile chop = new CombatMotionProfile();
+                chop.comboStep = 0;
+                chop.comboName = "OVERHEAD CHOP";
+                chop.duration = 0.32f;
+                chop.anticipationRatio = 0.22f;
+                chop.impactRatio = 0.38f;
+                chop.startRotation = -18f;
+                chop.endRotation = 12f;
+                chop.startXRel = 0.62f;
+                chop.endXRel = 0.54f;
+                chop.startYRel = 0.28f;
+                chop.endYRel = -0.16f;
+                chop.arcHeightRel = 0.04f;
+                chop.damageMultiplier = 1.05f;
+                chop.screenTrauma = 0.24f;
+
+                CombatMotionProfile hack = new CombatMotionProfile();
+                hack.comboStep = 1;
+                hack.comboName = "DIAGONAL HACK";
+                hack.duration = 0.30f;
+                hack.anticipationRatio = 0.20f;
+                hack.impactRatio = 0.36f;
+                hack.startRotation = -55f;
+                hack.endRotation = 35f;
+                hack.startXRel = 0.78f;
+                hack.endXRel = 0.32f;
+                hack.startYRel = 0.15f;
+                hack.endYRel = -0.12f;
+                hack.arcHeightRel = 0.08f;
+                hack.damageMultiplier = 1.15f;
+                hack.screenTrauma = 0.28f;
+
+                CombatMotionProfile hook = new CombatMotionProfile();
+                hook.comboStep = 2;
+                hook.comboName = "CLEAVING HOOK";
+                hook.isFinisher = true;
+                hook.duration = 0.38f;
+                hook.anticipationRatio = 0.24f;
+                hook.impactRatio = 0.42f;
+                hook.startRotation = 50f;
+                hook.endRotation = -50f;
+                hook.startXRel = 0.22f;
+                hook.endXRel = 0.80f;
+                hook.startYRel = -0.06f;
+                hook.endYRel = -0.04f;
+                hook.arcHeightRel = 0.10f;
+                hook.damageMultiplier = 1.40f;
+                hook.screenTrauma = 0.48f;
+
+                chain.add(chop);
+                chain.add(hack);
+                chain.add(hook);
+                break;
+            }
+
+            case POLEARM_SWEEP: {
+                // 3-hit extended reach polearm sequence: wide horizontal reap, overhead heft, vaulting thrust
+                CombatMotionProfile reap = new CombatMotionProfile();
+                reap.comboStep = 0;
+                reap.comboName = "WIDE REAP";
+                reap.duration = 0.38f;
+                reap.anticipationRatio = 0.24f;
+                reap.impactRatio = 0.42f;
+                reap.startRotation = -70f;
+                reap.endRotation = 60f;
+                reap.startXRel = 0.88f;
+                reap.endXRel = 0.16f;
+                reap.startYRel = 0.02f;
+                reap.endYRel = -0.04f;
+                reap.arcHeightRel = 0.12f;
+                reap.damageMultiplier = 1.05f;
+                reap.screenTrauma = 0.22f;
+
+                CombatMotionProfile heft = new CombatMotionProfile();
+                heft.comboStep = 1;
+                heft.comboName = "OVERHEAD HEFT";
+                heft.duration = 0.36f;
+                heft.anticipationRatio = 0.22f;
+                heft.impactRatio = 0.40f;
+                heft.startRotation = -10f;
+                heft.endRotation = 15f;
+                heft.startXRel = 0.52f;
+                heft.endXRel = 0.48f;
+                heft.startYRel = 0.34f;
+                heft.endYRel = -0.16f;
+                heft.arcHeightRel = 0.06f;
+                heft.damageMultiplier = 1.20f;
+                heft.screenTrauma = 0.35f;
+
+                CombatMotionProfile thrust = createThrustStrike(2, "VAULTING THRUST", 1.45f, 0.45f);
+                thrust.isFinisher = true;
+                thrust.duration = 0.34f;
+                thrust.startRotation = -30f;
+                thrust.endRotation = -15f;
+                thrust.startXRel = 0.65f;
+                thrust.startYRel = -0.04f;
+
+                chain.add(reap);
+                chain.add(heft);
+                chain.add(thrust);
+                break;
+            }
+
+            case FLAIL_WHIP: {
+                // 3-hit looping momentum flail chain
+                CombatMotionProfile swirl = new CombatMotionProfile();
+                swirl.comboStep = 0;
+                swirl.comboName = "MOMENTUM SWIRL";
+                swirl.duration = 0.35f;
+                swirl.anticipationRatio = 0.24f;
+                swirl.impactRatio = 0.40f;
+                swirl.startRotation = -80f;
+                swirl.endRotation = 55f;
+                swirl.startXRel = 0.82f;
+                swirl.endXRel = 0.20f;
+                swirl.startYRel = 0.08f;
+                swirl.endYRel = -0.08f;
+                swirl.arcHeightRel = 0.18f;
+                swirl.damageMultiplier = 1.05f;
+                swirl.screenTrauma = 0.20f;
+
+                CombatMotionProfile snap = new CombatMotionProfile();
+                snap.comboStep = 1;
+                snap.comboName = "SIDE SNAP";
+                snap.duration = 0.28f;
+                snap.anticipationRatio = 0.18f;
+                snap.impactRatio = 0.36f;
+                snap.startRotation = 65f;
+                snap.endRotation = -55f;
+                snap.startXRel = 0.20f;
+                snap.endXRel = 0.82f;
+                snap.startYRel = -0.05f;
+                snap.endYRel = -0.02f;
+                snap.arcHeightRel = 0.12f;
+                snap.damageMultiplier = 1.15f;
+                snap.screenTrauma = 0.25f;
+
+                CombatMotionProfile crush = new CombatMotionProfile();
+                crush.comboStep = 2;
+                crush.comboName = "OVERHEAD CRUSH";
+                crush.isFinisher = true;
+                crush.duration = 0.40f;
+                crush.anticipationRatio = 0.25f;
+                crush.impactRatio = 0.44f;
+                crush.startRotation = -15f;
+                crush.endRotation = 18f;
+                crush.startXRel = 0.50f;
+                crush.endXRel = 0.50f;
+                crush.startYRel = 0.36f;
+                crush.endYRel = -0.20f;
+                crush.arcHeightRel = 0.08f;
+                crush.damageMultiplier = 1.45f;
+                crush.screenTrauma = 0.52f;
+
+                chain.add(swirl);
+                chain.add(snap);
+                chain.add(crush);
+                break;
+            }
+
             case BLUNT_CRUSHING: {
                 // 3-hit crushing chain
                 CombatMotionProfile smash = new CombatMotionProfile();

@@ -271,6 +271,28 @@ public class FirstPersonWeaponOverlay {
         }
     }
 
+    /**
+     * Clears all accumulated blood splatters and resets blood coating level.
+     */
+    public void clearBloodDecals() {
+        this.weaponBloodDecals.clear();
+        this.bloodLevel = 0f;
+    }
+
+    /**
+     * Forces re-initialization of weapon textures, archetypes, combo chains,
+     * and solid pixels even if the equipped item reference is unchanged (e.g. after shelter respawn).
+     */
+    public void forceRefreshEquipment(Item rightHand, Item leftHand) {
+        this.mainHandItem = null;
+        this.offHandItem = null;
+        setEquipment(rightHand, leftHand);
+    }
+
+    public AnimationArchetype getMainHandArchetype() {
+        return mainHandArchetype;
+    }
+
     public void addBloodToWeapon() {
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }
@@ -738,6 +760,18 @@ public class FirstPersonWeaponOverlay {
                 // Two-handed grip stance (slightly centered, lower-right)
                 drawX = (worldW * 0.65f) + (bobX * 0.6f);
                 rotation = -4f;
+            } else if (mainHandArchetype == AnimationArchetype.POLEARM_SWEEP) {
+                // Long shaft stance: wider, angled forward slightly
+                drawX = (worldW * 0.67f) + (bobX * 0.7f);
+                rotation = -10f;
+            } else if (mainHandArchetype == AnimationArchetype.AXE_CHOPPING) {
+                // Heavy haft stance: slightly higher ready grip
+                drawX = (worldW * 0.70f) + bobX;
+                rotation = -2f;
+            } else if (mainHandArchetype == AnimationArchetype.FLAIL_WHIP) {
+                // Flexible hanging stance: tilted outwards ready to swing
+                drawX = (worldW * 0.72f) + bobX;
+                rotation = -12f;
             } else if (mainHandArchetype == AnimationArchetype.THRUSTING_PIERCE) {
                 drawX = (worldW * 0.71f) + bobX;
                 rotation = -8f;
@@ -831,6 +865,22 @@ public class FirstPersonWeaponOverlay {
             batch.end();
         }
 
+        // Query active OpenGL framebuffer binding and viewport before switching to weaponFbo
+        int previousFbo = 0;
+        int prevVpX = 0, prevVpY = 0, prevVpW = 0, prevVpH = 0;
+        if (Gdx.gl != null) {
+            java.nio.IntBuffer intBuf = com.badlogic.gdx.utils.BufferUtils.newIntBuffer(16);
+            Gdx.gl.glGetIntegerv(GL20.GL_FRAMEBUFFER_BINDING, intBuf);
+            previousFbo = intBuf.get(0);
+
+            intBuf.clear();
+            Gdx.gl.glGetIntegerv(GL20.GL_VIEWPORT, intBuf);
+            prevVpX = intBuf.get(0);
+            prevVpY = intBuf.get(1);
+            prevVpW = intBuf.get(2);
+            prevVpH = intBuf.get(3);
+        }
+
         // 2. Render weapon sprite into FBO to establish alpha mask
         weaponFbo.begin();
         Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
@@ -873,8 +923,16 @@ public class FirstPersonWeaponOverlay {
         fboBatch.end();
         weaponFbo.end();
 
+        // If an outer FBO was active (e.g. GameScreen CRT / post-processing FBO),
+        // weaponFbo.end() reverted to the default backbuffer (0). Restore the outer FBO!
+        if (previousFbo != 0 && Gdx.gl != null) {
+            Gdx.gl.glBindFramebuffer(GL20.GL_FRAMEBUFFER, previousFbo);
+        }
+
         // 4. Restore viewport and resume main batch
-        if (viewport != null) {
+        if (Gdx.gl != null && prevVpW > 0 && prevVpH > 0) {
+            Gdx.gl.glViewport(prevVpX, prevVpY, prevVpW, prevVpH);
+        } else if (viewport != null) {
             viewport.apply();
         }
         if (wasDrawing) {

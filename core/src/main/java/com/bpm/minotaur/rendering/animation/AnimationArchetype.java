@@ -9,7 +9,10 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 public enum AnimationArchetype {
     SLASHING_1H,
     SLASHING_2H,
+    AXE_CHOPPING,
+    POLEARM_SWEEP,
     BLUNT_CRUSHING,
+    FLAIL_WHIP,
     THRUSTING_PIERCE,
     BRAWLING,
     RANGED_BOW,
@@ -55,10 +58,38 @@ public enum AnimationArchetype {
             return RANGED_BOW;
         }
 
-        // Check for two-handed colossal weapons
+        // Check for flails, whips, and chained/momentum weapons
+        if (name.contains("FLAIL") || name.contains("MORNING_STAR") || name.contains("WHIP")
+                || name.contains("NUNCHAKU") || name.contains("CHAIN") || name.contains("SCOURGE")) {
+            return FLAIL_WHIP;
+        }
+
+        // Check for polearms and extended reach weapons
+        if (name.contains("HALBERD") || name.contains("GUISARME") || name.contains("NAGINATA")
+                || name.contains("GLAIVE") || name.contains("VOULGE") || name.contains("PARTISAN")
+                || name.contains("RANSEUR") || name.contains("SPETUM") || name.contains("FAUCHARD")
+                || name.contains("POLEARM") || name.contains("BARDICHE") || name.contains("MANCATCHER")
+                || name.contains("TETSUBO") || name.contains("TRIKAL")) {
+            return POLEARM_SWEEP;
+        }
+
+        // Check for blunt crushing weapons (checked before axes so maces/hammers with ItemType.AXE match properly)
+        if (name.contains("MACE") || name.contains("HAMMER") || name.contains("CLUB")
+                || name.contains("WARHAMMER") || name.contains("GADA") || name.contains("SAP")
+                || name.contains("BO_STICK") || name.contains("KNOBKERRIE") || name.contains("BELAYING_PIN")
+                || name.contains("FLINDBAR") || name.contains("ANKUS") || name.contains("QUARTERSTAFF")
+                || name.contains("STAFF") || name.contains("WOODEN_CROSS")) {
+            return BLUNT_CRUSHING;
+        }
+
+        // Check for axes and hatchets
+        if (name.contains("AXE") || name.contains("HATCHET") || name.contains("TOMAHAWK")) {
+            return AXE_CHOPPING;
+        }
+
+        // Check for two-handed colossal swords / greatswords
         if (name.contains("TWO_HANDED") || name.contains("CLAYMORE") || name.contains("FLAMBERGE")
-                || name.contains("GREAT_") || name.contains("HALBERD") || name.contains("BARDICHE")
-                || name.contains("POLEARM") || name.contains("GIANT_KIN")) {
+                || name.contains("GREAT_SWORD") || name.contains("GREATSWORD") || name.contains("GIANT_KIN")) {
             return SLASHING_2H;
         }
 
@@ -80,16 +111,6 @@ public enum AnimationArchetype {
                 || name.contains("RITIIK") || name.contains("KNIFE") || name.contains("RAZOR")
                 || name.contains("BASILARD") || name.contains("CAVILER")) {
             return THRUSTING_PIERCE;
-        }
-
-        // Check for blunt crushing weapons
-        if (name.contains("MACE") || name.contains("HAMMER") || name.contains("CLUB")
-                || name.contains("FLAIL") || name.contains("MORNING_STAR") || name.contains("WARHAMMER")
-                || name.contains("GADA") || name.contains("SAP") || name.contains("NUNCHAKU")
-                || name.contains("BO_STICK") || name.contains("KNOBKERRIE") || name.contains("BELAYING_PIN")
-                || name.contains("FLINDBAR") || name.contains("ANKUS") || name.contains("QUARTERSTAFF")
-                || name.contains("STAFF") || name.contains("WOODEN_CROSS")) {
-            return BLUNT_CRUSHING;
         }
 
         if (name.contains("SHIELD") || name.contains("BUCKLER")) {

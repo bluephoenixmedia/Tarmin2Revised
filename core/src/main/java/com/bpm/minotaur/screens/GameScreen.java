@@ -1245,6 +1245,14 @@ public class GameScreen extends BaseScreen {
             player.getInventory().setLeftHand(starterCross);
         }
 
+        // Clean weapon state upon shelter awakening: reset attack timer/combos, clear blood decals,
+        // and force re-synchronization of equipped items and motion profiles.
+        if (weaponOverlay != null) {
+            weaponOverlay.reset();
+            weaponOverlay.clearBloodDecals();
+            weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+        }
+
         // Travel crafting kits: guarantee the player always retains the portable field kits
         if (!player.getInventory().hasItemOfType(Item.ItemType.CRAFTING_TOOLKIT)) {
             Item craftingToolkit = game.getItemDataManager().createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
