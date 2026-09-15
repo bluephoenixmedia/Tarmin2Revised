@@ -7,6 +7,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.video.JavaCVVideoPlayer;
@@ -23,6 +24,19 @@ public class LoadingScreen extends ScreenAdapter {
     private final AssetManager assetManager;
     private final SpriteBatch batch;
 
+    private static final String[] LOADING_PHRASES = {
+        "Building the maze...",
+        "Delving into the subterranean...",
+        "Placing the hoards...",
+        "Carving forgotten catacombs...",
+        "Kindling subterranean torches...",
+        "Awakening ancient horrors...",
+        "Stirring the Minotaur from his slumber...",
+        "Planning your demise..."
+    };
+
+    private final GlyphLayout layout = new GlyphLayout();
+    private float phraseTimer = 0f;
     private BitmapFont font;
     private JavaCVVideoPlayer videoPlayer;
     private boolean videoFinished = false;
@@ -34,6 +48,7 @@ public class LoadingScreen extends ScreenAdapter {
         this.batch = game.getBatch();
 
         this.font = new BitmapFont();
+        this.font.getData().setScale(1.6f);
 
         boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo();
         if (skipIntro) {
@@ -75,6 +90,8 @@ public class LoadingScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        phraseTimer += delta;
+
         // --- 0. Check User Skip Input (Space, Enter, Escape, Left Click) ---
         if (!videoFinished) {
             if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ANY_KEY)
@@ -127,19 +144,34 @@ public class LoadingScreen extends ScreenAdapter {
                 batch.draw(frame, x, y, drawWidth, drawHeight);
             }
             // Skip hint
-            font.draw(batch, "[Press ANY KEY or Click to Skip]", screenWidth - 280, screenHeight - 20);
+            font.getData().setScale(1.2f);
+            font.setColor(0.7f, 0.7f, 0.7f, 0.75f);
+            layout.setText(font, "[Press ANY KEY or Click to Skip]");
+            font.draw(batch, "[Press ANY KEY or Click to Skip]", screenWidth - layout.width - 25f, screenHeight - 25f);
         }
 
-        // --- 4. Draw Loading Text & Progress ---
+        // --- 4. Draw Atmospheric Loading Phrases (Replacing Percentages) ---
         float progress = assetManager.getProgress();
-        int progressPercent = (int) (progress * 100);
+        String phrase = getLoadingPhrase(progress);
+        float alphaPulse = 0.82f + 0.18f * (float) Math.sin(phraseTimer * 4.0f);
 
         if (videoFinished) {
-            // Draw prominent loading message if video was skipped but assets are finishing
-            font.draw(batch, "CASTLE TARMIN", screenWidth / 2f - 60, screenHeight / 2f + 40);
-            font.draw(batch, "Loading Assets... " + progressPercent + "%", screenWidth / 2f - 75, screenHeight / 2f);
+            // Draw prominent loading message if video was skipped or completed while assets finish
+            font.getData().setScale(2.4f);
+            font.setColor(0.95f, 0.82f, 0.38f, 1f); // Warm ember gold
+            layout.setText(font, "CASTLE TARMIN");
+            font.draw(batch, "CASTLE TARMIN", (screenWidth - layout.width) / 2f, screenHeight / 2f + 40f);
+
+            font.getData().setScale(1.6f);
+            font.setColor(0.85f, 0.85f, 0.85f, alphaPulse); // Resonant pulsing silver
+            layout.setText(font, phrase);
+            font.draw(batch, phrase, (screenWidth - layout.width) / 2f, screenHeight / 2f - 20f);
         } else {
-            font.draw(batch, "Loading... " + progressPercent + "%", screenWidth / 2f - 50, 30);
+            // During intro video playback: drawn along the bottom with warm gold styling
+            font.getData().setScale(1.5f);
+            font.setColor(0.95f, 0.82f, 0.38f, alphaPulse);
+            layout.setText(font, phrase);
+            font.draw(batch, phrase, (screenWidth - layout.width) / 2f, 50f);
         }
 
         batch.end();
@@ -156,6 +188,16 @@ public class LoadingScreen extends ScreenAdapter {
             Gdx.app.log("LoadingScreen", "Asset loading and video sequence complete!");
             game.proceedToMainMenu();
         }
+    }
+
+    private String getLoadingPhrase(float progress) {
+        if (progress >= 0.88f) {
+            return "Planning your demise...";
+        }
+        int progressIndex = (int) (progress * (LOADING_PHRASES.length - 1));
+        int timeIndex = (int) (phraseTimer / 1.6f);
+        int index = Math.max(progressIndex, timeIndex) % (LOADING_PHRASES.length - 1);
+        return LOADING_PHRASES[index];
     }
 
     @Override
