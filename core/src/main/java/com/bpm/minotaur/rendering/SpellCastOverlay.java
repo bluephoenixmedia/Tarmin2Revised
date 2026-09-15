@@ -30,7 +30,8 @@ public class SpellCastOverlay {
 
     public enum CastOverlayMode {
         HAND_RAISE,
-        SCROLL_READ
+        SCROLL_READ,
+        BANDAGE_TEND
     }
 
     private CastOverlayMode mode = CastOverlayMode.HAND_RAISE;
@@ -86,6 +87,15 @@ public class SpellCastOverlay {
         }
     }
 
+    /** Triggers the first-person hand bandaging / salve tending animation. */
+    public void triggerBandageTend(float duration) {
+        this.mode = CastOverlayMode.BANDAGE_TEND;
+        this.active = true;
+        this.timer = 0f;
+        this.duration = Math.max(0.6f, duration);
+        this.handColor.set(0.82f, 0.68f, 0.55f, 1f);
+    }
+
     public void update(float delta) {
         if (!active) return;
         timer += delta;
@@ -110,6 +120,11 @@ public class SpellCastOverlay {
 
         if (mode == CastOverlayMode.SCROLL_READ) {
             renderScrollUnfurl(shapeRenderer, viewport, progress);
+            return;
+        }
+
+        if (mode == CastOverlayMode.BANDAGE_TEND) {
+            renderBandageTend(shapeRenderer, viewport, progress);
             return;
         }
 
@@ -404,5 +419,81 @@ public class SpellCastOverlay {
         shapeRenderer.rect(left - rodW - handW * 0.5f, handY, handW, handH);
         // Right Hand thumb & fingers
         shapeRenderer.rect(right + rodW * 0.5f, handY, handW, handH);
+    }
+
+    /**
+     * Renders a first-person field bandaging sequence: patient forearm held steady
+     * while opposite hand binds linen/silk dressing with restorative vitality motes.
+     */
+    private void renderBandageTend(ShapeRenderer shapeRenderer, Viewport viewport, float progress) {
+        float w = viewport.getWorldWidth();
+        float h = viewport.getWorldHeight();
+        float cx = w * 0.5f;
+
+        // Easing: Arm slides up from lower-left (0..0.25), wraps in place (0.25..0.75), slides down (0.75..1.0)
+        float armY;
+        float alpha = 1.0f;
+        if (progress < 0.25f) {
+            float t = progress / 0.25f;
+            armY = MathUtils.lerp(h * -0.25f, h * 0.12f, MathUtils.sin(t * MathUtils.PI * 0.5f));
+            alpha = t;
+        } else if (progress > 0.75f) {
+            float t = (progress - 0.75f) / 0.25f;
+            armY = MathUtils.lerp(h * 0.12f, h * -0.25f, t * t);
+            alpha = 1.0f - t;
+        } else {
+            armY = h * 0.12f + MathUtils.sin(timer * 10f) * 1.5f;
+        }
+
+        // 1. Forearm Base (Flesh tone)
+        float armW = w * 0.44f;
+        float armH = h * 0.14f;
+        float armX = cx - armW * 0.55f;
+
+        shapeRenderer.setColor(0.76f, 0.60f, 0.48f, alpha);
+        shapeRenderer.rect(armX, armY, armW, armH);
+
+        // Arm shading / depth
+        shapeRenderer.setColor(0.62f, 0.48f, 0.38f, alpha);
+        shapeRenderer.rect(armX, armY, armW, armH * 0.25f);
+
+        // 2. Wound laceration (red line prior to full wrapping)
+        float woundX = armX + armW * 0.45f;
+        float woundY = armY + armH * 0.35f;
+        shapeRenderer.setColor(0.70f, 0.10f, 0.10f, alpha * Math.max(0.1f, 1.0f - progress * 1.4f));
+        shapeRenderer.rect(woundX, woundY, armW * 0.15f, armH * 0.30f);
+
+        // 3. Bandage Strips Wrapping around forearm
+        float wrapProgress = MathUtils.clamp((progress - 0.15f) / 0.60f, 0f, 1f);
+        int numWraps = (int) (wrapProgress * 4) + 1;
+        float wrapW = armW * 0.08f;
+        for (int i = 0; i < numWraps; i++) {
+            float bx = armX + armW * 0.32f + (i * wrapW * 0.85f);
+            // Linen cloth color
+            shapeRenderer.setColor(0.92f, 0.88f, 0.80f, alpha);
+            shapeRenderer.rect(bx, armY - armH * 0.05f, wrapW, armH * 1.10f);
+            // Bandage fiber contour border
+            shapeRenderer.setColor(0.78f, 0.72f, 0.65f, alpha * 0.7f);
+            shapeRenderer.rect(bx, armY - armH * 0.05f, wrapW * 0.15f, armH * 1.10f);
+        }
+
+        // 4. Wrapping Hand (Right hand moving rhythmically across bandage)
+        float handCycle = MathUtils.sin(progress * MathUtils.PI * 6f);
+        float rHandX = armX + armW * 0.30f + (wrapProgress * armW * 0.35f) + handCycle * 8f;
+        float rHandY = armY + armH * 0.60f;
+        shapeRenderer.setColor(0.82f, 0.68f, 0.55f, alpha);
+        shapeRenderer.rect(rHandX, rHandY, w * 0.06f, h * 0.09f);
+
+        // 5. Restorative Vitality Green Particles
+        if (progress > 0.30f) {
+            for (int p = 0; p < 7; p++) {
+                float pTime = (timer * 2.5f + p * 0.5f) % 1.0f;
+                float px = woundX + MathUtils.sin(p * 2f + timer * 4f) * 35f;
+                float py = woundY + pTime * 45f;
+                float pAlpha = (1.0f - pTime) * alpha * 0.8f;
+                shapeRenderer.setColor(0.2f, 0.95f, 0.4f, pAlpha);
+                shapeRenderer.rect(px, py, 3.5f, 3.5f);
+            }
+        }
     }
 }

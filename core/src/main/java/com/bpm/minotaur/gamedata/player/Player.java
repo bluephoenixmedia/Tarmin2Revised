@@ -23,6 +23,9 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
 import com.bpm.minotaur.screens.GameScreen;
+import com.bpm.minotaur.gamedata.injury.BodyPart;
+import com.bpm.minotaur.gamedata.injury.InjuryManager;
+import com.bpm.minotaur.gamedata.injury.InjuryType;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 
@@ -35,6 +38,15 @@ public class Player {
 
     // --- Equipment ---
     private final PlayerEquipment equipment = new PlayerEquipment();
+    private final InjuryManager injuryManager = new InjuryManager();
+
+    public InjuryManager getInjuryManager() {
+        return injuryManager;
+    }
+
+    public boolean canWieldTwoHanded() {
+        return injuryManager == null || injuryManager.canWieldTwoHanded();
+    }
 
     public int getEffectiveSpeed() {
         int speed = moveSpeed; // 12
@@ -51,6 +63,10 @@ public class Player {
         // Weather Survival Exposure: CHILLED saps 20% of move/attack speed
         if (statusManager.hasEffect(StatusEffectType.CHILLED)) {
             speed = (int) (speed * 0.8f);
+        }
+        // Anatomical Injury Debuff: Broken legs reduce speed by 50%
+        if (injuryManager != null) {
+            speed = (int) (speed * injuryManager.getEffectiveSpeedModifier());
         }
         return Math.max(1, speed);
     }
@@ -1557,7 +1573,9 @@ public class Player {
 
     public void heal(int amount) {
         stats.heal(amount);
-        com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
+        if (com.badlogic.gdx.Gdx.app != null) {
+            com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
+        }
     }
 
     private void useConsumable(Item item, GameEventManager eventManager) {
@@ -1719,6 +1737,18 @@ public class Player {
             // ---------------
         } else {
             eventManager.addEvent(new GameEvent("You have no food to rest.", 2f));
+        }
+    }
+
+    public void restAtSanctuary(GameEventManager eventManager) {
+        if (injuryManager != null) {
+            injuryManager.restAtSanctuary(this, eventManager);
+        }
+        this.setWarStrength(this.getEffectiveMaxWarStrength());
+        stats.setSpiritualStrength(this.getEffectiveMaxSpiritualStrength());
+        equipment.fullyRechargeRings();
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("Deep sanctuary sleep restores your body, mind, and spirit!", 2.5f));
         }
     }
 

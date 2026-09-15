@@ -78,6 +78,7 @@ public class Hud implements Disposable {
     private final ModernStatBar monsterHpBar;
 
     private final CompassMedallion compassMedallion;
+    private final AnatomicalSilhouetteWidget anatomicalSilhouetteWidget;
     private final HudTooltip hudTooltip;
     private final WorldInteractionCard worldInteractionCard;
     private final Table dungeonTagTable;
@@ -90,6 +91,9 @@ public class Hud implements Disposable {
 
     public void setGameScreen(GameScreen gameScreen) {
         this.gameScreen = gameScreen;
+        if (anatomicalSilhouetteWidget != null) {
+            anatomicalSilhouetteWidget.setGameScreen(gameScreen);
+        }
     }
 
     private final Label warStrengthValueLabel;
@@ -293,6 +297,7 @@ public class Hud implements Disposable {
         mpBar = new ModernStatBar("MP", HudSkin.COL_MP_BLUE, hudSkin);
         expBar = new ModernStatBar("EXP", HudSkin.COL_EXP_AMBER, hudSkin);
         compassMedallion = new CompassMedallion(hudSkin, player);
+        anatomicalSilhouetteWidget = new AnatomicalSilhouetteWidget(hudSkin, player, gameScreen, hudTooltip);
 
         // Portrait
         try {
@@ -330,7 +335,8 @@ public class Hud implements Disposable {
         barsCol.add(expBar).width(235).height(14).padBottom(6).row();
 
         Table vitalsSubRow = new Table();
-        vitalsSubRow.add(compassMedallion).size(42, 42).padRight(12);
+        vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
+        vitalsSubRow.add(anatomicalSilhouetteWidget).size(36, 52).padRight(10);
         Table divDoomCol = new Table();
         divDoomCol.add(dayNightLabel).left().row();
         divDoomCol.add(divinitiesLabel).left().padTop(2).row();

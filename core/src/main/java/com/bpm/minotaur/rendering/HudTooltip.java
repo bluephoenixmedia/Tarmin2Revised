@@ -125,6 +125,24 @@ public class HudTooltip extends Table {
         setVisible(true);
     }
 
+    public void showCustomText(String title, String details, float anchorX, float anchorY, String prompt) {
+        if (title == null) {
+            setVisible(false);
+            return;
+        }
+        titleLabel.setText(title);
+        categoryLabel.setText("ANATOMICAL STATUS");
+        statsLabel.setText(details != null ? details : "");
+        promptLabel.setText(prompt != null ? prompt : "[R] to Tend Wounds");
+
+        pack();
+        float posX = Math.max(10f, Math.min(1920f - getWidth() - 10f, anchorX - getWidth() / 2f));
+        float posY = 205f;
+        setPosition(posX, posY);
+        toFront();
+        setVisible(true);
+    }
+
     public void hide() {
         setVisible(false);
     }

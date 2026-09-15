@@ -537,6 +537,61 @@ public class SoundManager {
         }
     }
 
+    /**
+     * Synthesizes crisp cloth tearing and linen wrapping friction for field dressing.
+     */
+    public void playBandageTearSound() {
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    for (int f : new int[] { 1150, 1380, 960, 1280, 840, 1050 }) {
+                        playRetroSound(f, 0.024f, 0.40f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("pickup_item");
+        }
+    }
+
+    /**
+     * Synthesizes soft squelching and soothing friction of medicinal salve or moss application.
+     */
+    public void playSalveApplySound() {
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    for (int f : new int[] { 260, 310, 350, 290, 240, 210 }) {
+                        playRetroSound(f, 0.035f, 0.45f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("pickup_item");
+        }
+    }
+
+    /**
+     * Synthesizes a warm, restorative resolution chord upon completing a field surgery / triage action.
+     */
+    public void playFirstAidSuccessSound() {
+        if (retroAudioDevice != null) {
+            new Thread(() -> {
+                try {
+                    // C4 - E4 - G4 - C5 calming tonic
+                    for (int f : new int[] { 261, 329, 392, 523 }) {
+                        playRetroSound(f, 0.08f, 0.55f);
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        } else {
+            playSound("pickup_item");
+        }
+    }
+
     private void playRetroSound(int frequency, float duration, float volume) {
         int numSamples = (int) (duration * SAMPLE_RATE);
         short[] samples = new short[numSamples];
