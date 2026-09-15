@@ -21,6 +21,7 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.screens.GameScreen;
+import com.bpm.minotaur.gamedata.injury.InjuryRecord;
 
 import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.dice.DieResult;
@@ -313,6 +314,10 @@ public class CombatManager {
         }
 
         Item weapon = player.getInventory().getRightHand();
+        if (weapon != null && weapon.isTwoHanded() && !player.canWieldTwoHanded()) {
+            eventManager.addEvent(new GameEvent("Your fractured arm cannot support a two-handed weapon!", 2.0f));
+            return;
+        }
         if (weapon != null && weapon.isRanged()) {
             eventManager.addEvent(new GameEvent("Cannot melee with a ranged weapon.", 1.5f));
             return;
@@ -383,6 +388,29 @@ public class CombatManager {
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
+
+            // --- Anatomical Trauma Infliction (Crits or Heavy Hits >= 20% Max HP) ---
+            if (actualDamage > 0 && player.getInjuryManager() != null) {
+                int maxHp = player.getStats().getMaxHP();
+                boolean isCrit = (d20Roll == 20);
+                boolean isHeavy = (maxHp > 0 && actualDamage >= (int) (maxHp * 0.20f));
+                if (isCrit || isHeavy) {
+                    DamageType dmgType = DamageType.PHYSICAL;
+                    String mType = (attacker.getMonsterType() != null) ? attacker.getMonsterType().toUpperCase() : "";
+                    if (mType.contains("FIRE") || mType.contains("DRAGON") || mType.contains("DEMON")) {
+                        dmgType = DamageType.FIRE;
+                    } else if (mType.contains("SNAKE") || mType.contains("SPIDER") || mType.contains("SCORPION")) {
+                        dmgType = DamageType.POISON;
+                    } else if (mType.contains("WRAITH") || mType.contains("LICH") || mType.contains("GHOST")) {
+                        dmgType = DamageType.MAGICAL;
+                    }
+
+                    InjuryRecord inj = player.getInjuryManager().inflictRandomInjury(dmgType, actualDamage, maxHp);
+                    if (inj != null) {
+                        eventManager.addEvent(new GameEvent("CRITICAL TRAUMA! Your " + inj.getBodyPart().getDisplayName() + " suffered a " + inj.getInjuryType().getDisplayName() + "!", 3.0f));
+                    }
+                }
+            }
 
             // --- Caves of Qud Metabolic Triggers on Hit ---
             if (player.getStatusManager() != null && actualDamage > 0) {
@@ -1265,6 +1293,9 @@ public class CombatManager {
             return;
 
         int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
+        if (player.getInjuryManager() != null) {
+            toHitBonus += player.getInjuryManager().getEffectiveAttackModifier();
+        }
         int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
         boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());

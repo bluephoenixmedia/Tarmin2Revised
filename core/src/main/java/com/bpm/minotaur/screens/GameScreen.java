@@ -43,6 +43,7 @@ import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.rendering.*;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
+import com.bpm.minotaur.screens.firstaid.FirstAidModal;
 import com.bpm.minotaur.gamedata.spawntables.WeightedRandomList;
 
 import java.util.ArrayList;
@@ -1343,6 +1344,9 @@ public class GameScreen extends BaseScreen {
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
+        if (player.getInjuryManager() != null) {
+            player.getInjuryManager().updateStep(player, maze, eventManager);
+        }
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager, game.getItemDataManager(), game.getAssetManager());
         }
@@ -1358,32 +1362,46 @@ public class GameScreen extends BaseScreen {
     }
 
     /**
-     * Resting (R) advances 5 world ticks at once instead of just 1, so hunting
-     * monsters have a real chance to close in and interrupt the player rather
-     * than letting them spam free heals in perfect safety. The rest is cut
-     * short the moment the player takes damage or combat starts.
+     * Opens the field surgery & first aid triage interface (R).
      */
-    private static final int REST_TICKS_PER_PRESS = 5;
+    public void openFirstAidModal() {
+        if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+            eventManager.addEvent(new GameEvent("Cannot perform surgery while locked in combat!", 2f));
+            return;
+        }
+        game.setScreen(new FirstAidModal(game, this, player, maze, soundManager, spellCastOverlay));
+    }
 
-    private void performRest() {
-        player.rest(eventManager);
+    /**
+     * Simulates passing world turns during field surgery and first aid.
+     * Wandering monsters have opportunities to close in and violently interrupt the player.
+     */
+    public void simulateFirstAidTurnAdvance(int turns) {
+        if (turns <= 0) return;
+        int hpBefore = player.getCurrentHP();
+        boolean interrupted = false;
 
-        int hpBeforeTick = player.getCurrentHP();
-        for (int i = 0; i < REST_TICKS_PER_PRESS; i++) {
+        for (int i = 0; i < turns; i++) {
             playerTurnTakesAction();
 
             if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
-                eventManager.addEvent(new GameEvent("Your rest is interrupted!", 2f));
+                eventManager.addEvent(new GameEvent("AMBUSH! A monster lunges while you tend your wounds!", 3f));
+                interrupted = true;
                 break;
             }
-            if (player.getCurrentHP() < hpBeforeTick) {
-                eventManager.addEvent(new GameEvent("Something attacks you as you rest!", 2f));
+            if (player.getCurrentHP() < hpBefore) {
+                eventManager.addEvent(new GameEvent("INTERRUPTED! You take damage while tending wounds!", 3f));
+                interrupted = true;
                 break;
             }
             if (player.getCurrentHP() <= 0) {
                 break;
             }
-            hpBeforeTick = player.getCurrentHP();
+            hpBefore = player.getCurrentHP();
+        }
+
+        if (!interrupted && player.getCurrentHP() > 0) {
+            hud.addMessage("Wound care complete. (" + turns + " turns elapsed)");
         }
     }
 
@@ -2084,7 +2102,7 @@ public class GameScreen extends BaseScreen {
                     ascendOrDescendLadder();
                     return true;
                 case Input.Keys.R:
-                    performRest();
+                    openFirstAidModal();
                     return true;
                 case Input.Keys.C:
                     openFieldCrafting();

@@ -844,10 +844,8 @@ public class CookingScreen extends BaseScreen {
         // Warm body temperature to 37.0°C
         player.getStats().setBodyTemperature(com.bpm.minotaur.gamedata.player.PlayerStats.BODY_TEMP_NORMAL);
 
-        // Recharging magic rings upon resting by the hearth fire
-        if (player.getEquipment() != null) {
-            player.getEquipment().fullyRechargeRings();
-        }
+        // Deep restorative rest at sanctuary hearth
+        player.restAtSanctuary(parentScreen.getEventManager());
 
         // Advance Day/Night time by 45 minutes
         if (worldManager != null && worldManager.getDayNightManager() != null) {
