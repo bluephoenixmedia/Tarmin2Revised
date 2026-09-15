@@ -208,4 +208,47 @@ public class CraftingManagerTest {
         // At least 3 metal scrap should be generated and deposited into backpack
         assertTrue(craftingManager.countMaterial(inventory, ItemType.METAL_SCRAP) >= 3);
     }
+
+    /**
+     * Restoring the merchant's Void chain laser is the careful-planning gate:
+     * common debris (STRANGE_METAL, ANCIENT_FOSSIL) is not enough on its own --
+     * it also needs a RIFT_FILAMENT, a component obtainable only from a trip into
+     * the Void, plus the spent weapon itself. Missing any one piece, and the cell
+     * stays dead.
+     */
+    @Test
+    public void testRestoringTheVoidChainLaserRequiresTheSpentWeaponAndAllThreeComponents() {
+        CraftingManager.Recipe recipe = findRecipe(ItemType.VOID_CHAIN_LASER);
+        assertNotNull("A restoration recipe for the Void chain laser must exist", recipe);
+
+        inventory.pickupToBackpack(createDebris(ItemType.STRANGE_METAL, "Strange Metal"));
+        inventory.pickupToBackpack(createDebris(ItemType.ANCIENT_FOSSIL, "Ancient Fossil"));
+        assertFalse("Common debris alone is not enough", craftingManager.canCraft(inventory, recipe));
+
+        inventory.pickupToBackpack(createDebris(ItemType.RIFT_FILAMENT, "Rift Filament"));
+        assertFalse("Without the spent weapon itself there is nothing to restore",
+                craftingManager.canCraft(inventory, recipe));
+
+        inventory.pickupToBackpack(createDebris(ItemType.VOID_CHAIN_LASER_SPENT, "Spent Void Chain Laser"));
+        assertTrue("The spent weapon plus all three components restores it",
+                craftingManager.canCraft(inventory, recipe));
+
+        Item restored = craftingManager.craft(inventory, recipe);
+        assertNotNull(restored);
+        assertEquals(ItemType.VOID_CHAIN_LASER, restored.getType());
+        assertEquals("The spent weapon is consumed, not duplicated",
+                0, craftingManager.countMaterial(inventory, ItemType.VOID_CHAIN_LASER_SPENT));
+        assertEquals(0, craftingManager.countMaterial(inventory, ItemType.STRANGE_METAL));
+        assertEquals(0, craftingManager.countMaterial(inventory, ItemType.ANCIENT_FOSSIL));
+        assertEquals(0, craftingManager.countMaterial(inventory, ItemType.RIFT_FILAMENT));
+    }
+
+    private CraftingManager.Recipe findRecipe(ItemType output) {
+        for (CraftingManager.Recipe recipe : craftingManager.getAllRecipes()) {
+            if (recipe.output == output) {
+                return recipe;
+            }
+        }
+        return null;
+    }
 }

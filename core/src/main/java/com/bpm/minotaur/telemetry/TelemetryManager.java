@@ -51,6 +51,12 @@ public class TelemetryManager {
     private final Map<String, Integer> monstersKilledByType = new HashMap<>();
     private int divinitiesEarned;
 
+    private int injuriesSustained;
+    private int bleedDamageTaken;
+
+    private int merchantFriendlyFireDamage;
+    private int merchantClips;
+
     private TelemetryManager() {
         startNewRun();
     }
@@ -75,6 +81,10 @@ public class TelemetryManager {
         this.scrollsRead = 0;
         this.monstersKilledByType.clear();
         this.divinitiesEarned = 0;
+        this.injuriesSustained = 0;
+        this.bleedDamageTaken = 0;
+        this.merchantFriendlyFireDamage = 0;
+        this.merchantClips = 0;
     }
 
     public String getRunId() {
@@ -138,6 +148,40 @@ public class TelemetryManager {
         }
     }
 
+    /** Counts a lasting anatomical wound inflicted on the player this run. */
+    public synchronized void recordInjurySustained() {
+        injuriesSustained++;
+    }
+
+    /** Total HP this run lost to untreated bleeding, reported at export time. */
+    public synchronized void setBleedDamageTaken(int amount) {
+        this.bleedDamageTaken = Math.max(0, amount);
+    }
+
+    public int getInjuriesSustained() {
+        return injuriesSustained;
+    }
+
+    public int getBleedDamageTaken() {
+        return bleedDamageTaken;
+    }
+
+    /** A stray from the merchant's chain laser clipped the player for this much. */
+    public synchronized void recordMerchantFriendlyFire(int amount) {
+        if (amount > 0) {
+            merchantFriendlyFireDamage += amount;
+            merchantClips++;
+        }
+    }
+
+    public int getMerchantFriendlyFireDamage() {
+        return merchantFriendlyFireDamage;
+    }
+
+    public int getMerchantClips() {
+        return merchantClips;
+    }
+
     public synchronized void setTurnsLived(int turns) {
         this.turnsLived = turns;
     }
@@ -194,9 +238,10 @@ public class TelemetryManager {
                 runFile.writeString(json, false);
 
                 String summary = String.format(
-                        "[TELEMETRY] run=%s turns=%d strata=%d cause=%s killer=%s kills=%d accuracy=%.1f%% dmgDealt=%d dmgTaken=%d divinities=%d",
+                        "[TELEMETRY] run=%s turns=%d strata=%d cause=%s killer=%s kills=%d accuracy=%.1f%% dmgDealt=%d dmgTaken=%d bleedDmg=%d injuries=%d merchantFF=%d divinities=%d",
                         runId, turnsLived, strataReached, causeOfDeath, killerMonster,
-                        getTotalMonstersKilled(), getAccuracyPercent(), damageDealt, damageTaken, divinitiesEarned);
+                        getTotalMonstersKilled(), getAccuracyPercent(), damageDealt, damageTaken,
+                        bleedDamageTaken, injuriesSustained, merchantFriendlyFireDamage, divinitiesEarned);
                 Gdx.files.local("logs/game_balance_session.log").writeString(summary + "\n", true);
             } catch (Exception e) {
                 if (Gdx.app != null) {
@@ -228,6 +273,10 @@ public class TelemetryManager {
         sb.append("  \"potionsQuaffed\": ").append(potionsQuaffed).append(",\n");
         sb.append("  \"scrollsRead\": ").append(scrollsRead).append(",\n");
         sb.append("  \"divinitiesEarned\": ").append(divinitiesEarned).append(",\n");
+        sb.append("  \"injuriesSustained\": ").append(injuriesSustained).append(",\n");
+        sb.append("  \"bleedDamageTaken\": ").append(bleedDamageTaken).append(",\n");
+        sb.append("  \"merchantFriendlyFireDamage\": ").append(merchantFriendlyFireDamage).append(",\n");
+        sb.append("  \"merchantClips\": ").append(merchantClips).append(",\n");
         sb.append("  \"monstersKilledByType\": {\n");
         int i = 0;
         int size = monstersKilledByType.size();

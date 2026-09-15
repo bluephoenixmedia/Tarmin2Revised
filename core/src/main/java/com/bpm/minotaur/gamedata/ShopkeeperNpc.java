@@ -43,6 +43,23 @@ public class ShopkeeperNpc implements Renderable {
     // --- Interaction cooldown: prevent re-triggering shop every step ---
     private int tradingCooldown = 0;
 
+    // --- Void chain laser ---
+    // Loot gate on the weapon is meant to stack two halves: (1) he turns the laser on
+    // an attacker in self-defense, so killing him early is meant to be suicidal, and
+    // (2) restoring the always-dropped spent cell needs rare debris plus a Void-only
+    // component (see CraftingManager's restoration recipe). Only half (2) actually
+    // exists in code -- CombatManager is Monster-typed and this NPC is deliberately
+    // not a Monster (see class doc), so there is currently NO path anywhere for the
+    // player to attack the merchant at all. Half (1) is fiction only until that gap
+    // is closed; killing him today means a monster does it, not the player.
+    /** Turns the weapon spends cycling after a burst before it can fire again. */
+    public static final int LASER_COOLDOWN_TURNS = 2;
+    private int laserCooldown = 0;
+
+    /** Fraction knocked off the next trade after one of his strays clips the player. */
+    public static final float RESTITUTION_DISCOUNT = 0.15f;
+    private float restitutionDiscount = 0f;
+
     public ShopkeeperNpc(float startX, float startY, AssetManager assetManager) {
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
         this.currentHP = maxHP;
@@ -122,6 +139,37 @@ public class ShopkeeperNpc implements Renderable {
         this.tradingCooldown = turns;
     }
 
+    /** He clipped the player: the next trade is on better terms. */
+    public void offerRestitution() {
+        restitutionDiscount = RESTITUTION_DISCOUNT;
+    }
+
+    public float getRestitutionDiscount() {
+        return restitutionDiscount;
+    }
+
+    /** The apology has been traded against; the next clip earns a fresh one. */
+    public void consumeRestitutionDiscount() {
+        restitutionDiscount = 0f;
+    }
+
+    /** True when the cell is charged and a burst can go out this turn. */
+    public boolean isLaserCharged() {
+        return laserCooldown == 0;
+    }
+
+    /** Called the turn a burst goes out. */
+    public void startLaserCooldown() {
+        laserCooldown = LASER_COOLDOWN_TURNS;
+    }
+
+    /** Advances the weapon cycle by one turn. */
+    public void tickLaserCooldown() {
+        if (laserCooldown > 0) {
+            laserCooldown--;
+        }
+    }
+
     public void tickTradingCooldown() {
         if (tradingCooldown > 0)
             tradingCooldown--;
@@ -160,6 +208,17 @@ public class ShopkeeperNpc implements Renderable {
                         com.bpm.minotaur.gamedata.item.Item.ItemType.COINS,
                         (int) position.x, (int) position.y, null, am);
                 if (goldPouch != null) drops.add(goldPouch);
+            } catch (Exception ignored) {}
+
+            // The Void chain laser always drops, but spent -- the cell burns out the
+            // instant he falls. Restoring it (see CraftingManager's Void salvage
+            // recipe) is the "careful planning" gate; surviving him at all to get
+            // here is the "extreme high levels" gate.
+            try {
+                com.bpm.minotaur.gamedata.item.Item spentLaser = idm.createItem(
+                        com.bpm.minotaur.gamedata.item.Item.ItemType.VOID_CHAIN_LASER_SPENT,
+                        (int) position.x, (int) position.y, null, am);
+                if (spentLaser != null) drops.add(spentLaser);
             } catch (Exception ignored) {}
         }
         List<com.bpm.minotaur.gamedata.item.Item> stock = inventory.getAllItems();

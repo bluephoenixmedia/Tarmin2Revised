@@ -13,7 +13,11 @@ public class GameEvent {
         PORTAL_ACTIVATED,
         ENCOUNTER_TRIGGERED,
         PLAYER_DIED,
-        SHOPKEEPER_INTERACTION
+        SHOPKEEPER_INTERACTION,
+        /** The merchant fired his Void chain laser; payload is the resolved LaserBurst.BurstResult. */
+        LASER_BURST,
+        /** A stray from the merchant clipped the player; payload is the ShopkeeperNpc making amends. */
+        SHOPKEEPER_RESTITUTION
     }
 
     // --- Fields ---

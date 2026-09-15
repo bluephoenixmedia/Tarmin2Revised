@@ -40,13 +40,13 @@ public class InjuryManagerTest {
         assertEquals(InjuryType.BONE_FRACTURE, legInjury.getInjuryType());
         assertFalse(legInjury.isTreated());
 
-        // Speed should be reduced to 50%
-        assertEquals(0.50f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
+        // Speed penalty scales with severity: a moderate fracture is 0.75x
+        assertEquals(0.75f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
 
-        // 2. Inflict Arm Fracture
+        // 2. Inflict Arm Fracture -- to-hit penalty is -1 per severity rank
         InjuryRecord armInjury = injuryManager.inflictInjury(BodyPart.ARMS, InjuryType.BONE_FRACTURE, 2);
         assertNotNull(armInjury);
-        assertEquals(-4, injuryManager.getEffectiveAttackModifier());
+        assertEquals(-2, injuryManager.getEffectiveAttackModifier());
         assertFalse(injuryManager.canWieldTwoHanded());
 
         // 3. Inflict Head Concussion
@@ -81,9 +81,9 @@ public class InjuryManagerTest {
         injuryManager.inflictInjury(BodyPart.LEGS, InjuryType.BONE_FRACTURE, 2);
         injuryManager.inflictInjury(BodyPart.ARMS, InjuryType.BONE_FRACTURE, 2);
 
-        assertEquals(0.50f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
+        assertEquals(0.75f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
         assertFalse(injuryManager.canWieldTwoHanded());
-        assertEquals(-4, injuryManager.getEffectiveAttackModifier());
+        assertEquals(-2, injuryManager.getEffectiveAttackModifier());
 
         Item bone = createItem(ItemType.BONE, "Animal Bone Splint");
         player.getInventory().addItem(bone);
@@ -99,7 +99,7 @@ public class InjuryManagerTest {
         player.getInventory().addItem(rope);
         InjuryManager.TreatmentResult resultLeg = injuryManager.applyTreatment(BodyPart.LEGS, rope, false, player, null);
         assertTrue(resultLeg.success);
-        assertEquals(0.80f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
+        assertEquals(0.90f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
     }
 
     @Test
@@ -169,7 +169,7 @@ public class InjuryManagerTest {
         injuryManager.inflictInjury(BodyPart.LEGS, InjuryType.BONE_FRACTURE, 2);
         injuryManager.getInjury(BodyPart.LEGS).setTreated(true);
 
-        injuryManager.inflictInjury(BodyPart.TORSO, InjuryType.LACERATION_BLEEDING, 1);
+        injuryManager.inflictInjury(BodyPart.TORSO, InjuryType.LACERATION_BLEEDING, 3);
         // Torso is NOT treated
 
         injuryManager.setIllnessStage(IllnessStage.STAGE_2_ACUTE_FEVER);
@@ -178,9 +178,97 @@ public class InjuryManagerTest {
 
         // Treated leg fracture should be healed
         assertNull(injuryManager.getInjury(BodyPart.LEGS));
-        // Untreated torso laceration remains
-        assertNotNull(injuryManager.getInjury(BodyPart.TORSO));
+        // Untreated torso laceration remains, but rest steps it down a rank and
+        // always stops the bleeding -- neglect costs time, not the run.
+        InjuryRecord torso = injuryManager.getInjury(BodyPart.TORSO);
+        assertNotNull(torso);
+        assertEquals(2, torso.getSeverity());
+        assertFalse(torso.isBleeding());
         // Fever should be broken
+        assertEquals(IllnessStage.HEALTHY, injuryManager.getIllnessStage());
+    }
+
+    /**
+     * A minor untreated wound closes over entirely after a single night's rest.
+     */
+    @Test
+    public void testSanctuaryRestClosesMinorUntreatedWound() {
+        injuryManager.inflictInjury(BodyPart.TORSO, InjuryType.LACERATION_BLEEDING, 1);
+        injuryManager.restAtSanctuary(player, null);
+        assertNull(injuryManager.getInjury(BodyPart.TORSO));
+    }
+
+    /**
+     * An untreated bleed costs a bounded pool of HP and then clots on its own.
+     * Before this bound existed, a single laceration drained 1 HP every step
+     * forever and reliably killed a 12-18 HP starting character outright.
+     */
+    @Test
+    public void testUntreatedBleedClotsAfterFinitePool() {
+        InjuryRecord rec = injuryManager.inflictInjury(BodyPart.TORSO, InjuryType.LACERATION_BLEEDING, 3);
+        assertTrue(rec.isBleeding());
+        int pool = rec.getBleedTicksRemaining();
+        assertTrue("Bleed pool must be bounded", pool > 0 && pool <= 12);
+
+        player.getStats().setMaxHP(200);
+        player.getStats().setCurrentHP(200);
+        for (int step = 0; step < 500; step++) {
+            injuryManager.updateStep(player, null, null);
+        }
+
+        assertFalse("Wound must clot once its bleed pool is spent", rec.isBleeding());
+        assertEquals(pool, injuryManager.getBleedDamageThisRun());
+        assertTrue("Bleeding alone must not be able to drain a full health pool",
+                player.getCurrentHP() > 200 - 20);
+    }
+
+    /**
+     * Trauma must not leak across expeditions: the Player instance survives death,
+     * so respawn calls cureAll() and every wound, fever, and counter must reset.
+     */
+    @Test
+    public void testCureAllWipesTraumaBetweenRuns() {
+        injuryManager.inflictInjury(BodyPart.TORSO, InjuryType.LACERATION_BLEEDING, 3);
+        injuryManager.inflictInjury(BodyPart.LEGS, InjuryType.BONE_FRACTURE, 2);
+        injuryManager.setIllnessStage(IllnessStage.STAGE_3_SEPTIC_DELIRIUM);
+        injuryManager.updateStep(player, null, null);
+
+        injuryManager.cureAll();
+
+        assertFalse(injuryManager.hasAnyInjuries());
+        assertFalse(injuryManager.hasUntreatedInjuries());
+        assertEquals(IllnessStage.HEALTHY, injuryManager.getIllnessStage());
+        assertEquals(0, injuryManager.getBleedDamageThisRun());
+        assertEquals(1.0f, injuryManager.getEffectiveSpeedModifier(), 0.001f);
+        assertEquals(0, injuryManager.getEffectiveAttackModifier());
+    }
+
+    /**
+     * Chip damage must not maim. A 3-point hit on a 14 HP character clears neither
+     * the fractional nor the absolute trauma threshold.
+     */
+    @Test
+    public void testChipDamageIsNotTraumatic() {
+        assertFalse(InjuryManager.isTraumaticHit(3, 14));
+        assertFalse(InjuryManager.isTraumaticHit(4, 14));
+        assertTrue(InjuryManager.isTraumaticHit(6, 14));
+        // Absolute floor protects high-HP characters from death by a thousand cuts
+        assertFalse(InjuryManager.isTraumaticHit(4, 8));
+    }
+
+    /**
+     * Illness is not a one-way ratchet: once nothing is festering, the body
+     * fights the fever back down instead of marching to sepsis regardless.
+     */
+    @Test
+    public void testIllnessRecoversWhenNothingIsFestering() {
+        injuryManager.setIllnessStage(IllnessStage.STAGE_2_ACUTE_FEVER);
+
+        // No injuries at all -- nothing can be feeding the fever.
+        for (int step = 0; step < 400; step++) {
+            injuryManager.updateStep(player, null, null);
+        }
+
         assertEquals(IllnessStage.HEALTHY, injuryManager.getIllnessStage());
     }
 

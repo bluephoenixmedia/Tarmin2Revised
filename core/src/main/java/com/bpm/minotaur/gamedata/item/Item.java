@@ -203,7 +203,10 @@ public class Item implements Renderable {
         SCROLL_FIREBALL, SCROLL_MISTY_STEP, SCROLL_MAGIC_MISSILE, SCROLL_LIGHTNING_BOLT,
 
         // Milestone Tarmin Tomes
-        TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN
+        TOME_OF_THE_INITIATE, TOME_OF_ELEMENTS, TOME_OF_THE_ARCANE, TOME_OF_TARMIN,
+
+        // Void salvage: the traveling merchant's chain laser and what restores it
+        VOID_CHAIN_LASER_SPENT, VOID_CHAIN_LASER, RIFT_FILAMENT
     }
 
     // --- Core Item Properties (Dynamic) ---

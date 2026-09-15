@@ -69,6 +69,8 @@ public class GameScreen extends BaseScreen {
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final World3DRenderer world3DRenderer = new World3DRenderer();
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager(), game.getAssetManager());
+    private final com.bpm.minotaur.rendering.vfx.LaserBeamRenderer laserBeamRenderer =
+            new com.bpm.minotaur.rendering.vfx.LaserBeamRenderer();
     private final Difficulty difficulty;
 
     // --- 3D Rendering Components ---
@@ -177,6 +179,38 @@ public class GameScreen extends BaseScreen {
 
         // --- NEW: Weapon Overlay ---
         this.weaponOverlay = new FirstPersonWeaponOverlay(game.getItemDataManager(), game.getAssetManager());
+
+        // Void chain laser: each beam gets an impact flash and scorch mark the instant it
+        // appears, in sync with the staggered reveal that shows the burst's climb.
+        this.laserBeamRenderer.setBeamStartListener(this::onLaserBeamStart);
+    }
+
+    /**
+     * Fires the instant one beam of a merchant burst appears on screen. A beam
+     * that struck something gets a violet impact flash there; a stray that
+     * burned into a wall instead leaves a scorch mark. If the beam is the one
+     * that clipped the player, their screen flinches too.
+     */
+    private void onLaserBeamStart(com.bpm.minotaur.gamedata.laser.LaserBurst.Beam beam) {
+        com.badlogic.gdx.math.Vector2 end = beam.getEnd();
+        com.badlogic.gdx.math.Vector3 impact3d = new com.badlogic.gdx.math.Vector3(end.x, 0.42f, end.y);
+
+        if (beam.getStruck() == com.bpm.minotaur.gamedata.laser.LaserBurst.Struck.WALL) {
+            if (maze != null && maze.getGoreManager() != null) {
+                maze.getGoreManager().spawnElementalScorch(impact3d,
+                        new com.badlogic.gdx.graphics.Color(0.35f, 0.1f, 0.5f, 0.9f), 0.30f);
+            }
+        } else if (combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnExplosion(
+                    com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.VOID, impact3d, 0.9f, 0.35f);
+        }
+
+        if (beam.getStruck() == com.bpm.minotaur.gamedata.laser.LaserBurst.Struck.PLAYER
+                && getSpellPostProcessor() != null) {
+            getSpellPostProcessor().triggerChromaticAberration(0.5f, 0.25f);
+            getSpellPostProcessor().triggerVignette(
+                    new com.badlogic.gdx.graphics.Color(0.6f, 0.2f, 0.8f, 1f), 0.35f, 0.3f);
+        }
     }
 
     @Override
@@ -591,6 +625,11 @@ public class GameScreen extends BaseScreen {
         } else if (player != null && maze != null) {
             if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
                 world3DRenderer.render(player, maze, currentViewport, worldManager, currentLevel, gameMode, combatManager);
+                // The merchant's Void chain laser only renders in the modern planar-3D
+                // engine, whose camera-space convention (x, height, -y) LaserBeamRenderer
+                // is built against; the retro raycaster does not get beam VFX.
+                laserBeamRenderer.update(Gdx.graphics.getDeltaTime());
+                laserBeamRenderer.render(world3DRenderer.getCamera());
             } else {
                 firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
                         gameMode);
@@ -1010,6 +1049,19 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        // --- Merchant Void Chain Laser: the resolution already happened in
+        // ShopkeeperAiManager; here we only make it visible. ---
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.LASER_BURST)) != null) {
+            if (event.payload instanceof com.bpm.minotaur.gamedata.laser.LaserBurst.BurstResult) {
+                laserBeamRenderer.spawnBurst(
+                        (com.bpm.minotaur.gamedata.laser.LaserBurst.BurstResult) event.payload);
+            }
+        }
+        // SHOPKEEPER_RESTITUTION carries no rendering of its own -- the discount it
+        // sets on the ShopkeeperNpc is read directly by ShopkeeperWindow at purchase
+        // time -- so it is only consumed here to keep it from lingering in the queue.
+        eventManager.consumeAll(GameEvent.EventType.SHOPKEEPER_RESTITUTION);
+
         // --- Portal & Dimensional Warp Handling ---
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PORTAL_ACTIVATED)) != null) {
             boolean toVoid = !com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid();
@@ -1100,6 +1152,9 @@ public class GameScreen extends BaseScreen {
 
             // 4. Finalize run telemetry & build the run epitaph
             com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+            if (player.getInjuryManager() != null) {
+                telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
+            }
             String epitaphCause = buildEpitaph(telemetry);
             int depthReached = Math.max(1, telemetry.getStrataReached());
             int monstersSlain = telemetry.getTotalMonstersKilled();
@@ -1181,6 +1236,13 @@ public class GameScreen extends BaseScreen {
             String niceName = formatMonsterName(killer);
             String article = niceName.matches("^[AEIOU].*") ? "an" : "a";
             sb.append("Fell to ").append(article).append(" ").append(niceName);
+        } else if (telemetry.getBleedDamageTaken() > 0
+                && player != null
+                && player.getInjuryManager() != null
+                && player.getInjuryManager().hasUntreatedInjuries()) {
+            // No killer on record but open wounds draining HP: name the real cause
+            // rather than burying a bleed-out under "Perished in the depths".
+            sb.append("Bled out from untended wounds");
         } else {
             sb.append("Perished in the depths");
         }
@@ -1239,6 +1301,13 @@ public class GameScreen extends BaseScreen {
         player.getStats().setHydration(80.0f);
         player.getStats().setToxicity(0);
         player.getStatusManager().clearEffects();
+        // The Player instance survives death, so anatomical trauma must be wiped
+        // explicitly -- otherwise open wounds, bleeding, and fever follow the
+        // character into the next expedition and can bleed them out before their
+        // first encounter.
+        if (player.getInjuryManager() != null) {
+            player.getInjuryManager().cureAll();
+        }
 
         // Only re-arm a starter weapon/cross if the player somehow has nothing equipped
         if (player.getInventory().getRightHand() == null) {
@@ -2381,6 +2450,7 @@ public class GameScreen extends BaseScreen {
             monsterDebugOverlay.dispose();
         }
         world3DRenderer.dispose();
+        laserBeamRenderer.dispose();
     }
 
     // --- NEW: Visceral API ---

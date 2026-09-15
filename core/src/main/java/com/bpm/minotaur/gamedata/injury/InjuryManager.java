@@ -20,6 +20,30 @@ import java.util.Random;
  */
 public class InjuryManager {
 
+    // =========================================================================
+    // BALANCE TUNING
+    // =========================================================================
+
+    /** Damage must be at least this fraction of max HP to threaten trauma. */
+    public static final float HEAVY_HIT_HP_FRACTION = 0.35f;
+    /** ...and at least this many raw HP, so a 12-18 HP starting character is not
+     *  maimed by every 3-point scratch. */
+    public static final int HEAVY_HIT_MIN_DAMAGE = 5;
+    /** Chance a qualifying heavy hit actually inflicts a lasting wound. */
+    public static final float HEAVY_HIT_INJURY_CHANCE = 0.30f;
+    /** Chance a critical hit inflicts a lasting wound. */
+    public static final float CRIT_INJURY_CHANCE = 0.55f;
+
+    /** Steps between bleed ticks, by severity: 5 / 4 / 3. */
+    private static final int BLEED_INTERVAL_BASE = 6;
+    /** HP lost per bleed tick. Severity drives tick frequency and pool size, not tick size. */
+    private static final int BLEED_DAMAGE_PER_TICK = 1;
+
+    /** Steps between illness progression checks. */
+    private static final int ILLNESS_TICK_STEPS = 120;
+    /** An untreated wound this old festers into infection. */
+    private static final int FESTER_STEPS = 150;
+
     public static class TreatmentResult {
         public final boolean success;
         public final String message;
@@ -40,7 +64,13 @@ public class InjuryManager {
     private IllnessStage illnessStage = IllnessStage.HEALTHY;
     private int illnessTimer = 0;
     private int stepCounter = 0;
+    private int bleedDamageThisRun = 0;
     private final Random random = new Random();
+
+    /** Total HP lost to bleeding since the last {@link #cureAll()}; feeds run telemetry. */
+    public int getBleedDamageThisRun() {
+        return bleedDamageThisRun;
+    }
 
     public Map<BodyPart, InjuryRecord> getInjuries() {
         return injuries;
@@ -79,7 +109,36 @@ public class InjuryManager {
     // =========================================================================
 
     /**
-     * Rolls for trauma on heavy strikes (>= 20% max HP) or critical hits.
+     * True when a blow is severe enough to even be considered for lasting trauma.
+     * Requires both a meaningful fraction of the health pool <em>and</em> an
+     * absolute damage floor, so low-level characters are not crippled by chip damage.
+     */
+    public static boolean isTraumaticHit(int damageAmount, int maxHp) {
+        if (damageAmount < HEAVY_HIT_MIN_DAMAGE) {
+            return false;
+        }
+        return maxHp <= 0 || damageAmount >= (int) Math.ceil(maxHp * HEAVY_HIT_HP_FRACTION);
+    }
+
+    /**
+     * Rolls the chance gate for a qualifying blow. Returns the inflicted wound,
+     * or {@code null} when the blow leaves nothing lasting behind.
+     */
+    public InjuryRecord rollForInjury(DamageType damageType, int damageAmount, int maxHp, boolean isCrit) {
+        boolean heavy = isTraumaticHit(damageAmount, maxHp);
+        if (!heavy && !isCrit) {
+            return null;
+        }
+        float chance = isCrit ? CRIT_INJURY_CHANCE : HEAVY_HIT_INJURY_CHANCE;
+        if (random.nextFloat() >= chance) {
+            return null;
+        }
+        return inflictRandomInjury(damageType, damageAmount, maxHp);
+    }
+
+    /**
+     * Rolls trauma unconditionally. Callers in combat should prefer
+     * {@link #rollForInjury} so the chance gate is applied.
      */
     public InjuryRecord inflictRandomInjury(DamageType damageType, int damageAmount, int maxHp) {
         // Weighted body part selection
@@ -125,12 +184,27 @@ public class InjuryManager {
 
         // Severity based on damage fraction
         float fraction = (maxHp > 0) ? (float) damageAmount / maxHp : 0.25f;
-        int severity = (fraction >= 0.50f) ? 3 : (fraction >= 0.30f) ? 2 : 1;
+        int severity = (fraction >= 0.75f) ? 3 : (fraction >= 0.55f) ? 2 : 1;
 
         return inflictInjury(selectedPart, injuryType, severity);
     }
 
+    /**
+     * Applies a wound to a body part. A fresh strike on an already-wounded limb
+     * aggravates the existing record rather than replacing it, so a new minor
+     * cut can never silently downgrade a critical one.
+     */
     public InjuryRecord inflictInjury(BodyPart part, InjuryType type, int severity) {
+        InjuryRecord existing = injuries.get(part);
+        if (existing != null && existing.getInjuryType() == type) {
+            existing.aggravate(severity);
+            existing.setTreated(false);
+            return existing;
+        }
+        if (existing != null && existing.getSeverity() > severity && !existing.isTreated()) {
+            // A worse untreated wound already occupies this limb; leave it be.
+            return existing;
+        }
         InjuryRecord record = new InjuryRecord(part, type, severity);
         injuries.put(part, record);
         return record;
@@ -140,10 +214,16 @@ public class InjuryManager {
         injuries.remove(part);
     }
 
+    /**
+     * Wipes every wound, illness, and counter. Called on death/respawn so trauma
+     * never leaks from one expedition into the next.
+     */
     public void cureAll() {
         injuries.clear();
         illnessStage = IllnessStage.HEALTHY;
         illnessTimer = 0;
+        stepCounter = 0;
+        bleedDamageThisRun = 0;
     }
 
     // =========================================================================
@@ -323,39 +403,70 @@ public class InjuryManager {
     public void updateStep(Player player, Maze maze, GameEventManager eventManager) {
         stepCounter++;
 
-        // 1. Bleed Checks
+        // 1. Bleed Checks -- an open wound bleeds on an interval set by its
+        //    severity, and only until its bleed pool runs dry and it clots.
         for (InjuryRecord rec : injuries.values()) {
-            if (!rec.isTreated() && (rec.getInjuryType() == InjuryType.LACERATION_BLEEDING || rec.getInjuryType() == InjuryType.PUNCTURE_WOUND)) {
-                int bleedDmg = Math.max(1, rec.getSeverity());
-                player.takeTrueDamage(bleedDmg);
+            if (rec.isTreated()) {
+                continue;
+            }
+            rec.incrementTurnsUntreated();
 
-                // Spawn blood trail on floor
-                if (maze != null && maze.getGoreManager() != null) {
-                    Vector3 feet3d = new Vector3(player.getPosition().x, 0.02f, player.getPosition().y);
-                    maze.getGoreManager().spawnSurfaceDecal(feet3d, new Color(0.65f, 0.05f, 0.05f, 0.85f), 0.35f);
-                }
+            if (!rec.isBleeding()) {
+                continue;
+            }
+            int interval = Math.max(1, BLEED_INTERVAL_BASE - rec.getSeverity());
+            if (stepCounter % interval != 0) {
+                continue;
+            }
 
-                if (stepCounter % 4 == 0 && eventManager != null) {
-                    eventManager.addEvent(new GameEvent("Blood pours from your " + rec.getBodyPart().getDisplayName() + " as you move! (-" + bleedDmg + " HP)", 1.5f));
+            rec.consumeBleedTick();
+            player.takeTrueDamage(BLEED_DAMAGE_PER_TICK);
+            bleedDamageThisRun += BLEED_DAMAGE_PER_TICK;
+
+            // Spawn blood trail on floor
+            if (maze != null && maze.getGoreManager() != null) {
+                Vector3 feet3d = new Vector3(player.getPosition().x, 0.02f, player.getPosition().y);
+                maze.getGoreManager().spawnSurfaceDecal(feet3d, new Color(0.65f, 0.05f, 0.05f, 0.85f), 0.35f);
+            }
+
+            if (eventManager != null) {
+                if (rec.getBleedTicksRemaining() <= 0) {
+                    eventManager.addEvent(new GameEvent("The bleeding from your " + rec.getBodyPart().getDisplayName()
+                            + " finally clots over. The wound is still open.", 2.0f));
+                } else {
+                    eventManager.addEvent(new GameEvent("Blood seeps from your " + rec.getBodyPart().getDisplayName()
+                            + " as you move! (-" + BLEED_DAMAGE_PER_TICK + " HP)", 1.5f));
                 }
             }
         }
 
-        // 2. Illness / Fever Escalation
-        illnessTimer++;
-        if (illnessTimer > 120) {
+        // 2. Illness / Fever Escalation -- only ticks while something is actually
+        //    wrong, so a clean bill of health never advances the disease clock.
+        if (illnessStage.isIll() || hasUntreatedInjuries()) {
+            illnessTimer++;
+            if (illnessTimer > ILLNESS_TICK_STEPS) {
+                illnessTimer = 0;
+                escalateIllness(player, eventManager);
+            }
+        } else {
             illnessTimer = 0;
-            escalateIllness(player, eventManager);
         }
     }
 
     private void escalateIllness(Player player, GameEventManager eventManager) {
         boolean hasInfectedWound = false;
         for (InjuryRecord rec : injuries.values()) {
-            if (rec.isInfected() || (!rec.isTreated() && rec.getTurnsUntreated() > 150)) {
+            if (rec.isInfected() || (!rec.isTreated() && rec.getTurnsUntreated() > FESTER_STEPS)) {
                 hasInfectedWound = true;
                 break;
             }
+        }
+
+        // No festering source left: the body fights the infection back down a
+        // stage instead of marching to sepsis regardless of treatment.
+        if (!hasInfectedWound && illnessStage.isIll()) {
+            recoverIllnessStage(eventManager);
+            return;
         }
 
         if (hasInfectedWound && illnessStage == IllnessStage.HEALTHY) {
@@ -383,15 +494,50 @@ public class InjuryManager {
         }
     }
 
+    /** Steps the illness back one stage as the body wins out. */
+    private void recoverIllnessStage(GameEventManager eventManager) {
+        switch (illnessStage) {
+            case STAGE_3_SEPTIC_DELIRIUM:
+                illnessStage = IllnessStage.STAGE_2_ACUTE_FEVER;
+                break;
+            case STAGE_2_ACUTE_FEVER:
+                illnessStage = IllnessStage.STAGE_1_INFECTED_WOUND;
+                break;
+            case STAGE_1_INFECTED_WOUND:
+            default:
+                illnessStage = IllnessStage.HEALTHY;
+                break;
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(illnessStage == IllnessStage.HEALTHY
+                    ? new GameEvent("The fever breaks. Your blood runs clean again.", 2.5f)
+                    : new GameEvent("Your fever eases as the wound is kept clean.", 2.0f));
+        }
+    }
+
     /**
      * Sanctuary resting at a camp/fire accelerates healing and cures fevers.
      */
     public void restAtSanctuary(Player player, GameEventManager eventManager) {
         for (BodyPart part : BodyPart.values()) {
             InjuryRecord rec = injuries.get(part);
-            if (rec != null && rec.isTreated()) {
+            if (rec == null) {
+                continue;
+            }
+            if (rec.isTreated()) {
                 // Treated fractures and lacerations heal completely in deep sanctuary rest
                 injuries.remove(part);
+            } else if (rec.mend()) {
+                // Untreated wounds still knit slowly -- one rank per night, and the
+                // bleeding always stops. Neglect costs time, not the run.
+                injuries.remove(part);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("Your untreated " + part.getDisplayName()
+                            + " wound has closed over during the night.", 2.5f));
+                }
+            } else if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Rest eases the wound on your " + part.getDisplayName()
+                        + ", though it remains untended.", 2.0f));
             }
         }
 
@@ -409,12 +555,20 @@ public class InjuryManager {
     // =========================================================================
 
     /**
-     * Speed modifier: Broken leg cuts movement speed in half; treated splinted leg gives 0.8x.
+     * Speed modifier: a broken leg slows movement by severity (0.85 / 0.75 / 0.60
+     * untreated); a splinted leg is a flat 0.90x.
      */
     public float getEffectiveSpeedModifier() {
         InjuryRecord legInjury = injuries.get(BodyPart.LEGS);
         if (legInjury != null && legInjury.getInjuryType() == InjuryType.BONE_FRACTURE) {
-            return legInjury.isTreated() ? 0.80f : 0.50f;
+            if (legInjury.isTreated()) {
+                return 0.90f;
+            }
+            switch (legInjury.getSeverity()) {
+                case 3: return 0.60f;
+                case 2: return 0.75f;
+                default: return 0.85f;
+            }
         }
         if (illnessStage == IllnessStage.STAGE_3_SEPTIC_DELIRIUM) {
             return 0.75f;
@@ -423,22 +577,28 @@ public class InjuryManager {
     }
 
     /**
-     * Attack roll modifier: Broken arm imposes -4 to hit; treated arm imposes -1.
+     * Attack roll modifier: a broken arm imposes -1 per severity rank untreated;
+     * a splinted arm is a flat -1.
      */
     public int getEffectiveAttackModifier() {
         InjuryRecord armInjury = injuries.get(BodyPart.ARMS);
         if (armInjury != null && armInjury.getInjuryType() == InjuryType.BONE_FRACTURE) {
-            return armInjury.isTreated() ? -1 : -4;
+            return armInjury.isTreated() ? -1 : -armInjury.getSeverity();
         }
         return 0;
     }
 
     /**
-     * Prevents dual wielding or 2-handed weapons if an arm is fractured and untreated.
+     * Prevents dual wielding or 2-handed weapons only while an arm carries a
+     * serious (severity 2+) untreated fracture. A minor cut on the forearm no
+     * longer disarms the player.
      */
     public boolean canWieldTwoHanded() {
         InjuryRecord armInjury = injuries.get(BodyPart.ARMS);
-        return armInjury == null || armInjury.isTreated();
+        if (armInjury == null || armInjury.isTreated()) {
+            return true;
+        }
+        return armInjury.getInjuryType() != InjuryType.BONE_FRACTURE || armInjury.getSeverity() < 2;
     }
 
     /**

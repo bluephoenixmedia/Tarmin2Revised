@@ -73,6 +73,13 @@ public class CraftingManager {
         legacyRecipes.add(new Recipe(List.of(ItemType.BONE, ItemType.BONE), ItemType.DART, 5, "Bone Darts"));
         legacyRecipes.add(new Recipe(List.of(ItemType.MEAT), ItemType.COOKED_MEAT, 1, "Cooked Meat"));
         legacyRecipes.add(new Recipe(List.of(ItemType.CHITIN, ItemType.LEATHER_SCRAP), ItemType.HELMET, 1, "Chitin Helm"));
+
+        // The careful-planning gate on the merchant's Void chain laser: common debris alone is not
+        // enough to wake a dead cell. A Rift Filament -- obtainable only from a trip into the Void --
+        // is also required, so restoring the weapon means a deliberate expedition, not a lucky find.
+        legacyRecipes.add(new Recipe(
+                List.of(ItemType.VOID_CHAIN_LASER_SPENT, ItemType.STRANGE_METAL, ItemType.ANCIENT_FOSSIL, ItemType.RIFT_FILAMENT),
+                ItemType.VOID_CHAIN_LASER, 1, "Restore Void Chain Laser"));
     }
 
     public List<Recipe> getAllRecipes() {

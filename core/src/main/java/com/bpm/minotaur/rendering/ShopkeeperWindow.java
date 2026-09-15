@@ -251,6 +251,12 @@ public class ShopkeeperWindow extends Table {
         int idx = Math.min(shopSelection, shopItems.size() - 1);
         Item item = shopItems.get(idx);
         int price = ShopInventory.getBuyPrice(item, itemDataManager);
+        // Restitution: after one of his strays clips the player, the next purchase is on
+        // better terms -- spent the moment a trade goes through, not on every trade after.
+        boolean applyingRestitution = shopkeeper.getRestitutionDiscount() > 0f;
+        if (applyingRestitution) {
+            price = Math.max(1, Math.round(price * (1f - shopkeeper.getRestitutionDiscount())));
+        }
         int gold = player.getStats().getTreasureScore();
 
         if (gold < price) {
@@ -263,8 +269,15 @@ public class ShopkeeperWindow extends Table {
         }
         player.getStats().setTreasureScore(gold - price);
         shopkeeper.getInventory().removeItem(item);
-        eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price + "g.", 2.5f));
-        status("Purchased " + item.getDisplayName() + " (-" + price + "g).");
+        if (applyingRestitution) {
+            shopkeeper.consumeRestitutionDiscount();
+            eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price
+                    + "g. (Merchant's apology discount applied)", 2.5f));
+            status("Purchased " + item.getDisplayName() + " (-" + price + "g, apology discount applied).");
+        } else {
+            eventManager.addEvent(new GameEvent("Bought " + item.getDisplayName() + " for " + price + "g.", 2.5f));
+            status("Purchased " + item.getDisplayName() + " (-" + price + "g).");
+        }
         refresh();
     }
 

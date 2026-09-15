@@ -926,6 +926,86 @@ public class ItemDataManager {
         }
     }
 
+    // 24x24 retro sprites for the Void salvage items. Textures come from tools/generate_void_laser_art.py.
+    private static final String[] VOID_LASER_SPRITE = new String[] {
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "...............#...#....",
+            ".............##########.",
+            "...###########.#...#....",
+            "...####################.",
+            "...###########.#...#....",
+            "...####################.",
+            "...###########.#...#....",
+            "...###########..........",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            "........................",
+            "........................"
+    };
+    private static final String[] VOID_LASER_SPENT_SPRITE = new String[] {
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "...............#...#....",
+            ".............##########.",
+            "...###########.#...#....",
+            "...###...##############.",
+            "...###...#####.#...#....",
+            "...###...##############.",
+            "...###########.#...#....",
+            "...###########..........",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            ".....####...............",
+            "........................",
+            "........................"
+    };
+    private static final String[] RIFT_FILAMENT_SPRITE = new String[] {
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            ".....#..#...#.#...#..#..",
+            ".......#...#...#...##...",
+            "..#.#.#..........#......",
+            ".........#...#..........",
+            "......#...#.....#.......",
+            "...#...#...........##...",
+            "............#...#.......",
+            ".....#...##...#..#......",
+            "..#.#...#..#...#..#..#..",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+    };
+
     private void initializeMissingTemplates() {
         // --- NEW: Generate Templates for Corpses & Resources if missing ---
         if (!itemTemplates.containsKey(ItemType.WOODEN_CROSS)) {
@@ -1109,6 +1189,41 @@ public class ItemDataManager {
         registerRingTemplate(ItemType.RING_SPELL_STORING, "Ring of Spell Storing", "Imbue 1 known spell for 0-MP free casting (1 charge).", 350, 1);
         registerRingTemplate(ItemType.RING_SHOOTING_STARS, "Ring of Shooting Stars", "Fires 2d6 light damage star motes during combat (6 charges).", 300, 6);
         registerRingTemplate(ItemType.RING_FEATHER_FALLING, "Ring of Feather Falling", "Slows falls and prevents pit trap drop damage.", 150, 0);
+    
+        // --- Void salvage: the traveling merchant's chain laser (spent / restored) and the Rift Filament ---
+        if (!itemTemplates.containsKey(ItemType.VOID_CHAIN_LASER_SPENT)) {
+            ItemTemplate spent = new ItemTemplate();
+            spent.friendlyName = "Spent Void Chain Laser";
+            spent.description = "Three barrels, a dead violet lens, and no way anyone in these depths could have made it. "
+                    + "The cell is empty. Something from the Void might wake it.";
+            spent.texturePath = "images/items/void_chain_laser_spent.png";
+            spent.baseValue = 120;
+            spent.scale = createDefaultScale();
+            spent.spriteData = VOID_LASER_SPENT_SPRITE;
+            itemTemplates.put(ItemType.VOID_CHAIN_LASER_SPENT, spent);
+        }
+        if (!itemTemplates.containsKey(ItemType.VOID_CHAIN_LASER)) {
+            ItemTemplate laser = new ItemTemplate();
+            laser.friendlyName = "Void Chain Laser";
+            laser.description = "The cell hums. Light that shouldn't exist here pools behind the lens, waiting. "
+                    + "Whoever carried this before the merchant didn't come from anywhere you know.";
+            laser.texturePath = "images/items/void_chain_laser.png";
+            laser.baseValue = 900;
+            laser.scale = createDefaultScale();
+            laser.spriteData = VOID_LASER_SPRITE;
+            itemTemplates.put(ItemType.VOID_CHAIN_LASER, laser);
+        }
+        if (!itemTemplates.containsKey(ItemType.RIFT_FILAMENT)) {
+            ItemTemplate filament = new ItemTemplate();
+            filament.friendlyName = "Rift Filament";
+            filament.description = "A thread of coherent light that only holds its shape inside the Void. "
+                    + "It's warm, and it hums the same note as the merchant's weapon.";
+            filament.texturePath = "images/items/rift_filament.png";
+            filament.baseValue = 60;
+            filament.scale = createDefaultScale();
+            filament.spriteData = RIFT_FILAMENT_SPRITE;
+            itemTemplates.put(ItemType.RIFT_FILAMENT, filament);
+        }
     }
 
     private void registerPotionTemplate(ItemType type, String name, String desc, int baseValue) {

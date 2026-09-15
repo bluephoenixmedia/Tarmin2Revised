@@ -389,26 +389,29 @@ public class CombatManager {
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
             eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " hits you for " + actualDamage, 1f));
 
-            // --- Anatomical Trauma Infliction (Crits or Heavy Hits >= 20% Max HP) ---
+            // --- Anatomical Trauma Infliction ---
+            // Gated twice over: the blow must be genuinely traumatic (see
+            // InjuryManager.isTraumaticHit -- both a large share of max HP and an
+            // absolute damage floor) and then pass a chance roll. Crits get a
+            // better roll. Without both gates a 14 HP starting character picks up
+            // a permanent wound from nearly every goblin swing.
             if (actualDamage > 0 && player.getInjuryManager() != null) {
                 int maxHp = player.getStats().getMaxHP();
                 boolean isCrit = (d20Roll == 20);
-                boolean isHeavy = (maxHp > 0 && actualDamage >= (int) (maxHp * 0.20f));
-                if (isCrit || isHeavy) {
-                    DamageType dmgType = DamageType.PHYSICAL;
-                    String mType = (attacker.getMonsterType() != null) ? attacker.getMonsterType().toUpperCase() : "";
-                    if (mType.contains("FIRE") || mType.contains("DRAGON") || mType.contains("DEMON")) {
-                        dmgType = DamageType.FIRE;
-                    } else if (mType.contains("SNAKE") || mType.contains("SPIDER") || mType.contains("SCORPION")) {
-                        dmgType = DamageType.POISON;
-                    } else if (mType.contains("WRAITH") || mType.contains("LICH") || mType.contains("GHOST")) {
-                        dmgType = DamageType.MAGICAL;
-                    }
+                DamageType dmgType = DamageType.PHYSICAL;
+                String mType = (attacker.getMonsterType() != null) ? attacker.getMonsterType().toUpperCase() : "";
+                if (mType.contains("FIRE") || mType.contains("DRAGON") || mType.contains("DEMON")) {
+                    dmgType = DamageType.FIRE;
+                } else if (mType.contains("SNAKE") || mType.contains("SPIDER") || mType.contains("SCORPION")) {
+                    dmgType = DamageType.POISON;
+                } else if (mType.contains("WRAITH") || mType.contains("LICH") || mType.contains("GHOST")) {
+                    dmgType = DamageType.MAGICAL;
+                }
 
-                    InjuryRecord inj = player.getInjuryManager().inflictRandomInjury(dmgType, actualDamage, maxHp);
-                    if (inj != null) {
-                        eventManager.addEvent(new GameEvent("CRITICAL TRAUMA! Your " + inj.getBodyPart().getDisplayName() + " suffered a " + inj.getInjuryType().getDisplayName() + "!", 3.0f));
-                    }
+                InjuryRecord inj = player.getInjuryManager().rollForInjury(dmgType, actualDamage, maxHp, isCrit);
+                if (inj != null) {
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordInjurySustained();
+                    eventManager.addEvent(new GameEvent("CRITICAL TRAUMA! Your " + inj.getBodyPart().getDisplayName() + " suffered a " + inj.getInjuryType().getDisplayName() + "!", 3.0f));
                 }
             }
 

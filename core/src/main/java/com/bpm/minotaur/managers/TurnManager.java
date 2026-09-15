@@ -143,7 +143,7 @@ public class TurnManager {
 
         // 4. Traveling Merchant AI (wanders, defends itself, flees)
         if (maze.getShopkeeper() != null) {
-            shopkeeperAiManager.update(maze.getShopkeeper(), maze, player, eventManager);
+            shopkeeperAiManager.update(maze.getShopkeeper(), maze, player, eventManager, itemDataManager, assetManager);
         }
     }
 
