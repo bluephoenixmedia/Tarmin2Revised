@@ -12,7 +12,7 @@ public enum ChunkTheme {
             "Blood Sigil (High Danger)",
             "ᚦ",
             new Color(0.95f, 0.1f, 0.1f, 1f),
-            1),
+            3),
 
     FLOODED_CAVERNS(
             "Flooded Caverns",

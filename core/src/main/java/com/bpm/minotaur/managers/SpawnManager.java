@@ -199,9 +199,15 @@ public class SpawnManager {
     }
 
     public void spawnEntities() {
-        // Dynamic Depth Scaling monster density: Level 1 has 14 monsters, scaling up with strata depth
+        // Dynamic Depth Scaling monster density: Level 1 has 14 monsters, scaling up with strata depth.
+        // Starter chunk (0, 0) on Strata 1 is gently capped to 8 monsters so unarmored players aren't overwhelmed.
         int currentDepth = Math.max(1, this.level);
-        int scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+        int scaledBudget;
+        if (maze != null && maze.getChunkId() != null && maze.getChunkId().x == 0 && maze.getChunkId().y == 0 && currentDepth <= 1) {
+            scaledBudget = 8;
+        } else {
+            scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+        }
         int monsterBudget = Math.min(validSpawnPoints.size(), scaledBudget);
         spawnMonsters(monsterBudget);
 

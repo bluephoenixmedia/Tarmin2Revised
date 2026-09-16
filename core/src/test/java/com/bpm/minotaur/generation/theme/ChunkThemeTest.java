@@ -71,10 +71,11 @@ public class ChunkThemeTest {
 
     @Test
     public void testLevelGatedThemes() {
-        // Ruined Castle has minLevel 3
+        // Ruined Castle and Blood Colosseum have minLevel 3
         assertEquals(3, ChunkTheme.RUINED_CASTLE.getMinLevel());
+        assertEquals(3, ChunkTheme.BLOOD_COLOSSEUM.getMinLevel());
 
-        // Sample 100 clusters on level 1 - Ruined Castle should never appear
+        // Sample 100 clusters on level 1 - Ruined Castle and Blood Colosseum should never appear
         for (int i = 1; i <= 100; i++) {
             GridPoint2 testChunk = new GridPoint2(i * 3, i * 3);
             // find the themed chunk in this cluster
@@ -83,10 +84,20 @@ public class ChunkThemeTest {
                     ChunkTheme theme = worldManager.getChunkTheme(new GridPoint2(testChunk.x + dx, testChunk.y + dy), 1);
                     if (theme != null) {
                         assertNotEquals("Ruined Castle must not appear on level 1", ChunkTheme.RUINED_CASTLE, theme);
+                        assertNotEquals("Blood Colosseum must not appear on level 1", ChunkTheme.BLOOD_COLOSSEUM, theme);
                     }
                 }
             }
         }
+    }
+
+    @Test
+    public void testShelterSanctuaryBufferNeverThemedOnLevelOne() {
+        // Chunks within the shelter buffer (x <= 1 && y <= 1) in cluster (0,0) must never be themed on Level 1
+        assertNull("Shelter (0,0) must not be themed", worldManager.getChunkTheme(new GridPoint2(0, 0), 1));
+        assertNull("Buffer (0,1) must not be themed", worldManager.getChunkTheme(new GridPoint2(0, 1), 1));
+        assertNull("Buffer (1,0) must not be themed", worldManager.getChunkTheme(new GridPoint2(1, 0), 1));
+        assertNull("Buffer (1,1) must not be themed", worldManager.getChunkTheme(new GridPoint2(1, 1), 1));
     }
 
     @Test

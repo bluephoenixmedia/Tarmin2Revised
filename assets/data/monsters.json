@@ -212,7 +212,7 @@
     "damageDice": "1d10+3"
   },
   "GIANT_SCORPION": {
-    "baseLevel": 1,
+    "baseLevel": 3,
     "frequency": 8,
     "maxHP": 18,
     "maxMP": 20,
@@ -267,13 +267,13 @@
     "variants": [
       {
         "color": "BLUE",
-        "minLevel": 1,
+        "minLevel": 3,
         "maxLevel": 4,
         "weight": 1
       },
       {
         "color": "PINK",
-        "minLevel": 2,
+        "minLevel": 3,
         "maxLevel": 9,
         "weight": 5
       },
@@ -284,7 +284,7 @@
         "weight": 10
       }
     ],
-    "damageDice": "1d8+3"
+    "damageDice": "1d8+1"
   },
   "GIANT_SNAKE": {
     "baseLevel": 1,
@@ -346,7 +346,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d8+2"
+    "damageDice": "1d6+1"
   },
   "GHOUL": {
     "baseLevel": 2,
@@ -470,7 +470,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d8+2"
+    "damageDice": "1d6+1"
   },
   "CLOAKED_SKELETON": {
     "baseLevel": 3,
@@ -877,7 +877,7 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d8+1"
+    "damageDice": "1d4+1"
   },
   "GHAST": {
     "baseLevel": 3,
@@ -1613,7 +1613,7 @@
       "x": 0.7,
       "y": 0.7
     },
-    "damageDice": "1d6+1",
+    "damageDice": "1d4+1",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 10,
@@ -1637,7 +1637,7 @@
   },
   "GOBLIN": {
     "baseLevel": 1,
-    "maxHP": 10,
+    "maxHP": 8,
     "maxMP": 5,
     "armorClass": 12,
     "baseExperience": 8,
@@ -1673,7 +1673,7 @@
       "x": 0.8,
       "y": 0.8
     },
-    "damageDice": "1d6+2",
+    "damageDice": "1d6",
     "damageType": "PHYSICAL",
     "intelligence": 3,
     "dexterity": 12,
@@ -1696,7 +1696,7 @@
     ]
   },
   "TROGLODYTE": {
-    "baseLevel": 1,
+    "baseLevel": 2,
     "maxHP": 18,
     "maxMP": 6,
     "armorClass": 11,
@@ -1733,7 +1733,7 @@
       "x": 0.9,
       "y": 0.9
     },
-    "damageDice": "1d8+2",
+    "damageDice": "1d6+1",
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 8,

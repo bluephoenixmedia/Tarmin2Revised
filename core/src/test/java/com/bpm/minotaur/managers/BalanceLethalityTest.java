@@ -134,4 +134,48 @@ public class BalanceLethalityTest {
         int depth4 = (int) Math.round(14.0 + (4 - 1) * 3.5);
         assertEquals(25, depth4);
     }
+
+    @Test
+    public void testTierOneMonsterDamageDiceBounds() {
+        // Kobold / Spider (1d4+1): 2 to 5 damage
+        for (int i = 0; i < 50; i++) {
+            int roll = DiceRoller.roll("1d4+1");
+            assertTrue("1d4+1 must roll between 2 and 5", roll >= 2 && roll <= 5);
+        }
+
+        // Goblin (1d6): 1 to 6 damage
+        for (int i = 0; i < 50; i++) {
+            int roll = DiceRoller.roll("1d6");
+            assertTrue("1d6 must roll between 1 and 6", roll >= 1 && roll <= 6);
+        }
+
+        // Skeleton / Giant Snake / Troglodyte (1d6+1): 2 to 7 damage
+        for (int i = 0; i < 50; i++) {
+            int roll = DiceRoller.roll("1d6+1");
+            assertTrue("1d6+1 must roll between 2 and 7", roll >= 2 && roll <= 7);
+        }
+    }
+
+    @Test
+    public void testStarterChunkMonsterDensity() {
+        // Starter chunk (0,0) at depth 1 has a gentle 8-monster budget
+        int currentDepth = 1;
+        int scaledBudget;
+        com.badlogic.gdx.math.GridPoint2 starterChunk = new com.badlogic.gdx.math.GridPoint2(0, 0);
+        if (starterChunk.x == 0 && starterChunk.y == 0 && currentDepth <= 1) {
+            scaledBudget = 8;
+        } else {
+            scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+        }
+        assertEquals("Starter chunk (0,0) at depth 1 should have 8 monsters", 8, scaledBudget);
+
+        // Adjacent chunk (1,0) at depth 1 uses standard 14 monsters
+        com.badlogic.gdx.math.GridPoint2 nextChunk = new com.badlogic.gdx.math.GridPoint2(1, 0);
+        if (nextChunk.x == 0 && nextChunk.y == 0 && currentDepth <= 1) {
+            scaledBudget = 8;
+        } else {
+            scaledBudget = (int) Math.round(14.0 + (currentDepth - 1) * 3.5);
+        }
+        assertEquals("Subsequent chunks at depth 1 should scale to 14 monsters", 14, scaledBudget);
+    }
 }

@@ -79,18 +79,34 @@ public class ChunkThemeDecorator {
             gate.setLocked(true);
         }
 
-        // Spawn 8-10 chaotic combatants in the arena
-        MonsterType[] gladiatorTypes = {
-                MonsterType.ORC, MonsterType.OGRE, MonsterType.TROLL,
-                MonsterType.SKELETON, MonsterType.WEREWOLF, MonsterType.GOBLIN
-        };
+        // Spawn 8-10 chaotic combatants in the arena scaled to dungeon depth
+        int depth = maze.getLevel();
+        MonsterType[] gladiatorTypes;
+        int hpBonus;
+        if (depth <= 2) {
+            gladiatorTypes = new MonsterType[] {
+                    MonsterType.GOBLIN, MonsterType.ORC, MonsterType.SKELETON, MonsterType.KOBOLD
+            };
+            hpBonus = 5;
+        } else if (depth <= 4) {
+            gladiatorTypes = new MonsterType[] {
+                    MonsterType.ORC, MonsterType.OGRE, MonsterType.SKELETON, MonsterType.GOBLIN, MonsterType.GHOUL
+            };
+            hpBonus = 10;
+        } else {
+            gladiatorTypes = new MonsterType[] {
+                    MonsterType.ORC, MonsterType.OGRE, MonsterType.TROLL,
+                    MonsterType.SKELETON, MonsterType.WEREWOLF, MonsterType.GOBLIN
+            };
+            hpBonus = 15;
+        }
 
         int count = 8 + rng.nextInt(3);
         List<GridPoint2> spawnPoints = findOpenTiles(maze, minX + 1, minY + 1, maxX - 1, maxY - 1);
         for (int i = 0; i < count && !spawnPoints.isEmpty(); i++) {
             GridPoint2 pt = spawnPoints.remove(rng.nextInt(spawnPoints.size()));
             MonsterType type = gladiatorTypes[rng.nextInt(gladiatorTypes.length)];
-            Monster m = createMonster(type, pt.x, pt.y, MonsterColor.RED, Faction.CHAOS_BERSERK, 15,
+            Monster m = createMonster(type, pt.x, pt.y, MonsterColor.RED, Faction.CHAOS_BERSERK, hpBonus,
                     monsterDataManager, assetManager);
             maze.addMonster(m);
         }

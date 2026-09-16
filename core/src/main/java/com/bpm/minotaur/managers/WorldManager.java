@@ -878,9 +878,9 @@ public class WorldManager {
         int targetLocalX = clusterRng.nextInt(3);
         int targetLocalY = clusterRng.nextInt(3);
 
-        // Ensure cluster (0,0) on Level 1 does not pick (0,0) as its only themed chunk
+        // Ensure cluster (0,0) on Level 1 keeps the shelter sanctuary buffer (x <= 1 && y <= 1) un-themed
         if (clusterX == 0 && clusterY == 0 && level == 1) {
-            while (targetLocalX == 0 && targetLocalY == 0) {
+            while (targetLocalX <= 1 && targetLocalY <= 1) {
                 targetLocalX = clusterRng.nextInt(3);
                 targetLocalY = clusterRng.nextInt(3);
             }
@@ -901,7 +901,7 @@ public class WorldManager {
             }
         }
         if (available.isEmpty()) {
-            return com.bpm.minotaur.generation.theme.ChunkTheme.BLOOD_COLOSSEUM;
+            return com.bpm.minotaur.generation.theme.ChunkTheme.OVERGROWN_THICKET;
         }
         return available.get(clusterRng.nextInt(available.size()));
     }

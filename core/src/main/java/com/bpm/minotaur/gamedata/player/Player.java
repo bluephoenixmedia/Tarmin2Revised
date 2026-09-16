@@ -417,7 +417,12 @@ public class Player {
             stats.getDicePool().add(knife.getGrantedDie());
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
-        // Player starts bare / unarmored (true scavenger start: 0 armor equipped, base AC = 10 + DEX)
+
+        // Starter protective layer: Padded Armor (+1 AC) provides baseline defense against early vermin
+        Item paddedArmor = itemDataManager.createItem(Item.ItemType.PADDED_ARMOR, 0, 0, ItemColor.TAN, assetManager);
+        if (paddedArmor != null) {
+            equipment.setWornChest(paddedArmor);
+        }
 
         Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
         inventory.pickupToBackpack(ration);
