@@ -196,6 +196,10 @@ public class GameScreen extends BaseScreen {
         com.badlogic.gdx.math.Vector2 end = beam.getEnd();
         com.badlogic.gdx.math.Vector3 impact3d = new com.badlogic.gdx.math.Vector3(end.x, 0.42f, end.y);
 
+        if (soundManager != null) {
+            soundManager.playVoidLaser();
+        }
+
         if (beam.getStruck() == com.bpm.minotaur.gamedata.laser.LaserBurst.Struck.WALL) {
             if (maze != null && maze.getGoreManager() != null) {
                 maze.getGoreManager().spawnElementalScorch(impact3d,

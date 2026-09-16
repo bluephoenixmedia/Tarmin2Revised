@@ -563,6 +563,20 @@ public class Item implements Renderable {
             }
         }
 
+        // Fallback to HAS IconPack icons if no texture was found
+        if (tempTexture == null && tempRegion == null && Gdx.files != null) {
+            String fallbackPath = resolveDefaultIconPath();
+            if (fallbackPath != null && Gdx.files.internal(fallbackPath).exists()) {
+                if (assetManager != null && assetManager.isLoaded(fallbackPath)) {
+                    tempTexture = assetManager.get(fallbackPath, Texture.class);
+                } else if (Gdx.gl != null) {
+                    try {
+                        tempTexture = new Texture(Gdx.files.internal(fallbackPath));
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
         this.texture = tempTexture;
         this.textureRegion = tempRegion;
 
@@ -794,6 +808,42 @@ public class Item implements Renderable {
 
     public boolean isShield() {
         return this.isShield;
+    }
+
+    public String resolveDefaultIconPath() {
+        if (isPotion() || (this.type != null && this.type.name().startsWith("POTION"))) {
+            if (itemColor == ItemColor.RED) return "images/icons/potions/potion_red.png";
+            if (itemColor == ItemColor.BLUE) return "images/icons/potions/potion_blue.png";
+            if (itemColor == ItemColor.GREEN) return "images/icons/potions/potion_green.png";
+            if (itemColor == ItemColor.GOLD) return "images/icons/potions/potion_gold.png";
+            if (itemColor == ItemColor.PINK) return "images/icons/potions/potion_pink.png";
+            return "images/icons/potions/potion_default.png";
+        }
+        if (isRing() || (this.type != null && this.type.name().startsWith("RING"))) {
+            return "images/icons/rings/ring_default.png";
+        }
+        if (isScroll() || (this.type != null && this.type.name().startsWith("SCROLL"))) {
+            return "images/icons/scrolls/scroll_default.png";
+        }
+        if (isHelmet()) {
+            return "images/icons/gear/helmet_default.png";
+        }
+        if (isBoots()) {
+            return "images/icons/gear/boots_default.png";
+        }
+        if (isGauntlets()) {
+            return "images/icons/gear/gauntlet_default.png";
+        }
+        if (isShield()) {
+            return "images/icons/gear/shield_default.png";
+        }
+        if (isCloak()) {
+            return "images/icons/gear/cloak_default.png";
+        }
+        if (isArmor() || isTorso()) {
+            return "images/icons/gear/armor_default.png";
+        }
+        return null;
     }
 
     public String getDamageDice() {

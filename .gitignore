@@ -196,6 +196,8 @@ assets/models/*
 !assets/models/skybox/**
 !assets/models/gate/
 !assets/models/gate/**
+!assets/models/camp/
+!assets/models/camp/**
 /monsters/
 assets/images/BearFX Explosions/
 assets/images/monsters/Super Pixel Effects*/
@@ -226,3 +228,7 @@ assets/images/monsters/x768p_HQ_Uncompressed_Frames/
 # Python
 __pycache__/
 *.py[cod]
+
+# Raw external game asset staging folder (500MB+)
+docs/game_assets/
+scratch/

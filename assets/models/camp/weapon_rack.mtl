@@ -1,0 +1,7 @@
+newmtl weapon_rack
+Ka 0.22 0.14 0.08
+Kd 0.55 0.35 0.20
+Ks 0.15 0.15 0.15
+Ns 10.0
+d 1.0
+illum 2

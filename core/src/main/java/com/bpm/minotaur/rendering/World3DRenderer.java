@@ -92,6 +92,14 @@ public class World3DRenderer implements Disposable {
     private Texture gateDiffuseTexture;
     private final Matrix4 gateTransform = new Matrix4();
 
+    // 3D Camp Station Models
+    private Model campfireModel;
+    private Model chestModel;
+    private Model weaponRackModel;
+    private Model tentModel;
+    private Texture whiteTexture;
+    private final Matrix4 itemModelTransform = new Matrix4();
+
     // Optional 3D skybox integration
     private Skybox3DRenderer skybox3DRenderer;
 
@@ -188,8 +196,30 @@ public class World3DRenderer implements Disposable {
             if (Gdx.files.internal("models/gate/gate_diffuse.png").exists()) {
                 this.gateDiffuseTexture = new Texture(Gdx.files.internal("models/gate/gate_diffuse.png"));
             }
+
+            // 3D Camp Models
+            if (Gdx.files.internal("models/camp/campfire.obj").exists()) {
+                this.campfireModel = objLoader.loadModel(Gdx.files.internal("models/camp/campfire.obj"));
+            }
+            if (Gdx.files.internal("models/camp/chest.obj").exists()) {
+                this.chestModel = objLoader.loadModel(Gdx.files.internal("models/camp/chest.obj"));
+            }
+            if (Gdx.files.internal("models/camp/weapon_rack.obj").exists()) {
+                this.weaponRackModel = objLoader.loadModel(Gdx.files.internal("models/camp/weapon_rack.obj"));
+            }
+            if (Gdx.files.internal("models/camp/tent.obj").exists()) {
+                this.tentModel = objLoader.loadModel(Gdx.files.internal("models/camp/tent.obj"));
+            }
+
+            if (Gdx.gl != null) {
+                Pixmap p = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+                p.setColor(Color.WHITE);
+                p.fill();
+                this.whiteTexture = new Texture(p);
+                p.dispose();
+            }
         } catch (Exception e) {
-            Gdx.app.error(TAG, "Failed to load 3D Skullgate assets", e);
+            Gdx.app.error(TAG, "Failed to load 3D assets", e);
         }
 
         try {
@@ -1066,6 +1096,51 @@ public class World3DRenderer implements Disposable {
                 }
             } else if (r instanceof Item) {
                 Item it = (Item) r;
+                ItemTemplate t = it.getTemplate();
+                Model model3d = null;
+                Color modelColor = Color.WHITE;
+
+                if (t != null && t.modelPath != null) {
+                    if (t.modelPath.contains("campfire") && campfireModel != null) {
+                        model3d = campfireModel;
+                        modelColor = new Color(0.95f, 0.50f, 0.15f, 1f);
+                    } else if (t.modelPath.contains("chest") && chestModel != null) {
+                        model3d = chestModel;
+                        modelColor = new Color(0.55f, 0.35f, 0.18f, 1f);
+                    } else if (t.modelPath.contains("weapon_rack") && weaponRackModel != null) {
+                        model3d = weaponRackModel;
+                        modelColor = new Color(0.60f, 0.45f, 0.25f, 1f);
+                    } else if (t.modelPath.contains("tent") && tentModel != null) {
+                        model3d = tentModel;
+                        modelColor = new Color(0.75f, 0.70f, 0.60f, 1f);
+                    }
+                }
+
+                if (model3d != null) {
+                    float scaleFactor = (t != null && t.modelScale > 0) ? t.modelScale : 1.0f;
+                    float yOffset = (t != null) ? t.modelYOffset : 0f;
+                    itemModelTransform.idt();
+                    itemModelTransform.translate(ex, 0.01f + yOffset, wz);
+                    itemModelTransform.scale(scaleFactor, scaleFactor, scaleFactor);
+                    if (t != null && t.modelRotation != 0) {
+                        itemModelTransform.rotate(0f, 1f, 0f, t.modelRotation);
+                    }
+
+                    if (whiteTexture != null) {
+                        whiteTexture.bind(0);
+                        shader.setUniformi("u_diffuseTexture", 0);
+                    }
+                    if (isRetro) {
+                        shader.setUniformf("u_retroColor", modelColor);
+                    }
+                    shader.setUniformMatrix("u_worldTrans", itemModelTransform);
+                    for (Mesh m : model3d.meshes) {
+                        m.render(shader, GL20.GL_TRIANGLES);
+                    }
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    continue;
+                }
+
                 TextureRegion region = it.getTextureRegion();
                 Texture tex = (region != null) ? region.getTexture() : it.getTexture();
 
@@ -1085,7 +1160,6 @@ public class World3DRenderer implements Disposable {
                     float h = baseHeight * sy;
                     float w = baseHeight * sx * aspect;
 
-                    ItemTemplate t = it.getTemplate();
                     if (t != null && t.modelScale > 0 && t.modelScale != 1.0f) {
                         w *= t.modelScale;
                         h *= t.modelScale;
@@ -1261,6 +1335,12 @@ public class World3DRenderer implements Disposable {
         if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();
         if (gateRightDoorModel != null) gateRightDoorModel.dispose();
         if (gateDiffuseTexture != null) gateDiffuseTexture.dispose();
+
+        if (whiteTexture != null) whiteTexture.dispose();
+        if (campfireModel != null) campfireModel.dispose();
+        if (chestModel != null) chestModel.dispose();
+        if (weaponRackModel != null) weaponRackModel.dispose();
+        if (tentModel != null) tentModel.dispose();
 
         if (skybox3DRenderer != null) {
             skybox3DRenderer.dispose();

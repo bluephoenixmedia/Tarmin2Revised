@@ -24,6 +24,7 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.DiscoveryManager;
 import com.bpm.minotaur.managers.GameEventManager;
+import com.bpm.minotaur.managers.SoundManager;
 import com.bpm.minotaur.paperdoll.PaperDollWidget;
 import com.bpm.minotaur.paperdoll.data.FragmentResolver;
 import com.bpm.minotaur.paperdoll.data.SkeletonData;
@@ -242,6 +243,7 @@ public class ModernInventoryUI {
         tabAttributes.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (SoundManager.getInstance() != null) SoundManager.getInstance().playBookFlip();
                 attributes.setVisible(true);
                 inspector.setVisible(false);
                 tabAttributes.setColor(InventorySkin.COL_BORDER_DARK);
@@ -251,6 +253,7 @@ public class ModernInventoryUI {
         tabInspect.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (SoundManager.getInstance() != null) SoundManager.getInstance().playBookFlip();
                 attributes.setVisible(false);
                 inspector.setVisible(true);
                 tabInspect.setColor(InventorySkin.COL_BORDER_DARK);

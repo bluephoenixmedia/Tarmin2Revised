@@ -13,6 +13,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerEquipment;
+import com.bpm.minotaur.managers.SoundManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,6 +138,10 @@ public class InventoryDragDropHandler {
         source.setItem(dstItem);
         target.setItem(srcItem);
 
+        if (SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playUiClick();
+        }
+
         eventBus.fireItemMoved(source, target, srcItem);
         eventBus.fireStatsChanged();
     }
@@ -174,6 +179,9 @@ public class InventoryDragDropHandler {
 
         boolean ok = player.dropItem(maze, item);
         if (ok) {
+            if (SoundManager.getInstance() != null) {
+                SoundManager.getInstance().playUiClick();
+            }
             setSlotModel(slot, null);
             slot.setItem(null);
             eventBus.fireItemDropped(item);

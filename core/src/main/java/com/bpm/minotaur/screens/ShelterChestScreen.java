@@ -64,6 +64,9 @@ public class ShelterChestScreen extends BaseScreen {
 
     @Override
     public void show() {
+        if (parentScreen != null && parentScreen.getSoundManager() != null) {
+            parentScreen.getSoundManager().playChestOpen();
+        }
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -347,6 +350,9 @@ public class ShelterChestScreen extends BaseScreen {
     private void purchaseLootRetentionUpgrade() {
         DivinityManager dm = DivinityManager.getInstance();
         if (dm.purchaseLootRetentionUpgrade()) {
+            if (parentScreen != null && parentScreen.getSoundManager() != null) {
+                parentScreen.getSoundManager().playCoins();
+            }
             statusLabel.setText("Loot Retention upgraded! You'll now keep " + dm.getLootRetentionCap()
                     + " unequipped items on death.");
         } else {
@@ -377,6 +383,9 @@ public class ShelterChestScreen extends BaseScreen {
         if (selectedItem == null) {
             statusLabel.setText("Select an item first.");
             return;
+        }
+        if (parentScreen != null && parentScreen.getSoundManager() != null) {
+            parentScreen.getSoundManager().playUiClick();
         }
         if (selectedSide == Side.PACK) {
             storeItem(selectedItem);

@@ -1,0 +1,7 @@
+newmtl campfire
+Ka 0.38 0.18 0.06
+Kd 0.95 0.45 0.15
+Ks 0.15 0.15 0.15
+Ns 10.0
+d 1.0
+illum 2

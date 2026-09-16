@@ -513,7 +513,7 @@ public class ShelterAltarScreen extends BaseScreen {
         if (ok) {
             statusLabel.setText("The altar consumes " + name + " in holy flame, releasing " + yield + " Divinities!");
             if (parentScreen.getSoundManager() != null) {
-                parentScreen.getSoundManager().playWeaponImpact(true);
+                parentScreen.getSoundManager().playCoins();
             }
             refresh();
         }

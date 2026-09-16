@@ -33,7 +33,16 @@ public class SoundManager {
     private float targetDampenFactor = 1.0f;
     private float currentBaseVol = 0.5f;
 
+    private static SoundManager instance;
+    private boolean swingToggle = false;
+    private boolean laserToggle = false;
+
+    public static SoundManager getInstance() {
+        return instance;
+    }
+
     public SoundManager(DebugManager debugManager) {
+        instance = this;
         this.debugManager = debugManager;
         this.retroAudioDevice = Gdx.audio.newAudioDevice(SAMPLE_RATE, true);
         loadModernSounds();
@@ -41,6 +50,7 @@ public class SoundManager {
 
     // Protected constructor for Headless/Mocking
     protected SoundManager() {
+        instance = this;
         this.debugManager = null;
         this.retroAudioDevice = null;
         // Do not load sounds
@@ -108,12 +118,27 @@ public class SoundManager {
         loadSound("lightning_crash_2", "sounds/lightning_crash_2.ogg");
         loadSound("lightning_crash_3", "sounds/lightning_crash_3.ogg");
 
-        // --- NEW: Visceral Combat Sounds ---
-        loadSound("weapon_swing", "sounds/weapon_swing.wav"); 
-        loadSound("meat_hit", "sounds/meat_hit.wav");
-        loadSound("metal_hit", "sounds/metal_hit.wav");
+        // --- NEW: Visceral Combat & Weapon Impacts ---
+        loadSound("weapon_swing", "sounds/weapon_swing.ogg");
+        loadSound("weapon_swing_2", "sounds/weapon_swing_2.ogg");
+        loadSound("meat_hit", "sounds/meat_hit.ogg");
+        loadSound("metal_hit", "sounds/metal_hit.ogg");
+        loadSound("metal_hit_heavy", "sounds/metal_hit_heavy.ogg");
         loadSound("monster_grunt_light", "sounds/monster_grunt_light.wav");
         loadSound("monster_roar_heavy", "sounds/monster_roar_heavy.wav");
+
+        // --- NEW: Tactile UI & World Audio ---
+        loadSound("ui_click", "sounds/ui_click.ogg");
+        loadSound("book_flip", "sounds/book_flip.ogg");
+        loadSound("chest_open", "sounds/chest_open.ogg");
+        loadSound("coins", "sounds/coins.ogg");
+        loadSound("door_creak", "sounds/door_creak.ogg");
+
+        // --- NEW: Void Lasers & Ambient Loops ---
+        loadSound("void_laser", "sounds/void_laser.wav");
+        loadSound("void_laser_alt", "sounds/void_laser_alt.wav");
+        loadSound("amb_void_groan", "sounds/amb_void_groan.wav");
+        loadSound("amb_doom_subbass", "sounds/amb_doom_subbass.wav");
     }
 
     private void loadSound(String key, String path) {
@@ -314,9 +339,14 @@ public class SoundManager {
     // --- NEW: Visceral Combat Audio ---
 
     public void playWeaponSwing() {
-        if (modernSounds.containsKey("weapon_swing")) {
-            long id = modernSounds.get("weapon_swing").play();
-            modernSounds.get("weapon_swing").setPitch(id, MathUtils.random(0.9f, 1.1f));
+        String key = swingToggle ? "weapon_swing_2" : "weapon_swing";
+        swingToggle = !swingToggle;
+        if (!modernSounds.containsKey(key)) {
+            key = "weapon_swing";
+        }
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.85f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.90f, 1.10f));
         } else {
             // Fallback existing
             playSound("player_attack");
@@ -341,10 +371,64 @@ public class SoundManager {
     }
 
     public void playWeaponImpact(boolean heavy) {
-        String sound = heavy ? "meat_hit" : "meat_hit"; // Can add metal_hit logic later if we know target armor
+        playWeaponImpact(heavy, false);
+    }
+
+    public void playWeaponImpact(boolean heavy, boolean isMetal) {
+        String sound;
+        if (isMetal) {
+            sound = heavy ? "metal_hit_heavy" : "metal_hit";
+        } else {
+            sound = "meat_hit";
+        }
         if (modernSounds.containsKey(sound)) {
-            long id = modernSounds.get(sound).play();
-            modernSounds.get(sound).setPitch(id, MathUtils.random(0.9f, 1.1f));
+            long id = modernSounds.get(sound).play(heavy ? 0.9f : 0.75f);
+            modernSounds.get(sound).setPitch(id, MathUtils.random(0.90f, 1.10f));
+        }
+    }
+
+    public void playUiClick() {
+        if (modernSounds.containsKey("ui_click")) {
+            long id = modernSounds.get("ui_click").play(0.6f);
+            modernSounds.get("ui_click").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
+    public void playBookFlip() {
+        if (modernSounds.containsKey("book_flip")) {
+            long id = modernSounds.get("book_flip").play(0.7f);
+            modernSounds.get("book_flip").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
+    public void playChestOpen() {
+        if (modernSounds.containsKey("chest_open")) {
+            long id = modernSounds.get("chest_open").play(0.8f);
+            modernSounds.get("chest_open").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
+    public void playCoins() {
+        if (modernSounds.containsKey("coins")) {
+            long id = modernSounds.get("coins").play(0.8f);
+            modernSounds.get("coins").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
+    public void playDoorCreak() {
+        if (modernSounds.containsKey("door_creak")) {
+            modernSounds.get("door_creak").play(0.75f);
+        } else {
+            playSound("door_open");
+        }
+    }
+
+    public void playVoidLaser() {
+        String key = laserToggle ? "void_laser_alt" : "void_laser";
+        laserToggle = !laserToggle;
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.85f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.92f, 1.08f));
         }
     }
 

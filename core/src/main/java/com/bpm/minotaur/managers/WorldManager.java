@@ -825,6 +825,29 @@ public class WorldManager {
             sm.spawnPeriodicMonster(player);
             Gdx.app.log("WorldManager", "Periodic Spawn Triggered at Turn " + turnCount + " (Doom Stage " + doom.getDoomStage() + ")");
         }
+
+        // Ambient Audio Escalation for Doom Clock & Themed Chunks
+        if (Gdx.app != null && Gdx.app.getType() != com.badlogic.gdx.Application.ApplicationType.HeadlessDesktop) {
+            if (doom.getDoomStage() >= 4) {
+                // Stage 4 (Tarmin's Wrath / >= 75%): duck background music and play ominous sub-bass drone
+                MusicManager.getInstance().duckMusic(0.25f);
+                MusicManager.getInstance().playAmbientLoop("sounds/amb_doom_subbass.wav", 0.75f);
+            } else if (doom.getDoomStage() == 3) {
+                // Stage 3 (Corrupted): slight duck and play space groan
+                MusicManager.getInstance().duckMusic(0.6f);
+                MusicManager.getInstance().playAmbientLoop("sounds/amb_void_groan.wav", 0.5f);
+            } else {
+                Maze currentMaze = loadedChunks.get(currentPlayerChunkId);
+                if (currentMaze != null && currentMaze.getChunkTheme() != null && 
+                    (currentMaze.getChunkTheme().name().contains("VOID") || currentMaze.getChunkTheme().name().contains("FLOODED") || currentMaze.getChunkTheme().name().contains("NECROPOLIS"))) {
+                    MusicManager.getInstance().duckMusic(0.5f);
+                    MusicManager.getInstance().playAmbientLoop("sounds/amb_void_groan.wav", 0.6f);
+                } else {
+                    MusicManager.getInstance().restoreMusicVolume();
+                    MusicManager.getInstance().stopAmbientLoop();
+                }
+            }
+        }
     }
 
     public void syncLightsForChunk(Maze maze) {

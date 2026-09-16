@@ -48,11 +48,62 @@ public class MusicManager {
         currentTrackPath = path;
     }
 
+    private Music ambientTrack;
+    private String ambientTrackPath;
+    private float ambientVolume = 0.5f;
+
+    public void playAmbientLoop(String path, float targetVol) {
+        if (path == null) {
+            stopAmbientLoop();
+            return;
+        }
+        if (path.equals(ambientTrackPath)) {
+            if (ambientTrack != null) ambientTrack.setVolume(targetVol);
+            return;
+        }
+        if (ambientTrack != null && ambientTrack.isPlaying()) {
+            ambientTrack.stop();
+        }
+        try {
+            if (!assetManager.isLoaded(path)) {
+                assetManager.load(path, Music.class);
+                assetManager.finishLoading();
+            }
+            ambientTrack = assetManager.get(path, Music.class);
+            ambientTrack.setLooping(true);
+            ambientTrack.setVolume(targetVol);
+            ambientTrack.play();
+            ambientTrackPath = path;
+        } catch (Exception e) {
+            com.badlogic.gdx.Gdx.app.error("MusicManager", "Failed to play ambient loop: " + path, e);
+        }
+    }
+
+    public void stopAmbientLoop() {
+        if (ambientTrack != null) {
+            ambientTrack.stop();
+            ambientTrackPath = null;
+        }
+    }
+
+    public void duckMusic(float factor) {
+        if (currentTrack != null) {
+            currentTrack.setVolume(volume * Math.max(0.0f, Math.min(1.0f, factor)));
+        }
+    }
+
+    public void restoreMusicVolume() {
+        if (currentTrack != null) {
+            currentTrack.setVolume(volume);
+        }
+    }
+
     public void stop() {
         if (currentTrack != null) {
             currentTrack.stop();
             currentTrackPath = null;
         }
+        stopAmbientLoop();
     }
 
     public void setVolume(float volume) {
@@ -65,6 +116,9 @@ public class MusicManager {
     public void dispose() {
         if (currentTrack != null) {
             currentTrack.stop();
+        }
+        if (ambientTrack != null) {
+            ambientTrack.stop();
         }
         assetManager.dispose();
     }
