@@ -57,6 +57,8 @@ public class TelemetryManager {
     private int merchantFriendlyFireDamage;
     private int merchantClips;
 
+    private int fieldRestUses;
+
     private TelemetryManager() {
         startNewRun();
     }
@@ -85,6 +87,7 @@ public class TelemetryManager {
         this.bleedDamageTaken = 0;
         this.merchantFriendlyFireDamage = 0;
         this.merchantClips = 0;
+        this.fieldRestUses = 0;
     }
 
     public String getRunId() {
@@ -182,6 +185,15 @@ public class TelemetryManager {
         return merchantClips;
     }
 
+    /** The field Rest action (H) was used this run -- see the "way off again" balance investigation. */
+    public synchronized void recordFieldRestUsed() {
+        fieldRestUses++;
+    }
+
+    public int getFieldRestUses() {
+        return fieldRestUses;
+    }
+
     public synchronized void setTurnsLived(int turns) {
         this.turnsLived = turns;
     }
@@ -277,6 +289,7 @@ public class TelemetryManager {
         sb.append("  \"bleedDamageTaken\": ").append(bleedDamageTaken).append(",\n");
         sb.append("  \"merchantFriendlyFireDamage\": ").append(merchantFriendlyFireDamage).append(",\n");
         sb.append("  \"merchantClips\": ").append(merchantClips).append(",\n");
+        sb.append("  \"fieldRestUses\": ").append(fieldRestUses).append(",\n");
         sb.append("  \"monstersKilledByType\": {\n");
         int i = 0;
         int size = monstersKilledByType.size();

@@ -467,6 +467,21 @@ public class CombatManager {
      * 5e Standard Monster To-Hit accuracy formula: Proficiency (2 + level/3) + Stat Modifier.
      * Nimble beasts/skirmishers scale from DEX; brute humanoids/undead scale from STR/HP.
      */
+    /**
+     * Minimum stat modifier contribution to a monster's attack bonus, regardless
+     * of how weak its actual Dex/HP would otherwise put it. Lowered from 2 to 1
+     * as part of the "way off again" balance fix: rest-to-heal (the R key) was
+     * removed from the game (see the tend-wounds/first-aid work) without
+     * retuning monster accuracy to compensate, so a fresh player facing several
+     * low-tier fights back-to-back with no recovery window had no realistic
+     * out even against trash monsters. This floor is what made every low-HP,
+     * low-Dex monster (Kobold, Giant Ant, ...) hit almost as often as one with
+     * real stats behind it; softening it here (not their damage dice, not the
+     * Doom escalation curve) is the smallest lever that fixes the specific
+     * compounding effect without touching anything else.
+     */
+    private static final int MONSTER_STAT_MOD_FLOOR = 1;
+
     public static int calculateMonsterAttackBonus(Monster attacker) {
         if (attacker == null) return 2;
         int monsterLevel = Math.max(1, attacker.getLevel());
@@ -475,9 +490,9 @@ public class CombatManager {
         MonsterTemplate t = attacker.getTemplate();
         if (t != null) {
             if (t.dexterity >= 12 && t.family == com.bpm.minotaur.gamedata.monster.MonsterFamily.BEAST) {
-                statMod = Math.max(2, (t.dexterity - 10) / 2);
+                statMod = Math.max(MONSTER_STAT_MOD_FLOOR, (t.dexterity - 10) / 2);
             } else {
-                statMod = Math.max(2, t.maxHP / 14);
+                statMod = Math.max(MONSTER_STAT_MOD_FLOOR, t.maxHP / 14);
             }
         }
         return profBonus + statMod;

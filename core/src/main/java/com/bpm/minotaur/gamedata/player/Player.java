@@ -44,6 +44,102 @@ public class Player {
         return injuryManager;
     }
 
+    // =========================================================================
+    // FIELD REST (H) -- reintroduced after the "way off again" balance
+    // investigation. The old R-bound rest was deleted wholesale when R was
+    // repurposed to open the First Aid modal, leaving no field-accessible HP
+    // recovery besides slow passive regen, rare potions, and shelter-only rest.
+    // Restored deliberately smaller and cooldown-gated: the original was
+    // abusable (camp a cleared room, spend a sliver of the hunger meter,
+    // repeat indefinitely for a free top-up), so this version cannot be spammed
+    // regardless of how much food is banked.
+    // =========================================================================
+
+    /** War Strength restored per successful field rest. */
+    public static final int FIELD_REST_HEAL_AMOUNT = 5;
+
+    private int fieldRestCooldownTurns = 0;
+
+    /** Turns remaining before {@link #attemptFieldRest} can succeed again. */
+    public int getFieldRestCooldownTurns() {
+        return fieldRestCooldownTurns;
+    }
+
+    /** Advances the cooldown by one turn. Called once per player turn regardless of what action was taken. */
+    public void tickFieldRestCooldown() {
+        if (fieldRestCooldownTurns > 0) {
+            fieldRestCooldownTurns--;
+        }
+    }
+
+    /**
+     * Compensates the cooldown for turns consumed by the SAME rest that just set
+     * it. GameScreen advances several world-ticks per rest (so a monster can
+     * close in mid-rest) through the same per-turn hook that decrements this
+     * cooldown for every other cause of turn advancement -- without this, a
+     * rest's own ticks would immediately erode the cooldown it just started,
+     * undermining the anti-spam cooldown's entire purpose.
+     */
+    public void restoreFieldRestCooldown(int ticks) {
+        if (ticks > 0) {
+            fieldRestCooldownTurns += ticks;
+        }
+    }
+
+    /** Outcome of one {@link #attemptFieldRest} call. */
+    public static final class FieldRestResult {
+        public final boolean success;
+        public final String message;
+
+        FieldRestResult(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+    }
+
+    /**
+     * Spends one point of satiety to heal {@link #FIELD_REST_HEAL_AMOUNT} War
+     * Strength, refusing (at no cost) when already at full strength, out of
+     * food, or still on cooldown from the last use. On success, the cooldown is
+     * set to {@link PlayerStats#getRegenIntervalTurns()} -- the same
+     * Constitution-scaled interval natural passive regen already uses, so this
+     * reads as one coherent healing model (a food-fueled acceleration of it)
+     * rather than a second, disconnected system. Every outcome, including every
+     * refusal, is queued onto {@code eventManager} -- a refusal is still
+     * something the player pressed a key for and needs a reason for, not a
+     * silent no-op.
+     */
+    public FieldRestResult attemptFieldRest(GameEventManager eventManager) {
+        if (fieldRestCooldownTurns > 0) {
+            return refuseFieldRest(eventManager,
+                    "You are still catching your breath. (" + fieldRestCooldownTurns + " turns)");
+        }
+        if (stats.getCurrentHP() >= stats.getMaxHP()) {
+            return refuseFieldRest(eventManager, "You are already at full strength.");
+        }
+        if (stats.getFood() <= 0) {
+            return refuseFieldRest(eventManager, "You are too famished to rest and recover.");
+        }
+
+        stats.setFood(stats.getFood() - 1);
+        heal(FIELD_REST_HEAL_AMOUNT);
+        fieldRestCooldownTurns = stats.getRegenIntervalTurns();
+        com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordFieldRestUsed();
+
+        String msg = "You catch your breath and recover. WS: " + stats.getCurrentHP() + "/" + stats.getMaxHP() + ".";
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(msg, 2f));
+        }
+        return new FieldRestResult(true, msg);
+    }
+
+    private FieldRestResult refuseFieldRest(GameEventManager eventManager, String message) {
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(message, 2f));
+        }
+        return new FieldRestResult(false, message);
+    }
+
     public boolean canWieldTwoHanded() {
         return injuryManager == null || injuryManager.canWieldTwoHanded();
     }

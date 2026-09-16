@@ -1413,6 +1413,7 @@ public class GameScreen extends BaseScreen {
     private void playerTurnTakesAction() {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
+        player.tickFieldRestCooldown();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }
@@ -1428,6 +1429,52 @@ public class GameScreen extends BaseScreen {
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
         }
+    }
+
+    /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
+    private static final int FIELD_REST_TICKS_PER_PRESS = 5;
+
+    /**
+     * Field rest & recover (H): a bounded, cooldown-gated HP top-up. Reintroduced
+     * after the "way off again" balance investigation found that the original
+     * R-bound rest was deleted wholesale (not deliberately redesigned) when R was
+     * repurposed to open First Aid, leaving no field-accessible War Strength recovery
+     * besides slow passive regen, rare potions, and shelter-only rest. The actual
+     * heal/cooldown/cost logic lives on Player (attemptFieldRest) so it is
+     * testable without a screen; this method only owns the same
+     * multi-tick-with-interruption risk the original had, so a monster can still
+     * close in mid-rest even though spamming it is no longer possible.
+     */
+    private void performFieldRestAction() {
+        Player.FieldRestResult result = player.attemptFieldRest(eventManager);
+        if (!result.success) {
+            return; // The refusal message was already queued by attemptFieldRest.
+        }
+
+        int hpBeforeTick = player.getCurrentHP();
+        int ticksElapsed = 0;
+        for (int i = 0; i < FIELD_REST_TICKS_PER_PRESS; i++) {
+            playerTurnTakesAction();
+            ticksElapsed++;
+
+            if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+                eventManager.addEvent(new GameEvent("Your rest is interrupted!", 2f));
+                break;
+            }
+            if (player.getCurrentHP() < hpBeforeTick) {
+                eventManager.addEvent(new GameEvent("Something attacks you as you rest!", 2f));
+                break;
+            }
+            if (player.getCurrentHP() <= 0) {
+                break;
+            }
+            hpBeforeTick = player.getCurrentHP();
+        }
+        // Each of the ticks just advanced also decremented the cooldown attemptFieldRest just
+        // set, via the same per-turn hook every other action uses -- restore what this rest's
+        // own ticks consumed so the intended full cooldown still holds afterward, whether the
+        // loop ran to completion or was cut short by an interruption above.
+        player.restoreFieldRestCooldown(ticksElapsed);
     }
 
     /**
@@ -2171,7 +2218,21 @@ public class GameScreen extends BaseScreen {
                     ascendOrDescendLadder();
                     return true;
                 case Input.Keys.R:
-                    openFirstAidModal();
+                    // Pressing R with nothing to tend is the exact muscle-memory moment that
+                    // caused the "way off again" balance confusion -- R used to be the general
+                    // rest-heal before it was repurposed to open First Aid, and that removal
+                    // shipped with no in-fiction sign anything had changed. Turning this specific
+                    // keypress into the teaching moment costs nothing extra: this branch already
+                    // needed to check for an active injury to decide what to do.
+                    if (player.getInjuryManager() != null && player.getInjuryManager().hasAnyInjuries()) {
+                        openFirstAidModal();
+                    } else {
+                        eventManager.addEvent(new GameEvent(
+                                "Nothing here needs tending. Press H to rest and recover strength.", 2.5f));
+                    }
+                    return true;
+                case Input.Keys.H:
+                    performFieldRestAction();
                     return true;
                 case Input.Keys.C:
                     openFieldCrafting();

@@ -36,6 +36,7 @@ public class SettingsManager {
         keyBindingDescriptions.put("USE_ITEM", "Use Item");
         keyBindingDescriptions.put("DESCEND", "Descend Ladder");
         keyBindingDescriptions.put("REST", "Rest");
+        keyBindingDescriptions.put("FIRST_AID", "First Aid");
         keyBindingDescriptions.put("SWAP_HANDS", "Swap Hands");
         keyBindingDescriptions.put("SWAP_PACK", "Swap with Pack");
         keyBindingDescriptions.put("ROTATE_PACK", "Rotate Pack");
@@ -144,7 +145,8 @@ public class SettingsManager {
             case "PICKUP_DROP": return Input.Keys.P;
             case "USE_ITEM": return Input.Keys.U;
             case "DESCEND": return Input.Keys.D;
-            case "REST": return Input.Keys.R;
+            case "REST": return Input.Keys.H;
+            case "FIRST_AID": return Input.Keys.R;
             case "SWAP_HANDS": return Input.Keys.S;
             case "SWAP_PACK": return Input.Keys.E;
             case "ROTATE_PACK": return Input.Keys.T;
