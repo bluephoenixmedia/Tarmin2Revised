@@ -369,6 +369,16 @@ public class SaveSlotSelectScreen extends BaseScreen {
         GameScreen gameScreen = new GameScreen(game, level, Difficulty.EASY, mode);
         game.setScreen(gameScreen);
 
+        if (worldData != null && gameScreen.getWorldManager() != null) {
+            if (worldData.masterSeed != 0) {
+                gameScreen.getWorldManager().setWorldSeed(worldData.masterSeed);
+            }
+            if (worldData.factionMatrix != null && !worldData.factionMatrix.trim().isEmpty()) {
+                gameScreen.getWorldManager().setFactionMatrix(
+                        com.bpm.minotaur.gamedata.monster.FactionMatrix.deserialize(worldData.factionMatrix));
+            }
+        }
+
         // Apply saved player state
         PlayerSaveData playerData = SaveManager.getInstance().loadActivePlayerData();
         if (playerData != null && gameScreen.getPlayer() != null) {

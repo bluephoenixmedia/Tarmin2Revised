@@ -432,8 +432,16 @@ public class PlayerStats {
         heal(amount); // Also heal the player by the amount gained
     }
 
+    private int getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        try {
+            return com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getAscensionTier(stat);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     public int getDexterity() {
-        return dexterity;
+        return dexterity + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.DEXTERITY);
     }
 
     public void setDexterity(int dexterity) {
@@ -441,7 +449,7 @@ public class PlayerStats {
     }
 
     public int getStrength() {
-        return strength;
+        return strength + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.STRENGTH);
     }
 
     public void setStrength(int strength) {
@@ -452,19 +460,27 @@ public class PlayerStats {
         this.strength += amount;
     }
 
-    public int getConstitution() { return constitution; }
+    public int getConstitution() {
+        return constitution + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.CONSTITUTION);
+    }
     public void setConstitution(int v) { this.constitution = v; }
     public void modifyConstitution(int amount) { this.constitution += amount; }
 
-    public int getIntelligence() { return intelligence; }
+    public int getIntelligence() {
+        return intelligence + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.INTELLIGENCE);
+    }
     public void setIntelligence(int v) { this.intelligence = v; }
     public void modifyIntelligence(int amount) { this.intelligence += amount; }
 
-    public int getWisdom() { return wisdom; }
+    public int getWisdom() {
+        return wisdom + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.WISDOM);
+    }
     public void setWisdom(int v) { this.wisdom = v; }
     public void modifyWisdom(int amount) { this.wisdom += amount; }
 
-    public int getAgility() { return agility; }
+    public int getAgility() {
+        return agility + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.AGILITY);
+    }
     public void setAgility(int v) { this.agility = v; }
     public void modifyAgility(int amount) { this.agility += amount; }
 

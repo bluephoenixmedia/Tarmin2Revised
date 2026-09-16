@@ -251,6 +251,10 @@ public class SaveManager {
             WorldSaveData worldData = new WorldSaveData();
             if (worldManager != null) {
                 worldData.currentLevel = worldManager.getCurrentLevel();
+                worldData.masterSeed = worldManager.getWorldSeed();
+                if (worldManager.getFactionMatrix() != null) {
+                    worldData.factionMatrix = worldManager.getFactionMatrix().serialize();
+                }
                 if (worldManager.getCurrentPlayerChunkId() != null) {
                     worldData.playerChunkX = worldManager.getCurrentPlayerChunkId().x;
                     worldData.playerChunkY = worldManager.getCurrentPlayerChunkId().y;

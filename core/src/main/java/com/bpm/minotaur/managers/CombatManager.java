@@ -464,6 +464,45 @@ public class CombatManager {
     }
 
     /**
+     * Resolves an attack between two infighting monsters.
+     */
+    public void monsterVsMonsterStrike(Monster attacker, Monster defender, Maze targetMaze) {
+        if (attacker == null || defender == null || targetMaze == null) return;
+        if (!attacker.isAlive() || !defender.isAlive()) return;
+
+        int attackBonus = calculateMonsterAttackBonus(attacker);
+        int d20Roll = DiceRoller.d20();
+        boolean isHit = (d20Roll + attackBonus) >= defender.getArmorClass();
+
+        if (isHit) {
+            int baseDmg = DiceRoller.roll(attacker.getDamageDice());
+            float doomScale = DoomManager.getInstance().getEnemyScalingMultiplier();
+            int dmg = Math.max(1, (int) (baseDmg * doomScale));
+            int taken = defender.takeDamage(dmg, DamageType.PHYSICAL);
+
+            targetMaze.addBlood((int) defender.getPosition().x, (int) defender.getPosition().y, 0.04f);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " strikes " + defender.getMonsterType() + " for " + taken + " dmg!", 1.5f));
+            }
+            defender.onAttackedBy(attacker);
+
+            if (defender.getCurrentHP() <= 0) {
+                GridPoint2 defPos = new GridPoint2((int) defender.getPosition().x, (int) defender.getPosition().y);
+                targetMaze.getMonsters().remove(defPos);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " slayed " + defender.getMonsterType() + "!", 2f));
+                }
+                spawnCorpseEffects(defender, Math.max(0, taken - defender.getMaxHP()));
+            }
+        } else {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " misses " + defender.getMonsterType() + "!", 1f));
+            }
+            defender.onAttackedBy(attacker);
+        }
+    }
+
+    /**
      * 5e Standard Monster To-Hit accuracy formula: Proficiency (2 + level/3) + Stat Modifier.
      * Nimble beasts/skirmishers scale from DEX; brute humanoids/undead scale from STR/HP.
      */

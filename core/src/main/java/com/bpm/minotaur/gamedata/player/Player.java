@@ -2074,6 +2074,10 @@ public class Player {
         position.set(nextX + 0.5f, nextY + 0.5f);
         UnlockManager.getInstance().incrementStat("steps", 1);
 
+        if (maze.getLiquidManager() != null) {
+            maze.getLiquidManager().onPlayerStep(nextX, nextY, this, eventManager);
+        }
+
         // --- VOID SIGHT LORE INSCRIPTIONS ---
         if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
             String voidLore = com.bpm.minotaur.managers.DimensionalManager.getInstance().getVoidLoreAt(0, 0, nextX, nextY);

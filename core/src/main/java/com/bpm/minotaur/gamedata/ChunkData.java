@@ -44,6 +44,9 @@ public class ChunkData {
     public List<WallDecalData> wallDecals = new ArrayList<>();
     public List<GibData> gibs = new ArrayList<>();
 
+    public String chunkTheme;
+    public String liquidData;
+
     public ChunkData() {
     }
 
@@ -110,6 +113,13 @@ public class ChunkData {
                 this.scenery.add(new SceneryData(s));
             }
         }
+
+        if (maze.getChunkTheme() != null) {
+            this.chunkTheme = maze.getChunkTheme().name();
+        }
+        if (maze.getLiquidManager() != null) {
+            this.liquidData = maze.getLiquidManager().serialize();
+        }
     }
 
     public Maze buildMaze(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
@@ -123,6 +133,16 @@ public class ChunkData {
 
         if (this.homeTiles != null) {
             maze.setHomeTiles(this.homeTiles);
+        }
+
+        if (this.chunkTheme != null) {
+            try {
+                maze.setChunkTheme(com.bpm.minotaur.generation.theme.ChunkTheme.valueOf(this.chunkTheme));
+            } catch (Exception ignored) {
+            }
+        }
+        if (this.liquidData != null && !this.liquidData.trim().isEmpty()) {
+            maze.setLiquidManager(com.bpm.minotaur.gamedata.liquid.LiquidManager.deserialize(this.liquidData));
         }
 
         for (ItemData data : items) {
@@ -205,6 +225,13 @@ public class ChunkData {
                 boolean isEW = (data.x == 0 || data.x == maze.getWidth() - 1);
                 gate.setOrientation(isEW ? Door.Orientation.EAST_WEST : Door.Orientation.NORTH_SOUTH);
             }
+            if (data.theme != null) {
+                try {
+                    gate.setTheme(com.bpm.minotaur.generation.theme.ChunkTheme.valueOf(data.theme));
+                } catch (Exception ignored) {
+                }
+            }
+            gate.setLocked(data.isLocked);
             maze.addGate(gate);
         }
 
@@ -348,6 +375,8 @@ public class ChunkData {
         public GateState state;
         public float animationProgress;
         public Door.Orientation orientation;
+        public String theme;
+        public boolean isLocked;
 
         public GateData() {
         }
@@ -360,6 +389,10 @@ public class ChunkData {
             this.state = gate.getState();
             this.animationProgress = gate.getAnimationProgress();
             this.orientation = gate.getOrientation();
+            if (gate.getTheme() != null) {
+                this.theme = gate.getTheme().name();
+            }
+            this.isLocked = gate.isLocked();
         }
     }
 

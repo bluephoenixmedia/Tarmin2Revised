@@ -145,6 +145,11 @@ public class TurnManager {
         if (maze.getShopkeeper() != null) {
             shopkeeperAiManager.update(maze.getShopkeeper(), maze, player, eventManager, itemDataManager, assetManager);
         }
+
+        // 5. Arena / Colosseum Clear Check
+        if (worldManager != null) {
+            worldManager.checkColosseumClear(maze, eventManager);
+        }
     }
 
     /**

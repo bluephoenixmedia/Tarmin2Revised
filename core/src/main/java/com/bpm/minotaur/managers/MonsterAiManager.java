@@ -8,6 +8,7 @@ import com.bpm.minotaur.gamedata.Pathfinder;
 import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.gamedata.Door; // NEW
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.badlogic.gdx.Gdx; // NEW
 
@@ -80,53 +81,130 @@ public class MonsterAiManager {
         }
     }
 
+    private FactionMatrix factionMatrix = new FactionMatrix();
+
+    public FactionMatrix getFactionMatrix() {
+        return factionMatrix;
+    }
+
+    public void setFactionMatrix(FactionMatrix factionMatrix) {
+        if (factionMatrix != null) {
+            this.factionMatrix = factionMatrix;
+        }
+    }
+
     private void checkAwareness(Monster monster, Player player, Maze maze) {
-        int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
+        monster.decrementRetaliationTurns();
+
+        int playerDist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
 
         // 1. Check Visual Awareness (Line of Sight)
-        // High intel monsters might see further? Fixed range for now.
         int visualRange = 10 + (monster.getIntelligence() / 2);
 
-        if (player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INVISIBILITY)) {
+        if (player.getEquipment() != null && player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INVISIBILITY)) {
             visualRange = 2; // Drastically reduced range
-            // Could also log debug if close but not seeing
         }
 
-        boolean hasLOS = false;
+        boolean playerSeen = false;
+        if (playerDist <= visualRange) {
+            playerSeen = checkLineOfSight(maze, monsterGridPos, playerGridPos);
+        }
 
-        if (dist <= visualRange) {
-            hasLOS = checkLineOfSight(maze, monsterGridPos, playerGridPos);
-            if (hasLOS) {
-                if (monster.getState() != Monster.MonsterState.HUNTING) {
-                    Gdx.app.log("AI", monster.getMonsterType() + " saw player! State -> HUNTING");
+        // 2. Check Audio Awareness (Hearing) if not seen
+        if (!playerSeen) {
+            int hearingRange = 5 + (monster.getIntelligence());
+            if (playerDist <= hearingRange) {
+                int chance = 50 + (monster.getIntelligence() * 5) - (playerDist * 5);
+                if (chance > Math.random() * 100) {
+                    playerSeen = true;
                 }
-                monster.setState(Monster.MonsterState.HUNTING);
-                monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
-                monster.setTurnsSinceLastSeen(0);
-                return; // Seen! Immediately hunting.
             }
         }
 
-        // 2. Check Audio Awareness (Hearing)
-        int hearingRange = 5 + (monster.getIntelligence()); // Base 5 + Intel
-        if (dist <= hearingRange) {
-            // Chance to hear based on distance and intelligence
-            // Closer = higher chance. Smarter = higher chance.
-            int chance = 50 + (monster.getIntelligence() * 5) - (dist * 5);
-            if (chance > Math.random() * 100) {
-                if (monster.getState() != Monster.MonsterState.HUNTING) {
-                    Gdx.app.log("AI", monster.getMonsterType() + " heard player! State -> HUNTING");
+        // 3. Check for Rival Monsters within visual range
+        Monster closestRival = null;
+        int closestRivalDist = Integer.MAX_VALUE;
+
+        // If currently retaliating against an attacker, check if attacker is still valid
+        if (monster.getTargetMonster() != null) {
+            Monster currentTar = monster.getTargetMonster();
+            GridPoint2 tarPos = new GridPoint2((int) currentTar.getPosition().x, (int) currentTar.getPosition().y);
+            if (currentTar.isAlive() && currentTar.getCurrentHP() > 0 && maze != null && maze.getMonsters().containsKey(tarPos)) {
+                closestRival = currentTar;
+                closestRivalDist = Math.abs(monsterGridPos.x - tarPos.x) + Math.abs(monsterGridPos.y - tarPos.y);
+            } else {
+                monster.setTargetMonster(null);
+            }
+        }
+
+        if (closestRival == null && maze != null && maze.getMonsters() != null) {
+            for (Monster other : maze.getMonsters().values()) {
+                if (other == null || other == monster || !other.isAlive() || other.getCurrentHP() <= 0) continue;
+                if (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction())) {
+                    GridPoint2 otherPos = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
+                    int d = Math.abs(monsterGridPos.x - otherPos.x) + Math.abs(monsterGridPos.y - otherPos.y);
+                    if (d <= visualRange && d < closestRivalDist) {
+                        if (checkLineOfSight(maze, monsterGridPos, otherPos)) {
+                            closestRival = other;
+                            closestRivalDist = d;
+                        }
+                    }
                 }
+            }
+        }
+
+        // 4. Target Arbitration (Retaliation > Distance-weighted with player tie-break)
+        if (monster.getTargetMonster() != null && monster.getRetaliationTurnsRemaining() > 0) {
+            monster.setState(Monster.MonsterState.HUNTING);
+            monster.setLastKnownTargetPos(new GridPoint2((int) monster.getTargetMonster().getPosition().x, (int) monster.getTargetMonster().getPosition().y));
+            monster.setTurnsSinceLastSeen(0);
+        } else if (playerSeen && closestRival != null) {
+            if (playerDist <= closestRivalDist) {
+                monster.setTargetMonster(null);
                 monster.setState(Monster.MonsterState.HUNTING);
                 monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
                 monster.setTurnsSinceLastSeen(0);
+            } else {
+                monster.setTargetMonster(closestRival);
+                monster.setState(Monster.MonsterState.HUNTING);
+                monster.setLastKnownTargetPos(new GridPoint2((int) closestRival.getPosition().x, (int) closestRival.getPosition().y));
+                monster.setTurnsSinceLastSeen(0);
             }
+        } else if (playerSeen) {
+            monster.setTargetMonster(null);
+            monster.setState(Monster.MonsterState.HUNTING);
+            monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));
+            monster.setTurnsSinceLastSeen(0);
+        } else if (closestRival != null) {
+            monster.setTargetMonster(closestRival);
+            monster.setState(Monster.MonsterState.HUNTING);
+            monster.setLastKnownTargetPos(new GridPoint2((int) closestRival.getPosition().x, (int) closestRival.getPosition().y));
+            monster.setTurnsSinceLastSeen(0);
         }
     }
 
     private void handleHuntingBehavior(Monster monster, Maze maze, Player player,
             CombatManager combatManager) {
-        // Ranged Attack Logic (Only if Hunting and generally active)
+        Monster rival = monster.getTargetMonster();
+        if (rival != null) {
+            if (!rival.isAlive() || rival.getCurrentHP() <= 0) {
+                monster.setTargetMonster(null);
+                monster.setState(Monster.MonsterState.WANDERING);
+                return;
+            }
+            GridPoint2 rivalPos = new GridPoint2((int) rival.getPosition().x, (int) rival.getPosition().y);
+            int distToRival = Math.abs(monsterGridPos.x - rivalPos.x) + Math.abs(monsterGridPos.y - rivalPos.y);
+            if (distToRival <= 1) {
+                if (combatManager != null) {
+                    combatManager.monsterVsMonsterStrike(monster, rival, maze);
+                }
+                return;
+            }
+            performSeekingMove(monster, rivalPos, maze, player, combatManager);
+            return;
+        }
+
+        // Ranged Attack Logic (Only if Hunting player and generally active)
         if (monster.hasRangedAttack() && combatManager != null) {
             int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
             if (dist <= monster.getAttackRange() && dist > 1) {
@@ -148,34 +226,25 @@ public class MonsterAiManager {
 
         // If we are at the last known position and player is not there...
         if (monsterGridPos.equals(target)) {
-            // If we can see the player NOW, update target (should have happened in
-            // checkAwareness)
-            // If checkAwareness didn't update us (no LoS), then we lost them.
             int distToRealPlayer = Math.abs(monsterGridPos.x - playerGridPos.x)
                     + Math.abs(monsterGridPos.y - playerGridPos.y);
             if (distToRealPlayer <= 1) {
                 if (combatManager != null && monster != combatManager.getMonster()) {
-                    // Try to flank instead of moving/idle
                     if (combatManager.performMonsterFlankAttack(monster)) {
                         return; // Attacked
                     }
                 }
-
-                // Just ensure target is player.
                 target = playerGridPos;
             } else {
-                // Lost 'em.
                 monster.setTurnsSinceLastSeen(monster.getTurnsSinceLastSeen() + 1);
                 if (monster.getTurnsSinceLastSeen() > 5) {
                     monster.setState(Monster.MonsterState.WANDERING);
                     monster.setLastKnownTargetPos(null);
                 }
-                return; // Look around confusingly
+                return;
             }
         }
 
-        // If target is null (shouldn't be if hunting), default to player but risk
-        // cheating
         if (target == null)
             target = playerGridPos;
 
@@ -200,8 +269,16 @@ public class MonsterAiManager {
             }
 
             tempPos.set(step.x, step.y);
-            if (maze.getMonsters().containsKey(tempPos))
-                return; // Blocked by friend
+            Monster occupant = maze.getMonsters().get(tempPos);
+            if (occupant != null) {
+                if (occupant == monster.getTargetMonster() || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), occupant.getFaction()))) {
+                    if (combatManager != null) {
+                        combatManager.monsterVsMonsterStrike(monster, occupant, maze);
+                    }
+                    return;
+                }
+                return; // Blocked by allied or non-hostile creature
+            }
 
             moveMonsterTo(monster, maze, step.x, step.y);
         }

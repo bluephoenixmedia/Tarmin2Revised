@@ -22,6 +22,10 @@ public class Gate implements Renderable {
     private float animationProgress = 0.0f;
     private static final float ANIMATION_TIME = 1.0f; // 1 second to open
 
+    private com.bpm.minotaur.generation.theme.ChunkTheme theme = null;
+    private boolean locked = false;
+    private boolean runeIdentified = false;
+
     public Door.Orientation getOrientation() {
         return orientation;
     }
@@ -111,6 +115,9 @@ public class Gate implements Renderable {
     }
 
     public void startOpening(WorldManager worldManager) {
+        if (locked) {
+            return;
+        }
         if (state == GateState.CLOSED) {
             state = GateState.OPENING;
             animationProgress = 0.0f;
@@ -132,5 +139,37 @@ public class Gate implements Renderable {
                 state = GateState.OPEN;
             }
         }
+    }
+
+    public com.bpm.minotaur.generation.theme.ChunkTheme getTheme() {
+        return theme;
+    }
+
+    public void setTheme(com.bpm.minotaur.generation.theme.ChunkTheme theme) {
+        this.theme = theme;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    public boolean isRuneIdentified() {
+        return runeIdentified;
+    }
+
+    public void setRuneIdentified(boolean runeIdentified) {
+        this.runeIdentified = runeIdentified;
+    }
+
+    public String getRuneDisplayName(com.bpm.minotaur.gamedata.player.Player player) {
+        if (theme == null) return "Iron Skullgate";
+        if (runeIdentified || (player != null && (player.getStats().getWisdom() >= 13 || player.getStats().getIntelligence() >= 13))) {
+            return "Rune of " + theme.getDisplayName();
+        }
+        return "Rune of " + theme.getCrypticOmen();
     }
 }

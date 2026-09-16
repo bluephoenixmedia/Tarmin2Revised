@@ -5,6 +5,8 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.gore.GoreManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.liquid.LiquidManager;
+import com.bpm.minotaur.gamedata.liquid.LiquidType;
 import com.bpm.minotaur.rendering.RetroTheme;
 
 import java.util.*;
@@ -33,6 +35,7 @@ public class Maze {
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
     private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
+    private LiquidManager liquidManager = new LiquidManager();
 
     // --- Debris Only ---
     private final List<CorpsePart> corpses = new ArrayList<>();
@@ -73,8 +76,32 @@ public class Maze {
         this.chunkId = (chunkId != null) ? new GridPoint2(chunkId) : new GridPoint2(0, 0);
     }
 
+    private com.bpm.minotaur.generation.theme.ChunkTheme chunkTheme;
+
+    public com.bpm.minotaur.generation.theme.ChunkTheme getChunkTheme() {
+        return chunkTheme;
+    }
+
+    public void setChunkTheme(com.bpm.minotaur.generation.theme.ChunkTheme chunkTheme) {
+        this.chunkTheme = chunkTheme;
+    }
+
     public void addHomeTile(GridPoint2 pos) {
         homeTiles.add(pos);
+    }
+
+    public LiquidManager getLiquidManager() {
+        return liquidManager;
+    }
+
+    public void setLiquidManager(LiquidManager liquidManager) {
+        if (liquidManager != null) {
+            this.liquidManager = liquidManager;
+        }
+    }
+
+    public LiquidType getLiquidAt(int x, int y) {
+        return liquidManager != null ? liquidManager.getLiquidAt(x, y) : LiquidType.NONE;
     }
 
     public boolean isHomeTile(int x, int y) {

@@ -577,6 +577,24 @@ public class World3DRenderer implements Disposable {
                         lightIntensityArray[count] = 1.25f * pulse;
                         count++;
                     }
+                } else if (gate.getTheme() != null) {
+                    float dist2 = player.getPosition().dst2(gate.getPosition());
+                    if (dist2 < 144f) {
+                        int idx = count * 3;
+                        lightPosArray[idx]     = gate.getPosition().x;
+                        lightPosArray[idx + 1] = 1.10f; // Floating rune level
+                        lightPosArray[idx + 2] = -gate.getPosition().y;
+
+                        Color runeCol = gate.getTheme().getRuneColor();
+                        float pulse = (float) Math.sin(totalTime * 3.5f + gate.getPosition().x) * 0.25f + 0.75f;
+                        lightColorArray[idx]     = runeCol.r * pulse;
+                        lightColorArray[idx + 1] = runeCol.g * pulse;
+                        lightColorArray[idx + 2] = runeCol.b * pulse;
+
+                        lightRadiusArray[count]     = 4.5f;
+                        lightIntensityArray[count] = 1.6f * pulse;
+                        count++;
+                    }
                 }
             }
         }
@@ -646,6 +664,23 @@ public class World3DRenderer implements Disposable {
                     }
                     dynamicBatcher.addSlidingDoor(tileX, tileY, ewFacing, gate.getAnimationProgress(), col);
                     dynamicBatcher.flush(shader, gateTexture);
+                    if (gate.getTheme() != null) {
+                        float runeBob = (float) Math.sin(totalTime * 3.0f + gx * 1.5f) * 0.04f;
+                        float runeY = 1.05f + runeBob;
+                        float runeSize = 0.40f;
+                        Color runeCol = gate.getTheme().getRuneColor();
+                        float pulse = (float) Math.sin(totalTime * 4.0f + gx) * 0.15f + 0.85f;
+                        Color emissiveColor = new Color(runeCol.r * pulse, runeCol.g * pulse, runeCol.b * pulse, 0.95f);
+                        Texture runeTex = (blankTexture != null) ? blankTexture : gateTexture;
+                        dynamicBatcher.addBillboard(
+                                tileX + 0.5f, runeY, -(tileY + 0.5f),
+                                runeSize, runeSize,
+                                new TextureRegion(runeTex),
+                                emissiveColor,
+                                camRight, camUp, camDir
+                        );
+                        dynamicBatcher.flush(shader, runeTex);
+                    }
                     continue;
                 }
 
@@ -727,6 +762,29 @@ public class World3DRenderer implements Disposable {
                 shader.setUniformMatrix("u_worldTrans", gateTransform);
                 for (Mesh mesh : gateRightDoorModel.meshes) {
                     mesh.render(shader, GL20.GL_TRIANGLES);
+                }
+
+                // --- D. Floating Runic Sigil Billboard ---
+                if (gate.getTheme() != null) {
+                    shader.setUniformMatrix("u_worldTrans", identityMatrix);
+                    shader.setUniformf("u_retroBorder", 0.0f);
+
+                    float runeBob = (float) Math.sin(totalTime * 3.0f + gateX * 1.5f) * 0.04f;
+                    float runeY = 1.05f + runeBob;
+                    float runeSize = 0.40f;
+                    Color runeCol = gate.getTheme().getRuneColor();
+                    float pulse = (float) Math.sin(totalTime * 4.0f + gateX) * 0.15f + 0.85f;
+                    Color emissiveColor = new Color(runeCol.r * pulse, runeCol.g * pulse, runeCol.b * pulse, 0.95f);
+
+                    Texture runeTex = (blankTexture != null) ? blankTexture : gateTexture;
+                    dynamicBatcher.addBillboard(
+                            gateX, runeY, gateZ,
+                            runeSize, runeSize,
+                            new TextureRegion(runeTex),
+                            emissiveColor,
+                            camRight, camUp, camDir
+                    );
+                    dynamicBatcher.flush(shader, runeTex);
                 }
             }
 

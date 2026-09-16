@@ -150,6 +150,10 @@ public class Monster implements Renderable {
 
     private MonsterState state = MonsterState.IDLE;
 
+    private Faction faction = Faction.BEASTS_AND_VERMIN;
+    private Monster targetMonster = null;
+    private int retaliationTurnsRemaining = 0;
+
     // Grace flag: true for the first turn after spawn so the auto-adjacent attack
     // cannot one-shot a monster before it has been rendered even once.
     private boolean justSpawned = true;
@@ -173,6 +177,8 @@ public class Monster implements Renderable {
         this.damageDice = "1d4";
         this.spriteData = new String[0];
         this.statusManager = new StatusManager();
+        this.family = MonsterFamily.NONE;
+        this.faction = Faction.getDefaultFaction(type != null ? type.name() : "", this.family);
     }
 
     public Monster(MonsterType type, float startX, float startY, MonsterColor color,
@@ -199,6 +205,7 @@ public class Monster implements Renderable {
         this.moveSpeed = template.moveSpeed; // Init speed
 
         this.family = template.family;
+        this.faction = Faction.getDefaultFaction(type != null ? type.name() : "", this.family);
         this.spriteData = template.spriteData;
         this.scale = new Vector2(template.scale.x, template.scale.y);
         this.statusManager = new StatusManager();
@@ -687,5 +694,53 @@ public class Monster implements Renderable {
 
     public void setTagged(boolean tagged) {
         this.isTagged = tagged;
+    }
+
+    public Faction getFaction() {
+        return faction;
+    }
+
+    public void setFaction(Faction faction) {
+        this.faction = faction;
+    }
+
+    public Monster getTargetMonster() {
+        return targetMonster;
+    }
+
+    public void setTargetMonster(Monster targetMonster) {
+        this.targetMonster = targetMonster;
+    }
+
+    public int getRetaliationTurnsRemaining() {
+        return retaliationTurnsRemaining;
+    }
+
+    public void setRetaliationTurnsRemaining(int turns) {
+        this.retaliationTurnsRemaining = turns;
+    }
+
+    public void decrementRetaliationTurns() {
+        if (this.retaliationTurnsRemaining > 0) {
+            this.retaliationTurnsRemaining--;
+            if (this.retaliationTurnsRemaining == 0) {
+                this.targetMonster = null;
+            }
+        }
+    }
+
+    /**
+     * Provoked retaliation: When damaged by another monster, switch aggro to the attacker for 3 turns.
+     */
+    public void onAttackedBy(Monster attacker) {
+        if (attacker != null && attacker != this && attacker.isAlive()) {
+            this.targetMonster = attacker;
+            this.retaliationTurnsRemaining = 3;
+            this.state = MonsterState.HUNTING;
+        }
+    }
+
+    public boolean isAlive() {
+        return currentHP > 0;
     }
 }

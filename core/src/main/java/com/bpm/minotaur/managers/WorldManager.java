@@ -22,6 +22,7 @@ import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 
 import java.io.File;
 import java.util.HashMap;
@@ -72,6 +73,7 @@ public class WorldManager {
 
     // --- NEW: Master Seed ---
     private long worldSeed;
+    private FactionMatrix factionMatrix;
 
     // --- NEW: Track where to place the return ladder ---
     private GridPoint2 pendingUpLadderPos = null;
@@ -110,6 +112,7 @@ public class WorldManager {
 
         // Initialize Seed
         this.worldSeed = new java.util.Random().nextLong();
+        this.factionMatrix = new FactionMatrix(this.worldSeed);
         if (Gdx.app != null) {
             Gdx.app.log("WorldManager", "World Initialized with Seed: " + this.worldSeed);
         }
@@ -406,6 +409,25 @@ public class WorldManager {
 
         newMaze.setGoreManager(this.goreManager);
         newMaze.setChunkId(chunkId);
+
+        // Themed Chunk Decoration
+        com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
+        if (theme != null) {
+            newMaze.setChunkTheme(theme);
+            com.bpm.minotaur.generation.theme.ChunkThemeDecorator.decorate(
+                    newMaze, theme, chunkSeed, this.dataManager, this.itemDataManager, this.assetManager);
+        }
+
+        // Stamp target chunk themes on boundary gates so glowing runes reveal the theme ahead
+        for (Gate gate : newMaze.getGates().values()) {
+            if (gate.getTargetChunkId() != null) {
+                com.bpm.minotaur.generation.theme.ChunkTheme targetTheme = getChunkTheme(gate.getTargetChunkId(), currentLevel);
+                if (targetTheme != null) {
+                    gate.setTheme(targetTheme);
+                }
+            }
+        }
+
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -817,5 +839,107 @@ public class WorldManager {
 
     public GoreManager getGoreManager() {
         return goreManager;
+    }
+
+    public FactionMatrix getFactionMatrix() {
+        return factionMatrix;
+    }
+
+    public void setFactionMatrix(FactionMatrix factionMatrix) {
+        if (factionMatrix != null) {
+            this.factionMatrix = factionMatrix;
+        }
+    }
+
+    public long getWorldSeed() {
+        return worldSeed;
+    }
+
+    public void setWorldSeed(long worldSeed) {
+        this.worldSeed = worldSeed;
+        if (this.factionMatrix == null) {
+            this.factionMatrix = new FactionMatrix(worldSeed);
+        }
+    }
+
+    public com.bpm.minotaur.generation.theme.ChunkTheme getChunkTheme(GridPoint2 chunkId, int level) {
+        if (chunkId == null) return null;
+        if (chunkId.x == 0 && chunkId.y == 0 && level == 1) {
+            return null; // Shelter chunk is never themed
+        }
+
+        // 3x3 Cluster Coordinates
+        int clusterX = Math.floorDiv(chunkId.x, 3);
+        int clusterY = Math.floorDiv(chunkId.y, 3);
+
+        long clusterSeed = (worldSeed ^ (clusterX * 73856093L) ^ (clusterY * 19349663L) ^ (level * 83492791L));
+        java.util.Random clusterRng = new java.util.Random(clusterSeed);
+
+        int targetLocalX = clusterRng.nextInt(3);
+        int targetLocalY = clusterRng.nextInt(3);
+
+        // Ensure cluster (0,0) on Level 1 does not pick (0,0) as its only themed chunk
+        if (clusterX == 0 && clusterY == 0 && level == 1) {
+            while (targetLocalX == 0 && targetLocalY == 0) {
+                targetLocalX = clusterRng.nextInt(3);
+                targetLocalY = clusterRng.nextInt(3);
+            }
+        }
+
+        int localX = ((chunkId.x % 3) + 3) % 3;
+        int localY = ((chunkId.y % 3) + 3) % 3;
+
+        if (localX != targetLocalX || localY != targetLocalY) {
+            return null;
+        }
+
+        // Filter available themes by minLevel <= level
+        java.util.List<com.bpm.minotaur.generation.theme.ChunkTheme> available = new java.util.ArrayList<>();
+        for (com.bpm.minotaur.generation.theme.ChunkTheme t : com.bpm.minotaur.generation.theme.ChunkTheme.values()) {
+            if (t.getMinLevel() <= level) {
+                available.add(t);
+            }
+        }
+        if (available.isEmpty()) {
+            return com.bpm.minotaur.generation.theme.ChunkTheme.BLOOD_COLOSSEUM;
+        }
+        return available.get(clusterRng.nextInt(available.size()));
+    }
+
+    public void checkColosseumClear(Maze maze, GameEventManager eventManager) {
+        if (maze == null || maze.getChunkTheme() != com.bpm.minotaur.generation.theme.ChunkTheme.BLOOD_COLOSSEUM) return;
+
+        boolean hasLockedGate = false;
+        for (Gate gate : maze.getGates().values()) {
+            if (gate.isLocked()) {
+                hasLockedGate = true;
+                break;
+            }
+        }
+        if (!hasLockedGate) {
+            return; // Already unlocked / cleared
+        }
+
+        boolean anyAlive = false;
+        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+            if (m != null && m.isAlive()) {
+                anyAlive = true;
+                break;
+            }
+        }
+
+        if (!anyAlive) {
+            for (Gate gate : maze.getGates().values()) {
+                gate.setLocked(false);
+            }
+            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().addCrestsOfValor(1);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("VICTORY! The Colosseum gates unlock! You claim a Crest of Valor! (+1 Crest)", 4.0f));
+            }
+            if (Gdx.app != null) {
+                Gdx.app.log("WorldManager", "Colosseum cleared! Awarded 1 Crest of Valor. Total: "
+                        + com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCrestsOfValor());
+            }
+        }
     }
 }

@@ -164,6 +164,7 @@ public class GameScreen extends BaseScreen {
                 this.soundManager);
 
         this.monsterAiManager = new MonsterAiManager();
+        this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
 
         switch (level) {
             case 1:

@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class ShelterAltarScreen extends BaseScreen {
 
-    public enum Tab { EXPANSION, BLESSINGS, SACRIFICE }
+    public enum Tab { EXPANSION, BLESSINGS, SACRIFICE, ASCENSION }
 
     private final GameScreen parentScreen;
     private final Player player;
@@ -48,6 +48,7 @@ public class ShelterAltarScreen extends BaseScreen {
     private TextButton tabExpansionBtn;
     private TextButton tabBlessingsBtn;
     private TextButton tabSacrificeBtn;
+    private TextButton tabAscensionBtn;
 
     // Blessings controls
     private Label provisionsTierLabel;
@@ -121,12 +122,14 @@ public class ShelterAltarScreen extends BaseScreen {
         // --- TAB BAR ---
         Table tabBar = new Table();
         tabExpansionBtn = createTabButton("1. SHELTER EXPANSION", Tab.EXPANSION);
-        tabBlessingsBtn = createTabButton("2. BLESSINGS & REPERTOIRE", Tab.BLESSINGS);
-        tabSacrificeBtn = createTabButton("3. SACRIFICE OFFERINGS", Tab.SACRIFICE);
+        tabBlessingsBtn = createTabButton("2. BLESSINGS", Tab.BLESSINGS);
+        tabSacrificeBtn = createTabButton("3. SACRIFICE", Tab.SACRIFICE);
+        tabAscensionBtn = createTabButton("4. ALTAR OF ASCENSION", Tab.ASCENSION);
 
-        tabBar.add(tabExpansionBtn).width(340).height(48).padRight(12);
-        tabBar.add(tabBlessingsBtn).width(340).height(48).padRight(12);
-        tabBar.add(tabSacrificeBtn).width(340).height(48);
+        tabBar.add(tabExpansionBtn).width(270).height(48).padRight(10);
+        tabBar.add(tabBlessingsBtn).width(270).height(48).padRight(10);
+        tabBar.add(tabSacrificeBtn).width(270).height(48).padRight(10);
+        tabBar.add(tabAscensionBtn).width(300).height(48);
         root.add(tabBar).left().padBottom(16).row();
 
         // --- BODY CONTAINER ---
@@ -168,6 +171,7 @@ public class ShelterAltarScreen extends BaseScreen {
         setTabSelected(tabExpansionBtn, activeTab == Tab.EXPANSION);
         setTabSelected(tabBlessingsBtn, activeTab == Tab.BLESSINGS);
         setTabSelected(tabSacrificeBtn, activeTab == Tab.SACRIFICE);
+        setTabSelected(tabAscensionBtn, activeTab == Tab.ASCENSION);
     }
 
     private void setTabSelected(TextButton btn, boolean selected) {
@@ -211,6 +215,9 @@ public class ShelterAltarScreen extends BaseScreen {
                 break;
             case SACRIFICE:
                 buildSacrificeTab();
+                break;
+            case ASCENSION:
+                buildAscensionTab(altar);
                 break;
         }
     }
@@ -537,6 +544,84 @@ public class ShelterAltarScreen extends BaseScreen {
         btn.getLabel().setFontScale(0.72f);
         setButtonEnabled(btn, false);
         return btn;
+    }
+
+    // =========================================================================
+    // TAB 4: ALTAR OF ASCENSION (STAT PROGRESSION)
+    // =========================================================================
+
+    private void buildAscensionTab(ShelterAltar altar) {
+        Table root = new Table();
+        root.top().left();
+
+        // Banner
+        Table banner = new Table();
+        banner.setBackground(hudSkin.getDoubleBorderPanel());
+        banner.pad(12, 20, 12, 20);
+        Label bannerTitle = new Label("ALTAR OF ASCENSION -- PERMANENT ATTRIBUTE EMPOWERMENT",
+                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        bannerTitle.setFontScale(1.05f);
+        banner.add(bannerTitle).left().row();
+
+        Label bannerSub = new Label("Banked Crests of Valor: " + altar.getCrestsOfValor() + " | Slay colosseum combatants to harvest Crests. Tiers survive death permanently.",
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+        banner.add(bannerSub).left().padTop(4).row();
+        root.add(banner).fillX().padBottom(16).row();
+
+        // 2x3 Grid for the 6 stats
+        Table grid = new Table();
+        grid.top().left();
+        int col = 0;
+
+        for (ShelterAltar.StatType stat : ShelterAltar.StatType.values()) {
+            Table card = new Table();
+            card.setBackground(hudSkin.getDoubleBorderPanel());
+            card.top().left().pad(14);
+
+            Label nameLbl = new Label(stat.getDisplayName().toUpperCase(),
+                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+            nameLbl.setFontScale(0.9f);
+            card.add(nameLbl).left().padBottom(4).row();
+
+            Label descLbl = new Label(stat.getDescription(),
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            descLbl.setWrap(true);
+            card.add(descLbl).width(440).left().padBottom(8).row();
+
+            int tier = altar.getAscensionTier(stat);
+            Label tierLbl = new Label("Tier: " + tier + " / " + ShelterAltar.MAX_ASCENSION_TIER + " (+" + tier + " Permanent " + stat.getDisplayName() + ")",
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            card.add(tierLbl).left().padBottom(10).row();
+
+            int cost = altar.getAscensionCost(stat);
+            TextButton buyBtn;
+            if (tier >= ShelterAltar.MAX_ASCENSION_TIER) {
+                buyBtn = createActionButton("[ FULLY ASCENDED ]");
+                setButtonEnabled(buyBtn, false);
+            } else {
+                buyBtn = createActionButton("ASCEND (+1) -- " + cost + " Crest" + (cost > 1 ? "s" : ""));
+                setButtonEnabled(buyBtn, altar.canAscend(stat));
+                buyBtn.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        if (altar.purchaseAscension(stat)) {
+                            statusLabel.setText("ASCENSION! Your " + stat.getDisplayName() + " has permanently increased by +1!");
+                            refresh();
+                        }
+                    }
+                });
+            }
+            card.add(buyBtn).width(360).height(40).left().row();
+
+            grid.add(card).width(480).pad(8);
+            col++;
+            if (col % 2 == 0) {
+                grid.row();
+            }
+        }
+
+        root.add(grid).expand().fill().row();
+        bodyContainer.add(root).expand().fill();
     }
 
     private void setButtonEnabled(TextButton btn, boolean enabled) {

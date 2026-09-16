@@ -18,6 +18,7 @@ public class WorldSaveData {
     public String gameMode = "MODERN";
     public int tormentLevel = 0;
     public List<String> activeTormentModifiers = new ArrayList<>();
+    public String factionMatrix;
 
     public WorldSaveData() {
     }

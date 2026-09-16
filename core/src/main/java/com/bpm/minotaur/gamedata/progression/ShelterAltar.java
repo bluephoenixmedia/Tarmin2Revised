@@ -13,7 +13,38 @@ import com.bpm.minotaur.managers.SaveManager;
  */
 public class ShelterAltar {
 
-    public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT, ARCANE_ATTUNEMENT }
+    public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT, ARCANE_ATTUNEMENT, ASCENSION }
+
+    public enum StatType {
+        STRENGTH("Strength", "Melee damage, physical carry weight, and heavy weapon efficiency."),
+        DEXTERITY("Dexterity", "Accuracy, ranged bow precision, and reflex evasions."),
+        CONSTITUTION("Constitution", "Maximum hit points and resistance to poison/toxic hazards."),
+        INTELLIGENCE("Intelligence", "Maximum mana, spell damage, and runic deciphering."),
+        WISDOM("Wisdom", "Spiritual energy, divine boons, and secret perception."),
+        AGILITY("Agility", "Movement speed and defense evasion against attacks.");
+
+        private final String displayName;
+        private final String description;
+
+        StatType(String displayName, String description) {
+            this.displayName = displayName;
+            this.description = description;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    public static final int MAX_ASCENSION_TIER = 5;
+    public static final int[] ASCENSION_COSTS = { 1, 2, 4, 7, 10 };
+
+    private int crestsOfValor = 0;
+    private final java.util.Map<StatType, Integer> ascensionTiers = new java.util.EnumMap<>(StatType.class);
 
     public enum Station {
         BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG),
@@ -331,6 +362,55 @@ public class ShelterAltar {
         return STATUE_FREQUENCY_BASE + (STATUE_FREQUENCY_MAX - STATUE_FREQUENCY_BASE) * ((float) monumentTier / MAX_TIER);
     }
 
+    // ---- Altar of Ascension (Stat Progression) ----
+
+    public int getCrestsOfValor() {
+        return crestsOfValor;
+    }
+
+    public void addCrestsOfValor(int amount) {
+        this.crestsOfValor = Math.max(0, this.crestsOfValor + amount);
+        save();
+    }
+
+    public void setCrestsOfValor(int amount) {
+        this.crestsOfValor = Math.max(0, amount);
+        save();
+    }
+
+    public int getAscensionTier(StatType stat) {
+        return ascensionTiers.getOrDefault(stat, 0);
+    }
+
+    public int getAscensionBonus(StatType stat) {
+        return getAscensionTier(stat);
+    }
+
+    public void setAscensionTier(StatType stat, int tier) {
+        ascensionTiers.put(stat, Math.max(0, Math.min(MAX_ASCENSION_TIER, tier)));
+        save();
+    }
+
+    public int getAscensionCost(StatType stat) {
+        int tier = getAscensionTier(stat);
+        if (tier >= MAX_ASCENSION_TIER) return -1;
+        return ASCENSION_COSTS[tier];
+    }
+
+    public boolean canAscend(StatType stat) {
+        int cost = getAscensionCost(stat);
+        return cost > 0 && crestsOfValor >= cost;
+    }
+
+    public boolean purchaseAscension(StatType stat) {
+        if (!canAscend(stat)) return false;
+        int cost = getAscensionCost(stat);
+        crestsOfValor -= cost;
+        ascensionTiers.put(stat, getAscensionTier(stat) + 1);
+        save();
+        return true;
+    }
+
     // ---- Persistence ----
 
     private String getSaveFilePath() {
@@ -353,6 +433,11 @@ public class ShelterAltar {
             data.unlockedStations = new java.util.ArrayList<>();
             for (Station s : unlockedStations) {
                 data.unlockedStations.add(s.name());
+            }
+            data.crestsOfValor = crestsOfValor;
+            data.ascensionTiers = new java.util.HashMap<>();
+            for (java.util.Map.Entry<StatType, Integer> entry : ascensionTiers.entrySet()) {
+                data.ascensionTiers.put(entry.getKey().name(), entry.getValue());
             }
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
@@ -383,6 +468,15 @@ public class ShelterAltar {
                             } catch (Exception ignored) {}
                         }
                     }
+                    crestsOfValor = data.crestsOfValor;
+                    ascensionTiers.clear();
+                    if (data.ascensionTiers != null) {
+                        for (java.util.Map.Entry<String, Integer> entry : data.ascensionTiers.entrySet()) {
+                            try {
+                                ascensionTiers.put(StatType.valueOf(entry.getKey()), entry.getValue());
+                            } catch (Exception ignored) {}
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -399,5 +493,7 @@ public class ShelterAltar {
         public int arcaneTier = 0;
         public java.util.List<String> unlockedStations = new java.util.ArrayList<>();
         public boolean canCommune = true;
+        public int crestsOfValor = 0;
+        public java.util.Map<String, Integer> ascensionTiers = new java.util.HashMap<>();
     }
 }

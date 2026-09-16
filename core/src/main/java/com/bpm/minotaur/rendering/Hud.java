@@ -1371,6 +1371,7 @@ public class Hud implements Disposable {
                 GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
                 Biome biome = worldManager.getBiomeManager().getBiome(chunkId);
                 String themeName = (maze != null && maze.getTheme() != null) ? maze.getTheme().name : "Unknown";
+                String chunkThemeName = (maze != null && maze.getChunkTheme() != null) ? maze.getChunkTheme().getDisplayName() : "Standard";
                 int chunkCount = worldManager.getLoadedChunkIds().size();
 
                 defaultFont.setColor(Color.YELLOW);
@@ -1381,7 +1382,9 @@ public class Hud implements Disposable {
                 rightY -= lineGap;
                 defaultFont.draw(spriteBatch, "Biome: " + biome.name(), rightColX, rightY);
                 rightY -= lineGap;
-                defaultFont.draw(spriteBatch, "Theme: " + themeName, rightColX, rightY);
+                defaultFont.draw(spriteBatch, "Retro Theme: " + themeName, rightColX, rightY);
+                rightY -= lineGap;
+                defaultFont.draw(spriteBatch, "Chunk Theme: " + chunkThemeName, rightColX, rightY);
                 rightY -= lineGap;
                 defaultFont.draw(spriteBatch, "Loaded Chunks: " + chunkCount, rightColX, rightY);
                 rightY -= lineGap;
@@ -1754,13 +1757,22 @@ public class Hud implements Disposable {
         Gate gate = maze.getGates().get(frontTile);
         if (gate != null) {
             boolean isChunk = gate.isChunkTransitionGate();
+            String title = isChunk ? "Sector Passage Gate" : "Iron Portcullis";
+            String desc = isChunk ? "Gateway leading into an adjacent sector of Castle Tarmin." : "Massive iron portcullis barring the corridor.";
+            if (gate.getTheme() != null) {
+                title = gate.getRuneDisplayName(player);
+                desc = gate.getTheme().getDescription();
+            }
+            if (gate.isLocked()) {
+                desc += " [SEALED: Slay all colosseum combatants to unseal]";
+            }
             worldInteractionCard.show(
-                    isChunk ? "[EXPEDITION GATEWAY]" : "[DUNGEON PORTCULLIS]",
-                    "[GATE]",
-                    isChunk ? "Sector Passage Gate" : "Iron Portcullis",
-                    isChunk ? "Gateway leading into an adjacent sector of Castle Tarmin." : "Massive iron portcullis barring the corridor.",
+                    gate.getTheme() != null ? "[RUNIC PORTAL]" : (isChunk ? "[EXPEDITION GATEWAY]" : "[DUNGEON PORTCULLIS]"),
+                    gate.isLocked() ? "[SEALED]" : "[GATE]",
+                    title,
+                    desc,
                     "[ O ]",
-                    "Pass Through Gate",
+                    gate.isLocked() ? "Sealed Shut" : "Pass Through Gate",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
             return;
