@@ -15812,7 +15812,7 @@
 	"WHIP": {
 		"friendlyName": "Whip",
 		"description": null,
-		"texturePath": "images/weapons/chain_whip.png",
+		"texturePath": "images/weapons/whip.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16010,7 +16010,7 @@
 	"WHIP_MASTER_S": {
 		"friendlyName": "Whip, Master's",
 		"description": null,
-		"texturePath": "images/weapons/chain_whip.png",
+		"texturePath": "images/weapons/whip.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19082,7 +19082,7 @@
 	"BELAYING_PIN": {
 		"friendlyName": "Belaying Pin",
 		"description": null,
-		"texturePath": "images/weapons/club.png",
+		"texturePath": "images/weapons/belaying_pin.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19181,7 +19181,7 @@
 	"BLOWGUN": {
 		"friendlyName": "Blowgun",
 		"description": null,
-		"texturePath": "images/weapons/dart.png",
+		"texturePath": "images/weapons/blowgun.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19280,7 +19280,7 @@
 	"BLOWGUN_BARBED_DART": {
 		"friendlyName": "Blowgun, Barbed Dart",
 		"description": null,
-		"texturePath": "images/weapons/dart.png",
+		"texturePath": "images/weapons/blowgun.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -19379,7 +19379,7 @@
 	"BLOWGUN_NEEDLE": {
 		"friendlyName": "Blowgun, Needle",
 		"description": null,
-		"texturePath": "images/weapons/dart.png",
+		"texturePath": "images/weapons/blowgun.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20171,7 +20171,7 @@
 	"CALTROP": {
 		"friendlyName": "Caltrop",
 		"description": null,
-		"texturePath": "images/weapons/spike_elbow.png",
+		"texturePath": "images/weapons/caltrop.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22349,7 +22349,7 @@
 	"HARPOON_TWO_HANDED": {
 		"friendlyName": "Harpoon, Two-Handed",
 		"description": null,
-		"texturePath": "images/weapons/spear_heavy_two_handed.png",
+		"texturePath": "images/weapons/harpoon_two_handed.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23537,7 +23537,7 @@
 	"LANCE_HEAVY_HORSE1": {
 		"friendlyName": "Lance, Heavy Horse1",
 		"description": null,
-		"texturePath": "images/weapons/spear_heavy_two_handed.png",
+		"texturePath": "images/weapons/lance_jousting.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23636,7 +23636,7 @@
 	"LANCE_JOUSTING1": {
 		"friendlyName": "Lance, Jousting1",
 		"description": null,
-		"texturePath": "images/weapons/spear_heavy_two_handed.png",
+		"texturePath": "images/weapons/lance_jousting.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23735,7 +23735,7 @@
 	"LANCE_LIGHT_HORSE1": {
 		"friendlyName": "Lance, Light Horse1",
 		"description": null,
-		"texturePath": "images/weapons/spear_long_two_handed3.png",
+		"texturePath": "images/weapons/lance_cavalry.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23834,7 +23834,7 @@
 	"LANCE_MEDIUM_HORSE1": {
 		"friendlyName": "Lance, Medium Horse1",
 		"description": null,
-		"texturePath": "images/weapons/spear_long_two_handed3.png",
+		"texturePath": "images/weapons/lance_cavalry.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -23933,7 +23933,7 @@
 	"LASSO": {
 		"friendlyName": "Lasso",
 		"description": null,
-		"texturePath": "images/weapons/chain_whip.png",
+		"texturePath": "images/weapons/lasso.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24626,7 +24626,7 @@
 	"MANCATCHER2": {
 		"friendlyName": "Mancatcher2",
 		"description": null,
-		"texturePath": "images/weapons/polearm_fauchard_fork.png",
+		"texturePath": "images/weapons/mancatcher.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -24824,7 +24824,7 @@
 	"NET": {
 		"friendlyName": "Net",
 		"description": null,
-		"texturePath": "images/weapons/chain_whip.png",
+		"texturePath": "images/weapons/net.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25022,7 +25022,7 @@
 	"PICK_HORSEMAN_S": {
 		"friendlyName": "Pick, Horseman's",
 		"description": null,
-		"texturePath": "images/weapons/pick_footman_s.png",
+		"texturePath": "images/weapons/pick_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25121,7 +25121,7 @@
 	"PICK_ICE": {
 		"friendlyName": "Pick, Ice",
 		"description": null,
-		"texturePath": "images/weapons/pick_footman_s.png",
+		"texturePath": "images/weapons/pick_horseman.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -26507,7 +26507,7 @@
 	"RAZOR": {
 		"friendlyName": "Razor",
 		"description": null,
-		"texturePath": "images/weapons/dagger.png",
+		"texturePath": "images/weapons/razor.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
