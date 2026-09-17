@@ -15,7 +15,10 @@ public class Scenery implements Renderable {
         BUSH,
         CACTUS,
         SANDSTONE_ROCK,
-        STATUE
+        STATUE,
+        LOW_COVER_RUBBLE,
+        LOW_COVER_ALTAR,
+        LOW_COVER_BARRICADE
     }
 
     private final SceneryType type;
@@ -55,6 +58,12 @@ public class Scenery implements Renderable {
                 this.impassable = true;
                 this.scale.set(1.0f, 0.8f); // <-- ADDED THIS (Slightly shorter)
                 break;
+            case LOW_COVER_RUBBLE:
+            case LOW_COVER_ALTAR:
+            case LOW_COVER_BARRICADE:
+                this.impassable = true;
+                this.scale.set(1.0f, 0.7f); // Half-height obstacle billboard
+                break;
             case BUSH:
                 this.impassable = false;
                 this.scale.set(1.0f, 0.75f); // <-- ADDED THIS (Shorter)
@@ -75,6 +84,12 @@ public class Scenery implements Renderable {
 
     public boolean isImpassable() {
         return impassable;
+    }
+
+    public boolean isLowCover() {
+        return type == SceneryType.LOW_COVER_RUBBLE
+                || type == SceneryType.LOW_COVER_ALTAR
+                || type == SceneryType.LOW_COVER_BARRICADE;
     }
 
     // --- Renderable Implementation ---

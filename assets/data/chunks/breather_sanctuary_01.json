@@ -1,0 +1,35 @@
+{
+  "id": "breather_sanctuary_01",
+  "archetype": "SANCTUARY",
+  "minStrata": 1,
+  "maxStrata": 10,
+  "pacingWeight": 50,
+  "sockets": {
+    "NORTH": "CORRIDOR_1",
+    "SOUTH": "CORRIDOR_1",
+    "EAST": "CORRIDOR_1",
+    "WEST": "CORRIDOR_1"
+  },
+  "layout": [
+    "#####.######",
+    "#..........#",
+    "#...####...#",
+    "#...#..#...#",
+    "#...#F.#...#",
+    "....#..#....",
+    "#...####...#",
+    "#..........#",
+    "#...o..o...#",
+    "#..........#",
+    "#..........#",
+    "#####.######"
+  ],
+  "tileLegend": {
+    "#": "WALL",
+    ".": "FLOOR",
+    "o": "LOW_COVER_RUBBLE",
+    "F": "CAMPFIRE"
+  },
+  "hazardSlots": 0,
+  "decalSlots": 1
+}

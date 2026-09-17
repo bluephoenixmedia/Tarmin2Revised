@@ -427,12 +427,23 @@ public class Maze {
             return false;
         }
 
+        // Check for impassable scenery (trees, rocks, low cover)
+        Scenery sc = scenery.get(new GridPoint2(x, y));
+        if (sc != null && sc.isImpassable()) {
+            return false;
+        }
+
         // Monsters are impassable
         if (monsters.containsKey(new GridPoint2(x, y))) {
             return false;
         }
 
         return true;
+    }
+
+    public boolean isLowCover(int x, int y) {
+        Scenery sc = scenery.get(new GridPoint2(x, y));
+        return sc != null && sc.isLowCover();
     }
 
     public void openDoorAt(int x, int y) {

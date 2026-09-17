@@ -1,0 +1,34 @@
+{
+  "id": "chasm_walkway_01",
+  "archetype": "CHASM_WALKWAY",
+  "minStrata": 2,
+  "maxStrata": 10,
+  "pacingWeight": 80,
+  "sockets": {
+    "NORTH": "CORRIDOR_1",
+    "SOUTH": "CORRIDOR_1",
+    "EAST": "CORRIDOR_1",
+    "WEST": "CORRIDOR_1"
+  },
+  "layout": [
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    ".....o......",
+    ".....o......",
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#####.######"
+  ],
+  "tileLegend": {
+    "#": "WALL",
+    ".": "FLOOR",
+    "o": "LOW_COVER_RUBBLE"
+  },
+  "hazardSlots": 2,
+  "decalSlots": 2
+}

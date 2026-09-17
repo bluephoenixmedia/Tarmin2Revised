@@ -695,6 +695,64 @@ public class SoundManager {
         }
     }
 
+    /**
+     * Computes acoustic volume attenuation based on Euclidean distance and Bresenham wall occlusion.
+     * Each solid stone wall (#) between sound origin and listener reduces volume by 30% (-4dB).
+     *
+     * @param maze The active dungeon maze
+     * @param sourceX Grid X of sound emitter
+     * @param sourceY Grid Y of sound emitter
+     * @param listenerX Grid X of listener (player)
+     * @param listenerY Grid Y of listener (player)
+     * @param baseVolume Unattenuated volume (0.0 - 1.0)
+     * @return Attenuated gain factor
+     */
+    public float calculateOccludedVolume(com.bpm.minotaur.gamedata.Maze maze,
+                                         int sourceX, int sourceY,
+                                         int listenerX, int listenerY,
+                                         float baseVolume) {
+        if (maze == null) return baseVolume;
+
+        float dist = (float) Math.sqrt(Math.pow(sourceX - listenerX, 2) + Math.pow(sourceY - listenerY, 2));
+        float distFactor = 1.0f / (1.0f + 0.15f * dist);
+
+        int wallCount = countWallsBetween(maze, sourceX, sourceY, listenerX, listenerY);
+        float wallFactor = (float) Math.pow(0.70, wallCount);
+
+        return Math.max(0.02f, baseVolume * distFactor * wallFactor);
+    }
+
+    private int countWallsBetween(com.bpm.minotaur.gamedata.Maze maze, int x0, int y0, int x1, int y1) {
+        int walls = 0;
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = (x0 < x1) ? 1 : -1;
+        int sy = (y0 < y1) ? 1 : -1;
+        int err = dx - dy;
+
+        int currX = x0;
+        int currY = y0;
+
+        while (currX != x1 || currY != y1) {
+            int e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                currX += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                currY += sy;
+            }
+
+            if (currX == x1 && currY == y1) break;
+
+            if (maze.isWall(currX, currY)) {
+                walls++;
+            }
+        }
+        return walls;
+    }
+
     public void dispose() {
         stopAllSounds();
         for (Sound sound : modernSounds.values()) {
