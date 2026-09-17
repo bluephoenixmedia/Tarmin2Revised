@@ -157,21 +157,45 @@ public class MazeChunkGenerator implements IChunkGenerator {
         random.setSeed(chunkSeed);
         Gdx.app.log("MazeChunkGenerator", "Generating Chunk " + chunkId + " with Seed: " + chunkSeed);
 
-        int mapRows = (gameMode == GameMode.ADVANCED) ? 3 : 2;
-        int mapCols = (gameMode == GameMode.ADVANCED) ? 3 : 2;
+        boolean isStartChunk = (chunkId.x == 0 && chunkId.y == 0 && layoutLevel == 1);
 
-        int attempts = 0;
-        int maxAttempts = 50;
+        if (gameMode == GameMode.ADVANCED) {
+            com.bpm.minotaur.telemetry.TelemetryManager.DirectorPacingState pacingState =
+                    com.bpm.minotaur.telemetry.TelemetryManager.getInstance().evaluateDirectorPacing(null);
+            MacroMissionGraphGenerator graphGen = new MacroMissionGraphGenerator(ModularChunkLoader.getInstance(), chunkSeed);
+            MacroMissionGraphGenerator.GeneratedMapResult mapResult =
+                    graphGen.generate3x3Strata(layoutLevel, pacingState, isStartChunk, homeTile);
+            this.finalLayout = mapResult.layout;
+            this.currentChunkHomeTiles.clear();
+            if (isStartChunk) {
+                // Pos (1, 1) in 3x3 grid corresponds to sub-chunk (x: 12..23, y: 12..23 in top-down layout)
+                for (int ty = 0; ty < 12; ty++) {
+                    for (int tx = 0; tx < 12; tx++) {
+                        if (ty >= 3 && ty <= 7 && tx >= 3 && tx <= 8) {
+                            int gameX = 1 * 12 + tx;
+                            int gameY = 36 - 1 - (1 * 12 + ty);
+                            currentChunkHomeTiles.add(new GridPoint2(gameX, gameY));
+                        }
+                    }
+                }
+            }
+        } else {
+            // CLASSIC RETRO MODE: strictly preserve original 16-tile array and 2x2 layout
+            int mapRows = 2;
+            int mapCols = 2;
+            int attempts = 0;
+            int maxAttempts = 50;
 
-        do {
-            createMazeFromArrayTiles(mapRows, mapCols, chunkId, layoutLevel);
-            attempts++;
-        } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
+            do {
+                createMazeFromArrayTiles(mapRows, mapCols, chunkId, layoutLevel);
+                attempts++;
+            } while (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos) && attempts < maxAttempts);
 
-        if (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos)) {
-            Gdx.app.log("MazeChunkGenerator", "Forcing clear tile at " + forcedUpLadderPos + " after " + attempts
-                    + " failed generation attempts.");
-            forceClearTile(forcedUpLadderPos);
+            if (forcedUpLadderPos != null && !isValidSpawnPosition(forcedUpLadderPos)) {
+                Gdx.app.log("MazeChunkGenerator", "Forcing clear tile at " + forcedUpLadderPos + " after " + attempts
+                        + " failed generation attempts.");
+                forceClearTile(forcedUpLadderPos);
+            }
         }
 
         Maze maze = createMazeFromText(layoutLevel, this.finalLayout, itemDataManager, assetManager);
@@ -216,7 +240,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
      */
     public void spawnShopkeeper(Maze maze, String[] layout, Set<GridPoint2> reachable, ItemDataManager itemDataManager,
             AssetManager assetManager) {
-        if (maze.getLevel() < 1 || maze.getLevel() > 2)
+        if (maze.getLevel() < 1 || maze.getLevel() > 2 || itemDataManager == null)
             return;
 
         List<GridPoint2> candidates = new ArrayList<>();
@@ -309,6 +333,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
     private void spawnEntities(Maze maze, Difficulty difficulty, int level, String[] layout,
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             SpawnTableData spawnTableData, long chunkSeed, int playerLuck, Set<GridPoint2> reachable) {
+
+        if (spawnTableData == null) {
+            return;
+        }
 
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
@@ -662,7 +690,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     maze.addGameObject(new Window(x, y), x, y); // NEW: Window
                 else if (c == 'S' || c == 'H') {
                     // --- NEW: Tarmin's Hunger Loot Decay ---
-                    if (random.nextFloat() < com.bpm.minotaur.managers.DoomManager.getInstance()
+                    if (itemDataManager != null && random.nextFloat() < com.bpm.minotaur.managers.DoomManager.getInstance()
                             .getLootChanceMultiplier()) {
                         if (c == 'S')
                             maze.addItem(itemDataManager.createItem(Item.ItemType.POTION_BLUE, x, y, ItemColor.BLUE,
@@ -675,7 +703,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 } else if (c == 'C') {
                     com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                    if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST)) {
                         maze.addItem(
                                 itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
@@ -683,18 +711,20 @@ public class MazeChunkGenerator implements IChunkGenerator {
                 } else if (c == 'N') {
                     com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                    if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH)) {
                         maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
                                 assetManager));
                     }
                 } else if (c == 'A') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
-                            assetManager));
+                    if (itemDataManager != null) {
+                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
+                                assetManager));
+                    }
                 } else if (c == 'B') {
                     com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                    if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED)) {
                         maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
                                 assetManager));
@@ -704,8 +734,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
                     if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
+                        if (itemDataManager != null) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
+                        }
                         maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
                                 LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
                                 LightSource.FlickerProfile.CAMPFIRE_FLICKER));
@@ -715,11 +747,22 @@ public class MazeChunkGenerator implements IChunkGenerator {
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
                     if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
+                        if (itemDataManager != null) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
+                        }
                         maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
                                 LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                                 LightSource.FlickerProfile.LANTERN_BREATH));
+                    }
+                } else if (c == 'o') {
+                    // Low cover obstacle (rubble / barricade)
+                    Scenery rubble = new Scenery(Scenery.SceneryType.LOW_COVER_RUBBLE, x, y, "images/debris/broken_column.png");
+                    maze.addScenery(rubble);
+                } else if (c == '~') {
+                    // Shallow water
+                    if (maze.getLiquidManager() != null) {
+                        maze.getLiquidManager().setLiquidAt(x, y, com.bpm.minotaur.gamedata.liquid.LiquidType.WATER);
                     }
                 }
             }

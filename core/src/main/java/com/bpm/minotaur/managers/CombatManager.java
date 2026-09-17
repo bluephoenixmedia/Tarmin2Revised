@@ -241,7 +241,7 @@ public class CombatManager {
             }
             if (maze.getScenery() != null && maze.getScenery().containsKey(currentPos)) {
                 Scenery s = maze.getScenery().get(currentPos);
-                if (s.isImpassable()) {
+                if (s.isImpassable() && !s.isLowCover()) {
                     return new HitResult(currentPos, HitResult.HitType.WALL, null);
                 }
             }
@@ -258,6 +258,24 @@ public class CombatManager {
             }
         }
         return new HitResult(new GridPoint2(currentX, currentY), HitResult.HitType.NOTHING, null);
+    }
+
+    public boolean hasLowCoverBetween(Vector2 origin, Vector2 target) {
+        if (maze == null || origin == null || target == null) return false;
+        int tX = (int) target.x;
+        int tY = (int) target.y;
+        int oX = (int) origin.x;
+        int oY = (int) origin.y;
+
+        int dx = Integer.compare(oX, tX);
+        int dy = Integer.compare(oY, tY);
+
+        if (dx != 0 && dy == 0 && maze.isLowCover(tX + dx, tY)) return true;
+        if (dy != 0 && dx == 0 && maze.isLowCover(tX, tY + dy)) return true;
+        if (dx != 0 && dy != 0) {
+            if (maze.isLowCover(tX + dx, tY) || maze.isLowCover(tX, tY + dy)) return true;
+        }
+        return false;
     }
 
     public void startCombat(Monster monster) {
@@ -894,10 +912,14 @@ public class CombatManager {
 
         if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
+            int targetAC = target.getArmorClass();
+            if (hasLowCoverBetween(player.getPosition(), target.getPosition())) {
+                targetAC += 3;
+            }
             if (Monster.isImmuneToType(target.getType(), DamageType.PHYSICAL)) {
                 eventManager.addEvent(new GameEvent(target.getType() + " is immune to thrown weapons!", 1.5f));
                 showDamageText(0, hit.collisionPoint);
-            } else if (attackRoll >= target.getArmorClass()) {
+            } else if (attackRoll >= targetAC) {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
@@ -1357,6 +1379,9 @@ public class CombatManager {
         }
         int attackRoll = d20Roll + toHitBonus;
         int targetAC = monster.getArmorClass();
+        if (pendingWeapon != null && pendingWeapon.isRanged() && hasLowCoverBetween(player.getPosition(), monster.getPosition())) {
+            targetAC += 3;
+        }
         boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());
         boolean isHit = isHit(attackRoll, targetAC, isCrit);
         boolean isGlancing = isGlancingBlow(attackRoll, targetAC, isCrit);
@@ -1670,6 +1695,9 @@ public class CombatManager {
         int d20Roll = DiceRoller.d20();
         int attackRoll = d20Roll + attackBonus;
         int targetAC = player.getArmorClass();
+        if (hasLowCoverBetween(attacker.getPosition(), player.getPosition())) {
+            targetAC += 3;
+        }
 
         int actualDamage = 0;
         if (attackRoll >= targetAC) {

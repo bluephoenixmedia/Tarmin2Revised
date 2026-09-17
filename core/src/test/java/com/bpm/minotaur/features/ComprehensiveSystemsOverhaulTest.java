@@ -67,13 +67,6 @@ public class ComprehensiveSystemsOverhaulTest {
         ShelterAltar.getInstance().reset();
     }
 
-    @org.junit.After
-    public void tearDown() {
-        Gdx.app = null;
-        Gdx.files = null;
-        ShelterAltar.getInstance().reset();
-    }
-
     private ItemDataManager mockItemDataManager() {
         return new ItemDataManager() {
             @Override

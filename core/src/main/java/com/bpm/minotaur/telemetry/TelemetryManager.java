@@ -18,6 +18,12 @@ public class TelemetryManager {
 
     public enum HitType { HIT, GLANCING, MISS }
 
+    public enum DirectorPacingState {
+        HIGH_STRAIN,
+        NEUTRAL,
+        FLOW
+    }
+
     private static TelemetryManager instance;
 
     public static synchronized TelemetryManager getInstance() {
@@ -25,6 +31,25 @@ public class TelemetryManager {
             instance = new TelemetryManager();
         }
         return instance;
+    }
+
+    public DirectorPacingState evaluateDirectorPacing(com.bpm.minotaur.gamedata.player.Player player) {
+        if (player == null) return DirectorPacingState.NEUTRAL;
+
+        float currentHpPercent = ((float) player.getCurrentHP() / Math.max(1, player.getMaxHP())) * 100f;
+        int injuryCount = (player.getInjuryManager() != null && player.getInjuryManager().getInjuries() != null)
+                ? player.getInjuryManager().getInjuries().size() : 0;
+        int recentDeaths = (causeOfDeath != null) ? 1 : 0;
+
+        float strainScore = currentHpPercent - (injuryCount * 15f) - (recentDeaths * 25f);
+
+        if (strainScore < 40f) {
+            return DirectorPacingState.HIGH_STRAIN;
+        } else if (strainScore > 75f) {
+            return DirectorPacingState.FLOW;
+        } else {
+            return DirectorPacingState.NEUTRAL;
+        }
     }
 
     private String runId;

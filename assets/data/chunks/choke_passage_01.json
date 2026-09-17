@@ -1,0 +1,34 @@
+{
+  "id": "choke_passage_01",
+  "archetype": "CHOKE",
+  "minStrata": 1,
+  "maxStrata": 10,
+  "pacingWeight": 120,
+  "sockets": {
+    "NORTH": "CORRIDOR_1",
+    "SOUTH": "CORRIDOR_1",
+    "EAST": "WALL",
+    "WEST": "WALL"
+  },
+  "layout": [
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#.....######",
+    "#.##########",
+    "#.##########",
+    "#.##########",
+    "#.....######",
+    "#####.######",
+    "#####.######",
+    "#####.######",
+    "#####.######"
+  ],
+  "tileLegend": {
+    "#": "WALL",
+    ".": "FLOOR",
+    "o": "LOW_COVER_RUBBLE"
+  },
+  "hazardSlots": 1,
+  "decalSlots": 2
+}
