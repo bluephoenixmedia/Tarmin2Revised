@@ -269,9 +269,7 @@ public class BonesManager {
     }
 
     private FileHandle getFileHandle(String path) {
-        if (Gdx.files != null) {
-            return Gdx.files.local(path);
-        }
+        // Bones files are runtime local saves in saves/bones/, always resolve to direct file
         return new FileHandle(new File(path));
     }
 
