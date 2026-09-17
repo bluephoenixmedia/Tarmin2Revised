@@ -14921,7 +14921,7 @@
 	"SWORDLET": {
 		"friendlyName": "Swordlet",
 		"description": null,
-		"texturePath": "images/weapons/sword_short.png",
+		"texturePath": "images/weapons/swordlet.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -15020,7 +15020,7 @@
 	"TALID": {
 		"friendlyName": "Talid",
 		"description": null,
-		"texturePath": "images/weapons/bagh_nakh_tiger_claws.png",
+		"texturePath": "images/weapons/talid.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -15119,7 +15119,7 @@
 	"TORTOISE_BLADES": {
 		"friendlyName": "Tortoise Blades",
 		"description": null,
-		"texturePath": "images/weapons/bagh_nakh_tiger_claws.png",
+		"texturePath": "images/weapons/tortoise_blades.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -16109,7 +16109,7 @@
 	"WRIST_RAZOR": {
 		"friendlyName": "Wrist Razor",
 		"description": null,
-		"texturePath": "images/weapons/bagh_nakh_tiger_claws.png",
+		"texturePath": "images/weapons/wrist_razor.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -20963,7 +20963,7 @@
 	"DAGGER_CLIMBING": {
 		"friendlyName": "Dagger, Climbing",
 		"description": null,
-		"texturePath": "images/weapons/knife.png",
+		"texturePath": "images/weapons/dagger_climbing.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22151,7 +22151,7 @@
 	"GLADIATOR_S_FRIEND_FOOTMAN_S": {
 		"friendlyName": "Gladiator's Friend, Footman's",
 		"description": null,
-		"texturePath": "images/weapons/sword_short.png",
+		"texturePath": "images/weapons/gladiators_friend.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -22250,7 +22250,7 @@
 	"GLADIATOR_S_FRIEND_HORSEMAN_S": {
 		"friendlyName": "Gladiator's Friend, Horseman's",
 		"description": null,
-		"texturePath": "images/weapons/sword_short.png",
+		"texturePath": "images/weapons/gladiators_friend.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25418,7 +25418,7 @@
 	"POLEARM_MILITARY_FORK4": {
 		"friendlyName": "Polearm, Military Fork4",
 		"description": null,
-		"texturePath": "images/weapons/polearm_fauchard_fork.png",
+		"texturePath": "images/weapons/polearm_military_fork.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25616,7 +25616,7 @@
 	"POLEARM_PARTISAN3": {
 		"friendlyName": "Polearm, Partisan3",
 		"description": null,
-		"texturePath": "images/weapons/polearm_awl_pike3.png",
+		"texturePath": "images/weapons/polearm_partisan.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -25814,7 +25814,7 @@
 	"POLEARM_RANSEUR3": {
 		"friendlyName": "Polearm, Ranseur3",
 		"description": null,
-		"texturePath": "images/weapons/polearm_fauchard_fork.png",
+		"texturePath": "images/weapons/polearm_ranseur.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
