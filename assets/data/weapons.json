@@ -540,7 +540,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 8,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -550,9 +550,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 6,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 5
 			}
 		],
 		"damageType": "PIERCING",
@@ -561,7 +561,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ASSEGAI": {
 		"friendlyName": "Assegai",
@@ -2546,7 +2548,7 @@
 	"CLUB_DWARVEN_WAR": {
 		"friendlyName": "Club, Dwarven War",
 		"description": null,
-		"texturePath": "images/weapons/club_great.png",
+		"texturePath": "images/weapons/club_dwarven_war.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -3338,7 +3340,7 @@
 	"FLAIL_BLADEBACK": {
 		"friendlyName": "Flail, Bladeback",
 		"description": null,
-		"texturePath": "images/weapons/flail_horseman.png",
+		"texturePath": "images/weapons/flail_bladeback.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -3437,7 +3439,7 @@
 	"FLAIL_CHAIN": {
 		"friendlyName": "Flail, Chain",
 		"description": null,
-		"texturePath": "images/weapons/flail_footman.png",
+		"texturePath": "images/weapons/flail_chain.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -6803,7 +6805,7 @@
 	"POLEARM_BILL_GUISARME": {
 		"friendlyName": "Polearm, Bill-Guisarme",
 		"description": null,
-		"texturePath": "images/weapons/polearm_guisarme.png",
+		"texturePath": "images/weapons/polearm_bill_guisarme.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -8262,7 +8264,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 12,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -8274,7 +8276,7 @@
 				"color": "TAN",
 				"minLevel": 1,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 8
 			}
 		],
 		"damageType": "PIERCING",
@@ -8283,7 +8285,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"QUARTERSTAFF": {
 		"friendlyName": "Quarterstaff",
@@ -15416,7 +15420,7 @@
 	"TROMBASH_HELD": {
 		"friendlyName": "Trombash, Held",
 		"description": null,
-		"texturePath": "images/weapons/axe.png",
+		"texturePath": "images/weapons/trombash_held.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -15515,7 +15519,7 @@
 	"TROMBASH_THROWN": {
 		"friendlyName": "Trombash, Thrown",
 		"description": null,
-		"texturePath": "images/weapons/axe.png",
+		"texturePath": "images/weapons/trombash_thrown.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -17967,7 +17971,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 15,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -17979,7 +17983,7 @@
 				"color": "TAN",
 				"minLevel": 1,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 10
 			}
 		],
 		"damageType": "PIERCING",
@@ -17988,7 +17992,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_FORGET": {
 		"friendlyName": "Arrow, Forget",
@@ -18066,7 +18072,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 8,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18076,9 +18082,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 2,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 5
 			}
 		],
 		"damageType": "PIERCING",
@@ -18087,7 +18093,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_GIANT_KIN": {
 		"friendlyName": "Arrow, Giant-kin",
@@ -18165,7 +18173,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 8,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18175,9 +18183,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 5,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 5
 			}
 		],
 		"damageType": "PIERCING",
@@ -18186,7 +18194,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_KENYAN": {
 		"friendlyName": "Arrow, Kenyan",
@@ -18363,7 +18373,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 10,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18373,9 +18383,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 4,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 6
 			}
 		],
 		"damageType": "PIERCING",
@@ -18384,7 +18394,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_SHEAF": {
 		"friendlyName": "Arrow, Sheaf",
@@ -18462,7 +18474,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 14,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18472,9 +18484,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 2,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 8
 			}
 		],
 		"damageType": "PIERCING",
@@ -18483,7 +18495,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_SLEEP": {
 		"friendlyName": "Arrow, Sleep",
@@ -18561,7 +18575,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 8,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18571,9 +18585,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 2,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 5
 			}
 		],
 		"damageType": "PIERCING",
@@ -18582,7 +18596,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_STONE_FLIGHT": {
 		"friendlyName": "Arrow, Stone Flight",
@@ -18660,7 +18676,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 12,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18672,7 +18688,7 @@
 				"color": "TAN",
 				"minLevel": 1,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 8
 			}
 		],
 		"damageType": "PIERCING",
@@ -18681,7 +18697,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"ARROW_WAR": {
 		"friendlyName": "Arrow, War",
@@ -18759,7 +18777,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 15,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -18769,9 +18787,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 3,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 10
 			}
 		],
 		"damageType": "PIERCING",
@@ -18780,7 +18798,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"AXE_FOREARM": {
 		"friendlyName": "Axe, Forearm",
@@ -20468,7 +20488,7 @@
 	"CROSSBOW_DISK": {
 		"friendlyName": "Crossbow, Disk",
 		"description": null,
-		"texturePath": "images/weapons/crossbow_heavy.png",
+		"texturePath": "images/weapons/crossbow_disk.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -21557,7 +21577,7 @@
 	"DISK_CROSSBOW": {
 		"friendlyName": "Disk, Crossbow",
 		"description": null,
-		"texturePath": "images/weapons/crossbow_heavy.png",
+		"texturePath": "images/weapons/crossbow_disk.png",
 		"modelPath": null,
 		"modelScale": 1,
 		"modelYOffset": 0,
@@ -26382,7 +26402,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 15,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -26392,9 +26412,9 @@
 		"variants": [
 			{
 				"color": "TAN",
-				"minLevel": 1,
+				"minLevel": 3,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 10
 			}
 		],
 		"damageType": "PIERCING",
@@ -26403,7 +26423,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"QUARREL_LIGHT": {
 		"friendlyName": "Quarrel, Light",
@@ -26481,7 +26503,7 @@
 		"nutrition": 0,
 		"hydrationValue": 0,
 		"warmthBonus": 0,
-		"probability": 0,
+		"probability": 15,
 		"isImpassable": false,
 		"scale": {
 			"x": 1,
@@ -26493,7 +26515,7 @@
 				"color": "TAN",
 				"minLevel": 1,
 				"maxLevel": 99,
-				"weight": 1
+				"weight": 10
 			}
 		],
 		"damageType": "PIERCING",
@@ -26502,7 +26524,9 @@
 		"isReach": false,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": false
+		"isTwoHanded": false,
+		"isAmmunition": true,
+		"category": "AMMUNITION"
 	},
 	"RAZOR": {
 		"friendlyName": "Razor",

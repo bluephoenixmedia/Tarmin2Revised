@@ -638,10 +638,10 @@ public class Player {
 
             if (itemAtFeet.getType() == Item.ItemType.QUIVER || itemAtFeet.isAmmunition()) {
                 soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(4) + 6;
+                int arrowsFound = new Random().nextInt(7) + 8;
                 stats.addArrows(arrowsFound);
                 maze.getItems().remove(playerTile2);
-                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " " + itemAtFeet.getDisplayName() + ".", 2f));
+                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemAtFeet.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
                 BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
                 return;
             }
@@ -705,10 +705,10 @@ public class Player {
             }
             if (itemInFront.getType() == Item.ItemType.QUIVER || itemInFront.isAmmunition()) {
                 soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(4) + 6;
+                int arrowsFound = new Random().nextInt(7) + 8;
                 stats.addArrows(arrowsFound);
                 maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("You found " + arrowsFound + " " + itemInFront.getDisplayName() + ".", 2f));
+                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemInFront.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
 
                 // --- LOGGING ---
                 BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
@@ -2081,6 +2081,21 @@ public class Player {
 
         if (maze.getLiquidManager() != null) {
             maze.getLiquidManager().onPlayerStep(nextX, nextY, this, eventManager);
+        }
+
+        // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts) on step ---
+        Item steppedItem = maze.getItems().get(nextTile);
+        if (steppedItem != null && (steppedItem.getType() == Item.ItemType.QUIVER || steppedItem.isAmmunition())) {
+            if (soundManager != null) {
+                soundManager.playPickupItemSound();
+            }
+            int arrowsFound = new Random().nextInt(7) + 8;
+            stats.addArrows(arrowsFound);
+            maze.getItems().remove(nextTile);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + steppedItem.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
+            }
+            BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
         }
 
         // --- VOID SIGHT LORE INSCRIPTIONS ---

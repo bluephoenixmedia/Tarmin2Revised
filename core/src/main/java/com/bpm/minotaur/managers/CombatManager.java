@@ -640,7 +640,8 @@ public class CombatManager {
             this.pendingIsRanged = weapon.isRanged();
 
             if (pendingIsRanged && weapon.getType() != Item.ItemType.DART && player.getArrows() <= 0) {
-                eventManager.addEvent(new GameEvent("You have no arrows!", 2f));
+                String ammoName = (weapon.getType() == Item.ItemType.CROSSBOW || (weapon.getFriendlyName() != null && weapon.getFriendlyName().toLowerCase().contains("crossbow"))) ? "bolts" : "arrows";
+                eventManager.addEvent(new GameEvent("You have no " + ammoName + "!", 2f));
                 passTurnToMonster();
                 return false;
             }
@@ -1372,6 +1373,11 @@ public class CombatManager {
     private void resolveAttack(int d20Roll, boolean stateless) {
         if (monster == null)
             return;
+
+        // Consume ammunition for ranged weapons (bows, crossbows)
+        if (pendingWeapon != null && pendingWeapon.isRanged() && pendingWeapon.getType() != Item.ItemType.DART) {
+            player.decrementArrow();
+        }
 
         int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         if (player.getInjuryManager() != null) {

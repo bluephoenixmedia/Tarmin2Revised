@@ -82,7 +82,9 @@ public class ItemDataManager {
                 }
                 if (type == ItemType.QUIVER) {
                     template.isAmmunition = true;
-                    template.probability = 15;
+                    if (template.probability < 20) {
+                        template.probability = 20;
+                    }
                 }
                 itemTemplates.put(type, template);
             }

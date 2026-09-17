@@ -2151,7 +2151,10 @@
                 "maxLevel": 99,
                 "weight": 21
             }
-        ]
+        ],
+        "category": "AMMUNITION",
+        "isAmmunition": true,
+        "probability": 25
     },
     "WAR_BOOK": {
         "friendlyName": "War Book",
