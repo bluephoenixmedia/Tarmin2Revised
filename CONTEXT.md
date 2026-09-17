@@ -23,9 +23,8 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Discovery**: Identification status of potions, scrolls, and magical items (no cursed item locks).
 
 ## Key Architectural Invariants
-- **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, retro wireframe presentation, and classic soundscape. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop. See [Retro Mode Preservation Charter](file:///c:/Users/denni/Desktop/Tarmin2/docs/DEsign/Retro_Mode_Preservation_Charter.md).
+- **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.
 - **Consult Active Architecture Specs**:
-  - `docs/DEsign/Retro_Mode_Preservation_Charter.md` (Authentic Classic mode visual, audio, and architectural isolation rules)
   - `docs/DEsign/Design Document_ Procedural Maze Chunk Architecture & Generation.md` (Modular 12x12 chunk archetypes, cyclic lock-and-key, low-cover +3 AC, Telemetry Director)
   - `docs/Implementation Plan_ The Expedition Loop & Progression Reboot.md` (Delve & Return Expedition loop)
   - `docs/DEsign/2D RPG Paperdoll System Architecture.md` (Paperdoll layer rendering and weapon slotting)
