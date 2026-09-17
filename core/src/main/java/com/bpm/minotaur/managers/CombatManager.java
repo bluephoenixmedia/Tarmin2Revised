@@ -22,6 +22,8 @@ import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.screens.GameScreen;
 import com.bpm.minotaur.gamedata.injury.InjuryRecord;
+import com.bpm.minotaur.gamedata.monster.GhostPlayerMonster;
+import com.bpm.minotaur.gamedata.bones.BonesData;
 
 import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.dice.DieResult;
@@ -2062,6 +2064,11 @@ public class CombatManager {
     }
 
     private void performMonsterSpell() {
+        if (monster instanceof GhostPlayerMonster) {
+            ((GhostPlayerMonster) monster).performGhostSpell(player, eventManager, soundManager);
+            currentState = CombatState.PLAYER_MENU;
+            return;
+        }
         eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
         int spellDmg = 5 + monster.getIntelligence();
         player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
@@ -2241,6 +2248,26 @@ public class CombatManager {
         currentState = CombatState.VICTORY;
         Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
         eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
+
+        if (monster instanceof GhostPlayerMonster) {
+            GhostPlayerMonster ghost = (GhostPlayerMonster) monster;
+            BonesData bData = ghost.getBonesData();
+            if (bData != null) {
+                bData.defeated = true;
+                BonesManager.getInstance().consumeBones(bData);
+                if (maze != null && maze.getScenery() != null) {
+                    for (Scenery s : maze.getScenery().values()) {
+                        if (s.isDecomposingCorpse() && s.getBonesData() != null
+                                && s.getBonesData().id != null && s.getBonesData().id.equals(bData.id)) {
+                            s.getBonesData().defeated = true;
+                        }
+                    }
+                }
+            }
+            eventManager.addEvent(new GameEvent("The ghost of " + ghost.getGhostPlayerName() + " has been laid to rest!", 3f));
+            eventManager.addEvent(new GameEvent("The decomposing remains can now be safely looted!", 3f));
+        }
+
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster.getMonsterType());
         int baseExp = monster.getBaseExperience();

@@ -39,7 +39,7 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.*;
-
+import com.bpm.minotaur.gamedata.bones.BonesData;
 import com.bpm.minotaur.rendering.*;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry;
@@ -1008,6 +1008,9 @@ public class GameScreen extends BaseScreen {
     private void handleSystemEvents() {
         GameEvent event;
 
+        // NetHack-style bones ghostly presence notification check on chunk entry
+        checkBonesPresenceNotification();
+
         // Centralized Player Death Check: any damage (combat, environmental, fatigue) reducing HP to 0 triggers death
         if (player != null && player.getCurrentHP() <= 0) {
             killPlayer();
@@ -1103,6 +1106,21 @@ public class GameScreen extends BaseScreen {
             // attacks or status ticks landing the same instant) so only one demise
             // is ever processed per expedition run.
             eventManager.consumeAll(GameEvent.EventType.PLAYER_DIED);
+
+            // Record Bones File for Advanced Mode (full player snapshot before item retention)
+            if (gameMode == GameMode.ADVANCED) {
+                int curLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
+                String epitaph = "Fell in the depths";
+                try {
+                    com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
+                    if (player.getInjuryManager() != null) {
+                        telemetry.setBleedDamageTaken(player.getInjuryManager().getBleedDamageThisRun());
+                    }
+                    epitaph = buildEpitaph(telemetry);
+                } catch (Exception ignored) {
+                }
+                BonesManager.getInstance().recordBonesOnDeath(player, curLvl, epitaph, gameMode);
+            }
 
             // 1. Advance Doom Clock ("Tarmin's Hunger") -- idempotent per expedition run
             DoomManager.getInstance().recordDeath(activeExpeditionRunId);
@@ -2657,6 +2675,18 @@ public class GameScreen extends BaseScreen {
                 (int) (player.getPosition().y + v.y));
 
         GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+        // Check Decomposing Corpse (NetHack-style Bones remains)
+        Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;
+        Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
+        Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isDecomposingCorpse()) ? sceneryInFront
+                : (sceneryAtFeet != null && sceneryAtFeet.isDecomposingCorpse()) ? sceneryAtFeet : null;
+
+        if (corpseScenery != null) {
+            handleCorpseInteraction(corpseScenery);
+            return;
+        }
+
         Item itemOnTile = maze.getItems().get(currentTile);
         if (itemOnTile != null && itemOnTile.getType() == Item.ItemType.CORPSE) {
             CorpseLootScreen corpseScreen = new CorpseLootScreen(game, this, player, itemOnTile, maze);
@@ -2883,6 +2913,50 @@ public class GameScreen extends BaseScreen {
     public void pause() {
         if (player != null && worldManager != null) {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
+        }
+    }
+
+    private void checkBonesPresenceNotification() {
+        if (gameMode != GameMode.ADVANCED || worldManager == null) return;
+        BonesData activeBones = BonesManager.getInstance().getActiveFloorBones();
+        if (activeBones != null && !BonesManager.getInstance().isNotificationTriggered()) {
+            GridPoint2 curChunk = worldManager.getCurrentPlayerChunkId();
+            if (curChunk != null && curChunk.x == activeBones.chunkX && curChunk.y == activeBones.chunkY) {
+                BonesManager.getInstance().setNotificationTriggered(true);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You sense a familiar ghostly presence...", 3.5f));
+                }
+                if (hud != null) {
+                    hud.addMessage("A spectral chill prickles your skin... You sense a familiar ghostly presence.");
+                }
+                if (soundManager != null) {
+                    soundManager.playThunder();
+                }
+            }
+        }
+    }
+
+    private void handleCorpseInteraction(Scenery corpse) {
+        BonesData bData = corpse.getBonesData();
+        if (bData == null) {
+            if (hud != null) hud.addMessage("The weathered remains crumble silently to dust.");
+            return;
+        }
+
+        if (!bData.awakened) {
+            if (hud != null && hud.getBonesAwakenModal() != null) {
+                hud.getBonesAwakenModal().configureAndShow(
+                        corpse, bData, maze, player, eventManager, soundManager, game.getAssetManager()
+                );
+            }
+        } else if (!bData.defeated) {
+            if (hud != null) hud.addMessage("The wrathful ghost of " + bData.playerName + " blocks you from disturbing the remains!");
+            if (soundManager != null) {
+                soundManager.playSound("player_spiritual_attack");
+            }
+        } else {
+            GraveLootScreen lootScreen = new GraveLootScreen(game, this, player, bData);
+            game.setScreen(lootScreen);
         }
     }
 }

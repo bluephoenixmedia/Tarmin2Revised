@@ -18,7 +18,8 @@ public class Scenery implements Renderable {
         STATUE,
         LOW_COVER_RUBBLE,
         LOW_COVER_ALTAR,
-        LOW_COVER_BARRICADE
+        LOW_COVER_BARRICADE,
+        DECOMPOSING_CORPSE
     }
 
     private final SceneryType type;
@@ -28,6 +29,7 @@ public class Scenery implements Renderable {
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
     private Texture texture; // Optional texture for Modern rendering
     private String texturePath;
+    private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
@@ -35,6 +37,7 @@ public class Scenery implements Renderable {
     private static final Color rockColor = new Color(0x7b7b7bff); // Gray
     private static final Color bushColor = new Color(0x2b5736ff); // Darker Green
     private static final Color statueColor = new Color(0xd4af37ff); // Gold/Stone
+    private static final Color corpseColor = new Color(0x8a9ea7ff); // Ethereal Bone Gray
 
     public Scenery(SceneryType type, int x, int y) {
         this(type, x, y, null);
@@ -64,6 +67,10 @@ public class Scenery implements Renderable {
                 this.impassable = true;
                 this.scale.set(1.0f, 0.7f); // Half-height obstacle billboard
                 break;
+            case DECOMPOSING_CORPSE:
+                this.impassable = true;
+                this.scale.set(1.0f, 0.55f); // Low lying skeletal remains billboard
+                break;
             case BUSH:
                 this.impassable = false;
                 this.scale.set(1.0f, 0.75f); // <-- ADDED THIS (Shorter)
@@ -90,6 +97,26 @@ public class Scenery implements Renderable {
         return type == SceneryType.LOW_COVER_RUBBLE
                 || type == SceneryType.LOW_COVER_ALTAR
                 || type == SceneryType.LOW_COVER_BARRICADE;
+    }
+
+    public boolean isDecomposingCorpse() {
+        return type == SceneryType.DECOMPOSING_CORPSE;
+    }
+
+    public com.bpm.minotaur.gamedata.bones.BonesData getBonesData() {
+        return bonesData;
+    }
+
+    public void setBonesData(com.bpm.minotaur.gamedata.bones.BonesData bonesData) {
+        this.bonesData = bonesData;
+    }
+
+    public boolean isAwakened() {
+        return bonesData != null && bonesData.awakened;
+    }
+
+    public boolean isDefeated() {
+        return bonesData != null && bonesData.defeated;
     }
 
     // --- Renderable Implementation ---
@@ -141,6 +168,8 @@ public class Scenery implements Renderable {
                 return bushColor;
             case STATUE:
                 return statueColor;
+            case DECOMPOSING_CORPSE:
+                return corpseColor;
             default:
                 return rockColor;
         }

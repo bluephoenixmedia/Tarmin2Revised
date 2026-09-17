@@ -25,6 +25,7 @@ public class Monster implements Renderable {
         GOBLIN(Category.BAD),
         TROGLODYTE(Category.BAD),
         HOBGOBLIN(Category.BAD),
+        PLAYER_GHOST(Category.BAD),
 
         // Nasty Monsters (Resistant to SPIRITUAL, vulnerable to War / PHYSICAL)
         GHOUL(Category.NASTY),
@@ -742,5 +743,61 @@ public class Monster implements Renderable {
 
     public boolean isAlive() {
         return currentHP > 0;
+    }
+
+    public void setMaxHP(int maxHP) {
+        this.maxHP = maxHP;
+    }
+
+    public void setMaxMP(int maxMP) {
+        this.maxMP = maxMP;
+    }
+
+    public void setArmorClass(int ac) {
+        this.armorClass = ac;
+    }
+
+    public void setDamageDice(String damageDice) {
+        this.damageDice = damageDice;
+    }
+
+    public void setIntelligence(int intelligence) {
+        this.intelligence = intelligence;
+    }
+
+    public void setDexterity(int dexterity) {
+        this.dexterity = dexterity;
+    }
+
+    public void setBaseExperience(int exp) {
+        this.baseExperience = exp;
+    }
+
+    public void setMoveSpeed(int moveSpeed) {
+        this.moveSpeed = moveSpeed;
+    }
+
+    public void setHasRangedAttack(boolean hasRanged) {
+        this.hasRangedAttack = hasRanged;
+    }
+
+    public void setAttackRange(int range) {
+        this.attackRange = range;
+    }
+
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
+    public void setAiType(MonsterTemplate.AiType aiType) {
+        this.aiType = aiType;
+    }
+
+    public void setSpellChance(int spellChance) {
+        this.spellChance = spellChance;
+    }
+
+    public void setHealThreshold(float healThreshold) {
+        this.healThreshold = healThreshold;
     }
 }

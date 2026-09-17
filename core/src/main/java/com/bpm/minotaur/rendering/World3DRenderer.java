@@ -1006,7 +1006,14 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
-                    dynamicBatcher.addBillboard(mex, 0.0f, mwz, w, h, region, tint, camRight, camUp, camDir);
+                    float monsterY = 0.0f;
+                    if (m.getType() == Monster.MonsterType.PLAYER_GHOST) {
+                        float floatOffset = (float) Math.sin(System.currentTimeMillis() / 350.0) * 0.05f + 0.08f;
+                        monsterY += floatOffset;
+                        tint = new Color(0.45f, 0.92f, 0.95f, 0.88f);
+                    }
+
+                    dynamicBatcher.addBillboard(mex, monsterY, mwz, w, h, region, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
 
                     // Overhead Health Bar
@@ -1147,6 +1154,14 @@ public class World3DRenderer implements Disposable {
                             && maze.getEventAt((int) sc.getPosition().x, (int) sc.getPosition().y) == null) {
                         // Depleted statue: encounter already resolved, dim to convey dormancy
                         tint = Color.GRAY;
+                    } else if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                        if (sc.isDefeated()) {
+                            tint = new Color(0.85f, 0.95f, 0.90f, 1.0f); // Peaceful soft glow
+                        } else if (sc.isAwakened()) {
+                            tint = new Color(1.0f, 0.6f, 0.6f, 0.85f);  // Ominous red glow
+                        } else {
+                            tint = new Color(0.7f, 0.9f, 0.95f, 0.95f);  // Dormant ethereal cyan
+                        }
                     }
 
                     dynamicBatcher.addBillboard(ex, 0.0f, wz, sw, sh, reg, tint, camRight, camUp, camDir);

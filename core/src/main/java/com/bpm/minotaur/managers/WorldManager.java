@@ -23,6 +23,8 @@ import com.bpm.minotaur.lighting.LightingManager;
 import com.bpm.minotaur.rendering.RetroTheme;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.gamedata.monster.FactionMatrix;
+import com.bpm.minotaur.gamedata.bones.BonesData;
+import com.bpm.minotaur.managers.BonesManager;
 
 import java.io.File;
 import java.util.HashMap;
@@ -169,6 +171,9 @@ public class WorldManager {
     }
 
     public Maze getInitialMaze() {
+        if (gameMode == GameMode.ADVANCED && BonesManager.getInstance().getActiveFloorBones() == null) {
+            BonesManager.getInstance().rollBonesForFloor(currentLevel, gameMode);
+        }
         Maze maze = loadChunk(currentPlayerChunkId);
         syncLightsForChunk(maze);
         return maze;
@@ -428,6 +433,42 @@ public class WorldManager {
             }
         }
 
+        // Place Decomposing Corpse if an active bones encounter was rolled for this floor
+        if (gameMode == GameMode.ADVANCED) {
+            BonesData activeBones = BonesManager.getInstance().getActiveFloorBones();
+            if (activeBones != null && activeBones.chunkX == -1) {
+                GridPoint2 corpseTile = findBonesPlacementTile(newMaze);
+                if (corpseTile != null) {
+                    activeBones.chunkX = chunkId.x;
+                    activeBones.chunkY = chunkId.y;
+                    activeBones.tileX = corpseTile.x;
+                    activeBones.tileY = corpseTile.y;
+
+                    String corpseTex = "images/scenery/decomposing_corpse.png";
+                    if (Gdx.files == null || !Gdx.files.internal(corpseTex).exists()) {
+                        if (Gdx.files != null && Gdx.files.internal("images/debris/bones.png").exists()) {
+                            corpseTex = "images/debris/bones.png";
+                        } else {
+                            corpseTex = "images/debris/broken_column.png";
+                        }
+                    }
+
+                    Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, corpseTile.x, corpseTile.y, corpseTex);
+                    corpse.setBonesData(activeBones);
+                    if (assetManager != null && Gdx.files != null && Gdx.files.internal(corpseTex).exists()) {
+                        if (!assetManager.isLoaded(corpseTex)) {
+                            assetManager.load(corpseTex, com.badlogic.gdx.graphics.Texture.class);
+                            assetManager.finishLoading();
+                        }
+                        corpse.setTexture(assetManager.get(corpseTex, com.badlogic.gdx.graphics.Texture.class));
+                    }
+                    newMaze.addScenery(corpse);
+                    Gdx.app.log("WorldManager", "Placed decomposing corpse for " + activeBones.playerName
+                            + " at chunk " + chunkId + " tile " + corpseTile);
+                }
+            }
+        }
+
         loadedChunks.put(chunkId, newMaze);
         saveChunk(newMaze, chunkId);
 
@@ -529,6 +570,9 @@ public class WorldManager {
             loadedChunks.clear();
             syncLightsForChunk(null);
             this.currentLevel = level;
+            if (gameMode == GameMode.ADVANCED) {
+                BonesManager.getInstance().rollBonesForFloor(level, gameMode);
+            }
         }
         DoomManager.getInstance().setCurrentLevel(level);
         UnlockManager.getInstance().updateDeepestLevel(level);
@@ -964,5 +1008,36 @@ public class WorldManager {
                         + com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCrestsOfValor());
             }
         }
+    }
+
+    private GridPoint2 findBonesPlacementTile(Maze maze) {
+        if (maze == null) return null;
+        int width = maze.getWidth();
+        int height = maze.getHeight();
+        int midX = width / 2;
+        int midY = height / 2;
+
+        for (int r = 1; r < Math.max(width, height); r++) {
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
+                    int x = midX + dx;
+                    int y = midY + dy;
+                    if (x > 1 && x < width - 2 && y > 1 && y < height - 2) {
+                        GridPoint2 pt = new GridPoint2(x, y);
+                        if (!maze.isWall(x, y)
+                                && (maze.getScenery() == null || !maze.getScenery().containsKey(pt))
+                                && (maze.getItems() == null || !maze.getItems().containsKey(pt))
+                                && (maze.getMonsters() == null || !maze.getMonsters().containsKey(pt))
+                                && (maze.getLadders() == null || !maze.getLadders().containsKey(pt))
+                                && (maze.getGates() == null || !maze.getGates().containsKey(pt))
+                                && (maze.getEventAt(x, y) == null)) {
+                            return pt;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

@@ -168,6 +168,7 @@ public class Hud implements Disposable {
     private final WorldManager worldManager;
     private final EncounterWindow encounterWindow;
     private final ShopkeeperWindow shopkeeperWindow;
+    private final BonesAwakenModal bonesAwakenModal;
 
     private String equippedWeapon = "NOTHING";
     private String damage = "0";
@@ -624,7 +625,11 @@ public class Hud implements Disposable {
         shopkeeperWindow = new ShopkeeperWindow(font);
         stage.addActor(shopkeeperWindow);
 
-        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow ---
+        // Decomposing corpse bones awakening modal
+        bonesAwakenModal = new BonesAwakenModal(hudSkin);
+        stage.addActor(bonesAwakenModal);
+
+        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
@@ -634,9 +639,16 @@ public class Hud implements Disposable {
                 if (shopkeeperWindow.isVisible()) {
                     return shopkeeperWindow.handleInput(keycode);
                 }
+                if (bonesAwakenModal.isVisible()) {
+                    return bonesAwakenModal.handleInput(keycode);
+                }
                 return false;
             }
         });
+    }
+
+    public BonesAwakenModal getBonesAwakenModal() {
+        return bonesAwakenModal;
     }
 
     public ShopkeeperWindow getShopkeeperWindow() {
@@ -1635,6 +1647,7 @@ public class Hud implements Disposable {
 
         if (debugManager.isDebugOverlayVisible() ||
                 (encounterWindow != null && encounterWindow.isVisible()) ||
+                (bonesAwakenModal != null && bonesAwakenModal.isVisible()) ||
                 (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
             worldInteractionCard.hide();
             return;
@@ -1647,6 +1660,45 @@ public class Hud implements Disposable {
         GridPoint2 feetTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
 
         Item frontItem = maze.getItems().get(frontTile);
+
+        // 0. Check Decomposing Corpse (NetHack-style Bones)
+        com.bpm.minotaur.gamedata.Scenery frontScenery = (maze.getScenery() != null) ? maze.getScenery().get(frontTile) : null;
+        if (frontScenery != null && frontScenery.isDecomposingCorpse()) {
+            com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
+            String heroName = (bd != null && bd.playerName != null) ? bd.playerName : "Fallen Hero";
+            if (bd != null && bd.defeated) {
+                worldInteractionCard.show(
+                        "[MORTAL REMAINS]",
+                        "[DEFEATED SPIRIT]",
+                        "Remains of " + heroName,
+                        "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
+                        "[ E ]",
+                        "Loot Remains",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+            } else if (bd != null && bd.awakened) {
+                worldInteractionCard.show(
+                        "[MORTAL REMAINS]",
+                        "[ACTIVE GHOST]",
+                        "Remains of " + heroName,
+                        "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
+                        "[ E ]",
+                        "Examine Remains",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+            } else {
+                worldInteractionCard.show(
+                        "[MORTAL REMAINS]",
+                        "[DORMANT BONES]",
+                        "Remains of " + heroName,
+                        "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
+                        "[ E ]",
+                        "Disturb Remains",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+            }
+            return;
+        }
 
         // 1. Check Shelter Objects
         if (frontItem != null) {
