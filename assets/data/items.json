@@ -329,9 +329,7 @@
                 "maxLevel": 99,
                 "weight": 1
             }
-        ],
-        "modelPath": "models/camp/chest.obj",
-        "modelScale": 0.85
+        ]
     },
     "HOME_CRAFTING_BENCH": {
         "friendlyName": "Crafting Bench",
@@ -387,9 +385,7 @@
                 "maxLevel": 99,
                 "weight": 1
             }
-        ],
-        "modelPath": "models/camp/weapon_rack.obj",
-        "modelScale": 1.0
+        ]
     },
     "HOME_SLEEPING_BAG": {
         "friendlyName": "Sleeping Bag",
@@ -445,9 +441,7 @@
                 "maxLevel": 99,
                 "weight": 1
             }
-        ],
-        "modelPath": "models/camp/tent.obj",
-        "modelScale": 1.25
+        ]
     },
     "HOME_FIRE_POT": {
         "friendlyName": "Cooking Fire",
@@ -503,9 +497,7 @@
                 "maxLevel": 99,
                 "weight": 1
             }
-        ],
-        "modelPath": "models/camp/campfire.obj",
-        "modelScale": 0.95
+        ]
     },
     "BRASS_LANTERN": {
         "friendlyName": "Brass Lantern",
