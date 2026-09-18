@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -36,7 +37,9 @@ import java.util.List;
  * game would look exactly the same.
  *
  * The design brief was that calibrating a piece is easy and happens once, so this is
- * built for walking a list rather than for fiddling with one item:
+ * built for walking a list rather than for fiddling with one item. Every transform has
+ * both a slider and a key: the keys are precise, the sliders are fast, and rotation in
+ * particular was unusable on keys alone at a degree per press.
  *
  *   [ ]            previous / next layer
  *   arrows         nudge 1px   (+SHIFT 10px)
@@ -55,6 +58,13 @@ public class PaperdollEditorScreen extends BaseScreen {
     private static final float SCALE_STEP = 1.01f;
     private static final float ROTATE_STEP = 1f;
 
+    // Slider ranges. Offsets reach beyond the canvas half-extents (512 x 768) because a
+    // layer can legitimately be positioned partly outside it.
+    private static final float OFFSET_RANGE_X = 700f;
+    private static final float OFFSET_RANGE_Y = 900f;
+    private static final float MIN_SCALE = 0.05f;
+    private static final float MAX_SCALE = 3f;
+
     // Matches PaperDollPanel: where base_father.png actually sits on the inventory page.
     private static final float PORTRAIT_W = 388.2f;
     private static final float PORTRAIT_H = 559.3f;
@@ -70,6 +80,8 @@ public class PaperdollEditorScreen extends BaseScreen {
     private SelectBox<String> layerBox;
     private Label statusLabel;
     private Label valuesLabel;
+    private Slider offsetXSlider, offsetYSlider, scaleXSlider, scaleYSlider, rotationSlider;
+    private Label offsetXValue, offsetYValue, scaleXValue, scaleYValue, rotationValue;
     private CheckBox hidesHairBox;
     private CheckBox hidesBeardBox;
     private CheckBox needsArtRedoBox;
@@ -156,6 +168,18 @@ public class PaperdollEditorScreen extends BaseScreen {
         check.checkboxOn = skin.newDrawable("white", new Color(0.3f, 0.8f, 0.3f, 1f));
         skin.add("default", check);
 
+        Slider.SliderStyle slider = new Slider.SliderStyle();
+        slider.background = skin.newDrawable("white", new Color(0.18f, 0.18f, 0.22f, 1f));
+        slider.background.setMinHeight(10f);
+        // The knob needs an explicit size or it renders as a 1x1 pixel and cannot be grabbed.
+        slider.knob = skin.newDrawable("white", new Color(0.75f, 0.75f, 0.85f, 1f));
+        slider.knob.setMinWidth(14f);
+        slider.knob.setMinHeight(26f);
+        slider.knobDown = skin.newDrawable("white", new Color(1f, 1f, 1f, 1f));
+        slider.knobDown.setMinWidth(14f);
+        slider.knobDown.setMinHeight(26f);
+        skin.add("default-horizontal", slider);
+
         SelectBox.SelectBoxStyle select = new SelectBox.SelectBoxStyle();
         select.font = font;
         select.fontColor = Color.WHITE;
@@ -212,6 +236,22 @@ public class PaperdollEditorScreen extends BaseScreen {
         valuesLabel = new Label("", skin);
         t.add(valuesLabel).colspan(2).padTop(14f).row();
 
+        // Sliders alongside the keys. Rotation in particular was unusable on keys alone:
+        // a degree per press means 180 presses to turn a piece round.
+        Table sliders = new Table();
+        sliders.defaults().left().pad(3f);
+        offsetXValue = new Label("", skin);
+        offsetYValue = new Label("", skin);
+        scaleXValue = new Label("", skin);
+        scaleYValue = new Label("", skin);
+        rotationValue = new Label("", skin);
+        offsetXSlider = addSlider(sliders, "X", -OFFSET_RANGE_X, OFFSET_RANGE_X, 1f, offsetXValue);
+        offsetYSlider = addSlider(sliders, "Y", -OFFSET_RANGE_Y, OFFSET_RANGE_Y, 1f, offsetYValue);
+        scaleXSlider = addSlider(sliders, "Width", MIN_SCALE, MAX_SCALE, 0.001f, scaleXValue);
+        scaleYSlider = addSlider(sliders, "Height", MIN_SCALE, MAX_SCALE, 0.001f, scaleYValue);
+        rotationSlider = addSlider(sliders, "Rotation", -180f, 180f, 0.5f, rotationValue);
+        t.add(sliders).colspan(2).padTop(10f).row();
+
         hidesHairBox = flag("Helmet hides hair");
         hidesBeardBox = flag("Helmet hides beard");
         needsArtRedoBox = flag("Art needs redoing (wrong perspective)");
@@ -253,6 +293,48 @@ public class PaperdollEditorScreen extends BaseScreen {
         t.add(help).colspan(2).padTop(20f).row();
 
         return t;
+    }
+
+    /**
+     * One labelled slider row, returning the slider and leaving its value label as the
+     * table's last child so the caller can keep a reference to it.
+     *
+     * Every slider writes straight through to the model and refreshes, so the preview
+     * tracks the drag live -- which is the whole reason for having them.
+     */
+    private Slider addSlider(Table into, String label, float min, float max, float step, Label value) {
+        Slider s = new Slider(min, max, step, false, skin);
+        s.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                if (syncing) return;
+                applySliders();
+            }
+        });
+        into.add(new Label(label, skin)).width(80f);
+        into.add(s).width(320f);
+        into.add(value).width(90f);
+        into.row();
+        return s;
+    }
+
+    /** Pushes every slider position into the selected layer's calibration. */
+    private void applySliders() {
+        if (model.selectedLayerId() == null) {
+            return;
+        }
+        LayerCalibration c = model.current();
+        c.offsetX = offsetXSlider.getValue();
+        c.offsetY = offsetYSlider.getValue();
+        c.scaleX = Math.max(MIN_SCALE, scaleXSlider.getValue());
+        c.scaleY = Math.max(MIN_SCALE, scaleYSlider.getValue());
+        c.rotation = rotationSlider.getValue();
+        model.commit();
+        // A focused Slider consumes the arrow keys for itself, so after touching one the
+        // arrows would drag that slider instead of nudging the layer. Dropping focus
+        // keeps the keys meaning the same thing all the time.
+        stage.setKeyboardFocus(null);
+        refreshStatus();
     }
 
     private CheckBox flag(String text) {
@@ -332,6 +414,22 @@ public class PaperdollEditorScreen extends BaseScreen {
         confirmingExit = false;
         confirmingReload = false;
         LayerCalibration c = model.current();
+
+        // Sliders follow the keys and the layer selection, not just the other way round;
+        // otherwise a nudge would leave the knob lying about where the layer is.
+        syncing = true;
+        offsetXSlider.setValue(c.offsetX);
+        offsetYSlider.setValue(c.offsetY);
+        scaleXSlider.setValue(c.scaleX);
+        scaleYSlider.setValue(c.scaleY);
+        rotationSlider.setValue(c.rotation);
+        syncing = false;
+
+        offsetXValue.setText(String.format("%+.0f", c.offsetX));
+        offsetYValue.setText(String.format("%+.0f", c.offsetY));
+        scaleXValue.setText(String.format("%.3f", c.scaleX));
+        scaleYValue.setText(String.format("%.3f", c.scaleY));
+        rotationValue.setText(String.format("%+.1f", c.rotation));
         valuesLabel.setText(String.format(
                 "offset  %+.1f, %+.1f      scale  %.3f x %.3f      rotation  %+.1f",
                 c.offsetX, c.offsetY, c.scaleX, c.scaleY, c.rotation));
