@@ -189,7 +189,7 @@ public class Tarmin2 extends Game {
         // Straight into the paperdoll editor when asked. Calibrating a slot means
         // opening this repeatedly, and clicking through the main menu each time is the
         // kind of friction that turns a one-hour pass into an afternoon.
-        //   ./gradlew lwjgl3:run --args="--paperdoll"   (or -Dtarmin.screen=paperdoll)
+        //   ./gradlew lwjgl3:run --args="--paperdoll"
         if (bootToPaperdollEditor()) {
             Gdx.app.log("Tarmin2", "Booting straight into the paperdoll editor");
             this.setScreen(new com.bpm.minotaur.screens.PaperdollEditorScreen(this, null));
@@ -201,9 +201,6 @@ public class Tarmin2 extends Game {
     }
 
     private static boolean bootToPaperdollEditor() {
-        if ("paperdoll".equalsIgnoreCase(System.getProperty("tarmin.screen", ""))) {
-            return true;
-        }
         String[] args = startupArgs;
         if (args != null) {
             for (String a : args) {
