@@ -16,9 +16,6 @@ public class Scenery implements Renderable {
         CACTUS,
         SANDSTONE_ROCK,
         STATUE,
-        LOW_COVER_RUBBLE,
-        LOW_COVER_ALTAR,
-        LOW_COVER_BARRICADE,
         DECOMPOSING_CORPSE
     }
 
@@ -61,12 +58,6 @@ public class Scenery implements Renderable {
                 this.impassable = true;
                 this.scale.set(1.0f, 0.8f); // <-- ADDED THIS (Slightly shorter)
                 break;
-            case LOW_COVER_RUBBLE:
-            case LOW_COVER_ALTAR:
-            case LOW_COVER_BARRICADE:
-                this.impassable = true;
-                this.scale.set(1.0f, 0.7f); // Half-height obstacle billboard
-                break;
             case DECOMPOSING_CORPSE:
                 this.impassable = true;
                 this.scale.set(1.0f, 0.55f); // Low lying skeletal remains billboard
@@ -93,12 +84,6 @@ public class Scenery implements Renderable {
         return impassable;
     }
 
-    public boolean isLowCover() {
-        return type == SceneryType.LOW_COVER_RUBBLE
-                || type == SceneryType.LOW_COVER_ALTAR
-                || type == SceneryType.LOW_COVER_BARRICADE;
-    }
-
     public boolean isDecomposingCorpse() {
         return type == SceneryType.DECOMPOSING_CORPSE;
     }
@@ -118,7 +103,6 @@ public class Scenery implements Renderable {
     public boolean isDefeated() {
         return bonesData != null && bonesData.defeated;
     }
-
     // --- Renderable Implementation ---
 
     @Override
