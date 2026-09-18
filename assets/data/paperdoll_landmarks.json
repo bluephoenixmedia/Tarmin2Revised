@@ -1,0 +1,85 @@
+{
+  "_comment": "Anatomical landmarks measured from base_father.png by tools/measure_landmarks.py. Master-canvas pixels, +y DOWN. Re-run after changing the body art; do not hand-edit.",
+  "canvas": {
+    "height": 1536,
+    "width": 1024
+  },
+  "points": {
+    "ankle_left": [
+      339.0,
+      1398.0
+    ],
+    "ankle_right": [
+      717.0,
+      1398.0
+    ],
+    "chin": [
+      525.5,
+      258.0
+    ],
+    "crotch": [
+      512.0,
+      1038.0
+    ],
+    "foot_left": [
+      277.0,
+      1488.0
+    ],
+    "foot_right": [
+      779.0,
+      1488.0
+    ],
+    "hand_left": [
+      180.0,
+      776.0
+    ],
+    "hand_right": [
+      865.5,
+      776.0
+    ],
+    "head_left": [
+      394.0,
+      217.0
+    ],
+    "head_right": [
+      658.0,
+      217.0
+    ],
+    "head_top": [
+      526.0,
+      70.0
+    ],
+    "hip_left": [
+      393.5,
+      1058.0
+    ],
+    "hip_right": [
+      656.0,
+      1058.0
+    ],
+    "knee_left": [
+      354.5,
+      1254.0
+    ],
+    "knee_right": [
+      697.0,
+      1254.0
+    ],
+    "shoulder_left": [
+      319.0,
+      313.0
+    ],
+    "shoulder_right": [
+      731.0,
+      313.0
+    ],
+    "waist_left": [
+      317.0,
+      729.0
+    ],
+    "waist_right": [
+      731.0,
+      729.0
+    ]
+  }
+}
