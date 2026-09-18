@@ -10,6 +10,7 @@ public class Lwjgl3Launcher {
         GpuHelper.requestHighPerformanceGpu();
         if (StartupHelper.startNewJvmIfRequired())
             return; // This handles macOS support and helps on Windows.
+        Tarmin2.setStartupArgs(args);
         createApplication();
     }
 

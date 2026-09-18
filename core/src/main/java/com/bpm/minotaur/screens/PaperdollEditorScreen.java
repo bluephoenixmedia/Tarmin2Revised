@@ -2,76 +2,81 @@ package com.bpm.minotaur.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-// import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-// import com.badlogic.gdx.utils.Align; // Unused
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Json;
-import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
-import com.bpm.minotaur.gamedata.item.Item;
-import com.bpm.minotaur.gamedata.item.Item.ItemType;
-import com.bpm.minotaur.gamedata.item.ItemTemplate;
-import com.bpm.minotaur.paperdoll.PaperDollWidget;
-import com.bpm.minotaur.paperdoll.data.FragmentResolver;
-import com.bpm.minotaur.paperdoll.data.SkeletonData;
+import com.bpm.minotaur.paperdoll.PaperDoll2DWidget;
+import com.bpm.minotaur.paperdoll.calibration.CalibrationEditModel;
+import com.bpm.minotaur.paperdoll.calibration.LayerCalibration;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+/**
+ * Calibration editor for the 2D paperdoll.
+ *
+ * Rebuilt against {@link PaperDoll2DWidget} and paperdoll_calibration.json. The previous
+ * version drove the legacy PaperDollWidget and wrote assets/data/skeleton.json, so it
+ * edited a doll the inventory does not display -- you could calibrate all day and the
+ * game would look exactly the same.
+ *
+ * The design brief was that calibrating a piece is easy and happens once, so this is
+ * built for walking a list rather than for fiddling with one item:
+ *
+ *   [ ]            previous / next layer
+ *   arrows         nudge 1px   (+SHIFT 10px)
+ *   + / -          scale       (+SHIFT non-uniform, X only)
+ *   , / .          rotate
+ *   R              revert this layer
+ *   D              reset to the slot's median placement
+ *   CTRL+S         save
+ *   F5             re-read the file from disk, so it can be hand-edited alongside
+ *   ESC            back
+ */
 public class PaperdollEditorScreen extends BaseScreen {
+
+    private static final float NUDGE = 1f;
+    private static final float NUDGE_FAST = 10f;
+    private static final float SCALE_STEP = 1.01f;
+    private static final float SCALE_STEP_FAST = 1.05f;
+    private static final float ROTATE_STEP = 1f;
+
+    // Matches PaperDollPanel: where base_father.png actually sits on the inventory page.
+    private static final float PORTRAIT_W = 388.2f;
+    private static final float PORTRAIT_H = 559.3f;
 
     private Stage stage;
     private Skin skin;
-    private Table rootTable;
+    private Texture whitePixel;
 
-    // Components
-    private PaperDollWidget paperDollWidget;
-    private Texture paperDollTexture;
-    private Texture headTexture;
-    private SkeletonData skeletonData;
-    private FragmentResolver fragmentResolver;
+    private PaperDoll2DWidget doll;
+    private CalibrationEditModel model;
 
-    // Editor data
-    private Map<String, Item> equippedItems = new HashMap<>(); // slotName -> Item
-    private String selectedSlot = null; // Currently selected slot for editing
+    private SelectBox<String> slotBox;
+    private SelectBox<String> layerBox;
+    private Label statusLabel;
+    private Label valuesLabel;
+    private CheckBox hidesHairBox;
+    private CheckBox hidesBeardBox;
+    private CheckBox needsArtRedoBox;
 
-    // Head Positioning (Editable)
-    private float headX = 700;
-    private float headY = 1200;
-
-    // UI Controls
-    private SelectBox<ItemType> itemSelectBox;
-    private SelectBox<String> slotSelectBox;
-
-    private Slider offsetXSlider, offsetYSlider;
-    private Slider scaleXSlider, scaleYSlider;
-    private Slider rotationSlider; // New
-    private Label offsetValueLabel, scaleValueLabel, rotationValueLabel; // New
-
-    // Skeleton Controls
-    private Slider socketXSlider, socketYSlider;
-    private Label socketValueLabel;
-
-    // Head Controls
-    private Slider headXSlider, headYSlider;
-    private Label headValueLabel;
-
-    private com.badlogic.gdx.Screen previousScreen;
+    private final com.badlogic.gdx.Screen previousScreen;
+    private boolean syncing = false;
 
     public PaperdollEditorScreen(Tarmin2 game, com.badlogic.gdx.Screen previousScreen) {
         super(game);
@@ -83,713 +88,326 @@ public class PaperdollEditorScreen extends BaseScreen {
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
         Gdx.input.setInputProcessor(stage);
 
-        // Basic Skin
+        buildSkin();
+
+        doll = new PaperDoll2DWidget();
+        model = new CalibrationEditModel(doll.getCalibration());
+
+        Table root = new Table();
+        root.setFillParent(true);
+        root.top().left();
+        stage.addActor(root);
+
+        // Preview at 2x the in-game portrait size: calibration is judged by eye, and the
+        // real portrait is only 388px wide on a 1920px stage.
+        Table previewCell = new Table();
+        doll.setSize(PORTRAIT_W * 2f, PORTRAIT_H * 2f);
+        previewCell.add(doll).size(PORTRAIT_W * 2f, PORTRAIT_H * 2f);
+
+        root.add(previewCell).pad(30f).top().left();
+        root.add(buildControls()).pad(30f).top().left().expandX().fillX();
+
+        stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                return handleKey(keycode);
+            }
+        });
+
+        if (!model.allLayers().isEmpty()) {
+            selectLayer(model.allLayers().get(0));
+        }
+        refreshStatus();
+    }
+
+    private void buildSkin() {
         skin = new Skin();
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        skin.add("white", new Texture(pixmap));
-        skin.add("white", new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(
-                new com.badlogic.gdx.graphics.g2d.TextureRegion(new Texture(pixmap))));
-        skin.add("default-font", new BitmapFont());
+        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm.setColor(Color.WHITE);
+        pm.fill();
+        whitePixel = new Texture(pm);
+        pm.dispose();
+        // Registered as a TextureRegion, not a TextureRegionDrawable: Skin.newDrawable()
+        // resolves a name against Drawable/TextureRegion/Texture/NinePatch/Sprite, and a
+        // TextureRegionDrawable entry matches none of those — it throws "No Drawable...
+        // registered with name: white" at screen construction.
+        skin.add("white", new TextureRegion(whitePixel));
 
-        Label.LabelStyle labelStyle = new Label.LabelStyle();
-        labelStyle.font = skin.getFont("default-font");
-        skin.add("default", labelStyle);
+        BitmapFont font = new BitmapFont();
+        skin.add("default-font", font);
 
-        TextField.TextFieldStyle tfStyle = new TextField.TextFieldStyle();
-        tfStyle.font = new BitmapFont();
-        tfStyle.fontColor = Color.WHITE;
-        skin.add("default", tfStyle);
+        Label.LabelStyle label = new Label.LabelStyle();
+        label.font = font;
+        label.fontColor = Color.WHITE;
+        skin.add("default", label);
 
-        CheckBox.CheckBoxStyle cbStyle = new CheckBox.CheckBoxStyle();
-        cbStyle.font = new BitmapFont();
-        cbStyle.checkboxOff = skin.newDrawable("white", Color.GRAY);
-        cbStyle.checkboxOn = skin.newDrawable("white", Color.GREEN);
-        skin.add("default", cbStyle);
+        TextButton.TextButtonStyle button = new TextButton.TextButtonStyle();
+        button.font = font;
+        button.up = skin.newDrawable("white", new Color(0.25f, 0.25f, 0.3f, 1f));
+        button.down = skin.newDrawable("white", new Color(0.4f, 0.4f, 0.5f, 1f));
+        button.over = skin.newDrawable("white", new Color(0.32f, 0.32f, 0.4f, 1f));
+        skin.add("default", button);
 
-        Slider.SliderStyle sliderStyle = new Slider.SliderStyle();
-        sliderStyle.background = skin.newDrawable("white", Color.DARK_GRAY);
-        sliderStyle.knob = skin.newDrawable("white", Color.LIGHT_GRAY);
-        sliderStyle.knob.setMinHeight(20);
-        sliderStyle.knob.setMinWidth(10);
-        skin.add("default-horizontal", sliderStyle);
+        CheckBox.CheckBoxStyle check = new CheckBox.CheckBoxStyle();
+        check.font = font;
+        check.fontColor = Color.WHITE;
+        check.checkboxOff = skin.newDrawable("white", new Color(0.2f, 0.2f, 0.2f, 1f));
+        check.checkboxOn = skin.newDrawable("white", new Color(0.3f, 0.8f, 0.3f, 1f));
+        skin.add("default", check);
 
-        ScrollPane.ScrollPaneStyle spStyle = new ScrollPane.ScrollPaneStyle();
-        skin.add("default", spStyle);
-
-        List.ListStyle lbStyle = new List.ListStyle();
-        lbStyle.font = new BitmapFont();
-        lbStyle.fontColorSelected = Color.GREEN;
-        lbStyle.fontColorUnselected = Color.WHITE;
-        lbStyle.selection = skin.newDrawable("white", Color.BLUE);
-        skin.add("default", lbStyle);
-
-        SelectBox.SelectBoxStyle sbStyle = new SelectBox.SelectBoxStyle();
-        sbStyle.font = new BitmapFont();
-        sbStyle.fontColor = Color.WHITE;
-        sbStyle.scrollStyle = spStyle;
-        sbStyle.listStyle = lbStyle;
-        sbStyle.background = skin.newDrawable("white", Color.DARK_GRAY);
-        skin.add("default", sbStyle);
-
-        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
-        btnStyle.font = new BitmapFont();
-        btnStyle.up = skin.newDrawable("white", Color.GRAY);
-        btnStyle.down = skin.newDrawable("white", Color.DARK_GRAY);
-        btnStyle.over = skin.newDrawable("white", Color.LIGHT_GRAY);
-        skin.add("default", btnStyle);
-
-        // --- Paper Doll Setup ---
-        paperDollTexture = new Texture(Gdx.files.internal("images/inventory_paper_doll.png"));
-        skeletonData = new SkeletonData();
-        // Live Reload: Check for source file first
-        if (Gdx.files.local("assets/data/skeleton.json").exists()) {
-            skeletonData.load(Gdx.files.local("assets/data/skeleton.json"));
-            Gdx.app.log("Editor", "Live Reloading skeleton.json from source.");
-        } else {
-            skeletonData.load(Gdx.files.internal("data/skeleton.json"));
-        }
-
-        // Initialize Head Position from Skeleton 'face' socket if available
-        com.badlogic.gdx.math.Vector2 faceSocket = skeletonData.getSocketPosition("face");
-        if (faceSocket != null && (faceSocket.x != 0 || faceSocket.y != 0)) {
-            this.headX = faceSocket.x;
-            this.headY = faceSocket.y;
-        } else {
-            // Default if not set
-            this.headX = 700;
-            this.headY = 1200;
-        }
-
-        TextureAtlas armorAtlas = game.getAssetManager().get("packed/armor.atlas", TextureAtlas.class);
-
-        TextureAtlas weaponsAtlas = game.getAssetManager().get("packed/weapons.atlas", TextureAtlas.class);
-        fragmentResolver = new FragmentResolver(armorAtlas, weaponsAtlas);
-
-        paperDollWidget = new PaperDollWidget(skeletonData, fragmentResolver);
-        // Debug assets
-        Pixmap p = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        p.setColor(Color.WHITE);
-        p.fill();
-        Texture white = new Texture(p);
-        paperDollWidget.setDebugAssets(white, new BitmapFont());
-
-        // Force debug overlay on for editor visibility of sockets
-        com.bpm.minotaur.managers.DebugManager.getInstance().setDebugOverlayVisible(true);
-
-        buildUI();
+        SelectBox.SelectBoxStyle select = new SelectBox.SelectBoxStyle();
+        select.font = font;
+        select.fontColor = Color.WHITE;
+        select.background = skin.newDrawable("white", new Color(0.2f, 0.2f, 0.25f, 1f));
+        com.badlogic.gdx.scenes.scene2d.ui.List.ListStyle listStyle =
+                new com.badlogic.gdx.scenes.scene2d.ui.List.ListStyle();
+        listStyle.font = font;
+        listStyle.fontColorSelected = Color.WHITE;
+        listStyle.fontColorUnselected = Color.LIGHT_GRAY;
+        listStyle.selection = skin.newDrawable("white", new Color(0.3f, 0.4f, 0.6f, 1f));
+        select.listStyle = listStyle;
+        select.scrollStyle = new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane.ScrollPaneStyle();
+        select.scrollStyle.background = skin.newDrawable("white", new Color(0.15f, 0.15f, 0.18f, 1f));
+        skin.add("default", select);
     }
 
-    private void buildUI() {
-        rootTable = new Table();
-        rootTable.setFillParent(true);
-        rootTable.pad(20);
-        rootTable.defaults().space(10);
+    private Table buildControls() {
+        Table t = new Table();
+        t.top().left().defaults().left().pad(4f);
 
-        // --- Left: Paperdoll Canvas ---
-        Group paperDollGroup = new Group();
-        Image bgImage = new Image(paperDollTexture);
-        float maxH = 800f;
-        float scale = maxH / bgImage.getHeight();
+        t.add(new Label("PAPERDOLL CALIBRATION", skin)).colspan(2).row();
+        t.add(new Label("", skin)).row();
 
-        bgImage.setSize(bgImage.getWidth() * scale, maxH);
-
-        paperDollWidget.setSize(bgImage.getWidth() * scale, maxH);
-        paperDollWidget.setScale(scale);
-
-        paperDollGroup.addActor(bgImage);
-
-        paperDollGroup.addActor(bgImage);
-
-        // NOTE: The head is now rendered by the PaperDollWidget as a body fragment.
-        // We removed the separate Image actor to avoid duplicated/hidden layers.
-
-        paperDollGroup.addActor(paperDollWidget);
-
-        Container<Group> dollContainer = new Container<>(paperDollGroup);
-        dollContainer.size(bgImage.getWidth() * scale, maxH);
-        dollContainer.right();
-
-        // --- Right: Controls ---
-        Table controls = new Table(skin);
-        controls.setBackground(skin.newDrawable("white", new Color(0, 0, 0, 0.8f))); // Dark background
-        controls.pad(20);
-        controls.top().left();
-
-        // Slot Selection
-        controls.add(new Label("Target Slot:", skin)).left();
-        slotSelectBox = new SelectBox<>(skin);
-        slotSelectBox.setItems("Head", "Torso", "Hands", "Arms", "Legs", "Feet", "MainHand", "OffHand", "Back",
-                "Backpack");
-        slotSelectBox.addListener(new ChangeListener() {
+        slotBox = new SelectBox<String>(skin);
+        Array<String> slots = new Array<String>();
+        for (String s : model.slots()) {
+            slots.add(s);
+        }
+        slotBox.setItems(slots);
+        slotBox.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                selectedSlot = slotSelectBox.getSelected();
-                updateUIFromSelection();
-            }
-        });
-        controls.add(slotSelectBox).width(200).row();
-
-        // Category Filter
-        controls.add(new Label("Filter:", skin)).left();
-        final SelectBox<String> categorySelectBox = new SelectBox<>(skin);
-        categorySelectBox.setItems("All", "Armor", "Weapon", "Misc");
-        categorySelectBox.setSelected("All");
-        categorySelectBox.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                populateItemSelectBox(categorySelectBox.getSelected());
-            }
-        });
-        controls.add(categorySelectBox).width(200).row();
-
-        // Item Selection
-        controls.add(new Label("Equip Item:", skin)).left();
-        itemSelectBox = new SelectBox<>(skin);
-        populateItemSelectBox("All"); // Initial population
-
-        itemSelectBox.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                equipSelectedItem();
-            }
-        });
-        controls.add(itemSelectBox).width(200).row();
-
-        controls.add(new Label("--- Item Transforms ---", skin, "default-font", Color.YELLOW)).colspan(2).padTop(20)
-                .row();
-
-        // Offset X
-        controls.add(new Label("Offset X:", skin)).left();
-        offsetXSlider = new Slider(-300, 300, 1, false, skin);
-        controls.add(offsetXSlider).width(200).row();
-
-        // Offset Y
-        controls.add(new Label("Offset Y:", skin)).left();
-        offsetYSlider = new Slider(-300, 300, 1, false, skin);
-        controls.add(offsetYSlider).width(200).row();
-
-        offsetValueLabel = new Label("0, 0", skin);
-        controls.add(offsetValueLabel).colspan(2).row();
-
-        // Scale
-        controls.add(new Label("Scale X:", skin)).left();
-        scaleXSlider = new Slider(0.1f, 3f, 0.05f, false, skin);
-        controls.add(scaleXSlider).width(200).row();
-
-        controls.add(new Label("Scale Y:", skin)).left();
-        scaleYSlider = new Slider(0.1f, 3f, 0.05f, false, skin);
-        controls.add(scaleYSlider).width(200).row();
-
-        scaleValueLabel = new Label("1.0, 1.0", skin);
-        controls.add(scaleValueLabel).colspan(2).row();
-
-        // Rotation
-        controls.add(new Label("Rotation:", skin)).left();
-        rotationSlider = new Slider(0, 360, 1, false, skin);
-        controls.add(rotationSlider).width(200).row();
-
-        rotationValueLabel = new Label("0.0", skin);
-        controls.add(rotationValueLabel).colspan(2).row();
-
-        // Listeners for sliders
-        ChangeListener scaler = new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                updateItemTransform();
-            }
-        };
-        offsetXSlider.addListener(scaler);
-        offsetYSlider.addListener(scaler);
-        scaleXSlider.addListener(scaler);
-        scaleYSlider.addListener(scaler);
-        rotationSlider.addListener(scaler);
-
-        // --- Socket Controls ---
-        controls.add(new Label("--- Skeleton Sockets ---", skin, "default-font", Color.RED)).colspan(2).padTop(20)
-                .row();
-        controls.add(new Label("Modify global socket position for selected slot", skin)).colspan(2).row();
-
-        socketXSlider = new Slider(0, 1200, 1, false, skin);
-        socketYSlider = new Slider(0, 1200, 1, false, skin);
-
-        controls.add(new Label("Socket X:", skin)).left();
-        controls.add(socketXSlider).width(200).row();
-        controls.add(new Label("Socket Y:", skin)).left();
-        controls.add(socketYSlider).width(200).row();
-
-        socketValueLabel = new Label("0, 0", skin);
-        controls.add(socketValueLabel).colspan(2).row();
-
-        ChangeListener socketListener = new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                updateSocketTransform();
-            }
-        };
-        socketXSlider.addListener(socketListener);
-        socketYSlider.addListener(socketListener);
-
-        // --- Head Overlay Controls ---
-        controls.add(new Label("--- Head Overlay ---", skin, "default-font", Color.ORANGE))
-                .colspan(2).padTop(20).row();
-
-        // Scale note: The head texture might be huge, so the range needs to be large.
-        // Assuming texture is ~2048x2048 or similar, range 0-2048 is safe.
-        headXSlider = new Slider(0, 2048, 1, false, skin);
-        headYSlider = new Slider(0, 2048, 1, false, skin);
-
-        // Set initial values
-        headXSlider.setValue(this.headX);
-        headYSlider.setValue(this.headY);
-
-        controls.add(new Label("Head X:", skin)).left();
-        controls.add(headXSlider).width(200).row();
-        controls.add(new Label("Head Y:", skin)).left();
-        controls.add(headYSlider).width(200).row();
-
-        headValueLabel = new Label((int) headX + ", " + (int) headY, skin);
-        controls.add(headValueLabel).colspan(2).row();
-
-        ChangeListener headListener = new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                updateHeadTransform();
-            }
-        };
-        headXSlider.addListener(headListener);
-        headYSlider.addListener(headListener);
-
-        headXSlider.addListener(headListener);
-        headYSlider.addListener(headListener);
-
-        // Buttons
-        TextButton saveHeadButton = new TextButton("Save Head Config", skin);
-        saveHeadButton.setColor(Color.ORANGE);
-        saveHeadButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                saveSkeleton();
-                Gdx.app.log("Editor", "Saved head configuration to skeleton.json");
-            }
-        });
-        controls.add(saveHeadButton).colspan(2).fillX().height(40).padTop(20).row();
-
-        TextButton saveButton = new TextButton("SAVE ALL (Items + Skeleton)", skin);
-        saveButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                saveSkeleton();
-                saveArmor(); // Calls saveItemData internally
-            }
-        });
-        controls.add(saveButton).colspan(2).fillX().height(50).padTop(10).row();
-
-        TextButton closeButton = new TextButton("Close Editor", skin);
-        closeButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (previousScreen != null) {
-                    game.setScreen(previousScreen);
-                } else {
-                    game.setScreen(new MainMenuScreen(game));
+            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                if (syncing) return;
+                populateLayerBox(slotBox.getSelected());
+                if (layerBox.getItems().size > 0) {
+                    selectLayer(layerBox.getItems().first());
                 }
             }
         });
-        controls.add(closeButton).colspan(2).fillX().height(50).padTop(10).row();
+        t.add(new Label("Slot", skin));
+        t.add(slotBox).width(320f).row();
 
-        // Layout
-        rootTable.add(dollContainer).expand().fill();
-        rootTable.add(controls).top().width(400);
-
-        stage.addActor(rootTable);
-
-        // Initial defaults
-        selectedSlot = "Torso";
-        slotSelectBox.setSelected(selectedSlot);
-        updateUIFromSelection();
-    }
-
-    private void equipSelectedItem() {
-        if (selectedSlot == null)
-            return;
-        ItemType type = itemSelectBox.getSelected();
-        if (type == null)
-            return;
-
-        try {
-            ItemTemplate template = game.getItemDataManager().getTemplate(type);
-            if (template == null) {
-                Gdx.app.log("Editor", "No template logic for " + type);
-                return;
+        layerBox = new SelectBox<String>(skin);
+        layerBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                if (syncing) return;
+                selectLayer(layerBox.getSelected());
             }
+        });
+        t.add(new Label("Layer", skin));
+        t.add(layerBox).width(320f).row();
 
-            // Create item wrapper
-            Item item = Item.fromTemplate(type, template);
+        valuesLabel = new Label("", skin);
+        t.add(valuesLabel).colspan(2).padTop(14f).row();
 
-            // Clear previous items to isolate the current one for editing
-            equippedItems.clear();
-            equippedItems.put(selectedSlot, item);
-            // Update widget
-            refreshWidget();
+        hidesHairBox = flag("Helmet hides hair");
+        hidesBeardBox = flag("Helmet hides beard");
+        needsArtRedoBox = flag("Art needs redoing (wrong perspective)");
+        t.add(hidesHairBox).colspan(2).row();
+        t.add(hidesBeardBox).colspan(2).row();
+        t.add(needsArtRedoBox).colspan(2).row();
 
-            // Update UI sliders to match this new item's current values
-            scaleXSlider.setValue(template.scaleX);
-            scaleYSlider.setValue(template.scaleY);
-            offsetXSlider.setValue(template.offsetX);
-            offsetYSlider.setValue(template.offsetY);
-            rotationSlider.setValue(template.rotation);
-        } catch (Exception e) {
-            Gdx.app.error("Editor", "Error equipping " + type, e);
-        }
+        Table buttons = new Table();
+        buttons.defaults().pad(4f);
+        buttons.add(button("< Prev  [", new Runnable() {
+            public void run() { model.previous(); syncFromModel(); }
+        }));
+        buttons.add(button("Next >  ]", new Runnable() {
+            public void run() { model.next(); syncFromModel(); }
+        }));
+        buttons.add(button("Revert  R", new Runnable() {
+            public void run() { model.revert(); syncFromModel(); }
+        }));
+        buttons.add(button("Slot default  D", new Runnable() {
+            public void run() { model.resetToSlotDefault(); syncFromModel(); }
+        }));
+        buttons.row();
+        buttons.add(button("SAVE  ctrl+S", new Runnable() {
+            public void run() { save(); }
+        })).colspan(2);
+        buttons.add(button("Reload  F5", new Runnable() {
+            public void run() { reload(); }
+        })).colspan(2);
+        t.add(buttons).colspan(2).padTop(14f).row();
+
+        statusLabel = new Label("", skin);
+        t.add(statusLabel).colspan(2).padTop(14f).row();
+
+        Label help = new Label(
+                "arrows nudge 1px (shift 10)   + / - scale (shift faster)\n"
+                + ", / . rotate     [ ] step layers     esc back\n"
+                + "The file can be hand-edited while this is open; F5 re-reads it.",
+                skin);
+        t.add(help).colspan(2).padTop(20f).row();
+
+        return t;
     }
 
-    private void updateUIFromSelection() {
-        // Update Socket Sliders
-        String socketKey = mapSlotToSocket(selectedSlot);
-        com.badlogic.gdx.math.Vector2 pos = skeletonData.getSocketPosition(socketKey);
-        if (pos != null) {
-            socketXSlider.setValue(pos.x);
-            socketYSlider.setValue(pos.y);
-            socketValueLabel.setText((int) pos.x + ", " + (int) pos.y);
+    private CheckBox flag(String text) {
+        CheckBox cb = new CheckBox(" " + text, skin);
+        cb.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
+                if (syncing) return;
+                LayerCalibration c = model.current();
+                c.hidesHair = hidesHairBox.isChecked();
+                c.hidesBeard = hidesBeardBox.isChecked();
+                c.needsArtRedo = needsArtRedoBox.isChecked();
+                model.commit();
+                refreshStatus();
+            }
+        });
+        return cb;
+    }
+
+    private TextButton button(String text, final Runnable action) {
+        TextButton b = new TextButton(text, skin);
+        b.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                action.run();
+            }
+        });
+        return b;
+    }
+
+    private void populateLayerBox(String slot) {
+        Array<String> items = new Array<String>();
+        for (String id : model.layersInSlot(slot)) {
+            items.add(id);
+        }
+        syncing = true;
+        layerBox.setItems(items);
+        syncing = false;
+    }
+
+    private void selectLayer(String layerId) {
+        model.select(layerId);
+        syncFromModel();
+    }
+
+    /** Pushes model state into the widget and the controls. */
+    private void syncFromModel() {
+        String id = model.selectedLayerId();
+        if (id == null) {
+            return;
+        }
+        int sep = id.indexOf('/');
+        String folder = sep > 0 ? id.substring(0, sep) : "";
+        PaperDoll2DWidget.PaperDollSlot slot = PaperDoll2DWidget.slotForFolder(folder);
+
+        doll.clearEquipment();
+        if (slot != null) {
+            doll.showLayer(slot, id);
         }
 
-        // Update Item Sliders if item exists
-        Item item = equippedItems.get(selectedSlot);
-        if (item != null) {
-            itemSelectBox.setSelected(item.getType());
-            offsetXSlider.setValue(item.getOffsetX());
-            offsetYSlider.setValue(item.getOffsetY());
-            scaleXSlider.setValue(item.getScale().x);
-            scaleYSlider.setValue(item.getScale().y);
-            rotationSlider.setValue(item.getRotation());
+        syncing = true;
+        if (!folder.equals(slotBox.getSelected())) {
+            slotBox.setSelected(folder);
+            populateLayerBox(folder);
+        }
+        layerBox.setSelected(id);
+        LayerCalibration c = model.current();
+        hidesHairBox.setChecked(c.hidesHair);
+        hidesBeardBox.setChecked(c.hidesBeard);
+        needsArtRedoBox.setChecked(c.needsArtRedo);
+        syncing = false;
+
+        refreshStatus();
+    }
+
+    private void refreshStatus() {
+        LayerCalibration c = model.current();
+        valuesLabel.setText(String.format(
+                "offset  %+.1f, %+.1f      scale  %.3f x %.3f      rotation  %+.1f",
+                c.offsetX, c.offsetY, c.scaleX, c.scaleY, c.rotation));
+
+        String id = model.selectedLayerId();
+        statusLabel.setText(String.format("%s   (%d of %d)%s",
+                id == null ? "-" : id,
+                model.selectedIndex() + 1,
+                model.layerCount(),
+                model.isDirty() ? "    *** UNSAVED ***" : ""));
+        statusLabel.setColor(model.isDirty() ? Color.ORANGE : Color.WHITE);
+    }
+
+    private void save() {
+        model.commit();
+        if (doll.saveCalibration()) {
+            model.markSaved();
+            statusLabel.setText("saved " + model.layerCount() + " layers");
+            statusLabel.setColor(Color.GREEN);
         } else {
-            // Reset sliders?
-            offsetXSlider.setValue(0);
-            offsetYSlider.setValue(0);
-            scaleXSlider.setValue(1);
-            scaleYSlider.setValue(1);
-            rotationSlider.setValue(0);
+            statusLabel.setText("SAVE FAILED - no writable assets/data path");
+            statusLabel.setColor(Color.RED);
         }
     }
 
-    private void updateItemTransform() {
-        if (selectedSlot == null)
-            return;
-        Item item = equippedItems.get(selectedSlot);
-        if (item == null)
-            return;
-
-        float valX = scaleXSlider.getValue();
-        float valY = scaleYSlider.getValue();
-        Gdx.app.log("EditorDebug", "Setting scale for " + item.getTypeName() + " to " + valX + ", " + valY);
-
-        item.setOffsetX(offsetXSlider.getValue());
-        item.setOffsetY(offsetYSlider.getValue());
-        item.getScale().set(valX, valY);
-        item.setRotation(rotationSlider.getValue());
-
-        refreshWidget();
-
-        offsetValueLabel.setText((int) item.getOffsetX() + ", " + (int) item.getOffsetY());
-        scaleValueLabel.setText(String.format("%.2f, %.2f", item.getScale().x, item.getScale().y));
-        rotationValueLabel.setText(String.format("%.0f", item.getRotation()));
-    }
-
-    private void updateSocketTransform() {
-        String socketKey = mapSlotToSocket(selectedSlot);
-        skeletonData.setSocketPosition(socketKey, socketXSlider.getValue(), socketYSlider.getValue());
-        refreshWidget(); // Re-render to see change
-        socketValueLabel.setText((int) socketXSlider.getValue() + ", " + (int) socketYSlider.getValue());
-    }
-
-    private void updateHeadTransform() {
-        this.headX = headXSlider.getValue();
-        this.headY = headYSlider.getValue();
-
-        // Update the skeleton data immediately so it's ready to save
-        skeletonData.setSocketPosition("face", headX, headY);
-
-        refreshWidget();
-        headValueLabel.setText((int) headX + ", " + (int) headY);
-    }
-
-    private void refreshWidget() {
-        paperDollWidget.clearEquipment();
-
-        // --- Add Head Overlay as a Fragment (Z-Index Control) ---
-        // Chest is usually Z=30, Helmet is Z=60. We want Z=45.
-        // We need to load/cache the texture somewhere or just use the one we loaded.
-        // We'll treat it as a "Body" part for now.
-        if (headTexture == null) {
-            headTexture = new Texture(Gdx.files.internal("images/inventory_doll_head.png"));
+    private void reload() {
+        String selected = model.selectedLayerId();
+        doll.reloadCalibration();
+        model = new CalibrationEditModel(doll.getCalibration());
+        if (selected != null) {
+            model.select(selected);
+        } else if (!model.allLayers().isEmpty()) {
+            model.select(model.allLayers().get(0));
         }
-        com.badlogic.gdx.graphics.g2d.TextureRegion headRegion = new com.badlogic.gdx.graphics.g2d.TextureRegion(
-                headTexture);
-
-        // Size/Position matching current Editor Scale logic
-        // The Widget handles scale application during render if we set localOffset?
-        // Wait, Widget.drawFragment uses: getX() + socketX + localOffset.
-        // And applies scale: fragment.scaleX.
-
-        // We need to match the "Global" positioning of the head image we realized
-        // earlier.
-        // In previous step we used explicit Actor sizing/positioning.
-        // Here we are inside the widget. The widget is already scaled by the stage
-        // logic (or actor scale).
-
-        // If we use DollFragment, coordinates are relative to the Widget's origin (0,0)
-        // + Socket Position.
-        // We can define a pseudo-socket or just use absolute offset.
-        // Let's use "head" socket?
-        // SkeletonData for "head": x=1048, y=1200, z=40
-        // The inventory_doll_head.png is actually the FACE.
-        // Previously we positioned it at explicit X/Y relative to the paperdoll image.
-
-        // Replicating explicit position from previous step:
-        // float headX = 402; float headY = 465; (Relative to UNCALED 400x600 image? No,
-        // wait.)
-        // The paperdoll texture is huge? checking previous read..
-        // Previous read showed paperDollTexture loaded from
-        // "images/inventory_paper_doll.png".
-        // InventoryScreen logic was "targetWidth / paperDollTexture.getWidth()".
-
-        // If we put it in the widget, the widget aligns with the paperdoll background.
-        // So we just need the local coordinates of the head relative to the background
-        // 0,0.
-        // InventoryScreen said: headImage.setPosition(402, 465);
-
-        com.bpm.minotaur.paperdoll.data.DollFragment headFrag = new com.bpm.minotaur.paperdoll.data.DollFragment(
-                headRegion, 45, "none", 1f, 1f);
-
-        // "none" socket means (0,0). So we set offset to (402, 465).
-        headFrag.localOffset.set(302, 465);
-
-        // WAIT: InventoryScreen's 402,465 was for a specific target size maybe?
-        // InventoryScreen used:
-        // scale = targetWidth / paperDollTexture.getWidth();
-        // ...
-        // headImage.setPosition(402, 465);
-        // This suggests 402,465 was relative to the Scaled Group if the Group/Image
-        // were scaled?
-        // Actually InventoryScreen adds headImage to paperDollGroup which contains
-        // paperDollImage.
-        // If paperDollImage is size (W,H) and headImage is at (402, 465),
-        // AND the user said "bascinet_head: Pos(1067.00, 1249.00)" in logs...
-        // The logs suggest the coordinate system is much larger (1000+).
-        // 402, 465 seems small for a 1200+ Y system.
-
-        // Let's re-read the user log from Step 635:
-        // "bascinet_head: Pos(1067.00, 1249.00)"
-        // "Socket(head: 1048.00, 1200.00)"
-
-        // Verify: Inventory texture might be large (e.g. 2048x2048).
-        // 402, 465 might be for the SCALED UI version in InventoryScreen.
-        // BUT, in Editor we are using the internal coordinate system of the Widget
-        // which matches the Texture resolution.
-
-        // I need to know the REAL coordinates of the head on the source texture.
-        // I don't have the image file to check.
-        // But I know "head" socket is at 1048, 1200.
-        // The "Face" should be near the head socket.
-        // So the offset should be near 1048, 1200.
-
-        // The user manually adjusted the Bascinet to:
-        // "scaleX": 0.65, "offsetY": 42
-        // Socket head: 1048, 1200.
-        // So helmet is around 1048, 1242.
-
-        // The head overlay is the "face". It should be roughly there too.
-        // Let's blindly guess it should be anchored to the "head" socket with (0,0)
-        // offset initially,
-        // OR try to map that 402/465 to the larger space.
-        // If 402/465 was correct for the UI, and the UI scale was, say, 0.4...
-        // 402 / 0.4 = 1005.
-        // 465 / 0.4 = 1162.
-        // That is suspiciously close to 1048, 1200.
-
-        // So, let's attach the Head Fragment to the "head" socket.
-        // And give it a small offset or 0,0.
-        // Let's try 0,0 first. It's safe.
-        // Z-Index 45 to be > Chest(30) and < Helm(60).
-
-        // Fix: Use "none" socket and calculate absolute offset based on INITIAL head
-        // position
-        // This prevents the face from moving when we adjust the socket sliders
-        // Z=80 (Layer 2: BELOW Helmet=90, ABOVE everything else)
-        com.bpm.minotaur.paperdoll.data.DollFragment headFragment = new com.bpm.minotaur.paperdoll.data.DollFragment(
-                headRegion, 80, "none", 1f, 1f);
-
-        // Use the class-level headX/headY that the user is editing
-        float staticX = this.headX;
-        float staticY = this.headY;
-
-        headFragment.localOffset.set(staticX, staticY);
-        paperDollWidget.setBody(headFragment); // Use setBody to add "extra" fragments
-
-        // Re-equip all
-        for (Item item : equippedItems.values()) {
-            paperDollWidget.equip(item);
-        }
+        syncFromModel();
     }
 
-    private String mapSlotToSocket(String slotName) {
-        switch (slotName) {
-            case "Head":
-                return "head";
-            case "Torso":
-                return "torso";
-            case "Hands":
-                return "hand_main"; // Or both?
-            case "Arms":
-                return "hand_main"; // Arms share the main hand socket usually
-            case "Legs":
-                return "hips";
-            case "Feet":
-                return "feet";
-            case "MainHand":
-                return "hand_main";
-            case "OffHand":
-                return "hand_off";
+    private boolean handleKey(int keycode) {
+        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+        float step = shift ? NUDGE_FAST : NUDGE;
+        float factor = shift ? SCALE_STEP_FAST : SCALE_STEP;
+
+        switch (keycode) {
+            case Input.Keys.LEFT:   model.nudge(-step, 0f); break;
+            case Input.Keys.RIGHT:  model.nudge(step, 0f); break;
+            case Input.Keys.UP:     model.nudge(0f, -step); break;
+            case Input.Keys.DOWN:   model.nudge(0f, step); break;
+            case Input.Keys.EQUALS:
+            case Input.Keys.PLUS:   model.scaleBy(factor, shift ? 1f : factor); break;
+            case Input.Keys.MINUS:  model.scaleBy(1f / factor, shift ? 1f : 1f / factor); break;
+            case Input.Keys.COMMA:  model.rotateBy(-ROTATE_STEP); break;
+            case Input.Keys.PERIOD: model.rotateBy(ROTATE_STEP); break;
+            case Input.Keys.LEFT_BRACKET:  model.previous(); syncFromModel(); return true;
+            case Input.Keys.RIGHT_BRACKET: model.next(); syncFromModel(); return true;
+            case Input.Keys.R:      model.revert(); syncFromModel(); return true;
+            case Input.Keys.D:      model.resetToSlotDefault(); syncFromModel(); return true;
+            case Input.Keys.F5:     reload(); return true;
+            case Input.Keys.S:
+                if (ctrl) { save(); return true; }
+                return false;
+            case Input.Keys.ESCAPE:
+                game.setScreen(previousScreen);
+                return true;
             default:
-                return "torso";
+                return false;
         }
-    }
-
-    private void saveSkeleton() {
-        try {
-            FileHandle skelFile = Gdx.files.local("assets/data/skeleton.json");
-
-            // Reconstruct the expected JSON structure
-            Map<String, Map<String, Object>> root = new HashMap<>();
-            Map<String, Object> socketsMap = new HashMap<>();
-
-            // ADD "face" to the known sockets list
-            String[] knownSockets = { "head", "face", "torso", "hand_main", "hand_off", "feet", "hips", "back",
-                    "backpack" };
-
-            for (String sockName : knownSockets) {
-                com.badlogic.gdx.math.Vector2 pos = skeletonData.getSocketPosition(sockName);
-                int depth = skeletonData.getSocketDepth(sockName);
-                if (pos != null) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("x", pos.x);
-                    data.put("y", pos.y);
-                    data.put("z", depth);
-                    socketsMap.put(sockName, data);
-                }
-            }
-
-            root.put("sockets", socketsMap);
-
-            Json json = new Json();
-            json.setOutputType(JsonWriter.OutputType.json);
-
-            skelFile.writeString(json.prettyPrint(root), false);
-            Gdx.app.log("Editor", "Saved skeleton.json");
-
-        } catch (Exception e) {
-            Gdx.app.error("Editor", "Error saving skeleton", e);
-        }
-    }
-
-    private void saveArmor() {
-        saveItemData();
-    }
-
-    private void saveItemData() {
-        Json json = new Json();
-        json.setOutputType(JsonWriter.OutputType.json);
-        json.setTypeName(null);
-        json.setUsePrototypes(false);
-        json.setIgnoreUnknownFields(true);
-
-        try {
-            // --- Load Armor ---
-            FileHandle armorFile = Gdx.files.local("assets/data/armor.json");
-            @SuppressWarnings("unchecked")
-            com.badlogic.gdx.utils.OrderedMap<String, ItemTemplate> armorMap = json
-                    .fromJson(com.badlogic.gdx.utils.OrderedMap.class, ItemTemplate.class, armorFile);
-
-            // --- Load Weapons ---
-            FileHandle weaponsFile = Gdx.files.local("assets/data/weapons.json");
-            @SuppressWarnings("unchecked")
-            com.badlogic.gdx.utils.OrderedMap<String, ItemTemplate> weaponsMap = json
-                    .fromJson(com.badlogic.gdx.utils.OrderedMap.class, ItemTemplate.class, weaponsFile);
-
-            boolean armorChanged = false;
-            boolean weaponsChanged = false;
-
-            for (Item item : equippedItems.values()) {
-                if (item.getType().name().equals("SCROLL") || item.getType().name().equals("POTION"))
-                    continue;
-
-                String key = item.getTypeName();
-
-                // Check Armor
-                ItemTemplate t = armorMap.get(key);
-                if (t != null) {
-                    updateTemplate(t, item);
-                    armorChanged = true;
-                    continue; // Done with this item
-                }
-
-                // Check Weapons
-                t = weaponsMap.get(key);
-                if (t != null) {
-                    updateTemplate(t, item);
-                    weaponsChanged = true;
-                }
-            }
-
-            if (armorChanged) {
-                armorFile.writeString(json.prettyPrint(armorMap), false);
-                Gdx.app.log("Editor", "Saved armor.json");
-            }
-
-            if (weaponsChanged) {
-                weaponsFile.writeString(json.prettyPrint(weaponsMap), false);
-                Gdx.app.log("Editor", "Saved weapons.json");
-            }
-
-            // Trigger Global Reload
-            game.getItemDataManager().reloadAll();
-            Gdx.app.log("Editor", "Triggered global ItemDataManager reload.");
-
-        } catch (Exception e) {
-            Gdx.app.error("Editor", "Failed to save item JSON", e);
-        }
-    }
-
-    private void updateTemplate(ItemTemplate t, Item item) {
-        t.offsetX = item.getOffsetX();
-        t.offsetY = item.getOffsetY();
-        t.scaleX = item.getScale().x;
-        t.scaleY = item.getScale().y;
-        t.rotation = item.getRotation(); // Save Rotation
-
-        if (t.scale == null) {
-            t.scale = new ItemTemplate.Vector2Wrapper();
-        }
-        t.scale.x = t.scaleX;
-        t.scale.y = t.scaleY;
-        Gdx.app.log("Editor", String.format("Updated %s: Scale(%.2f, %.2f) Offset(%.2f, %.2f) Rot(%.0f)",
-                item.getTypeName(), t.scaleX, t.scaleY, t.offsetX, t.offsetY, t.rotation));
+        refreshStatus();
+        return true;
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+        Gdx.gl.glClearColor(0.10f, 0.11f, 0.13f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
         stage.act(delta);
         stage.draw();
-
-        // Input handling for hotkeys if needed
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            // maybe close?
-        }
     }
 
     @Override
@@ -797,64 +415,11 @@ public class PaperdollEditorScreen extends BaseScreen {
         stage.getViewport().update(width, height, true);
     }
 
-    private void populateItemSelectBox(String category) {
-        Array<ItemType> items = new Array<>();
-        for (ItemType t : ItemType.values()) {
-            String name = t.name();
-
-            // Heuristic check for armor based on common keywords if isArmor() isn't
-            // available on Enum
-            ItemTemplate template = null;
-            try {
-                template = game.getItemDataManager().getTemplate(t);
-            } catch (Exception e) {
-                // Template missing, fall back to name-based heuristics
-            }
-
-            boolean isArmor = false;
-            boolean isWeapon = false;
-            boolean isMisc = false;
-
-            if (template != null) {
-                // Check varied template flags for "End User" categorization
-                isArmor = template.isArmor || template.isHelmet || template.isBoots || template.isGauntlets
-                        || template.isLegs || template.isShield || template.isCloak || template.isAmulet
-                        || template.isRing;
-                isWeapon = template.isWeapon;
-            } else {
-                // Fallback name check if template missing
-                isWeapon = name.contains("SWORD") || name.contains("AXE") || name.contains("MACE")
-                        || name.contains("DAGGER") || name.contains("SPEAR") || name.contains("BOW")
-                        || name.contains("CROSSBOW") || name.contains("STAFF") || name.contains("WAND")
-                        || name.contains("FLAIL") || name.contains("HALBERD") || name.contains("HAMMER")
-                        || name.contains("PICK") || name.contains("MORNING_STAR") || name.contains("CLUB")
-                        || name.contains("SCIMITAR") || name.contains("KATANA") || name.contains("GLAIVE")
-                        || name.contains("LANCE") || name.contains("TRIDENT") || name.contains("WHIP");
-            }
-
-            if (!isArmor && !isWeapon)
-                isMisc = true;
-
-            if (category.equals("All")) {
-                if (!isMisc || (template != null && (template.isPotion || template.isScrollAppearance)))
-                    items.add(t);
-            } else if (category.equals("Armor") && isArmor) {
-                items.add(t);
-            } else if (category.equals("Weapon") && isWeapon) {
-                items.add(t);
-            } else if (category.equals("Misc") && isMisc) {
-                items.add(t);
-            }
-        }
-
-        // Sort alphabetically
-        items.sort(new java.util.Comparator<ItemType>() {
-            @Override
-            public int compare(ItemType o1, ItemType o2) {
-                return o1.name().compareTo(o2.name());
-            }
-        });
-
-        itemSelectBox.setItems(items);
+    @Override
+    public void dispose() {
+        if (stage != null) stage.dispose();
+        if (doll != null) doll.dispose();
+        if (skin != null) skin.dispose();
+        if (whitePixel != null) whitePixel.dispose();
     }
 }

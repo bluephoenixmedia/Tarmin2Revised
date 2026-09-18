@@ -186,15 +186,50 @@ public class Tarmin2 extends Game {
         Gdx.app.log("Tarmin2", "Startup completed to MainMenu in " + elapsed + " ms (" + String.format("%.2f", elapsed / 1000f) + "s)");
         BalanceLogger.getInstance().log("STARTUP", "Game initialized to MainMenu in " + elapsed + " ms");
 
+        // Straight into the paperdoll editor when asked. Calibrating a slot means
+        // opening this repeatedly, and clicking through the main menu each time is the
+        // kind of friction that turns a one-hour pass into an afternoon.
+        //   ./gradlew lwjgl3:run --args="--paperdoll"   (or -Dtarmin.screen=paperdoll)
+        if (bootToPaperdollEditor()) {
+            Gdx.app.log("Tarmin2", "Booting straight into the paperdoll editor");
+            this.setScreen(new com.bpm.minotaur.screens.PaperdollEditorScreen(this, null));
+            return;
+        }
+
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
+    }
+
+    private static boolean bootToPaperdollEditor() {
+        if ("paperdoll".equalsIgnoreCase(System.getProperty("tarmin.screen", ""))) {
+            return true;
+        }
+        String[] args = startupArgs;
+        if (args != null) {
+            for (String a : args) {
+                if ("--paperdoll".equalsIgnoreCase(a)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Command-line arguments, handed over by the desktop launcher. */
+    private static String[] startupArgs;
+
+    public static void setStartupArgs(String[] args) {
+        startupArgs = args;
     }
 
     @Override
     public void render() {
         super.render();
-        // Debug Entry Point for Paperdoll Editor
-        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.F10)) {
+        // Debug Entry Point for Paperdoll Editor. Guarded because this fires from every
+        // screen: without it, F10 inside the editor opens a second one over the first
+        // and strands the original, along with its unsaved calibration.
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.F10)
+                && !(this.getScreen() instanceof com.bpm.minotaur.screens.PaperdollEditorScreen)) {
             this.setScreen(new com.bpm.minotaur.screens.PaperdollEditorScreen(this, this.getScreen()));
         }
     }

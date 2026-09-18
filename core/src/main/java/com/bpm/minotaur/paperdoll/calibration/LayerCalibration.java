@@ -52,6 +52,27 @@ public class LayerCalibration {
                 && Math.abs(rotation) < EPSILON;
     }
 
+    /**
+     * Whether anything a person could have edited differs from {@code other}.
+     *
+     * Covers the flags as well as the geometry: the editor binds checkboxes directly to
+     * these fields, so a change that this missed would look applied and then be lost as
+     * unsaved work nobody was warned about.
+     */
+    public boolean differsFrom(LayerCalibration other) {
+        if (other == null) {
+            return true;
+        }
+        return Math.abs(offsetX - other.offsetX) > EPSILON
+                || Math.abs(offsetY - other.offsetY) > EPSILON
+                || Math.abs(scaleX - other.scaleX) > EPSILON
+                || Math.abs(scaleY - other.scaleY) > EPSILON
+                || Math.abs(rotation - other.rotation) > EPSILON
+                || hidesHair != other.hidesHair
+                || hidesBeard != other.hidesBeard
+                || needsArtRedo != other.needsArtRedo;
+    }
+
     public LayerCalibration copy() {
         LayerCalibration c = new LayerCalibration();
         c.offsetX = offsetX;

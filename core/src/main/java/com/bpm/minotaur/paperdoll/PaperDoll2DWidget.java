@@ -125,6 +125,60 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         return layerMap;
     }
 
+    /**
+     * Shows one layer by its id, for the calibration editor.
+     *
+     * The normal path goes through an equipped {@link Item}, but the editor walks the
+     * baked layers directly -- including layers no item maps to yet, which are exactly
+     * the ones most likely to need calibrating.
+     */
+    public boolean showLayer(PaperDollSlot slot, String layerId) {
+        if (slot == null || slot == PaperDollSlot.BASE_FATHER || layerId == null) {
+            return false;
+        }
+        int sep = layerId.indexOf('/');
+        String folder = sep > 0 ? layerId.substring(0, sep) : slot.folderName;
+        String name = sep > 0 ? layerId.substring(sep + 1) : layerId;
+
+        Texture tex = loadTexture("images/paperdoll/" + folder + "/" + name + ".png");
+        if (tex == null) {
+            activeLayers.remove(slot);
+            return false;
+        }
+        activeLayers.put(slot, new LayerEntry(slot, tex, layerId));
+        return true;
+    }
+
+    /** The visual slot a layer folder belongs to, or null if the folder is unknown. */
+    public static PaperDollSlot slotForFolder(String folder) {
+        if (folder == null) {
+            return null;
+        }
+        for (PaperDollSlot s : PaperDollSlot.values()) {
+            if (folder.equals(s.folderName) && s != PaperDollSlot.CLOAK_FRONT) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Persists calibration back to the assets tree. Editor only -- a packaged build has
+     * no business rewriting its own assets.
+     */
+    public boolean saveCalibration() {
+        FileHandle handle = Gdx.files.local("assets/" + CALIBRATION_PATH);
+        if (!handle.exists() && !handle.parent().exists()) {
+            handle = Gdx.files.local(CALIBRATION_PATH);
+        }
+        if (!handle.exists() && !handle.parent().exists()) {
+            Gdx.app.error("PaperDoll2DWidget", "No writable path for " + CALIBRATION_PATH);
+            return false;
+        }
+        calibration.save(handle);
+        return true;
+    }
+
     private void loadBaseFather() {
         FileHandle handle = resolveFile("images/paperdoll/base_father.png");
         if (handle != null && handle.exists()) {
