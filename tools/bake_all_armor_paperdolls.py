@@ -431,7 +431,28 @@ def map_and_fix_armor_json(repo_root):
         
     print(f"Updated armor.json: {flag_fixes} flag fixes applied, {alias_count} alias images created.\n")
 
+SUPERSEDED_NOTICE = """
+This script is SUPERSEDED by tools/bake_paperdoll_layers.py and must not be run.
+
+It bakes placement INTO the pixels using hardcoded per-slot widths and paste offsets.
+Layers are now baked normalised (cropped, boxed, centred) with placement supplied at
+draw time from assets/data/paperdoll_calibration.json. Running this would overwrite
+every normalised layer with a differently-framed one while leaving the calibration
+untouched, so every piece would be placed twice and land nowhere near the body.
+
+It also re-creates the alias PNGs that assets/data/paperdoll_layers.json replaced.
+
+Kept only as the record of what the old constants were. To bake, run:
+    python tools/bake_paperdoll_layers.py --verify
+    python tools/bake_paperdoll_layers.py --apply
+"""
+
+
 def main():
+    raise SystemExit(SUPERSEDED_NOTICE)
+
+
+def _original_main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print(f"=== BATCH BAKING ARMOR ASSETS INTO 2D PAPERDOLL PIPELINE ===")
     print(f"Repository Root: {repo_root}\n")

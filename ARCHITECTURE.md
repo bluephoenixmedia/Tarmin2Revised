@@ -23,7 +23,7 @@ com.bpm.minotaur/
 ├── managers/                       ← 21 singleton + context managers
 ├── rendering/                      ← All renderers, overlays, HUD, animation
 ├── generation/                     ← Procedural maze/biome generators, factories, spawners
-├── paperdoll/                      ← PaperDollWidget, VerletPhysics, DollFragment, SkeletonData
+├── paperdoll/                      ← PaperDoll2DWidget, calibration/ (LayerCalibration, CalibrationStore, PaperdollLayerMap); legacy PaperDollWidget, VerletPhysics
 ├── weather/                        ← WeatherManager, WeatherRenderer, WeatherType, WeatherIntensity
 └── utils/                          ← DiceRoller, ShatterUtils, AY38914, JavaCVVideoPlayer
 ```
@@ -210,6 +210,22 @@ com.bpm.minotaur/
 | `SpellParticle` | Pooled visual spell particle |
 
 ### Paperdoll
+
+The shipping path is `PaperDoll2DWidget` plus `paperdoll/calibration/`. Layers are baked
+normalised by `tools/bake_paperdoll_layers.py` and positioned at draw time from
+`assets/data/paperdoll_calibration.json`.
+
+| Class | Purpose |
+|---|---|
+| `PaperDoll2DWidget` | Composite doll used by the inventory; applies calibration per layer |
+| `LayerCalibration` | One layer's offset, non-uniform scale, rotation and flags |
+| `LayerPlacement` | Maps canvas-space calibration onto the widget's stage rect |
+| `CalibrationStore` | Reads/writes `paperdoll_calibration.json`; slot-default fallback |
+| `PaperdollLayerMap` | Reads `paperdoll_layers.json`; item key → slot + layer |
+
+Legacy path, not used by the inventory — scheduled for removal when the paperdoll editor
+is rebuilt against `PaperDoll2DWidget`:
+
 | Class | Purpose |
 |---|---|
 | `PaperDollWidget` | Character appearance UI component |

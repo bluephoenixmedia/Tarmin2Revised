@@ -1,5 +1,16 @@
 {
-  "_comment": "Paperdoll layer calibration. Offsets are master-canvas pixels (1024x1536); +y is DOWN. Safe to hand-edit; the in-game editor reloads on F5.",
+  "_comment": "Paperdoll layer calibration. Offsets are master-canvas pixels (1024x1536); +y is DOWN. Safe to hand-edit; re-read by tools/bake_paperdoll_layers.py.",
+  "slotDefaults": {
+    "arms": {"offsetX": -42.0, "offsetY": -298.0, "scaleX": 0.98901, "scaleY": 0.98929, "rotation": 0},
+    "chest": {"offsetX": 0.0, "offsetY": -32.5, "scaleX": 0.98219, "scaleY": 0.98226, "rotation": 0},
+    "cloak": {"offsetX": 0.0, "offsetY": -78.5, "scaleX": 0.97297, "scaleY": 0.97354, "rotation": 0},
+    "feet": {"offsetX": -2.0, "offsetY": 537.0, "scaleX": 0.97258, "scaleY": 0.97222, "rotation": 0},
+    "hands": {"offsetX": -18.75, "offsetY": 122.0, "scaleX": 1.09428, "scaleY": 1.09431, "rotation": 0},
+    "head": {"offsetX": 0.0, "offsetY": -498.25, "scaleX": 0.97059, "scaleY": 0.96963, "rotation": 0},
+    "legs": {"offsetX": 0.0, "offsetY": 285.0, "scaleX": 0.97872, "scaleY": 0.97908, "rotation": 0},
+    "shield": {"offsetX": 310.0, "offsetY": 92.0, "scaleX": 0.95664, "scaleY": 0.95747, "rotation": 0},
+    "weapon": {"offsetX": -314.5, "offsetY": -97.5, "scaleX": 0.965, "scaleY": 0.965, "rotation": 0}
+  },
   "layers": {
     "arms/Lorica_hamata_arms": {"offsetX": -42.0, "offsetY": -316.0, "scaleX": 0.9, "scaleY": 0.90037, "rotation": 0, "sourceHash": "f4ae69f7901a27a3"},
     "arms/arms": {"offsetX": -53.0, "offsetY": -298.0, "scaleX": 1.0, "scaleY": 1.0, "rotation": 0, "sourceHash": "328be7408607ea1a"},

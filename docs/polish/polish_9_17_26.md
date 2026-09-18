@@ -13,3 +13,7 @@
 - Shields need reverse image generation to show what the player would see from the first person perspective.
 - The Spell Quick menu on the left of the UX is unreadable.
 The Light spell that the player starts with should cost MP, currently it does not.
+- I encountered a Remains of Hero (bones) and pressing E didn't interact with it as expected. The sprint also needs to be generated lower by about 50 pixels
+- The bones / remains should never generate inside the player's shelter
+- If a weapon is placed in the Quick Slots, the intent of doing that should be that the player will throw that weapon by pressing the quick slot key. 
+- The weapon bobbing animation needs to be 25% slower.

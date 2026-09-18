@@ -335,21 +335,89 @@ def merge_layer_map(repo, fresh, unresolved):
     return fresh, unresolved
 
 
+def looks_already_normalised(cal):
+    """True when a seed is suspiciously identity-like.
+
+    Normalising centres a layer and fits it to its slot box, so measuring an
+    already-normalised layer yields offset ~0 and scale ~1. That is indistinguishable
+    from a genuine layer that happens to sit dead centre at exactly box size, but no
+    real artwork does -- so treating it as an error is the right trade.
+    """
+    return (abs(cal["offsetX"]) < 2.0
+            and abs(cal["offsetY"]) < 2.0
+            and abs(cal["scaleX"] - 1.0) < 0.01
+            and abs(cal["scaleY"] - 1.0) < 0.01)
+
+
+def slot_defaults(calibration):
+    """Median placement per slot, used as the fallback for layers with no entry.
+
+    Identity is the wrong fallback once layers are normalised. A normalised layer is
+    cropped, boxed and centred, so drawing it at identity puts it in the middle of the
+    canvas -- a helmet renders at chest height. Before normalisation identity meant
+    "as baked", which was safe; now it means "at canvas centre", which is not.
+
+    New art therefore lands at its slot's typical position instead of the middle of
+    the body, which is both a usable starting point and an honest failure mode.
+    """
+    import statistics
+
+    grouped = {}
+    for layer_id, cal in calibration.items():
+        grouped.setdefault(layer_id.split("/", 1)[0], []).append(cal)
+
+    defaults = {}
+    for slot, cals in grouped.items():
+        defaults[slot] = {
+            "offsetX": round(statistics.median(c["offsetX"] for c in cals), 2),
+            "offsetY": round(statistics.median(c["offsetY"] for c in cals), 2),
+            "scaleX": round(statistics.median(c["scaleX"] for c in cals), 5),
+            "scaleY": round(statistics.median(c["scaleY"] for c in cals), 5),
+            "rotation": 0,
+        }
+    return defaults
+
+
 def write_calibration(path, calibration):
+    """Write the calibration file, preserving every field the Java side understands.
+
+    The flags are not optional extras. docs/paperdoll_triage.md instructs the reader to
+    set needsArtRedo by hand in this very file, and the triage list is then built by
+    reading it back -- so a writer that emitted only the geometry would erase the flag
+    on the next bake and quietly empty the worklist it is supposed to produce. Anything
+    CalibrationStore.java can read has to survive a round trip through here.
+    """
     lines = [
         "{",
         '  "_comment": "Paperdoll layer calibration. Offsets are master-canvas pixels '
-        '(1024x1536); +y is DOWN. Safe to hand-edit; the in-game editor reloads on F5.",',
-        '  "layers": {',
+        '(1024x1536); +y is DOWN. Safe to hand-edit; re-read by tools/bake_paperdoll_layers.py.",',
+        '  "slotDefaults": {',
     ]
+    defaults = slot_defaults(calibration)
+    dkeys = sorted(defaults)
+    for i, k in enumerate(dkeys):
+        d = defaults[k]
+        lines.append('    "%s": {"offsetX": %s, "offsetY": %s, "scaleX": %s, "scaleY": %s, "rotation": %s}'
+                     % (k, d["offsetX"], d["offsetY"], d["scaleX"], d["scaleY"], d["rotation"])
+                     + ("," if i < len(dkeys) - 1 else ""))
+    lines += ['  },', '  "layers": {']
+
     keys = sorted(calibration)
     for i, k in enumerate(keys):
         c = calibration[k]
-        line = ('    "%s": {"offsetX": %s, "offsetY": %s, "scaleX": %s, "scaleY": %s, '
-                '"rotation": %s, "sourceHash": "%s"}'
-                % (k, c["offsetX"], c["offsetY"], c["scaleX"], c["scaleY"],
-                   c["rotation"], c["sourceHash"]))
-        lines.append(line + ("," if i < len(keys) - 1 else ""))
+        parts = ['"offsetX": %s' % c["offsetX"],
+                 '"offsetY": %s' % c["offsetY"],
+                 '"scaleX": %s' % c["scaleX"],
+                 '"scaleY": %s' % c["scaleY"],
+                 '"rotation": %s' % c["rotation"]]
+        # Flags are omitted when false so the common case stays readable, matching
+        # CalibrationStore.serialize(); absent parses back as false.
+        for flag in ("hidesHair", "hidesBeard", "needsArtRedo"):
+            if c.get(flag):
+                parts.append('"%s": true' % flag)
+        if c.get("sourceHash"):
+            parts.append('"sourceHash": "%s"' % c["sourceHash"])
+        lines.append('    "%s": {%s}' % (k, ", ".join(parts)) + ("," if i < len(keys) - 1 else ""))
     lines += ["  }", "}", ""]
     with open(path, "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines))
@@ -491,6 +559,16 @@ def main():
                 cal = dict(prior)
                 reframed += 1
             else:
+                # A fresh seed that comes out as identity means the layer was already
+                # normalised and we are measuring our own output -- its real placement
+                # lived in a calibration entry that is now gone. Seeding from here would
+                # bake that loss in, so say so loudly rather than writing identity.
+                if looks_already_normalised(cal):
+                    failures.append((slot, canon,
+                                     "already normalised but has no calibration entry; "
+                                     "restore paperdoll_calibration.json or re-bake from "
+                                     "pre-normalisation art"))
+                    continue
                 recalibrated += 1
             cal["sourceHash"] = digest
 
