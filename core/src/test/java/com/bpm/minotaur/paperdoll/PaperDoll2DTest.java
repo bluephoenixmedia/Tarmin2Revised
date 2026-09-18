@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -55,10 +56,13 @@ public class PaperDoll2DTest {
                 "assets/images/paperdoll/base_father.png",
                 "assets/images/paperdoll/head/bascinet.png",
                 "assets/images/paperdoll/chest/breastplate.png",
-                "assets/images/paperdoll/arms/chainmail_arms.png",
                 "assets/images/paperdoll/legs/bronze_leggings.png",
-                "assets/images/paperdoll/feet/boots.png",
                 "assets/images/paperdoll/shield/buckler.png",
+                // Paired slots are baked as two half-layers, one per limb.
+                "assets/images/paperdoll/arms/chainmail_arms.left.png",
+                "assets/images/paperdoll/arms/chainmail_arms.right.png",
+                "assets/images/paperdoll/feet/boots.left.png",
+                "assets/images/paperdoll/feet/boots.right.png",
                 "tools/paperdoll_templates/base_father_1024x1536.png",
                 "tools/paperdoll_templates/slot_guides_1024x1536.png"
         };
@@ -163,6 +167,44 @@ public class PaperDoll2DTest {
                 !breastplate.isIdentity());
         assertNotNull("seed calibrations record the source they were measured against",
                 breastplate.sourceHash);
+    }
+
+    /**
+     * Paired artwork must exist as two halves and NOT as a combined layer.
+     *
+     * The combined form is what made boots and gauntlets uncalibratable: one rigid
+     * transform froze the spacing between the limbs into the artwork, and the boots were
+     * baked 337px apart where the feet are 502px apart. If a combined layer came back,
+     * the renderer would find it and the spacing lock would return with it.
+     */
+    @Test
+    public void testPairedSlotsAreBakedAsSeparateLimbs() {
+        String[][] pairs = {
+                {"feet", "boots"},
+                {"hands", "gauntlets"},
+                {"arms", "chainmail_arms"},
+        };
+        for (String[] p : pairs) {
+            String base = "assets/images/paperdoll/" + p[0] + "/" + p[1];
+            assertTrue("left limb missing: " + base, resolveFile(base + ".left.png").exists());
+            assertTrue("right limb missing: " + base, resolveFile(base + ".right.png").exists());
+            assertFalse("the combined layer must be gone, or the spacing lock returns: " + base,
+                    resolveFile(base + ".png").exists());
+
+            assertTrue("left limb needs its own calibration",
+                    calibration.has(p[0] + "/" + p[1] + ".left"));
+            assertTrue("right limb needs its own calibration",
+                    calibration.has(p[0] + "/" + p[1] + ".right"));
+        }
+    }
+
+    /** Each limb must be placed independently, or splitting them achieved nothing. */
+    @Test
+    public void testPairedLimbsCarryDistinctPlacements() {
+        LayerCalibration left = calibration.get("feet/boots.left");
+        LayerCalibration right = calibration.get("feet/boots.right");
+        assertTrue("the two boots should not share one offset",
+                Math.abs(left.offsetX - right.offsetX) > 50f);
     }
 
     /** No calibration entry should point at a layer nothing can equip. */

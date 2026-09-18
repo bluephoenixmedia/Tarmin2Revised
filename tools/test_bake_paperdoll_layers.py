@@ -122,5 +122,88 @@ class IdempotenceTest(unittest.TestCase):
             self.assertEqual("ff00", loaded["chest/breastplate"]["sourceHash"])
 
 
+
+
+class PairSplittingTest(unittest.TestCase):
+    """Paired slots draw both limbs in one image.
+
+    A single offset+scale moves that pair as a rigid unit, so its internal spacing is
+    frozen into the artwork. Measured against the body: the boots sit 337-413px apart
+    where the feet are 502px apart, so spreading them would need a 1.49x scale that
+    makes each boot half again too big. Correct spacing or correct size, never both --
+    which is why they could not be calibrated no matter how much they were nudged.
+
+    Splitting the pair gives each limb its own placement and decouples the two.
+    """
+
+    def pair(self, left_cx, right_cx, y=760, w=120, h=200):
+        img = Image.new("RGBA", (baker.CANVAS_W, baker.CANVAS_H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        for cx in (left_cx, right_cx):
+            d.rectangle([cx - w // 2, y - h // 2, cx + w // 2, y + h // 2], fill=(180, 140, 90, 255))
+        return img
+
+    def test_splits_a_clean_pair_into_two_halves(self):
+        img = self.pair(300, 720)
+        left, right = baker.split_pair(img)
+        self.assertIsNotNone(left)
+        self.assertIsNotNone(right)
+
+        lb = baker.solid_bbox(left)
+        rb = baker.solid_bbox(right)
+        self.assertLess(lb[2], rb[0], "halves must not overlap")
+        self.assertAlmostEqual(300, (lb[0] + lb[2]) / 2.0, delta=3)
+        self.assertAlmostEqual(720, (rb[0] + rb[2]) / 2.0, delta=3)
+
+    def test_each_half_keeps_its_own_position_on_the_canvas(self):
+        # The split is a mask, not a crop: each half stays where it was so its seed
+        # calibration still describes where that limb actually sits.
+        img = self.pair(300, 720)
+        left, right = baker.split_pair(img)
+        self.assertEqual(img.size, left.size)
+        self.assertEqual(img.size, right.size)
+
+    def test_stray_blobs_are_grouped_by_which_side_they_fall_on(self):
+        # great_boots.png separates into three pieces, not two -- a strap or buckle
+        # detached from its boot. Grouping by side keeps it with the limb it belongs to
+        # instead of being mistaken for a third limb.
+        img = self.pair(300, 720)
+        d = ImageDraw.Draw(img)
+        d.rectangle([250, 900, 290, 940], fill=(180, 140, 90, 255))  # stray, left side
+
+        left, right = baker.split_pair(img)
+        lb = baker.solid_bbox(left)
+        self.assertGreater(lb[3], 880, "the stray piece should travel with the left half")
+
+    def test_refuses_to_split_a_single_blob(self):
+        # One connected mass has no honest midline; guessing one would slice a boot in
+        # half down the middle.
+        img = Image.new("RGBA", (baker.CANVAS_W, baker.CANVAS_H), (0, 0, 0, 0))
+        ImageDraw.Draw(img).rectangle([400, 700, 620, 900], fill=(180, 140, 90, 255))
+        self.assertEqual((None, None), baker.split_pair(img))
+
+    def test_refuses_an_empty_image(self):
+        blank = Image.new("RGBA", (baker.CANVAS_W, baker.CANVAS_H), (0, 0, 0, 0))
+        self.assertEqual((None, None), baker.split_pair(blank))
+
+    def test_split_halves_can_be_placed_independently(self):
+        # The property the whole change exists for: after splitting, spacing and size
+        # are no longer locked together.
+        img = self.pair(300, 720)
+        left, right = baker.split_pair(img)
+
+        lnorm, lw, lh = baker.normalise(left, "feet")
+        rnorm, rw, rh = baker.normalise(right, "feet")
+        lcal = baker.seed_calibration(left, lw, lh)
+        rcal = baker.seed_calibration(right, rw, rh)
+
+        # Move only the right limb outward; the left must not follow.
+        rcal["offsetX"] += 120
+        lplaced = baker.solid_bbox(baker.apply_calibration(lnorm, lcal))
+        rplaced = baker.solid_bbox(baker.apply_calibration(rnorm, rcal))
+        self.assertAlmostEqual(300, (lplaced[0] + lplaced[2]) / 2.0, delta=4)
+        self.assertAlmostEqual(840, (rplaced[0] + rplaced[2]) / 2.0, delta=4)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

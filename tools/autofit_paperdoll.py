@@ -43,6 +43,29 @@ def load_json(path):
 # guessed -- see learn_rules(). Hand-guessed paddings were systematically wrong by
 # 80-170px per slot, because "how far a breastplate sits proud of the torso" is not
 # something to estimate when 335 worked examples are sitting right there.
+# Paired slots are baked as "<layer>.left" / "<layer>.right" and each limb is anchored
+# to its OWN landmark. This is the whole point of splitting them: the combined artwork
+# had the boots 337px apart where the feet are 502px apart, and one rigid transform
+# could match spacing or size but never both.
+LIMB_ANCHORS = {
+    ("feet", "left"):   lambda p: (p["foot_left"][0], p["foot_left"][1]),
+    ("feet", "right"):  lambda p: (p["foot_right"][0], p["foot_right"][1]),
+    ("hands", "left"):  lambda p: (p["hand_left"][0], p["hand_left"][1]),
+    ("hands", "right"): lambda p: (p["hand_right"][0], p["hand_right"][1]),
+    ("arms", "left"):   lambda p: (p["shoulder_left"][0], p["shoulder_left"][1]),
+    ("arms", "right"):  lambda p: (p["shoulder_right"][0], p["shoulder_right"][1]),
+}
+
+
+def limb_of(layer_name):
+    """'left' / 'right' for a split half, else None."""
+    if layer_name.endswith(".left"):
+        return "left"
+    if layer_name.endswith(".right"):
+        return "right"
+    return None
+
+
 SLOT_ANCHORS = {
     "head":   lambda p: ((p["head_left"][0] + p["head_right"][0]) / 2.0, p["head_top"][1]),
     "chest":  lambda p: ((p["shoulder_left"][0] + p["shoulder_right"][0]) / 2.0, p["shoulder_left"][1]),
@@ -183,6 +206,11 @@ def learn_rules(existing, pdir, p):
         slot, name = layer_id.split("/", 1)
         if slot not in SLOT_ANCHORS:
             continue
+        limb = limb_of(name)
+        key = (slot, limb) if limb else slot
+        anchor_fn = LIMB_ANCHORS.get((slot, limb)) if limb else SLOT_ANCHORS.get(slot)
+        if anchor_fn is None:
+            continue
         path = os.path.join(pdir, slot, name + ".png")
         if not os.path.exists(path):
             continue
@@ -190,7 +218,7 @@ def learn_rules(existing, pdir, p):
         if cw == 0 or ch == 0:
             continue
 
-        ax, ay = SLOT_ANCHORS[slot](p)
+        ax, ay = anchor_fn(p)
         span = SLOT_SPANS[slot](p) or 1.0
         cx = CANVAS_W / 2.0 + cal["offsetX"]
         cy = CANVAS_H / 2.0 + cal["offsetY"]
@@ -202,7 +230,7 @@ def learn_rules(existing, pdir, p):
             gy = cy + (f - 0.5) * ch * cal["scaleY"]
         else:
             gy = cy
-        samples.setdefault(slot, []).append((
+        samples.setdefault(key, []).append((
             (cx - ax) / span,
             (gy - ay) / span,
             (cw * cal["scaleX"]) / span,
@@ -224,11 +252,15 @@ def learn_rules(existing, pdir, p):
     return rules
 
 
-def target_box(slot, p, rules):
-    r = rules.get(slot)
+def target_box(slot, p, rules, limb=None):
+    key = (slot, limb) if limb else slot
+    r = rules.get(key)
     if r is None:
         return legacy_target_box(slot, p)
-    ax, ay = SLOT_ANCHORS[slot](p)
+    anchor_fn = LIMB_ANCHORS.get((slot, limb)) if limb else SLOT_ANCHORS.get(slot)
+    if anchor_fn is None:
+        return legacy_target_box(slot, p)
+    ax, ay = anchor_fn(p)
     span = SLOT_SPANS[slot](p) or 1.0
     return ax + r["dx"] * span, ay + r["dy"] * span, r["w"] * span, r["h"] * span
 
@@ -260,7 +292,7 @@ def propose(slot, content_w, content_h, p, rules, layer_name=""):
             "rotation": 0,
         }
 
-    cx, cy, tw, th = target_box(slot, p, rules)
+    cx, cy, tw, th = target_box(slot, p, rules, limb_of(layer_name))
     # Preserve the artwork's aspect: fit it inside the target box rather than squashing
     # it to fill. Squashing to the box would distort every piece whose proportions do
     # not happen to match the slot's average.
@@ -287,6 +319,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true",
                     help="write proposals for layers that have no calibration yet")
+    ap.add_argument("--centre-limbs", action="store_true",
+                    help="align each split limb horizontally onto its own landmark")
     args = ap.parse_args()
 
     repo = repo_root()
@@ -299,10 +333,11 @@ def main():
 
     rules = learn_rules(existing, pdir, landmarks)
     print("rules learned from existing calibrations (offsets/sizes in anchor spans):")
-    for slot in sorted(rules):
-        r = rules[slot]
-        print("  %-8s n=%-4d dx=%+.2f dy=%+.2f  w=%.2f h=%.2f"
-              % (slot, r["n"], r["dx"], r["dy"], r["w"], r["h"]))
+    for key in sorted(rules, key=lambda k: str(k)):
+        r = rules[key]
+        label = "%s.%s" % key if isinstance(key, tuple) else key
+        print("  %-14s n=%-4d dx=%+.2f dy=%+.2f  w=%.2f h=%.2f"
+              % (label, r["n"], r["dx"], r["dy"], r["w"], r["h"]))
     print()
 
     # Score: for every already-calibrated layer, how far is the proposal from the
@@ -363,6 +398,35 @@ def main():
     print("\nfurthest off:")
     for layer_id, dist, ratio in worst:
         print("   %-34s %5.0f px   %.2fx" % (layer_id, dist, ratio))
+
+    if args.centre_limbs:
+        # Learned rules only reproduce the status quo -- they are medians OF the current
+        # placements, so refitting to them changes nothing. Fixing the spacing means
+        # putting each limb on its own landmark, which is the one thing the combined
+        # artwork could never do: its two limbs were 337px apart where the feet are
+        # 502px apart, and one rigid transform cannot change spacing without also
+        # changing size. Vertical position and size are left alone; neither was wrong.
+        moved = 0
+        for layer_id, cal in sorted(existing.items()):
+            slot, name = layer_id.split("/", 1)
+            limb = limb_of(name)
+            anchor_fn = LIMB_ANCHORS.get((slot, limb)) if limb else None
+            if anchor_fn is None:
+                continue
+            path = os.path.join(pdir, slot, name + ".png")
+            if not os.path.exists(path):
+                continue
+            cw, ch = content_size(Image.open(path).convert("RGBA"))
+            if cw == 0:
+                continue
+            ax, _ = anchor_fn(landmarks)
+            before = CANVAS_W / 2.0 + cal["offsetX"]
+            cal["offsetX"] = round(ax - CANVAS_W / 2.0, 2)
+            if abs(before - ax) > 1.0:
+                moved += 1
+        baker.write_calibration(cal_path, existing)
+        print("\ncentred %d limbs on their landmarks" % moved)
+        return
 
     if not args.apply:
         print("\nScoring only. --apply writes proposals for uncalibrated layers.")

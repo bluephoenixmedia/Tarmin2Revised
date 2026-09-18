@@ -59,9 +59,16 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         BASE_FATHER(20, null),
         LEGS(30, "legs"),
         BOOTS(40, "feet"),
+        // Paired slots draw both limbs. Each limb is its own layer with its own
+        // placement, because one rigid transform freezes the spacing between them into
+        // the artwork -- the boots were baked 337px apart where the feet are 502px
+        // apart, so no calibration could fit both size and spacing at once.
+        BOOTS_RIGHT(41, "feet"),
         CHEST(50, "chest"),
         ARMS(60, "arms"),
+        ARMS_RIGHT(61, "arms"),
         HANDS(70, "hands"),
+        HANDS_RIGHT(71, "hands"),
         WEAPON_MAIN(80, "weapon"),
         SHIELD_OFF(85, "shield"),
         HELMET(90, "head"),
@@ -85,6 +92,16 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
             this.slot = slot;
             this.texture = texture;
             this.layerId = layerId;
+        }
+    }
+
+    /** The mirror slot that carries a paired layer's right limb, or null if unpaired. */
+    private static PaperDollSlot mirrorOf(PaperDollSlot slot) {
+        switch (slot) {
+            case BOOTS: return PaperDollSlot.BOOTS_RIGHT;
+            case ARMS:  return PaperDollSlot.ARMS_RIGHT;
+            case HANDS: return PaperDollSlot.HANDS_RIGHT;
+            default:    return null;
         }
     }
 
@@ -171,19 +188,27 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         return true;
     }
 
+    /** True for the mirror half of a paired slot, which no folder resolves to directly. */
+    private static boolean isMirror(PaperDollSlot slot) {
+        return slot == PaperDollSlot.BOOTS_RIGHT
+                || slot == PaperDollSlot.ARMS_RIGHT
+                || slot == PaperDollSlot.HANDS_RIGHT;
+    }
+
     /**
      * The visual slot a layer folder belongs to, or null if the folder is unknown.
      *
-     * CLOAK_BACK and CLOAK_FRONT share the "cloak" folder, so the lookup would be
-     * ambiguous; CLOAK_BACK wins because it is the one that actually shows the garment,
-     * with CLOAK_FRONT reserved for the clasp drawn over everything else.
+     * Several slots share a folder, so the first match would be ambiguous. CLOAK_BACK
+     * wins over CLOAK_FRONT because it shows the garment, with CLOAK_FRONT reserved for
+     * the clasp drawn over everything else; the paired slots resolve to their primary
+     * half, since the mirror is only ever reached through {@link #mirrorOf}.
      */
     public static PaperDollSlot slotForFolder(String folder) {
         if (folder == null) {
             return null;
         }
         for (PaperDollSlot s : PaperDollSlot.values()) {
-            if (folder.equals(s.folderName) && s != PaperDollSlot.CLOAK_FRONT) {
+            if (folder.equals(s.folderName) && s != PaperDollSlot.CLOAK_FRONT && !isMirror(s)) {
                 return s;
             }
         }
@@ -235,12 +260,35 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     public void equip(PaperDollSlot slot, Item item) {
         if (slot == null || slot == PaperDollSlot.BASE_FATHER) return;
 
+        PaperDollSlot mirror = mirrorOf(slot);
+
         if (item == null) {
             activeLayers.remove(slot);
+            // Clearing only the primary would leave a paired item's right limb — a
+            // lone boot or gauntlet — floating on the doll after it was taken off.
+            if (mirror != null) {
+                activeLayers.remove(mirror);
+            }
             return;
         }
 
+        if (mirror != null) {
+            activeLayers.remove(mirror);
+        }
+
         PaperdollLayerMap.LayerRef ref = resolveLayerRef(slot, item);
+
+        // Paired artwork is baked as two half-layers, "<layer>.left" and "<layer>.right".
+        if (ref != null && mirror != null) {
+            Texture left = loadTexture("images/paperdoll/" + ref.slot + "/" + ref.layer + ".left.png");
+            Texture right = loadTexture("images/paperdoll/" + ref.slot + "/" + ref.layer + ".right.png");
+            if (left != null && right != null) {
+                activeLayers.put(slot, new LayerEntry(slot, left, ref.layerId() + ".left"));
+                activeLayers.put(mirror, new LayerEntry(mirror, right, ref.layerId() + ".right"));
+                return;
+            }
+        }
+
         Texture tex = resolveTexture(slot, item, ref);
         if (tex != null) {
             activeLayers.put(slot, new LayerEntry(slot, tex, ref != null ? ref.layerId() : null));

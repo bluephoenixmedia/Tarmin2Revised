@@ -44,6 +44,8 @@ import hashlib
 import json
 import os
 import shutil
+
+import numpy as np
 from PIL import Image
 
 CANVAS_W = 1024
@@ -131,6 +133,70 @@ def alpha_moments(img):
     var_y = max(0.0, float((row_mass * ys * ys).sum() / total) - cy * cy)
 
     return cx, cy, var_x ** 0.5, var_y ** 0.5
+
+
+# Slots whose artwork draws BOTH limbs in one image.
+#
+# A single offset+scale moves that pair as a rigid unit, so the spacing between the two
+# limbs is frozen into the artwork and has to match the body's by luck. It does not:
+# the boots sit 337-413px apart where the feet are 502px apart, and spreading them would
+# need a 1.49x scale that makes each boot half again too big. Correct spacing or correct
+# size, never both — which is why boots and gauntlets could not be calibrated no matter
+# how much they were nudged.
+#
+# Splitting each pair into two independently placed layers decouples the two.
+PAIRED_SLOTS = ("feet", "hands", "arms")
+
+# Columns of empty pixels wide enough to read as the space between two limbs rather
+# than a gap inside one piece of artwork.
+PAIR_GAP_PX = 8
+
+# A run narrower than this is a buckle or strap that came away from its limb, not a
+# limb: great_boots.png separates into three pieces for exactly this reason.
+MIN_LIMB_W = 15
+
+
+def column_runs(img, gap=PAIR_GAP_PX):
+    """Horizontal spans of artwork, separated by at least `gap` empty columns."""
+    a = np.asarray(img.getchannel("A")) > ALPHA_FLOOR
+    cols = np.nonzero(a.any(axis=0))[0]
+    if not len(cols):
+        return []
+    runs = []
+    start = prev = cols[0]
+    for x in cols[1:]:
+        if x - prev > gap:
+            runs.append((int(start), int(prev)))
+            start = x
+        prev = x
+    runs.append((int(start), int(prev)))
+    return runs
+
+
+def split_pair(img):
+    """Split a two-limb layer into (left, right), or (None, None) if it cannot be.
+
+    The split is a MASK, not a crop: each half keeps the full canvas and stays where it
+    was, so its seed calibration still describes where that limb actually sits.
+
+    A single connected mass is refused rather than sliced down the middle — there is no
+    honest midline in one blob, and guessing one would cut a boot in half.
+    """
+    runs = [r for r in column_runs(img) if r[1] - r[0] >= MIN_LIMB_W]
+    if len(runs) < 2:
+        return None, None
+
+    # Stray pieces join whichever limb they fall nearer, so a detached strap travels
+    # with its boot instead of being mistaken for a third limb.
+    split_x = (runs[0][1] + runs[-1][0]) / 2.0
+
+    a = np.array(img)
+    xs = np.arange(a.shape[1])
+    left = a.copy()
+    right = a.copy()
+    left[:, xs > split_x, 3] = 0
+    right[:, xs <= split_x, 3] = 0
+    return Image.fromarray(left, "RGBA"), Image.fromarray(right, "RGBA")
 
 
 def sha1_of(path):
@@ -520,6 +586,8 @@ def main():
     calibration = {}
     normalised = {}
     failures = []
+    split_replaced = []
+    unsplittable = []
     untouched = 0
     recalibrated = 0
     reframed = 0
@@ -535,12 +603,59 @@ def main():
             # Already normalised and unchanged: nothing to do. Re-normalising would
             # resample the art again for no gain, and re-seeding from the centred
             # result would erase the placement.
-            if prior is not None and prior.get("sourceHash") == digest:
+            already_split = slot in PAIRED_SLOTS and ("%s.left" % layer_id) in existing
+            if prior is not None and prior.get("sourceHash") == digest and not (
+                    slot in PAIRED_SLOTS and not already_split):
                 calibration[layer_id] = prior
                 untouched += 1
                 continue
+            if already_split:
+                # The combined layer's halves are already calibrated; carry them over
+                # and drop the combined entry.
+                for side in ("left", "right"):
+                    hid = "%s.%s" % (layer_id, side)
+                    if hid in existing:
+                        calibration[hid] = existing[hid]
+                        untouched += 1
+                continue
 
             baked = Image.open(src).convert("RGBA")
+
+            # Paired slots become two independent layers, each placed against its own
+            # limb. Done here rather than at render time so the editor, the auto-fitter
+            # and the triage list all treat a half exactly like any other layer.
+            if slot in PAIRED_SLOTS:
+                # Split what the layer actually RENDERS, not the normalised file.
+                # The file is centred by normalisation; the placement lives in the
+                # calibration. Splitting the file directly would seed each half from the
+                # centred layout and silently discard every hand correction made to the
+                # combined layer.
+                rendered = apply_calibration(baked, prior) if prior else baked
+                left_img, right_img = split_pair(rendered)
+                if left_img is not None:
+                    stem = os.path.splitext(canon)[0]
+                    for side, half in (("left", left_img), ("right", right_img)):
+                        hnorm, hw, hh = normalise(half, slot)
+                        if hnorm is None:
+                            continue
+                        hcal = seed_calibration(half, hw, hh)
+                        if hcal is None:
+                            continue
+                        half_id = "%s/%s.%s" % (slot, stem, side)
+                        # A half that already has its own calibration keeps it; otherwise
+                        # the seed above describes where this limb renders TODAY, so hand
+                        # corrections made to the combined layer survive the split.
+                        prior_half = existing.get(half_id)
+                        if prior_half is not None:
+                            hcal = dict(prior_half)
+                        calibration[half_id] = hcal
+                        normalised[half_id] = (hnorm, os.path.join(paperdoll_dir, slot,
+                                                                   "%s.%s.png" % (stem, side)))
+                        recalibrated += 1
+                    # The combined layer is replaced by its halves.
+                    split_replaced.append(os.path.join(slot, canon))
+                    continue
+                unsplittable.append("%s/%s" % (slot, os.path.splitext(canon)[0]))
 
             norm, nw, nh = normalise(baked, slot)
             if norm is None:
@@ -591,6 +706,9 @@ def main():
     print("already normalised     : %d (left untouched)" % untouched)
     print("newly seeded           : %d" % recalibrated)
     print("re-normalised, calibration kept : %d" % reframed)
+    print("paired layers split    : %d (each limb now placed independently)" % len(split_replaced))
+    if unsplittable:
+        print("could NOT be split     : %d %s" % (len(unsplittable), unsplittable[:6]))
     print("worst round-trip drift : %.2f px (tolerance %.1f)" % (worst, VERIFY_TOL_PX))
     if failures:
         print("FAILURES (%d):" % len(failures))
@@ -624,6 +742,13 @@ def main():
         # mismatch and resamples the artwork again for nothing.
         calibration[layer_id]["sourceHash"] = sha1_of(src)
     print("wrote %d normalised layers" % len(normalised))
+
+    for rel in split_replaced:
+        p = os.path.join(paperdoll_dir, rel)
+        if os.path.exists(p):
+            os.remove(p)
+    if split_replaced:
+        print("removed %d combined paired layers, replaced by halves" % len(split_replaced))
 
     for rel in aliases_to_drop:
         p = os.path.join(paperdoll_dir, rel)
