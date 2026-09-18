@@ -562,8 +562,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ASSEGAI": {
 		"friendlyName": "Assegai",
@@ -8286,8 +8285,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"QUARTERSTAFF": {
 		"friendlyName": "Quarterstaff",
@@ -17993,8 +17991,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_FORGET": {
 		"friendlyName": "Arrow, Forget",
@@ -18094,8 +18091,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_GIANT_KIN": {
 		"friendlyName": "Arrow, Giant-kin",
@@ -18195,8 +18191,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_KENYAN": {
 		"friendlyName": "Arrow, Kenyan",
@@ -18395,8 +18390,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_SHEAF": {
 		"friendlyName": "Arrow, Sheaf",
@@ -18496,8 +18490,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_SLEEP": {
 		"friendlyName": "Arrow, Sleep",
@@ -18597,8 +18590,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_STONE_FLIGHT": {
 		"friendlyName": "Arrow, Stone Flight",
@@ -18698,8 +18690,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"ARROW_WAR": {
 		"friendlyName": "Arrow, War",
@@ -18799,8 +18790,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"AXE_FOREARM": {
 		"friendlyName": "Axe, Forearm",
@@ -26424,8 +26414,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"QUARREL_LIGHT": {
 		"friendlyName": "Quarrel, Light",
@@ -26525,8 +26514,7 @@
 		"isVersatile": false,
 		"versatileDamageDice": null,
 		"isTwoHanded": false,
-		"isAmmunition": true,
-		"category": "AMMUNITION"
+		"isAmmunition": true
 	},
 	"RAZOR": {
 		"friendlyName": "Razor",

@@ -196,6 +196,7 @@ public class ItemDataManager {
      */
     public void loadWeapons() {
         Json json = new Json();
+        json.setIgnoreUnknownFields(true);
 
         // Live Reload: Check for source file first
         FileHandle file = Gdx.files.local("assets/data/weapons.json");
@@ -250,6 +251,7 @@ public class ItemDataManager {
      */
     public void loadArmor() {
         Json json = new Json();
+        json.setIgnoreUnknownFields(true);
 
         // Live Reload: Check for source file first
         FileHandle file = Gdx.files.local("assets/data/armor.json");
