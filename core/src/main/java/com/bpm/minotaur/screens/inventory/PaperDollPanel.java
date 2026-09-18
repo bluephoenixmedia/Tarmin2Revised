@@ -68,17 +68,25 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     private static final float PH = 1080f;
 
     // ── Portrait geometry ─────────────────────────────────────────────
-    // Inner golden frame in assets/images/new_inventory.png (2676 x 1568):
-    // X: 485..946 (w=461), Y: 222..1032 (h=810).
-    // Converted to 1920x1080 stage pixels (Y-up):
-    // PORTRAIT_X = 485 * (1920 / 2676) = 348.0f
-    // PORTRAIT_Y = (1568 - 1032) * (1080 / 1568) = 369.2f
-    // PORTRAIT_W = 461 * (1920 / 2676) = 330.8f
-    // PORTRAIT_H = 810 * (1080 / 1568) = 557.9f
-    private static final float PORTRAIT_W = 330.8f; // portrait image width
-    private static final float PORTRAIT_H = 557.9f; // portrait image height
-    private static final float PORTRAIT_X = 348.0f; // left edge of portrait
-    private static final float PORTRAIT_Y = 369.2f; // bottom edge of portrait
+    // These used to describe the frame's inner OPENING (x 485..946, w=461). That was
+    // wrong: base_father.png includes the gold frame itself, not just its contents, so
+    // fitting it to the opening squeezed the whole doll ~15% narrower than the art.
+    //
+    // The rect below is where base_father.png actually corresponds to on the page,
+    // found by template-matching the two images: x=464, y=222, w=541, h=812 within
+    // new_inventory.png (2676 x 1568).
+    //
+    // Note the result is not 2:3 like the 1024x1536 canvas. new_inventory.png is drawn
+    // stretched to fill the 1920x1080 stage (see ModernInventoryUI), and 2676x1568 is
+    // not 16:9 — so the page art is already distorted non-uniformly. The doll has to
+    // share that distortion to sit correctly on the page it is painted into; forcing
+    // it to 2:3 would make it the only undistorted thing on a distorted page.
+    //
+    // stageX = imgX * (1920 / 2676), stageY = (1568 - imgBottom) * (1080 / 1568)
+    private static final float PORTRAIT_W = 388.2f; // 541 * (1920 / 2676)
+    private static final float PORTRAIT_H = 559.3f; // 812 * (1080 / 1568)
+    private static final float PORTRAIT_X = 332.9f; // 464 * (1920 / 2676)
+    private static final float PORTRAIT_Y = 367.8f; // (1568 - 1034) * (1080 / 1568)
 
     private final Player player;
     private final InventorySkin skin;

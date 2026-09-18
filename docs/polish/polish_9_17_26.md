@@ -1,2 +1,15 @@
 - Game refers to a spellbook to choose new spells when Tomes are discovered, it is not implemented.
 - We need to polish and clean up all text that appears in the field of view, this mostly applies to combat info that shows up. We need to add visual cues both graphic and text based to indicate the player's status (hungry, cold, bleed, diseased, poisoned etc)
+- Monsters with high intelligence should be able to cast spells, let's determine what monsters should be spell casters and determine a way to randomly assign them spell levels and slots based on their stats
+- High intelligence monsters should be able to open doors and pursue the player up and down stairs as well as through gates / chunks.
+- Some monsters need ranged attacks, let's determine what monsters need them and implement them.
+- We need to overhaul the ranged combat system. We need to randomly distribute bolts and arrow quivers through the game. We need to ensure projectiles actually animate from both the player and monsters. We need to evaluate the stats / attributes of both monsters and players for accuracy, damage and other aspects that are important to ranged combat.
+- We need to overhaul book weapons. They are intended to cast spells which animate the appropriate effect. Needs a full research and review.
+- We need to make mimics more like their inspiration. Certain chests the player walks up to should be mimics, but onlyon the level where mimics currently generate. There should be a brief visual animation or effect to transition from the chest sprite to the mimic monster sprite.
+- We need to re-introduce music to the game, starting with the music in Assets 
+- When the player dies and re-spawns in the shelter, they suddenly are equipped with a cross. They do not initially start the game with a cross. They also sometimes repawn with the traveling cooking and crafting equipment which only should be available when unlocked via dvinities and the altar.
+- We have a Musket and other fire arms in the game. We need to generate ammunition drops for them andthen work on animations and visual effects and audio for firing them as well as tweaking combat as needed.
+- Combat animations need more variety. We also need to animate combat if there is a weapon equipped in the second hand.
+- Shields need reverse image generation to show what the player would see from the first person perspective.
+- The Spell Quick menu on the left of the UX is unreadable.
+The Light spell that the player starts with should cost MP, currently it does not.

@@ -232,3 +232,7 @@ __pycache__/
 # Raw external game asset staging folder (500MB+)
 docs/game_assets/
 scratch/
+
+# Pre-normalisation paperdoll layers, written by tools/bake_paperdoll_layers.py.
+# Git history is the real backup; this is a local convenience copy.
+tools/paperdoll_prebake_backup/

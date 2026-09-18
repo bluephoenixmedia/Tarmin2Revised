@@ -8,6 +8,10 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.badlogic.gdx.utils.Disposable;
 import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.paperdoll.calibration.CalibrationStore;
+import com.bpm.minotaur.paperdoll.calibration.LayerCalibration;
+import com.bpm.minotaur.paperdoll.calibration.LayerPlacement;
+import com.bpm.minotaur.paperdoll.calibration.PaperdollLayerMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,10 +26,14 @@ import java.util.Set;
  * 2D Composite Paperdoll Widget.
  *
  * Renders the player character ("a desperate father on a mission") and equipped armor
- * layers using a standardized 1024x1536 master canvas standard.
+ * layers over a standardised 1024x1536 master canvas.
  *
- * All armor pieces authored at 1024x1536 auto-snap seamlessly onto the father's body
- * with zero coordinate offsets or scale factors.
+ * Layers are baked NORMALISED -- cropped to their artwork, scaled into a per-slot box
+ * and centred -- with placement supplied at draw time from
+ * assets/data/paperdoll_calibration.json. Placement therefore lives in data that can be
+ * corrected once per item, rather than being burnt into pixels where every correction
+ * means re-touching a PNG. An uncalibrated layer falls back to identity, which draws it
+ * stretched to fill the portrait exactly as the original implementation did.
  *
  * Layers are rendered strictly according to the agreed 10-layer Z-ordering:
  *   1. Back Cloak (Z=10)
@@ -66,15 +74,21 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
 
     private static class LayerEntry {
         final PaperDollSlot slot;
+        final String layerId;
         Texture texture;
-        boolean hidesHair;
-        boolean hidesBeard;
 
-        LayerEntry(PaperDollSlot slot, Texture texture) {
+        LayerEntry(PaperDollSlot slot, Texture texture, String layerId) {
             this.slot = slot;
             this.texture = texture;
+            this.layerId = layerId;
         }
     }
+
+    private static final String CALIBRATION_PATH = "data/paperdoll_calibration.json";
+    private static final String LAYER_MAP_PATH = "data/paperdoll_layers.json";
+
+    private static final int CANVAS_W = 1024;
+    private static final int CANVAS_H = 1536;
 
     private Texture baseFatherTexture;
     private final Map<PaperDollSlot, LayerEntry> activeLayers = new HashMap<>();
@@ -82,8 +96,44 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     private final Set<String> missingTextureWarned = new HashSet<>();
     private final List<LayerEntry> renderList = new ArrayList<>();
 
+    /** Shared default for layers with no id; never mutated. */
+    private static final LayerCalibration IDENTITY = new LayerCalibration();
+
+    private final CalibrationStore calibration = new CalibrationStore();
+    private final PaperdollLayerMap layerMap = new PaperdollLayerMap();
+
     public PaperDoll2DWidget() {
         loadBaseFather();
+        reloadCalibration();
+    }
+
+    /**
+     * Re-reads calibration and the layer map from disk.
+     *
+     * Bound to a key in the paperdoll editor so numbers can be hand-edited in a text
+     * editor and seen immediately, without a rebuild or even leaving the screen.
+     */
+    public void reloadCalibration() {
+        calibration.load(resolveFile(CALIBRATION_PATH));
+        layerMap.load(resolveFile(LAYER_MAP_PATH));
+    }
+
+    public CalibrationStore getCalibration() {
+        return calibration;
+    }
+
+    public PaperdollLayerMap getLayerMap() {
+        return layerMap;
+    }
+
+    /** Persists calibration back to the assets tree. Used by the editor's save action. */
+    public void saveCalibration() {
+        FileHandle handle = resolveWritableFile(CALIBRATION_PATH);
+        if (handle != null) {
+            calibration.save(handle);
+        } else {
+            Gdx.app.error("PaperDoll2DWidget", "Could not resolve a writable path for " + CALIBRATION_PATH);
+        }
     }
 
     private void loadBaseFather() {
@@ -91,7 +141,8 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         if (handle != null && handle.exists()) {
             baseFatherTexture = new Texture(handle);
             baseFatherTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            activeLayers.put(PaperDollSlot.BASE_FATHER, new LayerEntry(PaperDollSlot.BASE_FATHER, baseFatherTexture));
+            activeLayers.put(PaperDollSlot.BASE_FATHER,
+                    new LayerEntry(PaperDollSlot.BASE_FATHER, baseFatherTexture, "base/father"));
         } else {
             Gdx.app.error("PaperDoll2DWidget", "Missing base father portrait: images/paperdoll/base_father.png");
         }
@@ -108,14 +159,10 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
             return;
         }
 
-        Texture tex = resolveTexture(slot, item);
+        String layerId = resolveLayerId(slot, item);
+        Texture tex = resolveTexture(slot, item, layerId);
         if (tex != null) {
-            LayerEntry entry = new LayerEntry(slot, tex);
-            // Check for flags if item defines them
-            if (item.getTemplate() != null) {
-                // Helmet flags if present in template
-            }
-            activeLayers.put(slot, entry);
+            activeLayers.put(slot, new LayerEntry(slot, tex, layerId));
         } else {
             activeLayers.remove(slot);
         }
@@ -156,18 +203,53 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     public void clearEquipment() {
         activeLayers.clear();
         if (baseFatherTexture != null) {
-            activeLayers.put(PaperDollSlot.BASE_FATHER, new LayerEntry(PaperDollSlot.BASE_FATHER, baseFatherTexture));
+            activeLayers.put(PaperDollSlot.BASE_FATHER,
+                    new LayerEntry(PaperDollSlot.BASE_FATHER, baseFatherTexture, "base/father"));
         }
     }
 
     /**
-     * Resolves an item's texture from disk cache.
-     * Looks up images/paperdoll/<slot>/<item_id>.png
+     * Which calibrated layer an item draws.
+     *
+     * The explicit map in paperdoll_layers.json wins; name guessing remains only as a
+     * fallback for items the map has not caught up with, and the layer id it derives
+     * still keys calibration correctly.
      */
-    private Texture resolveTexture(PaperDollSlot slot, Item item) {
+    private String resolveLayerId(PaperDollSlot slot, Item item) {
         if (slot.folderName == null) return null;
 
-        List<String> candidateNames = getCandidateNames(item);
+        if (item.getType() != null) {
+            PaperdollLayerMap.LayerRef ref = layerMap.resolve(item.getType().name());
+            if (ref != null) {
+                return ref.layerId();
+            }
+        }
+
+        List<String> candidates = getCandidateNames(item);
+        for (String candidate : candidates) {
+            String path = "images/paperdoll/" + slot.folderName + "/" + candidate + ".png";
+            FileHandle handle = resolveFile(path);
+            if (handle != null && handle.exists()) {
+                return CalibrationStore.layerId(slot.folderName, candidate);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolves an item's texture from disk cache.
+     * Looks up images/paperdoll/<slot>/<layer>.png
+     */
+    private Texture resolveTexture(PaperDollSlot slot, Item item, String layerId) {
+        if (slot.folderName == null) return null;
+
+        List<String> candidateNames = new ArrayList<>();
+        if (layerId != null) {
+            int sep = layerId.indexOf('/');
+            candidateNames.add(sep >= 0 ? layerId.substring(sep + 1) : layerId);
+        }
+        candidateNames.addAll(getCandidateNames(item));
+
         for (String candidate : candidateNames) {
             String path = "images/paperdoll/" + slot.folderName + "/" + candidate + ".png";
             if (textureCache.containsKey(path)) {
@@ -238,6 +320,28 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         return null;
     }
 
+    /**
+     * A handle the editor can write calibration back through.
+     *
+     * Internal handles are read-only, so this prefers whichever on-disk location the
+     * assets were actually loaded from. Desktop/editor only -- a packaged build has no
+     * business rewriting its own assets.
+     */
+    private FileHandle resolveWritableFile(String internalPath) {
+        if (Gdx.files == null) {
+            return null;
+        }
+        FileHandle underAssets = Gdx.files.local("assets/" + internalPath);
+        if (underAssets.exists() || underAssets.parent().exists()) {
+            return underAssets;
+        }
+        FileHandle direct = Gdx.files.local(internalPath);
+        if (direct.exists() || direct.parent().exists()) {
+            return direct;
+        }
+        return null;
+    }
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
         validate();
@@ -260,9 +364,30 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         });
 
         for (LayerEntry entry : renderList) {
-            if (entry.texture != null) {
-                batch.draw(entry.texture, x, y, width, height);
+            if (entry.texture == null) {
+                continue;
             }
+
+            LayerCalibration cal = entry.layerId != null
+                    ? calibration.get(entry.layerId)
+                    : IDENTITY;
+
+            if (cal.isIdentity()) {
+                // Fast path, and the exact behaviour of the pre-calibration renderer.
+                batch.draw(entry.texture, x, y, width, height);
+                continue;
+            }
+
+            LayerPlacement p = LayerPlacement.compute(cal, x, y, width, height, CANVAS_W, CANVAS_H);
+            batch.draw(entry.texture,
+                    p.x, p.y,
+                    p.originX, p.originY,
+                    p.width, p.height,
+                    1f, 1f,
+                    p.rotation,
+                    0, 0,
+                    entry.texture.getWidth(), entry.texture.getHeight(),
+                    false, false);
         }
     }
 

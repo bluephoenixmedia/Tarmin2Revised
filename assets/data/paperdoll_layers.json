@@ -1,0 +1,1461 @@
+{
+  "_comment": "item key -> paperdoll layer. Replaces filename guessing; several items may share a layer.",
+  "items": {
+    "ALHULAK": {
+      "layer": "alhulak",
+      "slot": "weapon"
+    },
+    "ANKUS_ELEPHANT_GOAD": {
+      "layer": "ankuselephantgoad",
+      "slot": "weapon"
+    },
+    "ARMS": {
+      "layer": "arms",
+      "slot": "arms"
+    },
+    "ARQUEBUS": {
+      "layer": "arquebus",
+      "slot": "weapon"
+    },
+    "ASSEGAI": {
+      "layer": "assegai",
+      "slot": "weapon"
+    },
+    "AXE": {
+      "layer": "axe",
+      "slot": "weapon"
+    },
+    "AXE_BATTLE": {
+      "layer": "battle_axe",
+      "slot": "weapon"
+    },
+    "AXE_FOREARM": {
+      "layer": "axe",
+      "slot": "weapon"
+    },
+    "AXE_HAND_THROWING": {
+      "layer": "hatchet",
+      "slot": "weapon"
+    },
+    "AXE_TWO_HANDED_BATTLE": {
+      "layer": "axe_two_handed_battle",
+      "slot": "weapon"
+    },
+    "BAGH_NAKH_TIGER_CLAWS": {
+      "layer": "bagh_nakh_tiger_claws",
+      "slot": "weapon"
+    },
+    "BANDED_MAIL": {
+      "layer": "banded",
+      "slot": "chest"
+    },
+    "BARD_S_FRIEND": {
+      "layer": "bard_s_friend",
+      "slot": "weapon"
+    },
+    "BASILARD": {
+      "layer": "basilard",
+      "slot": "weapon"
+    },
+    "BASINET": {
+      "layer": "bascinet",
+      "slot": "head"
+    },
+    "BELAYING_PIN": {
+      "layer": "belaying_pin",
+      "slot": "weapon"
+    },
+    "BERSERKERS_GAUNTLETS": {
+      "layer": "gauntlets",
+      "slot": "hands"
+    },
+    "BLOWGUN": {
+      "layer": "blowgun",
+      "slot": "weapon"
+    },
+    "BLOWGUN_BARBED_DART": {
+      "layer": "blowgun",
+      "slot": "weapon"
+    },
+    "BLOWGUN_NEEDLE": {
+      "layer": "blowgun",
+      "slot": "weapon"
+    },
+    "BLUNDERBUS": {
+      "layer": "blunderbus",
+      "slot": "weapon"
+    },
+    "BOLA": {
+      "layer": "bola",
+      "slot": "weapon"
+    },
+    "BOOK": {
+      "layer": "book",
+      "slot": "weapon"
+    },
+    "BOOTS": {
+      "layer": "boots",
+      "slot": "feet"
+    },
+    "BOOTS_OF_SWIFTNESS": {
+      "layer": "great_boots",
+      "slot": "feet"
+    },
+    "BOW": {
+      "layer": "bow",
+      "slot": "weapon"
+    },
+    "BOW_COMPOSITE_LONG": {
+      "layer": "bow_composite_long",
+      "slot": "weapon"
+    },
+    "BOW_COMPOSITE_SHORT": {
+      "layer": "bow_composite_short",
+      "slot": "weapon"
+    },
+    "BOW_ELVEN": {
+      "layer": "elven_bow",
+      "slot": "weapon"
+    },
+    "BOW_FOLDING_SHORT": {
+      "layer": "bow_short",
+      "slot": "weapon"
+    },
+    "BOW_GIANT_KIN_LONG": {
+      "layer": "bow_long",
+      "slot": "weapon"
+    },
+    "BOW_KENYAN_LONG": {
+      "layer": "elven_bow",
+      "slot": "weapon"
+    },
+    "BOW_LONG": {
+      "layer": "bow_long",
+      "slot": "weapon"
+    },
+    "BOW_PIXIE": {
+      "layer": "elven_bow",
+      "slot": "weapon"
+    },
+    "BOW_SHORT": {
+      "layer": "bow_short",
+      "slot": "weapon"
+    },
+    "BO_STICK": {
+      "layer": "bo_stick",
+      "slot": "weapon"
+    },
+    "BREASTPLATE": {
+      "layer": "breastplate",
+      "slot": "chest"
+    },
+    "BRIGANDINE": {
+      "layer": "brigandine",
+      "slot": "chest"
+    },
+    "BRONZE_BOOTS": {
+      "layer": "bronze_boots",
+      "slot": "feet"
+    },
+    "BRONZE_GAUNTLETS": {
+      "layer": "bronze_gauntlets",
+      "slot": "hands"
+    },
+    "BRONZE_HELMET": {
+      "layer": "bronze_helmet",
+      "slot": "head"
+    },
+    "BRONZE_LEGGINGS": {
+      "layer": "bronze_leggings",
+      "slot": "legs"
+    },
+    "BRONZE_PLATE": {
+      "layer": "bronze_breastplate",
+      "slot": "chest"
+    },
+    "BUCKLER": {
+      "layer": "buckler",
+      "slot": "shield"
+    },
+    "BUCKLER_SPIKED": {
+      "layer": "buckler_spiked",
+      "slot": "weapon"
+    },
+    "CAHULAKS": {
+      "layer": "cahulaks",
+      "slot": "weapon"
+    },
+    "CALTROP": {
+      "layer": "caltrop",
+      "slot": "weapon"
+    },
+    "CARRIKAL": {
+      "layer": "carrikal",
+      "slot": "weapon"
+    },
+    "CAVILER": {
+      "layer": "caviler",
+      "slot": "weapon"
+    },
+    "CESTUS": {
+      "layer": "cestus",
+      "slot": "weapon"
+    },
+    "CHAIN": {
+      "layer": "chain",
+      "slot": "weapon"
+    },
+    "CHAINMAIL_ARMOR": {
+      "layer": "chainmail_armor",
+      "slot": "chest"
+    },
+    "CHAINMAIL_ARMS": {
+      "layer": "chainmail_arms",
+      "slot": "arms"
+    },
+    "CHAINMAIL_GAUNTLETS": {
+      "layer": "chainmail_gauntlets",
+      "slot": "hands"
+    },
+    "CHAINMAIL_HELMET": {
+      "layer": "chainmail_helmet",
+      "slot": "head"
+    },
+    "CHAINMAIL_LEGGINGS": {
+      "layer": "chainmail_leggings",
+      "slot": "legs"
+    },
+    "CHAIN_HAUBERK": {
+      "layer": "chain_hauberk",
+      "slot": "chest"
+    },
+    "CHAIN_HELMET": {
+      "layer": "chain_helmet",
+      "slot": "head"
+    },
+    "CHAIN_LAMELLAR": {
+      "layer": "chain_lamellar",
+      "slot": "chest"
+    },
+    "CHAIN_LEGGINGS": {
+      "layer": "chain_leggings",
+      "slot": "legs"
+    },
+    "CHAIN_MAIL": {
+      "layer": "chain_mail",
+      "slot": "chest"
+    },
+    "CHAKRAM": {
+      "layer": "chakram",
+      "slot": "weapon"
+    },
+    "CHATKCHA": {
+      "layer": "chatkcha",
+      "slot": "weapon"
+    },
+    "CLOAK": {
+      "layer": "cloak",
+      "slot": "cloak"
+    },
+    "CLOAK_OF_SHADOWS": {
+      "layer": "cloak",
+      "slot": "cloak"
+    },
+    "CLUB": {
+      "layer": "club",
+      "slot": "weapon"
+    },
+    "CLUB_DATCHI": {
+      "layer": "datchi_club",
+      "slot": "weapon"
+    },
+    "CLUB_DWARVEN_WAR": {
+      "layer": "club_dwarven_war",
+      "slot": "weapon"
+    },
+    "CLUB_GREAT": {
+      "layer": "club_great",
+      "slot": "weapon"
+    },
+    "CLUB_RIM": {
+      "layer": "club",
+      "slot": "weapon"
+    },
+    "CORD_MAIL": {
+      "layer": "corded_mail",
+      "slot": "chest"
+    },
+    "CROSSBOW": {
+      "layer": "crossbow",
+      "slot": "weapon"
+    },
+    "CROSSBOW_DISK": {
+      "layer": "crossbow_disk",
+      "slot": "weapon"
+    },
+    "CROSSBOW_DOUBLED": {
+      "layer": "crossbow_doubled",
+      "slot": "weapon"
+    },
+    "CROSSBOW_HAND": {
+      "layer": "crossbow_hand",
+      "slot": "weapon"
+    },
+    "CROSSBOW_HEAVY": {
+      "layer": "crossbow_heavy",
+      "slot": "weapon"
+    },
+    "CROSSBOW_LIGHT": {
+      "layer": "crossbow_light",
+      "slot": "weapon"
+    },
+    "DAGGER": {
+      "layer": "dagger",
+      "slot": "weapon"
+    },
+    "DAGGER_BONE": {
+      "layer": "dagger_bone",
+      "slot": "weapon"
+    },
+    "DAGGER_CLIMBING": {
+      "layer": "dagger_climbing",
+      "slot": "weapon"
+    },
+    "DAGGER_GIANT_KIN": {
+      "layer": "dagger_bone",
+      "slot": "weapon"
+    },
+    "DAGGER_PARRYING": {
+      "layer": "basiliard",
+      "slot": "weapon"
+    },
+    "DAGGER_STONE": {
+      "layer": "dagger_stone",
+      "slot": "weapon"
+    },
+    "DAIKYU": {
+      "layer": "daikyu",
+      "slot": "weapon"
+    },
+    "DART": {
+      "layer": "dart",
+      "slot": "weapon"
+    },
+    "DART_BARBED": {
+      "layer": "dart",
+      "slot": "weapon"
+    },
+    "DEJADA": {
+      "layer": "dejada",
+      "slot": "weapon"
+    },
+    "DEJADA_CESTUS": {
+      "layer": "bagh_nakh_tiger_claws",
+      "slot": "weapon"
+    },
+    "DIRK": {
+      "layer": "dirk",
+      "slot": "weapon"
+    },
+    "DISK_CROSSBOW": {
+      "layer": "crossbow_disk",
+      "slot": "weapon"
+    },
+    "DRAGON_S_PAW": {
+      "layer": "dragon_s_paw",
+      "slot": "weapon"
+    },
+    "EYES": {
+      "layer": "visor",
+      "slot": "head"
+    },
+    "FIELD_PLATE": {
+      "layer": "field_plate",
+      "slot": "chest"
+    },
+    "FIELD_PLATE_BOOTS": {
+      "layer": "field_plate_boots",
+      "slot": "feet"
+    },
+    "FIELD_PLATE_GAUNTLETS": {
+      "layer": "field_plate_gauntlets",
+      "slot": "hands"
+    },
+    "FIELD_PLATE_HELMET": {
+      "layer": "field_plate_helmet",
+      "slot": "head"
+    },
+    "FIELD_PLATE_LEGGINGS": {
+      "layer": "field_plate_leggings",
+      "slot": "legs"
+    },
+    "FLAIL_BLADEBACK": {
+      "layer": "flail_bladeback",
+      "slot": "weapon"
+    },
+    "FLAIL_CHAIN": {
+      "layer": "flail_chain",
+      "slot": "weapon"
+    },
+    "FLAIL_FOOTMAN_S": {
+      "layer": "flail_footman",
+      "slot": "weapon"
+    },
+    "FLAIL_GRAIN": {
+      "layer": "flail_footman",
+      "slot": "weapon"
+    },
+    "FLAIL_HORSEMAN_S": {
+      "layer": "flail_horseman",
+      "slot": "weapon"
+    },
+    "FLINDBAR": {
+      "layer": "flindbar",
+      "slot": "weapon"
+    },
+    "FULL_PLATE": {
+      "layer": "full_plate",
+      "slot": "chest"
+    },
+    "FULL_PLATE_ARMS": {
+      "layer": "full_plate_arms",
+      "slot": "arms"
+    },
+    "FULL_PLATE_BOOTS": {
+      "layer": "full_plate_boots",
+      "slot": "feet"
+    },
+    "FULL_PLATE_GAUNTLETS": {
+      "layer": "full_plate_gauntlets",
+      "slot": "hands"
+    },
+    "FULL_PLATE_HELMET": {
+      "layer": "full_plate_helmet",
+      "slot": "head"
+    },
+    "FULL_PLATE_LEGGINGS": {
+      "layer": "full_plate_leggings",
+      "slot": "legs"
+    },
+    "GADA": {
+      "layer": "gada",
+      "slot": "weapon"
+    },
+    "GAFF_HOOK_ATTACHED": {
+      "layer": "sword_hook",
+      "slot": "weapon"
+    },
+    "GAFF_HOOK_HELD": {
+      "layer": "sword_hook",
+      "slot": "weapon"
+    },
+    "GALLIC_ARMOR": {
+      "layer": "gallic_plate",
+      "slot": "chest"
+    },
+    "GALLIC_ARMS": {
+      "layer": "gallic_arms",
+      "slot": "arms"
+    },
+    "GALLIC_HELMET": {
+      "layer": "gallic_helmet",
+      "slot": "head"
+    },
+    "GALLIC_LEGGINGS": {
+      "layer": "gallic_leggings",
+      "slot": "legs"
+    },
+    "GALLIC_SHIELD": {
+      "layer": "gallic_shield",
+      "slot": "shield"
+    },
+    "GAUNTLETS": {
+      "layer": "gauntlets",
+      "slot": "hands"
+    },
+    "GLADIATOR_S_FRIEND_FOOTMAN_S": {
+      "layer": "gladiators_friend",
+      "slot": "weapon"
+    },
+    "GLADIATOR_S_FRIEND_HORSEMAN_S": {
+      "layer": "gladiators_friend",
+      "slot": "weapon"
+    },
+    "GLOVE_NAIL": {
+      "layer": "glovenail",
+      "slot": "weapon"
+    },
+    "GOUGE": {
+      "layer": "gouge",
+      "slot": "weapon"
+    },
+    "GREAT_HELM": {
+      "layer": "great_helm",
+      "slot": "head"
+    },
+    "HALF_PLATE": {
+      "layer": "half_plate",
+      "slot": "chest"
+    },
+    "HALF_PLATE_ARMS": {
+      "layer": "half_plate_arms",
+      "slot": "arms"
+    },
+    "HALF_PLATE_BOOTS": {
+      "layer": "half_plate_boots",
+      "slot": "feet"
+    },
+    "HALF_PLATE_GAUNTLETS": {
+      "layer": "half_plate_gauntlets",
+      "slot": "hands"
+    },
+    "HALF_PLATE_HELMET": {
+      "layer": "half_plate_helmet",
+      "slot": "head"
+    },
+    "HALF_PLATE_LEGGINGS": {
+      "layer": "half_plate_leggings",
+      "slot": "legs"
+    },
+    "HARPOON_ONE_HANDED": {
+      "layer": "onehandedharpoon",
+      "slot": "weapon"
+    },
+    "HARPOON_TWO_HANDED": {
+      "layer": "harpoon_two_handed",
+      "slot": "weapon"
+    },
+    "HATCHET": {
+      "layer": "hatchet",
+      "slot": "weapon"
+    },
+    "HATCHET_HAWK": {
+      "layer": "hatchet",
+      "slot": "weapon"
+    },
+    "HAUBERK": {
+      "layer": "breastplate",
+      "slot": "chest"
+    },
+    "HELMET": {
+      "layer": "helmet",
+      "slot": "head"
+    },
+    "HIDE_ARMOR": {
+      "layer": "hide_armor",
+      "slot": "chest"
+    },
+    "HIDE_ARMS": {
+      "layer": "hide_arms",
+      "slot": "arms"
+    },
+    "HIDE_BOOTS": {
+      "layer": "hide_boots",
+      "slot": "feet"
+    },
+    "HIDE_HELMET": {
+      "layer": "hide_helmet",
+      "slot": "head"
+    },
+    "HIDE_LEGGINGS": {
+      "layer": "hide_leggings",
+      "slot": "legs"
+    },
+    "HOLY_GAUNTLETS": {
+      "layer": "gauntlets",
+      "slot": "hands"
+    },
+    "HOOD_OF_CLARITY": {
+      "layer": "helmet",
+      "slot": "head"
+    },
+    "HOPLITE_ARMOR": {
+      "layer": "hoplite_armor",
+      "slot": "chest"
+    },
+    "HOPLITE_BOOTS": {
+      "layer": "hoplite_boots",
+      "slot": "feet"
+    },
+    "HOPLITE_HELMET": {
+      "layer": "hoplite_helmet",
+      "slot": "head"
+    },
+    "HOPLITE_LEGGINGS": {
+      "layer": "hoplite_leggings",
+      "slot": "legs"
+    },
+    "HOPLITE_SHIELD": {
+      "layer": "hoplite_shield",
+      "slot": "shield"
+    },
+    "HOPLITE_SILVER_ARMOR": {
+      "layer": "hoplite_silver_armor",
+      "slot": "chest"
+    },
+    "HOPLITE_SILVER_ARMS": {
+      "layer": "hoplite_silver_arms",
+      "slot": "arms"
+    },
+    "HOPLITE_SILVER_BOOTS": {
+      "layer": "hoplite_silver_boots",
+      "slot": "feet"
+    },
+    "HOPLITE_SILVER_GAUNTLETS": {
+      "layer": "hoplite_silver_gauntlets",
+      "slot": "hands"
+    },
+    "HOPLITE_SILVER_HELMET": {
+      "layer": "hoplite_silver_helmet",
+      "slot": "head"
+    },
+    "HOPLITE_SILVER_LEGGINGS": {
+      "layer": "hoplite_silver_legs",
+      "slot": "legs"
+    },
+    "HORA": {
+      "layer": "hora",
+      "slot": "weapon"
+    },
+    "IMPALER": {
+      "layer": "impaler",
+      "slot": "weapon"
+    },
+    "IUAK_SNOW_BLADE": {
+      "layer": "iuaksnowblade",
+      "slot": "weapon"
+    },
+    "JAMBIYA": {
+      "layer": "jambiya",
+      "slot": "weapon"
+    },
+    "JAVELIN_ONE_HANDED": {
+      "layer": "javelin_one_handed",
+      "slot": "weapon"
+    },
+    "JAVELIN_STONE_ONE_HANDED": {
+      "layer": "javelin_one_handed",
+      "slot": "weapon"
+    },
+    "JAVELIN_STONE_TWO_HANDED": {
+      "layer": "javelin",
+      "slot": "weapon"
+    },
+    "JAVELIN_TWO_HANDED": {
+      "layer": "javelin",
+      "slot": "weapon"
+    },
+    "KATAR_PUNCH_DAGGER": {
+      "layer": "katarpunchdagger",
+      "slot": "weapon"
+    },
+    "KICK_SLASHER": {
+      "layer": "kickslasher",
+      "slot": "weapon"
+    },
+    "KNIFE": {
+      "layer": "knife",
+      "slot": "weapon"
+    },
+    "KNIFE_BONE": {
+      "layer": "knife_bone",
+      "slot": "weapon"
+    },
+    "KNIFE_HARNESS": {
+      "layer": "knife_throwing",
+      "slot": "weapon"
+    },
+    "KNIFE_STONE": {
+      "layer": "knife_stone",
+      "slot": "weapon"
+    },
+    "KNIFE_THROWING": {
+      "layer": "knife_throwing",
+      "slot": "weapon"
+    },
+    "KNIFE_WIDOW_S": {
+      "layer": "knife_throwing",
+      "slot": "weapon"
+    },
+    "KNOBKERRIE": {
+      "layer": "knobkerrie",
+      "slot": "weapon"
+    },
+    "KORA": {
+      "layer": "kora",
+      "slot": "weapon"
+    },
+    "KUKRI": {
+      "layer": "kukri",
+      "slot": "weapon"
+    },
+    "LAMELLAR_SHIRT": {
+      "layer": "chain_lamellar",
+      "slot": "chest"
+    },
+    "LANCE_FLIGHT": {
+      "layer": "spear_throwing",
+      "slot": "weapon"
+    },
+    "LANCE_HEAVY_HORSE1": {
+      "layer": "lance_jousting",
+      "slot": "weapon"
+    },
+    "LANCE_JOUSTING1": {
+      "layer": "lance_jousting",
+      "slot": "weapon"
+    },
+    "LANCE_LIGHT_HORSE1": {
+      "layer": "lance_cavalry",
+      "slot": "weapon"
+    },
+    "LANCE_MEDIUM_HORSE1": {
+      "layer": "lance_cavalry",
+      "slot": "weapon"
+    },
+    "LARGE_FIREBALL": {
+      "layer": "big_fireball",
+      "slot": "weapon"
+    },
+    "LARGE_SHIELD": {
+      "layer": "large_shield",
+      "slot": "shield"
+    },
+    "LASSO": {
+      "layer": "lasso",
+      "slot": "weapon"
+    },
+    "LEATHER_ARMOR": {
+      "layer": "leather_plate",
+      "slot": "chest"
+    },
+    "LEATHER_ARMS": {
+      "layer": "leather_arms",
+      "slot": "arms"
+    },
+    "LEATHER_BOOTS": {
+      "layer": "leather_boots",
+      "slot": "feet"
+    },
+    "LEATHER_HELM": {
+      "layer": "leather_helmet",
+      "slot": "head"
+    },
+    "LEATHER_LEGGINGS": {
+      "layer": "leather_leggings",
+      "slot": "legs"
+    },
+    "LEGS": {
+      "layer": "legs",
+      "slot": "legs"
+    },
+    "LIGHT_SCALE": {
+      "layer": "light_scale_armor",
+      "slot": "chest"
+    },
+    "LIGHT_SCALE_ARMS": {
+      "layer": "light_scale_arms",
+      "slot": "arms"
+    },
+    "LIGHT_SCALE_BOOTS": {
+      "layer": "light_scale_boots",
+      "slot": "feet"
+    },
+    "LIGHT_SCALE_GAUNTLETS": {
+      "layer": "light_scale_gauntlets",
+      "slot": "hands"
+    },
+    "LIGHT_SCALE_HELMET": {
+      "layer": "light_scale_helmet",
+      "slot": "head"
+    },
+    "LIGHT_SCALE_LEGGINGS": {
+      "layer": "light_scale_leggings",
+      "slot": "legs"
+    },
+    "LORICA_HAMATA": {
+      "layer": "lorica_hamata",
+      "slot": "chest"
+    },
+    "LORICA_HAMATA_ARMS": {
+      "layer": "Lorica_hamata_arms",
+      "slot": "arms"
+    },
+    "LOTULIS": {
+      "layer": "lotulis",
+      "slot": "weapon"
+    },
+    "MACA": {
+      "layer": "maca",
+      "slot": "weapon"
+    },
+    "MACE_BLADEBACK": {
+      "layer": "mace_footman",
+      "slot": "weapon"
+    },
+    "MACE_FOOTMAN_S": {
+      "layer": "mace_footman",
+      "slot": "weapon"
+    },
+    "MACE_FOOTMAN_S_WHISTLING": {
+      "layer": "mace_footman",
+      "slot": "weapon"
+    },
+    "MACE_GIANT_KIN": {
+      "layer": "mace_footman",
+      "slot": "weapon"
+    },
+    "MACE_GREAT": {
+      "layer": "great_mace",
+      "slot": "weapon"
+    },
+    "MACE_HORSEMAN_S": {
+      "layer": "mace_horseman",
+      "slot": "weapon"
+    },
+    "MACE_HORSEMAN_S_WHISTLING": {
+      "layer": "mace_horseman",
+      "slot": "weapon"
+    },
+    "MACHETE": {
+      "layer": "machete",
+      "slot": "weapon"
+    },
+    "MADU": {
+      "layer": "madu",
+      "slot": "weapon"
+    },
+    "MAIN_GAUCHE": {
+      "layer": "main_gauche",
+      "slot": "weapon"
+    },
+    "MANCATCHER2": {
+      "layer": "mancatcher",
+      "slot": "weapon"
+    },
+    "MORNING_STAR": {
+      "layer": "morning_star",
+      "slot": "weapon"
+    },
+    "MORNING_STAR_DOUBLE_BALL": {
+      "layer": "morning_star_double_ball",
+      "slot": "weapon"
+    },
+    "MUSKET": {
+      "layer": "musket",
+      "slot": "weapon"
+    },
+    "NET": {
+      "layer": "net",
+      "slot": "weapon"
+    },
+    "NUNCHAKU": {
+      "layer": "nunchaku",
+      "slot": "weapon"
+    },
+    "NYEK_PLE_NEN_TOH": {
+      "layer": "nyek-ple-nen-to",
+      "slot": "weapon"
+    },
+    "PADDED_ARMOR": {
+      "layer": "padded_armor",
+      "slot": "chest"
+    },
+    "PADDED_HELMET": {
+      "layer": "padded_helmet",
+      "slot": "head"
+    },
+    "PADDED_LEGGINGS": {
+      "layer": "padded_leggings",
+      "slot": "legs"
+    },
+    "PATA1": {
+      "layer": "sword_short",
+      "slot": "weapon"
+    },
+    "PESHKABZ": {
+      "layer": "peshkabz",
+      "slot": "weapon"
+    },
+    "PICK_FOOTMAN_S": {
+      "layer": "pick_footman_s",
+      "slot": "weapon"
+    },
+    "PICK_HORSEMAN_S": {
+      "layer": "pick_horseman",
+      "slot": "weapon"
+    },
+    "PICK_ICE": {
+      "layer": "pick_horseman",
+      "slot": "weapon"
+    },
+    "PIKE_WEIGHTED": {
+      "layer": "weightedpike",
+      "slot": "weapon"
+    },
+    "PISTOL_STARWHEEL": {
+      "layer": "starwheelpistol",
+      "slot": "weapon"
+    },
+    "POLEARM_AWL_PIKE3": {
+      "layer": "polearm_awl_pike3",
+      "slot": "weapon"
+    },
+    "POLEARM_BARDICHE": {
+      "layer": "polearm_bardiche",
+      "slot": "weapon"
+    },
+    "POLEARM_BEC_DE_CORBIN": {
+      "layer": "polearm_bec_de_corbin",
+      "slot": "weapon"
+    },
+    "POLEARM_BILL_GUISARME": {
+      "layer": "polearm_bill_guisarme",
+      "slot": "weapon"
+    },
+    "POLEARM_CRUSHER": {
+      "layer": "polearm_crusher",
+      "slot": "weapon"
+    },
+    "POLEARM_FAUCHARD": {
+      "layer": "polearm_fauchard",
+      "slot": "weapon"
+    },
+    "POLEARM_FAUCHARD_FORK": {
+      "layer": "polearm_fauchard_fork",
+      "slot": "weapon"
+    },
+    "POLEARM_GIANT_KIN_HALBERD": {
+      "layer": "polearm_giant_kin_halberd",
+      "slot": "weapon"
+    },
+    "POLEARM_GLAIVE4": {
+      "layer": "polearm_glaive_guisarme4",
+      "slot": "weapon"
+    },
+    "POLEARM_GLAIVE_GUISARME4": {
+      "layer": "polearm_glaive_guisarme4",
+      "slot": "weapon"
+    },
+    "POLEARM_GUISARME": {
+      "layer": "polearm_guisarme",
+      "slot": "weapon"
+    },
+    "POLEARM_GUISARME_VOULGE": {
+      "layer": "polearm_guisarme_voulge",
+      "slot": "weapon"
+    },
+    "POLEARM_GYTHKA": {
+      "layer": "polearm_gythka",
+      "slot": "weapon"
+    },
+    "POLEARM_HALBERD": {
+      "layer": "polearm_halberd",
+      "slot": "weapon"
+    },
+    "POLEARM_HOOK_FAUCHARD": {
+      "layer": "polearm_hook_fauchard",
+      "slot": "weapon"
+    },
+    "POLEARM_LUCERN_HAMMER3": {
+      "layer": "polearm_lucern_hammer3",
+      "slot": "weapon"
+    },
+    "POLEARM_MILITARY_FORK4": {
+      "layer": "polearm_military_fork",
+      "slot": "weapon"
+    },
+    "POLEARM_NAGINATA3": {
+      "layer": "polearm_fauchard",
+      "slot": "weapon"
+    },
+    "POLEARM_PARTISAN3": {
+      "layer": "polearm_partisan",
+      "slot": "weapon"
+    },
+    "POLEARM_QUAD_FAUCHARD": {
+      "layer": "polearm_hook_fauchard",
+      "slot": "weapon"
+    },
+    "POLEARM_RANSEUR3": {
+      "layer": "polearm_ranseur",
+      "slot": "weapon"
+    },
+    "POLEARM_SPETUM3": {
+      "layer": "polearm_awl_pike3",
+      "slot": "weapon"
+    },
+    "POLEARM_TETSUBO": {
+      "layer": "bo_staff",
+      "slot": "weapon"
+    },
+    "POLEARM_TRIKAL": {
+      "layer": "polearm_crusher",
+      "slot": "weapon"
+    },
+    "POLEARM_VOULGE": {
+      "layer": "polearm_guisarme_voulge",
+      "slot": "weapon"
+    },
+    "PUCHIK": {
+      "layer": "puchik",
+      "slot": "weapon"
+    },
+    "PUNCH_CUTTER": {
+      "layer": "punchcutter",
+      "slot": "weapon"
+    },
+    "QUABONE": {
+      "layer": "quabone",
+      "slot": "weapon"
+    },
+    "QUARTERSTAFF": {
+      "layer": "quarterstaff",
+      "slot": "weapon"
+    },
+    "RAZOR": {
+      "layer": "razor",
+      "slot": "weapon"
+    },
+    "RING_MAIL": {
+      "layer": "chain_mail",
+      "slot": "chest"
+    },
+    "RITIIK": {
+      "layer": "ritiik",
+      "slot": "weapon"
+    },
+    "RUSTY_ARMOR": {
+      "layer": "rusty_armor",
+      "slot": "chest"
+    },
+    "RUSTY_SWORD": {
+      "layer": "rusty_sword",
+      "slot": "weapon"
+    },
+    "SAI": {
+      "layer": "sai",
+      "slot": "weapon"
+    },
+    "SAP": {
+      "layer": "sap",
+      "slot": "weapon"
+    },
+    "SCOURGE": {
+      "layer": "scourge",
+      "slot": "weapon"
+    },
+    "SCROLL": {
+      "layer": "scroll",
+      "slot": "weapon"
+    },
+    "SCYTHE": {
+      "layer": "scythe",
+      "slot": "weapon"
+    },
+    "SHIELD_BODY": {
+      "layer": "body_shield_1",
+      "slot": "shield"
+    },
+    "SHIELD_BODY_2": {
+      "layer": "body_shield_2",
+      "slot": "shield"
+    },
+    "SHIELD_ROUND_WOODEN": {
+      "layer": "shield",
+      "slot": "shield"
+    },
+    "SHIELD_SMALL": {
+      "layer": "small_shield",
+      "slot": "shield"
+    },
+    "SHIELD_SPIKE": {
+      "layer": "shield_spike",
+      "slot": "weapon"
+    },
+    "SHOKA": {
+      "layer": "shoka",
+      "slot": "weapon"
+    },
+    "SHOTEL": {
+      "layer": "shotel",
+      "slot": "weapon"
+    },
+    "SHURIKEN": {
+      "layer": "shuriken",
+      "slot": "weapon"
+    },
+    "SICKLE": {
+      "layer": "sickle",
+      "slot": "weapon"
+    },
+    "SLING": {
+      "layer": "sling",
+      "slot": "weapon"
+    },
+    "SLING_BULLET": {
+      "layer": "sling_bullet",
+      "slot": "weapon"
+    },
+    "SLING_STONE": {
+      "layer": "sling_stone",
+      "slot": "weapon"
+    },
+    "SMALL_FIREBALL": {
+      "layer": "firenball",
+      "slot": "weapon"
+    },
+    "SPEAR": {
+      "layer": "spear",
+      "slot": "weapon"
+    },
+    "SPEAR_CASTER": {
+      "layer": "spear_caster",
+      "slot": "weapon"
+    },
+    "SPEAR_DOUBLE_BLADED": {
+      "layer": "spear_double_bladed",
+      "slot": "weapon"
+    },
+    "SPEAR_HEAVY_ONE_HANDED": {
+      "layer": "spear_heavy_one_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_HEAVY_TWO_HANDED": {
+      "layer": "spear_heavy_two_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_HOOK_TAILED": {
+      "layer": "spear_hook_tailed",
+      "slot": "weapon"
+    },
+    "SPEAR_LONG_ONE_HANDED": {
+      "layer": "spear_long_one_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_LONG_TWO_HANDED3": {
+      "layer": "spear_long_two_handed3",
+      "slot": "weapon"
+    },
+    "SPEAR_ONE_HANDED": {
+      "layer": "spear_one_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_PADDLE": {
+      "layer": "spear_paddle",
+      "slot": "weapon"
+    },
+    "SPEAR_STONE_ONE_HANDED": {
+      "layer": "spear_stone_one_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_STONE_TWO_HANDED": {
+      "layer": "spear_stone_two_handed",
+      "slot": "weapon"
+    },
+    "SPEAR_THROWING": {
+      "layer": "spear_throwing",
+      "slot": "weapon"
+    },
+    "SPEAR_TWO_HANDED3": {
+      "layer": "spear_two_handed3",
+      "slot": "weapon"
+    },
+    "SPIKES_BODY": {
+      "layer": "spike_elbow",
+      "slot": "weapon"
+    },
+    "SPIKE_ELBOW": {
+      "layer": "spike_elbow",
+      "slot": "weapon"
+    },
+    "SPIKE_HEAD": {
+      "layer": "spike_head",
+      "slot": "weapon"
+    },
+    "SPIKE_KNEE": {
+      "layer": "spike_elbow",
+      "slot": "weapon"
+    },
+    "SPLINT_MAIL": {
+      "layer": "splint_mail_armor",
+      "slot": "chest"
+    },
+    "SPLINT_MAIL_ARMS": {
+      "layer": "splint_mail_arms",
+      "slot": "arms"
+    },
+    "SPLINT_MAIL_GAUNTLETS": {
+      "layer": "splint_mail_gauntlets",
+      "slot": "hands"
+    },
+    "SPLINT_MAIL_HELMET": {
+      "layer": "splint_mail_helmet",
+      "slot": "head"
+    },
+    "SPLINT_MAIL_LEGGINGS": {
+      "layer": "splint_mail_leggings",
+      "slot": "legs"
+    },
+    "STAFF_HAMANU_S": {
+      "layer": "staff_hamanu_s",
+      "slot": "weapon"
+    },
+    "STAFF_HORNHEAD": {
+      "layer": "staff_hornhead",
+      "slot": "weapon"
+    },
+    "STAFF_SLING": {
+      "layer": "staff_sling",
+      "slot": "weapon"
+    },
+    "STAFF_SLING_STINKPOT": {
+      "layer": "staff_sling",
+      "slot": "weapon"
+    },
+    "STICKS_SINGING": {
+      "layer": "sticks_singing",
+      "slot": "weapon"
+    },
+    "STICK_GOBLIN": {
+      "layer": "stick_goblin",
+      "slot": "weapon"
+    },
+    "STILETTO": {
+      "layer": "stiletto",
+      "slot": "weapon"
+    },
+    "STUDDED_LEATHER": {
+      "layer": "studded_leather_armor",
+      "slot": "chest"
+    },
+    "STUDDED_LEATHER_ARMS": {
+      "layer": "studded_leather_arms",
+      "slot": "arms"
+    },
+    "STUDDED_LEATHER_BOOTS": {
+      "layer": "studded_leather_boots",
+      "slot": "feet"
+    },
+    "STUDDED_LEATHER_GAUNTLETS": {
+      "layer": "studded_leather_gauntlets",
+      "slot": "hands"
+    },
+    "STUDDED_LEATHER_HELMET": {
+      "layer": "studded_leather_helmet",
+      "slot": "head"
+    },
+    "STUDDED_LEATHER_LEGGINGS": {
+      "layer": "studded_leather_leggings",
+      "slot": "legs"
+    },
+    "SWORD": {
+      "layer": "sword",
+      "slot": "weapon"
+    },
+    "SWORDLET": {
+      "layer": "swordlet",
+      "slot": "weapon"
+    },
+    "SWORD_BASTARD_ONE_HANDED": {
+      "layer": "sword_bastard_one_handed",
+      "slot": "weapon"
+    },
+    "SWORD_BASTARD_TWO_HANDED": {
+      "layer": "sword_bastard_two_handed",
+      "slot": "weapon"
+    },
+    "SWORD_BROAD": {
+      "layer": "sword_broad",
+      "slot": "weapon"
+    },
+    "SWORD_CLAYMORE": {
+      "layer": "sword_claymore",
+      "slot": "weapon"
+    },
+    "SWORD_CUTLASS": {
+      "layer": "sword_cutlass",
+      "slot": "weapon"
+    },
+    "SWORD_DRUSUS": {
+      "layer": "sword_drusus",
+      "slot": "weapon"
+    },
+    "SWORD_DWARVEN_CLAYMORE": {
+      "layer": "sword_dwarven_claymore",
+      "slot": "weapon"
+    },
+    "SWORD_FALCHION": {
+      "layer": "sword_falchion",
+      "slot": "weapon"
+    },
+    "SWORD_FLAMBERGE": {
+      "layer": "sword_flamberge",
+      "slot": "weapon"
+    },
+    "SWORD_GIANT_KIN_TWO_HANDED": {
+      "layer": "sword_giant_kin_two_handed",
+      "slot": "weapon"
+    },
+    "SWORD_GREAT_SCIMITAR": {
+      "layer": "sword_great_scimitar",
+      "slot": "weapon"
+    },
+    "SWORD_HOOK": {
+      "layer": "sword_hook",
+      "slot": "weapon"
+    },
+    "SWORD_KATANA_ONE_HANDED": {
+      "layer": "sword_katana_one_handed",
+      "slot": "weapon"
+    },
+    "SWORD_KATANA_TWO_HANDED": {
+      "layer": "sword_katana_two_handed",
+      "slot": "weapon"
+    },
+    "SWORD_KHANDAR_ONE_HANDED": {
+      "layer": "sword_khandar_one_handed",
+      "slot": "weapon"
+    },
+    "SWORD_KHANDAR_TWO_HANDED": {
+      "layer": "sword_khandar_two_handed",
+      "slot": "weapon"
+    },
+    "SWORD_KHOPESH": {
+      "layer": "sword_khopesh",
+      "slot": "weapon"
+    },
+    "SWORD_LONG": {
+      "layer": "sword_long",
+      "slot": "weapon"
+    },
+    "SWORD_MANDIBLE": {
+      "layer": "sword_mandible",
+      "slot": "weapon"
+    },
+    "SWORD_MARINER_S": {
+      "layer": "sword_mariners",
+      "slot": "weapon"
+    },
+    "SWORD_PIERCER": {
+      "layer": "sword_piercer",
+      "slot": "weapon"
+    },
+    "SWORD_PIXIE": {
+      "layer": "sword_pixie",
+      "slot": "weapon"
+    },
+    "SWORD_RAPIER": {
+      "layer": "sword_rapier",
+      "slot": "weapon"
+    },
+    "SWORD_SABRE": {
+      "layer": "sword_sabre",
+      "slot": "weapon"
+    },
+    "SWORD_SCIMITAR": {
+      "layer": "sword_scimitar",
+      "slot": "weapon"
+    },
+    "SWORD_SHORT": {
+      "layer": "sword_short",
+      "slot": "weapon"
+    },
+    "SWORD_TALWAR": {
+      "layer": "sword_talwar",
+      "slot": "weapon"
+    },
+    "SWORD_TWO_HANDED": {
+      "layer": "sword_two_handed",
+      "slot": "weapon"
+    },
+    "SWORD_WAKIZASHI": {
+      "layer": "sword_wakizashi",
+      "slot": "weapon"
+    },
+    "TALID": {
+      "layer": "talid",
+      "slot": "weapon"
+    },
+    "TORTOISE_BLADES": {
+      "layer": "tortoise_blades",
+      "slot": "weapon"
+    },
+    "TOXIC_VEIL": {
+      "layer": "cloak",
+      "slot": "cloak"
+    },
+    "TRIDENT_ONE_HANDED": {
+      "layer": "trident",
+      "slot": "weapon"
+    },
+    "TRIDENT_TWO_HANDED": {
+      "layer": "trident",
+      "slot": "weapon"
+    },
+    "TROMBASH_HELD": {
+      "layer": "trombash_held",
+      "slot": "weapon"
+    },
+    "TROMBASH_THROWN": {
+      "layer": "trombash_thrown",
+      "slot": "weapon"
+    },
+    "TUFENK": {
+      "layer": "dart",
+      "slot": "weapon"
+    },
+    "TWO_HANDED_SWORD": {
+      "layer": "sword_two_handed",
+      "slot": "weapon"
+    },
+    "WARHAMMER": {
+      "layer": "warhammer",
+      "slot": "weapon"
+    },
+    "WHIP": {
+      "layer": "whip",
+      "slot": "weapon"
+    },
+    "WHIP_CHAIN": {
+      "layer": "chain_whip",
+      "slot": "weapon"
+    },
+    "WHIP_MASTER_S": {
+      "layer": "whip",
+      "slot": "weapon"
+    },
+    "WOODEN_CROSS": {
+      "layer": "wooden_cross",
+      "slot": "weapon"
+    },
+    "WOOD_BONE_ARMOR": {
+      "layer": "wood_bone_armor",
+      "slot": "chest"
+    },
+    "WOOD_BONE_ARMS": {
+      "layer": "wood_bone_arms",
+      "slot": "arms"
+    },
+    "WOOD_BONE_BOOTS": {
+      "layer": "wood_bone_boots",
+      "slot": "feet"
+    },
+    "WOOD_BONE_HELMET": {
+      "layer": "wood_bone_helmet",
+      "slot": "head"
+    },
+    "WOOD_BONE_LEGGINGS": {
+      "layer": "wood_bone_leggings",
+      "slot": "legs"
+    },
+    "WRIST_RAZOR": {
+      "layer": "wrist_razor",
+      "slot": "weapon"
+    },
+    "ZAGHNAL": {
+      "layer": "pick_footman_s",
+      "slot": "weapon"
+    }
+  }
+}
