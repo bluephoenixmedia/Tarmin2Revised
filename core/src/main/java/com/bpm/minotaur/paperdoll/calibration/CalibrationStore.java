@@ -175,12 +175,19 @@ public class CalibrationStore {
         sb.append("}");
     }
 
-    /** Trims trailing zeroes so diffs stay readable and numbers stay hand-editable. */
+    /**
+     * Trims trailing zeroes so diffs stay readable and numbers stay hand-editable.
+     *
+     * Five decimals, matching tools/bake_paperdoll_layers.py. They have to agree: merely
+     * stepping through a layer in the editor commits it, so a writer that rounded more
+     * coarsely would rewrite every layer it visited and bury a handful of real edits in a
+     * diff touching all 335.
+     */
     private static String num(float f) {
         if (f == Math.rint(f) && !Float.isInfinite(f)) {
             return String.valueOf((long) f);
         }
-        return String.valueOf(Math.round(f * 10000f) / 10000f);
+        return String.valueOf(Math.round(f * 100000f) / 100000f);
     }
 
     public void load(FileHandle handle) {
