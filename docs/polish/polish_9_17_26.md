@@ -1,0 +1,2 @@
+- Game refers to a spellbook to choose new spells when Tomes are discovered, it is not implemented.
+- We need to polish and clean up all text that appears in the field of view, this mostly applies to combat info that shows up. We need to add visual cues both graphic and text based to indicate the player's status (hungry, cold, bleed, diseased, poisoned etc)
