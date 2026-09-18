@@ -40,7 +40,7 @@ import java.util.List;
  *
  *   [ ]            previous / next layer
  *   arrows         nudge 1px   (+SHIFT 10px)
- *   + / -          scale       (+SHIFT non-uniform, X only)
+ *   + / -          scale both axes   (SHIFT: width only, CTRL: height only)
  *   , / .          rotate
  *   R              revert this layer
  *   D              reset to the slot's median placement
@@ -53,7 +53,6 @@ public class PaperdollEditorScreen extends BaseScreen {
     private static final float NUDGE = 1f;
     private static final float NUDGE_FAST = 10f;
     private static final float SCALE_STEP = 1.01f;
-    private static final float SCALE_STEP_FAST = 1.05f;
     private static final float ROTATE_STEP = 1f;
 
     // Matches PaperDollPanel: where base_father.png actually sits on the inventory page.
@@ -77,6 +76,8 @@ public class PaperdollEditorScreen extends BaseScreen {
 
     private final com.badlogic.gdx.Screen previousScreen;
     private boolean syncing = false;
+    private boolean confirmingExit = false;
+    private boolean confirmingReload = false;
 
     public PaperdollEditorScreen(Tarmin2 game, com.badlogic.gdx.Screen previousScreen) {
         super(game);
@@ -328,6 +329,8 @@ public class PaperdollEditorScreen extends BaseScreen {
     }
 
     private void refreshStatus() {
+        confirmingExit = false;
+        confirmingReload = false;
         LayerCalibration c = model.current();
         valuesLabel.setText(String.format(
                 "offset  %+.1f, %+.1f      scale  %.3f x %.3f      rotation  %+.1f",
@@ -355,6 +358,13 @@ public class PaperdollEditorScreen extends BaseScreen {
     }
 
     private void reload() {
+        if (model.isDirty() && !confirmingReload) {
+            confirmingReload = true;
+            statusLabel.setText("UNSAVED CHANGES - reloading discards them. Press F5 again to confirm");
+            statusLabel.setColor(Color.ORANGE);
+            return;
+        }
+        confirmingReload = false;
         String selected = model.selectedLayerId();
         doll.reloadCalibration();
         model = new CalibrationEditModel(doll.getCalibration());
@@ -372,16 +382,21 @@ public class PaperdollEditorScreen extends BaseScreen {
         boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
                 || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
         float step = shift ? NUDGE_FAST : NUDGE;
-        float factor = shift ? SCALE_STEP_FAST : SCALE_STEP;
 
         switch (keycode) {
             case Input.Keys.LEFT:   model.nudge(-step, 0f); break;
             case Input.Keys.RIGHT:  model.nudge(step, 0f); break;
             case Input.Keys.UP:     model.nudge(0f, -step); break;
             case Input.Keys.DOWN:   model.nudge(0f, step); break;
+            // Non-uniform scale is the specific tool for "right height, too narrow",
+            // so width and height need to be reachable separately.
             case Input.Keys.EQUALS:
-            case Input.Keys.PLUS:   model.scaleBy(factor, shift ? 1f : factor); break;
-            case Input.Keys.MINUS:  model.scaleBy(1f / factor, shift ? 1f : 1f / factor); break;
+            case Input.Keys.PLUS:
+                model.scaleBy(ctrl ? 1f : SCALE_STEP, shift ? 1f : SCALE_STEP);
+                break;
+            case Input.Keys.MINUS:
+                model.scaleBy(ctrl ? 1f : 1f / SCALE_STEP, shift ? 1f : 1f / SCALE_STEP);
+                break;
             case Input.Keys.COMMA:  model.rotateBy(-ROTATE_STEP); break;
             case Input.Keys.PERIOD: model.rotateBy(ROTATE_STEP); break;
             case Input.Keys.LEFT_BRACKET:  model.previous(); syncFromModel(); return true;
@@ -393,13 +408,32 @@ public class PaperdollEditorScreen extends BaseScreen {
                 if (ctrl) { save(); return true; }
                 return false;
             case Input.Keys.ESCAPE:
-                game.setScreen(previousScreen);
+                exit();
                 return true;
             default:
                 return false;
         }
         refreshStatus();
         return true;
+    }
+
+    /**
+     * Leaves the editor, refusing the first time if there is unsaved work.
+     *
+     * The whole point of tracking dirtiness is to not lose a calibration pass; silently
+     * discarding it on the way out would waste exactly the work this screen exists to
+     * capture.
+     */
+    private void exit() {
+        if (model.isDirty() && !confirmingExit) {
+            confirmingExit = true;
+            statusLabel.setText("UNSAVED CHANGES - ctrl+S to save, or press ESC again to discard");
+            statusLabel.setColor(Color.ORANGE);
+            return;
+        }
+        // previousScreen is null when booted straight here with --paperdoll, and
+        // Game.setScreen(null) leaves a black window with an orphaned input processor.
+        game.setScreen(previousScreen != null ? previousScreen : new MainMenuScreen(game));
     }
 
     @Override
@@ -415,11 +449,31 @@ public class PaperdollEditorScreen extends BaseScreen {
         stage.getViewport().update(width, height, true);
     }
 
+    /**
+     * Releases everything on the way out.
+     *
+     * Game.setScreen() calls hide(), never dispose(), so releasing in dispose() alone
+     * would leak the stage, the skin and its font, the white pixel, and one texture per
+     * layer stepped through -- on every visit to the editor. LoadingScreen does the same
+     * thing for the same reason.
+     */
+    @Override
+    public void hide() {
+        if (Gdx.input.getInputProcessor() == stage) {
+            Gdx.input.setInputProcessor(null);
+        }
+        releaseResources();
+    }
+
     @Override
     public void dispose() {
-        if (stage != null) stage.dispose();
-        if (doll != null) doll.dispose();
-        if (skin != null) skin.dispose();
-        if (whitePixel != null) whitePixel.dispose();
+        releaseResources();
+    }
+
+    private void releaseResources() {
+        if (stage != null) { stage.dispose(); stage = null; }
+        if (doll != null) { doll.dispose(); doll = null; }
+        if (skin != null) { skin.dispose(); skin = null; }
+        if (whitePixel != null) { whitePixel.dispose(); whitePixel = null; }
     }
 }

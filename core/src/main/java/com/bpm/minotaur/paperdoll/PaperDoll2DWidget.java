@@ -113,8 +113,30 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
 
     /** Re-reads calibration and the layer map from disk. */
     public void reloadCalibration() {
-        calibration.load(resolveFile(CALIBRATION_PATH));
-        layerMap.load(resolveFile(LAYER_MAP_PATH));
+        calibration.load(dataFile(CALIBRATION_PATH));
+        layerMap.load(dataFile(LAYER_MAP_PATH));
+    }
+
+    /**
+     * Resolves a data file, preferring the real asset over the build's copy of it.
+     *
+     * lwjgl3/build.gradle puts assets/ on the resource path, so a copy of every data
+     * file also lives in lwjgl3/build/resources/main/. Gdx.files.internal finds that
+     * copy first via the classpath. Combined with saving to the real asset, that split
+     * is silently destructive: a calibration pass would save correctly, then F5 would
+     * re-read the stale build copy and revert the whole session -- and a hand-edit of
+     * the tracked file would never be seen at all, which is precisely what the editor
+     * advertises F5 for.
+     *
+     * A packaged build has no local assets/ directory, so it falls through to internal
+     * and behaves exactly as before.
+     */
+    private FileHandle dataFile(String internalPath) {
+        FileHandle onDisk = Gdx.files.local("assets/" + internalPath);
+        if (onDisk.exists()) {
+            return onDisk;
+        }
+        return resolveFile(internalPath);
     }
 
     public CalibrationStore getCalibration() {
@@ -149,7 +171,13 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         return true;
     }
 
-    /** The visual slot a layer folder belongs to, or null if the folder is unknown. */
+    /**
+     * The visual slot a layer folder belongs to, or null if the folder is unknown.
+     *
+     * CLOAK_BACK and CLOAK_FRONT share the "cloak" folder, so the lookup would be
+     * ambiguous; CLOAK_BACK wins because it is the one that actually shows the garment,
+     * with CLOAK_FRONT reserved for the clasp drawn over everything else.
+     */
     public static PaperDollSlot slotForFolder(String folder) {
         if (folder == null) {
             return null;
@@ -167,16 +195,26 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
      * no business rewriting its own assets.
      */
     public boolean saveCalibration() {
-        FileHandle handle = Gdx.files.local("assets/" + CALIBRATION_PATH);
-        if (!handle.exists() && !handle.parent().exists()) {
-            handle = Gdx.files.local(CALIBRATION_PATH);
-        }
-        if (!handle.exists() && !handle.parent().exists()) {
+        FileHandle handle = writableDataFile(CALIBRATION_PATH);
+        if (handle == null) {
             Gdx.app.error("PaperDoll2DWidget", "No writable path for " + CALIBRATION_PATH);
             return false;
         }
         calibration.save(handle);
         return true;
+    }
+
+    /** The on-disk asset a save should land in, or null when there is no writable one. */
+    private FileHandle writableDataFile(String internalPath) {
+        FileHandle underAssets = Gdx.files.local("assets/" + internalPath);
+        if (underAssets.exists() || underAssets.parent().exists()) {
+            return underAssets;
+        }
+        FileHandle direct = Gdx.files.local(internalPath);
+        if (direct.exists() || direct.parent().exists()) {
+            return direct;
+        }
+        return null;
     }
 
     private void loadBaseFather() {

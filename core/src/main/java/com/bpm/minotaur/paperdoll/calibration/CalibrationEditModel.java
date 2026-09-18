@@ -127,7 +127,6 @@ public class CalibrationEditModel {
         }
         working.offsetX += dx;
         working.offsetY += dy;
-        dirty = true;
         commit();
     }
 
@@ -141,7 +140,6 @@ public class CalibrationEditModel {
         }
         working.scaleX = Math.max(MIN_SCALE, working.scaleX * fx);
         working.scaleY = Math.max(MIN_SCALE, working.scaleY * fy);
-        dirty = true;
         commit();
     }
 
@@ -150,7 +148,6 @@ public class CalibrationEditModel {
             return;
         }
         working.rotation += degrees;
-        dirty = true;
         commit();
     }
 
@@ -159,7 +156,10 @@ public class CalibrationEditModel {
             return;
         }
         working = pristine.copy();
-        commit();
+        // Straight to the store: commit() would compare against pristine, find no
+        // difference, and correctly leave dirty alone -- but being explicit here keeps
+        // revert's meaning obvious.
+        store.put(selectedLayerId(), working.copy());
     }
 
     /** Falls back to the baker's median placement for the slot — the nonsense escape hatch. */
@@ -179,7 +179,6 @@ public class CalibrationEditModel {
         String hash = working.sourceHash;
         working = def.copy();
         working.sourceHash = hash;
-        dirty = true;
         commit();
     }
 
@@ -191,15 +190,6 @@ public class CalibrationEditModel {
     public void markSaved() {
         dirty = false;
         pristine = working.copy();
-    }
-
-    /** Flags edited through {@link #current()} still count as unsaved work. */
-    public void markDirty() {
-        dirty = true;
-    }
-
-    public CalibrationStore store() {
-        return store;
     }
 
     public int selectedIndex() {
