@@ -45,6 +45,7 @@ import java.util.List;
  *   arrows         nudge 1px   (+SHIFT 10px)
  *   + / -          scale both axes   (SHIFT: width only, CTRL: height only)
  *   , / .          rotate
+ *   N              flag this layer as needing its art re-created
  *   R              revert this layer
  *   D              reset to the slot's median placement
  *   CTRL+S         save
@@ -252,12 +253,14 @@ public class PaperdollEditorScreen extends BaseScreen {
         rotationSlider = addSlider(sliders, "Rotation", -180f, 180f, 0.5f, rotationValue);
         t.add(sliders).colspan(2).padTop(10f).row();
 
+        needsArtRedoBox = flag("[N]  NEEDS RE-CREATION - no placement fits this art");
+        needsArtRedoBox.getLabel().setColor(Color.ORANGE);
+        t.add(needsArtRedoBox).colspan(2).padTop(12f).row();
+
         hidesHairBox = flag("Helmet hides hair");
         hidesBeardBox = flag("Helmet hides beard");
-        needsArtRedoBox = flag("Art needs redoing (wrong perspective)");
         t.add(hidesHairBox).colspan(2).row();
         t.add(hidesBeardBox).colspan(2).row();
-        t.add(needsArtRedoBox).colspan(2).row();
 
         Table buttons = new Table();
         buttons.defaults().pad(4f);
@@ -435,10 +438,12 @@ public class PaperdollEditorScreen extends BaseScreen {
                 c.offsetX, c.offsetY, c.scaleX, c.scaleY, c.rotation));
 
         String id = model.selectedLayerId();
-        statusLabel.setText(String.format("%s   (%d of %d)%s",
+        int flagged = model.countNeedingArtRedo();
+        statusLabel.setText(String.format("%s   (%d of %d)   flagged for re-creation: %d%s",
                 id == null ? "-" : id,
                 model.selectedIndex() + 1,
                 model.layerCount(),
+                flagged,
                 model.isDirty() ? "    *** UNSAVED ***" : ""));
         statusLabel.setColor(model.isDirty() ? Color.ORANGE : Color.WHITE);
     }
@@ -499,6 +504,11 @@ public class PaperdollEditorScreen extends BaseScreen {
             case Input.Keys.PERIOD: model.rotateBy(ROTATE_STEP); break;
             case Input.Keys.LEFT_BRACKET:  model.previous(); syncFromModel(); return true;
             case Input.Keys.RIGHT_BRACKET: model.next(); syncFromModel(); return true;
+            case Input.Keys.N:
+                // Flagging is part of walking the list, not a separate chore: if no
+                // placement fits, mark it and move on rather than fighting it.
+                needsArtRedoBox.setChecked(!needsArtRedoBox.isChecked());
+                return true;
             case Input.Keys.R:      model.revert(); syncFromModel(); return true;
             case Input.Keys.D:      model.resetToSlotDefault(); syncFromModel(); return true;
             case Input.Keys.F5:     reload(); return true;

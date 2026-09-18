@@ -176,6 +176,26 @@ public class CalibrationEditModelTest {
     }
 
     @Test
+    public void countsLayersFlaggedForArtRecreation() {
+        assertEquals(0, model.countNeedingArtRedo());
+
+        model.select("chest/banded");
+        model.current().needsArtRedo = true;
+        model.commit();
+        assertEquals(1, model.countNeedingArtRedo());
+
+        model.select("head/bascinet");
+        model.current().needsArtRedo = true;
+        model.commit();
+        assertEquals("the count spans every slot, not just the one being edited",
+                2, model.countNeedingArtRedo());
+
+        model.current().needsArtRedo = false;
+        model.commit();
+        assertEquals(1, model.countNeedingArtRedo());
+    }
+
+    @Test
     public void selectingAnUnknownLayerIsIgnoredRatherThanCrashing() {
         model.select("chest/banded");
         model.select("nosuch/layer");

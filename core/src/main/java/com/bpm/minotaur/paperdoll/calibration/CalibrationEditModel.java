@@ -192,6 +192,23 @@ public class CalibrationEditModel {
         pristine = working.copy();
     }
 
+    /**
+     * How many layers are flagged as needing their art re-created.
+     *
+     * Shown live while calibrating: the point of the flag is to turn "most of the boots
+     * don't work" into a countable queue, and a count you can watch grow is what makes
+     * it feel like progress rather than a list of defeats.
+     */
+    public int countNeedingArtRedo() {
+        int n = 0;
+        for (LayerCalibration cal : store.all().values()) {
+            if (cal.needsArtRedo) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     public int selectedIndex() {
         return index;
     }
