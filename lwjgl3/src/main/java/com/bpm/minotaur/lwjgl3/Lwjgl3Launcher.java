@@ -11,7 +11,15 @@ public class Lwjgl3Launcher {
         if (StartupHelper.startNewJvmIfRequired())
             return; // This handles macOS support and helps on Windows.
         Tarmin2.setStartupArgs(args);
-        createApplication();
+        CrashReporter.install();
+        try {
+            createApplication();
+        } catch (Throwable error) {
+            // The game loop runs on this thread, so its crashes surface here rather than
+            // through the default handler.
+            CrashReporter.write(Thread.currentThread(), error);
+            throw error;
+        }
     }
 
     private static Lwjgl3Application createApplication() {
