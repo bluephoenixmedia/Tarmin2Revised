@@ -153,6 +153,7 @@ public class ChunkData {
                     item.addModifier(mod);
                 }
             }
+            item.setStudyProgress(data.studyProgress);
             if (data.contents != null && !data.contents.isEmpty()) {
                 List<Item> insideItems = new ArrayList<>();
                 for (ItemData insideData : data.contents) {
@@ -304,6 +305,7 @@ public class ChunkData {
         public int y;
         public List<ItemModifier> modifiers = new ArrayList<>();
         public List<ItemData> contents = new ArrayList<>();
+        public int studyProgress;
 
         public ItemData() {
         }
@@ -314,6 +316,7 @@ public class ChunkData {
             this.x = (int) item.getPosition().x;
             this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
+            this.studyProgress = item.getStudyProgress();
             if (item.getContents() != null && !item.getContents().isEmpty()) {
                 for (Item inside : item.getContents()) {
                     if (inside != null) {

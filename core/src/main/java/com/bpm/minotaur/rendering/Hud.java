@@ -2712,6 +2712,9 @@ public class Hud implements Disposable {
     }
 
     // --- NEW: Tarmin's Hunger UI ---
+    private static final Color TOME_STUDY_FILL_LIGHT = Color.valueOf("8A6BD1");
+    private static final Color TOME_STUDY_FILL_DARK = Color.valueOf("5B3F9E");
+
     /** Progress of a Tome being studied in the field, centred in the field of view. */
     private void drawTomeStudyBar() {
         com.bpm.minotaur.gamedata.player.TomeStudy study = player.getActiveTomeStudy();
@@ -2729,9 +2732,9 @@ public class Hud implements Disposable {
         shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
         shapeRenderer.rect(x, y, maxW, h);
         if (fraction > 0) {
-            shapeRenderer.setColor(Color.valueOf("8A6BD1"));
+            shapeRenderer.setColor(TOME_STUDY_FILL_LIGHT);
             shapeRenderer.rect(x, y + h / 2f, maxW * fraction, h / 2f);
-            shapeRenderer.setColor(Color.valueOf("5B3F9E"));
+            shapeRenderer.setColor(TOME_STUDY_FILL_DARK);
             shapeRenderer.rect(x, y, maxW * fraction, h / 2f);
         }
         shapeRenderer.end();

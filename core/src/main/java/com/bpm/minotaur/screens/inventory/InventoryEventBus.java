@@ -10,7 +10,6 @@ public class InventoryEventBus {
         default void onItemMoved(InventorySlot from, InventorySlot to, Item item) {}
         default void onItemDropped(Item item) {}
         default void onStatsChanged() {}
-        default void onSpellbookChanged() {}
         default void onItemInspected(Item item) {}
     }
 
@@ -29,10 +28,6 @@ public class InventoryEventBus {
 
     public void fireStatsChanged() {
         for (Listener l : listeners) l.onStatsChanged();
-    }
-
-    public void fireSpellbookChanged() {
-        for (Listener l : listeners) l.onSpellbookChanged();
     }
 
     public void fireItemInspected(Item item) {

@@ -159,4 +159,28 @@ public class TomeStudyTest {
 
         assertEquals(7, restored.studyProgress);
     }
+
+    @Test
+    public void studyProgressSurvivesATomeLeftOnTheGround() {
+        Item tome = tome(Item.ItemType.TOME_OF_TARMIN);
+        tome.setStudyProgress(9);
+
+        Json json = new Json();
+        com.bpm.minotaur.gamedata.ChunkData.ItemData restored = json.fromJson(
+                com.bpm.minotaur.gamedata.ChunkData.ItemData.class,
+                json.toJson(new com.bpm.minotaur.gamedata.ChunkData.ItemData(tome)));
+
+        assertEquals(9, restored.studyProgress);
+    }
+
+    @Test
+    public void aTomeNoLongerCarriedUnlocksNothing() {
+        Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
+        player.beginTomeStudy(tome, field, events);
+        player.getInventory().removeItem(tome);
+
+        studyUntilStopped();
+
+        assertEquals(1, player.getUnlockedSpellSlots());
+    }
 }

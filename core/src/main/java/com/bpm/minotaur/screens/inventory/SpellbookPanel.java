@@ -13,9 +13,7 @@ import com.bpm.minotaur.managers.SettingsManager;
  * Read-only summary of the five Spell Slots on the inventory page. Spells are
  * read and assigned on the full Spellbook screen.
  */
-public class SpellbookPanel extends Table implements InventoryEventBus.Listener {
-
-    private static final String[] SLOT_KEYS = { "Z", "X", "V", "B", "N" };
+public class SpellbookPanel extends Table {
 
     private final Player player;
     private final InventorySkin skin;
@@ -28,10 +26,6 @@ public class SpellbookPanel extends Table implements InventoryEventBus.Listener 
         padTop(12);
 
         refresh();
-    }
-
-    public void setBus(InventoryEventBus bus) {
-        // Read-only: nothing to publish.
     }
 
     public void refresh() {
@@ -51,7 +45,7 @@ public class SpellbookPanel extends Table implements InventoryEventBus.Listener 
                 text = spell != null ? spell.getName() : "-- empty --";
                 color = spell != null ? InventorySkin.COL_PAGE_LIGHT : InventorySkin.COL_TEXT_MUTED;
             }
-            Label line = new Label("[" + SLOT_KEYS[i] + "] " + text, new Label.LabelStyle(skin.getFontSmall(), color));
+            Label line = new Label("[" + com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i] + "] " + text, new Label.LabelStyle(skin.getFontSmall(), color));
             line.setEllipsis(true);
             add(line).width(340).left().row();
         }
@@ -59,10 +53,5 @@ public class SpellbookPanel extends Table implements InventoryEventBus.Listener 
         String key = Input.Keys.toString(SettingsManager.getInstance().getKey("SPELLBOOK"));
         add(new Label(player.getKnownSpellIds().size() + " known -- Open Spellbook [" + key + "]",
                 new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_HEADER))).left().padTop(6).row();
-    }
-
-    @Override
-    public void onSpellbookChanged() {
-        refresh();
     }
 }

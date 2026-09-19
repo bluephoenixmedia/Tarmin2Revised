@@ -1469,11 +1469,11 @@ public class GameScreen extends BaseScreen {
         }
         tomeStudyTimer = 0f;
         playerTurnTakesAction();
+        player.advanceTomeStudy(maze, eventManager);
+        // A monster that engaged without being seen (e.g. invisible) still ends the study.
         if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
             player.cancelTomeStudy(eventManager);
-            return;
         }
-        player.advanceTomeStudy(maze, eventManager);
     }
 
     /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
@@ -1748,7 +1748,7 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
-        // Any key breaks the concentration of a Tome being studied (and does nothing else).
+        // The key only breaks concentration, so stopping a study never also moves or attacks.
         if (player != null && player.getActiveTomeStudy() != null) {
             player.cancelTomeStudy(eventManager);
             return true;
@@ -2495,6 +2495,10 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (player != null && player.getActiveTomeStudy() != null) {
+            player.cancelTomeStudy(eventManager);
+            return true;
+        }
         if (button == Input.Buttons.RIGHT && combatManager != null) {
             combatManager.setPlayerGuardStance(true);
             if (weaponOverlay != null) weaponOverlay.setGuarding(true);

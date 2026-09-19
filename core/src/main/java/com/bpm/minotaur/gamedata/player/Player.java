@@ -470,10 +470,12 @@ public class Player {
     }
 
     private void finishTomeStudy(Item tome, GameEventManager eventManager) {
+        if (!inventory.removeItem(tome)) {
+            return;
+        }
         int slots = TomeStudy.slotsUnlockedBy(tome.getType());
         boolean newSlot = slots > unlockedSpellSlots;
         setUnlockedSpellSlots(Math.max(unlockedSpellSlots, slots));
-        inventory.removeItem(tome);
         eventManager.addEvent(new GameEvent(newSlot
                 ? "Studied the " + tome.getDisplayName() + "! Spell Slot " + slots + " unlocked!"
                 : "Studied the " + tome.getDisplayName() + ".", 3.0f));

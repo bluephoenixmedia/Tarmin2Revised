@@ -143,7 +143,6 @@ public class ModernInventoryUI {
         backpack.setBus(bus);
         quickSlots.setBus(bus);
         paperDoll.setBus(bus);
-        spellbook.setBus(bus);
 
         // ── Event subscriptions ───────────────────────────────────────
         bus.subscribe(paperDoll);
@@ -151,7 +150,6 @@ public class ModernInventoryUI {
         bus.subscribe(backpack);
         bus.subscribe(quickSlots);
         bus.subscribe(attributes);
-        bus.subscribe(spellbook);
 
         // ── Backpack slot right-click → drop ─────────────────────────
         wireBackpackInteractions();

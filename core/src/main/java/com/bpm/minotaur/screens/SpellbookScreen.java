@@ -35,7 +35,8 @@ import java.util.TreeSet;
  */
 public class SpellbookScreen extends BaseScreen {
 
-    private static final String[] SLOT_KEYS = { "Z", "X", "V", "B", "N" };
+    /** Quick-cast keys of the five Spell Slots, in slot order. */
+    public static final String[] SLOT_KEYS = { "Z", "X", "V", "B", "N" };
     private static final String[] SLOT_UNLOCKED_BY = {
             null, "Tome of the Initiate", "Tome of Elements", "Tome of the Arcane", "Tome of Tarmin" };
 
