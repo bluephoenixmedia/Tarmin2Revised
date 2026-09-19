@@ -336,7 +336,8 @@ public class ShelterAltarScreen extends BaseScreen {
         body.add(monumentCard).width(380).expandY().fillY().padRight(20);
 
         Table arcaneCard = buildTreeCard("ARCANE ATTUNEMENT",
-                "Unseals higher spell circles into scroll loot at each tier. Spell slots come from Tomes found in the strata.");
+                "Unseals higher spell circles into scroll loot and widens every Tome Choice: "
+                        + "4 spells to choose from, then a reroll, then 5 spells and level 8 magic from the Tome of Tarmin.");
         arcaneTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         arcaneCard.add(arcaneTierLabel).left().padTop(10).row();
         arcaneBtn = createActionButton("UPGRADE ATTUNEMENT");
@@ -407,7 +408,11 @@ public class ShelterAltarScreen extends BaseScreen {
                         + Math.round(altar.getStatueEventFrequency() * 100) + "% of the time per chunk.";
                 break;
             case ARCANE_ATTUNEMENT:
-                message = "Attunement deepened! Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
+                com.bpm.minotaur.gamedata.spells.TomeChoice.Perks perks = altar.getTomeChoicePerks();
+                message = "Attunement deepened! Tome Choices now show " + perks.options() + " spells"
+                        + (perks.rerolls() > 0 ? " with " + perks.rerolls() + " reroll" : "")
+                        + (perks.tarminMaxLevel() > 7 ? ", and the Tome of Tarmin reaches level " + perks.tarminMaxLevel() : "")
+                        + ". Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
                 break;
             default:
                 message = "Upgrade purchased.";
