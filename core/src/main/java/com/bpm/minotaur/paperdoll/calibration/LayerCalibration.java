@@ -23,6 +23,13 @@ public class LayerCalibration {
     /** Degrees, counter-clockwise, about the layer's centre. */
     public float rotation = 0f;
 
+    /**
+     * Mirrors the sprite horizontally. Used by the first-person weapon view, where art is
+     * sometimes drawn edge-left and the pose needs it edge-right; the paperdoll never sets
+     * it. Mirroring happens about the grip, so it does not move the piece.
+     */
+    public boolean flipX = false;
+
     /** Suppresses the base character's hair, for helmets that fully enclose the head. */
     public boolean hidesHair = false;
     /** Suppresses the base character's beard, for great helms and full visors. */
@@ -49,7 +56,10 @@ public class LayerCalibration {
                 && Math.abs(offsetY) < EPSILON
                 && Math.abs(scaleX - 1f) < EPSILON
                 && Math.abs(scaleY - 1f) < EPSILON
-                && Math.abs(rotation) < EPSILON;
+                && Math.abs(rotation) < EPSILON
+                // A mirror is geometry, not metadata: a flipped layer drawn by an identity
+                // fast path would silently come out unflipped.
+                && !flipX;
     }
 
     /**
@@ -70,7 +80,8 @@ public class LayerCalibration {
                 || Math.abs(rotation - other.rotation) > EPSILON
                 || hidesHair != other.hidesHair
                 || hidesBeard != other.hidesBeard
-                || needsArtRedo != other.needsArtRedo;
+                || needsArtRedo != other.needsArtRedo
+                || flipX != other.flipX;
     }
 
     public LayerCalibration copy() {
@@ -83,6 +94,7 @@ public class LayerCalibration {
         c.hidesHair = hidesHair;
         c.hidesBeard = hidesBeard;
         c.needsArtRedo = needsArtRedo;
+        c.flipX = flipX;
         c.sourceHash = sourceHash;
         return c;
     }

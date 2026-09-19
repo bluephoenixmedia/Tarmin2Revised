@@ -31,6 +31,20 @@ public class CalibrationStore {
     /** Returned when a layer has neither an entry nor a slot default; never mutated. */
     private static final LayerCalibration IDENTITY = new LayerCalibration();
 
+    /**
+     * Written as the file's _comment. The store is unit-agnostic, but the two files it
+     * serves are not: the paperdoll is canvas pixels with +y down, the weapon view is
+     * viewport fractions with +y up. The comment is the only place a hand-editor learns
+     * which, so each file states its own.
+     */
+    private String headerComment = "Paperdoll layer calibration. Offsets are master-canvas "
+            + "pixels (1024x1536); +y is DOWN. Safe to hand-edit; re-read by "
+            + "tools/bake_paperdoll_layers.py.";
+
+    public void setHeaderComment(String comment) {
+        this.headerComment = comment;
+    }
+
     public static String layerId(String slotFolder, String layerName) {
         return slotFolder + "/" + layerName;
     }
@@ -80,6 +94,19 @@ public class CalibrationStore {
         layers.put(layerId, cal);
     }
 
+    public void remove(String layerId) {
+        layers.remove(layerId);
+    }
+
+    /** The paperdoll's slot defaults come from the baker; the weapon view's are tuned by hand. */
+    public void putSlotDefault(String slot, LayerCalibration cal) {
+        slotDefaults.put(slot, cal);
+    }
+
+    public void removeSlotDefault(String slot) {
+        slotDefaults.remove(slot);
+    }
+
     public Map<String, LayerCalibration> all() {
         return layers;
     }
@@ -124,6 +151,7 @@ public class CalibrationStore {
         cal.hidesHair = entry.getBoolean("hidesHair", false);
         cal.hidesBeard = entry.getBoolean("hidesBeard", false);
         cal.needsArtRedo = entry.getBoolean("needsArtRedo", false);
+        cal.flipX = entry.getBoolean("flipX", false);
         cal.sourceHash = entry.getString("sourceHash", null);
         return cal;
     }
@@ -131,7 +159,7 @@ public class CalibrationStore {
     public String serialize() {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
-        sb.append("  \"_comment\": \"Paperdoll layer calibration. Offsets are master-canvas pixels (1024x1536); +y is DOWN. Safe to hand-edit; re-read by tools/bake_paperdoll_layers.py.\",\n");
+        sb.append("  \"_comment\": \"").append(escape(headerComment)).append("\",\n");
 
         if (!slotDefaults.isEmpty()) {
             sb.append("  \"slotDefaults\": {\n");
@@ -171,8 +199,14 @@ public class CalibrationStore {
         if (c.hidesHair) sb.append(", \"hidesHair\": true");
         if (c.hidesBeard) sb.append(", \"hidesBeard\": true");
         if (c.needsArtRedo) sb.append(", \"needsArtRedo\": true");
+        if (c.flipX) sb.append(", \"flipX\": true");
         if (c.sourceHash != null) sb.append(", \"sourceHash\": \"").append(c.sourceHash).append("\"");
         sb.append("}");
+    }
+
+    /** The comment is free text set in code, so it must not be able to break the JSON. */
+    private static String escape(String text) {
+        return text.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     /**

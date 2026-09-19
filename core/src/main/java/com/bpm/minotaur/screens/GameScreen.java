@@ -122,6 +122,7 @@ public class GameScreen extends BaseScreen {
 
     // --- NEW: Visceral Feedback Components ---
     private FirstPersonWeaponOverlay weaponOverlay;
+    private com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel weaponTunerPanel;
     private CraftingManager craftingManager;
 
     public static class VisorDroplet {
@@ -180,6 +181,8 @@ public class GameScreen extends BaseScreen {
 
         // --- NEW: Weapon Overlay ---
         this.weaponOverlay = new FirstPersonWeaponOverlay(game.getItemDataManager(), game.getAssetManager());
+        this.weaponOverlay.getViewCalibration().load();
+        this.weaponTunerPanel = new com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel(weaponOverlay);
 
         // Void chain laser: each beam gets an impact flash and scorch mark the instant it
         // appears, in sync with the staggered reveal that shows the burst's climb.
@@ -293,6 +296,9 @@ public class GameScreen extends BaseScreen {
             hud.setDiscoveryManager(this.discoveryManager);
             player.setItemPickupListener(item -> hud.showPickupToast(item));
             inputMultiplexer.clear();
+            // The F11 weapon tuner passes everything through while closed, and while open
+            // has to see the arrows before the game turns them into movement.
+            inputMultiplexer.addProcessor(weaponTunerPanel);
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
@@ -675,6 +681,7 @@ public class GameScreen extends BaseScreen {
 
                 game.getBatch().begin();
                 weaponOverlay.render(game.getBatch(), game.getViewport());
+                weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();
             }
 
@@ -2330,6 +2337,14 @@ public class GameScreen extends BaseScreen {
                 }
                 return true;
             case Input.Keys.F11:
+                // Plain F11 tunes the weapon view; shift+F11 keeps the weather debug. Not
+                // shift+F10: Tarmin2 opens the paperdoll editor on F10 whatever the modifiers.
+                if (!Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                        && !Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                    // Closing is handled by the panel itself, which sees F11 first while open.
+                    weaponTunerPanel.open();
+                    return true;
+                }
                 if (worldManager.getWeatherManager() != null) {
                     worldManager.getWeatherManager().debugCycleWeather();
                     eventManager.addEvent(new GameEvent(

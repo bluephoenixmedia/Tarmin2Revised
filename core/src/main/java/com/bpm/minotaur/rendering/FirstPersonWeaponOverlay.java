@@ -22,6 +22,8 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.rendering.animation.AnimationArchetype;
 import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
 import com.bpm.minotaur.rendering.animation.WeaponTrailRenderer;
+import com.bpm.minotaur.rendering.weaponview.WeaponViewCalibration;
+import com.bpm.minotaur.rendering.weaponview.WeaponViewPlacement;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -120,6 +122,17 @@ public class FirstPersonWeaponOverlay {
     private final WeaponTrailRenderer trailRenderer = new WeaponTrailRenderer();
 
     private final AssetManager assetManager;
+
+    // Per-weapon tuning applied on top of every pose below. Empty until loaded, and an
+    // empty calibration draws exactly the hardcoded poses.
+    private final WeaponViewCalibration viewCalibration = new WeaponViewCalibration();
+
+    // Hand geometry: sprite height as a fraction of the viewport, and where the grip sits
+    // up the sprite.
+    private static final float MAIN_HAND_HEIGHT_REL = 0.44f;
+    private static final float MAIN_HAND_GRIP_Y = 0.10f;
+    private static final float OFF_HAND_HEIGHT_REL = 0.36f;
+    private static final float OFF_HAND_GRIP_Y = 0.12f;
 
     public FirstPersonWeaponOverlay(ItemDataManager itemDataManager, AssetManager assetManager) {
         this.assetManager = assetManager;
@@ -291,6 +304,41 @@ public class FirstPersonWeaponOverlay {
 
     public AnimationArchetype getMainHandArchetype() {
         return mainHandArchetype;
+    }
+
+    public Item getMainHandItem() {
+        return mainHandItem;
+    }
+
+    public Item getOffHandItem() {
+        return offHandItem;
+    }
+
+    public WeaponViewCalibration getViewCalibration() {
+        return viewCalibration;
+    }
+
+    /**
+     * Swings the main hand with no combat attached, so tuning can be checked across the
+     * attack arc. The hit-frame callback is cleared first: it is whatever the last real
+     * attack left behind, and firing it would resolve that attack a second time.
+     * CombatManager re-arms it on every real attack, so clearing it costs nothing.
+     */
+    public void previewSwing() {
+        if (mainHandItem == null) {
+            return;
+        }
+        this.hitFrameCallback = null;
+        triggerAttack(mainHandItem);
+    }
+
+    /**
+     * An off-hand weapon uses main-hand art, so it is mirrored to face the other way.
+     * Shields are not: they are drawn for the off hand already, and mirroring one would
+     * flip its device.
+     */
+    private boolean mirrorsOffHand() {
+        return offHandItem != null && offHandItem.isWeapon() && !offHandItem.isShield();
     }
 
     public void addBloodToWeapon() {
@@ -781,12 +829,19 @@ public class FirstPersonWeaponOverlay {
             }
         }
 
-        float targetHeight = worldH * 0.44f;
         float ratio = (float) mainHandTexture.getRegionWidth() / (float) mainHandTexture.getRegionHeight();
-        float targetWidth = targetHeight * ratio;
-
-        float originX = targetWidth * 0.5f;
-        float originY = targetHeight * 0.10f;
+        WeaponViewPlacement placed = WeaponViewPlacement.apply(drawX, drawY, rotation,
+                worldH * MAIN_HAND_HEIGHT_REL, ratio, MAIN_HAND_GRIP_Y, worldW, worldH,
+                viewCalibration.get(mainHandArchetype.name(), WeaponViewCalibration.itemKey(mainHandItem)),
+                false);
+        drawX = placed.x;
+        drawY = placed.y;
+        rotation = placed.rotation;
+        float targetWidth = placed.width;
+        float targetHeight = placed.height;
+        float originX = placed.originX;
+        float originY = placed.originY;
+        float scaleX = placed.scaleX;
 
         // Sample blade tip and hilt positions for procedural trail
         if (active && currentProfile != null) {
@@ -825,17 +880,18 @@ public class FirstPersonWeaponOverlay {
 
         if (!weaponBloodDecals.isEmpty() && Gdx.gl != null) {
             renderMaskedWeaponWithDecals(batch, viewport, drawX, drawY, originX, originY,
-                    targetWidth, targetHeight, rotation, weaponColor);
+                    targetWidth, targetHeight, scaleX, rotation, weaponColor);
         } else {
             batch.setColor(weaponColor);
             batch.draw(mainHandTexture,
                     drawX, drawY,
                     originX, originY,
                     targetWidth, targetHeight,
-                    1f, 1f,
+                    scaleX, 1f,
                     rotation);
             if (!weaponBloodDecals.isEmpty()) {
-                renderWeaponBloodDecals(batch, drawX, drawY, originX, originY, targetWidth, targetHeight, rotation);
+                renderWeaponBloodDecals(batch, drawX, drawY, originX, originY, targetWidth, targetHeight,
+                        scaleX, rotation);
             }
         }
 
@@ -850,7 +906,7 @@ public class FirstPersonWeaponOverlay {
      */
     private void renderMaskedWeaponWithDecals(SpriteBatch batch, Viewport viewport,
             float drawX, float drawY, float originX, float originY,
-            float targetWidth, float targetHeight, float rotation, Color weaponColor) {
+            float targetWidth, float targetHeight, float scaleX, float rotation, Color weaponColor) {
         if (weaponFbo == null) {
             weaponFbo = new FrameBuffer(Pixmap.Format.RGBA8888, FBO_SIZE, FBO_SIZE, false);
             weaponFbo.getColorBufferTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
@@ -940,12 +996,14 @@ public class FirstPersonWeaponOverlay {
         }
 
         // 5. Draw composite weapon with its world position, scale, origin, and rotation!
+        // The FBO holds the unmirrored weapon with its decals, so mirroring the composite
+        // flips both together and the blood stays on the blade.
         batch.setColor(Color.WHITE);
         batch.draw(weaponFboRegion,
                 drawX, drawY,
                 originX, originY,
                 targetWidth, targetHeight,
-                1f, 1f,
+                scaleX, 1f,
                 rotation);
     }
 
@@ -956,7 +1014,7 @@ public class FirstPersonWeaponOverlay {
      * state computed in update() -- no separate weapon-specific fade logic.
      */
     private void renderWeaponBloodDecals(SpriteBatch batch, float drawX, float drawY,
-            float originX, float originY, float targetWidth, float targetHeight, float rotation) {
+            float originX, float originY, float targetWidth, float targetHeight, float scaleX, float rotation) {
         if (weaponBloodDecals.isEmpty()) return;
 
         float rad = rotation * MathUtils.degreesToRadians;
@@ -969,7 +1027,8 @@ public class FirstPersonWeaponOverlay {
             // rather than disappearing; match that instead of skipping.
             TextureRegion tex = (decal.textureRegion != null) ? decal.textureRegion : getBlankDecalTexture();
 
-            float localX = targetWidth * (0.5f + decal.position.x) - originX;
+            // Mirrored with the sprite, which the draw call flips about the origin.
+            float localX = scaleX * (targetWidth * (0.5f + decal.position.x) - originX);
             float localY = targetHeight * (0.5f + decal.position.z) - originY;
             float dx = drawX + originX + (localX * cos - localY * sin);
             float dy = drawY + originY + (localX * sin + localY * cos);
@@ -1011,20 +1070,19 @@ public class FirstPersonWeaponOverlay {
             rotation = 16f;
         }
 
-        float targetHeight = worldH * 0.36f;
         float ratio = (float) offHandTexture.getRegionWidth() / (float) offHandTexture.getRegionHeight();
-        float targetWidth = targetHeight * ratio;
-
-        float originX = targetWidth * 0.5f;
-        float originY = targetHeight * 0.12f;
+        WeaponViewPlacement placed = WeaponViewPlacement.apply(drawX, drawY, rotation,
+                worldH * OFF_HAND_HEIGHT_REL, ratio, OFF_HAND_GRIP_Y, worldW, worldH,
+                viewCalibration.get(WeaponViewCalibration.OFF_HAND, WeaponViewCalibration.itemKey(offHandItem)),
+                mirrorsOffHand());
 
         batch.setColor(Color.WHITE);
         batch.draw(offHandTexture,
-                drawX, drawY,
-                originX, originY,
-                targetWidth, targetHeight,
-                1f, 1f,
-                rotation);
+                placed.x, placed.y,
+                placed.originX, placed.originY,
+                placed.width, placed.height,
+                placed.scaleX, 1f,
+                placed.rotation);
     }
 
     public void renderTrails(ShapeRenderer shapeRenderer) {
