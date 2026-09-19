@@ -543,6 +543,7 @@ public class GameScreen extends BaseScreen {
                 hud.update(delta);
             eventManager.update(delta);
             handleSystemEvents();
+            updateTomeStudy(delta);
 
             if (worldManager != null) {
                 worldManager.update(delta);
@@ -1469,6 +1470,32 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Real-time seconds between the world turns of a Tome being studied in the field. */
+    private static final float TOME_STUDY_SECONDS_PER_TURN = 0.25f;
+    private float tomeStudyTimer;
+
+    /**
+     * Advances a channelled Tome study one world turn at a time, so monsters act
+     * and the HUD bar fills while the player reads. Combat breaking out stops it.
+     */
+    private void updateTomeStudy(float delta) {
+        if (player == null || player.getActiveTomeStudy() == null) {
+            tomeStudyTimer = 0f;
+            return;
+        }
+        tomeStudyTimer += delta;
+        if (tomeStudyTimer < TOME_STUDY_SECONDS_PER_TURN) {
+            return;
+        }
+        tomeStudyTimer = 0f;
+        playerTurnTakesAction();
+        if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+            player.cancelTomeStudy(eventManager);
+            return;
+        }
+        player.advanceTomeStudy(maze, eventManager);
+    }
+
     /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
     private static final int FIELD_REST_TICKS_PER_PRESS = 5;
 
@@ -1697,6 +1724,12 @@ public class GameScreen extends BaseScreen {
         // --- Forward keyboard input to active ShopkeeperWindow modal ---
         if (hud != null && hud.getShopkeeperWindow() != null && hud.getShopkeeperWindow().isVisible()) {
             hud.getShopkeeperWindow().handleInput(keycode);
+            return true;
+        }
+
+        // Any key breaks the concentration of a Tome being studied (and does nothing else).
+        if (player != null && player.getActiveTomeStudy() != null) {
+            player.cancelTomeStudy(eventManager);
             return true;
         }
 

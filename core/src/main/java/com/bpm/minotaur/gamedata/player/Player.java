@@ -393,6 +393,92 @@ public class Player {
         return -1;
     }
 
+    // --- Tome Study ---
+
+    private TomeStudy activeTomeStudy;
+
+    /** The field study being channelled, or null. */
+    public TomeStudy getActiveTomeStudy() {
+        return activeTomeStudy;
+    }
+
+    /**
+     * Opens a Tome. In the Shelter the study completes at once; in the field it
+     * becomes a channelled study the caller advances turn by turn with
+     * {@link #advanceTomeStudy}. Refused while a hostile is in view.
+     *
+     * @return true if the study completed or began
+     */
+    public boolean beginTomeStudy(Item tome, Maze maze, GameEventManager eventManager) {
+        if (tome == null || !TomeStudy.isTome(tome.getType())) {
+            return false;
+        }
+        if (maze != null && maze.isHomeTile((int) position.x, (int) position.y)) {
+            finishTomeStudy(tome, eventManager);
+            return true;
+        }
+        if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
+            eventManager.addEvent(new GameEvent("A hostile is in view -- you cannot study now.", 2.0f));
+            return false;
+        }
+        activeTomeStudy = new TomeStudy(tome, getCurrentHP());
+        int left = activeTomeStudy.getTurnsRequired() - activeTomeStudy.getTurnsDone();
+        eventManager.addEvent(new GameEvent("You open the " + tome.getDisplayName() + " and begin to study... ("
+                + left + " turns). Any action breaks your concentration.", 3.0f));
+        return true;
+    }
+
+    /** Resolves the world turn that just passed for the active study. */
+    public TomeStudy.Step advanceTomeStudy(Maze maze, GameEventManager eventManager) {
+        if (activeTomeStudy == null) {
+            return TomeStudy.Step.COMPLETE;
+        }
+        TomeStudy study = activeTomeStudy;
+        TomeStudy.Step step = study.afterTurn(getCurrentHP(),
+                com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position));
+        switch (step) {
+            case COMPLETE:
+                activeTomeStudy = null;
+                finishTomeStudy(study.getTome(), eventManager);
+                break;
+            case INTERRUPTED_BY_DAMAGE:
+                activeTomeStudy = null;
+                eventManager.addEvent(new GameEvent("Pain breaks your concentration! " + studyProgressText(study), 2.5f));
+                break;
+            case INTERRUPTED_BY_HOSTILE:
+                activeTomeStudy = null;
+                eventManager.addEvent(new GameEvent("A hostile appears! You snap the Tome shut. " + studyProgressText(study), 2.5f));
+                break;
+            default:
+                break;
+        }
+        return step;
+    }
+
+    /** Stops the active study on the player's own action; progress is kept. */
+    public void cancelTomeStudy(GameEventManager eventManager) {
+        if (activeTomeStudy == null) {
+            return;
+        }
+        TomeStudy study = activeTomeStudy;
+        activeTomeStudy = null;
+        eventManager.addEvent(new GameEvent("You close the Tome. " + studyProgressText(study), 2.0f));
+    }
+
+    private static String studyProgressText(TomeStudy study) {
+        return "(" + study.getTurnsDone() + "/" + study.getTurnsRequired() + " turns studied)";
+    }
+
+    private void finishTomeStudy(Item tome, GameEventManager eventManager) {
+        int slots = TomeStudy.slotsUnlockedBy(tome.getType());
+        boolean newSlot = slots > unlockedSpellSlots;
+        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, slots));
+        inventory.removeItem(tome);
+        eventManager.addEvent(new GameEvent(newSlot
+                ? "Studied the " + tome.getDisplayName() + "! Spell Slot " + slots + " unlocked!"
+                : "Studied the " + tome.getDisplayName() + ".", 3.0f));
+    }
+
     public boolean hasEnoughMana(int cost) {
         return stats.getCurrentMP() >= cost;
     }
@@ -841,26 +927,9 @@ public class Player {
             return;
         }
 
-        // --- Tarmin Milestone Tomes (Spell Slot Unlocks) ---
-        if (item.getType() == Item.ItemType.TOME_OF_THE_INITIATE) {
-            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 2));
-            eventManager.addEvent(new GameEvent("Studied the Tome of the Initiate! Spell Slot 2 Unlocked!", 3.0f));
-            inventory.removeItem(item);
-            return;
-        } else if (item.getType() == Item.ItemType.TOME_OF_ELEMENTS) {
-            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 3));
-            eventManager.addEvent(new GameEvent("Studied the Tome of Elements! Spell Slot 3 Unlocked!", 3.0f));
-            inventory.removeItem(item);
-            return;
-        } else if (item.getType() == Item.ItemType.TOME_OF_THE_ARCANE) {
-            setUnlockedSpellSlots(Math.max(getUnlockedSpellSlots(), 4));
-            eventManager.addEvent(new GameEvent("Studied the Tome of the Arcane! Spell Slot 4 Unlocked!", 3.0f));
-            inventory.removeItem(item);
-            return;
-        } else if (item.getType() == Item.ItemType.TOME_OF_TARMIN) {
-            setUnlockedSpellSlots(5);
-            eventManager.addEvent(new GameEvent("Mastered the Tome of Tarmin! Spell Slot 5 Unlocked!", 3.0f));
-            inventory.removeItem(item);
+        // --- Tarmin Milestone Tomes: studied (instant in the Shelter, channelled in the field) ---
+        if (TomeStudy.isTome(item.getType())) {
+            beginTomeStudy(item, maze, eventManager);
             return;
         }
 

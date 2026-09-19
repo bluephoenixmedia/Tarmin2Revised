@@ -229,6 +229,8 @@ public class Item implements Renderable {
     private int armorClassBonus; // Removed final
     private String description;
     private String spellId;
+    /** Turns already spent studying this Tome in the field; kept when a study is interrupted. */
+    private int studyProgress;
     private String material;
 
     // --- Type Flags ---
@@ -1133,6 +1135,14 @@ public class Item implements Renderable {
 
     public boolean isSpiritual() {
         return getCategory() == ItemCategory.SPIRITUAL_WEAPON || (type != null && type.name().contains("SPIRIT"));
+    }
+
+    public int getStudyProgress() {
+        return studyProgress;
+    }
+
+    public void setStudyProgress(int studyProgress) {
+        this.studyProgress = Math.max(0, studyProgress);
     }
 
     public boolean isCargo() {

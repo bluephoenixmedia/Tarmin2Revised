@@ -19,6 +19,8 @@ public class ItemSaveData {
     public List<ItemModifier> modifiers = new ArrayList<>();
     /** Blood on the item's paperdoll art, keyed by drawn part. Null when clean. */
     public java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> blood;
+    /** Turns already spent studying a Tome. */
+    public int studyProgress;
 
     public ItemSaveData() {
     }
@@ -36,6 +38,7 @@ public class ItemSaveData {
                 this.modifiers.addAll(item.getModifiers());
             }
             this.blood = item.getBloodCoats();
+            this.studyProgress = item.getStudyProgress();
         }
     }
 
@@ -50,6 +53,7 @@ public class ItemSaveData {
             }
         }
         item.setBloodCoats(blood);
+        item.setStudyProgress(studyProgress);
         return item;
     }
 }

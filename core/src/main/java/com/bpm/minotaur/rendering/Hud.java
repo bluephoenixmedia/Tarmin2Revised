@@ -1113,6 +1113,7 @@ public class Hud implements Disposable {
             drawInventory();
             drawPickupToast();
         }
+        drawTomeStudyBar();
 
         if (isDebug) {
 
@@ -2599,6 +2600,50 @@ public class Hud implements Disposable {
     }
 
     // --- NEW: Tarmin's Hunger UI ---
+    /** Progress of a Tome being studied in the field, centred in the field of view. */
+    private void drawTomeStudyBar() {
+        com.bpm.minotaur.gamedata.player.TomeStudy study = player.getActiveTomeStudy();
+        if (study == null) {
+            return;
+        }
+        float maxW = 520;
+        float h = 26;
+        float x = (viewport.getWorldWidth() - maxW) / 2;
+        float y = viewport.getWorldHeight() * 0.38f;
+        float fraction = Math.min(1f, study.getTurnsDone() / (float) study.getTurnsRequired());
+
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
+        shapeRenderer.rect(x, y, maxW, h);
+        if (fraction > 0) {
+            shapeRenderer.setColor(Color.valueOf("8A6BD1"));
+            shapeRenderer.rect(x, y + h / 2f, maxW * fraction, h / 2f);
+            shapeRenderer.setColor(Color.valueOf("5B3F9E"));
+            shapeRenderer.rect(x, y, maxW * fraction, h / 2f);
+        }
+        shapeRenderer.end();
+
+        Gdx.gl.glLineWidth(2);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(HudSkin.COL_STONE_MID);
+        shapeRenderer.rect(x, y, maxW, h);
+        shapeRenderer.end();
+        Gdx.gl.glLineWidth(1);
+
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        String text = "STUDYING " + study.getTome().getDisplayName().toUpperCase()
+                + "  " + study.getTurnsDone() + " / " + study.getTurnsRequired();
+        glyphLayout.setText(font, text);
+        font.setColor(HudSkin.COL_GOLD_BRIGHT);
+        font.draw(spriteBatch, text, x + (maxW - glyphLayout.width) / 2, y + h + glyphLayout.height + 8);
+        glyphLayout.setText(font, "Any key stops");
+        font.setColor(HudSkin.COL_GOLD_MUTED);
+        font.draw(spriteBatch, "Any key stops", x + (maxW - glyphLayout.width) / 2, y - 8);
+        spriteBatch.end();
+    }
+
     private void drawBridgeIntegrityBar() {
         if (com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() <= 0)
             return;

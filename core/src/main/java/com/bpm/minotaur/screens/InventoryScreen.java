@@ -1367,6 +1367,11 @@ public class InventoryScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        // A Tome study just began: return to the world so it can be channelled.
+        if (player.getActiveTomeStudy() != null && parentScreen != null) {
+            game.setScreen(parentScreen);
+            return;
+        }
         Gdx.gl.glClearColor(0.05f, 0.05f, 0.05f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
