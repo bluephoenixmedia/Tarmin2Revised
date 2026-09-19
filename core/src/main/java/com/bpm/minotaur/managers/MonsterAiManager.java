@@ -7,6 +7,7 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Pathfinder;
 import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.gamedata.Door; // NEW
+import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 import com.bpm.minotaur.gamedata.player.Player;
@@ -207,6 +208,32 @@ public class MonsterAiManager {
             return;
         }
 
+        // --- Sanctuary Check: Home Shelter tiles are protected ---
+        if (maze.getHomeTiles() != null && !maze.getHomeTiles().isEmpty()) {
+            if (maze.getHomeTiles().contains(playerGridPos)) {
+                monster.setState(Monster.MonsterState.WANDERING);
+                monster.setLastKnownTargetPos(null);
+                monster.setSearchTurnsRemaining(0);
+                if (combatManager != null && combatManager.getGameScreen() != null) {
+                    GameEventManager em = combatManager.getGameScreen().getEventManager();
+                    if (em != null) {
+                        em.addEvent(new GameEvent("The " + monster.getMonsterType() + " roars in fury at the warded shelter boundary and retreats!", 2.5f));
+                    }
+                }
+                return;
+            }
+        }
+
+        // Cross-zone hunt search decay
+        if (monster.getSearchTurnsRemaining() > 0) {
+            monster.setSearchTurnsRemaining(monster.getSearchTurnsRemaining() - 1);
+            if (monster.getSearchTurnsRemaining() <= 0 && !checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
+                monster.setState(Monster.MonsterState.WANDERING);
+                monster.setLastKnownTargetPos(null);
+                return;
+            }
+        }
+
         // --- Spellcasting Logic (Tactical casting before physical actions) ---
         if (monster.isSpellcaster() && monster.getSpellbook() != null && combatManager != null) {
             boolean canCast = true;
@@ -305,10 +332,46 @@ public class MonsterAiManager {
         if (targetPos == null)
             return;
 
-        List<GridPoint2> path = Pathfinder.findPath(maze, player, monsterGridPos, targetPos);
+        List<GridPoint2> path = Pathfinder.findPath(maze, player, monsterGridPos, targetPos, monster.canOperateDoors());
 
         if (path != null && !path.isEmpty()) {
             GridPoint2 step = path.get(0);
+
+            // Door Bump: if step moves into a closed door, open it and consume turn
+            if (monster.canOperateDoors()) {
+                Object objAtStep = maze.getGameObjectAt(step.x, step.y);
+                Object objAtCurrent = maze.getGameObjectAt(monsterGridPos.x, monsterGridPos.y);
+                com.bpm.minotaur.gamedata.Door doorToOpen = null;
+                if (objAtStep instanceof com.bpm.minotaur.gamedata.Door) {
+                    com.bpm.minotaur.gamedata.Door d = (com.bpm.minotaur.gamedata.Door) objAtStep;
+                    if (d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSED || d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSING) {
+                        doorToOpen = d;
+                    }
+                } else if (objAtCurrent instanceof com.bpm.minotaur.gamedata.Door) {
+                    com.bpm.minotaur.gamedata.Door d = (com.bpm.minotaur.gamedata.Door) objAtCurrent;
+                    if (d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSED || d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSING) {
+                        doorToOpen = d;
+                    }
+                }
+
+                if (doorToOpen != null) {
+                    doorToOpen.startOpening();
+                    int distToPlayer = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
+                    if (distToPlayer <= 8) {
+                        if (combatManager != null && combatManager.getGameScreen() != null) {
+                            SoundManager sm = combatManager.getGameScreen().getSoundManager();
+                            if (sm != null) {
+                                sm.playDoorCreak();
+                            }
+                            GameEventManager em = combatManager.getGameScreen().getEventManager();
+                            if (em != null) {
+                                em.addEvent(new GameEvent("You hear a door creak open in the darkness...", 2.0f));
+                            }
+                        }
+                    }
+                    return; // Consumes monster's turn opening the door!
+                }
+            }
 
             if (step.x == playerGridPos.x && step.y == playerGridPos.y) {
                 if (combatManager != null) {

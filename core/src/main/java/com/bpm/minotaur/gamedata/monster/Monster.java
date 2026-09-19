@@ -139,6 +139,11 @@ public class Monster implements Renderable {
     private Color spellFlashColor = null;
     private float spellFlashDurationSec = 0.4f;
 
+    // --- Door & Ladder Capabilities ---
+    private Boolean canOpenDoors = null;
+    private Boolean canClimbLadders = null;
+    private int searchTurnsRemaining = 0;
+
     // --- Refactored Instance Data ---
     private com.bpm.minotaur.gamedata.Inventory inventory;
     private int tameness = 0; // 0 = Hostile
@@ -303,6 +308,13 @@ public class Monster implements Renderable {
                     template.spellSchools,
                     template.innateSpells,
                     com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance());
+        }
+
+        if (template.canOpenDoors != null) {
+            this.canOpenDoors = template.canOpenDoors;
+        }
+        if (template.canClimbLadders != null) {
+            this.canClimbLadders = template.canClimbLadders;
         }
 
         this.inventory = new com.bpm.minotaur.gamedata.Inventory();
@@ -628,6 +640,10 @@ public class Monster implements Renderable {
         return family;
     }
 
+    public void setFamily(MonsterFamily family) {
+        this.family = family;
+    }
+
     public int getIntelligence() {
         return intelligence;
     }
@@ -872,5 +888,35 @@ public class Monster implements Renderable {
 
     public void setHealThreshold(float healThreshold) {
         this.healThreshold = healThreshold;
+    }
+
+    public boolean canOperateDoors() {
+        if (canOpenDoors != null) return canOpenDoors;
+        if (testTemplate != null && testTemplate.canOpenDoors != null) return testTemplate.canOpenDoors;
+        if (family == MonsterFamily.BEAST) return false;
+        if (type != null && type == MonsterType.DRAGON) return false;
+        return intelligence >= 12;
+    }
+
+    public boolean canClimbLadders() {
+        if (canClimbLadders != null) return canClimbLadders;
+        if (testTemplate != null && testTemplate.canClimbLadders != null) return testTemplate.canClimbLadders;
+        return canOperateDoors() && family != MonsterFamily.BEAST;
+    }
+
+    public void setCanOpenDoors(Boolean canOpenDoors) {
+        this.canOpenDoors = canOpenDoors;
+    }
+
+    public void setCanClimbLadders(Boolean canClimbLadders) {
+        this.canClimbLadders = canClimbLadders;
+    }
+
+    public int getSearchTurnsRemaining() {
+        return searchTurnsRemaining;
+    }
+
+    public void setSearchTurnsRemaining(int searchTurnsRemaining) {
+        this.searchTurnsRemaining = searchTurnsRemaining;
     }
 }

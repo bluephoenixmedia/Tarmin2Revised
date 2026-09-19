@@ -265,6 +265,7 @@ public class SaveManager {
                     worldManager.saveCurrentChunk(worldManager.getCurrentMaze());
                 }
             }
+            worldData.pendingPursuers = MonsterPursuitManager.getInstance().toSaveData();
             atomicWriteJson(getFileHandle(getActiveSlotFilePath("world.json")), worldData);
 
             // 4. Save Chest, Doom, Divinities

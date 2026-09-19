@@ -97,6 +97,10 @@ public class MonsterTemplate {
 
     public Array<EffectApplicationData> onHitEffects;
 
+    // --- Door & Ladder Capabilities ---
+    public Boolean canOpenDoors;
+    public Boolean canClimbLadders;
+
     // --- Corpse Intrinsics ---
     public StatusEffectType corpseEffect;
     public int corpseEffectChance = 100;

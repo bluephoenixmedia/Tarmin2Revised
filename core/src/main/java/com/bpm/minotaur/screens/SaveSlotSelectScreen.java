@@ -22,6 +22,7 @@ import com.bpm.minotaur.gamedata.save.PlayerSaveData;
 import com.bpm.minotaur.gamedata.save.SlotMetadata;
 import com.bpm.minotaur.gamedata.save.WorldSaveData;
 import com.bpm.minotaur.managers.MusicManager;
+import com.bpm.minotaur.managers.MonsterPursuitManager;
 import com.bpm.minotaur.managers.SaveManager;
 
 import java.text.SimpleDateFormat;
@@ -344,6 +345,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
     }
 
     private void startNewExpedition(int slotIndex, String mode) {
+        MonsterPursuitManager.getInstance().clear();
         SaveManager.getInstance().startNewGame(slotIndex, mode, "Hero", "Warrior");
         MusicManager.getInstance().stop();
 
@@ -383,6 +385,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
         PlayerSaveData playerData = SaveManager.getInstance().loadActivePlayerData();
         if (playerData != null && gameScreen.getPlayer() != null) {
             playerData.applyToPlayer(gameScreen.getPlayer(), game.getItemDataManager(), game.getAssetManager());
+        }
+
+        // Restore pending pursuers across gates / ladders
+        if (worldData != null && worldData.pendingPursuers != null) {
+            MonsterPursuitManager.getInstance().loadFromSaveData(worldData.pendingPursuers, game.getMonsterDataManager(), game.getAssetManager());
+        } else {
+            MonsterPursuitManager.getInstance().clear();
         }
 
         // Load persistent shelter chest for the active slot

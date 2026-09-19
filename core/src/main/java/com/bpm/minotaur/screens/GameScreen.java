@@ -1569,6 +1569,39 @@ public class GameScreen extends BaseScreen {
     private void performChunkTransition(Gate transitionGate) {
         if (player == null)
             return;
+
+        // Collect hunting monsters that can operate doors within 8 tiles of transitionGate
+        List<Monster> pursuers = new ArrayList<>();
+        if (this.maze != null && transitionGate != null) {
+            Vector2 gPos = transitionGate.getPosition();
+            GridPoint2 gatePos = (gPos != null) ? new GridPoint2((int) gPos.x, (int) gPos.y) : null;
+            if (gatePos == null) {
+                for (Map.Entry<GridPoint2, Gate> entry : maze.getGates().entrySet()) {
+                    if (entry.getValue() == transitionGate) {
+                        gatePos = entry.getKey();
+                        break;
+                    }
+                }
+            }
+            if (gatePos != null) {
+                List<GridPoint2> toRemove = new ArrayList<>();
+                for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+                    Monster m = entry.getValue();
+                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
+                        int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
+                        if (dist <= 8) {
+                            pursuers.add(m);
+                            toRemove.add(entry.getKey());
+                            if (pursuers.size() >= 2) break;
+                        }
+                    }
+                }
+                for (GridPoint2 pt : toRemove) {
+                    maze.getMonsters().remove(pt);
+                }
+            }
+        }
+
         if (maze != null)
             worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
@@ -1577,6 +1610,14 @@ public class GameScreen extends BaseScreen {
             transitionGate.close();
             return;
         }
+
+        if (!pursuers.isEmpty()) {
+            GridPoint2 originChunk = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : null;
+            GridPoint2 targetChunk = transitionGate.getTargetChunkId();
+            GridPoint2 arrivalTile = transitionGate.getTargetPlayerPos();
+            MonsterPursuitManager.getInstance().registerGatePursuit(pursuers, originChunk, targetChunk, arrivalTile, this.currentLevel);
+        }
+
         player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f,
                 transitionGate.getTargetPlayerPos().y + 0.5f);
         worldManager.setCurrentChunk(transitionGate.getTargetChunkId());
@@ -2885,6 +2926,28 @@ public class GameScreen extends BaseScreen {
             ladder = maze.getLadders().get(inFront);
 
         if (ladder != null) {
+            GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
+            List<Monster> pursuers = new ArrayList<>();
+            if (this.maze != null) {
+                List<GridPoint2> toRemove = new ArrayList<>();
+                for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+                    Monster m = entry.getValue();
+                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                        int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
+                        if (dist <= 6) {
+                            pursuers.add(m);
+                            toRemove.add(entry.getKey());
+                            if (pursuers.size() >= 2) break;
+                        }
+                    }
+                }
+                for (GridPoint2 pt : toRemove) {
+                    maze.getMonsters().remove(pt);
+                }
+            }
+
+            int originLevel = this.currentLevel;
+
             if (ladder.getType() == Ladder.LadderType.DOWN) {
                 GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
                         (int) ladder.getPosition().y);
@@ -2894,6 +2957,10 @@ public class GameScreen extends BaseScreen {
                 generateLevel(this.currentLevel);
                 player.getPosition().set(ladderPos.x + 0.5f, ladderPos.y + 0.5f);
                 hud.addMessage("Descended into Strata (Depth " + (currentLevel - 1) + ")");
+
+                if (!pursuers.isEmpty()) {
+                    MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, this.currentLevel, ladderPos, true);
+                }
             } else {
                 boolean success = worldManager.ascendLevel();
                 if (success) {
@@ -2907,14 +2974,18 @@ public class GameScreen extends BaseScreen {
                             break;
                         }
                     }
-                    if (foundDownLadderPos != null) {
-                        player.setPosition(
-                                new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y));
-                    }
+                    GridPoint2 arrivalPos = (foundDownLadderPos != null)
+                            ? new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y)
+                            : originLadderPos;
+                    player.getPosition().set(arrivalPos.x + 0.5f, arrivalPos.y + 0.5f);
                     if (currentLevel == 1) {
                         hud.addMessage("Ascended to the Overland Surface.");
                     } else {
                         hud.addMessage("Ascended to Strata (Depth " + (currentLevel - 1) + ")");
+                    }
+
+                    if (!pursuers.isEmpty()) {
+                        MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, this.currentLevel, arrivalPos, false);
                     }
                 } else {
                     hud.addMessage("You cannot ascend any higher.");

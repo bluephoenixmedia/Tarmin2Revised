@@ -61,6 +61,10 @@ public class Pathfinder {
      * @return A List of GridPoint2 coordinates representing the path, or an empty list if no path is found.
      */
     public static List<GridPoint2> findPath(Maze maze, Player player, GridPoint2 start, GridPoint2 goal) {
+        return findPath(maze, player, start, goal, false);
+    }
+
+    public static List<GridPoint2> findPath(Maze maze, Player player, GridPoint2 start, GridPoint2 goal, boolean canOpenDoors) {
 
         Node startNode = new Node(start.x, start.y);
         Node goalNode = new Node(goal.x, goal.y);
@@ -102,36 +106,63 @@ public class Pathfinder {
                     continue; // Already processed this node
                 }
 
-                // --- [ THE FIX ] ---
-                // We now perform ALL collision checks that the player uses.
-
-                // 1. Check the EDGE (like Player.isWallBlocking)
-                if (maze.isWallBlocking(currentNode.x, currentNode.y, dir)) {
-                    continue; // Path is blocked by a wall or closed door
+                // --- Sanctuary Ward Check ---
+                tempPos.set(nx, ny);
+                if (maze.getHomeTiles() != null && maze.getHomeTiles().contains(tempPos)) {
+                    continue; // Protected shelter sanctuary boundary
                 }
 
-                // 2. Check the NODE (like Player.move)
-                tempPos.set(nx, ny);
+                boolean isDoorEdge = false;
+                int wallMask = dir.getWallMask();
+                int doorMask = wallMask << 1;
+                int cellData = maze.getWallDataAt(currentNode.x, currentNode.y);
+
+                if ((cellData & wallMask) != 0) {
+                    continue; // Solid wall blocks movement
+                }
+
+                if ((cellData & doorMask) != 0) {
+                    Object obj1 = maze.getGameObjectAt(currentNode.x, currentNode.y);
+                    Object obj2 = maze.getGameObjectAt(nx, ny);
+                    Door door = (obj1 instanceof Door) ? (Door) obj1 : ((obj2 instanceof Door) ? (Door) obj2 : null);
+
+                    if (door != null) {
+                        if (door.getState() != Door.DoorState.OPEN && door.getState() != Door.DoorState.OPENING) {
+                            if (!canOpenDoors) {
+                                continue; // Closed door blocks non-door openers
+                            }
+                            isDoorEdge = true; // Can be opened, +2 cost penalty
+                        }
+                    } else if (maze.isWallBlocking(currentNode.x, currentNode.y, dir)) {
+                        continue;
+                    }
+                } else if (maze.isWallBlocking(currentNode.x, currentNode.y, dir)) {
+                    continue;
+                }
+
+                // 2. Check the NODE Scenery
                 Scenery s = maze.getScenery().get(tempPos);
                 if (s != null && s.isImpassable()) {
                     continue; // Tile is blocked by impassable scenery
                 }
 
-                // 3. Check if the NODE is a solid wall block (what Player.move was missing)
+                // 3. Check if NODE is passable (ignoring closed door if canOpenDoors)
                 if (!maze.isPassable(nx, ny)) {
-                    // isPassable logs its own failure, so we just continue
-                    continue;
+                    Object targetObj = maze.getGameObjectAt(nx, ny);
+                    if (!(canOpenDoors && targetObj instanceof Door)) {
+                        continue;
+                    }
+                    isDoorEdge = true;
                 }
 
                 // 4. Check for the Player (unless it's the goal)
-                boolean isPlayerTile = (nx == (int)player.getPosition().x && ny == (int)player.getPosition().y);
-
-                // --- [ END FIX ] ---
+                boolean isPlayerTile = (player != null && player.getPosition() != null
+                        && nx == (int) player.getPosition().x && ny == (int) player.getPosition().y);
 
                 // The tile is valid if it's not the player OR it's the goal
                 if (!isPlayerTile || neighbor.equals(goalNode)) {
-
-                    int newGCost = currentNode.gCost + 1; // Cost to move is 1
+                    int stepCost = isDoorEdge ? 3 : 1; // Door opening costs extra movement
+                    int newGCost = currentNode.gCost + stepCost;
 
                     if (newGCost < neighbor.gCost || !openSet.contains(neighbor)) {
                         neighbor.gCost = newGCost;

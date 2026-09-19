@@ -66,6 +66,11 @@ public class TurnManager {
         updateMetabolism(player, maze, worldManager, eventManager, timeElapsed);
         // --------------------------------
 
+        // --- MONSTER INTER-ZONAL PURSUIT (Gates & Ladders) ---
+        MonsterPursuitManager.getInstance().onPlayerTurn(maze, player, worldManager,
+                (combatManager != null && combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getSoundManager() : null,
+                eventManager, combatManager);
+
         // --- RING EFFECTS ---
         // (Moved after metabolism so we can heal starvation damage if we have regen
         // ring?)
