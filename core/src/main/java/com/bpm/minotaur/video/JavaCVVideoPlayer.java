@@ -27,6 +27,7 @@ public class JavaCVVideoPlayer implements Disposable {
     private ByteBuffer transferBuffer;
     private int width, height;
     private boolean newFrameReady = false;
+    private volatile boolean muted = false;
 
     private OnCompletionListener completionListener;
 
@@ -36,6 +37,14 @@ public class JavaCVVideoPlayer implements Disposable {
 
     public void setOnCompletionListener(OnCompletionListener listener) {
         this.completionListener = listener;
+    }
+
+    public void setMuted(boolean muted) {
+        this.muted = muted;
+    }
+
+    public boolean isMuted() {
+        return muted;
     }
 
     public void play(FileHandle file) {
@@ -98,7 +107,7 @@ public class JavaCVVideoPlayer implements Disposable {
                     }
 
                     // Handle Audio (Process immediately)
-                    if (frame.samples != null && audioDevice != null) {
+                    if (!muted && frame.samples != null && audioDevice != null) {
                         ShortBuffer sb = (ShortBuffer) frame.samples[0];
                         if (sb != null) {
                             int limit = sb.limit();

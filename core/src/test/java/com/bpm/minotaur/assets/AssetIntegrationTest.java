@@ -39,7 +39,8 @@ public class AssetIntegrationTest {
                 "sounds/void_laser.wav",
                 "sounds/void_laser_alt.wav",
                 "sounds/amb_void_groan.wav",
-                "sounds/amb_doom_subbass.wav"
+                "sounds/amb_doom_subbass.wav",
+                "sounds/music/tarmin_core.mp3"
         };
 
         for (String soundPath : requiredSounds) {

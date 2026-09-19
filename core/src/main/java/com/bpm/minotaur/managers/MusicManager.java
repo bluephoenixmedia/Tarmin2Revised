@@ -106,6 +106,10 @@ public class MusicManager {
         stopAmbientLoop();
     }
 
+    public float getVolume() {
+        return volume;
+    }
+
     public void setVolume(float volume) {
         this.volume = volume;
         if (currentTrack != null) {

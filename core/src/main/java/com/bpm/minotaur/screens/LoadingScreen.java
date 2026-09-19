@@ -9,7 +9,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.audio.Music;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.video.JavaCVVideoPlayer;
 
 /**
@@ -41,6 +43,8 @@ public class LoadingScreen extends ScreenAdapter {
     private JavaCVVideoPlayer videoPlayer;
     private boolean videoFinished = false;
     private boolean videoError = false;
+    private Music introMusic;
+    private boolean introMusicStarted = false;
 
     public LoadingScreen(Tarmin2 game) {
         this.game = game;
@@ -57,9 +61,27 @@ public class LoadingScreen extends ScreenAdapter {
             return;
         }
 
+        // Initialize Intro Music
+        try {
+            FileHandle musicFile = Gdx.files.internal("sounds/music/tarmin_core.mp3");
+            if (musicFile.exists()) {
+                introMusic = Gdx.audio.newMusic(musicFile);
+                introMusic.setLooping(false);
+                introMusic.setVolume(MusicManager.getInstance().getVolume());
+                Gdx.app.log("LoadingScreen", "Found intro music: " + musicFile.path());
+            } else {
+                Gdx.app.log("LoadingScreen", "Intro music file not found: " + musicFile.path());
+            }
+        } catch (Exception e) {
+            Gdx.app.error("LoadingScreen", "Error initializing intro music: " + e.getMessage());
+        }
+
         // Initialize VideoPlayer
         try {
             videoPlayer = new JavaCVVideoPlayer();
+            if (introMusic != null) {
+                videoPlayer.setMuted(true);
+            }
 
             // Try internal handle first
             FileHandle videoFile = Gdx.files.internal("video/stinger_studio.mp4");
@@ -72,14 +94,17 @@ public class LoadingScreen extends ScreenAdapter {
                 } catch (Exception e) {
                     Gdx.app.error("LoadingScreen", "Playback error", e);
                     videoError = true;
+                    stopIntroMusic();
                 }
             } else {
                 Gdx.app.error("LoadingScreen", "Video file not found: " + videoFile.path());
                 videoError = true;
+                stopIntroMusic();
             }
         } catch (Exception e) {
             Gdx.app.error("LoadingScreen", "Error initializing video player: " + e.getMessage());
             videoError = true;
+            stopIntroMusic();
         }
     }
 
@@ -104,6 +129,30 @@ public class LoadingScreen extends ScreenAdapter {
                     } catch (Exception ignored) {
                     }
                 }
+                stopIntroMusic();
+            }
+        }
+
+        // Start intro music once the video starts playing / displaying frames
+        if (!introMusicStarted && introMusic != null && videoPlayer != null && !videoFinished && !videoError) {
+            if (videoPlayer.isPlaying() || videoPlayer.getTexture() != null) {
+                try {
+                    introMusic.play();
+                    introMusicStarted = true;
+                    Gdx.app.log("LoadingScreen", "Started intro music playback in sync with video.");
+                } catch (Exception e) {
+                    Gdx.app.error("LoadingScreen", "Failed to start intro music playback", e);
+                }
+            }
+        }
+
+        // Fade out intro music smoothly once the video has finished
+        if (videoFinished && introMusic != null && introMusic.isPlaying()) {
+            float currentVol = introMusic.getVolume();
+            float newVol = Math.max(0f, currentVol - delta * 2.0f);
+            introMusic.setVolume(newVol);
+            if (newVol <= 0.01f) {
+                stopIntroMusic();
             }
         }
 
@@ -207,10 +256,25 @@ public class LoadingScreen extends ScreenAdapter {
             videoPlayer.dispose();
             videoPlayer = null;
         }
+        stopIntroMusic();
     }
 
     @Override
     public void dispose() {
         // hide is called on screen switch
+        stopIntroMusic();
+    }
+
+    private void stopIntroMusic() {
+        if (introMusic != null) {
+            try {
+                if (introMusic.isPlaying()) {
+                    introMusic.stop();
+                }
+                introMusic.dispose();
+            } catch (Exception ignored) {
+            }
+            introMusic = null;
+        }
     }
 }
