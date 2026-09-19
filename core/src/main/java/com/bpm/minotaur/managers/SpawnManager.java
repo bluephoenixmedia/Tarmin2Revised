@@ -231,7 +231,7 @@ public class SpawnManager {
             if (depth == 2) tomeType = ItemType.TOME_OF_THE_INITIATE;
             else if (depth == 4) tomeType = ItemType.TOME_OF_ELEMENTS;
             else if (depth == 6) tomeType = ItemType.TOME_OF_THE_ARCANE;
-            else if (depth >= 8) tomeType = ItemType.TOME_OF_TARMIN;
+            else if (depth == 8) tomeType = ItemType.TOME_OF_TARMIN; // once, to keep top-band Tome Choices scarce
 
             if (tomeType != null) {
                 GridPoint2 pt = getEmptySpawnPoint();
