@@ -2288,6 +2288,14 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        if (keycode == SettingsManager.getInstance().getKey("SPELLBOOK")) {
+            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                    combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+                game.setScreen(new SpellbookScreen(game, this, player, maze));
+            }
+            return true;
+        }
+
         if (keycode == SettingsManager.getInstance().getKey("TOGGLE_LANTERN")) {
             boolean hasLantern = player.getInventory() != null &&
                     ((player.getInventory().getLeftHand() != null && player.getInventory().getLeftHand().getType() == Item.ItemType.BRASS_LANTERN)

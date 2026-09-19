@@ -251,6 +251,37 @@ public class Player {
         }
     }
 
+    /** Outcome of a Spellbook request to change a Spell Slot. */
+    public enum SlotChange { OK, HOSTILE_IN_VIEW, SLOT_LOCKED, UNKNOWN_SPELL }
+
+    /**
+     * The Spellbook's way to change a Spell Slot: puts a Known Spell into an unlocked
+     * slot, or clears it when {@code spellId} is null. A spell holds at most one slot,
+     * so moving it swaps with whatever the target slot held. Refused while a hostile
+     * is in view.
+     */
+    public SlotChange assignSpellSlot(int slot, String spellId, Maze maze) {
+        if (slot < 0 || slot >= unlockedSpellSlots || slot >= preparedSpells.length) {
+            return SlotChange.SLOT_LOCKED;
+        }
+        String id = spellId != null ? spellId.toUpperCase() : null;
+        if (id != null && !knownSpellIds.contains(id)) {
+            return SlotChange.UNKNOWN_SPELL;
+        }
+        if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
+            return SlotChange.HOSTILE_IN_VIEW;
+        }
+        if (id != null) {
+            for (int i = 0; i < preparedSpells.length; i++) {
+                if (i != slot && id.equals(preparedSpells[i])) {
+                    preparedSpells[i] = preparedSpells[slot];
+                }
+            }
+        }
+        preparedSpells[slot] = id;
+        return SlotChange.OK;
+    }
+
     public String getPreparedSpell(int slot) {
         if (slot >= 0 && slot < preparedSpells.length) {
             return preparedSpells[slot];
@@ -265,7 +296,8 @@ public class Player {
         }
         String id = getPreparedSpell(slot);
         if (id == null || id.isEmpty()) {
-            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is empty! Assign in Spellbook.", 1.5f));
+            eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is empty! Assign a spell in the Spellbook ["
+                    + com.badlogic.gdx.Input.Keys.toString(com.bpm.minotaur.managers.SettingsManager.getInstance().getKey("SPELLBOOK")) + "].", 1.5f));
             return false;
         }
         return com.bpm.minotaur.gamedata.spells.SpellExecutionEngine.castSpell(id, this, maze, eventManager, combatManager);
