@@ -211,12 +211,6 @@ public class Player {
         this.unlockedSpellSlots = Math.max(1, Math.min(5, slots));
     }
 
-    public void unlockNextSpellSlot() {
-        if (unlockedSpellSlots < 5) {
-            unlockedSpellSlots++;
-        }
-    }
-
     public List<String> getKnownSpellIds() {
         return knownSpellIds;
     }
@@ -311,10 +305,10 @@ public class Player {
     }
 
     /**
-     * Permanently commits a spell scroll into an open prepared spell slot, at the
-     * cost of 100% of the spell's MP (as opposed to {@link #read} which is a free
-     * single emergency cast). Requires an unlocked, empty spell slot and enough
-     * current MP to pay the spell's full cost.
+     * Permanently learns a spell scroll into Known Spells, at the cost of 100% of the
+     * spell's MP (as opposed to {@link #read} which is a free single emergency cast).
+     * The spell also fills the first empty unlocked Spell Slot, if there is one;
+     * otherwise the player assigns it from the Spellbook.
      */
     public boolean inscribeScroll(Item scrollItem, GameEventManager eventManager, DiscoveryManager discoveryManager) {
         if (scrollItem == null) return false;
@@ -330,18 +324,6 @@ public class Player {
             return false;
         }
 
-        int openSlot = -1;
-        for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
-            if (preparedSpells[i] == null) {
-                openSlot = i;
-                break;
-            }
-        }
-        if (openSlot == -1) {
-            eventManager.addEvent(new GameEvent("No open spell slot! Free one up or attune a new slot at the Altar.", 2.0f));
-            return false;
-        }
-
         com.bpm.minotaur.gamedata.spells.SpellTemplate spellTemplate = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
         int mpCost = (spellTemplate != null) ? spellTemplate.getMpCost() : 0;
         if (!hasEnoughMana(mpCost)) {
@@ -350,16 +332,33 @@ public class Player {
         }
 
         deductMana(mpCost);
-        learnSpellId(spellId);
-        prepareSpell(openSlot, spellId);
+        int slot = learnAndPrepareIfSlotFree(spellId);
         inventory.removeItem(scrollItem);
         if (discoveryManager != null) {
             discoveryManager.identifyDedicatedScroll(scrollItem.getType(), spellId);
         }
-        eventManager.addEvent(new GameEvent(
-                "Inscribed " + spellId + " into spell slot " + (openSlot + 1) + "! (-" + mpCost + " MP)", 2.5f));
+        String name = spellTemplate != null ? spellTemplate.getName() : spellId;
+        eventManager.addEvent(new GameEvent(slot >= 0
+                ? "Inscribed " + name + " into spell slot " + (slot + 1) + "! (-" + mpCost + " MP)"
+                : "Inscribed " + name + " into your Spellbook! (-" + mpCost + " MP)", 2.5f));
         if (soundManager != null) soundManager.playPickupItemSound();
         return true;
+    }
+
+    /**
+     * Adds a spell to Known Spells and puts it in the first empty unlocked Spell Slot.
+     *
+     * @return the slot index it was prepared in, or -1 if every unlocked slot is full
+     */
+    public int learnAndPrepareIfSlotFree(String spellId) {
+        learnSpellId(spellId);
+        for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
+            if (preparedSpells[i] == null) {
+                prepareSpell(i, spellId);
+                return i;
+            }
+        }
+        return -1;
     }
 
     public boolean hasEnoughMana(int cost) {

@@ -336,7 +336,7 @@ public class ShelterAltarScreen extends BaseScreen {
         body.add(monumentCard).width(380).expandY().fillY().padRight(20);
 
         Table arcaneCard = buildTreeCard("ARCANE ATTUNEMENT",
-                "Unseals higher spell circles into loot and attunes a new prepared spell slot at each tier.");
+                "Unseals higher spell circles into scroll loot at each tier. Spell slots come from Tomes found in the strata.");
         arcaneTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         arcaneCard.add(arcaneTierLabel).left().padTop(10).row();
         arcaneBtn = createActionButton("UPGRADE ATTUNEMENT");
@@ -388,10 +388,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private void purchaseTree(ShelterAltar.Tree tree) {
         ShelterAltar altar = ShelterAltar.getInstance();
-        boolean purchased = (tree == ShelterAltar.Tree.ARCANE_ATTUNEMENT)
-                ? altar.purchaseArcaneAttunement(player)
-                : altar.purchaseUpgrade(tree);
-        if (!purchased) {
+        if (!altar.purchaseUpgrade(tree)) {
             statusLabel.setText("Not enough Divinities for that upgrade.");
             refresh();
             return;
@@ -410,8 +407,7 @@ public class ShelterAltarScreen extends BaseScreen {
                         + Math.round(altar.getStatueEventFrequency() * 100) + "% of the time per chunk.";
                 break;
             case ARCANE_ATTUNEMENT:
-                message = "Attunement deepened! Spell slot " + player.getUnlockedSpellSlots()
-                        + " unlocked. Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
+                message = "Attunement deepened! Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
                 break;
             default:
                 message = "Upgrade purchased.";

@@ -164,10 +164,9 @@ public class ItemInspectorPanel extends Table {
 
             com.bpm.minotaur.gamedata.spells.SpellTemplate spell = getSpellTemplateForScroll(item);
             int mpCost = spell != null ? spell.getMpCost() : 0;
-            boolean hasOpenSlot = hasOpenSpellSlot();
             boolean hasEnoughMp = player.hasEnoughMana(mpCost);
             TextButton inscribeBtn = buildActionButton("INSCRIBE (" + mpCost + " MP)");
-            inscribeBtn.setDisabled(!hasOpenSlot || !hasEnoughMp);
+            inscribeBtn.setDisabled(!hasEnoughMp);
             inscribeBtn.setTouchable(inscribeBtn.isDisabled() ? com.badlogic.gdx.scenes.scene2d.Touchable.disabled
                     : com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
             inscribeBtn.addListener(new ClickListener() {
@@ -181,9 +180,9 @@ public class ItemInspectorPanel extends Table {
             scrollBtnRow.add(inscribeBtn).width(220).height(38);
             contentTable.add(scrollBtnRow).padTop(8).center().row();
 
-            String tooltipHint = !hasOpenSlot
-                    ? "No open spell slot — attune a new slot at the Shelter Altar."
-                    : (!hasEnoughMp ? "Not enough MP to inscribe (need " + mpCost + ")." : "Permanently learns the spell and consumes the scroll.");
+            String tooltipHint = !hasEnoughMp
+                    ? "Not enough MP to inscribe (need " + mpCost + ")."
+                    : "Permanently learns the spell into your Spellbook and consumes the scroll.";
             Label tooltip = new Label(tooltipHint, new Label.LabelStyle(skin.getFontSmall(), COL_INK_MUTED));
             tooltip.setWrap(true);
             contentTable.add(tooltip).width(320).padTop(4).center().row();
@@ -214,14 +213,6 @@ public class ItemInspectorPanel extends Table {
         btnStyle.down = skin.getEquipSlotDrawable();
         btnStyle.disabled = skin.getNormalSlotDrawable();
         return new TextButton("[ " + text + " ]", btnStyle);
-    }
-
-    private boolean hasOpenSpellSlot() {
-        String[] prepared = player.getPreparedSpells();
-        for (int i = 0; i < player.getUnlockedSpellSlots() && i < prepared.length; i++) {
-            if (prepared[i] == null) return true;
-        }
-        return false;
     }
 
     private com.bpm.minotaur.gamedata.spells.SpellTemplate getSpellTemplateForScroll(Item item) {

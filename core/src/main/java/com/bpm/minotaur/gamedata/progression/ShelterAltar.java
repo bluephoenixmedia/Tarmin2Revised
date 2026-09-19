@@ -303,20 +303,6 @@ public class ShelterAltar {
         return true;
     }
 
-    /**
-     * Purchases the next Arcane Attunement tier for the given player, unlocking
-     * their next spell slot in addition to the altar-side tracking.
-     */
-    public boolean purchaseArcaneAttunement(com.bpm.minotaur.gamedata.player.Player player) {
-        if (!purchaseUpgrade(Tree.ARCANE_ATTUNEMENT)) {
-            return false;
-        }
-        if (player != null) {
-            player.unlockNextSpellSlot();
-        }
-        return true;
-    }
-
     /** Spell ids unsealed for loot spawning by the current Arcane Attunement tier. */
     public java.util.List<String> getUnsealedSpellIds() {
         java.util.List<String> unsealed = new java.util.ArrayList<>();

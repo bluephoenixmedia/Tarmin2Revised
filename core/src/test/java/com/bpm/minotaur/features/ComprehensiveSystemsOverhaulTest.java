@@ -186,35 +186,49 @@ public class ComprehensiveSystemsOverhaulTest {
 
     // ── Component 4: Spell Inscription & Arcane Attunement ──────────────────
 
-    @Test
-    public void testInscribeScrollRequiresOpenSlotAndMp() {
-        Player player = new Player(2, 2);
-        GameEventManager eventManager = new GameEventManager();
-
+    private Item magicMissileScroll(Player player) {
         ItemTemplate scrollTmpl = new ItemTemplate();
         scrollTmpl.friendlyName = "Scroll of Magic Missile";
         Item scroll = Item.fromTemplate(ItemType.SCROLL_MAGIC_MISSILE, scrollTmpl);
         player.getInventory().pickup(scroll);
+        return scroll;
+    }
 
-        // Slot 0 holds the starting cantrip; no free slot yet.
-        assertFalse("Inscription should fail with no open spell slot",
-                player.inscribeScroll(scroll, eventManager, null));
-        assertFalse(player.getKnownSpellIds().contains("MAGIC_MISSILE"));
+    @Test
+    public void testInscribeScrollLearnsIntoSpellbookWithoutAFreeSlot() {
+        Player player = new Player(2, 2);
+        GameEventManager eventManager = new GameEventManager();
+        Item scroll = magicMissileScroll(player);
 
-        player.setUnlockedSpellSlots(2);
         player.getStats().setCurrentMP(0);
         assertFalse("Inscription should fail without enough MP", player.inscribeScroll(scroll, eventManager, null));
+        assertFalse(player.getKnownSpellIds().contains("MAGIC_MISSILE"));
 
+        // Slot 1 holds the starting cantrip and is the only unlocked slot.
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
-        assertTrue("Inscription should succeed with an open slot and enough MP",
+        int mpBefore = player.getStats().getCurrentMP();
+        assertTrue("Inscription should succeed with enough MP even when every slot is full",
                 player.inscribeScroll(scroll, eventManager, null));
         assertTrue(player.getKnownSpellIds().contains("MAGIC_MISSILE"));
-        assertEquals("MAGIC_MISSILE", player.getPreparedSpell(1));
+        assertEquals("The full slot keeps its spell", "MOTE_OF_LIGHT", player.getPreparedSpell(0));
+        assertTrue("Full MP cost is paid", player.getStats().getCurrentMP() < mpBefore);
         assertFalse(player.getInventory().getMainInventory().contains(scroll));
     }
 
     @Test
-    public void testArcaneAttunementUnlocksSpellSlotAndUnsealsCircle() {
+    public void testInscribeScrollFillsAnEmptyUnlockedSlot() {
+        Player player = new Player(2, 2);
+        GameEventManager eventManager = new GameEventManager();
+        Item scroll = magicMissileScroll(player);
+        player.setUnlockedSpellSlots(2);
+        player.getStats().setCurrentMP(player.getStats().getMaxMP());
+
+        assertTrue(player.inscribeScroll(scroll, eventManager, null));
+        assertEquals("MAGIC_MISSILE", player.getPreparedSpell(1));
+    }
+
+    @Test
+    public void testArcaneAttunementUnsealsCircleWithoutGrantingASlot() {
         Player player = new Player(2, 2);
         DivinityManager.getInstance().addDivinities(100);
         ShelterAltar altar = ShelterAltar.getInstance();
@@ -222,8 +236,8 @@ public class ComprehensiveSystemsOverhaulTest {
         int slotsBefore = player.getUnlockedSpellSlots();
         assertTrue(altar.isSpellSealed("MAGIC_MISSILE"));
 
-        assertTrue(altar.purchaseArcaneAttunement(player));
-        assertEquals(slotsBefore + 1, player.getUnlockedSpellSlots());
+        assertTrue(altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
+        assertEquals("Only Tomes unlock Spell Slots", slotsBefore, player.getUnlockedSpellSlots());
         assertEquals(1, altar.getTier(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
         assertFalse("Circle 1 spells should unseal at Tier 1", altar.isSpellSealed("MAGIC_MISSILE"));
         assertTrue("Circle 2 spells remain sealed at Tier 1", altar.isSpellSealed("MISTY_STEP"));
