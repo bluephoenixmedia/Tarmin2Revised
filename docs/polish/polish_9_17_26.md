@@ -17,3 +17,4 @@ The Light spell that the player starts with should cost MP, currently it does no
 - The bones / remains should never generate inside the player's shelter
 - If a weapon is placed in the Quick Slots, the intent of doing that should be that the player will throw that weapon by pressing the quick slot key. 
 - The weapon bobbing animation needs to be 25% slower.
+- The merchant screen needs to show the cost of items for both buying and selling right alongside the items.
