@@ -292,6 +292,16 @@ public class ItemDataManager {
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
     }
 
+    /** Every type with a loaded template, in ItemType declaration order. */
+    public List<ItemType> getLoadedTypes() {
+        List<ItemType> types = new ArrayList<>();
+        for (ItemType type : itemTemplates.keys()) {
+            types.add(type);
+        }
+        java.util.Collections.sort(types);
+        return types;
+    }
+
     public ItemTemplate getTemplate(ItemType type) {
         ItemTemplate template = itemTemplates.get(type);
         if (template == null) {

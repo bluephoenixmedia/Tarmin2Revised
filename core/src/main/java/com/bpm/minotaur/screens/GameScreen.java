@@ -182,7 +182,8 @@ public class GameScreen extends BaseScreen {
         // --- NEW: Weapon Overlay ---
         this.weaponOverlay = new FirstPersonWeaponOverlay(game.getItemDataManager(), game.getAssetManager());
         this.weaponOverlay.getViewCalibration().load();
-        this.weaponTunerPanel = new com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel(weaponOverlay);
+        this.weaponTunerPanel = new com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel(
+                weaponOverlay, game.getItemDataManager());
 
         // Void chain laser: each beam gets an impact flash and scorch mark the instant it
         // appears, in sync with the staggered reveal that shows the burst's climb.

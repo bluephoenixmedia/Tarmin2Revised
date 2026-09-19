@@ -127,6 +127,10 @@ public class FirstPersonWeaponOverlay {
     // empty calibration draws exactly the hardcoded poses.
     private final WeaponViewCalibration viewCalibration = new WeaponViewCalibration();
 
+    // Tuner preview: shown in place of the equipped items while set. See setPreview.
+    private Item previewMainHand;
+    private Item previewOffHand;
+
     // Hand geometry: sprite height as a fraction of the viewport, and where the grip sits
     // up the sprite.
     private static final float MAIN_HAND_HEIGHT_REL = 0.44f;
@@ -143,7 +147,24 @@ public class FirstPersonWeaponOverlay {
         this.hitFrameCallback = callback;
     }
 
+    /**
+     * Shows these items in place of what is equipped, for the weapon tuner to walk every
+     * weapon without touching the inventory. Null for a hand shows what it really holds.
+     * Applied inside setEquipment because GameScreen re-asserts the real equipment every
+     * frame; the next frame after clearing puts the real items back.
+     */
+    public void setPreview(Item mainHand, Item offHand) {
+        this.previewMainHand = mainHand;
+        this.previewOffHand = offHand;
+    }
+
     public void setEquipment(Item rightHand, Item leftHand) {
+        if (previewMainHand != null) {
+            rightHand = previewMainHand;
+        }
+        if (previewOffHand != null) {
+            leftHand = previewOffHand;
+        }
         if (this.mainHandItem != rightHand) {
             this.mainHandItem = rightHand;
             this.mainHandTexture = resolveTexture(rightHand);

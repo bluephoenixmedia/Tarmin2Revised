@@ -7,8 +7,19 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.bpm.minotaur.gamedata.item.Item;
+import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.paperdoll.calibration.LayerCalibration;
 import com.bpm.minotaur.rendering.FirstPersonWeaponOverlay;
+import com.bpm.minotaur.rendering.animation.AnimationArchetype;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * F11: tunes the first-person weapon live, in the game, against the real 3D view.
@@ -19,7 +30,9 @@ import com.bpm.minotaur.rendering.FirstPersonWeaponOverlay;
  *
  * Sits at the front of the input multiplexer while open and consumes only its own keys,
  * so the arrows tune instead of walking but everything else still reaches the game.
- * Keys follow the paperdoll editor where the two overlap.
+ * Keys follow the paperdoll editor where the two overlap, including [ and ] to walk
+ * every weapon in turn. Walking only changes what is drawn, never the inventory, and
+ * closing the tuner puts the real equipment back.
  */
 public class WeaponViewTunerPanel extends InputAdapter {
 
@@ -33,6 +46,12 @@ public class WeaponViewTunerPanel extends InputAdapter {
     private final FirstPersonWeaponOverlay overlay;
     private final WeaponViewCalibration calibration;
     private final WeaponViewTuner tuner;
+    private final ItemDataManager itemData;
+
+    /** Built on first open, when item data is certain to be loaded. */
+    private WeaponViewCycle mainCycle;
+    private WeaponViewCycle offCycle;
+    private final Map<String, Item> previewItems = new HashMap<String, Item>();
 
     private boolean open = false;
     /** Set by a first F11 or F5 over unsaved work; the second press goes through. */
@@ -40,8 +59,9 @@ public class WeaponViewTunerPanel extends InputAdapter {
     private String status = "";
     private Color statusColor = Color.WHITE;
 
-    public WeaponViewTunerPanel(FirstPersonWeaponOverlay overlay) {
+    public WeaponViewTunerPanel(FirstPersonWeaponOverlay overlay, ItemDataManager itemData) {
         this.overlay = overlay;
+        this.itemData = itemData;
         this.calibration = overlay.getViewCalibration();
         this.tuner = new WeaponViewTuner(calibration.store());
     }
@@ -51,6 +71,7 @@ public class WeaponViewTunerPanel extends InputAdapter {
     }
 
     public void open() {
+        buildCycles();
         open = true;
         confirmingDiscard = false;
         setStatus("", Color.WHITE);
@@ -74,7 +95,79 @@ public class WeaponViewTunerPanel extends InputAdapter {
         }
         open = false;
         confirmingDiscard = false;
+        mainCycle.reset();
+        offCycle.reset();
+        applyPreview();
         return true;
+    }
+
+    /**
+     * Main hand: every weapon, grouped by archetype so a pass tunes one family at a time
+     * and the archetype default can be set on the first of each. Off hand: shields, then
+     * every weapon again for dual-wielding. Only items with texture art are listed, as
+     * tuning applies only to the textured view.
+     */
+    private void buildCycles() {
+        if (mainCycle != null) {
+            return;
+        }
+        List<Item> weapons = new ArrayList<Item>();
+        List<Item> shields = new ArrayList<Item>();
+        if (itemData != null) {
+            for (Item.ItemType type : itemData.getLoadedTypes()) {
+                ItemTemplate template = itemData.getTemplate(type);
+                if (template == null || template.texturePath == null) {
+                    continue;
+                }
+                Item item = Item.fromTemplate(type, template);
+                if (template.isShield) {
+                    shields.add(item);
+                } else if (template.isWeapon) {
+                    weapons.add(item);
+                }
+            }
+        }
+        Collections.sort(weapons, new Comparator<Item>() {
+            @Override
+            public int compare(Item a, Item b) {
+                int byArchetype = AnimationArchetype.fromItem(a).compareTo(AnimationArchetype.fromItem(b));
+                return byArchetype != 0 ? byArchetype : a.getTypeName().compareTo(b.getTypeName());
+            }
+        });
+
+        List<String> mainKeys = new ArrayList<String>();
+        for (Item item : weapons) {
+            mainKeys.add(register(item));
+        }
+        List<String> offKeys = new ArrayList<String>();
+        for (Item item : shields) {
+            offKeys.add(register(item));
+        }
+        offKeys.addAll(mainKeys);
+        mainCycle = new WeaponViewCycle(mainKeys);
+        offCycle = new WeaponViewCycle(offKeys);
+    }
+
+    private String register(Item item) {
+        String key = WeaponViewCalibration.itemKey(item);
+        previewItems.put(key, item);
+        return key;
+    }
+
+    private WeaponViewCycle selectedCycle() {
+        return tuner.hand() == WeaponViewTuner.Hand.MAIN ? mainCycle : offCycle;
+    }
+
+    /**
+     * What the selected hand shows. Only read when not yet previewing, when that is what
+     * it really holds, so the first step lands next to the equipped weapon.
+     */
+    private String equippedKey() {
+        return tuner.itemKey();
+    }
+
+    private void applyPreview() {
+        overlay.setPreview(previewItems.get(mainCycle.current()), previewItems.get(offCycle.current()));
     }
 
     @Override
@@ -118,6 +211,18 @@ public class WeaponViewTunerPanel extends InputAdapter {
                 tuner.clear();
                 break;
             case Input.Keys.P:      overlay.previewSwing(); break;
+            case Input.Keys.LEFT_BRACKET:
+                selectedCycle().previous(equippedKey());
+                applyPreview();
+                break;
+            case Input.Keys.RIGHT_BRACKET:
+                selectedCycle().next(equippedKey());
+                applyPreview();
+                break;
+            case Input.Keys.E:
+                selectedCycle().reset();
+                applyPreview();
+                break;
             case Input.Keys.S:
                 if (!ctrl) {
                     return false;
@@ -189,6 +294,14 @@ public class WeaponViewTunerPanel extends InputAdapter {
         y -= line;
 
         font.setColor(Color.WHITE);
+        WeaponViewCycle cycle = selectedCycle();
+        Item shown = tuner.hand() == WeaponViewTuner.Hand.MAIN
+                ? overlay.getMainHandItem() : overlay.getOffHandItem();
+        font.draw(batch, (cycle.isPreviewing()
+                        ? "Previewing " + cycle.position() + " of " + cycle.size()
+                        : "Equipped (" + cycle.size() + " to walk with [ ])")
+                        + (shown != null ? ":  " + shown.getFriendlyName() : ""), x, y);
+        y -= line;
         if (!tuner.hasTarget()) {
             font.draw(batch, (tuner.hand() == WeaponViewTuner.Hand.MAIN ? "Main" : "Off")
                     + " hand is empty - H to switch hands", x, y);
@@ -211,7 +324,9 @@ public class WeaponViewTunerPanel extends InputAdapter {
         font.setColor(Color.LIGHT_GRAY);
         font.draw(batch, "arrows move   +/- scale   , . rotate   (shift = big steps)", x, y);
         y -= line;
-        font.draw(batch, "F flip   H hand   T weapon/archetype   P preview swing   Bksp clear", x, y);
+        font.draw(batch, "[ ] prev/next weapon   E back to equipped   H hand   T weapon/archetype", x, y);
+        y -= line;
+        font.draw(batch, "F flip   P preview swing   Bksp clear", x, y);
         y -= line;
         font.draw(batch, "ctrl+S save   F5 re-read   F11 close", x, y);
         y -= line;
