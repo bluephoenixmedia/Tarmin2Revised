@@ -48,6 +48,10 @@
     "dexterity": 12,
     "hasRangedAttack": true,
     "attackRange": 6,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "1d6",
+    "rangedDamageType": "POISON",
+    "rangedEffect": "POISONED",
     "onHitEffects": [
       {
         "type": "POISONED",
@@ -209,7 +213,13 @@
         "weight": 10
       }
     ],
-    "damageDice": "1d10+3"
+    "damageDice": "1d10+3",
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d8",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4
   },
   "GIANT_SCORPION": {
     "baseLevel": 3,
@@ -284,7 +294,13 @@
         "weight": 10
       }
     ],
-    "damageDice": "1d8+1"
+    "damageDice": "1d8+1",
+    "hasRangedAttack": true,
+    "attackRange": 4,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "1d6",
+    "rangedDamageType": "POISON",
+    "rangedEffect": "POISONED"
   },
   "GIANT_SNAKE": {
     "baseLevel": 1,
@@ -346,7 +362,13 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d6+1"
+    "damageDice": "1d6+1",
+    "hasRangedAttack": true,
+    "attackRange": 4,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "1d6",
+    "rangedDamageType": "POISON",
+    "rangedEffect": "POISONED"
   },
   "GHOUL": {
     "baseLevel": 2,
@@ -470,7 +492,13 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d6+1"
+    "damageDice": "1d6+1",
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d6",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4
   },
   "CLOAKED_SKELETON": {
     "baseLevel": 3,
@@ -537,7 +565,13 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d10+3"
+    "damageDice": "1d10+3",
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d8",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4
   },
   "ALLIGATOR": {
     "baseLevel": 4,
@@ -662,7 +696,13 @@
         "weight": 1
       }
     ],
-    "damageDice": "4d10+8"
+    "damageDice": "4d10+8",
+    "hasRangedAttack": true,
+    "attackRange": 7,
+    "rangedProjectile": "FIREBALL",
+    "rangedDamageDice": "3d10",
+    "rangedDamageType": "FIRE",
+    "rangedPreferredDistance": 5
   },
   "WRAITH": {
     "baseLevel": 5,
@@ -786,7 +826,12 @@
         "weight": 1
       }
     ],
-    "damageDice": "3d10+6"
+    "damageDice": "3d10+6",
+    "hasRangedAttack": true,
+    "attackRange": 6,
+    "rangedProjectile": "BOULDER",
+    "rangedDamageDice": "3d10",
+    "rangedDamageType": "PHYSICAL"
   },
   "MINOTAUR": {
     "baseLevel": 15,
@@ -884,7 +929,14 @@
         "weight": 1
       }
     ],
-    "damageDice": "1d4+1"
+    "damageDice": "1d4+1",
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "WEB",
+    "rangedDamageDice": "1d4",
+    "rangedDamageType": "PHYSICAL",
+    "rangedEffect": "SLOWED",
+    "rangedPreferredDistance": 3
   },
   "GHAST": {
     "baseLevel": 3,
@@ -997,6 +1049,10 @@
     "dexterity": 8,
     "hasRangedAttack": true,
     "attackRange": 8,
+    "rangedProjectile": "DEATH_RAY",
+    "rangedDamageDice": "2d10",
+    "rangedDamageType": "DARK",
+    "rangedPreferredDistance": 5,
     "onHitEffects": [
       {
         "type": "CONFUSION",
@@ -1216,6 +1272,10 @@
     "dexterity": 10,
     "hasRangedAttack": true,
     "attackRange": 7,
+    "rangedProjectile": "DEATH_RAY",
+    "rangedDamageDice": "2d10",
+    "rangedDamageType": "ICE",
+    "rangedPreferredDistance": 5,
     "onHitEffects": [
       {
         "type": "WEAKENED",
@@ -1369,6 +1429,10 @@
     "dexterity": 12,
     "hasRangedAttack": true,
     "attackRange": 6,
+    "rangedProjectile": "PSYCHIC_BOLT",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "SORCERY",
+    "rangedPreferredDistance": 5,
     "onHitEffects": [
       {
         "type": "CONFUSION",
@@ -1639,8 +1703,12 @@
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 10,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "STONE",
+    "rangedDamageDice": "1d4",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4,
     "onHitEffects": [],
     "variants": [
       {
@@ -1700,7 +1768,11 @@
     "intelligence": 3,
     "dexterity": 12,
     "hasRangedAttack": true,
-    "attackRange": 4,
+    "attackRange": 5,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d6",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4,
     "onHitEffects": [],
     "variants": [
       {
@@ -1828,7 +1900,11 @@
     "intelligence": 5,
     "dexterity": 10,
     "hasRangedAttack": true,
-    "attackRange": 5,
+    "attackRange": 6,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d8",
+    "rangedDamageType": "PHYSICAL",
+    "rangedPreferredDistance": 4,
     "onHitEffects": [],
     "variants": [
       {
@@ -2271,8 +2347,11 @@
     "damageType": "PHYSICAL",
     "intelligence": 3,
     "dexterity": 8,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "BOULDER",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "PHYSICAL",
     "onHitEffects": [],
     "variants": [
       {
@@ -2331,8 +2410,11 @@
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 6,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "BOULDER",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "PHYSICAL",
     "onHitEffects": [],
     "variants": [
       {
@@ -2391,8 +2473,12 @@
     "damageType": "PHYSICAL",
     "intelligence": 2,
     "dexterity": 8,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "2d6",
+    "rangedDamageType": "POISON",
+    "rangedEffect": "SLOWED",
     "onHitEffects": [
       {
         "type": "SLOWED",
@@ -2465,7 +2551,12 @@
     "aiType": "TACTICAL",
     "dexterity": 12,
     "hasRangedAttack": true,
-    "attackRange": 5,
+    "attackRange": 6,
+    "rangedProjectile": "ARROW",
+    "rangedDamageDice": "1d8",
+    "rangedDamageType": "PHYSICAL",
+    "rangedEffect": "SLOWED",
+    "rangedPreferredDistance": 4,
     "onHitEffects": [
       {
         "type": "SLOWED",
@@ -2532,8 +2623,11 @@
     "damageType": "PHYSICAL",
     "intelligence": 5,
     "dexterity": 14,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "2d6",
+    "rangedDamageType": "POISON",
     "onHitEffects": [
       {
         "type": "POISONED",
@@ -2601,7 +2695,10 @@
     "intelligence": 8,
     "dexterity": 10,
     "hasRangedAttack": true,
-    "attackRange": 4,
+    "attackRange": 6,
+    "rangedProjectile": "FIREBALL",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "FIRE",
     "onHitEffects": [],
     "variants": [
       {
@@ -2660,8 +2757,11 @@
     "damageType": "PHYSICAL",
     "intelligence": 4,
     "dexterity": 6,
-    "hasRangedAttack": false,
-    "attackRange": 2,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "VENOM",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "POISON",
     "onHitEffects": [],
     "variants": [
       {
@@ -2727,6 +2827,9 @@
     "dexterity": 14,
     "hasRangedAttack": true,
     "attackRange": 6,
+    "rangedProjectile": "DEATH_RAY",
+    "rangedDamageDice": "2d8",
+    "rangedDamageType": "DARK",
     "onHitEffects": [
       {
         "type": "WEAKENED",
@@ -2793,8 +2896,11 @@
     "damageType": "PHYSICAL",
     "intelligence": 0,
     "dexterity": 4,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 5,
+    "rangedProjectile": "BOULDER",
+    "rangedDamageDice": "2d10",
+    "rangedDamageType": "PHYSICAL",
     "onHitEffects": [],
     "variants": [
       {
@@ -2951,8 +3057,11 @@
     "spellChance": 35,
     "aiType": "TACTICAL",
     "dexterity": 14,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 8,
+    "rangedProjectile": "DEATH_RAY",
+    "rangedDamageDice": "3d12",
+    "rangedDamageType": "DARK",
     "damageDice": "4d12+10",
     "damageType": "PHYSICAL",
     "scale": {
@@ -2998,8 +3107,11 @@
     "spellChance": 50,
     "aiType": "TACTICAL",
     "dexterity": 15,
-    "hasRangedAttack": false,
-    "attackRange": 1,
+    "hasRangedAttack": true,
+    "attackRange": 8,
+    "rangedProjectile": "RADIANT_SPEAR",
+    "rangedDamageDice": "3d10",
+    "rangedDamageType": "LIGHT",
     "damageDice": "3d10+6",
     "damageType": "PHYSICAL",
     "scale": {

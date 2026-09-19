@@ -77,6 +77,12 @@ public class MonsterTemplate {
     public int dexterity; // For Hit Chance calculation
     public boolean hasRangedAttack; // Can this monster shoot back?
     public int attackRange; // How far can they shoot?
+    public String rangedProjectile = "ARROW"; // Archetype projectile: ARROW, BOULDER, WEB, VENOM, FIREBALL, etc.
+    public String rangedDamageDice = null; // Overrides damageDice for ranged attacks if set
+    public DamageType rangedDamageType = null; // Overrides damageType for ranged attacks if set
+    public String rangedEffect = null; // On-hit status effect (e.g. POISONED, SLOWED)
+    public float rangedEffectChance = 0.5f;
+    public float rangedPreferredDistance = 4f; // Preferred tactical standoff range
 
     public int intelligence; // This will be loaded from JSON, defaulting to 0
     public Boolean isSpellcaster = null; // null = auto by INT >= 12, true/false overrides

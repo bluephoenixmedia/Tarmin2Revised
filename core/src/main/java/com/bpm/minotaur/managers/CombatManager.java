@@ -15,6 +15,7 @@ import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
+import com.bpm.minotaur.gamedata.monster.MonsterProjectileRegistry;
 
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
@@ -1528,7 +1529,7 @@ public class CombatManager {
 
     public boolean performMonsterRangedAttack(Monster attacker) {
         int range = attacker.getAttackRange();
-        Item weapon = attacker.getInventory().getRightHand();
+        Item weapon = (attacker.getInventory() != null) ? attacker.getInventory().getRightHand() : null;
         boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
 
         if (!attacker.hasRangedAttack() && !hasRangedWeapon)
@@ -1552,41 +1553,95 @@ public class CombatManager {
         if (finalResult.type != HitResult.HitType.PLAYER)
             return false;
 
+        // Retrieve Projectile Archetype
+        MonsterProjectileRegistry.MonsterProjectileDefinition projDef =
+                MonsterProjectileRegistry.get(attacker.getRangedProjectile());
+
+        // Visual Windup & Telegraph on Attacker
+        attacker.triggerRangedAttackTelegraph(projDef.getColor(), 0.35f);
+
+        // Sound cue
+        if (soundManager != null) {
+            String sKey = projDef.getSoundKey();
+            if (sKey != null && !sKey.isEmpty()) {
+                soundManager.playSound(sKey);
+            } else {
+                soundManager.playMonsterAttackSound(attacker);
+            }
+        }
+
+        // Ballistic Projectile Animation
         float dist = attacker.getPosition().dst(player.getPosition());
-        float animDuration = dist / PROJECTILE_SPEED;
+        float speed = projDef.getSpeed() > 0 ? projDef.getSpeed() : PROJECTILE_SPEED;
+        float animDuration = dist / speed;
         animationManager.addAnimation(
-                new Animation(Animation.AnimationType.PROJECTILE_MONSTER, attacker.getPosition(), player.getPosition(),
-                        attacker.getColor(), animDuration, itemDataManager.getTemplate(Item.ItemType.DART).spriteData));
-        soundManager.playMonsterAttackSound(attacker);
+                new Animation(Animation.AnimationType.PROJECTILE_MONSTER,
+                        attacker.getPosition(), player.getPosition(),
+                        projDef.getColor(), animDuration, projDef.getSpriteData()));
 
         // --- ATTACK ROLL ---
         int attackBonus = 2 + (attacker.getDexterity() / 5);
         int d20Roll = DiceRoller.d20();
+        boolean isCrit = (d20Roll == 20);
         int attackRoll = d20Roll + attackBonus;
         int targetAC = player.getArmorClass();
 
         int actualDamage = 0;
-        if (attackRoll >= targetAC) {
-            int dmg = attacker.getMaxHP() / 4; // Ranged default? Or use weapon?
-            if (hasRangedWeapon) {
-                dmg = DiceRoller.roll(weapon.getDamageDice());
-            } else {
-                dmg = DiceRoller.roll(attacker.getDamageDice());
+        if (isCrit || attackRoll >= targetAC) {
+            String dice = attacker.getRangedDamageDice();
+            if (dice == null || dice.isEmpty()) {
+                dice = (hasRangedWeapon && weapon != null) ? weapon.getDamageDice() : attacker.getDamageDice();
+            }
+            int dmg = DiceRoller.roll(dice);
+            if (isCrit) {
+                dmg += DiceRoller.roll(dice);
             }
             if (dmg < 1)
                 dmg = 1;
 
-            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            DamageType damageType = attacker.getRangedDamageType();
+            if (damageType == null) {
+                damageType = projDef.getDefaultDamageType();
+            }
+
+            actualDamage = player.takeDamage(dmg, damageType);
 
             if (actualDamage > 0) {
-                maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+                if (damageType == DamageType.PHYSICAL) {
+                    maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+                }
+                showPlayerDamageText(actualDamage, isCrit, damageType);
+
+                // 3D Impact Burst (BearFX Explosion)
+                if (projDef.getExplosionType() != null) {
+                    GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                    float wx = cid.x * 36.0f + player.getPosition().x;
+                    float wz = cid.y * 36.0f + player.getPosition().y;
+                    Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+                    animationManager.addAnimation(new Animation(projDef.getExplosionType(), hitPos, 1.8f, 0.55f));
+                }
+
+                // On-Hit Status Effect
+                String effectStr = attacker.getRangedEffect();
+                if (effectStr != null && !effectStr.isEmpty()) {
+                    if (Math.random() <= attacker.getRangedEffectChance()) {
+                        try {
+                            StatusEffectType effType = StatusEffectType.valueOf(effectStr.toUpperCase());
+                            player.getStatusManager().addEffect(effType, 6, 1, true);
+                            eventManager.addEvent(new GameEvent("You are afflicted with " + effType.name() + "!", 2.0f));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+
+                String critPrefix = isCrit ? "Critical Hit! " : "";
                 eventManager.addEvent(
-                        new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + "!", 1.5f));
+                        new GameEvent(critPrefix + attacker.getMonsterType() + " hits you with " + projDef.getName() + " for " + actualDamage + " " + damageType.name().toLowerCase() + " damage!", 2.0f));
             } else {
-                eventManager.addEvent(new GameEvent("Armor deflected the shot!", 1.5f));
+                eventManager.addEvent(new GameEvent("Armor deflected the " + projDef.getName().toLowerCase() + "!", 1.5f));
             }
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.5f));
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires " + projDef.getName().toLowerCase() + " and misses!", 1.5f));
         }
 
         if (actualDamage > 0)

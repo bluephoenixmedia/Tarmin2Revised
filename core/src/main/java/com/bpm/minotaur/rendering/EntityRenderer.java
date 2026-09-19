@@ -702,8 +702,13 @@ public class EntityRenderer {
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
             int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-            int spriteHeight = (int) (baseSpriteHeight * monster.scale.y);
-            int spriteWidth = (int) (baseSpriteHeight * monster.scale.x);
+            float pulse = 0f;
+            float rangedTelegraph = monster.getRangedAttackTelegraphProgress();
+            if (rangedTelegraph < 1f) {
+                pulse = (1f - rangedTelegraph) * 0.16f;
+            }
+            int spriteHeight = (int) (baseSpriteHeight * monster.scale.y * (1f + pulse));
+            int spriteWidth = (int) (baseSpriteHeight * monster.scale.x * (1f + pulse));
 
             float offX = 0;
             float offY = 0;
@@ -764,6 +769,13 @@ public class EntityRenderer {
                 float flashStrength = (1f - spellFlash) * 0.85f;
                 Color sc = monster.getSpellFlashColor();
                 monsterLight.lerp(sc, flashStrength);
+            }
+
+            // Ranged attack telegraph flash: chromatic windup aura
+            if (rangedTelegraph < 1f && monster.getRangedAttackTelegraphColor() != null) {
+                float flashStrength = (1f - rangedTelegraph) * 0.90f;
+                Color rc = monster.getRangedAttackTelegraphColor();
+                monsterLight.lerp(rc, flashStrength);
             }
 
             if (inPitchDarkness) {
@@ -1045,8 +1057,13 @@ public class EntityRenderer {
             Camera camera, Viewport viewport, float[] depthBuffer) {
         int spriteScreenY = (int) (camera.viewportHeight / 2);
         int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-        int spriteHeight = (int) (baseSpriteHeight * monster.scale.y);
-        int spriteWidth = (int) (baseSpriteHeight * monster.scale.x);
+        float retroPulse = 0f;
+        float retroRanged = monster.getRangedAttackTelegraphProgress();
+        if (retroRanged < 1f) {
+            retroPulse = (1f - retroRanged) * 0.16f;
+        }
+        int spriteHeight = (int) (baseSpriteHeight * monster.scale.y * (1f + retroPulse));
+        int spriteWidth = (int) (baseSpriteHeight * monster.scale.x * (1f + retroPulse));
         float drawY = spriteScreenY - spriteHeight / 2.0f;
         if (monster.getSpriteData() != null) {
             drawAsciiSprite(shapeRenderer, monster, monster.getSpriteData(), screenX, transformY, camera, viewport,
