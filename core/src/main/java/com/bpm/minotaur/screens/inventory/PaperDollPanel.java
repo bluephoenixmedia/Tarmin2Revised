@@ -329,11 +329,19 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
                 paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CLOAK_BACK, eq.getWornBack());
                 paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.CLOAK_FRONT, eq.getWornBack());
             }
+            // Weapons are deliberately not drawn on the doll: a sword read as a sticker on
+            // a front-facing figure, and the equipped weapon now gets its own large preview
+            // panel instead. The 229 weapon layers and their calibration are kept on disk,
+            // because that panel draws from them.
+            //
+            // Shields stay: they are worn, body-relative, and read well on the figure. The
+            // isShield() guard matters -- the left hand can hold a weapon when dual-wielding,
+            // and the layer map would resolve it to its weapon art, putting a weapon back
+            // on the doll through the off-hand slot.
             if (player.getInventory() != null) {
-                if (player.getInventory().getRightHand() != null)
-                    paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.WEAPON_MAIN, player.getInventory().getRightHand());
-                if (player.getInventory().getLeftHand() != null)
-                    paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF, player.getInventory().getLeftHand());
+                Item offHand = player.getInventory().getLeftHand();
+                if (offHand != null && offHand.isShield())
+                    paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF, offHand);
             }
         }
 
