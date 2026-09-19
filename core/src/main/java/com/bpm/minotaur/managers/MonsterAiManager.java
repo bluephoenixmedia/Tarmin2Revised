@@ -10,6 +10,9 @@ import com.bpm.minotaur.gamedata.Door; // NEW
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.effects.StatusEffectType;
+import com.bpm.minotaur.gamedata.spells.MonsterSpellExecutor;
+import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 import com.badlogic.gdx.Gdx; // NEW
 
 import java.util.List;
@@ -204,6 +207,52 @@ public class MonsterAiManager {
             return;
         }
 
+        // --- Spellcasting Logic (Tactical casting before physical actions) ---
+        if (monster.isSpellcaster() && monster.getSpellbook() != null && combatManager != null) {
+            boolean canCast = true;
+            if (monster.getStatusManager() != null) {
+                if (monster.getStatusManager().hasEffect(StatusEffectType.PARALYZED)) {
+                    canCast = false;
+                }
+            }
+
+            if (canCast) {
+                int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
+
+                // Priority 1: Emergency heal/escape if HP < 35%
+                if (monster.getCurrentHP() < (int) (monster.getMaxHP() * 0.35f)) {
+                    String defSpell = monster.getSpellbook().selectDefensiveOrHealSpell(
+                            monster.getCurrentMP(),
+                            SpellDataManager.getInstance());
+                    if (defSpell != null) {
+                        GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                        if (MonsterSpellExecutor.castMonsterSpell(monster, defSpell, player, maze, em, combatManager)) {
+                            return; // Cast spell, turn consumed
+                        }
+                    }
+                }
+
+                // Priority 2: Ranged Offensive Spellcasting (2 <= dist <= 8 with clear LoS)
+                if (dist >= 2 && dist <= 8) {
+                    if (checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
+                        int chance = monster.getSpellChance() > 0 ? monster.getSpellChance() : 60;
+                        if (Math.random() * 100 < chance) {
+                            String offSpell = monster.getSpellbook().selectOffensiveSpell(
+                                    monster.getCurrentMP(),
+                                    dist,
+                                    SpellDataManager.getInstance());
+                            if (offSpell != null) {
+                                GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                                if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
+                                    return; // Cast spell, turn consumed
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Ranged Attack Logic (Only if Hunting player and generally active)
         if (monster.hasRangedAttack() && combatManager != null) {
             int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
@@ -263,6 +312,18 @@ public class MonsterAiManager {
 
             if (step.x == playerGridPos.x && step.y == playerGridPos.y) {
                 if (combatManager != null) {
+                    if (monster.isSpellcaster() && monster.getSpellbook() != null && Math.random() < 0.35) {
+                        String touchSpell = monster.getSpellbook().selectOffensiveSpell(
+                                monster.getCurrentMP(),
+                                1.0f,
+                                SpellDataManager.getInstance());
+                        if (touchSpell != null) {
+                            GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            if (MonsterSpellExecutor.castMonsterSpell(monster, touchSpell, player, maze, em, combatManager)) {
+                                return;
+                            }
+                        }
+                    }
                     combatManager.monsterMeleeStrike(monster);
                 }
                 return;

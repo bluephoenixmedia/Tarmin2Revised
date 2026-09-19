@@ -170,6 +170,16 @@ public class SpellDataManager {
         return result;
     }
 
+    public List<SpellTemplate> getSpellsBySchoolAndMaxLevel(String school, int maxLevel) {
+        List<SpellTemplate> result = new ArrayList<>();
+        for (SpellTemplate s : getAllSpells()) {
+            if (s.level <= maxLevel && (school == null || (s.school != null && s.school.equalsIgnoreCase(school)))) {
+                result.add(s);
+            }
+        }
+        return result;
+    }
+
     public boolean isLoaded() {
         return loaded;
     }

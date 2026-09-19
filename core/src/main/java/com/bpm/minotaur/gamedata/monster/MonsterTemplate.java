@@ -79,6 +79,9 @@ public class MonsterTemplate {
     public int attackRange; // How far can they shoot?
 
     public int intelligence; // This will be loaded from JSON, defaulting to 0
+    public Boolean isSpellcaster = null; // null = auto by INT >= 12, true/false overrides
+    public List<String> spellSchools; // e.g. ["NECROMANCY", "EVOCATION"]
+    public List<String> innateSpells; // Predefined spells prepared by this monster
 
     // --- AI & Combat Behavior ---
     public enum AiType {

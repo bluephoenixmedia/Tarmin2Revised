@@ -1628,10 +1628,17 @@ public class CombatManager {
     }
 
     public void showPlayerDamageText(int damage) {
+        showPlayerDamageText(damage, false, DamageType.PHYSICAL);
+    }
+
+    public void showPlayerDamageText(int damage, boolean isCrit, DamageType damageType) {
         if (damage <= 0) return;
         String text = "-" + damage + " HP";
+        com.badlogic.gdx.graphics.Color col = (damageType == DamageType.SPIRITUAL || damageType == DamageType.MAGICAL)
+                ? com.badlogic.gdx.graphics.Color.valueOf("B388FF")
+                : com.badlogic.gdx.graphics.Color.valueOf("FF4B36");
         animationManager.addAnimation(
-                new Animation(Animation.AnimationType.DAMAGE_TEXT, null, text, com.badlogic.gdx.graphics.Color.valueOf("FF4B36"), 1.2f, false, true, DamageType.PHYSICAL));
+                new Animation(Animation.AnimationType.DAMAGE_TEXT, null, text, col, 1.2f, isCrit, true, damageType));
     }
 
     public void update(float delta) {
@@ -1795,6 +1802,50 @@ public class CombatManager {
             for (Item item : monster.getInventory().getQuickSlots()) {
                 if (item != null) {
                     dropSingleItem(item, pos, monster);
+                }
+            }
+        }
+
+        // 4. Spellcaster Magical Spoils Drop
+        if (monster.isSpellcaster() && monster.getSpellbook() != null) {
+            // 40% chance for Tome or Arcane Book / Scroll
+            if (random.nextInt(100) < 40) {
+                Item.ItemType dropType = Item.ItemType.BOOK;
+                int lvl = monster.getLevel();
+                if (lvl >= 12) {
+                    dropType = (random.nextBoolean()) ? Item.ItemType.TOME_OF_THE_ARCANE : Item.ItemType.SPIRITUAL_BOOK;
+                } else if (lvl >= 6) {
+                    dropType = (random.nextBoolean()) ? Item.ItemType.TOME_OF_ELEMENTS : Item.ItemType.BOOK;
+                } else {
+                    dropType = (random.nextBoolean()) ? Item.ItemType.TOME_OF_THE_INITIATE : Item.ItemType.SCROLL;
+                }
+                Item magicTome = itemDataManager.createItem(dropType, pos.x, pos.y, ItemColor.WHITE,
+                        (game != null) ? game.getAssetManager() : null);
+                if (magicTome != null) {
+                    dropSingleItem(magicTome, pos, monster);
+                    if (eventManager != null) {
+                        eventManager.addEvent(new GameEvent(monster.getMonsterType() + " dropped arcane knowledge!", 2.0f));
+                    }
+                }
+            }
+
+            // 35% chance for Mana Potion or Clarity Elixir
+            if (random.nextInt(100) < 35) {
+                Item.ItemType potType = (random.nextBoolean()) ? Item.ItemType.POTION_BLUE : Item.ItemType.POTION_CLARITY;
+                Item manaPot = itemDataManager.createItem(potType, pos.x, pos.y, ItemColor.BLUE,
+                        (game != null) ? game.getAssetManager() : null);
+                if (manaPot != null) {
+                    dropSingleItem(manaPot, pos, monster);
+                }
+            }
+
+            // High-tier caster bonus (Level 12+ e.g. Lich, Beholder): 20% chance for enchanted ring or wand
+            if (monster.getLevel() >= 12 && random.nextInt(100) < 20) {
+                Item.ItemType relic = (random.nextBoolean()) ? Item.ItemType.RING_SPELL_STORING : Item.ItemType.WAND;
+                Item magicRelic = itemDataManager.createItem(relic, pos.x, pos.y, ItemColor.GOLD,
+                        (game != null) ? game.getAssetManager() : null);
+                if (magicRelic != null) {
+                    dropSingleItem(magicRelic, pos, monster);
                 }
             }
         }

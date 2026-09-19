@@ -758,6 +758,14 @@ public class EntityRenderer {
                 monsterLight.b = Math.max(0f, monsterLight.b - flashStrength * 0.5f);
             }
 
+            // Spellcast telegraph flash: school-colored mystic aura
+            float spellFlash = monster.getSpellFlashProgress();
+            if (spellFlash < 1f && monster.getSpellFlashColor() != null) {
+                float flashStrength = (1f - spellFlash) * 0.85f;
+                Color sc = monster.getSpellFlashColor();
+                monsterLight.lerp(sc, flashStrength);
+            }
+
             if (inPitchDarkness) {
                 spriteBatch.setColor(Math.max(0.04f, monsterLight.r * 0.4f), Math.max(0.04f, monsterLight.g * 0.4f), Math.max(0.05f, monsterLight.b * 0.4f), 1f);
             } else {

@@ -132,6 +132,13 @@ public class Monster implements Renderable {
     private float healThreshold;
     private int spellChance;
 
+    // --- Spellcasting Fields ---
+    private boolean spellcaster = false;
+    private MonsterSpellbook spellbook = null;
+    private long lastSpellFlashTimeMillis = -1L;
+    private Color spellFlashColor = null;
+    private float spellFlashDurationSec = 0.4f;
+
     // --- Refactored Instance Data ---
     private com.bpm.minotaur.gamedata.Inventory inventory;
     private int tameness = 0; // 0 = Hostile
@@ -174,6 +181,8 @@ public class Monster implements Renderable {
         this.dataManager = null;
         this.maxHP = hp;
         this.currentHP = hp;
+        this.maxMP = 50;
+        this.currentMP = 50;
         this.armorClass = ac;
         this.damageDice = "1d4";
         this.spriteData = new String[0];
@@ -279,7 +288,71 @@ public class Monster implements Renderable {
         this.healThreshold = template.healThreshold;
         this.spellChance = template.spellChance;
 
+        if (template.isSpellcaster != null) {
+            this.spellcaster = template.isSpellcaster;
+        } else {
+            this.spellcaster = (this.intelligence >= 12);
+        }
+
+        if (this.spellcaster) {
+            this.maxMP = Math.max(this.maxMP, 20 + this.intelligence * 2);
+            this.currentMP = this.maxMP;
+            this.spellbook = MonsterSpellbook.createForMonster(
+                    this.intelligence,
+                    this.level,
+                    template.spellSchools,
+                    template.innateSpells,
+                    com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance());
+        }
+
         this.inventory = new com.bpm.minotaur.gamedata.Inventory();
+    }
+
+    // --- Spellcasting Methods ---
+    public boolean isSpellcaster() {
+        return spellcaster;
+    }
+
+    public void setSpellcaster(boolean spellcaster) {
+        this.spellcaster = spellcaster;
+    }
+
+    public MonsterSpellbook getSpellbook() {
+        return spellbook;
+    }
+
+    public void setSpellbook(MonsterSpellbook spellbook) {
+        this.spellbook = spellbook;
+    }
+
+    public void deductMana(int amount) {
+        this.currentMP = Math.max(0, this.currentMP - amount);
+    }
+
+    public boolean hasEnoughMana(int amount) {
+        return this.currentMP >= amount;
+    }
+
+    public int heal(int amount) {
+        int oldHP = currentHP;
+        currentHP = Math.min(maxHP, currentHP + amount);
+        return currentHP - oldHP;
+    }
+
+    public void triggerSpellFlash(Color color, float durationSec) {
+        this.spellFlashColor = color != null ? color.cpy() : Color.WHITE;
+        this.spellFlashDurationSec = durationSec > 0 ? durationSec : 0.4f;
+        this.lastSpellFlashTimeMillis = System.currentTimeMillis();
+    }
+
+    public float getSpellFlashProgress() {
+        if (lastSpellFlashTimeMillis < 0) return 1f;
+        float elapsed = (System.currentTimeMillis() - lastSpellFlashTimeMillis) / 1000f;
+        return Math.min(1f, elapsed / spellFlashDurationSec);
+    }
+
+    public Color getSpellFlashColor() {
+        return spellFlashColor;
     }
 
     // --- AI Getters ---

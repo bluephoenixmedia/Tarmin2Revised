@@ -1970,7 +1970,9 @@ public class Player {
         // Dodge check: AGI-based chance to avoid a connected hit entirely.
         float dodgeChance = getDodgeChance();
         if (dodgeChance > 0f && new java.util.Random().nextFloat() < dodgeChance) {
-            com.badlogic.gdx.Gdx.app.log("Player", "Dodged! (dodge chance: " + dodgeChance + ")");
+            if (com.badlogic.gdx.Gdx.app != null) {
+                com.badlogic.gdx.Gdx.app.log("Player", "Dodged! (dodge chance: " + dodgeChance + ")");
+            }
             return 0;
         }
 
@@ -2017,7 +2019,9 @@ public class Player {
         // Cheat-Death check: Ring of Evasion (Charged)
         if (finalDamage >= (stats.getCurrentHP() + stats.getTemporaryHP()) && equipment.getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED) > 0) {
             equipment.expendRingCharge(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED);
-            com.badlogic.gdx.Gdx.app.log("Player", "Ring of Evasion triggered! Negated fatal blow.");
+            if (com.badlogic.gdx.Gdx.app != null) {
+                com.badlogic.gdx.Gdx.app.log("Player", "Ring of Evasion triggered! Negated fatal blow.");
+            }
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Your Ring of Evasion flashes brilliantly, negating the fatal blow!", 3.0f));
             }
@@ -2026,7 +2030,9 @@ public class Player {
 
         stats.setWarStrength(stats.getWarStrength() - finalDamage);
 
-        com.badlogic.gdx.Gdx.app.log("Player", "Taken Damage: " + finalDamage + " (Adj. Amount: " + amount + ")");
+        if (com.badlogic.gdx.Gdx.app != null) {
+            com.badlogic.gdx.Gdx.app.log("Player", "Taken Damage: " + finalDamage + " (Adj. Amount: " + amount + ")");
+        }
 
         return finalDamage;
     }
