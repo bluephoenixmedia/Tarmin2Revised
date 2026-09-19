@@ -132,6 +132,7 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
+        MusicManager.getInstance().loadMusic("sounds/music/tarmin_core.mp3");
 
         // Queue monster textures and 3D models (via DataManagers)
         monsterDataManager.queueAssets(assetManager);

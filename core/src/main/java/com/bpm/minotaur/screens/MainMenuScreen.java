@@ -123,7 +123,7 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
 
-        MusicManager.getInstance().playTrack("sounds/music/tarmin_ambient.ogg");
+        MusicManager.getInstance().playTrack("sounds/music/tarmin_core.mp3");
     }
 
     private void createButtonTextures() {

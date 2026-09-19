@@ -31,21 +31,64 @@ public class MusicManager {
     }
 
     public void playTrack(String path) {
+        playTrack(path, true);
+    }
+
+    public void playTrack(String path, boolean looping) {
+        if (path == null) {
+            stop();
+            return;
+        }
+
         // Don't restart the music if it's already playing
-        if (path.equals(currentTrackPath)) {
+        if (path.equals(currentTrackPath) && currentTrack != null && currentTrack.isPlaying()) {
             return;
         }
 
         // If another track is playing, stop it first
-        if (currentTrack != null && currentTrack.isPlaying()) {
-            currentTrack.stop();
+        if (currentTrack != null) {
+            try {
+                if (currentTrack.isPlaying()) {
+                    currentTrack.stop();
+                }
+            } catch (Exception ignored) {
+            }
+            if (currentTrackPath != null && !assetManager.isLoaded(currentTrackPath)) {
+                try {
+                    currentTrack.dispose();
+                } catch (Exception ignored) {
+                }
+            }
+            currentTrack = null;
         }
 
-        currentTrack = assetManager.get(path, Music.class);
-        currentTrack.setLooping(true);
-        currentTrack.setVolume(volume);
-        currentTrack.play();
-        currentTrackPath = path;
+        try {
+            if (assetManager.isLoaded(path)) {
+                currentTrack = assetManager.get(path, Music.class);
+            } else {
+                com.badlogic.gdx.files.FileHandle file = com.badlogic.gdx.Gdx.files.internal(path);
+                if (file.exists()) {
+                    currentTrack = com.badlogic.gdx.Gdx.audio.newMusic(file);
+                } else {
+                    assetManager.load(path, Music.class);
+                    assetManager.finishLoading();
+                    currentTrack = assetManager.get(path, Music.class);
+                }
+            }
+
+            if (currentTrack != null) {
+                currentTrack.setLooping(looping);
+                currentTrack.setVolume(volume);
+                currentTrack.play();
+                currentTrackPath = path;
+            }
+        } catch (Exception e) {
+            com.badlogic.gdx.Gdx.app.error("MusicManager", "Failed to play track: " + path, e);
+        }
+    }
+
+    public boolean isPlaying() {
+        return currentTrack != null && currentTrack.isPlaying();
     }
 
     private Music ambientTrack;
@@ -100,7 +143,19 @@ public class MusicManager {
 
     public void stop() {
         if (currentTrack != null) {
-            currentTrack.stop();
+            try {
+                if (currentTrack.isPlaying()) {
+                    currentTrack.stop();
+                }
+            } catch (Exception ignored) {
+            }
+            if (currentTrackPath != null && !assetManager.isLoaded(currentTrackPath)) {
+                try {
+                    currentTrack.dispose();
+                } catch (Exception ignored) {
+                }
+            }
+            currentTrack = null;
             currentTrackPath = null;
         }
         stopAmbientLoop();

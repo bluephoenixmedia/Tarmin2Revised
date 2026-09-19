@@ -169,14 +169,8 @@ public class GameScreen extends BaseScreen {
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
 
-        switch (level) {
-            case 1:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
-                break;
-            default:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
-                break;
-        }
+        // Music stops when the player starts a game; dungeon uses atmospheric ambient soundscapes
+        MusicManager.getInstance().stop();
 
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
