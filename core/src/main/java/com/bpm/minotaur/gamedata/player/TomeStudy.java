@@ -14,11 +14,11 @@ public final class TomeStudy {
     public enum Step { CONTINUE, COMPLETE, INTERRUPTED_BY_DAMAGE, INTERRUPTED_BY_HOSTILE }
 
     private final Item tome;
-    private int lastHp;
+    private final int woundsAtStart;
 
-    TomeStudy(Item tome, int currentHp) {
+    TomeStudy(Item tome, int woundsTaken) {
         this.tome = tome;
-        this.lastHp = currentHp;
+        this.woundsAtStart = woundsTaken;
     }
 
     /** World turns a field study of this item takes; 0 for anything that is not a Tome. */
@@ -27,15 +27,14 @@ public final class TomeStudy {
         return tome != null ? tome.getStudyTurns() : 0;
     }
 
-    /** Resolves one world turn of study given the player's HP after that turn. */
-    Step afterTurn(int currentHp, boolean hostileInView) {
-        if (currentHp < lastHp) {
+    /** Resolves one world turn of study given the player's wound count after that turn. */
+    Step afterTurn(int woundsTaken, boolean hostileInView) {
+        if (woundsTaken > woundsAtStart) {
             return Step.INTERRUPTED_BY_DAMAGE;
         }
         if (hostileInView) {
             return Step.INTERRUPTED_BY_HOSTILE;
         }
-        lastHp = currentHp;
         tome.setStudyProgress(tome.getStudyProgress() + 1);
         return tome.getStudyProgress() >= turnsToStudy(tome.getType()) ? Step.COMPLETE : Step.CONTINUE;
     }

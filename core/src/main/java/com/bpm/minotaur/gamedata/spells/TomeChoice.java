@@ -58,6 +58,13 @@ public final class TomeChoice {
         return new TomeChoice(tome, tomeItem, perks, draw(candidates, perks.options(), rng));
     }
 
+    /** Rebuilds a Tome Choice exactly as it was saved, so a reload never redraws it. */
+    public static TomeChoice restore(Tome tome, Item tomeItem, List<String> options, int rerollsLeft, Perks perks) {
+        TomeChoice choice = new TomeChoice(tome, tomeItem, perks, new ArrayList<>(options));
+        choice.rerollsLeft = rerollsLeft;
+        return choice;
+    }
+
     /** Whether a reroll is left and the pool still holds spells not on offer now. */
     public boolean canReroll(Collection<String> knownIds) {
         return rerollsLeft > 0 && !freshCandidates(knownIds).isEmpty();

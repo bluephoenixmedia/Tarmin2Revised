@@ -80,6 +80,11 @@ public class PlayerSaveData {
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
     public List<String> knownSpells = new ArrayList<>();
+    // A Tome Choice still waiting for its pick (null when none), saved as offered so a
+    // reload cannot redraw it.
+    public Item.ItemType pendingTomeType;
+    public List<String> pendingTomeOptions = new ArrayList<>();
+    public int pendingTomeRerolls;
 
     // Blood on the father's skin and splashes not yet settled onto the paperdoll. Blood
     // on worn items travels inside each ItemSaveData.
@@ -176,6 +181,12 @@ public class PlayerSaveData {
         this.knownSpellIds = new ArrayList<>(player.getKnownSpellIds());
         java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
         this.unlockedSpellSlots = player.getUnlockedSpellSlots();
+        com.bpm.minotaur.gamedata.spells.TomeChoice pending = player.getPendingTomeChoice();
+        if (pending != null && pending.getTomeItem() != null) {
+            this.pendingTomeType = pending.getTomeItem().getType();
+            this.pendingTomeOptions.addAll(pending.getOptions());
+            this.pendingTomeRerolls = pending.getRerollsLeft();
+        }
     }
 
     public void applyToPlayer(Player player, ItemDataManager itemDataManager, AssetManager assetManager) {
@@ -276,6 +287,7 @@ public class PlayerSaveData {
         // Spells
         if (knownSpellIds != null) {
             player.restoreSpellbook(knownSpellIds, preparedSpells, unlockedSpellSlots);
+            player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);
         } else if (knownSpells != null) {
             // Legacy save: keep the starting spellbook and add any legacy name that is a real spell id.
             for (String spName : knownSpells) {

@@ -441,7 +441,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("A hostile is in view -- you cannot study now.", 2.0f));
             return false;
         }
-        activeTomeStudy = new TomeStudy(tome, getCurrentHP());
+        activeTomeStudy = new TomeStudy(tome, stats.getWoundsTaken());
         int left = activeTomeStudy.getTurnsRequired() - activeTomeStudy.getTurnsDone();
         eventManager.addEvent(new GameEvent("You open the " + kind.getDisplayName() + " and begin to study... ("
                 + left + " turns). Any action breaks your concentration.", 3.0f));
@@ -454,7 +454,7 @@ public class Player {
             return TomeStudy.Step.COMPLETE;
         }
         TomeStudy study = activeTomeStudy;
-        TomeStudy.Step step = study.afterTurn(getCurrentHP(), HostileSight.anyInView(maze, position));
+        TomeStudy.Step step = study.afterTurn(stats.getWoundsTaken(), HostileSight.anyInView(maze, position));
         switch (step) {
             case COMPLETE:
                 activeTomeStudy = null;
@@ -484,6 +484,11 @@ public class Player {
         eventManager.addEvent(new GameEvent("You close the Tome. " + studyProgressText(study), 2.0f));
     }
 
+    /** Drops the active study without a message, e.g. when the player dies; progress is kept. */
+    public void abandonTomeStudy() {
+        activeTomeStudy = null;
+    }
+
     private static String studyProgressText(TomeStudy study) {
         return "(" + study.getTurnsDone() + "/" + study.getTurnsRequired() + " turns studied)";
     }
@@ -491,7 +496,7 @@ public class Player {
     /**
      * A finished study opens the Tome Choice. Nothing is granted until a spell is
      * chosen, so the Tome is never lost to an unanswered choice. A first-time Tome
-     * with nothing left to offer still unlocks its slot.
+     * with nothing left to offer still unlocks its slot, and is kept to sell.
      */
     private void finishTomeStudy(Item tome, GameEventManager eventManager) {
         if (!inventory.contains(tome)) {
@@ -500,7 +505,8 @@ public class Player {
         Tome kind = Tome.of(tome.getType());
         pendingTomeChoice = TomeChoice.offer(kind, tome, knownSpellIds, tomeChoicePerks(), tomeRng);
         if (pendingTomeChoice == null) {
-            grantTome(tome, kind, eventManager);
+            unlockTomeSlot(kind, eventManager);
+            eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return;
         }
         eventManager.addEvent(new GameEvent("The " + kind.getDisplayName() + " reveals its secrets. Choose a spell to learn.", 3.0f));
@@ -540,9 +546,30 @@ public class Player {
         return pendingTomeChoice != null && pendingTomeChoice.reroll(knownSpellIds, tomeRng);
     }
 
+    /**
+     * Brings back a Tome Choice saved before it was answered, bound to a carried
+     * Tome of the same kind. Does nothing if no such Tome is carried.
+     */
+    public void restorePendingTomeChoice(Item.ItemType tomeType, List<String> options, int rerollsLeft) {
+        Tome kind = Tome.of(tomeType);
+        if (kind == null || options == null || options.isEmpty()) {
+            return;
+        }
+        for (Item carried : inventory.getAllItems()) {
+            if (carried.getType() == tomeType) {
+                pendingTomeChoice = TomeChoice.restore(kind, carried, options, rerollsLeft, tomeChoicePerks());
+                return;
+            }
+        }
+    }
+
     /** Uses up the Tome and unlocks its slot; returns whether the slot was newly unlocked. */
     private boolean grantTome(Item tome, Tome kind, GameEventManager eventManager) {
         inventory.removeItem(tome);
+        return unlockTomeSlot(kind, eventManager);
+    }
+
+    private boolean unlockTomeSlot(Tome kind, GameEventManager eventManager) {
         boolean newSlot = kind.getSlotNumber() > unlockedSpellSlots;
         setUnlockedSpellSlots(Math.max(unlockedSpellSlots, kind.getSlotNumber()));
         eventManager.addEvent(new GameEvent(newSlot

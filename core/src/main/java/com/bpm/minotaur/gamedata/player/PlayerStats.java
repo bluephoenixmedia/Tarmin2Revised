@@ -286,7 +286,19 @@ public class PlayerStats {
         this.temporaryHP = Math.max(this.temporaryHP, amount);
     }
 
+    /**
+     * How many times War Strength has been lowered, counting hits temporary HP
+     * absorbed. Lets a channelled action notice a wound even when regeneration
+     * made the loss back within the same turn.
+     */
+    public int getWoundsTaken() {
+        return woundsTaken;
+    }
+
     public void setCurrentHP(int currentHP) {
+        if (currentHP < this.currentHP) {
+            woundsTaken++;
+        }
         if (currentHP < this.currentHP && temporaryHP > 0) {
             int diff = this.currentHP - currentHP;
             if (temporaryHP >= diff) {
@@ -301,6 +313,8 @@ public class PlayerStats {
         }
         this.currentHP = Math.max(0, currentHP);
     }
+
+    private int woundsTaken;
 
     public int getCurrentMP() {
         return currentMP;

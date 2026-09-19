@@ -185,6 +185,49 @@ public class TomeStudyTest {
     }
 
     @Test
+    public void aHitHealedInTheSameTurnStillInterrupts() {
+        Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
+        player.beginTomeStudy(tome, field, events);
+        player.advanceTomeStudy(field, events);
+
+        int hp = player.getStats().getCurrentHP();
+        player.getStats().setCurrentHP(hp - 3);
+        player.getStats().heal(3);
+
+        assertEquals(TomeStudy.Step.INTERRUPTED_BY_DAMAGE, player.advanceTomeStudy(field, events));
+    }
+
+    @Test
+    public void aFirstTimeTomeWithNothingToTeachStillUnlocksItsSlotAndIsKept() {
+        for (String id : com.bpm.minotaur.gamedata.spells.TomeChoice.candidates(
+                com.bpm.minotaur.gamedata.spells.Tome.INITIATE, java.util.Collections.emptyList(),
+                com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getTomeChoicePerks())) {
+            player.learnSpellId(id);
+        }
+        Maze shelter = new Maze(1, new int[12][12]);
+        shelter.addHomeTile(new GridPoint2(1, 1));
+        Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
+
+        assertTrue(player.beginTomeStudy(tome, shelter, events));
+
+        assertNull(player.getPendingTomeChoice());
+        assertEquals(2, player.getUnlockedSpellSlots());
+        assertTrue("Nothing to teach: the Tome is kept to sell", player.getInventory().getMainInventory().contains(tome));
+    }
+
+    @Test
+    public void abandoningAStudyEndsItSilently() {
+        Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
+        player.beginTomeStudy(tome, field, events);
+        player.advanceTomeStudy(field, events);
+
+        player.abandonTomeStudy();
+
+        assertNull(player.getActiveTomeStudy());
+        assertEquals(1, tome.getStudyProgress());
+    }
+
+    @Test
     public void aHostileComingIntoViewInterrupts() {
         Item tome = tome(Item.ItemType.TOME_OF_THE_INITIATE);
         player.beginTomeStudy(tome, field, events);

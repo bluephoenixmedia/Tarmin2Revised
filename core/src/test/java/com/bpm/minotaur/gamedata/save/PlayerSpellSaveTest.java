@@ -58,6 +58,30 @@ public class PlayerSpellSaveTest {
     }
 
     @Test
+    public void aPendingTomeChoiceSurvivesSaveAndLoad() {
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().reset();
+        Player player = new Player(1, 1);
+        com.bpm.minotaur.gamedata.Maze shelter = new com.bpm.minotaur.gamedata.Maze(1, new int[12][12]);
+        shelter.addHomeTile(new com.badlogic.gdx.math.GridPoint2(1, 1));
+        com.bpm.minotaur.gamedata.item.Item tome = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.TOME_OF_ELEMENTS, new com.bpm.minotaur.gamedata.item.ItemTemplate());
+        player.getInventory().pickupToBackpack(tome);
+        player.beginTomeStudy(tome, shelter, new com.bpm.minotaur.managers.GameEventManager());
+        java.util.List<String> offered = new java.util.ArrayList<>(player.getPendingTomeChoice().getOptions());
+
+        Player loaded = roundTrip(player);
+
+        assertNotNull("The choice is still waiting after a reload", loaded.getPendingTomeChoice());
+        assertEquals("The same spells, not a fresh draw", offered, loaded.getPendingTomeChoice().getOptions());
+        assertEquals(com.bpm.minotaur.gamedata.spells.Tome.ELEMENTS, loaded.getPendingTomeChoice().getTome());
+
+        assertTrue(loaded.chooseTomeSpell(offered.get(0), new com.bpm.minotaur.managers.GameEventManager()));
+        assertEquals(3, loaded.getUnlockedSpellSlots());
+        assertFalse("The reloaded Tome is the one used up",
+                loaded.getInventory().hasItemOfType(com.bpm.minotaur.gamedata.item.Item.ItemType.TOME_OF_ELEMENTS));
+    }
+
+    @Test
     public void clearedSlotStaysClearedAfterLoad() {
         Player player = new Player(2, 2);
         player.prepareSpell(0, null);

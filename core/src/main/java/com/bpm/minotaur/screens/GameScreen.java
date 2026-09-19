@@ -299,6 +299,9 @@ public class GameScreen extends BaseScreen {
             hud.setDiscoveryManager(this.discoveryManager);
             player.setItemPickupListener(item -> hud.showPickupToast(item));
             inputMultiplexer.clear();
+            // First in line so a key or click anywhere, HUD included, only breaks a study's
+            // concentration instead of also moving, attacking or pressing a button.
+            inputMultiplexer.addProcessor(tomeStudyBreaker);
             // The F11 weapon tuner passes everything through while closed, and while open
             // has to see the arrows before the game turns them into movement.
             inputMultiplexer.addProcessor(weaponTunerPanel);
@@ -1317,6 +1320,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setHydration(80.0f);
         player.getStats().setToxicity(0);
         player.getStatusManager().clearEffects();
+        player.abandonTomeStudy();
         // The Player instance survives death, so anatomical trauma must be wiped
         // explicitly -- otherwise open wounds, bleeding, and fever follow the
         // character into the next expedition and can bleed them out before their
@@ -1452,6 +1456,26 @@ public class GameScreen extends BaseScreen {
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
         }
+    }
+
+    private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
+        @Override
+        public boolean keyDown(int keycode) {
+            return breakTomeStudy();
+        }
+
+        @Override
+        public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            return breakTomeStudy();
+        }
+    };
+
+    private boolean breakTomeStudy() {
+        if (player == null || player.getActiveTomeStudy() == null) {
+            return false;
+        }
+        player.cancelTomeStudy(eventManager);
+        return true;
     }
 
     /** Real-time seconds between the world turns of a Tome being studied in the field. */
@@ -1749,12 +1773,6 @@ public class GameScreen extends BaseScreen {
         // --- Forward keyboard input to active ShopkeeperWindow modal ---
         if (hud != null && hud.getShopkeeperWindow() != null && hud.getShopkeeperWindow().isVisible()) {
             hud.getShopkeeperWindow().handleInput(keycode);
-            return true;
-        }
-
-        // The key only breaks concentration, so stopping a study never also moves or attacks.
-        if (player != null && player.getActiveTomeStudy() != null) {
-            player.cancelTomeStudy(eventManager);
             return true;
         }
 
@@ -2222,7 +2240,10 @@ public class GameScreen extends BaseScreen {
                     return true;
                 case Input.Keys.U:
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
-                    playerTurnTakesAction();
+                    // A Tome study spends its own turns as it is channelled.
+                    if (player.getActiveTomeStudy() == null) {
+                        playerTurnTakesAction();
+                    }
                     return true;
                 case Input.Keys.Z:
                     if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
@@ -2499,10 +2520,6 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        if (player != null && player.getActiveTomeStudy() != null) {
-            player.cancelTomeStudy(eventManager);
-            return true;
-        }
         if (button == Input.Buttons.RIGHT && combatManager != null) {
             combatManager.setPlayerGuardStance(true);
             if (weaponOverlay != null) weaponOverlay.setGuarding(true);
@@ -2589,7 +2606,9 @@ public class GameScreen extends BaseScreen {
                 break;
             case NORMAL:
                 player.useItem(item, eventManager, discoveryManager, maze);
-                playerTurnTakesAction();
+                if (player.getActiveTomeStudy() == null) {
+                    playerTurnTakesAction();
+                }
                 break;
             default:
                 break;
