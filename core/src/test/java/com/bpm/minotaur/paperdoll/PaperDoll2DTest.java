@@ -54,6 +54,10 @@ public class PaperDoll2DTest {
     public void testMasterCanvasAssetsExistAndHaveStandardDimensions() throws IOException {
         String[] requiredImages = {
                 "assets/images/paperdoll/base_father.png",
+                // Drawn across the whole portrait with no calibration, so they only
+                // line up with the body if they share its canvas exactly.
+                "assets/images/paperdoll/portrait_backdrop.png",
+                "assets/images/paperdoll/base_head.png",
                 "assets/images/paperdoll/head/bascinet.png",
                 "assets/images/paperdoll/chest/breastplate.png",
                 "assets/images/paperdoll/legs/bronze_leggings.png",
@@ -90,6 +94,20 @@ public class PaperDoll2DTest {
         assertEquals(85, PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF.zIndex);
         assertEquals(90, PaperDoll2DWidget.PaperDollSlot.HELMET.zIndex);
         assertEquals(95, PaperDoll2DWidget.PaperDollSlot.CLOAK_FRONT.zIndex);
+    }
+
+    @Test
+    public void headIsRedrawnOverEveryBodyLayerButUnderTheHelmet() {
+        // Collars and high necklines reach over the beard; the redrawn head covers them.
+        // A helmet still has to cover the head, and the clasp sits over everything.
+        for (PaperDoll2DWidget.PaperDollSlot slot : PaperDoll2DWidget.PaperDollSlot.values()) {
+            if (slot == PaperDoll2DWidget.PaperDollSlot.HELMET
+                    || slot == PaperDoll2DWidget.PaperDollSlot.CLOAK_FRONT) {
+                assertTrue(slot + " must draw over the head", slot.zIndex > PaperDoll2DWidget.HEAD_Z);
+            } else {
+                assertTrue(slot + " must draw under the head", slot.zIndex < PaperDoll2DWidget.HEAD_Z);
+            }
+        }
     }
 
     @Test

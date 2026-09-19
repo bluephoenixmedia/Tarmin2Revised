@@ -40,7 +40,9 @@ import java.util.Set;
  * right behaviour for the old un-normalised pixels but puts a normalised layer at the
  * centre of the canvas — a new helmet would render at chest height.
  *
- * Layers are rendered strictly according to the agreed 10-layer Z-ordering:
+ * Layers are rendered strictly according to the agreed 10-layer Z-ordering, over an
+ * opaque portrait backdrop that is always drawn first:
+ *   0. Portrait backdrop (frame and vignette, no figure)
  *   1. Back Cloak (Z=10)
  *   2. Base Father Character (Z=20)
  *   3. Legs/Trousers (Z=30)
@@ -50,6 +52,7 @@ import java.util.Set;
  *   7. Gauntlets/Hands (Z=70)
  *   8. Main Hand Weapon (Z=80)
  *   9. Off-Hand Shield (Z=85)
+ *      Head redrawn (Z=88) -- always, see headTexture
  *  10. Helmet/Headgear (Z=90)
  *  11. Front Cloak Clasp (Z=95)
  */
@@ -116,6 +119,25 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     private static final int CANVAS_H = 1536;
 
     private Texture baseFatherTexture;
+    /**
+     * The portrait with the father removed, drawn under every layer. The page art
+     * underneath (new_inventory.png) has its own father painted into the frame -- a
+     * different painting, in a slightly different pose -- and since base_father became a
+     * transparent cutout that copy showed through around the body and any clothing as
+     * doubled boots, legs and hands. This covers it. Built by
+     * tools/make_portrait_backdrop.py.
+     */
+    private Texture backdropTexture;
+    /**
+     * The father's head and beard alone, redrawn over the armour and under any helmet.
+     * Chest pieces are fitted to the torso, but anything with a collar or a high neck
+     * reaches up over the beard, and no placement can move a collar without moving the
+     * garment. Cut from base_father on the same canvas by tools/make_head_overlay.py, so
+     * it lands on the body exactly.
+     */
+    private Texture headTexture;
+    /** Above every body layer, below the helmet and the front cloak clasp. */
+    static final int HEAD_Z = 88;
     private final Map<PaperDollSlot, LayerEntry> activeLayers = new HashMap<>();
     private final Map<String, Texture> textureCache = new HashMap<>();
     private final Set<String> missingTextureWarned = new HashSet<>();
@@ -125,7 +147,9 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
     private final PaperdollLayerMap layerMap = new PaperdollLayerMap();
 
     public PaperDoll2DWidget() {
+        loadBackdrop();
         loadBaseFather();
+        loadHead();
         reloadCalibration();
     }
 
@@ -206,6 +230,26 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         }
         calibration.save(handle);
         return true;
+    }
+
+    private void loadBackdrop() {
+        FileHandle handle = resolveFile("images/paperdoll/portrait_backdrop.png");
+        if (handle != null && handle.exists()) {
+            backdropTexture = new Texture(handle);
+            backdropTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        } else {
+            Gdx.app.error("PaperDoll2DWidget", "Missing portrait backdrop: images/paperdoll/portrait_backdrop.png");
+        }
+    }
+
+    private void loadHead() {
+        FileHandle handle = resolveFile("images/paperdoll/base_head.png");
+        if (handle != null && handle.exists()) {
+            headTexture = new Texture(handle);
+            headTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        } else {
+            Gdx.app.error("PaperDoll2DWidget", "Missing head overlay: images/paperdoll/base_head.png");
+        }
     }
 
     private void loadBaseFather() {
@@ -438,6 +482,11 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
         float width = getWidth();
         float height = getHeight();
 
+        if (backdropTexture != null) {
+            // Same canvas and rectangle as base_father, so it sits exactly behind him.
+            batch.draw(backdropTexture, x, y, width, height);
+        }
+
         renderList.clear();
         renderList.addAll(activeLayers.values());
         Collections.sort(renderList, new Comparator<LayerEntry>() {
@@ -447,7 +496,12 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
             }
         });
 
+        boolean headDrawn = headTexture == null;
         for (LayerEntry entry : renderList) {
+            if (!headDrawn && entry.slot.zIndex > HEAD_Z) {
+                batch.draw(headTexture, x, y, width, height);
+                headDrawn = true;
+            }
             if (entry.texture == null) {
                 continue;
             }
@@ -471,10 +525,21 @@ public class PaperDoll2DWidget extends Widget implements Disposable {
                     entry.texture.getWidth(), entry.texture.getHeight(),
                     false, false);
         }
+        if (!headDrawn) {
+            batch.draw(headTexture, x, y, width, height);
+        }
     }
 
     @Override
     public void dispose() {
+        if (backdropTexture != null) {
+            backdropTexture.dispose();
+            backdropTexture = null;
+        }
+        if (headTexture != null) {
+            headTexture.dispose();
+            headTexture = null;
+        }
         if (baseFatherTexture != null) {
             baseFatherTexture.dispose();
             baseFatherTexture = null;
