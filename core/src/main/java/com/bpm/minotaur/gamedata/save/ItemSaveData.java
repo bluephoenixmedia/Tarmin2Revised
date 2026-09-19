@@ -17,6 +17,8 @@ public class ItemSaveData {
     public Item.ItemType type;
     public ItemColor color;
     public List<ItemModifier> modifiers = new ArrayList<>();
+    /** Blood on the item's paperdoll art, keyed by drawn part. Null when clean. */
+    public java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> blood;
 
     public ItemSaveData() {
     }
@@ -33,6 +35,7 @@ public class ItemSaveData {
             if (item.getModifiers() != null) {
                 this.modifiers.addAll(item.getModifiers());
             }
+            this.blood = item.getBloodCoats();
         }
     }
 
@@ -46,6 +49,7 @@ public class ItemSaveData {
                 item.addModifier(mod);
             }
         }
+        item.setBloodCoats(blood);
         return item;
     }
 }

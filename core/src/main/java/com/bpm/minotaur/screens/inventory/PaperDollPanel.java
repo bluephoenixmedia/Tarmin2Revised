@@ -343,6 +343,12 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
                 if (offHand != null && offHand.isShield())
                     paperDoll2DWidget.equip(com.bpm.minotaur.paperdoll.PaperDoll2DWidget.PaperDollSlot.SHIELD_OFF, offHand);
             }
+
+            // Blood from the fighting since the doll was last shown. Settled after
+            // equipping, onto what was being worn when it was spilled -- gear only
+            // changes in here, so that is still what is on the doll.
+            paperDoll2DWidget.setBodyBlood(player.getBlood().body);
+            paperDoll2DWidget.absorbBlood(player.getBlood().drainPending());
         }
 
         if (paperDollWidget != null) {

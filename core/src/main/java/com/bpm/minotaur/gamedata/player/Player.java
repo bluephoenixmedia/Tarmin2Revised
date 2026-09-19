@@ -39,6 +39,7 @@ public class Player {
     // --- Equipment ---
     private final PlayerEquipment equipment = new PlayerEquipment();
     private final InjuryManager injuryManager = new InjuryManager();
+    private final com.bpm.minotaur.gamedata.gore.PlayerBlood blood = new com.bpm.minotaur.gamedata.gore.PlayerBlood();
 
     public InjuryManager getInjuryManager() {
         return injuryManager;
@@ -2743,6 +2744,54 @@ public class Player {
 
     public PlayerEquipment getEquipment() {
         return equipment;
+    }
+
+    /** Blood on the father himself, and splashes not yet settled onto the paperdoll. */
+    public com.bpm.minotaur.gamedata.gore.PlayerBlood getBlood() {
+        return blood;
+    }
+
+    public void restoreBlood(com.bpm.minotaur.gamedata.gore.PlayerBlood saved) {
+        blood.clear();
+        if (saved != null) {
+            blood.body = saved.body != null ? saved.body : new com.bpm.minotaur.gamedata.gore.BloodCoat();
+            if (saved.pending != null) {
+                blood.pending.addAll(saved.pending);
+            }
+        }
+    }
+
+    /** Everything drawn on the paperdoll that can carry blood. */
+    private java.util.List<Item> bloodiedGear() {
+        java.util.List<Item> gear = new java.util.ArrayList<>(equipment.getAllEquipped());
+        if (inventory.getLeftHand() != null && !gear.contains(inventory.getLeftHand())) {
+            gear.add(inventory.getLeftHand());
+        }
+        return gear;
+    }
+
+    /** Dries the blood on him and on everything he is wearing by a number of turns. */
+    public void ageBlood(int turns) {
+        blood.age(turns);
+        for (Item item : bloodiedGear()) {
+            if (item.getBloodCoats() != null) {
+                for (com.bpm.minotaur.gamedata.gore.BloodCoat coat : item.getBloodCoats().values()) {
+                    coat.age(turns);
+                }
+            }
+        }
+    }
+
+    /** Washes him and everything he is wearing clean. */
+    public void washBlood() {
+        blood.clear();
+        for (Item item : bloodiedGear()) {
+            if (item.getBloodCoats() != null) {
+                for (com.bpm.minotaur.gamedata.gore.BloodCoat coat : item.getBloodCoats().values()) {
+                    coat.clear();
+                }
+            }
+        }
     }
 
     public StatusManager getStatusManager() {

@@ -125,4 +125,57 @@ public class LayerPlacementTest {
         assertEquals(here.width, moved.width, 0.001f);
         assertEquals(here.height, moved.height, 0.001f);
     }
+
+    /**
+     * Where SpriteBatch actually draws a layer pixel, as a master-canvas point: the
+     * forward direction, written independently of toLayerPixel so the two check each other.
+     */
+    private float[] drawnAt(LayerCalibration cal, float lx, float ly) {
+        LayerPlacement p = place(cal);
+        float fx = lx / CANVAS_W * p.width - p.originX;
+        float fy = (1f - ly / CANVAS_H) * p.height - p.originY;
+        double rad = Math.toRadians(p.rotation);
+        float wx = p.x + p.originX + (float) (fx * Math.cos(rad) - fy * Math.sin(rad));
+        float wy = p.y + p.originY + (float) (fx * Math.sin(rad) + fy * Math.cos(rad));
+        return new float[]{(wx - RX) / RW * CANVAS_W, (RH - (wy - RY)) / RH * CANVAS_H};
+    }
+
+    private void assertRoundTrip(LayerCalibration cal, float lx, float ly) {
+        float[] canvas = drawnAt(cal, lx, ly);
+        float[] back = LayerPlacement.toLayerPixel(cal, canvas[0], canvas[1], RW, RH, CANVAS_W, CANVAS_H);
+        assertEquals(lx, back[0], 0.05f);
+        assertEquals(ly, back[1], 0.05f);
+    }
+
+    @Test
+    public void toLayerPixelIsTheIdentityForAnUncalibratedLayer() {
+        float[] at = LayerPlacement.toLayerPixel(new LayerCalibration(), 300f, 900f, RW, RH, CANVAS_W, CANVAS_H);
+        assertEquals(300f, at[0], 0.01f);
+        assertEquals(900f, at[1], 0.01f);
+    }
+
+    @Test
+    public void toLayerPixelUndoesOffsetAndScale() {
+        // Blood aimed at a point on the doll has to land on the pixel of the piece that is
+        // actually drawn there, or a stain on the breastplate ends up on the belt.
+        LayerCalibration cal = new LayerCalibration();
+        cal.offsetX = 12f;
+        cal.offsetY = -128f;
+        cal.scaleX = 2.0245f;
+        cal.scaleY = 1.6416f;
+        assertRoundTrip(cal, 512f, 700f);
+        assertRoundTrip(cal, 380f, 1000f);
+    }
+
+    @Test
+    public void toLayerPixelUndoesRotation() {
+        LayerCalibration cal = new LayerCalibration();
+        cal.offsetX = -40f;
+        cal.offsetY = 60f;
+        cal.scaleX = 0.8f;
+        cal.scaleY = 1.2f;
+        cal.rotation = 30f;
+        assertRoundTrip(cal, 200f, 300f);
+        assertRoundTrip(cal, 900f, 1400f);
+    }
 }

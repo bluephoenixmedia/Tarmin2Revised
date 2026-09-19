@@ -48,4 +48,36 @@ public final class LayerPlacement {
 
         return p;
     }
+
+    /**
+     * The inverse of {@link #compute}: which pixel of a layer's own texture sits under a
+     * master-canvas point. Both are 1024x1536-style canvases with +y down.
+     *
+     * Worked in the stage rectangle rather than on the canvas because the rectangle is
+     * not 2:3, and rotation only undoes correctly in the space it was applied in. The
+     * rectangle's position is irrelevant, so only its size is taken.
+     *
+     * @return {x, y} in layer pixels; may fall outside the texture
+     */
+    public static float[] toLayerPixel(LayerCalibration cal, float canvasX, float canvasY,
+                                       float rectW, float rectH, int canvasW, int canvasH) {
+        LayerPlacement p = compute(cal, 0f, 0f, rectW, rectH, canvasW, canvasH);
+
+        // Canvas point to stage space (y up), relative to the layer's centre.
+        float sx = canvasX * rectW / canvasW;
+        float sy = rectH - canvasY * rectH / canvasH;
+        float dx = sx - (p.x + p.originX);
+        float dy = sy - (p.y + p.originY);
+
+        // Undo the CCW rotation SpriteBatch applied about that centre.
+        double rad = Math.toRadians(-cal.rotation);
+        float cos = (float) Math.cos(rad);
+        float sin = (float) Math.sin(rad);
+        float ux = dx * cos - dy * sin;
+        float uy = dx * sin + dy * cos;
+
+        float lx = (ux / p.width + 0.5f) * canvasW;
+        float ly = (0.5f - uy / p.height) * canvasH;
+        return new float[]{lx, ly};
+    }
 }

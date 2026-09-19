@@ -386,6 +386,7 @@ public class CombatManager {
             }
             dmg = applyGuardMitigation(dmg);
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            bleedPlayer(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
             maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
@@ -1589,6 +1590,7 @@ public class CombatManager {
                 }
 
                 applyWeaponBlood(bloodIntensity, profile);
+                splatterPlayer(bloodIntensity, profile, false);
             }
 
         } else {
@@ -2321,6 +2323,7 @@ public class CombatManager {
         // Weapon shares in the killing blow's blood, same as every other
         // player-caused hit above.
         applyWeaponBlood(killBloodIntensity, profile);
+        splatterPlayer(killBloodIntensity, profile, true);
 
         spawnCorpseEffects(monster, overkillTier);
         DivinityOrbManager.getInstance().spawnOrb();
@@ -2331,6 +2334,37 @@ public class CombatManager {
      * into the world by a player-caused hit -- same decal class, color, and
      * texture family as the floor/wall splats it's landing alongside.
      */
+    private final java.util.Random bloodRandom = new java.util.Random();
+
+    /**
+     * Spray from something he hit lands on him too, and stays: the paperdoll shows it
+     * the next time the inventory opens. Bloodless creatures leave nothing -- bone dust
+     * and soul mist are not blood.
+     */
+    private void splatterPlayer(int intensity, GoreProfile profile, boolean kill) {
+        if (intensity <= 0 || profile == null || !profile.hasBlood || player == null) {
+            return;
+        }
+        com.badlogic.gdx.graphics.Color c = profile.primaryColor != null
+                ? profile.primaryColor
+                : com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
+        int rgb = com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.rgb(c.r, c.g, c.b);
+        player.getBlood().splatter(kill
+                ? com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.forKill(intensity, rgb, bloodRandom)
+                : com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.forHitDealt(intensity, rgb, bloodRandom));
+    }
+
+    /** His own blood, from a wound, sized by how much of him the blow took. */
+    private void bleedPlayer(int damage) {
+        if (damage <= 0 || player == null) {
+            return;
+        }
+        com.badlogic.gdx.graphics.Color c = com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
+        player.getBlood().splatter(com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.forWound(
+                damage, player.getStats().getMaxHP(),
+                com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.rgb(c.r, c.g, c.b), bloodRandom));
+    }
+
     private void applyWeaponBlood(int intensity, GoreProfile profile) {
         if (intensity <= 0 || game == null || !(game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)) {
             return;

@@ -1350,6 +1350,9 @@ public class GameScreen extends BaseScreen {
             player.getInventory().setLeftHand(starterCross);
         }
 
+        // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
+        player.washBlood();
+
         // Clean weapon state upon shelter awakening: reset attack timer/combos, clear blood decals,
         // and force re-synchronization of equipped items and motion profiles.
         if (weaponOverlay != null) {
@@ -1456,6 +1459,10 @@ public class GameScreen extends BaseScreen {
         // --- Periodic Spawning Hook ---
         turnCount++;
         worldManager.processTurn(player, turnCount);
+        // Blood on him and his gear dries from crimson toward black as the delve goes on.
+        if (player != null) {
+            player.ageBlood(1);
+        }
 
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);

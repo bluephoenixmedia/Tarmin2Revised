@@ -214,6 +214,10 @@ public class Item implements Renderable {
     private final Vector2 position;
     private ItemColor itemColor;
     private List<ItemModifier> modifiers = new ArrayList<>();
+    // Blood on this item's paperdoll art, one coat per drawn part: "" for a single
+    // layer, "left"/"right" for paired limbs. Lives on the item so it goes where the
+    // item goes -- into the backpack, and back on. Null until first bloodied.
+    private java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> bloodCoats;
 
     // --- Base Properties ---
     private String friendlyName;
@@ -997,6 +1001,28 @@ public class Item implements Renderable {
         if (this.modifiers == null)
             this.modifiers = new ArrayList<>();
         return modifiers;
+    }
+
+    /** The blood on one drawn part of this item, created clean on first use. */
+    public com.bpm.minotaur.gamedata.gore.BloodCoat getBloodCoat(String part) {
+        if (bloodCoats == null) {
+            bloodCoats = new java.util.HashMap<>();
+        }
+        com.bpm.minotaur.gamedata.gore.BloodCoat coat = bloodCoats.get(part);
+        if (coat == null) {
+            coat = new com.bpm.minotaur.gamedata.gore.BloodCoat();
+            bloodCoats.put(part, coat);
+        }
+        return coat;
+    }
+
+    /** Every part's blood, or null when the item has never been bloodied. */
+    public java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> getBloodCoats() {
+        return bloodCoats;
+    }
+
+    public void setBloodCoats(java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> coats) {
+        this.bloodCoats = coats;
     }
 
     @Override

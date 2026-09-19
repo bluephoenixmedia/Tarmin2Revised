@@ -77,6 +77,10 @@ public class PlayerSaveData {
     // Spells
     public List<String> knownSpells = new ArrayList<>();
 
+    // Blood on the father's skin and splashes not yet settled onto the paperdoll. Blood
+    // on worn items travels inside each ItemSaveData.
+    public com.bpm.minotaur.gamedata.gore.PlayerBlood blood;
+
     public PlayerSaveData() {
     }
 
@@ -84,6 +88,8 @@ public class PlayerSaveData {
         if (player == null) {
             return;
         }
+
+        this.blood = player.getBlood();
 
         // Coordinates & direction
         this.x = player.getPosition().x;
@@ -177,6 +183,8 @@ public class PlayerSaveData {
         if (player == null) {
             return;
         }
+
+        player.restoreBlood(blood);
 
         // Position & facing
         player.setPosition(x, y);
