@@ -2,6 +2,8 @@ package com.bpm.minotaur.gamedata.player;
 
 import com.bpm.minotaur.gamedata.monster.HostileSight;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
+import com.bpm.minotaur.gamedata.spells.SpellDataManager;
+import com.bpm.minotaur.gamedata.spells.SpellTemplate;
 import com.bpm.minotaur.gamedata.spells.Tome;
 import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.badlogic.gdx.Gdx;
@@ -399,7 +401,7 @@ public class Player {
 
     // --- Tome Study & Tome Choice ---
 
-    private final java.util.Random tomeRng = new java.util.Random();
+    private final Random tomeRng = new Random();
     private TomeStudy activeTomeStudy;
     private TomeChoice pendingTomeChoice;
 
@@ -511,22 +513,26 @@ public class Player {
      * @return false if the spell was not one of the options
      */
     public boolean chooseTomeSpell(String spellId, GameEventManager eventManager) {
-        if (pendingTomeChoice == null || spellId == null
-                || !pendingTomeChoice.getOptions().contains(spellId.toUpperCase())) {
+        String id = spellId != null ? spellId.toUpperCase(java.util.Locale.ROOT) : null;
+        if (pendingTomeChoice == null || id == null || !pendingTomeChoice.getOptions().contains(id)) {
             return false;
         }
         TomeChoice choice = pendingTomeChoice;
         pendingTomeChoice = null;
-        String id = spellId.toUpperCase();
         if (grantTome(choice.getTomeItem(), choice.getTome(), eventManager)) {
             learnSpellId(id);
             prepareSpell(choice.getTome().getSlotNumber() - 1, id);
         } else {
             learnAndPrepareIfSlotFree(id);
         }
-        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(id);
+        SpellTemplate spell = SpellDataManager.getSpell(id);
         eventManager.addEvent(new GameEvent("Learned " + (spell != null ? spell.getName() : id) + "!", 3.0f));
         return true;
+    }
+
+    /** Whether the pending Tome Choice has a reroll that would show a new spell. */
+    public boolean canRerollTomeChoice() {
+        return pendingTomeChoice != null && pendingTomeChoice.canReroll(knownSpellIds);
     }
 
     /** Spends one of the Tome Choice's rerolls on fresh options. */

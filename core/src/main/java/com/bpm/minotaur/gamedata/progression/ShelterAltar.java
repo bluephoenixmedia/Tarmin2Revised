@@ -311,7 +311,7 @@ public class ShelterAltar {
     public com.bpm.minotaur.gamedata.spells.TomeChoice.Perks getTomeChoicePerks() {
         int options = 3 + (arcaneTier >= 1 ? 1 : 0) + (arcaneTier >= 3 ? 1 : 0);
         int rerolls = arcaneTier >= 2 ? 1 : 0;
-        int tarminMaxLevel = arcaneTier >= 3 ? 8 : 7;
+        int tarminMaxLevel = com.bpm.minotaur.gamedata.spells.Tome.TARMIN.getMaxSpellLevel() + (arcaneTier >= 3 ? 1 : 0);
         return new com.bpm.minotaur.gamedata.spells.TomeChoice.Perks(options, rerolls, tarminMaxLevel);
     }
 

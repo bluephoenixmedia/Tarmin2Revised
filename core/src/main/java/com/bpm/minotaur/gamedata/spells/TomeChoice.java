@@ -50,10 +50,6 @@ public final class TomeChoice {
     }
 
     /** Draws a Tome Choice, or returns null when the Tome has nothing left to teach. */
-    public static TomeChoice offer(Tome tome, Collection<String> knownIds, Perks perks, Random rng) {
-        return offer(tome, null, knownIds, perks, rng);
-    }
-
     public static TomeChoice offer(Tome tome, Item tomeItem, Collection<String> knownIds, Perks perks, Random rng) {
         List<String> candidates = candidates(tome, knownIds, perks);
         if (candidates.isEmpty()) {
@@ -62,19 +58,23 @@ public final class TomeChoice {
         return new TomeChoice(tome, tomeItem, perks, draw(candidates, perks.options(), rng));
     }
 
+    /** Whether a reroll is left and the pool still holds spells not on offer now. */
+    public boolean canReroll(Collection<String> knownIds) {
+        return rerollsLeft > 0 && !freshCandidates(knownIds).isEmpty();
+    }
+
     /**
      * Spends a reroll to draw fresh options, favouring spells not just offered.
      *
-     * @return false when no reroll is left
+     * @return false, spending nothing, when no reroll is left or none would show a new spell
      */
     public boolean reroll(Collection<String> knownIds, Random rng) {
-        if (rerollsLeft <= 0) {
+        if (!canReroll(knownIds)) {
             return false;
         }
         rerollsLeft--;
         List<String> candidates = candidates(tome, knownIds, perks);
-        List<String> fresh = new ArrayList<>(candidates);
-        fresh.removeAll(options);
+        List<String> fresh = freshCandidates(knownIds);
         List<String> drawn = draw(fresh, perks.options(), rng);
         if (drawn.size() < perks.options()) {
             List<String> previous = new ArrayList<>(options);
@@ -83,6 +83,12 @@ public final class TomeChoice {
         }
         options = drawn;
         return true;
+    }
+
+    private List<String> freshCandidates(Collection<String> knownIds) {
+        List<String> fresh = candidates(tome, knownIds, perks);
+        fresh.removeAll(options);
+        return fresh;
     }
 
     private static List<String> draw(List<String> from, int count, Random rng) {

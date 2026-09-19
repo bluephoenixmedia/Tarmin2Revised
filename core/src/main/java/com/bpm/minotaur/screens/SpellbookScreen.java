@@ -435,7 +435,7 @@ public class SpellbookScreen extends BaseScreen {
         scroll.setScrollingDisabled(true, false);
         detailPanel.add(scroll).expand().fill().padTop(12).row();
 
-        if (choice.getRerollsLeft() > 0) {
+        if (player.canRerollTomeChoice()) {
             TextButton reroll = createActionButton("REROLL (" + choice.getRerollsLeft() + " LEFT)");
             reroll.addListener(new ClickListener() {
                 @Override

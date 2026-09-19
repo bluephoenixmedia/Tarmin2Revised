@@ -47,7 +47,7 @@ public class TomeChoiceTest {
 
     @Test
     public void offersThePerkCountOfDistinctCandidates() {
-        TomeChoice choice = TomeChoice.offer(Tome.ARCANE, Collections.emptyList(), BASE, rng);
+        TomeChoice choice = TomeChoice.offer(Tome.ARCANE, null, Collections.emptyList(), BASE, rng);
 
         assertEquals(3, choice.getOptions().size());
         assertEquals(3, new HashSet<>(choice.getOptions()).size());
@@ -58,7 +58,7 @@ public class TomeChoiceTest {
         List<String> known = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
         String last = known.get(known.size() - 1);
 
-        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, known.subList(0, known.size() - 1), BASE, rng);
+        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, known.subList(0, known.size() - 1), BASE, rng);
 
         assertEquals(Collections.singletonList(last), choice.getOptions());
     }
@@ -67,7 +67,7 @@ public class TomeChoiceTest {
     public void anExhaustedPoolOffersNothing() {
         List<String> known = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
 
-        assertNull(TomeChoice.offer(Tome.ELEMENTS, known, BASE, rng));
+        assertNull(TomeChoice.offer(Tome.ELEMENTS, null, known, BASE, rng));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class TomeChoiceTest {
 
     @Test
     public void aRerollDrawsNewOptionsAndSpendsTheReroll() {
-        TomeChoice choice = TomeChoice.offer(Tome.INITIATE, Collections.emptyList(), new TomeChoice.Perks(3, 1, 7), rng);
+        TomeChoice choice = TomeChoice.offer(Tome.INITIATE, null, Collections.emptyList(), new TomeChoice.Perks(3, 1, 7), rng);
         Set<String> first = new HashSet<>(choice.getOptions());
 
         assertTrue(choice.reroll(Collections.emptyList(), rng));
@@ -95,6 +95,17 @@ public class TomeChoiceTest {
             assertFalse("A reroll shows spells not just offered", first.contains(id));
         }
         assertFalse("No rerolls left", choice.reroll(Collections.emptyList(), rng));
+    }
+
+    @Test
+    public void aRerollWithNothingNewToShowIsNotSpent() {
+        List<String> all = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
+        List<String> known = all.subList(0, all.size() - 2);
+        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, known, new TomeChoice.Perks(3, 1, 7), rng);
+
+        assertFalse(choice.canReroll(known));
+        assertFalse(choice.reroll(known, rng));
+        assertEquals(1, choice.getRerollsLeft());
     }
 
     @Test
