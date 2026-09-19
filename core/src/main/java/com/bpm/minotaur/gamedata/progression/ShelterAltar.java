@@ -303,6 +303,18 @@ public class ShelterAltar {
         return true;
     }
 
+    /**
+     * What Arcane Attunement adds to every Tome Choice: tier 1 shows 4 options,
+     * tier 2 adds a reroll, tier 3 shows 5 options and lets the Tome of Tarmin
+     * offer level 8 spells.
+     */
+    public com.bpm.minotaur.gamedata.spells.TomeChoice.Perks getTomeChoicePerks() {
+        int options = 3 + (arcaneTier >= 1 ? 1 : 0) + (arcaneTier >= 3 ? 1 : 0);
+        int rerolls = arcaneTier >= 2 ? 1 : 0;
+        int tarminMaxLevel = arcaneTier >= 3 ? 8 : 7;
+        return new com.bpm.minotaur.gamedata.spells.TomeChoice.Perks(options, rerolls, tarminMaxLevel);
+    }
+
     /** Spell ids unsealed for loot spawning by the current Arcane Attunement tier. */
     public java.util.List<String> getUnsealedSpellIds() {
         java.util.List<String> unsealed = new java.util.ArrayList<>();

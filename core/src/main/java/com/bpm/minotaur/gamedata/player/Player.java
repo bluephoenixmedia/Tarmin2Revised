@@ -1,5 +1,9 @@
 package com.bpm.minotaur.gamedata.player;
 
+import com.bpm.minotaur.gamedata.monster.HostileSight;
+import com.bpm.minotaur.gamedata.progression.ShelterAltar;
+import com.bpm.minotaur.gamedata.spells.Tome;
+import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
@@ -393,37 +397,51 @@ public class Player {
         return -1;
     }
 
-    // --- Tome Study ---
+    // --- Tome Study & Tome Choice ---
 
+    private final java.util.Random tomeRng = new java.util.Random();
     private TomeStudy activeTomeStudy;
+    private TomeChoice pendingTomeChoice;
 
     /** The field study being channelled, or null. */
     public TomeStudy getActiveTomeStudy() {
         return activeTomeStudy;
     }
 
+    /** The Tome Choice waiting for the player to pick a spell, or null. */
+    public TomeChoice getPendingTomeChoice() {
+        return pendingTomeChoice;
+    }
+
     /**
      * Opens a Tome. In the Shelter the study completes at once; in the field it
      * becomes a channelled study the caller advances turn by turn with
-     * {@link #advanceTomeStudy}. Refused while a hostile is in view.
+     * {@link #advanceTomeStudy}. Refused while a hostile is in view, and for a
+     * repeat Tome with nothing left to teach.
      *
      * @return true if the study completed or began
      */
     public boolean beginTomeStudy(Item tome, Maze maze, GameEventManager eventManager) {
-        if (tome == null || !TomeStudy.isTome(tome.getType())) {
+        Tome kind = tome != null ? Tome.of(tome.getType()) : null;
+        if (kind == null || pendingTomeChoice != null) {
+            return false;
+        }
+        if (unlockedSpellSlots >= kind.getSlotNumber()
+                && TomeChoice.candidates(kind, knownSpellIds, tomeChoicePerks()).isEmpty()) {
+            eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return false;
         }
         if (maze != null && maze.isHomeTile((int) position.x, (int) position.y)) {
             finishTomeStudy(tome, eventManager);
             return true;
         }
-        if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
+        if (HostileSight.anyInView(maze, position)) {
             eventManager.addEvent(new GameEvent("A hostile is in view -- you cannot study now.", 2.0f));
             return false;
         }
         activeTomeStudy = new TomeStudy(tome, getCurrentHP());
         int left = activeTomeStudy.getTurnsRequired() - activeTomeStudy.getTurnsDone();
-        eventManager.addEvent(new GameEvent("You open the " + tome.getDisplayName() + " and begin to study... ("
+        eventManager.addEvent(new GameEvent("You open the " + kind.getDisplayName() + " and begin to study... ("
                 + left + " turns). Any action breaks your concentration.", 3.0f));
         return true;
     }
@@ -434,8 +452,7 @@ public class Player {
             return TomeStudy.Step.COMPLETE;
         }
         TomeStudy study = activeTomeStudy;
-        TomeStudy.Step step = study.afterTurn(getCurrentHP(),
-                com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position));
+        TomeStudy.Step step = study.afterTurn(getCurrentHP(), HostileSight.anyInView(maze, position));
         switch (step) {
             case COMPLETE:
                 activeTomeStudy = null;
@@ -469,16 +486,67 @@ public class Player {
         return "(" + study.getTurnsDone() + "/" + study.getTurnsRequired() + " turns studied)";
     }
 
+    /**
+     * A finished study opens the Tome Choice. Nothing is granted until a spell is
+     * chosen, so the Tome is never lost to an unanswered choice. A first-time Tome
+     * with nothing left to offer still unlocks its slot.
+     */
     private void finishTomeStudy(Item tome, GameEventManager eventManager) {
-        if (!inventory.removeItem(tome)) {
+        if (!inventory.contains(tome)) {
             return;
         }
-        int slots = TomeStudy.slotsUnlockedBy(tome.getType());
-        boolean newSlot = slots > unlockedSpellSlots;
-        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, slots));
+        Tome kind = Tome.of(tome.getType());
+        pendingTomeChoice = TomeChoice.offer(kind, tome, knownSpellIds, tomeChoicePerks(), tomeRng);
+        if (pendingTomeChoice == null) {
+            grantTome(tome, kind, eventManager);
+            return;
+        }
+        eventManager.addEvent(new GameEvent("The " + kind.getDisplayName() + " reveals its secrets. Choose a spell to learn.", 3.0f));
+    }
+
+    /**
+     * Learns the chosen spell from the pending Tome Choice, unlocks the Tome's
+     * slot if it is new (preparing the spell there), and uses up the Tome.
+     *
+     * @return false if the spell was not one of the options
+     */
+    public boolean chooseTomeSpell(String spellId, GameEventManager eventManager) {
+        if (pendingTomeChoice == null || spellId == null
+                || !pendingTomeChoice.getOptions().contains(spellId.toUpperCase())) {
+            return false;
+        }
+        TomeChoice choice = pendingTomeChoice;
+        pendingTomeChoice = null;
+        String id = spellId.toUpperCase();
+        if (grantTome(choice.getTomeItem(), choice.getTome(), eventManager)) {
+            learnSpellId(id);
+            prepareSpell(choice.getTome().getSlotNumber() - 1, id);
+        } else {
+            learnAndPrepareIfSlotFree(id);
+        }
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(id);
+        eventManager.addEvent(new GameEvent("Learned " + (spell != null ? spell.getName() : id) + "!", 3.0f));
+        return true;
+    }
+
+    /** Spends one of the Tome Choice's rerolls on fresh options. */
+    public boolean rerollTomeChoice() {
+        return pendingTomeChoice != null && pendingTomeChoice.reroll(knownSpellIds, tomeRng);
+    }
+
+    /** Uses up the Tome and unlocks its slot; returns whether the slot was newly unlocked. */
+    private boolean grantTome(Item tome, Tome kind, GameEventManager eventManager) {
+        inventory.removeItem(tome);
+        boolean newSlot = kind.getSlotNumber() > unlockedSpellSlots;
+        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, kind.getSlotNumber()));
         eventManager.addEvent(new GameEvent(newSlot
-                ? "Studied the " + tome.getDisplayName() + "! Spell Slot " + slots + " unlocked!"
-                : "Studied the " + tome.getDisplayName() + ".", 3.0f));
+                ? "Studied the " + kind.getDisplayName() + "! Spell Slot " + kind.getSlotNumber() + " unlocked!"
+                : "Studied the " + kind.getDisplayName() + ".", 3.0f));
+        return newSlot;
+    }
+
+    private static TomeChoice.Perks tomeChoicePerks() {
+        return ShelterAltar.getInstance().getTomeChoicePerks();
     }
 
     public boolean hasEnoughMana(int cost) {
@@ -930,7 +998,7 @@ public class Player {
         }
 
         // --- Tarmin Milestone Tomes: studied (instant in the Shelter, channelled in the field) ---
-        if (TomeStudy.isTome(item.getType())) {
+        if (Tome.of(item.getType()) != null) {
             beginTomeStudy(item, maze, eventManager);
             return;
         }

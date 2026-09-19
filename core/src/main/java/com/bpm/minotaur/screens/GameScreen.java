@@ -546,6 +546,10 @@ public class GameScreen extends BaseScreen {
             eventManager.update(delta);
             handleSystemEvents();
             updateTomeStudy(delta);
+            if (player != null && player.getPendingTomeChoice() != null) {
+                game.setScreen(new SpellbookScreen(game, this, player, maze));
+                return;
+            }
 
             if (worldManager != null) {
                 worldManager.update(delta);

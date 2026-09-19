@@ -1367,8 +1367,9 @@ public class InventoryScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        // A Tome study just began: return to the world so it can be channelled.
-        if (player.getActiveTomeStudy() != null && parentScreen != null) {
+        // A Tome study just began (to be channelled in the world) or finished (its Tome
+        // Choice opens from the world): hand back to the game screen either way.
+        if ((player.getActiveTomeStudy() != null || player.getPendingTomeChoice() != null) && parentScreen != null) {
             game.setScreen(parentScreen);
             return;
         }

@@ -307,6 +307,7 @@ public class NetHackDifficultyDistributionTest {
         Player player = new Player(100, 10);
         GameEventManager eventManager = new GameEventManager();
 
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().reset();
         // Initial unlocked slots: only the first (cantrip) slot until Tomes are studied
         assertEquals(1, player.getUnlockedSpellSlots());
 
@@ -318,21 +319,25 @@ public class NetHackDifficultyDistributionTest {
         Item tomeInitiate = new Item(Item.ItemType.TOME_OF_THE_INITIATE, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeInitiate);
         player.useItem(tomeInitiate, eventManager, null, shelter);
+        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
         assertTrue(player.getUnlockedSpellSlots() >= 2);
 
         Item tomeElements = new Item(Item.ItemType.TOME_OF_ELEMENTS, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeElements);
         player.useItem(tomeElements, eventManager, null, shelter);
+        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
         assertTrue(player.getUnlockedSpellSlots() >= 3);
 
         Item tomeArcane = new Item(Item.ItemType.TOME_OF_THE_ARCANE, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeArcane);
         player.useItem(tomeArcane, eventManager, null, shelter);
+        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
         assertTrue(player.getUnlockedSpellSlots() >= 4);
 
         Item tomeTarmin = new Item(Item.ItemType.TOME_OF_TARMIN, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeTarmin);
         player.useItem(tomeTarmin, eventManager, null, shelter);
+        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
         assertEquals(5, player.getUnlockedSpellSlots());
     }
 }

@@ -21,6 +21,8 @@ public class SpellTemplate {
     public String runeSchool = "EVOCATION";
     public String bespokeEffect;
     public String description;
+    /** Tomes whose Tome Choice may offer this spell (names of {@link Tome}); null for none. */
+    public String[] tomePools;
 
     public SpellTemplate() {
     }
@@ -95,6 +97,18 @@ public class SpellTemplate {
 
     public boolean hasBespokeEffect() {
         return bespokeEffect != null && !bespokeEffect.isEmpty();
+    }
+
+    public boolean isInTomePool(Tome tome) {
+        if (tomePools == null) {
+            return false;
+        }
+        for (String pool : tomePools) {
+            if (tome.name().equalsIgnoreCase(pool)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getDescription() {
