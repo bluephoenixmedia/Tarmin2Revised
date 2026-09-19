@@ -169,6 +169,17 @@ public class Hud implements Disposable {
     private final EncounterWindow encounterWindow;
     private final ShopkeeperWindow shopkeeperWindow;
     private final BonesAwakenModal bonesAwakenModal;
+    private final StatusPillBar statusPillBar;
+    private String statusToastMessage = null;
+    private Color statusToastColor = Color.WHITE;
+    private float statusToastTimer = 0f;
+    private boolean wasBleeding = false;
+    private boolean wasChilled = false;
+    private boolean wasHypothermic = false;
+    private boolean wasPoisoned = false;
+    private boolean wasFeverish = false;
+    private boolean wasStarving = false;
+    private boolean wasParchedStatus = false;
 
     private String equippedWeapon = "NOTHING";
     private String damage = "0";
@@ -242,6 +253,7 @@ public class Hud implements Disposable {
         hudTooltip = new HudTooltip(hudSkin);
         worldInteractionCard = new WorldInteractionCard(hudSkin);
         controlsLegend = new ControlsLegendOverlay(hudSkin);
+        statusPillBar = new StatusPillBar(hudSkin, hudTooltip);
 
         // --- Label Styles ---
         Label.LabelStyle labelStyle = new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE);
@@ -598,6 +610,7 @@ public class Hud implements Disposable {
         stage.addActor(mainContainer);
         stage.addActor(spellHotbarTable);
         stage.addActor(dungeonTagTable);
+        stage.addActor(statusPillBar);
         stage.addActor(hudTooltip);
         stage.addActor(controlsLegend);
         stage.addActor(worldInteractionCard);
@@ -841,6 +854,11 @@ public class Hud implements Disposable {
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
         dungeonTagTable.pack();
         dungeonTagTable.setPosition(28f, viewport.getWorldHeight() - 24f - dungeonTagTable.getHeight());
+
+        if (statusPillBar != null && player != null) {
+            statusPillBar.update(player);
+        }
+        checkStatusTransitions(player);
 
         if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE
                 && combatManager.getMonster() != null) {
@@ -1112,6 +1130,7 @@ public class Hud implements Disposable {
         if (encounterWindow == null || !encounterWindow.isVisible()) {
             drawInventory();
             drawPickupToast();
+            drawStatusAlertToast();
         }
         drawTomeStudyBar();
 
@@ -2062,6 +2081,97 @@ public class Hud implements Disposable {
         spriteBatch.end();
     }
 
+    public void showStatusAlertToast(String message, Color accentColor) {
+        if (message == null || message.isEmpty()) return;
+        this.statusToastMessage = message;
+        this.statusToastColor = (accentColor != null) ? accentColor : Color.WHITE;
+        this.statusToastTimer = 2.5f;
+    }
+
+    private void checkStatusTransitions(Player p) {
+        if (p == null) return;
+
+        // 1. Bleed
+        boolean bleeding = p.getInjuryManager() != null && p.getInjuryManager().isBleeding();
+        if (bleeding && !wasBleeding) {
+            showStatusAlertToast("BLEEDING INFLICTED - Tend wounds immediately! [R]", HudSkin.COL_HP_CRITICAL);
+        }
+        wasBleeding = bleeding;
+
+        // 2. Temperature
+        if (p.getStats() != null) {
+            float temp = p.getStats().getBodyTemperature();
+            boolean hypothermic = temp < 32.0f;
+            boolean chilled = temp < 35.0f && !hypothermic;
+
+            if (hypothermic && !wasHypothermic) {
+                showStatusAlertToast("HYPOTHERMIA SETS IN! Violent shivering and frostbite!", Color.valueOf("8CD6FF"));
+            } else if (chilled && !wasChilled) {
+                showStatusAlertToast("BITING CHILL - Movement and attack speed slowed!", HudSkin.COL_WATER_CYAN);
+            }
+            wasHypothermic = hypothermic;
+            wasChilled = chilled;
+
+            // 3. Satiation & Dehydration
+            boolean starving = p.getStats().getSatietyFloat() <= 0f;
+            if (starving && !wasStarving) {
+                showStatusAlertToast("STARVATION! Eat rations before your body collapses!", HudSkin.COL_HP_CRITICAL);
+            }
+            wasStarving = starving;
+
+            boolean parched = p.getStats().getHydrationFloat() <= 0f;
+            if (parched && !wasParchedStatus) {
+                showStatusAlertToast("PARCHED DEHYDRATION! Drink water flask or find fountain!", HudSkin.COL_HP_CRITICAL);
+            }
+            wasParchedStatus = parched;
+        }
+
+        // 4. Poison
+        boolean poisoned = p.getStatusManager() != null && p.getStatusManager().hasEffect(StatusEffectType.POISONED);
+        if (poisoned && !wasPoisoned) {
+            showStatusAlertToast("POISONED! Venom courses through your veins!", Color.valueOf("44DD66"));
+        }
+        wasPoisoned = poisoned;
+
+        // 5. Fever
+        boolean feverish = (p.getInjuryManager() != null && p.getInjuryManager().getIllnessStage().isIll())
+                || (p.getStatusManager() != null && p.getStatusManager().hasEffect(StatusEffectType.FEVER));
+        if (feverish && !wasFeverish) {
+            showStatusAlertToast("INFECTION FEVER! Wound has festered into illness!", Color.valueOf("E8C83A"));
+        }
+        wasFeverish = feverish;
+    }
+
+    private void drawStatusAlertToast() {
+        if (statusToastTimer <= 0f || statusToastMessage == null) return;
+        statusToastTimer -= Gdx.graphics.getDeltaTime();
+
+        float alpha = Math.min(1.0f, statusToastTimer * 2f);
+        GlyphLayout layout = new GlyphLayout(font, statusToastMessage);
+        float boxW = layout.width + 50;
+        float boxH = 46;
+        float boxX = (viewport.getWorldWidth() - boxW) / 2f;
+        float boxY = (toastTimer > 0f) ? 940f : 1000f; // Shift down if pickup toast is active
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.06f, 0.05f, 0.04f, 0.92f * alpha);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(statusToastColor.r, statusToastColor.g, statusToastColor.b, alpha);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        spriteBatch.setProjectionMatrix(stage.getCamera().combined);
+        spriteBatch.begin();
+        font.setColor(statusToastColor.r, statusToastColor.g, statusToastColor.b, alpha);
+        font.draw(spriteBatch, statusToastMessage, boxX + 25, boxY + boxH - 14);
+        spriteBatch.end();
+    }
+
     private void drawItemSprite(ShapeRenderer shapeRenderer, Item item, String[] spriteData, float x, float y,
             float width, float height, Color color) {
         if (spriteData == null || spriteData.length == 0)
@@ -2585,6 +2695,8 @@ public class Hud implements Disposable {
 
     @Override
     public void dispose() {
+        if (statusPillBar != null)
+            statusPillBar.dispose();
         stage.dispose();
         font.dispose();
         directionFont.dispose();

@@ -71,6 +71,8 @@ public class GameScreen extends BaseScreen {
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager(), game.getAssetManager());
     private final com.bpm.minotaur.rendering.vfx.LaserBeamRenderer laserBeamRenderer =
             new com.bpm.minotaur.rendering.vfx.LaserBeamRenderer();
+    private final com.bpm.minotaur.rendering.vfx.StatusVignetteRenderer statusVignetteRenderer =
+            new com.bpm.minotaur.rendering.vfx.StatusVignetteRenderer();
     private final Difficulty difficulty;
 
     // --- 3D Rendering Components ---
@@ -579,6 +581,9 @@ public class GameScreen extends BaseScreen {
         if (spellCastOverlay != null) {
             spellCastOverlay.update(delta);
         }
+        if (statusVignetteRenderer != null) {
+            statusVignetteRenderer.update(delta);
+        }
 
         boolean renderToFbo = useCrtFilter || (spellPostProcessor != null && spellPostProcessor.isActive());
         if (renderToFbo) {
@@ -775,10 +780,7 @@ public class GameScreen extends BaseScreen {
 
         game.getBatch().setProjectionMatrix(currentViewport.getCamera().combined);
         game.getBatch().begin();
-        animationManager.renderDamageText(game.getBatch(), currentViewport);
-        font.setColor(Color.WHITE);
-        font.draw(game.getBatch(), "Level: " + currentLevel, 10, currentViewport.getWorldHeight() - 10);
-
+        animationManager.renderDamageText(game.getBatch(), currentViewport, player, firstPersonRenderer.getDepthBuffer());
         game.getBatch().end();
 
         renderCombatOverlay();
@@ -789,31 +791,9 @@ public class GameScreen extends BaseScreen {
     }
 
     private void renderCombatOverlay() {
-        // --- IRON SKIN VIGNETTE ---
-        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.HARDENED)) {
-            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
-            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
-            shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(new Color(0.8f, 0.7f, 0.2f, 0.8f)); // Gold
-            // Draw thick border
-            int w = (int) game.getViewport().getWorldWidth();
-            int h = (int) game.getViewport().getWorldHeight();
-            for (int i = 0; i < 5; i++) {
-                shapeRenderer.rect(i, i, w - (i * 2), h - (i * 2));
-            }
-            shapeRenderer.end();
-            Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
-        }
-
-        // --- BERZERK VIGNETTE ---
-        if (player != null && player.getStatusManager().hasEffect(StatusEffectType.BERZERK)) {
-            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
-            shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
-            shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(new Color(1f, 0f, 0f, 0.3f)); // Red tint
-            shapeRenderer.rect(0, 0, game.getViewport().getWorldWidth(), game.getViewport().getWorldHeight());
-            shapeRenderer.end();
-            Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        // --- ATMOSPHERIC STATUS VIGNETTES (Bleed, Cold, Poison, Fever, Starvation, Berzerk, Iron Skin) ---
+        if (statusVignetteRenderer != null && player != null) {
+            statusVignetteRenderer.render(shapeRenderer, game.getViewport(), player);
         }
 
         // --- VISOR BLOOD SPLATTERS ---

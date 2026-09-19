@@ -69,14 +69,24 @@ public class Animation {
         this.spriteData = spriteData;
     }
 
-    // NEW constructor for damage text with custom color
-    public Animation(AnimationType type, GridPoint2 position, String text, Color color, float duration) {
+    private boolean isCritical;
+    private boolean isPlayerDamage;
+    private float driftOffset;
+    private com.bpm.minotaur.gamedata.DamageType damageType;
+
+    // Full constructor for damage text with custom styling, positioning, and type
+    public Animation(AnimationType type, GridPoint2 position, String text, Color color, float duration,
+                     boolean isCritical, boolean isPlayerDamage, com.bpm.minotaur.gamedata.DamageType damageType) {
         this.type = type;
         this.textPosition = position;
         this.damageText = text;
         this.duration = duration;
         this.progress = 0f;
         this.elapsedTime = 0f;
+        this.isCritical = isCritical;
+        this.isPlayerDamage = isPlayerDamage;
+        this.damageType = damageType;
+        this.driftOffset = (com.badlogic.gdx.math.MathUtils.random() - 0.5f) * 30f;
 
         // Initialize unused fields for projectiles
         this.startPosition = new Vector2();
@@ -85,8 +95,13 @@ public class Animation {
         this.spriteData = null;
     }
 
+    // Constructor for damage text with custom color
+    public Animation(AnimationType type, GridPoint2 position, String text, Color color, float duration) {
+        this(type, position, text, color, duration, false, false, null);
+    }
+
     public Animation(AnimationType type, GridPoint2 position, String text, float duration) {
-        this(type, position, text, Color.WHITE, duration);
+        this(type, position, text, Color.WHITE, duration, false, false, null);
     }
 
     public void update(float delta) {
@@ -152,5 +167,21 @@ public class Animation {
 
     public boolean isAdditiveBlend() {
         return additiveBlend;
+    }
+
+    public boolean isCritical() {
+        return isCritical;
+    }
+
+    public boolean isPlayerDamage() {
+        return isPlayerDamage;
+    }
+
+    public float getDriftOffset() {
+        return driftOffset;
+    }
+
+    public com.bpm.minotaur.gamedata.DamageType getDamageType() {
+        return damageType;
     }
 }

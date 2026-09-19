@@ -9,6 +9,8 @@ import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.Projectile;
 
+import com.badlogic.gdx.math.GridPoint2;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +21,37 @@ public class AnimationManager {
     private final BitmapFont damageFont;
 
     public AnimationManager(EntityRenderer entityRenderer) {
-        damageFont = new BitmapFont();
-        damageFont.setColor(Color.WHITE);
-        damageFont.getData().setScale(4.0f); // Make it slightly larger and easier to see
+        BitmapFont df = null;
+        try {
+            if (com.badlogic.gdx.Gdx.files != null && com.badlogic.gdx.Gdx.files.internal("fonts/intellivision.ttf").exists()) {
+                com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator gen =
+                        new com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator(com.badlogic.gdx.Gdx.files.internal("fonts/intellivision.ttf"));
+                com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter param =
+                        new com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter();
+                param.size = 26;
+                param.color = Color.WHITE;
+                param.shadowColor = new Color(0.04f, 0.03f, 0.02f, 0.90f);
+                param.shadowOffsetX = 2;
+                param.shadowOffsetY = 2;
+                param.borderWidth = 1.5f;
+                param.borderColor = new Color(0.04f, 0.03f, 0.02f, 0.95f);
+                param.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
+                param.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Linear;
+                df = gen.generateFont(param);
+                gen.dispose();
+            }
+        } catch (Throwable t) {
+            df = null;
+        }
+        if (df == null) {
+            try {
+                df = new BitmapFont();
+                df.getData().setScale(1.8f);
+            } catch (Throwable t) {
+                df = null;
+            }
+        }
+        this.damageFont = df;
         this.entityRenderer = entityRenderer;
     }
 
@@ -100,34 +130,105 @@ public class AnimationManager {
         renderSpellParticles(shapeRenderer, player, viewport, depthBuffer);
     }
 
+    private final com.badlogic.gdx.graphics.g2d.GlyphLayout glyphLayout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
+
     /**
-     * Renders damage text overlays. Call this separately with a SpriteBatch.
-     * This should be called AFTER your main 3D rendering, during the HUD/UI phase.
+     * Renders damage text overlays with standard viewport fallback.
      */
     public void renderDamageText(SpriteBatch batch, Viewport viewport) {
+        renderDamageText(batch, viewport, null, null);
+    }
+
+    /**
+     * Renders damage text overlays projected from 3D entity world coordinates,
+     * including player incoming damage floaters and critical strike scaling.
+     */
+    public void renderDamageText(SpriteBatch batch, Viewport viewport, Player player, float[] depthBuffer) {
+        if (damageFont == null || viewport == null) return;
+
         for (Animation animation : animations) {
             if (animation.getType() == Animation.AnimationType.DAMAGE_TEXT) {
-                // Position the text in screen center (above the monster in the player's view)
-                float screenX = viewport.getWorldWidth() / 2 + 120; // Slightly left of center
-                float screenY = viewport.getWorldHeight() / 2 + 180; // Above center
+                float screenX = viewport.getWorldWidth() / 2f;
+                float screenY = viewport.getWorldHeight() / 2f + 160f;
+                boolean projected = false;
 
-                // Make it float upward over time
-                float floatOffset = animation.getElapsedTime() * 50f;
+                if (animation.isPlayerDamage()) {
+                    // Incoming hit on player: centered lower FOV above vitals
+                    screenX = viewport.getWorldWidth() / 2f;
+                    screenY = 280f;
+                    projected = true;
+                } else if (player != null && depthBuffer != null && animation.getTextPosition() != null) {
+                    GridPoint2 targetPos = animation.getTextPosition();
+                    float worldX = targetPos.x + 0.5f;
+                    float worldY = targetPos.y + 0.5f;
+
+                    float dx = worldX - player.getPosition().x;
+                    float dy = worldY - player.getPosition().y;
+                    float planeX = player.getCameraPlane().x;
+                    float planeY = player.getCameraPlane().y;
+                    float dirX = player.getDirectionVector().x;
+                    float dirY = player.getDirectionVector().y;
+                    float invDet = 1.0f / (planeX * dirY - dirX * planeY);
+                    float transformX = invDet * (dirY * dx - dirX * dy);
+                    float transformY = invDet * (-planeY * dx + planeX * dy);
+
+                    if (transformY > 0.2f) {
+                        com.badlogic.gdx.graphics.Camera camera = viewport.getCamera();
+                        int projX = (int) ((camera.viewportWidth / 2f) * (1f + transformX / transformY));
+                        if (projX >= 0 && projX < depthBuffer.length && transformY < depthBuffer[projX] + 0.6f) {
+                            float spriteScale = Math.abs(camera.viewportHeight / transformY);
+                            screenX = projX;
+                            screenY = (camera.viewportHeight / 2f) + (spriteScale * 0.42f);
+                            projected = true;
+                        }
+                    }
+                }
+
+                // If outgoing damage was completely offscreen, suppress 3D floating text
+                if (!projected && !animation.isPlayerDamage() && player != null) {
+                    continue;
+                }
+
+                // Apply randomized horizontal drift so multi-hits don't stack directly
+                screenX += animation.getDriftOffset();
+
+                // Float upward over time
+                float floatOffset = animation.getElapsedTime() * 45f;
+                screenY += floatOffset;
 
                 // Fade out over time
-                float alpha = 1.0f - animation.getProgress();
-                Color animColor = animation.getColor() != null ? animation.getColor() : Color.WHITE;
-                damageFont.setColor(animColor.r, animColor.g, animColor.b, alpha);
+                float progress = animation.getProgress();
+                float alpha = Math.max(0f, 1.0f - progress);
 
-                damageFont.draw(batch, animation.getDamageText(), screenX, screenY + floatOffset);
+                // Scale punch-in bounce
+                float scale = 1.0f;
+                if (animation.isCritical()) {
+                    scale = (progress < 0.25f) ? 1.45f - (progress / 0.25f) * 0.45f : 1.0f;
+                } else {
+                    scale = (progress < 0.20f) ? 1.18f - (progress / 0.20f) * 0.18f : 1.0f;
+                }
+                damageFont.getData().setScale(scale);
+
+                // Color calculation: critical hits flash gold in first 20% of duration
+                Color animColor = animation.getColor() != null ? animation.getColor() : Color.WHITE;
+                if (animation.isCritical() && progress < 0.20f) {
+                    damageFont.setColor(1.0f, 0.85f, 0.35f, alpha);
+                } else {
+                    damageFont.setColor(animColor.r, animColor.g, animColor.b, alpha);
+                }
+
+                glyphLayout.setText(damageFont, animation.getDamageText());
+                float drawX = screenX - glyphLayout.width / 2f;
+                damageFont.draw(batch, animation.getDamageText(), drawX, screenY);
             }
         }
+        damageFont.getData().setScale(1.0f);
         damageFont.setColor(Color.WHITE); // Reset color
     }
 
     public void dispose() {
-        damageFont.dispose();
-        entityRenderer.dispose();
+        if (damageFont != null) damageFont.dispose();
+        if (entityRenderer != null) entityRenderer.dispose();
     }
 
     // --- NEW: Particle System ---

@@ -610,6 +610,18 @@ public class InjuryManager {
     }
 
     /**
+     * Checks if the player is actively suffering from any untreated bleeding wound.
+     */
+    public boolean isBleeding() {
+        for (InjuryRecord r : injuries.values()) {
+            if (r != null && r.isBleeding()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Checks if an item can be utilized in first aid triage.
      */
     public boolean isItemViableFirstAid(Item item) {

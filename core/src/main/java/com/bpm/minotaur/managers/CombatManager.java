@@ -386,6 +386,7 @@ public class CombatManager {
             }
             dmg = applyGuardMitigation(dmg);
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageTaken(actualDamage);
             com.bpm.minotaur.telemetry.TelemetryManager.getInstance().setLastDamageSource(attacker.getMonsterType());
@@ -1371,7 +1372,7 @@ public class CombatManager {
                     eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
                 }
 
-                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor);
+                showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
                 lastDamageDealt = actualDamage;
 
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
@@ -1613,13 +1614,24 @@ public class CombatManager {
     }
 
     public void showDamageText(int damage, GridPoint2 position) {
-        showDamageText(damage, position, "", com.badlogic.gdx.graphics.Color.WHITE);
+        showDamageText(damage, position, "", com.badlogic.gdx.graphics.Color.WHITE, false, DamageType.PHYSICAL);
     }
 
     public void showDamageText(int damage, GridPoint2 position, String prefix, com.badlogic.gdx.graphics.Color color) {
+        showDamageText(damage, position, prefix, color, false, DamageType.PHYSICAL);
+    }
+
+    public void showDamageText(int damage, GridPoint2 position, String prefix, com.badlogic.gdx.graphics.Color color, boolean isCrit, DamageType damageType) {
         String text = (prefix != null ? prefix : "") + damage;
         animationManager.addAnimation(
-                new Animation(Animation.AnimationType.DAMAGE_TEXT, position, text, color, 1.0f));
+                new Animation(Animation.AnimationType.DAMAGE_TEXT, position, text, color, 1.2f, isCrit, false, damageType));
+    }
+
+    public void showPlayerDamageText(int damage) {
+        if (damage <= 0) return;
+        String text = "-" + damage + " HP";
+        animationManager.addAnimation(
+                new Animation(Animation.AnimationType.DAMAGE_TEXT, null, text, com.badlogic.gdx.graphics.Color.valueOf("FF4B36"), 1.2f, false, true, DamageType.PHYSICAL));
     }
 
     public void update(float delta) {

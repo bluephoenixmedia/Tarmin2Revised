@@ -143,6 +143,24 @@ public class HudTooltip extends Table {
         setVisible(true);
     }
 
+    public void showStatus(String title, String category, String details, String remedy, float anchorX, float anchorY) {
+        if (title == null) {
+            setVisible(false);
+            return;
+        }
+        titleLabel.setText(title);
+        categoryLabel.setText(category != null ? category : "STATUS EFFECT");
+        statsLabel.setText(details != null ? details : "");
+        promptLabel.setText(remedy != null ? remedy : "");
+
+        pack();
+        float posX = Math.max(10f, Math.min(1920f - getWidth() - 10f, anchorX - getWidth() / 2f));
+        float posY = Math.max(205f, anchorY - getHeight() - 8f);
+        setPosition(posX, posY);
+        toFront();
+        setVisible(true);
+    }
+
     public void hide() {
         setVisible(false);
     }

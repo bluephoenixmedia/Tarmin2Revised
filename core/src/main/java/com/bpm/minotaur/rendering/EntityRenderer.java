@@ -301,69 +301,9 @@ public class EntityRenderer {
         // --- Draw Monster Health Bars ---
         renderMonsterHealthBars(shapeRenderer, player, maze, viewport, depthBuffer,
                 fogEnabled, fogDistance, activeMonsterOnly);
-
-        // --- Draw Tooltip Overlay ---
-        if (hoveredItem != null) {
-            renderTooltip(spriteBatch, shapeRenderer, viewport);
-        }
-
     }
 
-    private void renderTooltip(PolygonSpriteBatch batch, ShapeRenderer shape, Viewport viewport) {
-        // 1. Prepare Text
-        StringBuilder sb = new StringBuilder();
-        sb.append(hoveredItem.getDisplayName()).append("\n");
 
-        // Add stats
-        // Add stats
-        if (hoveredItem.isWeapon()) {
-            sb.append("Dmg: ").append(hoveredItem.getDamageDice()).append(" ");
-        } else if (hoveredItem.isArmor()) {
-            sb.append("AC: +").append(hoveredItem.getArmorClassBonus());
-        } else if (hoveredItem.isPotion() || hoveredItem.isFood()) {
-            sb.append("Consumable");
-        }
-
-        layout.setText(font, sb.toString());
-
-        float width = layout.width + 20;
-        float height = layout.height + 20;
-
-        // 2. Calculate Position (Right of sprite, clamped to screen)
-        float x = hoveredScreenX + 40;
-        float y = hoveredScreenY + 20;
-
-        // Clamp to screen
-        if (x + width > viewport.getWorldWidth())
-            x = hoveredScreenX - width - 40;
-        if (y - height < 0)
-            y = height + 10;
-        if (y > viewport.getWorldHeight())
-            y = viewport.getWorldHeight() - 10;
-
-        // 3. Draw Background Box
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shape.setProjectionMatrix(viewport.getCamera().combined);
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-        shape.setColor(0, 0, 0, 0.7f);
-        shape.rect(x, y - height, width, height);
-
-        // Border
-        shape.setColor(Color.WHITE);
-        shape.rect(x, y - height, width, 2); // Bottom
-        shape.rect(x, y, width, 2); // Top
-        shape.rect(x, y - height, 2, height); // Left
-        shape.rect(x + width - 2, y - height, 2, height); // Right
-        shape.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        // 4. Draw Text
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        font.setColor(Color.YELLOW);
-        font.draw(batch, sb.toString(), x + 10, y - 10);
-        batch.end();
-    }
 
     // ... [GORE RENDER METHODS UNCHANGED] ...
 
@@ -1587,13 +1527,17 @@ public class EntityRenderer {
 
             float hpRatio = (m.getMaxHP() > 0) ? (float) m.getCurrentHP() / m.getMaxHP() : 0f;
 
-            // Background (dark red)
-            shapeRenderer.setColor(0.3f, 0f, 0f, 0.85f);
+            // Dark recessed border matching HudSkin stone frame
+            shapeRenderer.setColor(0.12f, 0.08f, 0.04f, 0.90f);
+            shapeRenderer.rect(barX - 1, barY - 1, barWidth + 2, barHeight + 2);
+
+            // Track background
+            shapeRenderer.setColor(0.24f, 0.08f, 0.08f, 0.85f);
             shapeRenderer.rect(barX, barY, barWidth, barHeight);
 
-            // Filled portion
-            Color barColor = (hpRatio > 0.5f) ? Color.GREEN
-                    : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
+            // Filled portion with rich dark-fantasy palette
+            Color barColor = (hpRatio > 0.5f) ? Color.valueOf("7FB04A")
+                    : (hpRatio > 0.25f) ? Color.valueOf("E8A63A") : Color.valueOf("C24A34");
             shapeRenderer.setColor(barColor);
             shapeRenderer.rect(barX, barY, barWidth * hpRatio, barHeight);
         }
