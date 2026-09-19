@@ -36,6 +36,31 @@ public class SpellSystemTest {
     }
 
     @Test
+    public void healingSpellsHealTheCasterAndNeverHurtTheMonsterInFront() {
+        SpellDataManager.getInstance().load();
+        com.bpm.minotaur.gamedata.monster.Monster goblin =
+                new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.GOBLIN, 30, 10, 2, 3);
+        maze.addMonster(goblin);
+        player.getStats().setMaxMP(100);
+
+        for (String id : new String[] { "CURE_WOUNDS", "HEALING_WORD", "HEAL", "PRAYER_OF_HEALING", "MASS_CURE_WOUNDS" }) {
+            player.getStats().setCurrentHP(1);
+            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+
+            assertTrue(id, SpellExecutionEngine.castSpell(id, player, maze, eventManager, null));
+
+            assertEquals(id + " must not hurt the goblin", 30, goblin.getCurrentHP());
+            assertTrue(id + " heals the caster", player.getStats().getCurrentHP() > 1);
+        }
+    }
+
+    @Test
+    public void thunderwaveDealsThunderDamage() {
+        SpellDataManager.getInstance().load();
+        assertEquals("THUNDER", SpellDataManager.getSpell("THUNDERWAVE").getDamageType());
+    }
+
+    @Test
     public void testSpellDataManagerLoading() {
         SpellDataManager manager = SpellDataManager.getInstance();
         manager.load();

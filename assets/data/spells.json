@@ -5605,7 +5605,7 @@
     "range": 1,
     "targetType": "SELF",
     "damageDice": "2d8",
-    "damageType": "FORCE",
+    "damageType": "THUNDER",
     "domain": "SPIRITUAL",
     "duration": "Instantaneous",
     "statusEffect": null,

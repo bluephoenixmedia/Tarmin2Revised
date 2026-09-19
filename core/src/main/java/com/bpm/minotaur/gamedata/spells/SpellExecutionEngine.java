@@ -76,6 +76,13 @@ public class SpellExecutionEngine {
 
         eventManager.addEvent(new GameEvent("Cast " + spell.getName() + "!", 1.5f));
 
+        // Healing is cast on yourself whatever its 5e range, so a Cure Wounds never
+        // wounds the monster standing in front of you.
+        if (isHealing(spell)) {
+            resolveSelfSpell(spell, archetype, player, maze, eventManager, gs);
+            return true;
+        }
+
         // 4. Check for Iconic Bespoke Flourishes (The Fab Five)
         String bespoke = spell.getBespokeEffect();
         if ("FIREBALL".equalsIgnoreCase(bespoke)) {
@@ -323,12 +330,15 @@ public class SpellExecutionEngine {
     // STANDARD ARCHETYPE HANDLERS
     // =========================================================================
 
+    private static boolean isHealing(SpellTemplate spell) {
+        String name = spell.getName().toLowerCase();
+        return name.contains("cure") || name.contains("heal") || name.equals("aid") || name.contains("restoration");
+    }
+
     private static void resolveSelfSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                          GameEventManager eventManager, GameScreen gs) {
-        String name = spell.getName().toLowerCase();
-
         // Healing
-        if (name.contains("cure") || name.contains("heal") || name.contains("aid") || name.contains("restoration")) {
+        if (isHealing(spell)) {
             int amount = DiceRoller.roll(spell.getDamageDice());
             amount = Math.max(1, amount + player.getWisdomModifier());
             player.heal(amount);
