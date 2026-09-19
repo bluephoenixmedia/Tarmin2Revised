@@ -8,7 +8,7 @@ import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.player.PlayerEquipment;
 import com.bpm.minotaur.gamedata.player.PlayerStats;
-import com.bpm.minotaur.gamedata.spells.SpellType;
+import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +74,11 @@ public class PlayerSaveData {
     // Backpack (size up to 30)
     public List<ItemSaveData> backpack = new ArrayList<>();
 
-    // Spells
+    // Spells. knownSpellIds is null in saves written before the spellbook was persisted;
+    // those carried only the legacy knownSpells name list.
+    public List<String> knownSpellIds;
+    public List<String> preparedSpells = new ArrayList<>();
+    public int unlockedSpellSlots = 1;
     public List<String> knownSpells = new ArrayList<>();
 
     // Blood on the father's skin and splashes not yet settled onto the paperdoll. Blood
@@ -169,14 +173,9 @@ public class PlayerSaveData {
         }
 
         // Spells
-        List<SpellType> spells = player.getKnownSpells();
-        if (spells != null) {
-            for (SpellType sp : spells) {
-                if (sp != null) {
-                    this.knownSpells.add(sp.name());
-                }
-            }
-        }
+        this.knownSpellIds = new ArrayList<>(player.getKnownSpellIds());
+        java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
+        this.unlockedSpellSlots = player.getUnlockedSpellSlots();
     }
 
     public void applyToPlayer(Player player, ItemDataManager itemDataManager, AssetManager assetManager) {
@@ -275,12 +274,13 @@ public class PlayerSaveData {
         }
 
         // Spells
-        if (knownSpells != null) {
+        if (knownSpellIds != null) {
+            player.restoreSpellbook(knownSpellIds, preparedSpells, unlockedSpellSlots);
+        } else if (knownSpells != null) {
+            // Legacy save: keep the starting spellbook and add any legacy name that is a real spell id.
             for (String spName : knownSpells) {
-                try {
-                    SpellType sp = SpellType.valueOf(spName);
-                    player.learnSpell(sp);
-                } catch (Exception ignored) {
+                if (spName != null && SpellDataManager.getSpell(spName) != null) {
+                    player.learnSpellId(spName);
                 }
             }
         }

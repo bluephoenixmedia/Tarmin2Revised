@@ -197,7 +197,6 @@ public class Player {
     private final Inventory inventory = new Inventory();
 
     // --- Spells ---
-    private final List<com.bpm.minotaur.gamedata.spells.SpellType> knownSpells = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
     // Slot 1 (cantrips) is available from the start; Tomes of the Initiate/Elements/
@@ -218,16 +217,6 @@ public class Player {
         }
     }
 
-    public List<com.bpm.minotaur.gamedata.spells.SpellType> getKnownSpells() {
-        return knownSpells;
-    }
-
-    public void learnSpell(com.bpm.minotaur.gamedata.spells.SpellType spell) {
-        if (!knownSpells.contains(spell)) {
-            knownSpells.add(spell);
-        }
-    }
-
     public List<String> getKnownSpellIds() {
         return knownSpellIds;
     }
@@ -235,6 +224,26 @@ public class Player {
     public void learnSpellId(String spellId) {
         if (spellId != null && !knownSpellIds.contains(spellId.toUpperCase())) {
             knownSpellIds.add(spellId.toUpperCase());
+        }
+    }
+
+    /**
+     * Replaces the whole spellbook with saved state: Known Spells, the prepared
+     * slots, and how many Spell Slots are unlocked. Prepared entries beyond the
+     * unlocked slots are dropped.
+     */
+    public void restoreSpellbook(List<String> knownIds, List<String> prepared, int unlockedSlots) {
+        knownSpellIds.clear();
+        if (knownIds != null) {
+            for (String id : knownIds) {
+                learnSpellId(id);
+            }
+        }
+        setUnlockedSpellSlots(unlockedSlots);
+        for (int i = 0; i < preparedSpells.length; i++) {
+            String id = (prepared != null && i < prepared.size()) ? prepared.get(i) : null;
+            preparedSpells[i] = null;
+            prepareSpell(i, id);
         }
     }
 
@@ -383,8 +392,6 @@ public class Player {
     }
 
     private void initStartingSpells() {
-        knownSpells.clear();
-        knownSpells.add(com.bpm.minotaur.gamedata.spells.SpellType.MOTE_OF_LIGHT);
         knownSpellIds.clear();
         learnSpellId("MOTE_OF_LIGHT");
         for (int i = 0; i < preparedSpells.length; i++) {

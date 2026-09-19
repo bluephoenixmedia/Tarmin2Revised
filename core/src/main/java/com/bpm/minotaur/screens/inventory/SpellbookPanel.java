@@ -10,7 +10,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 import com.bpm.minotaur.gamedata.spells.SpellTemplate;
-import com.bpm.minotaur.gamedata.spells.SpellType;
 
 import java.util.List;
 
@@ -149,21 +148,6 @@ public class SpellbookPanel extends Table implements InventoryEventBus.Listener 
                 }
 
                 list.add(rowTable).left().padBottom(2).row();
-            }
-        }
-
-        // ── 3. Legacy Spells (if any) ─────────────────────
-        List<SpellType> legacySpells = player.getKnownSpells();
-        if (legacySpells != null && !legacySpells.isEmpty()) {
-            for (SpellType sp : legacySpells) {
-                // If not already covered by 5e ID
-                String id = sp.name();
-                if (!knownIds.contains(id)) {
-                    String text = sp.getDisplayName() + " [" + sp.getMpCost() + " MP]";
-                    list.add(new Label(text,
-                            new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED)))
-                            .left().padBottom(2).row();
-                }
             }
         }
     }

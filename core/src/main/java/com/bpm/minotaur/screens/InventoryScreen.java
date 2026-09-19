@@ -412,11 +412,13 @@ public class InventoryScreen extends BaseScreen {
         // Spells + alchemy — left side below the doll
         Table spellsTable = new Table();
         spellsTable.add(new Label("Known Spells", new Label.LabelStyle(font, Color.CYAN))).padBottom(5).left().row();
-        if (player.getKnownSpells() == null || player.getKnownSpells().isEmpty()) {
+        if (player.getKnownSpellIds().isEmpty()) {
             spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).left();
         } else {
-            for (com.bpm.minotaur.gamedata.spells.SpellType spell : player.getKnownSpells()) {
-                spellsTable.add(new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
+            for (String spellId : player.getKnownSpellIds()) {
+                com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+                String text = spell != null ? spell.getName() + " [" + spell.getMpCost() + " MP]" : spellId;
+                spellsTable.add(new Label(text,
                         new Label.LabelStyle(font, Color.WHITE))).left().padRight(5).row();
             }
         }
@@ -704,11 +706,13 @@ public class InventoryScreen extends BaseScreen {
         Label spellsLabel = new Label("Known Spells", new Label.LabelStyle(font, Color.CYAN));
         spellsLabel.setAlignment(Align.left);
         spellsTable.add(spellsLabel).padBottom(5).left().row();
-        if (player.getKnownSpells() == null || player.getKnownSpells().isEmpty()) {
+        if (player.getKnownSpellIds().isEmpty()) {
             spellsTable.add(new Label("None", new Label.LabelStyle(font, Color.GRAY))).left();
         } else {
-            for (com.bpm.minotaur.gamedata.spells.SpellType spell : player.getKnownSpells()) {
-                spellsTable.add(new Label(spell.getDisplayName() + " [" + spell.getMpCost() + " MP]",
+            for (String spellId : player.getKnownSpellIds()) {
+                com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+                String text = spell != null ? spell.getName() + " [" + spell.getMpCost() + " MP]" : spellId;
+                spellsTable.add(new Label(text,
                         new Label.LabelStyle(font, Color.WHITE))).left().padRight(5).row();
             }
         }

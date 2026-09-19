@@ -636,139 +636,24 @@ public class CombatManager {
         }
     }
 
+    /**
+     * Combat menu CAST: casts the first prepared spell. Picking a specific spell is
+     * done with the quick-cast keys (Z,X,V,B,N) or the Spellbook.
+     */
     public void playerCast() {
         if (currentState != CombatState.PLAYER_MENU && currentState != CombatState.PLAYER_TURN)
             return;
 
-        // FOR NOW: Hardcoded Spell Selection (later pass in spell or use UI state)
-        // Check if player knows IRON_SKIN to prioritize it for testing/context?
-        // Or simple toggle?
-        // The prompt implies we can cast "any spell they have access to".
-        // Since we don't have a spell selection UI in the menu yet (just "CAST"),
-        // let's assume this method is triggering the selection OR defaulting.
-        // For this task, we'll default to MAGIC_ARROW unless we implement a submenu.
-        // User asked: "they can cast any spell they have access too"
-        // This implies a sub-menu.
-        // BUT, for this step, let's implement the logic assuming the SPELL is passed or
-        // selected.
-        // Since I can't easily add a full sub-menu right now without more UI work,
-        // I will make this method accept a SpellType, OR defaults.
-        // Let's modify the signature or just infer.
-        // ACTUALLY: The user said "access the combat menu... cast any spell".
-        // I should probably pop up a spell list?
-        // For simplicity in this iteration: If invalid target (no monster), try
-        // defensive.
-        // If monster exists, try offensive?
-        // Better: Let's support `playerCast(SpellType)` and overload.
-
-        // Default behavior for "CAST" button (simplification):
-        // Cycle or pick first available?
-        // Let's pick MAGIC_ARROW if target, IRON_SKIN if no target?
-        // Or better: Cycle them?
-        // Let's stick to MAGIC_ARROW default for now, but handle IRON_SKIN if I change
-        // logic.
-        // Wait, I can't easily change the UI to send arguments yet.
-        // Let's check `player.getKnownSpells()`.
-
-        com.bpm.minotaur.gamedata.spells.SpellType spellToCast = com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW;
-        if (player.getKnownSpells().contains(com.bpm.minotaur.gamedata.spells.SpellType.IRON_SKIN)) {
-            // Prioritize IRON_SKIN if no monster?
-            if (monster == null) {
-                spellToCast = com.bpm.minotaur.gamedata.spells.SpellType.IRON_SKIN;
+        String[] prepared = player.getPreparedSpells();
+        for (int slot = 0; slot < player.getUnlockedSpellSlots() && slot < prepared.length; slot++) {
+            if (prepared[slot] != null) {
+                if (player.castPreparedSpell(slot, maze, eventManager, this)) {
+                    closeMenuOrPassTurn();
+                }
+                return;
             }
         }
-
-        castSpell(spellToCast);
-    }
-
-    public void castSpell(com.bpm.minotaur.gamedata.spells.SpellType spell) {
-        if (!player.getKnownSpells().contains(spell)) {
-            eventManager.addEvent(new GameEvent("You don't know that spell!", 1.5f));
-            return;
-        }
-
-        if (!player.hasEnoughMana(spell.getMpCost())) {
-            eventManager.addEvent(new GameEvent("Not enough MP!", 1.5f));
-            return;
-        }
-
-        player.deductMana(spell.getMpCost());
-        eventManager.addEvent(new GameEvent("Cast " + spell.getDisplayName() + "!", 1.5f));
-
-        if (spell == com.bpm.minotaur.gamedata.spells.SpellType.IRON_SKIN) {
-            player.getStatusManager().addEffect(StatusEffectType.HARDENED, 10, 1, false);
-            eventManager.addEvent(new GameEvent("Your skin turns to iron!", 2f));
-            // Trigger Vignette (via Event or Callback?)
-            // Simple hack: Set a flag on Player or GameScreen via Event?
-            // Let's add a specialized event.
-            // eventManager.addEvent(new GameEvent(GameEvent.EventType.VFX_TRIGGER,
-            // "IRON_SKIN")); // If supported
-            // For now, Player status is enough for GameScreen to render vignette.
-
-            // End turn or free action?
-            closeMenuOrPassTurn();
-            return;
-        }
-
-        if (spell == com.bpm.minotaur.gamedata.spells.SpellType.MAGIC_ARROW) {
-            // Visuals
-            com.badlogic.gdx.math.Vector2 startPos = player.getPosition().cpy()
-                    .add(player.getDirectionVector().cpy().scl(0.6f));
-
-            Vector2 targetPos = null;
-            Monster targetMonster = this.monster; // Default to current combat target
-
-            // If no locked monster, Raycast to find one
-            if (targetMonster == null) {
-                HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), 8, true);
-                if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
-                    targetMonster = hit.hitMonster;
-                    targetPos = targetMonster.getPosition();
-                    // Auto-engage?
-                    // startCombat(targetMonster); // Optional: Engage if hit
-                } else {
-                    // Shoot into void/wall
-                    targetPos = new Vector2(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
-                }
-            } else {
-                targetPos = targetMonster.getPosition();
-            }
-
-            animationManager.addAnimation(new Animation(
-                    Animation.AnimationType.PROJECTILE_SPELL,
-                    startPos, targetPos,
-                    com.badlogic.gdx.graphics.Color.CYAN, 0.6f,
-                    new String[] { "*" }));
-
-            if (targetMonster != null) {
-                int magicDamage = 5 + player.getLevel() + player.getSpellPower();
-                int actualDamage = targetMonster.takeDamage(magicDamage);
-
-                showDamageText(actualDamage,
-                        new GridPoint2((int) targetMonster.getPosition().x, (int) targetMonster.getPosition().y));
-                if (actualDamage > 0) {
-                    // Impact
-                }
-
-                if (targetMonster.getCurrentHP() <= 0) {
-                    // Logic to kill if it's the active monster
-                    if (targetMonster == this.monster) {
-                        handleMonsterDeath();
-                        currentState = CombatState.VICTORY;
-                    } else {
-                        // Remote kill
-                        handleRemoteKill(targetMonster);
-                    }
-                } else {
-                    // If we weren't in combat, maybe start now?
-                    if (this.monster == null) {
-                        startCombat(targetMonster);
-                    }
-                }
-            }
-
-            closeMenuOrPassTurn();
-        }
+        eventManager.addEvent(new GameEvent("No spell prepared! Assign one in the Spellbook.", 1.5f));
     }
 
     public void handleRemoteKill(Monster m) {

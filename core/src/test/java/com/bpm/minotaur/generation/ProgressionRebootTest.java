@@ -13,7 +13,6 @@ import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
-import com.bpm.minotaur.gamedata.spells.SpellType;
 import com.bpm.minotaur.managers.DivinityManager;
 import org.junit.Before;
 import org.junit.Test;
