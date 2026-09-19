@@ -21,6 +21,13 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler combining
 - **Strata**: Vertical subterranean dungeon layers beneath any overland chunk, increasing in hazard, loot quality, and depth.
 - **Paper Doll**: Equipment configuration covering armor slots, rings, cloak, boots, gauntlets, and two active hands.
 - **Discovery**: Identification status of potions, scrolls, and magical items (no cursed item locks).
+- **Known Spells**: Every spell the player has learned, by `spells.json` id. Persistent progression: survives death and is saved.
+- **Spell Slot**: One of five prepared quick-cast positions (Shift+1..5 / Z,X,V,B,N). Slot 1 is open from the start; Tomes unlock slots 2-5. A slot holds one Known Spell.
+- **Spellbook**: The screen listing Known Spells, their details, and the Spell Slots they are assigned to. Slots can only be changed while no hostile is in view.
+- **Tome**: A heavy milestone book found in the strata (Initiate, Elements, Arcane, Tarmin). Studying it unlocks its Spell Slot and offers a Tome Choice.
+- **Tome Choice**: Picking one not-yet-known spell from a Tome's curated, level-banded pool. Arcane Attunement at the Altar widens it (more options, a reroll, a higher Tarmin band).
+- **Study**: Reading a Tome. Instant in the Shelter; in the field a channelled action over several turns, interrupted by damage, a hostile coming into view, or player input. Progress is kept on the Tome.
+- **Inscribe**: Permanently learning a spell scroll into Known Spells for the spell's full MP cost (as opposed to reading it for one free cast).
 
 ## Key Architectural Invariants
 - **Retro Mode Preservation**: `GameMode.CLASSIC` strictly preserves the original 16-tile array (`tile1` to `tile16`), 2x2 map layout, and retro wireframe presentation. Modern procedural chunk engines, cyclic mission graphs, and low-cover billboards operate solely in `GameMode.ADVANCED` and the Expedition Delve loop.

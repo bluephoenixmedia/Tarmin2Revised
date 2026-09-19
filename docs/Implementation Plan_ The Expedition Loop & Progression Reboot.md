@@ -15,7 +15,7 @@ Tarmin2 is a dark, atmospheric first-person procedural dungeon crawler blending:
 - **Core Macro-Loop**: **Delve & Return (Expedition Loop)** based out of a safe starting Shelter (4x4 sanctuary with bed, hearth, chest, and workbench).
 - **World Topography**: Explorable surface wilderness with biomes (Forest, Plains, Swamps, Ruins) and Castle Tarmin visible on the horizon. **Every chunk permits vertical strata descent (Caves of Qud / Dwarf Fortress style)** into dangerous subterranean depths harboring rare loot and optional bosses.
 - **Combat Flow**: **Fast-Paced Grid Tactics**. Bump-to-attack, archery/thrown ballistics, and tactical spells directly on the grid. Dice rolls and trait modifiers run under the hood with instant floating damage feedback and combat log output (no modal physics delays interrupting movement).
-- **Character Progression**: **Camp Progression & Skill Mastery (M&M + Qud)**. Spend accumulated XP and Divinity at camp to raise Attributes and unlock skills; read Tarmin tomes to raise War/Spiritual power thresholds.
+- **Character Progression**: **Camp Progression & Skill Mastery (M&M + Qud)**. Spend accumulated XP and Divinity at camp to raise Attributes and unlock skills; study Tarmin Tomes found in the strata to unlock spell slots and choose new spells (see `docs/adr/0001-tomes-grant-slots-and-a-spell-choice.md`).
 - **Death & Stakes**: **Corpse Run + Doom Clock**. Dying revives you at the Shelter without carried pack items; your gear, bones, and lost divinities wait at the death tile. Dying advances the Doom Clock (Tarmin's Hunger), corrupting the world and shortening the time before the sacrificial ritual.
 - **Loot & Identification**: Full paper doll equipment, NetHack-style unidentified descriptors ("fizzy blue potion") testable in the field or safely analyzed at camp, weapon durability and ammo, **no beatitude/curses**.
 - **Dungeon Interactivity**: Shrines to Tarmin gods for permanent blessings, mysterious fountains, harvestable debris (bones/wood/stone), secret walls, destructible doors, and elemental reactions (fire/water/lightning).
@@ -54,7 +54,7 @@ Establish the physical foundation of the Delve-Return loop:
 ### Phase 3: Camp Progression & Skill Tree
 - Spend XP and Divinity at camp to train Attributes (STR, DEX, CON, INT, WIS, AGI, CHA).
 - Implement perk/skill trees (Butchery, Archery, Arcana, Field Dressing, Foraging).
-- Tarmin Tomes integration to expand War/Spiritual maximum power.
+- Tarmin Tomes unlock spell slots and offer a Tome Choice of new spells; Arcane Attunement at the Altar widens that choice (ADR 0001).
 
 ### Phase 4: Systemic Labyrinth Features & Ecosystem
 - Shrines, fountains, and harvestable debris.
