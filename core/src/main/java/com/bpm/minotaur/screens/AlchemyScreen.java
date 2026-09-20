@@ -188,7 +188,15 @@ public class AlchemyScreen extends BaseScreen {
             nameLabel.setEllipsis(true);
 
             String statusStr = canCraft ? "[ READY TO BREW ]" : "[ MISSING REAGENTS ]";
-            Color statusCol = canCraft ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_GOLD_MUTED;
+            // The selected row is filled gold, so the status has to flip to dark ink --
+            // muted gold on gold was effectively invisible on exactly the row the player
+            // is looking at.
+            Color statusCol;
+            if (isSelected) {
+                statusCol = HudSkin.COL_TEXT_ON_GOLD;
+            } else {
+                statusCol = canCraft ? HudSkin.COL_FOOD_ON_DARK : HudSkin.COL_TEXT_MUTED;
+            }
             Label statLabel = new Label(statusStr, new Label.LabelStyle(hudSkin.getFontSmall(), statusCol));
 
             textCol.add(nameLabel).left().row();
@@ -263,7 +271,7 @@ public class AlchemyScreen extends BaseScreen {
             Label name = new Label(formatItemName(reqType),
                     new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
             String countStr = owned + " / " + needed + " (In Backpack)";
-            Color countCol = hasEnough ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_HP_CRITICAL;
+            Color countCol = hasEnough ? HudSkin.COL_FOOD_ON_DARK : HudSkin.COL_HP_ON_DARK;
             Label count = new Label(countStr, new Label.LabelStyle(hudSkin.getFontSmall(), countCol));
 
             row.add(name).left().expandX();

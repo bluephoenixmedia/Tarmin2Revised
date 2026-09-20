@@ -104,7 +104,7 @@ public class ControlsScreen extends BaseScreen {
                 game.setScreen(backScreen);
             }
         });
-        card.add(backButton).colspan(2).width(340).height(54).center().row();
+        card.add(backButton).colspan(2).minWidth(340).height(54).center().row();
 
         root.add(card);
 
@@ -140,7 +140,7 @@ public class ControlsScreen extends BaseScreen {
             }
         });
 
-        table.add(keyButton).width(160).height(40).padBottom(8);
+        table.add(keyButton).minWidth(160).height(40).padBottom(8);
         table.row();
     }
 

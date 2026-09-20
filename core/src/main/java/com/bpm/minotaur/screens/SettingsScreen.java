@@ -80,7 +80,7 @@ public class SettingsScreen extends BaseScreen {
                 cycleDifficulty();
             }
         });
-        card.add(difficultyButton).width(240).height(48).padBottom(16).row();
+        card.add(difficultyButton).minWidth(240).height(48).padBottom(16).row();
 
         // 2. Game Mode
         card.add(new Label("Game Mode", labelStyle)).left().padRight(40).padBottom(16);
@@ -91,7 +91,7 @@ public class SettingsScreen extends BaseScreen {
                 toggleGameMode();
             }
         });
-        card.add(modeButton).width(240).height(48).padBottom(16).row();
+        card.add(modeButton).minWidth(240).height(48).padBottom(16).row();
 
         // 3. Music Volume
         card.add(new Label("Music Volume", labelStyle)).left().padRight(40).padBottom(16);
@@ -163,7 +163,7 @@ public class SettingsScreen extends BaseScreen {
                 game.setScreen(new ControlsScreen(game, SettingsScreen.this));
             }
         });
-        card.add(controlsButton).colspan(2).width(400).height(54).padBottom(16).center().row();
+        card.add(controlsButton).colspan(2).minWidth(400).height(54).padBottom(16).center().row();
 
         // 6. Back Button
         TextButton backButton = new TextButton("BACK TO MAIN MENU  [ESC]", btnStyle);
@@ -173,7 +173,7 @@ public class SettingsScreen extends BaseScreen {
                 game.setScreen(new MainMenuScreen(game));
             }
         });
-        card.add(backButton).colspan(2).width(400).height(54).center().row();
+        card.add(backButton).colspan(2).minWidth(400).height(54).center().row();
 
         root.add(card);
 

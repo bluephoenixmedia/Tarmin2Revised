@@ -114,7 +114,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 close();
             }
         });
-        root.add(backBtn).width(360).height(52).padBottom(25).row();
+        root.add(backBtn).minWidth(360).height(52).padBottom(25).row();
     }
 
     private Table buildSlotCard(final int slotIndex) {
@@ -125,11 +125,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
         if (!meta.isOccupied) {
             // Empty Slot Card
+            // Same font and padding as the occupied branch below, or the headers sit
+            // at different heights across a row of cards.
             Label slotNum = new Label("SLOT " + slotIndex + "  [" + slotIndex + "]",
-                    new Label.LabelStyle(hudSkin.getFontHeader(), Color.GRAY));
-            card.add(slotNum).padTop(20).padBottom(20).row();
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
+            card.add(slotNum).padBottom(4).row();
 
-            Label emptyLabel = new Label("- EMPTY SLOT -", new Label.LabelStyle(hudSkin.getFontMain(), Color.DARK_GRAY));
+            Label emptyLabel = new Label("- EMPTY SLOT -", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEXT_MUTED));
             card.add(emptyLabel).expandY().row();
 
             TextButton.TextButtonStyle startStyle = new TextButton.TextButtonStyle();
@@ -147,7 +149,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
                     promptNewGame(slotIndex);
                 }
             });
-            card.add(startBtn).width(340).height(54).padBottom(20).row();
+            card.add(startBtn).minWidth(340).height(54).padBottom(20).row();
 
         } else {
             // Occupied Slot Card
@@ -165,13 +167,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
             // Stats row
             Table statsTable = new Table();
             statsTable.add(new Label("HP: " + meta.currentHP + "/" + meta.maxHP,
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_HP_CRITICAL))).padRight(18);
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_HP_ON_DARK))).padRight(18);
             statsTable.add(new Label("MP: " + meta.currentMP + "/" + meta.maxMP,
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_MP_BLUE))).row();
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_MP_ON_DARK))).row();
             card.add(statsTable).padBottom(12).row();
 
             // Location
-            Label locLabel = new Label(meta.locationName, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
+            Label locLabel = new Label(meta.locationName, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_ON_DARK));
             card.add(locLabel).padBottom(8).row();
 
             // Mode & Heat
@@ -190,7 +192,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
             // Timestamp
             String dateStr = meta.lastPlayedTimestamp > 0 ? dateFormat.format(new Date(meta.lastPlayedTimestamp)) : "Recently";
-            Label dateLabel = new Label("Played: " + dateStr, new Label.LabelStyle(hudSkin.getFontMicro(), Color.GRAY));
+            Label dateLabel = new Label("Played: " + dateStr, new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_TEXT_MUTED));
             card.add(dateLabel).expandY().row();
 
             // Action Buttons
@@ -215,7 +217,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
                     }
                 }
             });
-            btnTable.add(playBtn).width(220).height(48).padRight(12);
+            btnTable.add(playBtn).minWidth(220).height(48).padRight(12);
 
             TextButton.TextButtonStyle delStyle = new TextButton.TextButtonStyle();
             delStyle.font = hudSkin.getFontSmall();
@@ -232,7 +234,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
                     confirmDelete(slotIndex, meta);
                 }
             });
-            btnTable.add(delBtn).width(120).height(48);
+            btnTable.add(delBtn).minWidth(120).height(48);
 
             card.add(btnTable).padBottom(15).row();
         }

@@ -207,31 +207,31 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         final TextButton continueBtn = new TextButton(continueLabel, hasSave ? continueStyle : defaultStyle);
         continueBtn.setDisabled(!hasSave);
         setupButton(continueBtn, 0);
-        buttonTable.add(continueBtn).width(500).height(54).padBottom(14).row();
+        buttonTable.add(continueBtn).minWidth(500).height(54).padBottom(14).row();
         menuButtons.add(continueBtn);
 
         // 2. LOAD GAME BUTTON
         final TextButton loadBtn = new TextButton("LOAD EXPEDITION (L)", defaultStyle);
         setupButton(loadBtn, 1);
-        buttonTable.add(loadBtn).width(500).height(54).padBottom(14).row();
+        buttonTable.add(loadBtn).minWidth(500).height(54).padBottom(14).row();
         menuButtons.add(loadBtn);
 
         // 3. NEW GAME BUTTON
         final TextButton newGameBtn = new TextButton("NEW EXPEDITION (N)", defaultStyle);
         setupButton(newGameBtn, 2);
-        buttonTable.add(newGameBtn).width(500).height(54).padBottom(14).row();
+        buttonTable.add(newGameBtn).minWidth(500).height(54).padBottom(14).row();
         menuButtons.add(newGameBtn);
 
         // 4. SETTINGS BUTTON
         final TextButton settingsBtn = new TextButton("SETTINGS (S)", defaultStyle);
         setupButton(settingsBtn, 3);
-        buttonTable.add(settingsBtn).width(500).height(54).padBottom(14).row();
+        buttonTable.add(settingsBtn).minWidth(500).height(54).padBottom(14).row();
         menuButtons.add(settingsBtn);
 
         // 5. QUIT BUTTON
         final TextButton exitBtn = new TextButton("QUIT TO DESKTOP (ESC)", defaultStyle);
         setupButton(exitBtn, 4);
-        buttonTable.add(exitBtn).width(500).height(54).row();
+        buttonTable.add(exitBtn).minWidth(500).height(54).row();
         menuButtons.add(exitBtn);
 
         root.add(buttonTable).padTop(240).row();

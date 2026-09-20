@@ -243,7 +243,7 @@ public class PlayerDeathScreen extends BaseScreen {
             }
         });
 
-        footer.add(awakenBtn).width(680).height(64).center();
+        footer.add(awakenBtn).minWidth(680).height(64).center();
         root.add(footer).fillX();
 
         stage.addActor(root);

@@ -87,7 +87,7 @@ public class PauseScreen extends BaseScreen {
                 resumeGame();
             }
         });
-        panel.add(resumeBtn).width(400).height(54).padBottom(14).row();
+        panel.add(resumeBtn).minWidth(400).height(54).padBottom(14).row();
 
         // Secondary style for other actions
         TextButton.TextButtonStyle secStyle = new TextButton.TextButtonStyle();
@@ -106,7 +106,7 @@ public class PauseScreen extends BaseScreen {
                 game.setScreen(new SettingsScreen(game));
             }
         });
-        panel.add(settingsBtn).width(400).height(54).padBottom(14).row();
+        panel.add(settingsBtn).minWidth(400).height(54).padBottom(14).row();
 
         // 3. Pact of Torment (Available when unlocked)
         if (SaveManager.getInstance().isClassicModeUnlocked()) {
@@ -125,7 +125,7 @@ public class PauseScreen extends BaseScreen {
                     game.setScreen(new TormentPactScreen(game, PauseScreen.this));
                 }
             });
-            panel.add(tormentBtn).width(400).height(54).padBottom(14).row();
+            panel.add(tormentBtn).minWidth(400).height(54).padBottom(14).row();
         }
 
         // 4. Save & Quit
@@ -144,7 +144,7 @@ public class PauseScreen extends BaseScreen {
                 saveAndQuit();
             }
         });
-        panel.add(saveQuitBtn).width(400).height(54).padBottom(14).row();
+        panel.add(saveQuitBtn).minWidth(400).height(54).padBottom(14).row();
 
         // 5. Abandon Run
         TextButton.TextButtonStyle abandonStyle = new TextButton.TextButtonStyle();
@@ -162,7 +162,7 @@ public class PauseScreen extends BaseScreen {
                 confirmAbandon();
             }
         });
-        panel.add(abandonBtn).width(400).height(54).row();
+        panel.add(abandonBtn).minWidth(400).height(54).row();
 
         root.add(panel);
     }

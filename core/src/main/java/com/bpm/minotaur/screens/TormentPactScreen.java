@@ -113,7 +113,7 @@ public class TormentPactScreen extends BaseScreen {
                 close();
             }
         });
-        buttonBar.add(confirmBtn).width(420).height(58).padRight(30);
+        buttonBar.add(confirmBtn).minWidth(420).height(58).padRight(30);
 
         TextButton.TextButtonStyle clearStyle = new TextButton.TextButtonStyle();
         clearStyle.font = hudSkin.getFontMain();
@@ -131,7 +131,7 @@ public class TormentPactScreen extends BaseScreen {
                 refreshUI();
             }
         });
-        buttonBar.add(clearBtn).width(240).height(58);
+        buttonBar.add(clearBtn).minWidth(240).height(58);
 
         root.add(buttonBar).padBottom(20).row();
     }
@@ -167,7 +167,7 @@ public class TormentPactScreen extends BaseScreen {
                     refreshUI();
                 }
             });
-            row.add(toggleBtn).width(170).height(48).padRight(18);
+            row.add(toggleBtn).minWidth(170).height(48).padRight(18);
 
             // Title and Description
             Table infoTable = new Table();
