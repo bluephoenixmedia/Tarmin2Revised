@@ -103,7 +103,6 @@ public class PlayerDeathScreen extends BaseScreen {
         header.pad(20, 40, 20, 40);
 
         Label perishedLabel = new Label("YOU HAVE FALLEN", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
-        perishedLabel.setFontScale(1.8f);
         header.add(perishedLabel).center().row();
 
         Label loreLabel = new Label(defeatLore, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -169,7 +168,7 @@ public class PlayerDeathScreen extends BaseScreen {
 
             StringBuilder sb = new StringBuilder();
             for (String unlock : newUnlocks) {
-                sb.append("• ").append(unlock).append("\n");
+                sb.append("- ").append(unlock).append("\n");
             }
             Label unlockItems = new Label(sb.toString().trim(),
                     new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));

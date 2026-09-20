@@ -155,7 +155,7 @@ public class ShopkeeperWindow extends Table {
 
         // ─── Row 3: Buttons ───────────────────────────────────────────────
         TextButton.TextButtonStyle primaryBtnStyle = new TextButton.TextButtonStyle();
-        primaryBtnStyle.font = (hudSkin != null) ? hudSkin.getFontHeader() : font;
+        primaryBtnStyle.font = (hudSkin != null) ? hudSkin.getFontSmall() : font;
         primaryBtnStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
         primaryBtnStyle.up = (hudSkin != null) ? hudSkin.getPrimaryButtonUp() : makeRowDrawable(new Color(0.85f, 0.70f, 0.25f, 1f));
         primaryBtnStyle.down = (hudSkin != null) ? hudSkin.getPrimaryButtonDown() : makeRowDrawable(new Color(0.65f, 0.50f, 0.15f, 1f));
@@ -164,8 +164,8 @@ public class ShopkeeperWindow extends Table {
 
         TextButton buyBtn = new TextButton("[B] BUY", primaryBtnStyle);
         TextButton sellBtn = new TextButton("[V] SELL", secBtnStyle);
-        TextButton tabBtn = new TextButton("[TAB] SWITCH PANEL", secBtnStyle);
-        TextButton gemBtn = new TextButton("[G] EXCHANGE GEMS", secBtnStyle);
+        TextButton tabBtn = new TextButton("[TAB] SWITCH", secBtnStyle);
+        TextButton gemBtn = new TextButton("[G] GEMS", secBtnStyle);
         TextButton closeBtn = new TextButton("[ESC] CLOSE", secBtnStyle);
 
         buyBtn.addListener(new ClickListener() {
@@ -200,11 +200,11 @@ public class ShopkeeperWindow extends Table {
         });
 
         Table btnRow = new Table();
-        btnRow.add(buyBtn).width(180).padRight(12);
-        btnRow.add(sellBtn).width(180).padRight(12);
-        btnRow.add(gemBtn).width(230).padRight(12);
-        btnRow.add(tabBtn).width(250).padRight(12);
-        btnRow.add(closeBtn).width(180);
+        btnRow.add(buyBtn).width(150).height(42).padRight(12);
+        btnRow.add(sellBtn).width(150).height(42).padRight(12);
+        btnRow.add(gemBtn).width(160).height(42).padRight(12);
+        btnRow.add(tabBtn).width(180).height(42).padRight(12);
+        btnRow.add(closeBtn).width(160).height(42);
         this.add(btnRow).padTop(12).row();
 
         // ─── Row 4: Status ────────────────────────────────────────────────
@@ -524,12 +524,12 @@ public class ShopkeeperWindow extends Table {
 
     private TextButton.TextButtonStyle makeButtonStyle() {
         TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
-        s.font = font;
+        s.font = (hudSkin != null) ? hudSkin.getFontSmall() : font;
         s.fontColor = Color.WHITE;
-        s.overFontColor = Color.GOLD;
-        s.up = makeRowDrawable(new Color(0.15f, 0.12f, 0.05f, 0.95f));
-        s.over = makeRowDrawable(new Color(0.30f, 0.25f, 0.05f, 0.95f));
-        s.down = makeRowDrawable(new Color(0.10f, 0.08f, 0.02f, 0.95f));
+        s.overFontColor = HudSkin.COL_GOLD_BRIGHT;
+        s.up = (hudSkin != null) ? hudSkin.getSlotRecessed() : makeRowDrawable(new Color(0.15f, 0.12f, 0.05f, 0.95f));
+        s.over = (hudSkin != null) ? hudSkin.getSlotActive() : makeRowDrawable(new Color(0.30f, 0.25f, 0.05f, 0.95f));
+        s.down = (hudSkin != null) ? hudSkin.getSlotActive() : makeRowDrawable(new Color(0.10f, 0.08f, 0.02f, 0.95f));
         return s;
     }
 

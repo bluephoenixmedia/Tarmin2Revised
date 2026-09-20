@@ -1,28 +1,33 @@
-// Path: core/src/main/java/com/bpm/minotaur/screens/SettingsScreen.java
 package com.bpm.minotaur.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.Align;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.Difficulty;
 import com.bpm.minotaur.managers.SettingsManager;
+import com.bpm.minotaur.managers.SoundManager;
+import com.bpm.minotaur.rendering.HudSkin;
 
+/**
+ * Settings configuration screen.
+ * Polished with HudSkin dark fantasy double-borders, gold highlights, and keyboard shortcuts.
+ */
 public class SettingsScreen extends BaseScreen {
 
     private final SettingsManager settingsManager;
+    private final HudSkin hudSkin;
     private Stage stage;
-    private Skin skin;
-    private BitmapFont font;
 
-    // UI elements we need to update
     private TextButton difficultyButton;
     private TextButton modeButton;
     private Label musicVolLabel;
@@ -31,156 +36,146 @@ public class SettingsScreen extends BaseScreen {
     public SettingsScreen(Tarmin2 game) {
         super(game);
         this.settingsManager = SettingsManager.getInstance();
+        this.hudSkin = new HudSkin();
     }
 
     @Override
     public void show() {
         stage = new Stage(game.getViewport(), game.getBatch());
 
-        // We need a Skin for standard UI widgets like buttons
-        // Using a basic one here. You can customize this.
-        skin = new Skin();
-        font = new BitmapFont();
-        skin.add("default", font); // Add the font as "default"
+        Table backdrop = new Table();
+        backdrop.setFillParent(true);
+        backdrop.setBackground(hudSkin.getScreenBackdrop());
+        stage.addActor(backdrop);
 
-// Create a 1x1 white pixmap to use for backgrounds
-        com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
-        pixmap.setColor(com.badlogic.gdx.graphics.Color.WHITE);
-        pixmap.fill();
+        Table root = new Table();
+        root.setFillParent(true);
+        root.center();
+        stage.addActor(root);
 
-// Add the 1x1 white texture to the skin with the name "white"
-        skin.add("white", new com.badlogic.gdx.graphics.Texture(pixmap));
+        // Main Settings Card
+        Table card = new Table();
+        card.setBackground(hudSkin.getDoubleBorderPanel());
+        card.pad(35, 50, 35, 50);
 
-// Dispose of the pixmap as it's no longer needed
-        pixmap.dispose();
-        // Button style
-        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = font;
-        textButtonStyle.up = skin.newDrawable("white", Color.DARK_GRAY);
-        textButtonStyle.down = skin.newDrawable("white", Color.LIGHT_GRAY);
-        textButtonStyle.checked = skin.newDrawable("white", Color.GRAY);
-        skin.add("default", textButtonStyle);
+        Label title = new Label("S E T T I N G S", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        card.add(title).colspan(2).padBottom(30).center().row();
 
-        // Label style
-        Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
-        skin.add("default", labelStyle);
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+        btnStyle.font = hudSkin.getFontMain();
+        btnStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
+        btnStyle.overFontColor = Color.WHITE;
+        btnStyle.up = hudSkin.getSlotRecessed();
+        btnStyle.down = hudSkin.getSlotActive();
+        btnStyle.over = hudSkin.getSlotActive();
 
-        // ScrollPane style
-        ScrollPane.ScrollPaneStyle scrollPaneStyle = new ScrollPane.ScrollPaneStyle();
-        scrollPaneStyle.hScroll = skin.newDrawable("white", Color.DARK_GRAY);
-        scrollPaneStyle.hScrollKnob = skin.newDrawable("white", Color.LIGHT_GRAY);
-        scrollPaneStyle.vScroll = skin.newDrawable("white", Color.DARK_GRAY);
-        scrollPaneStyle.vScrollKnob = skin.newDrawable("white", Color.LIGHT_GRAY);
-        skin.add("default", scrollPaneStyle);
+        Label.LabelStyle labelStyle = new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE);
 
-        // --- Main Layout Table ---
-        Table table = new Table();
-        table.setFillParent(true);
-        table.center();
-
-        Label title = new Label("S E T T I N G S", labelStyle);
-        title.setFontScale(2.0f);
-        table.add(title).colspan(2).padBottom(30);
-        table.row();
-
-        // --- Difficulty ---
-        table.add(new Label("Difficulty", labelStyle)).left().padRight(20);
-        difficultyButton = new TextButton(settingsManager.getDifficulty().name(), skin);
+        // 1. Difficulty
+        card.add(new Label("Difficulty", labelStyle)).left().padRight(40).padBottom(16);
+        difficultyButton = new TextButton(settingsManager.getDifficulty().name(), btnStyle);
         difficultyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 cycleDifficulty();
             }
         });
-        table.add(difficultyButton).width(200);
-        table.row().padTop(10);
+        card.add(difficultyButton).width(240).height(48).padBottom(16).row();
 
-        // --- Game Mode (Debug) ---
-        table.add(new Label("Game Mode", labelStyle)).left();
-        modeButton = new TextButton(settingsManager.isAdvancedMode() ? "Advanced" : "Original", skin);
+        // 2. Game Mode
+        card.add(new Label("Game Mode", labelStyle)).left().padRight(40).padBottom(16);
+        modeButton = new TextButton(settingsManager.isAdvancedMode() ? "Advanced" : "Original", btnStyle);
         modeButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 toggleGameMode();
             }
         });
-        table.add(modeButton).width(200);
-        table.row().padTop(10);
+        card.add(modeButton).width(240).height(48).padBottom(16).row();
 
-        // --- Music Volume ---
-        table.add(new Label("Music Volume", labelStyle)).left();
+        // 3. Music Volume
+        card.add(new Label("Music Volume", labelStyle)).left().padRight(40).padBottom(16);
         Table musicTable = new Table();
-        TextButton musicMinus = new TextButton("-", skin);
+        TextButton musicMinus = new TextButton("-", btnStyle);
         musicMinus.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 adjustMusicVolume(-0.10f);
             }
         });
-        musicTable.add(musicMinus).width(40).height(35);
+        musicTable.add(musicMinus).width(48).height(44);
+
         int currentMusicPercent = Math.round(settingsManager.getMusicVolume() * 100);
         musicVolLabel = new Label(currentMusicPercent + "%", labelStyle);
-        musicVolLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-        musicTable.add(musicVolLabel).width(120);
-        TextButton musicPlus = new TextButton("+", skin);
+        musicVolLabel.setAlignment(Align.center);
+        musicTable.add(musicVolLabel).width(140);
+
+        TextButton musicPlus = new TextButton("+", btnStyle);
         musicPlus.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 adjustMusicVolume(0.10f);
             }
         });
-        musicTable.add(musicPlus).width(40).height(35);
-        table.add(musicTable).width(200);
-        table.row().padTop(10);
+        musicTable.add(musicPlus).width(48).height(44);
+        card.add(musicTable).width(240).padBottom(16).row();
 
-        // --- SFX Volume ---
-        table.add(new Label("SFX Volume", labelStyle)).left();
+        // 4. SFX Volume
+        card.add(new Label("SFX Volume", labelStyle)).left().padRight(40).padBottom(28);
         Table sfxTable = new Table();
-        TextButton sfxMinus = new TextButton("-", skin);
+        TextButton sfxMinus = new TextButton("-", btnStyle);
         sfxMinus.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 adjustSfxVolume(-0.10f);
             }
         });
-        sfxTable.add(sfxMinus).width(40).height(35);
+        sfxTable.add(sfxMinus).width(48).height(44);
+
         int currentSfxPercent = Math.round(settingsManager.getSfxVolume() * 100);
         sfxVolLabel = new Label(currentSfxPercent + "%", labelStyle);
-        sfxVolLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
-        sfxTable.add(sfxVolLabel).width(120);
-        TextButton sfxPlus = new TextButton("+", skin);
+        sfxVolLabel.setAlignment(Align.center);
+        sfxTable.add(sfxVolLabel).width(140);
+
+        TextButton sfxPlus = new TextButton("+", btnStyle);
         sfxPlus.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 adjustSfxVolume(0.10f);
             }
         });
-        sfxTable.add(sfxPlus).width(40).height(35);
-        table.add(sfxTable).width(200);
-        table.row().padTop(10);
+        sfxTable.add(sfxPlus).width(48).height(44);
+        card.add(sfxTable).width(240).padBottom(28).row();
 
-        // --- Controls ---
-        TextButton controlsButton = new TextButton("Controls", skin);
+        // 5. Controls CTA Button
+        TextButton.TextButtonStyle ctaStyle = new TextButton.TextButtonStyle();
+        ctaStyle.font = hudSkin.getFontMain();
+        ctaStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        ctaStyle.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
+        ctaStyle.up = hudSkin.getPrimaryButtonUp();
+        ctaStyle.down = hudSkin.getPrimaryButtonDown();
+        ctaStyle.over = hudSkin.getPrimaryButtonDown();
+
+        TextButton controlsButton = new TextButton("KEY BINDINGS & CONTROLS  [C]", ctaStyle);
         controlsButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.setScreen(new ControlsScreen(game, SettingsScreen.this));
             }
         });
-        table.add(controlsButton).colspan(2).padTop(30).width(200);
-        table.row();
+        card.add(controlsButton).colspan(2).width(400).height(54).padBottom(16).center().row();
 
-        // --- Back Button ---
-        TextButton backButton = new TextButton("Back to Menu", skin);
+        // 6. Back Button
+        TextButton backButton = new TextButton("BACK TO MAIN MENU  [ESC]", btnStyle);
         backButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.setScreen(new MainMenuScreen(game));
             }
         });
-        table.add(backButton).colspan(2).padTop(18).width(200);
+        card.add(backButton).colspan(2).width(400).height(54).center().row();
 
-        stage.addActor(table);
+        root.add(card);
 
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
@@ -222,8 +217,8 @@ public class SettingsScreen extends BaseScreen {
         if (sfxVolLabel != null) {
             sfxVolLabel.setText(Math.round(newVol * 100) + "%");
         }
-        if (com.bpm.minotaur.managers.SoundManager.getInstance() != null) {
-            com.bpm.minotaur.managers.SoundManager.getInstance().playSound("ui_click");
+        if (SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playSound("ui_click");
         }
     }
 
@@ -232,7 +227,9 @@ public class SettingsScreen extends BaseScreen {
         if (game.getViewport() != null) {
             game.getViewport().apply();
         }
-        ScreenUtils.clear(Color.BLACK);
+        Gdx.gl.glClearColor(0.06f, 0.05f, 0.04f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         stage.act(Math.min(delta, 1 / 30f));
         stage.draw();
     }
@@ -249,12 +246,9 @@ public class SettingsScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        stage.dispose();
-        skin.dispose();
-        font.dispose();
+        if (stage != null) stage.dispose();
+        if (hudSkin != null) hudSkin.dispose();
     }
-
-    // --- InputProcessor Methods ---
 
     @Override
     public boolean keyDown(int keycode) {
@@ -262,6 +256,18 @@ public class SettingsScreen extends BaseScreen {
             game.setScreen(new MainMenuScreen(game));
             return true;
         }
-        return false; // Let stage handle it
+        if (keycode == Input.Keys.C) {
+            game.setScreen(new ControlsScreen(game, SettingsScreen.this));
+            return true;
+        }
+        if (keycode == Input.Keys.D) {
+            cycleDifficulty();
+            return true;
+        }
+        if (keycode == Input.Keys.M) {
+            toggleGameMode();
+            return true;
+        }
+        return false;
     }
 }

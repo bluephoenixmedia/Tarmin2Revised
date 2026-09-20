@@ -14,7 +14,7 @@ import com.bpm.minotaur.managers.SoundManager;
 
 public class GameOverScreen extends BaseScreen {
 
-    private final BitmapFont font;
+    private final com.bpm.minotaur.rendering.HudSkin hudSkin;
     private SoundManager soundManager;
     private DebugManager debugManager;
 
@@ -66,9 +66,7 @@ public class GameOverScreen extends BaseScreen {
     public GameOverScreen(Tarmin2 game, boolean shouldClearSaves) {
         super(game);
         this.shouldClearSaves = shouldClearSaves;
-        this.font = new BitmapFont();
-        this.font.setColor(Color.RED);
-        this.font.getData().setScale(3);
+        this.hudSkin = new com.bpm.minotaur.rendering.HudSkin();
 
         // --- FIX: Initialize DebugManager before SoundManager to avoid null pointers
         // ---
@@ -256,53 +254,52 @@ public class GameOverScreen extends BaseScreen {
         // --- End Sprite ---
 
         // Draw text
-        // Draw text
         com.bpm.minotaur.managers.DoomManager doom = com.bpm.minotaur.managers.DoomManager.getInstance();
         boolean isApocalypse = doom.isApocalypse();
 
+        float centerX = game.getViewport().getWorldWidth() / 2f;
+        float centerY = game.getViewport().getWorldHeight() / 2f;
+
+        com.badlogic.gdx.graphics.g2d.BitmapFont fontCompass = hudSkin.getFontCompass();
+        com.badlogic.gdx.graphics.g2d.BitmapFont fontHeader = hudSkin.getFontHeader();
+        com.badlogic.gdx.graphics.g2d.BitmapFont fontMain = hudSkin.getFontMain();
+
         if (isApocalypse) {
-            font.setColor(Color.PURPLE);
-            font.draw(game.getBatch(), "THE BRIDGE IS COMPLETE", game.getViewport().getWorldWidth() / 2 - 230,
-                    game.getViewport().getWorldHeight() / 2 + 50);
-            font.draw(game.getBatch(), "TARMIN FEASTS...", game.getViewport().getWorldWidth() / 2 - 150,
-                    game.getViewport().getWorldHeight() / 2 - 20);
+            fontCompass.setColor(com.bpm.minotaur.rendering.HudSkin.COL_HP_CRITICAL);
+            fontCompass.draw(game.getBatch(), "THE BRIDGE IS COMPLETE", centerX - 260, centerY + 80);
+            fontHeader.setColor(com.bpm.minotaur.rendering.HudSkin.COL_GOLD_BRIGHT);
+            fontHeader.draw(game.getBatch(), "TARMIN FEASTS...", centerX - 120, centerY + 20);
         } else {
-            font.setColor(Color.RED);
-            font.draw(game.getBatch(), "GAME OVER", game.getViewport().getWorldWidth() / 2 - 150,
-                    game.getViewport().getWorldHeight() / 2 + 50);
+            fontCompass.setColor(com.bpm.minotaur.rendering.HudSkin.COL_HP_CRITICAL);
+            fontCompass.draw(game.getBatch(), "GAME OVER", centerX - 120, centerY + 80);
 
-            font.setColor(Color.GRAY);
-            font.draw(game.getBatch(), "Death Count: " + doom.getDeathCount(),
-                    game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 - 20);
-            font.draw(game.getBatch(), "Integration: " + (int) doom.getBridgeIntegrity() + "%",
-                    game.getViewport().getWorldWidth() / 2 - 150, game.getViewport().getWorldHeight() / 2 - 60);
-
-            font.setColor(Color.WHITE);
+            fontMain.setColor(Color.LIGHT_GRAY);
+            fontMain.draw(game.getBatch(), "Expedition Demise: " + doom.getDeathCount(), centerX - 150, centerY + 20);
+            fontMain.draw(game.getBatch(), "Bridge Integration: " + (int) doom.getBridgeIntegrity() + "%", centerX - 150, centerY - 15);
         }
-        font.draw(game.getBatch(), "Press any key to return to the Main Menu",
-                game.getViewport().getWorldWidth() / 2 - 450, game.getViewport().getWorldHeight() / 2 - 120);
+
+        fontMain.setColor(com.bpm.minotaur.rendering.HudSkin.COL_GOLD_BRIGHT);
+        fontMain.draw(game.getBatch(), "[SPACE / ENTER / ESC] Return to Main Menu", centerX - 250, centerY - 80);
 
         // --- NEW: Display Session Unlocks ---
         java.util.List<String> unlocks = com.bpm.minotaur.managers.UnlockManager.getInstance().getSessionUnlocks();
         if (!unlocks.isEmpty()) {
-            font.setColor(Color.GOLD);
-            font.getData().setScale(2);
-            font.draw(game.getBatch(), "NEW DISCOVERIES!", 50, game.getViewport().getWorldHeight() - 50);
+            fontHeader.setColor(com.bpm.minotaur.rendering.HudSkin.COL_GOLD_BRIGHT);
+            fontHeader.draw(game.getBatch(), "NEW DISCOVERIES!", 60, game.getViewport().getWorldHeight() - 50);
 
-            font.setColor(Color.YELLOW);
-            float y = game.getViewport().getWorldHeight() - 100;
+            fontMain.setColor(Color.WHITE);
+            float y = game.getViewport().getWorldHeight() - 90;
             for (String unlockId : unlocks) {
                 // Formatting: "item_rusty_sword" -> "Rusty Sword"
                 String name = unlockId.replace("item_", "").replace("monster_", "");
                 name = name.replace("_", " ").toUpperCase();
 
-                font.draw(game.getBatch(), "- " + name, 50, y);
-                y -= 40;
+                fontMain.draw(game.getBatch(), "- " + name, 60, y);
+                y -= 30;
 
                 if (y < 100)
                     break; // Overflow protection
             }
-            font.getData().setScale(3); // Reset
         }
         // ------------------------------------
 
@@ -311,10 +308,15 @@ public class GameOverScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        if (hudSkin != null) {
+            hudSkin.dispose();
+        }
         // IMPORTANT: Always dispose of textures you create
         if (reaperTexture != null) {
             reaperTexture.dispose();
+        }
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
         }
     }
 

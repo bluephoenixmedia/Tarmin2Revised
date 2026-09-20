@@ -5,34 +5,28 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.managers.TormentManager;
 import com.bpm.minotaur.managers.TormentManager.TormentModifier;
+import com.bpm.minotaur.rendering.HudSkin;
 
 /**
  * Screen for configuring Hades-style Torment / Heat modifiers before starting an ascended expedition.
+ * Polished with HudSkin dark fantasy double-borders, ember gold highlights, and clean hotkey badges.
  */
 public class TormentPactScreen extends BaseScreen {
 
     private final BaseScreen parentScreen;
     private final TormentManager tormentManager;
+    private final HudSkin hudSkin;
 
     private Stage stage;
-    private BitmapFont font;
-    private BitmapFont titleFont;
-    private Texture whitePixel;
-    private Texture cardBg;
-
     private Label heatLevelLabel;
     private Table modifiersTable;
 
@@ -40,6 +34,7 @@ public class TormentPactScreen extends BaseScreen {
         super(game);
         this.parentScreen = parentScreen;
         this.tormentManager = TormentManager.getInstance();
+        this.hudSkin = new HudSkin();
     }
 
     @Override
@@ -51,81 +46,84 @@ public class TormentPactScreen extends BaseScreen {
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
 
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        whitePixel = new Texture(pixmap);
-        pixmap.dispose();
-
-        Pixmap cardPix = new Pixmap(60, 60, Pixmap.Format.RGBA8888);
-        cardPix.setColor(0.15f, 0.15f, 0.2f, 0.95f);
-        cardPix.fill();
-        cardPix.setColor(0.35f, 0.35f, 0.45f, 1f);
-        cardPix.drawRectangle(0, 0, 60, 60);
-        cardBg = new Texture(cardPix);
-        cardPix.dispose();
-
-        font = new BitmapFont();
-        font.getData().setScale(1.4f);
-
-        titleFont = new BitmapFont();
-        titleFont.getData().setScale(2.2f);
-
         buildUI();
     }
 
     private void buildUI() {
         stage.clear();
 
+        // Atmospheric dark backdrop
+        Table backdrop = new Table();
+        backdrop.setFillParent(true);
+        backdrop.setBackground(hudSkin.getScreenBackdrop());
+        stage.addActor(backdrop);
+
         Table root = new Table();
         root.setFillParent(true);
+        root.pad(35, 60, 35, 60);
         stage.addActor(root);
 
-        // Header
-        Label title = new Label("PACT OF TORMENT", new Label.LabelStyle(titleFont, new Color(0.95f, 0.3f, 0.2f, 1f)));
-        root.add(title).padTop(40).padBottom(5).row();
+        // Header Panel
+        Table header = new Table();
+        header.setBackground(hudSkin.getDoubleBorderPanel());
+        header.pad(18, 35, 18, 35);
 
-        Label subtitle = new Label("Invoke infernal pacts to increase expedition difficulty and glory.",
-                new Label.LabelStyle(font, Color.LIGHT_GRAY));
-        root.add(subtitle).padBottom(15).row();
+        Label title = new Label("PACT OF TORMENT", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
+        header.add(title).center().padBottom(6).row();
+
+        Label subtitle = new Label("Invoke infernal pacts to increase expedition difficulty, danger, and glory.",
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        header.add(subtitle).center().padBottom(10).row();
 
         heatLevelLabel = new Label("CURRENT HEAT LEVEL: " + tormentManager.getHeatLevel(),
-                new Label.LabelStyle(titleFont, new Color(1f, 0.8f, 0.2f, 1f)));
-        root.add(heatLevelLabel).padBottom(25).row();
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+        header.add(heatLevelLabel).center().row();
 
-        // Modifiers List
+        root.add(header).fillX().padBottom(20).row();
+
+        // Modifiers List Container
+        Table listContainer = new Table();
+        listContainer.setBackground(hudSkin.getSlotRecessed());
+        listContainer.pad(15);
+
         modifiersTable = new Table();
         populateModifiersTable();
 
         ScrollPane scrollPane = new ScrollPane(modifiersTable);
         scrollPane.setFadeScrollBars(false);
-        root.add(scrollPane).size(1100, 520).padBottom(30).row();
+        listContainer.add(scrollPane).size(1160, 530).expand().fill();
+
+        root.add(listContainer).size(1200, 560).padBottom(24).row();
 
         // Footer buttons
         Table buttonBar = new Table();
 
         TextButton.TextButtonStyle confirmStyle = new TextButton.TextButtonStyle();
-        confirmStyle.font = font;
-        confirmStyle.fontColor = Color.WHITE;
-        confirmStyle.up = new TextureRegionDrawable(whitePixel).tint(new Color(0.2f, 0.5f, 0.2f, 0.9f));
-        confirmStyle.over = new TextureRegionDrawable(whitePixel).tint(new Color(0.3f, 0.7f, 0.3f, 1f));
+        confirmStyle.font = hudSkin.getFontMain();
+        confirmStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        confirmStyle.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
+        confirmStyle.up = hudSkin.getPrimaryButtonUp();
+        confirmStyle.down = hudSkin.getPrimaryButtonDown();
+        confirmStyle.over = hudSkin.getPrimaryButtonDown();
 
-        TextButton confirmBtn = new TextButton("SEAL PACT & RETURN", confirmStyle);
+        TextButton confirmBtn = new TextButton("SEAL PACT & RETURN  [ESC / ENTER]", confirmStyle);
         confirmBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 close();
             }
         });
-        buttonBar.add(confirmBtn).width(300).height(55).padRight(30);
+        buttonBar.add(confirmBtn).width(420).height(58).padRight(30);
 
         TextButton.TextButtonStyle clearStyle = new TextButton.TextButtonStyle();
-        clearStyle.font = font;
-        clearStyle.fontColor = Color.WHITE;
-        clearStyle.up = new TextureRegionDrawable(whitePixel).tint(new Color(0.4f, 0.2f, 0.2f, 0.9f));
-        clearStyle.over = new TextureRegionDrawable(whitePixel).tint(new Color(0.6f, 0.3f, 0.3f, 1f));
+        clearStyle.font = hudSkin.getFontMain();
+        clearStyle.fontColor = HudSkin.COL_HP_CRITICAL;
+        clearStyle.overFontColor = Color.WHITE;
+        clearStyle.up = hudSkin.getSlotRecessed();
+        clearStyle.down = hudSkin.getSlotActive();
+        clearStyle.over = hudSkin.getSlotActive();
 
-        TextButton clearBtn = new TextButton("CLEAR ALL", clearStyle);
+        TextButton clearBtn = new TextButton("CLEAR ALL  [C]", clearStyle);
         clearBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -133,28 +131,35 @@ public class TormentPactScreen extends BaseScreen {
                 refreshUI();
             }
         });
-        buttonBar.add(clearBtn).width(200).height(55);
+        buttonBar.add(clearBtn).width(240).height(58);
 
-        root.add(buttonBar).padBottom(40).row();
+        root.add(buttonBar).padBottom(20).row();
     }
 
     private void populateModifiersTable() {
         modifiersTable.clear();
 
-        for (final TormentModifier mod : TormentModifier.values()) {
+        TormentModifier[] modifiers = TormentModifier.values();
+        for (int i = 0; i < modifiers.length; i++) {
+            final TormentModifier mod = modifiers[i];
             final boolean active = tormentManager.hasModifier(mod);
+            final int hotkeyNum = i + 1;
 
             Table row = new Table();
-            row.setBackground(new TextureRegionDrawable(cardBg));
+            row.setBackground(hudSkin.getDoubleBorderPanel());
+            row.pad(10, 15, 10, 15);
 
-            // Status Indicator / Toggle Button
+            // Toggle Button with Hotkey Badge
             TextButton.TextButtonStyle toggleStyle = new TextButton.TextButtonStyle();
-            toggleStyle.font = font;
-            toggleStyle.fontColor = Color.WHITE;
-            Color btnColor = active ? new Color(0.7f, 0.2f, 0.2f, 0.9f) : new Color(0.25f, 0.25f, 0.3f, 0.8f);
-            toggleStyle.up = new TextureRegionDrawable(whitePixel).tint(btnColor);
+            toggleStyle.font = hudSkin.getFontSmall();
+            toggleStyle.fontColor = active ? HudSkin.COL_TEXT_ON_GOLD : HudSkin.COL_GOLD_MUTED;
+            toggleStyle.overFontColor = active ? HudSkin.COL_TEXT_ON_GOLD : Color.WHITE;
+            toggleStyle.up = active ? hudSkin.getPrimaryButtonUp() : hudSkin.getSlotRecessed();
+            toggleStyle.down = active ? hudSkin.getPrimaryButtonDown() : hudSkin.getSlotActive();
+            toggleStyle.over = active ? hudSkin.getPrimaryButtonDown() : hudSkin.getSlotActive();
 
-            TextButton toggleBtn = new TextButton(active ? "[ ACTIVE ]" : "[ INACTIVE ]", toggleStyle);
+            String toggleText = active ? String.format("[%d] ACTIVE", hotkeyNum) : String.format("[%d] INACTIVE", hotkeyNum);
+            TextButton toggleBtn = new TextButton(toggleText, toggleStyle);
             toggleBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -162,23 +167,24 @@ public class TormentPactScreen extends BaseScreen {
                     refreshUI();
                 }
             });
-            row.add(toggleBtn).width(160).height(50).pad(12);
+            row.add(toggleBtn).width(170).height(48).padRight(18);
 
             // Title and Description
             Table infoTable = new Table();
-            Label nameLabel = new Label(mod.getTitle() + "  (+" + mod.getHeatValue() + " Heat)",
-                    new Label.LabelStyle(font, active ? new Color(1f, 0.85f, 0.4f, 1f) : Color.WHITE));
+            String heatTag = String.format("(+%d Heat)", mod.getHeatValue());
+            Label nameLabel = new Label(mod.getTitle() + "  " + heatTag,
+                    new Label.LabelStyle(hudSkin.getFontMain(), active ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE));
             nameLabel.setAlignment(Align.left);
-            infoTable.add(nameLabel).expandX().fillX().row();
+            infoTable.add(nameLabel).expandX().fillX().padBottom(4).row();
 
             Label descLabel = new Label(mod.getDescription(),
-                    new Label.LabelStyle(font, Color.LIGHT_GRAY));
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             descLabel.setAlignment(Align.left);
             infoTable.add(descLabel).expandX().fillX().row();
 
-            row.add(infoTable).expandX().fillX().padLeft(15);
+            row.add(infoTable).expandX().fillX();
 
-            modifiersTable.add(row).width(1050).padBottom(10).row();
+            modifiersTable.add(row).width(1120).padBottom(10).row();
         }
     }
 
@@ -193,16 +199,30 @@ public class TormentPactScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
-        if (keycode == Input.Keys.ESCAPE) {
+        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.ENTER) {
             close();
             return true;
+        }
+        if (keycode == Input.Keys.C) {
+            tormentManager.clearModifiers();
+            refreshUI();
+            return true;
+        }
+        if (keycode >= Input.Keys.NUM_1 && keycode <= Input.Keys.NUM_9) {
+            int idx = keycode - Input.Keys.NUM_1;
+            TormentModifier[] mods = TormentModifier.values();
+            if (idx >= 0 && idx < mods.length) {
+                tormentManager.toggleModifier(mods[idx]);
+                refreshUI();
+                return true;
+            }
         }
         return false;
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.06f, 0.04f, 0.08f, 1f);
+        Gdx.gl.glClearColor(0.05f, 0.03f, 0.06f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.act(delta);
@@ -219,9 +239,6 @@ public class TormentPactScreen extends BaseScreen {
     @Override
     public void dispose() {
         if (stage != null) stage.dispose();
-        if (font != null) font.dispose();
-        if (titleFont != null) titleFont.dispose();
-        if (whitePixel != null) whitePixel.dispose();
-        if (cardBg != null) cardBg.dispose();
+        if (hudSkin != null) hudSkin.dispose();
     }
 }
