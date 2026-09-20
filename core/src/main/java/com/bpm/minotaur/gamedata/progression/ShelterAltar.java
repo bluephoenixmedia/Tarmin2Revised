@@ -47,18 +47,27 @@ public class ShelterAltar {
     private final java.util.Map<StatType, Integer> ascensionTiers = new java.util.EnumMap<>(StatType.class);
 
     public enum Station {
-        BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG),
-        STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST),
-        CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT),
-        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH),
-        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN);
+        BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG, null),
+        STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST, null),
+        CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
+        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
+        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null);
 
         private final String displayName;
         private final String description;
         private final int cost;
         private final com.bpm.minotaur.gamedata.item.Item.ItemType itemType;
+        /**
+         * The travelling counterpart of this station, or null if it has none. Owning the
+         * station is what earns the kit -- see FieldKitGrant. Kept here beside itemType so
+         * a station's two item facts live on one line.
+         */
+        private final com.bpm.minotaur.gamedata.item.Item.ItemType portableKit;
 
-        Station(String displayName, String description, int cost, com.bpm.minotaur.gamedata.item.Item.ItemType itemType) {
+        Station(String displayName, String description, int cost,
+                com.bpm.minotaur.gamedata.item.Item.ItemType itemType,
+                com.bpm.minotaur.gamedata.item.Item.ItemType portableKit) {
+            this.portableKit = portableKit;
             this.displayName = displayName;
             this.description = description;
             this.cost = cost;
@@ -69,6 +78,9 @@ public class ShelterAltar {
         public String getDescription() { return description; }
         public int getCost() { return cost; }
         public com.bpm.minotaur.gamedata.item.Item.ItemType getItemType() { return itemType; }
+
+        /** The portable counterpart this station teaches, or null if it has none. */
+        public com.bpm.minotaur.gamedata.item.Item.ItemType getPortableKit() { return portableKit; }
     }
 
     public static final int MAX_TIER = 3;

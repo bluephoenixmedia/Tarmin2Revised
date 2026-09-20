@@ -1323,14 +1323,14 @@ public class GameScreen extends BaseScreen {
             player.getInjuryManager().cureAll();
         }
 
-        // Only re-arm a starter weapon/cross if the player somehow has nothing equipped
+        // Only re-arm a starter weapon if the player somehow has nothing in hand. The
+        // off-hand is deliberately left empty: a new game starts with an empty left hand,
+        // so re-arming it here handed out a free WOODEN_CROSS on essentially every death.
+        // That is not cosmetic -- the cross is a Spiritual weapon, and Bad monsters are
+        // immune to War damage, so it quietly gifted the counter to a whole category.
         if (player.getInventory().getRightHand() == null) {
             Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().setRightHand(starterWeapon);
-        }
-        if (player.getInventory().getLeftHand() == null) {
-            Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setLeftHand(starterCross);
         }
 
         // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
@@ -1344,15 +1344,11 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
 
-        // Travel crafting kits: guarantee the player always retains the portable field kits
-        if (!player.getInventory().hasItemOfType(Item.ItemType.CRAFTING_TOOLKIT)) {
-            Item craftingToolkit = game.getItemDataManager().createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().pickupToBackpack(craftingToolkit);
-        }
-        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
-            Item cookingKit = game.getItemDataManager().createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().pickupToBackpack(cookingKit);
-        }
+        // Travel kits: replace any the player has paid for at the Altar but no longer
+        // carries. They are not a death handout -- owning the Crafting Bench or Fire Pot
+        // is what earns the portable version, and this is only the top-up for one lost
+        // in the field.
+        grantOwedFieldKits();
 
         // Shelter Altar Provisions tier: extra rations at the start of each expedition
         int bonusProvisions = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getBonusProvisionCount();
@@ -2971,6 +2967,34 @@ public class GameScreen extends BaseScreen {
         player.interact(maze, eventManager, soundManager, gameMode, worldManager);
         playerTurnTakesAction();
         needsAsciiRender = true;
+    }
+
+    /**
+     * Tops the player up with any portable field kit they unlocked at the Altar but are no
+     * longer carrying, reporting anything their pack had no room for.
+     *
+     * <p>The purchase path grants separately, at the Altar, so buying a station does not
+     * require dying to collect the kit it teaches.
+     */
+    private void grantOwedFieldKits() {
+        if (player == null) {
+            return;
+        }
+
+        com.bpm.minotaur.gamedata.progression.FieldKitGrant.Result result =
+                com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getUnlockedStations(),
+                        player.getInventory(),
+                        game.getItemDataManager(),
+                        game.getAssetManager());
+
+        // A full pack used to swallow the grant without a word, which is why the kits
+        // seemed to appear only sometimes. Say so instead.
+        if (hud != null) {
+            for (Item kit : result.getNoRoom()) {
+                hud.addMessage("No room for your " + kit.getDisplayName() + " -- free a pack slot.");
+            }
+        }
     }
 
     /**

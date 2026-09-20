@@ -276,7 +276,29 @@ public class ShelterAltarScreen extends BaseScreen {
         ShelterAltar altar = ShelterAltar.getInstance();
         boolean success = altar.unlockStation(station, parentScreen.getMaze(), game.getItemDataManager(), game.getAssetManager());
         if (success) {
-            statusLabel.setText(station.getDisplayName() + " materialized into the shelter!");
+            StringBuilder message = new StringBuilder(station.getDisplayName() + " materialized into the shelter!");
+
+            // The portable counterpart arrives with the station, not on the player's next
+            // death -- otherwise buying the bench would mean having to die to collect the
+            // field toolkit it teaches.
+            com.bpm.minotaur.gamedata.progression.FieldKitGrant.Result kits =
+                    com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
+                            altar.getUnlockedStations(),
+                            parentScreen.getPlayer().getInventory(),
+                            game.getItemDataManager(),
+                            game.getAssetManager());
+
+            for (com.bpm.minotaur.gamedata.item.Item kit : kits.getGranted()) {
+                message.append(" ").append(kit.getDisplayName()).append(" packed for the field.");
+            }
+            // The divinities are already spent, so a pack too full to take the kit has to
+            // be said here -- the player is looking at this label, not the world HUD.
+            for (com.bpm.minotaur.gamedata.item.Item kit : kits.getNoRoom()) {
+                message.append(" Your pack is too full for the ").append(kit.getDisplayName())
+                        .append(" -- make room and it will be issued on your next expedition.");
+            }
+
+            statusLabel.setText(message.toString());
             if (parentScreen.getSoundManager() != null) {
                 parentScreen.getSoundManager().playDimensionalWarpSound();
             }
