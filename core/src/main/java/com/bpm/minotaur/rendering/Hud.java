@@ -552,34 +552,31 @@ public class Hud implements Disposable {
 
         // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
         spellHotbarTable = new Table();
-        spellHotbarTable.setBackground(hudSkin.getDashboardBg());
-        spellHotbarTable.pad(3f, 6f, 3f, 6f);
-        Label spellTitle = new Label("SPELLS", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
-        spellHotbarTable.add(spellTitle).padRight(6f);
+        spellHotbarTable.setBackground(hudSkin.getPanelBg());
+        spellHotbarTable.pad(4f);
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
             spellSlots[i] = new Table();
             spellSlots[i].setBackground(hudSkin.getSlotRecessed());
-            spellSlots[i].pad(3f, 4f, 3f, 4f);
+            spellSlots[i].pad(2f, 5f, 2f, 5f);
             spellSlots[i].top();
 
-            // Header row: Key badge on the left, MP cost on the right
-            Table headerRow = new Table();
+            // One row: [key] name  cost. Stacking the badge above the name meant two
+            // lines competing for a slot barely tall enough for one, which is what made
+            // them overlap. The full name, school and description are on hover.
             String slotKey = (i < com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS.length)
                     ? com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i]
                     : String.valueOf(i + 1);
-            spellBadgeLabels[i] = new Label("[" + slotKey + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
-            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_WATER_CYAN));
-            headerRow.add(spellBadgeLabels[i]).left();
-            headerRow.add().expandX();
-            headerRow.add(spellCostLabels[i]).right();
-            spellSlots[i].add(headerRow).growX().padBottom(1f).row();
-
-            // Spell Name: crisp, unscaled fontMicro with room for full spell names
+            spellBadgeLabels[i] = new Label("[" + slotKey + "]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
             spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.valueOf("4DEEEA")));
             spellNameLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellNameLabels[i]).growX().left();
+            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_MP_ON_DARK));
+
+            spellSlots[i].add(spellBadgeLabels[i]).left().padRight(7f);
+            // minWidth(0) lets the cell shrink so the ellipsis actually engages.
+            spellSlots[i].add(spellNameLabels[i]).expandX().fillX().minWidth(0f).left();
+            spellSlots[i].add(spellCostLabels[i]).right().padLeft(4f);
 
             spellSlots[i].addListener(new ClickListener() {
                 @Override
@@ -617,7 +614,7 @@ public class Hud implements Disposable {
                 }
             });
 
-            spellHotbarTable.add(spellSlots[i]).size(104f, 48f).pad(2f);
+            spellHotbarTable.add(spellSlots[i]).size(168f, 24f).pad(2f);
         }
 
         spellHotbarTable.pack();
@@ -859,9 +856,9 @@ public class Hud implements Disposable {
         for (int i = 0; i < 5; i++) {
             if (i >= unlockedSpellSlots) {
                 spellSlots[i].setBackground(hudSkin.getSlotRecessed());
-                spellBadgeLabels[i].setColor(Color.DARK_GRAY);
+                spellBadgeLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
                 spellNameLabels[i].setText("LOCKED");
-                spellNameLabels[i].setColor(Color.DARK_GRAY);
+                spellNameLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
                 spellCostLabels[i].setText("");
                 continue;
             }
@@ -870,7 +867,7 @@ public class Hud implements Disposable {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                 if (st != null) {
                     spellNameLabels[i].setText(st.getName());
-                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "Free" : (st.getMpCost() + " MP"));
+                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "-" : String.valueOf(st.getMpCost()));
                     boolean canCast = player.hasEnoughMana(st.getMpCost());
                     if (canCast) {
                         spellSlots[i].setBackground(hudSkin.getSlotActive());
