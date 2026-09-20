@@ -261,19 +261,6 @@
       "x": 1.1,
       "y": 0.9
     },
-    "directionTextures": {
-      "north": "images/monsters/giant_scorpion_n.png",
-      "east": "images/monsters/giant_scorpion_e.png",
-      "west": "images/monsters/giant_scorpion_w.png",
-      "southFrames": [
-        "images/monsters/giant_scorpion_s_0.png",
-        "images/monsters/giant_scorpion_s_1.png",
-        "images/monsters/giant_scorpion_s_2.png",
-        "images/monsters/giant_scorpion_s_3.png",
-        "images/monsters/giant_scorpion_s_4.png"
-      ],
-      "frameDuration": 0.15
-    },
     "variants": [
       {
         "color": "BLUE",
@@ -946,7 +933,7 @@
     "baseExperience": 200,
     "intelligence": 20,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/ghast.jpg",
+    "texturePath": "images/monsters/ghast.png",
     "spriteData": [
       "........#########.......",
       ".......#..#..#...#......",
@@ -1007,7 +994,7 @@
     "armorClass": 16,
     "baseExperience": 250,
     "family": "MYTHICAL",
-    "texturePath": "images/monsters/beholder.jpg",
+    "texturePath": "images/monsters/beholder.png",
     "spriteData": [
       "......#.....#.....#.....",
       ".......#...#.#...#......",
