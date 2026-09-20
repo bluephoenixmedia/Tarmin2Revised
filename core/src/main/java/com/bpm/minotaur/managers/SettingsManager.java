@@ -44,6 +44,7 @@ public class SettingsManager {
         keyBindingDescriptions.put("MAP", "Castle Map");
         keyBindingDescriptions.put("FIELD_CRAFTING", "Field Crafting");
         keyBindingDescriptions.put("FIELD_COOKING", "Field Cooking");
+        keyBindingDescriptions.put("SKILL_TREE", "Skill Tree & Perks");
         keyBindingDescriptions.put("TOGGLE_LANTERN", "Toggle Lantern");
         keyBindingDescriptions.put("SPELLBOOK", "Spellbook");
     }
@@ -154,7 +155,8 @@ public class SettingsManager {
             case "ATTACK": return Input.Keys.A;
             case "MAP": return Input.Keys.M;
             case "FIELD_CRAFTING": return Input.Keys.C;
-            case "FIELD_COOKING": return Input.Keys.K;
+            case "FIELD_COOKING": return Input.Keys.J;
+            case "SKILL_TREE": return Input.Keys.K;
             case "TOGGLE_LANTERN": return Input.Keys.L;
             case "SPELLBOOK": return Input.Keys.Q;
             default: return Input.Keys.UNKNOWN;

@@ -2402,6 +2402,9 @@ public class GameScreen extends BaseScreen {
                     openFieldCrafting();
                     return true;
                 case Input.Keys.K:
+                    openSkillTree();
+                    return true;
+                case Input.Keys.J:
                     openFieldCooking();
                     return true;
             }
@@ -2419,6 +2422,11 @@ public class GameScreen extends BaseScreen {
                     combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
             }
+            return true;
+        }
+
+        if (keycode == SettingsManager.getInstance().getKey("SKILL_TREE")) {
+            openSkillTree();
             return true;
         }
 
@@ -3031,6 +3039,13 @@ public class GameScreen extends BaseScreen {
             game.setScreen(cookingScreen);
         } catch (Exception e) {
             Gdx.app.error("GameScreen", "Failed to open field cooking", e);
+        }
+    }
+
+    public void openSkillTree() {
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            game.setScreen(new SkillTreeScreen(game, this, player, maze));
         }
     }
 

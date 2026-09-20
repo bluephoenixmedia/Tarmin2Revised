@@ -96,6 +96,14 @@ public class InventoryDragDropHandler {
                 InventorySlot origin = (InventorySlot) p.getObject();
                 if (origin == slot) { slot.setHighlight(false, false); return false; }
                 boolean valid = slot.accepts(origin.getItem());
+                if (valid && "L.Hand".equals(slot.slotName)) {
+                    Item it = origin.getItem();
+                    if (it != null && it.isWeapon() && !it.isShield()) {
+                        if (!player.canDualWield()) {
+                            valid = false;
+                        }
+                    }
+                }
                 slot.setHighlight(true, valid);
                 return valid;
             }
@@ -127,6 +135,16 @@ public class InventoryDragDropHandler {
     public void moveItem(InventorySlot source, InventorySlot target) {
         Item srcItem = source.getItem();
         if (srcItem == null) return;
+
+        if ("L.Hand".equals(target.slotName) && srcItem.isWeapon() && !srcItem.isShield()) {
+            if (!player.canDualWield()) {
+                if (player.getEventManager() != null) {
+                    player.getEventManager().addEvent(
+                            new com.bpm.minotaur.gamedata.GameEvent("Two-weapon fighting requires the Dual Wielder skill!", 3f));
+                }
+                return;
+            }
+        }
 
         Item dstItem = target.getItem();
         // Ensure the displaced item can also go back into the source slot.
@@ -165,6 +183,11 @@ public class InventoryDragDropHandler {
         } else {
             for (InventorySlot candidate : allSlots) {
                 if (candidate.category == InventorySlot.SlotCategory.EQUIPMENT && candidate.accepts(item)) {
+                    if ("L.Hand".equals(candidate.slotName) && item.isWeapon() && !item.isShield()) {
+                        if (!player.canDualWield()) {
+                            continue;
+                        }
+                    }
                     moveItem(slot, candidate);
                     return;
                 }

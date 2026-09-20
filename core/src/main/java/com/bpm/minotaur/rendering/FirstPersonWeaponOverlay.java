@@ -812,7 +812,7 @@ public class FirstPersonWeaponOverlay {
 
         float drawX, drawY, rotation;
 
-        if (active && currentProfile != null) {
+        if (active && currentProfile != null && !currentProfile.isOffHand) {
             float progress = attackTimer / currentProfile.duration;
             CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
 
@@ -1073,6 +1073,20 @@ public class FirstPersonWeaponOverlay {
             drawX = worldW * state.xRel;
             drawY = worldH * state.yRel;
             rotation = state.rotation;
+        } else if (active && currentProfile != null && (currentProfile.isOffHand || currentProfile.isDualStrike)) {
+            float progress = attackTimer / currentProfile.duration;
+            CombatMotionProfile.MotionState state = currentProfile.evaluate(progress);
+            if (currentProfile.isOffHand) {
+                drawX = (worldW * state.xRel) + (bobX * 0.3f);
+                drawY = (worldH * state.yRel) + (bobY * 0.3f);
+                rotation = state.rotation;
+            } else {
+                // Dual strike (Scissor Finisher): off-hand sweeps symmetrically across center from left
+                float offXRel = 1.0f - state.xRel;
+                drawX = (worldW * offXRel) - (bobX * 0.3f);
+                drawY = (worldH * state.yRel) + (bobY * 0.3f);
+                rotation = -state.rotation;
+            }
         } else if (guardFlinchTimer > 0f) {
             // Defensive flinch
             float flinchT = guardFlinchTimer / GUARD_FLINCH_DURATION;

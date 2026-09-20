@@ -19,6 +19,7 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
 import com.bpm.minotaur.screens.GameScreen;
+import com.bpm.minotaur.gamedata.progression.SkillId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,13 +48,24 @@ public class SpellExecutionEngine {
         }
 
         // Check MP (Cantrips level 0 cost 0 MP)
-        if (spell.getMpCost() > 0 && !player.hasEnoughMana(spell.getMpCost())) {
-            eventManager.addEvent(new GameEvent("Not enough MP! (" + spell.getMpCost() + " required)", 1.5f));
+        int effectiveCost = spell.getMpCost();
+        if (effectiveCost > 0) {
+            if (player.hasSkill(SkillId.SPELL_WEAVER)) {
+                effectiveCost = Math.max(1, effectiveCost - 1);
+            }
+            if (player.hasSkill(SkillId.RUNIC_CONSERVATION) && com.badlogic.gdx.math.MathUtils.randomBoolean(0.25f)) {
+                effectiveCost = 0;
+                eventManager.addEvent(new GameEvent("RUNIC CONSERVATION: Free spell cast!", 1.5f));
+            }
+        }
+
+        if (effectiveCost > 0 && !player.hasEnoughMana(effectiveCost)) {
+            eventManager.addEvent(new GameEvent("Not enough MP! (" + effectiveCost + " required)", 1.5f));
             return false;
         }
 
-        if (spell.getMpCost() > 0) {
-            player.deductMana(spell.getMpCost());
+        if (effectiveCost > 0) {
+            player.deductMana(effectiveCost);
         }
 
         VisualArchetype archetype = spell.getVisualArchetypeEnum();
@@ -286,7 +298,7 @@ public class SpellExecutionEngine {
         Monster target = maze.getMonsters().get(targetTile);
 
         if (target != null && target.getCurrentHP() > 0) {
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+            int dmg = calculateSpellDamage(spell, player);
             int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
@@ -409,8 +421,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
-            dmg = Math.max(1, dmg);
+            int dmg = calculateSpellDamage(spell, player);
 
             int actualDmg = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
@@ -475,7 +486,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+            int dmg = calculateSpellDamage(spell, player);
             int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
@@ -502,8 +513,7 @@ public class SpellExecutionEngine {
                     continue;
                 }
 
-                int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
-                dmg = Math.max(1, dmg);
+                int dmg = calculateSpellDamage(spell, player);
 
                 int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
@@ -515,6 +525,14 @@ public class SpellExecutionEngine {
             }
         }
         return hits;
+    }
+
+    private static int calculateSpellDamage(SpellTemplate spell, Player player) {
+        int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+        if (player.hasSkill(SkillId.PRIMORDIAL_FOCUS)) {
+            dmg = (int) (dmg * 1.25f);
+        }
+        return Math.max(1, dmg);
     }
 
     private static void handleKill(Monster target, GridPoint2 pos, Player player, Maze maze,

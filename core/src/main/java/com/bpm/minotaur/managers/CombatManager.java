@@ -23,6 +23,7 @@ import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.screens.GameScreen;
 import com.bpm.minotaur.gamedata.injury.InjuryRecord;
+import com.bpm.minotaur.gamedata.progression.SkillId;
 import com.bpm.minotaur.gamedata.monster.GhostPlayerMonster;
 import com.bpm.minotaur.gamedata.bones.BonesData;
 
@@ -582,6 +583,16 @@ public class CombatManager {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(blocked);
             }
             dmg = applyGuardMitigation(dmg);
+
+            // HEAVY_ARMOR_MASTERY: Nonmagical physical damage reduced by 3 while wearing heavy armor
+            if (player.hasSkill(SkillId.HEAVY_ARMOR_MASTERY) && player.isWearingHeavyArmor()) {
+                int reduced = Math.min(3, dmg);
+                dmg = Math.max(0, dmg - 3);
+                if (reduced > 0) {
+                    eventManager.addEvent(new GameEvent("Heavy Armor Master absorbed " + reduced + " dmg!", 1.2f));
+                }
+            }
+
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);
@@ -1436,12 +1447,21 @@ public class CombatManager {
         if (monster == null)
             return;
 
+        // Determine attacking weapon: if off-hand combo strike, use left hand weapon
+        Item attackWeapon = pendingWeapon;
+        if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
+            Item leftHand = player.getInventory().getLeftHand();
+            if (leftHand != null) {
+                attackWeapon = leftHand;
+            }
+        }
+
         // Consume ammunition for ranged weapons (bows, crossbows)
-        if (pendingWeapon != null && pendingWeapon.isRanged() && pendingWeapon.getType() != Item.ItemType.DART) {
+        if (attackWeapon != null && attackWeapon.isRanged() && attackWeapon.getType() != Item.ItemType.DART) {
             player.decrementArrow();
         }
 
-        int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
+        int toHitBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         if (player.getInjuryManager() != null) {
             toHitBonus += player.getInjuryManager().getEffectiveAttackModifier();
         }
@@ -1473,17 +1493,17 @@ public class CombatManager {
         if (isHit || isGlancing) {
             DamageType dmgType = DamageType.PHYSICAL;
             String damageDice = "1d2";
-            boolean isArcaneSpark = isBookWeapon(pendingWeapon);
+            boolean isArcaneSpark = isBookWeapon(attackWeapon);
             if (isArcaneSpark) {
                 // Tome Weapon Attack: a Spiritual Arcane Spark replaces the book's own
                 // damage dice entirely -- see arcaneSparkDamage() for the 1d4+INT roll.
                 dmgType = DamageType.SPIRITUAL;
                 damageDice = ARCANE_SPARK_DICE;
-            } else if (pendingWeapon != null) {
-                damageDice = player.getInventory().getActiveDamageDice(pendingWeapon);
+            } else if (attackWeapon != null) {
+                damageDice = player.getInventory().getActiveDamageDice(attackWeapon);
                 if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
-                if ("SPIRITUAL".equalsIgnoreCase(pendingWeapon.getDamageType()) ||
-                        pendingWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
+                if ("SPIRITUAL".equalsIgnoreCase(attackWeapon.getDamageType()) ||
+                        attackWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
                     dmgType = DamageType.SPIRITUAL;
                 }
             }
@@ -1499,15 +1519,55 @@ public class CombatManager {
                 if (isArcaneSpark) {
                     int intModifier = (player.getEffectiveIntelligence() - 10) / 2;
                     totalDamage = arcaneSparkDamage(intModifier, DiceRoller.roll(damageDice));
+                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                    // Dual Strike (Scissor Finisher): Rolls main hand + off hand damage together!
+                    int mainBase = DiceRoller.roll(damageDice);
+                    int mainBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                    int mainDmg = Math.max(1, mainBase + mainBonus);
+
+                    Item offHand = player.getInventory().getLeftHand();
+                    int offDmg = 0;
+                    if (offHand != null) {
+                        String offDice = player.getInventory().getActiveDamageDice(offHand);
+                        if (offDice == null || offDice.isEmpty()) offDice = "1d4";
+                        int offBase = DiceRoller.roll(offDice);
+                        int offBonus = offHand.isFinesse() ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                        offDmg = Math.max(1, offBase + offBonus);
+                    }
+                    totalDamage = mainDmg + offDmg;
+
+                    // Whirlwind Executioner: +50% dual-strike damage
+                    if (player.hasSkill(SkillId.WHIRLWIND_EXECUTIONER)) {
+                        totalDamage = (int) (totalDamage * 1.5f);
+                        eventManager.addEvent(new GameEvent("WHIRLWIND EXECUTIONER! Devastating dual strike!", 1.2f));
+                    }
+                } else if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
+                    int baseDamage = DiceRoller.roll(damageDice);
+                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                    totalDamage = Math.max(1, baseDamage + damageBonus);
                 } else {
                     int baseDamage = DiceRoller.roll(damageDice);
-                    int damageBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
                     totalDamage = Math.max(1, baseDamage + damageBonus);
                 }
 
                 // Combo Damage Multiplier
                 if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
                     totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
+                }
+
+                // Brutal Cleave Perk: +20% damage on finisher strikes
+                if (currentMotionProfile != null && currentMotionProfile.isFinisher && player.hasSkill(SkillId.BRUTAL_CLEAVE)) {
+                    totalDamage = (int) (totalDamage * 1.20f);
+                }
+
+                // Deadeye Sniper Perk: +25% damage on ranged attack at distance >= 3
+                if (attackWeapon != null && attackWeapon.isRanged() && player.hasSkill(SkillId.DEADEYE_SNIPER)) {
+                    float dist = player.getPosition().dst(monster.getPosition());
+                    if (dist >= 3.0f) {
+                        totalDamage = (int) (totalDamage * 1.25f);
+                        eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
+                    }
                 }
 
                 // Glancing Blow: 35% base damage
@@ -1530,15 +1590,44 @@ public class CombatManager {
                     eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
                 }
 
+                int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit);
+
+                // Brutal Cleave: Overkill damage cleaves into adjacent monster
+                if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {
+                    int overkill = totalDamage - monsterHpBefore;
+                    if (overkill > 0) {
+                        int cleaveDmg = Math.max(1, overkill / 2);
+                        GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+                        for (Direction d : Direction.values()) {
+                            GridPoint2 adjPos = new GridPoint2(mPos.x + (int) d.getVector().x, mPos.y + (int) d.getVector().y);
+                            Monster adjMonster = maze.getMonsters().get(adjPos);
+                            if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
+                                int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
+                                eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getMonsterType() + " for " + cleaved + " dmg!", 1.5f));
+                                showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
+                                if (adjMonster.getCurrentHP() <= 0) {
+                                    maze.getMonsters().remove(adjPos);
+                                    player.getStats().addExperience(adjMonster.getBaseExperience());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 Monster.Affinity affinity = monster.getAffinity(dmgType);
                 String dmgPrefix = "";
                 com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
 
                 String comboTag = "";
                 if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
-                    if (currentMotionProfile.isFinisher) {
+                    if (currentMotionProfile.isDualStrike) {
+                        comboTag = "DUAL SCISSOR! ";
+                    } else if (currentMotionProfile.isFinisher) {
                         comboTag = "FINISHER! ";
+                    } else if (currentMotionProfile.isOffHand) {
+                        comboTag = "OFF-HAND! ";
                     } else {
                         comboTag = "COMBO x" + (currentMotionProfile.comboStep + 1) + "! ";
                     }
@@ -1551,6 +1640,9 @@ public class CombatManager {
                     dmgPrefix = "GLANCE! ";
                     textColor = com.badlogic.gdx.graphics.Color.CYAN;
                     eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
+                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                    dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
+                    textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
                 } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
                     dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.GOLD;

@@ -175,7 +175,7 @@ public class Item implements Renderable {
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
 
         // Home Props
-        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR,
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
@@ -898,7 +898,19 @@ public class Item implements Renderable {
     }
 
     public String getArmorCategory() {
-        return template != null ? template.armorCategory : "LIGHT";
+        if (template != null && template.armorCategory != null) {
+            return template.armorCategory;
+        }
+        if (type != null) {
+            String name = type.name();
+            if (name.contains("PLATE") || name.contains("SPLINT") || name.contains("CHAINMAIL_ARMOR")) {
+                return "HEAVY";
+            }
+            if (name.contains("SCALE") || name.contains("MAIL") || name.contains("HAUBERK")) {
+                return "MEDIUM";
+            }
+        }
+        return "LIGHT";
     }
 
     public boolean hasStealthDisadvantage() {

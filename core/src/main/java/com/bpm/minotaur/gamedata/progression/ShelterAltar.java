@@ -51,7 +51,8 @@ public class ShelterAltar {
         STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST, null),
         CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
         CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
-        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null);
+        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
+        TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null);
 
         private final String displayName;
         private final String description;
@@ -123,12 +124,18 @@ public class ShelterAltar {
         repertoireTier = 0;
         monumentTier = 0;
         arcaneTier = 0;
+        crestsOfValor = 0;
+        ascensionTiers.clear();
         unlockedStations.clear();
         canCommune = true;
     }
 
     public boolean hasStation(Station station) {
         return unlockedStations.contains(station);
+    }
+
+    public boolean isSkillTreeUnlocked() {
+        return hasStation(Station.TRAINING_DUMMY);
     }
 
     public void setStationUnlocked(Station station, boolean unlocked) {

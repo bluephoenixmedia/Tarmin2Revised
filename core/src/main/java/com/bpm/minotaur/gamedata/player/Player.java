@@ -2063,24 +2063,17 @@ public class Player {
             int warStrengthGained = 5;
             int spiritualStrengthGained = 5;
 
-            // Check for Level Up
-            if (stats.canLevelUp()) {
-                performLevelUp(eventManager); // Call the private helper that calls stats.performLevelUp()
-                // Don't consume food if leveling up? Or maybe require food TO level up?
-                // Let's require food to level up as well.
-            } else {
-                // Standard Rest (Heal)
-                this.setWarStrength(
-                        Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
-                stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
-                        stats.getSpiritualStrength() + spiritualStrengthGained));
-                equipment.fullyRechargeRings();
+            // Standard Rest (Heal)
+            this.setWarStrength(
+                    Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
+            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
+                    stats.getSpiritualStrength() + spiritualStrengthGained));
+            equipment.fullyRechargeRings();
 
-                eventManager.addEvent(new GameEvent(
-                        ("WS restored to " + stats.getWarStrength() + ", SS restored to "
-                                + stats.getSpiritualStrength() + ". Magic rings recharged."),
-                        2f));
-            }
+            eventManager.addEvent(new GameEvent(
+                    ("HP restored to " + stats.getCurrentHP() + ", MP restored to "
+                            + stats.getCurrentMP() + ". Magic rings recharged."),
+                    2f));
 
             // --- LOGGING ---
             BalanceLogger.getInstance().logEconomy("RES_USED", "Food", 1);
@@ -2714,21 +2707,46 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean readyToLevel = stats.addExperience(amount);
+        boolean leveled = stats.addExperience(amount);
 
-        eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
-        if (readyToLevel) {
-            eventManager
-                    .addEvent(new GameEvent("You have enough experience to level up! Sleep in a bed to advance.", 3f));
+            if (leveled) {
+                if (soundManager != null) {
+                    soundManager.playPlayerLevelUpSound();
+                }
+                eventManager.addEvent(new GameEvent("LEVEL UP! Reached Level " + stats.getLevel() + "!", 3.5f));
+                eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
+            }
         }
+    }
+
+    public boolean hasSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        return stats != null && stats.hasSkill(skill);
+    }
+
+    public boolean canDualWield() {
+        return stats != null && stats.canDualWield();
+    }
+
+    public boolean allocateAttribute(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        return stats != null && stats.allocateAttribute(stat);
+    }
+
+    public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        return stats != null && stats.learnSkill(skill);
     }
 
     private void performLevelUp(GameEventManager eventManager) {
         stats.performLevelUp();
-        soundManager.playPlayerLevelUpSound();
-        eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
-        eventManager.addEvent(new GameEvent("Attack Bonus increased to +" + stats.getAttackModifier() + "!", 2f));
+        if (soundManager != null) {
+            soundManager.playPlayerLevelUpSound();
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
+            eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
+        }
     }
 
     public void takeStatusEffectDamage(int amount, DamageType type) {
@@ -3173,5 +3191,9 @@ public class Player {
         if (worn.isEmpty())
             return null;
         return worn.get(new Random().nextInt(worn.size()));
+    }
+
+    public boolean isWearingHeavyArmor() {
+        return equipment != null && equipment.isWearingHeavyArmor();
     }
 }

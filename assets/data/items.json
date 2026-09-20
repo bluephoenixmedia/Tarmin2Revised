@@ -443,6 +443,62 @@
             }
         ]
     },
+    "HOME_TRAINING_DUMMY": {
+        "friendlyName": "Training Grounds",
+        "texturePath": "images/items/training_dummy.png",
+        "isImpassable": true,
+        "spriteData": [
+            "........................",
+            "........................",
+            "..........####..........",
+            "..........#..#..........",
+            ".........######.........",
+            "........########........",
+            ".........######.........",
+            "..........####..........",
+            "...........##...........",
+            "........########........",
+            "........########........",
+            "........########........",
+            "...........##...........",
+            "...........##...........",
+            "..........####..........",
+            "..........#..#..........",
+            "..........#..#..........",
+            ".........######.........",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "baseValue": 0,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": true,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "TAN",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 1
+            }
+        ]
+    },
     "HOME_FIRE_POT": {
         "friendlyName": "Cooking Fire",
         "texturePath": "images/items/cookingpot.png",

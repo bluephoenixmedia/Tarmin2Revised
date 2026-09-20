@@ -722,7 +722,14 @@ public class Hud implements Disposable {
 
         mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
         expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
-        levelBadgeLabel.setText("LVL " + player.getLevel());
+        int unallocated = player.getStats().getUnallocatedAttributePoints() + player.getStats().getUnallocatedSkillPoints();
+        if (unallocated > 0) {
+            levelBadgeLabel.setText("LVL " + player.getLevel() + " [K: +" + unallocated + "]");
+            levelBadgeLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
+        } else {
+            levelBadgeLabel.setText("LVL " + player.getLevel());
+            levelBadgeLabel.setColor(HudSkin.COL_GOLD_MUTED);
+        }
 
         warStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
         spiritualStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));

@@ -42,6 +42,9 @@ public class PlayerSaveData {
     public int level = 1;
     public int experience = 0;
     public int experienceToNextLevel = 300;
+    public int unallocatedAttributePoints = 0;
+    public int unallocatedSkillPoints = 0;
+    public List<String> unlockedSkills = new ArrayList<>();
 
     public float satiety = 80f;
     public float hydration = 80f;
@@ -140,6 +143,12 @@ public class PlayerSaveData {
             this.shot = stats.getShot();
             this.powderDampness = stats.getPowderDampness();
             this.treasureScore = stats.getTreasureScore();
+
+            this.unallocatedAttributePoints = stats.getUnallocatedAttributePoints();
+            this.unallocatedSkillPoints = stats.getUnallocatedSkillPoints();
+            for (com.bpm.minotaur.gamedata.progression.SkillId s : stats.getUnlockedSkills()) {
+                this.unlockedSkills.add(s.name());
+            }
         }
 
         // Equipment
@@ -240,6 +249,16 @@ public class PlayerSaveData {
             stats.setShot(shot);
             stats.setPowderDampness(powderDampness);
             stats.setTreasureScore(treasureScore);
+
+            stats.setUnallocatedAttributePoints(unallocatedAttributePoints);
+            stats.setUnallocatedSkillPoints(unallocatedSkillPoints);
+            if (unlockedSkills != null) {
+                for (String s : unlockedSkills) {
+                    try {
+                        stats.unlockSkill(com.bpm.minotaur.gamedata.progression.SkillId.valueOf(s));
+                    } catch (Exception ignored) {}
+                }
+            }
         }
 
         // Equipment
