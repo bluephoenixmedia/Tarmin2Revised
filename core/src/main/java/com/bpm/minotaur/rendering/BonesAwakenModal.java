@@ -198,7 +198,7 @@ public class BonesAwakenModal extends Table {
             leaveInPeace();
             return true;
         }
-        if (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE) {
+        if (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE || keycode == Input.Keys.E) {
             challengeSpirit();
             return true;
         }

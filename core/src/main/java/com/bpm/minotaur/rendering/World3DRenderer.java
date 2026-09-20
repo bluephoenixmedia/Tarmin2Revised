@@ -1196,7 +1196,12 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
-                    dynamicBatcher.addBillboard(ex, 0.0f, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    float feetY = 0.0f;
+                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                        feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
+                    }
+
+                    dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Ladder) {

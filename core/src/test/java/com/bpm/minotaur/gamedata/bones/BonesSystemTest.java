@@ -195,4 +195,33 @@ public class BonesSystemTest {
         assertTrue(corpse.isAwakened());
         assertTrue(corpse.isDefeated());
     }
+
+    @Test
+    public void testCorpseSceneryPropertiesAndOffset() {
+        Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, 3, 4);
+        assertTrue(corpse.isDecomposingCorpse());
+        assertTrue("Corpse must be impassable to ensure player faces it", corpse.isImpassable());
+        assertEquals("Scale X must be 1.0f", 1.0f, corpse.getScale().x, 0.001f);
+        assertEquals("Scale Y must be 0.55f for low lying remains", 0.55f, corpse.getScale().y, 0.001f);
+        assertEquals("Corpse sprite must have -50px pixel offset", -50.0f, corpse.getPixelOffsetY(), 0.001f);
+
+        // Non-corpse scenery types should not have the -50px offset
+        Scenery rock = new Scenery(Scenery.SceneryType.ROCK, 1, 1);
+        assertEquals(0.0f, rock.getPixelOffsetY(), 0.001f);
+
+        Scenery tree = new Scenery(Scenery.SceneryType.TREE, 2, 2);
+        assertEquals(0.0f, tree.getPixelOffsetY(), 0.001f);
+    }
+
+    @Test
+    public void testMazeCorpsePlacementAndInteractionTarget() {
+        com.bpm.minotaur.gamedata.Maze maze = new com.bpm.minotaur.gamedata.Maze(1, new int[10][10]);
+        Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, 5, 6);
+        maze.addScenery(corpse);
+
+        com.badlogic.gdx.math.GridPoint2 target = new com.badlogic.gdx.math.GridPoint2(5, 6);
+        Scenery sceneryInFront = maze.getScenery().get(target);
+        assertNotNull("Scenery must be found at target tile", sceneryInFront);
+        assertTrue("Target scenery must be decomposing corpse", sceneryInFront.isDecomposingCorpse());
+    }
 }

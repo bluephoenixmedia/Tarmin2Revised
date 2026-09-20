@@ -1858,6 +1858,12 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        // --- Forward keyboard input to active BonesAwakenModal ---
+        if (hud != null && hud.getBonesAwakenModal() != null && hud.getBonesAwakenModal().isVisible()) {
+            hud.getBonesAwakenModal().handleInput(keycode);
+            return true;
+        }
+
         if (keycode == Input.Keys.ESCAPE) {
             game.setScreen(new PauseScreen(game, this));
             return true;
@@ -2032,6 +2038,17 @@ public class GameScreen extends BaseScreen {
                         Vector2 dir = player.getFacing().getVector();
                         int fx = (int) (player.getPosition().x + dir.x);
                         int fy = (int) (player.getPosition().y + dir.y);
+                        GridPoint2 targetTile = new GridPoint2(fx, fy);
+                        GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+                        // Check Decomposing Corpse (Hero Remains / NetHack bones)
+                        Scenery scFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(targetTile) : null;
+                        Scenery scFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
+                        if ((scFront != null && scFront.isDecomposingCorpse()) || (scFeet != null && scFeet.isDecomposingCorpse())) {
+                            interactWithWorldObject();
+                            return true;
+                        }
+
                         if (maze.getGameObjectAt(fx, fy) instanceof Window) {
                             interactWithWorldObject();
                             return true;

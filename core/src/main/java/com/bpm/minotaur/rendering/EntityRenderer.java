@@ -1112,6 +1112,7 @@ public class EntityRenderer {
         } else {
             drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
         }
+        drawY += scenery.getPixelOffsetY();
         String[] spriteData = scenery.getSpriteData();
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, scenery, spriteData, screenX, transformY, camera, viewport, depthBuffer,
@@ -1495,6 +1496,7 @@ public class EntityRenderer {
             // We want the sprite bottom to be there.
 
             drawY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2.0f);
+            drawY += scenery.getPixelOffsetY();
 
             // If we use standard centering logic:
             // drawY = center - height/2 = center - (scale*base)/2.
