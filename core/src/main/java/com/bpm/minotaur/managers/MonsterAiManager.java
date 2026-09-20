@@ -9,6 +9,7 @@ import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.gamedata.Door; // NEW
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.monster.MonsterTactics;
 import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
@@ -284,26 +285,33 @@ public class MonsterAiManager {
         if (monster.hasRangedAttack() && combatManager != null) {
             int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
 
-            // Archer / Skirmisher Kiting: If too close (< 3 tiles) and an unblocked retreat path exists, step back
-            if (dist < 3 && monster.getRangedPreferredDistance() >= 4) {
-                GridPoint2 retreatCell = findRetreatStep(monsterGridPos, playerGridPos, maze, player);
-                if (retreatCell != null) {
-                    moveMonsterTo(monster, maze, retreatCell.x, retreatCell.y);
-                    return;
-                }
-            }
+            boolean lined = (monsterGridPos.x == playerGridPos.x) || (monsterGridPos.y == playerGridPos.y);
+            boolean canShoot = dist <= monster.getAttackRange() && dist > 1 && lined
+                    && checkLineOfSight(maze, monsterGridPos, playerGridPos);
 
-            if (dist <= monster.getAttackRange() && dist > 1) {
-                // Check LoS for shooting
-                if (checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
-                    boolean alignedX = (monsterGridPos.x == playerGridPos.x);
-                    boolean alignedY = (monsterGridPos.y == playerGridPos.y);
-                    if (alignedX || alignedY) {
-                        if (combatManager.performMonsterRangedAttack(monster)) {
-                            return; // Attacked, skip move
-                        }
+            switch (MonsterTactics.decide(monster, dist, canShoot)) {
+                case RETREAT:
+                    GridPoint2 retreatCell = findRetreatStep(monsterGridPos, playerGridPos, maze, player);
+                    if (retreatCell != null) {
+                        moveMonsterTo(monster, maze, retreatCell.x, retreatCell.y);
+                        return;
                     }
-                }
+                    // Cornered: shoot from where it stands rather than freezing.
+                    if (canShoot && combatManager.performMonsterRangedAttack(monster)) {
+                        return;
+                    }
+                    break;
+                case SHOOT:
+                    if (combatManager.performMonsterRangedAttack(monster)) {
+                        // The shot is this turn's action; the next one is spent closing in.
+                        monster.setRangedShotCooldown(1);
+                        return;
+                    }
+                    break;
+                default:
+                    // Walking in is what pays off the shot it just took.
+                    monster.tickRangedShotCooldown();
+                    break;
             }
         }
 

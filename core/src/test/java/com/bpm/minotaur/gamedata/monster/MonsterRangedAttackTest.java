@@ -180,23 +180,99 @@ public class MonsterRangedAttackTest {
                 player.getStatusManager().hasEffect(StatusEffectType.POISONED));
     }
 
-    @Test
-    public void testSkirmisherKitingAI() {
-        // Skeleton Archer at (5, 4) - 1 tile away from player at (5, 5)
-        Monster archer = new Monster(Monster.MonsterType.SKELETON, 20, 10, 5f, 4f);
+    /** A plain archer: shoots from afar, but closes in to fight once it is near. */
+    private Monster plainArcher(float x, float y) {
+        Monster archer = new Monster(Monster.MonsterType.SKELETON, 20, 10, x, y);
         archer.setHasRangedAttack(true);
         archer.setAttackRange(6);
         archer.setRangedPreferredDistance(4f);
+        archer.setIntelligence(5);
         archer.setState(Monster.MonsterState.HUNTING);
-
         maze.addMonster(archer);
+        return archer;
+    }
 
+    /** Intelligence and level high enough to fight at arm's length and never close. */
+    private Monster eliteSkirmisher(float x, float y) {
+        Monster elite = plainArcher(x, y);
+        elite.setIntelligence(MonsterTactics.ELITE_INTELLIGENCE);
+        elite.setLevel(MonsterTactics.ELITE_LEVEL);
+        return elite;
+    }
+
+    @Test
+    public void aPlainArcherClosesInInsteadOfBackingAway() {
+        Monster archer = plainArcher(5f, 4f); // one tile south of the player
         MonsterAiManager aiManager = new MonsterAiManager();
 
-        // Update AI - archer should retreat away from player (South to y=3)
         aiManager.updateMonster(archer, maze, player, true, combatManager);
 
-        assertEquals("Archer should kite backwards along open corridor to (5, 3)",
-                new Vector2(5.5f, 3.5f), archer.getPosition());
+        assertEquals("A plain archer holds its ground to fight rather than kiting",
+                new Vector2(5.5f, 4.5f), archer.getPosition());
+    }
+
+    @Test
+    public void aPlainArcherAdvancesTheTurnAfterItShoots() {
+        Monster archer = plainArcher(5f, 1f); // four tiles south, lined up with the player
+        MonsterAiManager aiManager = new MonsterAiManager();
+
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("It shoots from range and stays put that turn",
+                new Vector2(5.5f, 1.5f), archer.getPosition());
+
+        aiManager.updateMonster(archer, maze, player, true, combatManager);
+        assertEquals("The next turn it closes the gap instead of shooting again",
+                new Vector2(5.5f, 2.5f), archer.getPosition());
+    }
+
+    @Test
+    public void anEliteSkirmisherStillKitesWhenCrowded() {
+        Monster elite = eliteSkirmisher(5f, 4f);
+        MonsterAiManager aiManager = new MonsterAiManager();
+
+        aiManager.updateMonster(elite, maze, player, true, combatManager);
+
+        assertEquals("An elite skirmisher backs off down the open corridor",
+                new Vector2(5.5f, 3.5f), elite.getPosition());
+    }
+
+    @Test
+    public void tacticsGateKitingOnBothIntelligenceAndLevel() {
+        Monster smartButGreen = plainArcher(1f, 1f);
+        smartButGreen.setIntelligence(MonsterTactics.ELITE_INTELLIGENCE + 4);
+        smartButGreen.setLevel(MonsterTactics.ELITE_LEVEL - 2);
+        Monster veteranBrute = plainArcher(2f, 1f);
+        veteranBrute.setIntelligence(MonsterTactics.ELITE_INTELLIGENCE - 2);
+        veteranBrute.setLevel(MonsterTactics.ELITE_LEVEL + 5);
+
+        assertFalse("Clever but low level: it still comes for you",
+                MonsterTactics.isEliteSkirmisher(smartButGreen));
+        assertFalse("High level but dull: it still comes for you",
+                MonsterTactics.isEliteSkirmisher(veteranBrute));
+        assertTrue(MonsterTactics.isEliteSkirmisher(eliteSkirmisher(3f, 1f)));
+    }
+
+    @Test
+    public void tacticsSendAPlainArcherToMeleeOnceItIsClose() {
+        Monster archer = plainArcher(1f, 1f);
+
+        assertEquals(MonsterTactics.Move.SHOOT, MonsterTactics.decide(archer, 4, true));
+        assertEquals("Within two tiles it wants melee, not another shot",
+                MonsterTactics.Move.ADVANCE, MonsterTactics.decide(archer, 2, true));
+        assertEquals(MonsterTactics.Move.ADVANCE, MonsterTactics.decide(archer, 5, false));
+
+        archer.setRangedShotCooldown(1);
+        assertEquals("A shot costs a turn of approach",
+                MonsterTactics.Move.ADVANCE, MonsterTactics.decide(archer, 4, true));
+    }
+
+    @Test
+    public void tacticsLetAnEliteRetreatThenShoot() {
+        Monster elite = eliteSkirmisher(1f, 1f);
+
+        assertEquals(MonsterTactics.Move.RETREAT, MonsterTactics.decide(elite, 1, true));
+        assertEquals(MonsterTactics.Move.SHOOT, MonsterTactics.decide(elite, 4, true));
+        assertEquals("An elite keeps its distance rather than charging",
+                MonsterTactics.Move.RETREAT, MonsterTactics.decide(elite, 2, false));
     }
 }

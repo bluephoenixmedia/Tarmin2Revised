@@ -132,6 +132,7 @@ public class Monster implements Renderable {
     private String rangedEffect = null;
     private float rangedEffectChance = 0.5f;
     private float rangedPreferredDistance = 4f;
+    private int rangedShotCooldown;
 
     private long lastRangedTelegraphTimeMillis = -1L;
     private Color rangedTelegraphColor = null;
@@ -754,6 +755,21 @@ public class Monster implements Renderable {
 
     public void setRangedEffectChance(float rangedEffectChance) {
         this.rangedEffectChance = rangedEffectChance;
+    }
+
+    /** Turns left before this monster may shoot again; spent walking toward the player. */
+    public int getRangedShotCooldown() {
+        return rangedShotCooldown;
+    }
+
+    public void setRangedShotCooldown(int turns) {
+        this.rangedShotCooldown = Math.max(0, turns);
+    }
+
+    public void tickRangedShotCooldown() {
+        if (rangedShotCooldown > 0) {
+            rangedShotCooldown--;
+        }
     }
 
     public float getRangedPreferredDistance() {
