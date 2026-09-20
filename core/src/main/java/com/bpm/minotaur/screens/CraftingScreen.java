@@ -221,7 +221,7 @@ public class CraftingScreen extends BaseScreen {
         }
     }
 
-    private void switchTab(int index) {
+    public void switchTab(int index) {
         currentTab = index;
         selectedTargetItem = null;
         selectedTrophy = null;

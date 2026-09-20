@@ -200,8 +200,43 @@ public class Tarmin2 extends Game {
             return;
         }
 
+        if (isCaptureBaseline()) {
+            Gdx.app.log("Tarmin2", "Booting straight into UXScreenCaptureScreen (BASELINE)");
+            this.setScreen(new com.bpm.minotaur.screens.UXScreenCaptureScreen(this, "baseline"));
+            return;
+        }
+        if (isCapturePolished()) {
+            Gdx.app.log("Tarmin2", "Booting straight into UXScreenCaptureScreen (POLISHED)");
+            this.setScreen(new com.bpm.minotaur.screens.UXScreenCaptureScreen(this, "polished"));
+            return;
+        }
+
         // And finally, go to the main menu
         this.setScreen(new MainMenuScreen(this));
+    }
+
+    public static boolean isCaptureBaseline() {
+        String[] args = startupArgs;
+        if (args != null) {
+            for (String a : args) {
+                if ("--capture-baseline".equalsIgnoreCase(a)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isCapturePolished() {
+        String[] args = startupArgs;
+        if (args != null) {
+            for (String a : args) {
+                if ("--capture-polished".equalsIgnoreCase(a)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean bootToPaperdollEditor() {

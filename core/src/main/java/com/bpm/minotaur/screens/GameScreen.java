@@ -3268,6 +3268,21 @@ public class GameScreen extends BaseScreen {
         return soundManager;
     }
 
+    public Hud getHud() {
+        return hud;
+    }
+
+    public CraftingManager getCraftingManager() {
+        if (craftingManager == null) {
+            craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
+        }
+        return craftingManager;
+    }
+
+    public CombatDiceOverlay getCombatDiceOverlay() {
+        return combatDiceOverlay;
+    }
+
     public void killPlayer() {
         if (player != null && player.getStats() != null) {
             player.getStats().setCurrentHP(0);

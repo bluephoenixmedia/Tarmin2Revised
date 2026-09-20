@@ -453,7 +453,7 @@ public class ShopkeeperWindow extends Table {
         }
     }
 
-    private void close() {
+    public void close() {
         this.setVisible(false);
         if (shopkeeper != null) {
             shopkeeper.setState(ShopkeeperNpc.ShopkeeperState.WANDERING);

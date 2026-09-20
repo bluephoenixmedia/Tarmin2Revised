@@ -44,18 +44,26 @@ public class LoadingScreen extends ScreenAdapter {
     private boolean videoFinished = false;
     private boolean videoError = false;
     private boolean musicStarted = false;
+    private final boolean autoProceed;
+    private boolean proceeded = false;
 
     public LoadingScreen(Tarmin2 game) {
+        this(game, true);
+    }
+
+    public LoadingScreen(Tarmin2 game, boolean autoProceed) {
         this.game = game;
+        this.autoProceed = autoProceed;
         this.assetManager = game.getAssetManager();
         this.batch = game.getBatch();
 
         this.font = new BitmapFont();
         this.font.getData().setScale(1.6f);
 
-        boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo();
+        boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo()
+                || Tarmin2.isCaptureBaseline() || Tarmin2.isCapturePolished();
         if (skipIntro) {
-            Gdx.app.log("LoadingScreen", "Intro video skipped by configuration.");
+            Gdx.app.log("LoadingScreen", "Intro video skipped by configuration or capture mode.");
             videoFinished = true;
             return;
         }
@@ -202,7 +210,8 @@ public class LoadingScreen extends ScreenAdapter {
         boolean assetsLoaded = assetManager.update(assetBudgetMs);
 
         // Check if we can proceed to MainMenu
-        if (assetsLoaded && (videoFinished || videoError)) {
+        if (autoProceed && !proceeded && assetsLoaded && (videoFinished || videoError)) {
+            proceeded = true;
             Gdx.app.log("LoadingScreen", "Asset loading and video sequence complete!");
             game.proceedToMainMenu();
         }

@@ -57,8 +57,15 @@ public class GameOverScreen extends BaseScreen {
             "..##......##............",
     };
 
+    private final boolean shouldClearSaves;
+
     public GameOverScreen(Tarmin2 game) {
+        this(game, true);
+    }
+
+    public GameOverScreen(Tarmin2 game, boolean shouldClearSaves) {
         super(game);
+        this.shouldClearSaves = shouldClearSaves;
         this.font = new BitmapFont();
         this.font.setColor(Color.RED);
         this.font.getData().setScale(3);
@@ -188,11 +195,15 @@ public class GameOverScreen extends BaseScreen {
     @Override
     public void show() {
         // --- NEW: Tarmin's Hunger Death Logic ---
-        com.bpm.minotaur.managers.DoomManager.getInstance().incrementDeaths();
+        if (shouldClearSaves) {
+            com.bpm.minotaur.managers.DoomManager.getInstance().incrementDeaths();
+        }
         // ----------------------------------------
 
         // --- FIX: Execute deletion HERE, after GameScreen has hidden and saved ---
-        clearWorldSaves();
+        if (shouldClearSaves) {
+            clearWorldSaves();
+        }
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override

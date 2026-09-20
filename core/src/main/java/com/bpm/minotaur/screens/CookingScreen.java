@@ -245,7 +245,7 @@ public class CookingScreen extends BaseScreen {
         return btn;
     }
 
-    private void switchTab(int tabIndex) {
+    public void switchTab(int tabIndex) {
         this.currentTab = tabIndex;
         updateTabButtonStyles();
         refreshRightPanel();
