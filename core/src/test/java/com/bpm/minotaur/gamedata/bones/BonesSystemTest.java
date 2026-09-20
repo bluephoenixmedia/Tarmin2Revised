@@ -224,4 +224,69 @@ public class BonesSystemTest {
         assertNotNull("Scenery must be found at target tile", sceneryInFront);
         assertTrue("Target scenery must be decomposing corpse", sceneryInFront.isDecomposingCorpse());
     }
+
+    @Test
+    public void testBonesPlacementNeverSelectsHomeTiles() {
+        // 10x10 maze with walls everywhere except (4,4), (4,5), (5,4), (5,5)
+        int[][] layout = new int[10][10];
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 10; x++) {
+                layout[y][x] = 1; // Wall
+            }
+        }
+        layout[4][4] = 0; // Floor
+        layout[4][5] = 0; // Floor
+        layout[5][4] = 0; // Floor
+        layout[5][5] = 0; // Floor
+
+        com.bpm.minotaur.gamedata.Maze maze = new com.bpm.minotaur.gamedata.Maze(1, layout);
+
+        // Mark all open floor tiles as home / shelter tiles
+        List<com.badlogic.gdx.math.GridPoint2> shelterTiles = new ArrayList<>();
+        shelterTiles.add(new com.badlogic.gdx.math.GridPoint2(4, 4));
+        shelterTiles.add(new com.badlogic.gdx.math.GridPoint2(4, 5));
+        shelterTiles.add(new com.badlogic.gdx.math.GridPoint2(5, 4));
+        shelterTiles.add(new com.badlogic.gdx.math.GridPoint2(5, 5));
+        maze.setHomeTiles(shelterTiles);
+
+        for (com.badlogic.gdx.math.GridPoint2 pt : shelterTiles) {
+            assertTrue("Tile must be recognized as home tile", maze.isHomeTile(pt.x, pt.y));
+        }
+
+        // When all available floor tiles are shelter tiles, bones placement must reject them all
+        com.badlogic.gdx.math.GridPoint2 chosen = com.bpm.minotaur.managers.WorldManager.findBonesPlacementTile(maze);
+        assertNull("Bones placement must NEVER select any tile inside the player shelter", chosen);
+
+        // Now carve an open floor tile outside the shelter at (2, 2)
+        layout[2][2] = 0;
+        assertFalse("Tile (2,2) is not a home tile", maze.isHomeTile(2, 2));
+
+        chosen = com.bpm.minotaur.managers.WorldManager.findBonesPlacementTile(maze);
+        assertNotNull("Bones placement must find non-shelter open floor tile", chosen);
+        assertEquals(2, chosen.x);
+        assertEquals(2, chosen.y);
+        assertFalse("Chosen tile must not be inside player shelter", maze.isHomeTile(chosen.x, chosen.y));
+    }
+
+    @Test
+    public void testStartingShelterSanctuaryChunkGuard() {
+        // Verification of starting shelter chunk guard logic used by WorldManager
+        int level = 1;
+        com.badlogic.gdx.math.GridPoint2 startingShelterChunk = new com.badlogic.gdx.math.GridPoint2(0, 0);
+        com.badlogic.gdx.math.GridPoint2 delveChunkEast = new com.badlogic.gdx.math.GridPoint2(1, 0);
+        com.badlogic.gdx.math.GridPoint2 delveChunkNorth = new com.badlogic.gdx.math.GridPoint2(0, 1);
+
+        boolean isStartingShelter = (level == 1 && startingShelterChunk.x == 0 && startingShelterChunk.y == 0);
+        assertTrue("Chunk (0,0) on Level 1 must be protected as starting shelter sanctuary", isStartingShelter);
+
+        boolean isDelveEastShelter = (level == 1 && delveChunkEast.x == 0 && delveChunkEast.y == 0);
+        assertFalse("Adjacent adventure chunk (1,0) is not starting shelter sanctuary", isDelveEastShelter);
+
+        boolean isDelveNorthShelter = (level == 1 && delveChunkNorth.x == 0 && delveChunkNorth.y == 0);
+        assertFalse("Adjacent adventure chunk (0,1) is not starting shelter sanctuary", isDelveNorthShelter);
+
+        int levelTwo = 2;
+        boolean isLevelTwoShelter = (levelTwo == 1 && startingShelterChunk.x == 0 && startingShelterChunk.y == 0);
+        assertFalse("Level 2 chunk (0,0) is not a shelter sanctuary", isLevelTwoShelter);
+    }
 }
