@@ -10,7 +10,7 @@
 - When the player dies and re-spawns in the shelter, they suddenly are equipped with a cross. They do not initially start the game with a cross. They also sometimes repawn with the traveling cooking and crafting equipment which only should be available when unlocked via dvinities and the altar.
 - We have a Musket and other fire arms in the game. We need to generate ammunition drops for them andthen work on animations and visual effects and audio for firing them as well as tweaking combat as needed.
 - Combat animations need more variety. We also need to animate combat if there is a weapon equipped in the second hand.
-- Shields need reverse image generation to show what the player would see from the first person perspective.
+- [x] Shields need reverse image generation to show what the player would see from the first person perspective. (Completed: Generated period-accurate reverse sprites for all 10 shields/bucklers with clean transparency, integrated automatic reverse texture resolution and off-hand mirror prevention in FirstPersonWeaponOverlay).
 - The Spell Quick menu on the left of the UX is unreadable.
 The Light spell that the player starts with should cost MP, currently it does not.
 - I encountered a Remains of Hero (bones) and pressing E didn't interact with it as expected. The sprint also needs to be generated lower by about 50 pixels
