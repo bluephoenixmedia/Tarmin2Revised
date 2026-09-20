@@ -1615,7 +1615,7 @@
 		"isUsable": false,
 		"isContainer": false,
 		"isRing": false,
-		"isShield": false,
+		"isShield": true,
 		"isHelmet": false,
 		"isGauntlets": false,
 		"isBoots": false,
@@ -1651,7 +1651,7 @@
 		"isReach": true,
 		"isVersatile": false,
 		"versatileDamageDice": null,
-		"isTwoHanded": true
+		"isTwoHanded": false
 	},
 	"CAHULAKS": {
 		"friendlyName": "Cahulaks",
@@ -8942,7 +8942,7 @@
 		"isUsable": false,
 		"isContainer": false,
 		"isRing": false,
-		"isShield": false,
+		"isShield": true,
 		"isHelmet": false,
 		"isGauntlets": false,
 		"isBoots": false,

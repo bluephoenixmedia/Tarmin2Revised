@@ -52,6 +52,7 @@ public class FirstPersonWeaponOverlay {
     // Off-hand item and texture
     private Item offHandItem;
     private TextureRegion offHandTexture;
+    private boolean offHandUsesReverseTexture = false;
     private String[] offHandSpriteData;
     private Color offHandSpriteColor = Color.WHITE;
 
@@ -167,7 +168,7 @@ public class FirstPersonWeaponOverlay {
         }
         if (this.mainHandItem != rightHand) {
             this.mainHandItem = rightHand;
-            this.mainHandTexture = resolveTexture(rightHand);
+            this.mainHandTexture = resolveTexture(rightHand, false);
             if (rightHand != null) {
                 this.mainHandSpriteData = rightHand.getSpriteData();
                 this.mainHandSpriteColor = (rightHand.getColor() != null) ? rightHand.getColor().cpy() : Color.WHITE;
@@ -183,7 +184,7 @@ public class FirstPersonWeaponOverlay {
 
         if (this.offHandItem != leftHand) {
             this.offHandItem = leftHand;
-            this.offHandTexture = resolveTexture(leftHand);
+            this.offHandTexture = resolveTexture(leftHand, true);
             if (leftHand != null) {
                 this.offHandSpriteData = leftHand.getSpriteData();
                 this.offHandSpriteColor = (leftHand.getColor() != null) ? leftHand.getColor().cpy() : Color.WHITE;
@@ -320,6 +321,7 @@ public class FirstPersonWeaponOverlay {
     public void forceRefreshEquipment(Item rightHand, Item leftHand) {
         this.mainHandItem = null;
         this.offHandItem = null;
+        this.offHandUsesReverseTexture = false;
         setEquipment(rightHand, leftHand);
     }
 
@@ -333,6 +335,10 @@ public class FirstPersonWeaponOverlay {
 
     public Item getOffHandItem() {
         return offHandItem;
+    }
+
+    public boolean isOffHandUsesReverseTexture() {
+        return offHandUsesReverseTexture;
     }
 
     public WeaponViewCalibration getViewCalibration() {
@@ -359,7 +365,7 @@ public class FirstPersonWeaponOverlay {
      * flip its device.
      */
     private boolean mirrorsOffHand() {
-        return offHandItem != null && offHandItem.isWeapon() && !offHandItem.isShield();
+        return offHandItem != null && offHandItem.isWeapon() && !offHandItem.isShield() && !offHandUsesReverseTexture;
     }
 
     public void addBloodToWeapon() {
@@ -1205,11 +1211,64 @@ public class FirstPersonWeaponOverlay {
     }
 
     private TextureRegion resolveTexture(Item item) {
+        return resolveTexture(item, false);
+    }
+
+    private TextureRegion resolveTexture(Item item, boolean isOffHand) {
         if (item == null || item.getTemplate() == null || assetManager == null) {
+            if (isOffHand) {
+                this.offHandUsesReverseTexture = false;
+            }
             return null;
         }
 
         String texturePath = item.getTemplate().texturePath;
+
+        // OFF-HAND REVERSE VIEW: If equipped in off-hand, check for a reverse perspective texture
+        if (isOffHand && texturePath != null) {
+            String reversePath = null;
+            int dotIdx = texturePath.lastIndexOf('.');
+            if (dotIdx > 0) {
+                reversePath = texturePath.substring(0, dotIdx) + "_reverse" + texturePath.substring(dotIdx);
+            }
+            if (reversePath != null) {
+                boolean exists = false;
+                if (Gdx.files != null) {
+                    try {
+                        exists = Gdx.files.internal(reversePath).exists();
+                    } catch (Throwable ignored) {
+                    }
+                }
+                if (!exists) {
+                    File f = new File("assets/" + reversePath);
+                    if (!f.exists()) {
+                        f = new File("../assets/" + reversePath);
+                    }
+                    exists = f.exists();
+                }
+                if (exists) {
+                    try {
+                        TextureRegion region;
+                        if (assetManager.isLoaded(reversePath)) {
+                            region = new TextureRegion(assetManager.get(reversePath, Texture.class));
+                        } else {
+                            assetManager.load(reversePath, Texture.class);
+                            assetManager.finishLoadingAsset(reversePath);
+                            region = new TextureRegion(assetManager.get(reversePath, Texture.class));
+                        }
+                        if (region != null) {
+                            this.offHandUsesReverseTexture = true;
+                            return region;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+
+        if (isOffHand) {
+            this.offHandUsesReverseTexture = false;
+        }
 
         // PRIORITY 1: Explicit Texture Path
         if (texturePath != null) {
@@ -1238,6 +1297,25 @@ public class FirstPersonWeaponOverlay {
         }
 
         if (regionName != null) {
+            if (isOffHand) {
+                String revRegionName = regionName + "_reverse";
+                if (assetManager.isLoaded("packed/armor.atlas")) {
+                    TextureAtlas atlas = assetManager.get("packed/armor.atlas", TextureAtlas.class);
+                    TextureRegion r = atlas.findRegion(revRegionName);
+                    if (r != null) {
+                        this.offHandUsesReverseTexture = true;
+                        return r;
+                    }
+                }
+                if (assetManager.isLoaded("packed/weapons.atlas")) {
+                    TextureAtlas atlas = assetManager.get("packed/weapons.atlas", TextureAtlas.class);
+                    TextureRegion r = atlas.findRegion(revRegionName);
+                    if (r != null) {
+                        this.offHandUsesReverseTexture = true;
+                        return r;
+                    }
+                }
+            }
             if (assetManager.isLoaded("packed/weapons.atlas")) {
                 TextureAtlas atlas = assetManager.get("packed/weapons.atlas", TextureAtlas.class);
                 TextureRegion r = atlas.findRegion(regionName);
