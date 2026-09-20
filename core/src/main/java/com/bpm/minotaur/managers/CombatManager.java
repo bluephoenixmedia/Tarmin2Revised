@@ -1001,8 +1001,10 @@ public class CombatManager {
     }
 
     private void closeMenuOrPassTurn() {
-        if (monster == null) {
-            currentState = CombatState.INACTIVE; // Close menu if no enemy
+        if (currentState == CombatState.VICTORY || currentState == CombatState.DEFEAT || currentState == CombatState.INACTIVE || monster == null || monster.getCurrentHP() <= 0) {
+            if (currentState != CombatState.VICTORY && currentState != CombatState.DEFEAT) {
+                currentState = CombatState.INACTIVE; // Close menu if no enemy
+            }
         } else {
             // Pass Turn
             tickReload();
@@ -1148,12 +1150,21 @@ public class CombatManager {
             } else {
                 eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " glanced off " + target.getType() + "!", 1.0f));
             }
-            weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
-            maze.addItem(weapon);
+            if (hit.collisionPoint != null) {
+                weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+            }
+            if (maze != null) {
+                maze.addItem(weapon);
+            }
         } else {
             eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " clatters to the stone.", 1.0f));
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+            } else {
+                Vector2 landPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(maxRange));
+                weapon.setPosition((int) landPos.x + 0.5f, (int) landPos.y + 0.5f);
+            }
+            if (maze != null) {
                 maze.addItem(weapon);
             }
         }
@@ -1398,8 +1409,9 @@ public class CombatManager {
 
         if (itemToUse != null) {
             if (itemToUse.isWeapon() || itemToUse.isShield()) {
-                player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze, this);
-                closeMenuOrPassTurn();
+                if (player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze, this)) {
+                    closeMenuOrPassTurn();
+                }
             } else {
                 player.useItem(itemToUse, eventManager, discoveryManager, maze, this);
                 closeMenuOrPassTurn();

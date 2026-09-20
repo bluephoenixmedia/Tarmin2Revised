@@ -772,18 +772,28 @@ public class Player {
         }
 
         if (item.isWeapon()) {
-            Item oldWeapon = inventory.getRightHand();
-            if (oldWeapon != null && oldWeapon.getGrantedDie() != null) {
-                stats.getDicePool().remove(oldWeapon.getGrantedDie());
+            if (combatManager != null) {
+                boolean threw = combatManager.throwWeapon(item);
+                if (threw) {
+                    inventory.getQuickSlots()[slotIndex] = null;
+                    return true;
+                }
+                return false;
+            } else {
+                inventory.getQuickSlots()[slotIndex] = null;
+                inventory.removeItem(item);
+                if (maze != null && position != null && facing != null) {
+                    item.setPosition(position.x + facing.getVector().x, position.y + facing.getVector().y);
+                    maze.addItem(item);
+                }
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("Threw " + item.getDisplayName() + "!", 1.5f));
+                }
+                if (soundManager != null) {
+                    soundManager.playWeaponSwing();
+                }
+                return true;
             }
-            if (item.getGrantedDie() != null) {
-                stats.getDicePool().add(item.getGrantedDie());
-            }
-            inventory.setRightHand(item);
-            inventory.getQuickSlots()[slotIndex] = oldWeapon;
-            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Right Hand.", 2.0f));
-            soundManager.playPickupItemSound();
-            return true;
         }
 
         if (item.isShield()) {
@@ -796,8 +806,12 @@ public class Player {
             }
             inventory.setLeftHand(item);
             inventory.getQuickSlots()[slotIndex] = oldShield;
-            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Left Hand.", 2.0f));
-            soundManager.playPickupItemSound();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Left Hand.", 2.0f));
+            }
+            if (soundManager != null) {
+                soundManager.playPickupItemSound();
+            }
             return true;
         }
 

@@ -403,7 +403,11 @@ public class Hud implements Disposable {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
                     Item item = player.getInventory().getQuickSlots()[slotIdx];
                     Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                    hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, "Hotkey " + (slotIdx + 1));
+                    String hotkeyHint = "Hotkey " + (slotIdx + 1);
+                    if (item != null && item.isWeapon()) {
+                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]";
+                    }
+                    hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, hotkeyHint);
                 }
 
                 @Override
