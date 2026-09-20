@@ -300,6 +300,9 @@ public class GameScreen extends BaseScreen {
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
         }
+        if (weaponOverlay != null && player != null && player.getInventory() != null) {
+            weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+        }
         updateMusicTrackForCurrentZone();
     }
 

@@ -162,20 +162,25 @@ public class FirstPersonWeaponOverlay {
     }
 
     public void setEquipment(Item rightHand, Item leftHand) {
+        applyEquipment(rightHand, leftHand, false);
+    }
+
+    private void applyEquipment(Item rightHand, Item leftHand, boolean force) {
         if (previewMainHand != null) {
             rightHand = previewMainHand;
         }
         if (previewOffHand != null) {
             leftHand = previewOffHand;
         }
-        if (this.mainHandItem != rightHand) {
+        if (force || this.mainHandItem != rightHand) {
             this.mainHandItem = rightHand;
-            this.mainHandTexture = resolveTexture(rightHand, false);
+            this.mainHandTexture = (rightHand != null) ? resolveTexture(rightHand, false) : null;
             if (rightHand != null) {
                 this.mainHandSpriteData = rightHand.getSpriteData();
                 this.mainHandSpriteColor = (rightHand.getColor() != null) ? rightHand.getColor().cpy() : Color.WHITE;
             } else {
                 this.mainHandSpriteData = null;
+                this.mainHandSpriteColor = Color.WHITE;
             }
             this.mainHandArchetype = AnimationArchetype.fromItem(rightHand);
             rebuildComboChain();
@@ -184,14 +189,15 @@ public class FirstPersonWeaponOverlay {
             extractSolidWeaponPixels();
         }
 
-        if (this.offHandItem != leftHand) {
+        if (force || this.offHandItem != leftHand) {
             this.offHandItem = leftHand;
-            this.offHandTexture = resolveTexture(leftHand, true);
+            this.offHandTexture = (leftHand != null) ? resolveTexture(leftHand, true) : null;
             if (leftHand != null) {
                 this.offHandSpriteData = leftHand.getSpriteData();
                 this.offHandSpriteColor = (leftHand.getColor() != null) ? leftHand.getColor().cpy() : Color.WHITE;
             } else {
                 this.offHandSpriteData = null;
+                this.offHandSpriteColor = Color.WHITE;
             }
             rebuildComboChain();
         }
@@ -303,9 +309,20 @@ public class FirstPersonWeaponOverlay {
         isGuarding = false;
         guardFlinchTimer = 0f;
         turnSway = 0f;
+        this.previewMainHand = null;
+        this.previewOffHand = null;
         if (trailRenderer != null) {
             trailRenderer.clear();
         }
+    }
+
+    /**
+     * Completely unarms and clears weapon overlay equipment and textures.
+     */
+    public void clearEquipment() {
+        this.previewMainHand = null;
+        this.previewOffHand = null;
+        applyEquipment(null, null, true);
     }
 
     /**
@@ -321,10 +338,9 @@ public class FirstPersonWeaponOverlay {
      * and solid pixels even if the equipped item reference is unchanged (e.g. after shelter respawn).
      */
     public void forceRefreshEquipment(Item rightHand, Item leftHand) {
-        this.mainHandItem = null;
-        this.offHandItem = null;
-        this.offHandUsesReverseTexture = false;
-        setEquipment(rightHand, leftHand);
+        this.previewMainHand = null;
+        this.previewOffHand = null;
+        applyEquipment(rightHand, leftHand, true);
     }
 
     public AnimationArchetype getMainHandArchetype() {
@@ -335,8 +351,16 @@ public class FirstPersonWeaponOverlay {
         return mainHandItem;
     }
 
+    public TextureRegion getMainHandTexture() {
+        return mainHandTexture;
+    }
+
     public Item getOffHandItem() {
         return offHandItem;
+    }
+
+    public TextureRegion getOffHandTexture() {
+        return offHandTexture;
     }
 
     public boolean isOffHandUsesReverseTexture() {
@@ -814,7 +838,7 @@ public class FirstPersonWeaponOverlay {
     }
 
     private void renderMainHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {
-        if (mainHandTexture == null) {
+        if (mainHandItem == null || mainHandTexture == null) {
             return;
         }
 
@@ -1069,7 +1093,7 @@ public class FirstPersonWeaponOverlay {
     }
 
     private void renderOffHand(SpriteBatch batch, Viewport viewport, float worldW, float worldH, float bobX, float bobY) {
-        if (offHandTexture == null) {
+        if (offHandItem == null || offHandTexture == null) {
             return;
         }
 
@@ -1156,11 +1180,13 @@ public class FirstPersonWeaponOverlay {
             drawY = (worldH * CombatMotionProfile.IDLE_Y_REL) + totalBobY;
         }
 
-        // Render main hand ASCII block
-        renderRetroSprite(shapeRenderer, mainHandSpriteData, mainHandSpriteColor, drawX, drawY, worldH * 0.44f);
+        // Render main hand ASCII block if equipped
+        if (mainHandItem != null && mainHandSpriteData != null) {
+            renderRetroSprite(shapeRenderer, mainHandSpriteData, mainHandSpriteColor, drawX, drawY, worldH * 0.44f);
+        }
 
         // Render off-hand ASCII block if equipped
-        if (offHandSpriteData != null) {
+        if (offHandItem != null && offHandSpriteData != null) {
             float offX = isGuarding ? (worldW * 0.22f) : (worldW * 0.12f);
             float offY = isGuarding ? (worldH * 0.02f) : (worldH * CombatMotionProfile.IDLE_Y_REL) + totalBobY;
             renderRetroSprite(shapeRenderer, offHandSpriteData, offHandSpriteColor, offX, offY, worldH * 0.36f);
