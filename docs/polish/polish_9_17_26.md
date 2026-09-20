@@ -20,3 +20,4 @@ The Light spell that the player starts with should cost MP, currently it does no
 - The merchant screen needs to show the cost of items for both buying and selling right alongside the items.
 - Sometimes after a death and reset, the player's weapon is not equipped but the weapon renders in the player's hand.
 - Leveling up should be automatic and not require the player to rest. Then we need to implement a skill tree, leveling up system where the player can distribute points to attributes and choose new skills from the tree.
+- Let's ensure casting spells actually costs MP, I just tested poison spray and it was not decrementing MP.
