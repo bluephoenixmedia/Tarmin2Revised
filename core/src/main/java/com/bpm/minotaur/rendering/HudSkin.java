@@ -84,6 +84,7 @@ public class HudSkin implements Disposable {
     // Fonts
     private BitmapFont fontMain;
     private BitmapFont fontSmall;
+    private BitmapFont fontMicro;
     private BitmapFont fontLog;
     private BitmapFont fontHeader;
     private BitmapFont fontCompass;
@@ -522,6 +523,11 @@ public class HudSkin implements Disposable {
         param.color = COL_GOLD_BRIGHT;
         fontSmall = gen.generateFont(param);
 
+        // Micro font (size 12) for tight quick-cast labels and hotbars without scaling artifacts
+        param.size = 12;
+        param.color = Color.WHITE;
+        fontMicro = gen.generateFont(param);
+
         // Log font (size 17) for action chronicle
         param.size = 17;
         param.color = Color.WHITE;
@@ -561,6 +567,7 @@ public class HudSkin implements Disposable {
 
     public BitmapFont getFontMain() { return fontMain; }
     public BitmapFont getFontSmall() { return fontSmall; }
+    public BitmapFont getFontMicro() { return fontMicro; }
     public BitmapFont getFontLog() { return fontLog; }
     public BitmapFont getFontHeader() { return fontHeader; }
     public BitmapFont getFontCompass() { return fontCompass; }
@@ -574,6 +581,7 @@ public class HudSkin implements Disposable {
 
         if (fontMain != null) fontMain.dispose();
         if (fontSmall != null) fontSmall.dispose();
+        if (fontMicro != null) fontMicro.dispose();
         if (fontLog != null) fontLog.dispose();
         if (fontHeader != null) fontHeader.dispose();
         if (fontCompass != null) fontCompass.dispose();

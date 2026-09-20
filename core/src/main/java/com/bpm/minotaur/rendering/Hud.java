@@ -121,6 +121,7 @@ public class Hud implements Disposable {
     // --- 5-Slot Spell Quick-Cast Hotbar ---
     private final Table spellHotbarTable;
     private final Table[] spellSlots = new Table[5];
+    private final Label[] spellBadgeLabels = new Label[5];
     private final Label[] spellNameLabels = new Label[5];
     private final Label[] spellCostLabels = new Label[5];
 
@@ -544,29 +545,30 @@ public class Hud implements Disposable {
         // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
         spellHotbarTable = new Table();
         spellHotbarTable.setBackground(hudSkin.getDashboardBg());
-        spellHotbarTable.pad(2f, 4f, 2f, 4f);
-        Label spellTitle = new Label("SPL", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        spellHotbarTable.add(spellTitle).padRight(4);
+        spellHotbarTable.pad(3f, 6f, 3f, 6f);
+        Label spellTitle = new Label("SPELLS", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+        spellHotbarTable.add(spellTitle).padRight(6f);
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
             spellSlots[i] = new Table();
             spellSlots[i].setBackground(hudSkin.getSlotRecessed());
-            spellSlots[i].top().left();
+            spellSlots[i].pad(3f, 4f, 3f, 4f);
+            spellSlots[i].top();
 
-            Label badge = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
-            badge.setFontScale(0.7f);
-            spellSlots[i].add(badge).padLeft(1).padTop(1).row();
+            // Header row: Key badge on the left, MP cost on the right
+            Table headerRow = new Table();
+            spellBadgeLabels[i] = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_WATER_CYAN));
+            headerRow.add(spellBadgeLabels[i]).left();
+            headerRow.add().expandX();
+            headerRow.add(spellCostLabels[i]).right();
+            spellSlots[i].add(headerRow).growX().padBottom(1f).row();
 
-            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontSmall(), Color.CYAN));
-            spellNameLabels[i].setFontScale(0.62f);
+            // Spell Name: crisp, unscaled fontMicro with room for full spell names
+            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.valueOf("4DEEEA")));
             spellNameLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellNameLabels[i]).width(52).padLeft(1).row();
-
-            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-            spellCostLabels[i].setFontScale(0.62f);
-            spellCostLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellCostLabels[i]).width(52).padLeft(1);
+            spellSlots[i].add(spellNameLabels[i]).growX().left();
 
             spellSlots[i].addListener(new ClickListener() {
                 @Override
@@ -585,7 +587,16 @@ public class Hud implements Disposable {
                         com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                         if (st != null) {
                             Vector2 pos = spellSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                            hudTooltip.showSpell(st.getName(), st.getSchool(), st.getMpCost(), st.getDescription(), pos.x + 38f, pos.y, "Shift+" + (slotIdx + 1));
+                            String hotkeyStr;
+                            switch (slotIdx) {
+                                case 0: hotkeyStr = "Z or Shift+1"; break;
+                                case 1: hotkeyStr = "X or Shift+2"; break;
+                                case 2: hotkeyStr = "V or Shift+3"; break;
+                                case 3: hotkeyStr = "B or Shift+4"; break;
+                                case 4: hotkeyStr = "N or Shift+5"; break;
+                                default: hotkeyStr = "Shift+" + (slotIdx + 1); break;
+                            }
+                            hudTooltip.showSpell(st.getName(), st.getSchool(), st.getMpCost(), st.getDescription(), pos.x + 52f, pos.y, hotkeyStr);
                         }
                     }
                 }
@@ -595,7 +606,7 @@ public class Hud implements Disposable {
                 }
             });
 
-            spellHotbarTable.add(spellSlots[i]).size(56, 40).pad(1);
+            spellHotbarTable.add(spellSlots[i]).size(104f, 48f).pad(2f);
         }
 
         spellHotbarTable.pack();
@@ -808,9 +819,11 @@ public class Hud implements Disposable {
         int unlockedSpellSlots = player.getUnlockedSpellSlots();
         for (int i = 0; i < 5; i++) {
             if (i >= unlockedSpellSlots) {
+                spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                spellBadgeLabels[i].setColor(Color.DARK_GRAY);
                 spellNameLabels[i].setText("LOCKED");
-                spellCostLabels[i].setText("");
                 spellNameLabels[i].setColor(Color.DARK_GRAY);
+                spellCostLabels[i].setText("");
                 continue;
             }
             String spellId = player.getPreparedSpell(i);
@@ -818,18 +831,32 @@ public class Hud implements Disposable {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                 if (st != null) {
                     spellNameLabels[i].setText(st.getName());
-                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "Cantrip" : st.getMpCost() + " MP");
+                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "Free" : (st.getMpCost() + " MP"));
                     boolean canCast = player.hasEnoughMana(st.getMpCost());
-                    spellNameLabels[i].setColor(canCast ? Color.CYAN : Color.GRAY);
-                    spellCostLabels[i].setColor(canCast ? Color.LIGHT_GRAY : Color.DARK_GRAY);
+                    if (canCast) {
+                        spellSlots[i].setBackground(hudSkin.getSlotActive());
+                        spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                        spellNameLabels[i].setColor(Color.valueOf("4DEEEA"));
+                        spellCostLabels[i].setColor(HudSkin.COL_WATER_CYAN);
+                    } else {
+                        spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                        spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
+                        spellNameLabels[i].setColor(Color.GRAY);
+                        spellCostLabels[i].setColor(HudSkin.COL_HP_CRITICAL);
+                    }
                 } else {
+                    spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                    spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                     spellNameLabels[i].setText(spellId);
+                    spellNameLabels[i].setColor(Color.WHITE);
                     spellCostLabels[i].setText("");
                 }
             } else {
+                spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                 spellNameLabels[i].setText("---");
-                spellCostLabels[i].setText("");
                 spellNameLabels[i].setColor(Color.DARK_GRAY);
+                spellCostLabels[i].setText("");
             }
         }
 

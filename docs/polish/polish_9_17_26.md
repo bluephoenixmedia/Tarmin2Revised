@@ -11,8 +11,8 @@
 - We have a Musket and other fire arms in the game. We need to generate ammunition drops for them andthen work on animations and visual effects and audio for firing them as well as tweaking combat as needed.
 - Combat animations need more variety. We also need to animate combat if there is a weapon equipped in the second hand.
 - [x] Shields need reverse image generation to show what the player would see from the first person perspective. (Completed: Generated period-accurate reverse sprites for all 10 shields/bucklers with clean transparency, integrated automatic reverse texture resolution and off-hand mirror prevention in FirstPersonWeaponOverlay).
-- The Spell Quick menu on the left of the UX is unreadable.
-The Light spell that the player starts with should cost MP, currently it does not.
+- [x] The Spell Quick menu on the left of the UX is unreadable. (Completed: Redesigned 5-slot Spell Quick-Cast Hotbar with spacious 104x48px slots, a clean 2-row layout with hotkey badge & MP cost in header and unscaled crisp fontMicro for spell names without downscaling distortion, dynamic slotActive/recessed states, out-of-MP red cost indicators, and clear dual-shortcut tooltips).
+- [x] The Light spell that the player starts with should cost MP, currently it does not. (Completed: Updated Mote of Light and Light to cost 2 MP in spells.json; updated Poison Spray to 2 MP; verified mana guards, mana deduction upon casting, and test coverage in SpellSystemTest).
 - I encountered a Remains of Hero (bones) and pressing E didn't interact with it as expected. The sprint also needs to be generated lower by about 50 pixels
 - The bones / remains should never generate inside the player's shelter
 - If a weapon is placed in the Quick Slots, the intent of doing that should be that the player will throw that weapon by pressing the quick slot key. 

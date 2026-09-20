@@ -83,6 +83,37 @@ public class SpellSystemTest {
     }
 
     @Test
+    public void testLightSpellCostsMP() {
+        SpellDataManager manager = SpellDataManager.getInstance();
+        manager.load();
+
+        SpellTemplate moteOfLight = SpellDataManager.getSpell("MOTE_OF_LIGHT");
+        assertNotNull("Mote of Light spell should be loaded", moteOfLight);
+        assertEquals(2, moteOfLight.mpCost);
+
+        SpellTemplate light = SpellDataManager.getSpell("LIGHT");
+        assertNotNull("Light spell should be loaded", light);
+        assertEquals(2, light.mpCost);
+
+        // Player starts with MOTE_OF_LIGHT in prepared slot 0
+        assertEquals("MOTE_OF_LIGHT", player.getPreparedSpell(0));
+
+        // When player has enough MP, casting MOTE_OF_LIGHT deducts 2 MP
+        player.getStats().setMaxMP(10);
+        player.getStats().setCurrentMP(10);
+
+        boolean castSuccess = player.castPreparedSpell(0, maze, eventManager, null);
+        assertTrue("Player should successfully cast Mote of Light with enough MP", castSuccess);
+        assertEquals("Player MP should be deducted by 2", 8, player.getStats().getCurrentMP());
+
+        // When player does not have enough MP (e.g. 1 MP), casting must fail and preserve MP
+        player.getStats().setCurrentMP(1);
+        boolean castFail = player.castPreparedSpell(0, maze, eventManager, null);
+        assertFalse("Player should not be able to cast Mote of Light with 1 MP", castFail);
+        assertEquals("Player MP should remain unchanged at 1", 1, player.getStats().getCurrentMP());
+    }
+
+    @Test
     public void test5eArmorClassCalculations() {
         // Base AC without armor should be 10 + Dex modifier
         player.getStats().setDexterity(10); // DEX 10 -> +0
