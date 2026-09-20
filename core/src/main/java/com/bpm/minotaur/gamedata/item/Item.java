@@ -180,6 +180,9 @@ public class Item implements Renderable {
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
 
+        // Powder and ball for firearms. Its own resource, never mixed with arrows.
+        SHOT_POUCH,
+
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
         MONSTER_EYE, MEAL,

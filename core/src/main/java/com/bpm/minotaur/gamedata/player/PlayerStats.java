@@ -10,6 +10,12 @@ public class PlayerStats {
     private int currentMP;
     // private int food; // REPLACED BY SATIETY
     private int arrows;
+    /**
+     * Powder and ball for firearms. Deliberately separate from {@link #arrows}: sharing
+     * one pool would let a musket ball fire from a longbow, and would refill the scarce
+     * resource that gates a 2d8 shot from every arrow drop in the dungeon.
+     */
+    private int shot;
     private int dexterity;
     private int strength;
     private int constitution;
@@ -258,6 +264,19 @@ public class PlayerStats {
         }
     }
 
+    public void addShot(int amount) {
+        this.shot += amount;
+        if (this.shot > 99) {
+            this.shot = 99; // Same ceiling as arrows
+        }
+    }
+
+    public void decrementShot() {
+        if (this.shot > 0) {
+            this.shot--;
+        }
+    }
+
     public void addHydration(int amount) {
         modifyHydration(amount);
     }
@@ -355,6 +374,29 @@ public class PlayerStats {
 
     public void setArrows(int arrows) {
         this.arrows = arrows;
+    }
+
+    /**
+     * How damp the carried powder is, 0..1. Lives on the player rather than being read
+     * from the weather, because weather wetness is outdoor-only and nearly all play is
+     * underground -- a live read would mean firearms never misfire in practice.
+     */
+    private float powderDampness = 0f;
+
+    public float getPowderDampness() {
+        return powderDampness;
+    }
+
+    public void setPowderDampness(float powderDampness) {
+        this.powderDampness = Math.max(0f, Math.min(1f, powderDampness));
+    }
+
+    public int getShot() {
+        return shot;
+    }
+
+    public void setShot(int shot) {
+        this.shot = Math.max(0, shot);
     }
 
     public int getLevel() {

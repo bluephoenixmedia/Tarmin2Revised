@@ -48,6 +48,9 @@ public class PlayerSaveData {
     public float bodyTemperature = 37f;
     public int toxicity = 0;
     public int arrows = 0;
+    public int shot = 0;
+    /** Carried powder dampness, 0..1; see PowderDampness. */
+    public float powderDampness = 0f;
     public int treasureScore = 0;
 
     // Equipment
@@ -134,6 +137,8 @@ public class PlayerSaveData {
             this.bodyTemperature = stats.getBodyTemperature();
             this.toxicity = stats.getToxicity();
             this.arrows = stats.getArrows();
+            this.shot = stats.getShot();
+            this.powderDampness = stats.getPowderDampness();
             this.treasureScore = stats.getTreasureScore();
         }
 
@@ -232,6 +237,8 @@ public class PlayerSaveData {
             stats.setBodyTemperature(bodyTemperature);
             stats.setToxicity(toxicity);
             stats.setArrows(arrows);
+            stats.setShot(shot);
+            stats.setPowderDampness(powderDampness);
             stats.setTreasureScore(treasureScore);
         }
 

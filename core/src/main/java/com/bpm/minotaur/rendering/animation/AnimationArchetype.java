@@ -51,7 +51,12 @@ public enum AnimationArchetype {
         String name = sb.toString();
 
         if (item.isRanged() || (template != null && template.isRanged)) {
-            if (name.contains("CROSSBOW") || name.contains("ARQUEBUS") || name.contains("BLUNDERBUS")
+            // Powder weapons only. A crossbow used to land here -- it was the sole
+            // occupant, because the firearms were mis-flagged as melee and never
+            // reached this branch at all -- and so played the recoil kick of a gun.
+            // Now that real firearms use that profile, a crossbow draws like the bow
+            // it is.
+            if (name.contains("ARQUEBUS") || name.contains("BLUNDERBUS")
                     || name.contains("MUSKET") || name.contains("PISTOL") || name.contains("TUFENK")) {
                 return RANGED_FIREARM;
             }

@@ -664,6 +664,59 @@ public class Player {
         initStartingSpells();
     }
 
+    /**
+     * Picks up a bundle of ammunition, if that is what this tile holds.
+     *
+     * <p>Arrows and shot are separate pools on purpose: sharing one would let a musket
+     * ball fire from a longbow, and would refill the scarce resource that gates a 2d8
+     * shot from every arrow drop in the dungeon. Shot therefore comes in far smaller
+     * bundles, and is checked first because a shot pouch is also ammunition.
+     *
+     * <p>Consolidated from three identical copies (item at feet, item in front, and
+     * auto-pickup on step) so the two resources cannot drift apart.
+     *
+     * @return true if the item was ammunition and has been consumed.
+     */
+    private boolean collectAmmunition(Item item, GridPoint2 tile, Maze maze,
+            GameEventManager eventManager, SoundManager soundManager) {
+        if (item == null || maze == null) {
+            return false;
+        }
+
+        boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
+        boolean isArrows = item.getType() == Item.ItemType.QUIVER || item.isAmmunition();
+        if (!isShot && !isArrows) {
+            return false;
+        }
+
+        if (soundManager != null) {
+            soundManager.playPickupItemSound();
+        }
+
+        int found;
+        int total;
+        String resource;
+        if (isShot) {
+            found = new Random().nextInt(3) + 2; // 2-4: deliberately scarce
+            stats.addShot(found);
+            total = stats.getShot();
+            resource = "Shot";
+        } else {
+            found = new Random().nextInt(7) + 8; // 8-14, unchanged
+            stats.addArrows(found);
+            total = stats.getArrows();
+            resource = "Arrows";
+        }
+
+        maze.getItems().remove(tile);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(
+                    "Collected " + found + " " + item.getDisplayName() + "! Total: " + total, 2.5f));
+        }
+        BalanceLogger.getInstance().logEconomy("RES_GAIN", resource, found);
+        return true;
+    }
+
     public interface ItemPickupListener {
         void onItemPickedUp(Item item);
     }
@@ -864,13 +917,7 @@ public class Player {
                 return;
             }
 
-            if (itemAtFeet.getType() == Item.ItemType.QUIVER || itemAtFeet.isAmmunition()) {
-                soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(7) + 8;
-                stats.addArrows(arrowsFound);
-                maze.getItems().remove(playerTile2);
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemAtFeet.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
+            if (collectAmmunition(itemAtFeet, playerTile2, maze, eventManager, soundManager)) {
                 return;
             }
 
@@ -931,16 +978,7 @@ public class Player {
                 // ---------------
                 return;
             }
-            if (itemInFront.getType() == Item.ItemType.QUIVER || itemInFront.isAmmunition()) {
-                soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(7) + 8;
-                stats.addArrows(arrowsFound);
-                maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemInFront.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-
-                // --- LOGGING ---
-                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
-                // ---------------
+            if (collectAmmunition(itemInFront, targetTile, maze, eventManager, soundManager)) {
                 return;
             }
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
@@ -2300,20 +2338,8 @@ public class Player {
             maze.getLiquidManager().onPlayerStep(nextX, nextY, this, eventManager);
         }
 
-        // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts) on step ---
-        Item steppedItem = maze.getItems().get(nextTile);
-        if (steppedItem != null && (steppedItem.getType() == Item.ItemType.QUIVER || steppedItem.isAmmunition())) {
-            if (soundManager != null) {
-                soundManager.playPickupItemSound();
-            }
-            int arrowsFound = new Random().nextInt(7) + 8;
-            stats.addArrows(arrowsFound);
-            maze.getItems().remove(nextTile);
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + steppedItem.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-            }
-            BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
-        }
+        // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts / Shot) on step ---
+        collectAmmunition(maze.getItems().get(nextTile), nextTile, maze, eventManager, soundManager);
 
         // --- VOID SIGHT LORE INSCRIPTIONS ---
         if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {

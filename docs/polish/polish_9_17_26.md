@@ -6,7 +6,7 @@
 - We need to overhaul the ranged combat system. We need to randomly distribute bolts and arrow quivers through the game. We need to ensure projectiles actually animate from both the player and monsters. We need to evaluate the stats / attributes of both monsters and players for accuracy, damage and other aspects that are important to ranged combat.
 - We need to overhaul book weapons. They are intended to cast spells which animate the appropriate effect. Needs a full research and review.
 - We need to make mimics more like their inspiration. Certain chests the player walks up to should be mimics, but onlyon the level where mimics currently generate. There should be a brief visual animation or effect to transition from the chest sprite to the mimic monster sprite.
-- We need to re-introduce music to the game, starting with the music in Assets 
+- We need to ensure music is working as expected in the game, starting with the music in Assets. It should loop and restart properly baesd on in game actions.
 - When the player dies and re-spawns in the shelter, they suddenly are equipped with a cross. They do not initially start the game with a cross. They also sometimes repawn with the traveling cooking and crafting equipment which only should be available when unlocked via dvinities and the altar.
 - We have a Musket and other fire arms in the game. We need to generate ammunition drops for them andthen work on animations and visual effects and audio for firing them as well as tweaking combat as needed.
 - Combat animations need more variety. We also need to animate combat if there is a weapon equipped in the second hand.
@@ -21,3 +21,4 @@ The Light spell that the player starts with should cost MP, currently it does no
 - Sometimes after a death and reset, the player's weapon is not equipped but the weapon renders in the player's hand.
 - Leveling up should be automatic and not require the player to rest. Then we need to implement a skill tree, leveling up system where the player can distribute points to attributes and choose new skills from the tree.
 - Let's ensure casting spells actually costs MP, I just tested poison spray and it was not decrementing MP.
+- We need to overhaul and re-implement the Progression / Unlock system. Ideally every run unlocks at least 1 new item which can spawn in the dungeon in future runs. This includes weapons, armor, items, spells, encounter types, statues, events, etc. It should feed into the roguelike nature of the game to encourage future runs even if they end early.
