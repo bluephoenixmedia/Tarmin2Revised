@@ -113,6 +113,24 @@ public class ShopInventory {
         return Math.max(1, (int) (base * MARKUP));
     }
 
+    /**
+     * What the merchant will actually charge, restitution discount included.
+     *
+     * <p>Lives here rather than in the shop window so the list and the till cannot quote
+     * different numbers. A shop that advertises one price and charges another is worse
+     * than one that shows no prices at all.
+     *
+     * @param restitutionDiscount 0..1; the apology discount owed after one of the
+     *        merchant's strays clips the player.
+     */
+    public static int getEffectiveBuyPrice(Item item, ItemDataManager idm, float restitutionDiscount) {
+        int price = getBuyPrice(item, idm);
+        if (restitutionDiscount > 0f) {
+            price = Math.max(1, Math.round(price * (1f - restitutionDiscount)));
+        }
+        return price;
+    }
+
     public static int getSellPrice(Item item, ItemDataManager idm) {
         int base = getBaseValue(item, idm);
         return Math.max(1, (int) (base * BUYBACK));

@@ -41,6 +41,20 @@ public class ShopkeeperWindow extends Table {
     private GameEventManager eventManager;
     private ItemDataManager itemDataManager;
     private BitmapFont font;
+
+    /** Width of each of the two list panels. */
+    private static final float PANEL_WIDTH = 500f;
+    /**
+     * Width reserved for the price column.
+     *
+     * <p>Prices used to be appended to the item name in one space-padded string
+     * ({@code "%-28s %5dg"}), which only lined up for short, unmodified names. A display
+     * name carries its prefix, enchantment and suffix -- "Vicious Longsword +2 of Flame"
+     * -- so on any decorated item the padding did nothing and the price was pushed past
+     * the panel edge and clipped out of sight entirely. Giving it its own cell means the
+     * price is always visible and always in the same place.
+     */
+    private static final float PRICE_COLUMN_WIDTH = 96f;
     private Runnable onClose;
 
     // ── UI Children ──────────────────────────────────────────────────────────
@@ -113,8 +127,13 @@ public class ShopkeeperWindow extends Table {
         panelsRow.add(shopHeader).center().expandX().padBottom(4);
         panelsRow.add(playerHeader).center().expandX().padBottom(4);
         panelsRow.row();
-        panelsRow.add(shopScroll).width(500).height(400).top().padRight(20);
-        panelsRow.add(playerScroll).width(500).height(400).top();
+        // Column headings, laid out with the same price-column width as the rows below
+        // so the numbers sit under their label rather than wherever the name ends.
+        panelsRow.add(columnHeader("ITEM", "BUY", bodyStyle)).width(PANEL_WIDTH).padRight(20);
+        panelsRow.add(columnHeader("ITEM", "SELL", bodyStyle)).width(PANEL_WIDTH);
+        panelsRow.row();
+        panelsRow.add(shopScroll).width(PANEL_WIDTH).height(400).top().padRight(20);
+        panelsRow.add(playerScroll).width(PANEL_WIDTH).height(400).top();
         this.add(panelsRow).growX().row();
 
         // ─── Row 3: Buttons ───────────────────────────────────────────────
@@ -250,13 +269,10 @@ public class ShopkeeperWindow extends Table {
         }
         int idx = Math.min(shopSelection, shopItems.size() - 1);
         Item item = shopItems.get(idx);
-        int price = ShopInventory.getBuyPrice(item, itemDataManager);
+        int price = effectiveBuyPrice(item);
         // Restitution: after one of his strays clips the player, the next purchase is on
         // better terms -- spent the moment a trade goes through, not on every trade after.
         boolean applyingRestitution = shopkeeper.getRestitutionDiscount() > 0f;
-        if (applyingRestitution) {
-            price = Math.max(1, Math.round(price * (1f - shopkeeper.getRestitutionDiscount())));
-        }
         int gold = player.getStats().getTreasureScore();
 
         if (gold < price) {
@@ -344,6 +360,56 @@ public class ShopkeeperWindow extends Table {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * What this item will actually cost, restitution discount included.
+     *
+     * <p>Shared by the list and by {@code doBuy} on purpose: a shop that advertises one
+     * number and charges another is worse than one that shows no prices at all, and the
+     * discount is exactly the sort of thing that drifts when two places compute it.
+     */
+    private int effectiveBuyPrice(Item item) {
+        float discount = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
+        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, discount);
+    }
+
+    /**
+     * One list row: the item's name on the left, its price in a fixed column on the right.
+     *
+     * <p>The two live in separate cells rather than one padded string. A display name
+     * carries its prefix, enchantment and suffix, so it can run well past any fixed pad
+     * -- and when it did, the price was pushed off the panel and clipped. Here a long
+     * name ellipsises and the price stays put.
+     */
+    private Table priceRow(String name, int price, boolean selected, Color priceColor,
+            TextureRegionDrawable background) {
+        Label nameLabel = new Label(name, new Label.LabelStyle(font,
+                selected ? Color.GOLD : Color.WHITE));
+        nameLabel.setEllipsis(true);
+
+        Label priceLabel = new Label(price + "g", new Label.LabelStyle(font, priceColor));
+        priceLabel.setAlignment(Align.right);
+
+        Table row = new Table();
+        row.setBackground(background);
+        // The name cell must be allowed to shrink, or the ellipsis never engages and the
+        // row simply overflows the panel again.
+        row.add(nameLabel).expandX().fillX().left().minWidth(0).pad(4, 8, 4, 8);
+        row.add(priceLabel).width(PRICE_COLUMN_WIDTH).right().pad(4, 0, 4, 8);
+        return row;
+    }
+
+    /** Column headings for a list panel, aligned to the same price column as its rows. */
+    private Table columnHeader(String nameHeading, String priceHeading, Label.LabelStyle style) {
+        Label nameLabel = new Label(nameHeading, style);
+        Label priceLabel = new Label(priceHeading, style);
+        priceLabel.setAlignment(Align.right);
+
+        Table header = new Table();
+        header.add(nameLabel).expandX().fillX().left().minWidth(0).pad(0, 8, 2, 8);
+        header.add(priceLabel).width(PRICE_COLUMN_WIDTH).right().pad(0, 0, 2, 8);
+        return header;
+    }
+
     private void refresh() {
         if (player == null || shopkeeper == null)
             return;
@@ -355,15 +421,15 @@ public class ShopkeeperWindow extends Table {
         shopListTable.clearChildren();
         for (int i = 0; i < shopItems.size(); i++) {
             Item it = shopItems.get(i);
-            int price = ShopInventory.getBuyPrice(it, itemDataManager);
-            String txt = String.format("%-28s %5dg", it.getDisplayName(), price);
-            Label lbl = new Label(txt, new Label.LabelStyle(font,
-                    (focusOnShop && i == shopSelection) ? Color.GOLD : Color.WHITE));
+            boolean selected = focusOnShop && i == shopSelection;
+            int price = effectiveBuyPrice(it);
+            boolean affordable = player.getStats().getTreasureScore() >= price;
 
-            TextureRegionDrawable bg = (focusOnShop && i == shopSelection) ? rowSelected : rowNormal;
-            Table row = new Table();
-            row.setBackground(bg);
-            row.add(lbl).expandX().left().pad(4, 8, 4, 8);
+            TextureRegionDrawable bg = selected ? rowSelected : rowNormal;
+            Table row = priceRow(it.getDisplayName(), price, selected,
+                    // What you cannot afford is greyed, so the constraint is visible
+                    // before the player commits to a purchase that will be refused.
+                    affordable ? Color.GOLD : Color.GRAY, bg);
             shopListTable.add(row).growX().padBottom(2).row();
         }
         if (shopItems.isEmpty()) {
@@ -375,15 +441,11 @@ public class ShopkeeperWindow extends Table {
         playerListTable.clearChildren();
         for (int i = 0; i < playerItems.size(); i++) {
             Item it = playerItems.get(i);
+            boolean selected = !focusOnShop && i == playerSelection;
             int price = ShopInventory.getSellPrice(it, itemDataManager);
-            String txt = String.format("%-28s %5dg", it.getDisplayName(), price);
-            Label lbl = new Label(txt, new Label.LabelStyle(font,
-                    (!focusOnShop && i == playerSelection) ? Color.GOLD : Color.WHITE));
 
-            TextureRegionDrawable bg = (!focusOnShop && i == playerSelection) ? rowSelected : rowNormal;
-            Table row = new Table();
-            row.setBackground(bg);
-            row.add(lbl).expandX().left().pad(4, 8, 4, 8);
+            TextureRegionDrawable bg = selected ? rowSelected : rowNormal;
+            Table row = priceRow(it.getDisplayName(), price, selected, Color.GOLD, bg);
             playerListTable.add(row).growX().padBottom(2).row();
         }
         if (playerItems.isEmpty()) {
