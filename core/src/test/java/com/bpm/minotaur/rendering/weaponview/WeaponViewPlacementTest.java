@@ -136,4 +136,17 @@ public class WeaponViewPlacementTest {
         assertEquals(1f, idle.rotation, 0.001f);
         assertEquals(51f, swing.rotation, 0.001f);
     }
+
+    @Test
+    public void testWeaponBobbingSpeedIsTwentyFivePercentSlower() {
+        // Original speeds: idle = 2.2f, walk = 8.5f
+        // 25% slower (75% speed): idle = 1.65f, walk = 6.375f
+        float expectedIdle = 2.2f * 0.75f;
+        float expectedWalk = 8.5f * 0.75f;
+
+        assertEquals("Idle breathing bob speed must be 25% slower",
+                expectedIdle, com.bpm.minotaur.rendering.FirstPersonWeaponOverlay.IDLE_BOB_SPEED, 0.0001f);
+        assertEquals("Walking bob speed must be 25% slower",
+                expectedWalk, com.bpm.minotaur.rendering.FirstPersonWeaponOverlay.WALK_BOB_SPEED, 0.0001f);
+    }
 }

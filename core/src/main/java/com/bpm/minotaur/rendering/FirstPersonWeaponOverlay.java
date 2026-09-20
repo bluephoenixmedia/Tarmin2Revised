@@ -69,7 +69,9 @@ public class FirstPersonWeaponOverlay {
     private float comboWindowTimer = 0f;
     private static final float COMBO_WINDOW_MAX = 0.55f;
 
-    // Persistent stance dynamics
+    // Persistent stance dynamics (bobbing speeds slowed by 25% from original 2.2f and 8.5f)
+    public static final float IDLE_BOB_SPEED = 1.65f;
+    public static final float WALK_BOB_SPEED = 6.375f;
     private float idleBobTimer = 0f;
     private float walkBobTimer = 0f;
     private boolean isWalking = false;
@@ -699,10 +701,10 @@ public class FirstPersonWeaponOverlay {
             updatePageFlutter(delta);
         }
 
-        // Update persistent breathing and walking bob
-        idleBobTimer += delta * 2.2f;
+        // Update persistent breathing and walking bob (25% slower)
+        idleBobTimer += delta * IDLE_BOB_SPEED;
         if (isWalking) {
-            walkBobTimer += delta * 8.5f;
+            walkBobTimer += delta * WALK_BOB_SPEED;
         }
 
         // Decay camera turn sway back to zero
