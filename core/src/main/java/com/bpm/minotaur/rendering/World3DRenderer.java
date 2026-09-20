@@ -926,7 +926,15 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /**
+     * Free-running clock for the mimic idle bob and reveal shudder. Driven by wall time
+     * rather than a per-item timer so chests breathe out of phase with one another.
+     */
+    private float mimicIdlePhase = 0f;
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
+        mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
+
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
 
@@ -1135,6 +1143,30 @@ public class World3DRenderer implements Disposable {
                         // Scale slightly for close-up presentation at player's feet
                         h = Math.min(0.32f, h * 0.85f);
                         w = Math.min(0.40f, w * 0.85f);
+                    }
+
+                    // --- MIMIC TELLS ---
+                    // A disguised mimic breathes. This is the always-on tell every
+                    // player gets regardless of Wisdom: too small to notice in passing,
+                    // learnable once you know to look for it.
+                    // TODO: replace with the dedicated mimic_chest.png silhouette variant
+                    // once the asset exists -- swap it in at spawn and delete this bob.
+                    if (it.isMimic()) {
+                        float bob = MimicBob.worldOffset(mimicIdlePhase, ex, ey);
+                        renderFeetY += bob;
+                        h *= 1.0f + bob * 0.5f;
+                    }
+
+                    // Once the player has reached for it, the lid thrashes: a beat of
+                    // warning before the burst covers the swap.
+                    GridPoint2 shudderTile = (combatManager != null) ? combatManager.getMimicRevealTile() : null;
+                    if (shudderTile != null && shudderTile.x == (int) ex && shudderTile.y == (int) ey) {
+                        float progress = combatManager.getMimicShudderProgress();
+                        float violence = 0.02f + progress * 0.05f;
+                        renderX += (float) Math.sin(mimicIdlePhase * 11f) * violence;
+                        renderFeetY += Math.abs((float) Math.sin(mimicIdlePhase * 17f)) * violence;
+                        w *= 1.0f + progress * 0.22f;
+                        h *= 1.0f + progress * 0.22f;
                     }
 
                     dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, it.getColor(), camRight, camUp, camDir);

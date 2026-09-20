@@ -27,6 +27,8 @@ import com.bpm.minotaur.gamedata.monster.GhostPlayerMonster;
 import com.bpm.minotaur.gamedata.bones.BonesData;
 
 import com.bpm.minotaur.gamedata.dice.Die;
+import com.bpm.minotaur.gamedata.monster.MonsterColor;
+import com.bpm.minotaur.gamedata.monster.MimicReveal;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import com.bpm.minotaur.utils.DiceRoller;
@@ -43,6 +45,16 @@ public class CombatManager {
         PHYSICS_RESOLUTION, // Rolling
         PHYSICS_DELAY, // Viewing Result
         MONSTER_TURN,
+        /**
+         * A mimic is shedding its chest disguise.
+         *
+         * <p>Movement and attack input is dropped for the duration, because those sites
+         * gate on INACTIVE/PLAYER_TURN/PLAYER_MENU. Note this is not a blanket lock:
+         * a few keys (interact, pick up) are not state-gated and guard themselves
+         * instead -- see GameScreen.interactWithWorldObject, which must never let a
+         * mimic reach the container branch.
+         */
+        MONSTER_REVEAL,
         VICTORY,
         DEFEAT
     }
@@ -209,7 +221,23 @@ public class CombatManager {
         this.worldManager = worldManager;
     }
 
+    /**
+     * Traces a projectile path without disturbing anything. Safe for speculative or
+     * targeting-preview use.
+     */
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer) {
+        return raycastProjectile(origin, direction, maxRange, sourceIsPlayer, false);
+    }
+
+    /**
+     * @param revealDisguises when true, a mimic the player has already seen through is
+     *        dropped out of its disguise as the ray reaches it, making it a valid target.
+     *        This <em>mutates the world</em> -- it spawns a monster, plays a sound and
+     *        shakes the camera -- so only genuine attacks should pass true. A trace used
+     *        merely to ask "is there anything in range?" must not.
+     */
+    public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
+            boolean revealDisguises) {
         int startX = (int) origin.x;
         int startY = (int) origin.y;
 
@@ -253,12 +281,180 @@ public class CombatManager {
                     return new HitResult(currentPos, HitResult.HitType.PLAYER, null);
                 }
             }
+            // A mimic the player has already seen through is a legitimate target at
+            // range: spotting one should pay off the same way for an archer as it does
+            // for a fighter. An unspotted mimic stays invisible to projectiles, so area
+            // fire cannot be used to sweep a room for chests that bite.
+            if (revealDisguises && sourceIsPlayer) {
+                Item disguised = MimicReveal.disguisedMimicAt(maze, currentPos);
+                if (disguised != null && disguised.isMimicSeen()) {
+                    revealMimicPreEmptively(currentPos, maze.getLevel());
+                }
+            }
+
             if (maze.getMonsters().containsKey(currentPos)) {
                 Monster m = maze.getMonsters().get(currentPos);
                 return new HitResult(currentPos, HitResult.HitType.MONSTER, m);
             }
         }
         return new HitResult(new GridPoint2(currentX, currentY), HitResult.HitType.NOTHING, null);
+    }
+
+    // --- Mimic Reveal ---
+    /** Total length of the shudder-then-burst morph. */
+    private static final float MIMIC_REVEAL_TIME = 0.5f;
+    /** How long the chest shudders before the burst masks the swap. */
+    public static final float MIMIC_SHUDDER_TIME = 0.15f;
+    private float mimicRevealTimer = 0f;
+    private Monster revealingMimic = null;
+    private GridPoint2 mimicRevealTile = null;
+    private int mimicRevealDepth = 1;
+
+    /**
+     * How far into the shudder the disguised chest is, 0..1, or 0 when nothing is
+     * revealing. The renderer uses this to shake the chest billboard; once the burst
+     * takes over, the chest is gone and this returns to 0.
+     */
+    public float getMimicShudderProgress() {
+        if (currentState != CombatState.MONSTER_REVEAL || revealingMimic != null) {
+            return 0f;
+        }
+        return Math.min(1f, mimicRevealTimer / MIMIC_SHUDDER_TIME);
+    }
+
+    /** The tile whose chest is currently shuddering, or null. */
+    public GridPoint2 getMimicRevealTile() {
+        return (currentState == CombatState.MONSTER_REVEAL && revealingMimic == null) ? mimicRevealTile : null;
+    }
+
+    /**
+     * Builds the monster a disguised chest has been hiding all along.
+     *
+     * <p>Deliberately not routed through MonsterFactory: the factory would roll an
+     * inventory, and a mimic's loot is rolled at death instead precisely so that nothing
+     * has to survive on a live monster across a chunk unload.
+     */
+    private Monster createMimicMonster(int depth) {
+        com.bpm.minotaur.gamedata.monster.MonsterDataManager monsterData =
+                (game != null) ? game.getMonsterDataManager() : null;
+
+        // Without a data manager there is no monsters.json template to build from, and
+        // the templated constructor dereferences it unguarded. Fall back to the
+        // stat-only constructor so a reveal degrades into a plain mimic rather than
+        // throwing -- the templated path is the norm; this keeps headless runs alive.
+        if (monsterData == null) {
+            Monster fallback = new Monster(Monster.MonsterType.MIMIC, MIMIC_FALLBACK_HP, MIMIC_FALLBACK_AC);
+            fallback.scaleStats(Math.max(1, depth));
+            fallback.setCurrentHP(fallback.getMaxHP());
+            return fallback;
+        }
+
+        Monster mimic = new Monster(Monster.MonsterType.MIMIC, 0, 0, MonsterColor.WHITE,
+                monsterData, (game != null) ? game.getAssetManager() : null);
+        mimic.scaleStats(Math.max(1, depth));
+        mimic.setCurrentHP(mimic.getMaxHP());
+        return mimic;
+    }
+
+    /** Mirrors the MIMIC entry in monsters.json, for the no-template fallback above. */
+    private static final int MIMIC_FALLBACK_HP = 50;
+    private static final int MIMIC_FALLBACK_AC = 12;
+
+    /**
+     * The ambush: the player reached for a chest and it was a mimic.
+     *
+     * <p>Control is taken away for the length of the morph, then the mimic lands one
+     * free blow before combat opens. Without that blow the disguise would be pure
+     * theatre -- mechanically identical to a monster standing in a corridor, which is
+     * the thing this feature exists to stop being.
+     */
+    public void triggerMimicAmbush(GridPoint2 tile, int depth) {
+        if (currentState != CombatState.INACTIVE) {
+            return;
+        }
+        if (MimicReveal.disguisedMimicAt(maze, tile) == null) {
+            return;
+        }
+
+        // The chest is deliberately left standing for the length of the shudder: the
+        // player needs a beat to register that the thing they touched moved, before the
+        // burst covers the swap. It is replaced in update() at the phase boundary.
+        mimicRevealTile = new GridPoint2(tile);
+        mimicRevealDepth = depth;
+        revealingMimic = null;
+        mimicRevealTimer = 0f;
+        currentState = CombatState.MONSTER_REVEAL;
+
+        playMimicAmbushJolt();
+        eventManager.addEvent(new GameEvent("The chest lunges at you!", 2.5f));
+    }
+
+    /**
+     * The player struck first at a chest they had already seen through.
+     *
+     * <p>No blocking state and no free blow: the player owns the initiative here, which
+     * is exactly what spotting the mimic bought them. The morph still plays, but the
+     * world keeps running underneath it.
+     */
+    public Monster revealMimicPreEmptively(GridPoint2 tile, int depth) {
+        Monster mimic = createMimicMonster(depth);
+        if (!MimicReveal.swap(maze, tile, mimic)) {
+            return null;
+        }
+
+        playMimicAmbushJolt();
+        playMimicBurst(tile, mimic);
+        eventManager.addEvent(new GameEvent("You strike before the mimic can spring!", 2.5f));
+        return mimic;
+    }
+
+    /**
+     * The opening jolt: low roar and a camera kick on the frame the lid moves.
+     *
+     * <p>The hit pause is deliberately far shorter than the shudder. {@code hitPauseTimer}
+     * freezes the entire update block, animations included, so a pause as long as the
+     * morph would stall the very thing it is meant to punctuate.
+     */
+    private void playMimicAmbushJolt() {
+        if (soundManager != null) {
+            soundManager.playMimicRevealSound();
+        }
+
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.addTrauma(0.45f);
+            gs.triggerHitPause(0.08f);
+        }
+    }
+
+    /** Clears the reveal bookkeeping and returns the state machine to rest. */
+    private void endMimicReveal() {
+        revealingMimic = null;
+        mimicRevealTile = null;
+        mimicRevealTimer = 0f;
+        currentState = CombatState.INACTIVE;
+    }
+
+    /** The burst that masks the chest-to-monster swap. */
+    private void playMimicBurst(GridPoint2 tile, Monster mimic) {
+        if (animationManager != null) {
+            animationManager.spawnExplosion(
+                    com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.CONCUSSIVE,
+                    new com.badlogic.gdx.math.Vector3(tile.x + 0.5f, 0.5f, tile.y + 0.5f),
+                    1.4f, MIMIC_REVEAL_TIME - MIMIC_SHUDDER_TIME);
+        }
+
+        // The retro raycaster never draws SPRITE_EXPLOSION_3D, so it gets the swap plus
+        // a spray of gibs -- the same beat told in the engine's own visual language.
+        if (mimic != null) {
+            com.bpm.minotaur.gamedata.gore.GoreManager gore = maze.getGoreManager();
+            if (gore != null) {
+                gore.spawnRetroGibs(
+                        new com.badlogic.gdx.math.Vector3(tile.x + 0.5f, 0.5f, tile.y + 0.5f),
+                        mimic.getSpriteData(),
+                        com.badlogic.gdx.graphics.Color.GOLDENROD);
+            }
+        }
     }
 
     public void startCombat(Monster monster) {
@@ -702,7 +898,7 @@ public class CombatManager {
             if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                 performRangedAttack(); // Re-use existing GameScreen method logic? No, move it here or dup.
                 // Re-implementing logic here safely:
-                HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), 8, true);
+                HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), 8, true, true);
                 if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
                     // Found one!
                     // Trigger Ranged Attack on this monster
@@ -762,7 +958,7 @@ public class CombatManager {
     public boolean throwWeapon(Item weapon) {
         if (weapon == null) return false;
         int maxRange = Math.max(3, weapon.getRange());
-        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true);
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true);
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = hit.collisionPoint != null ?
@@ -1722,6 +1918,47 @@ public class CombatManager {
             return;
         }
 
+        // MIMIC REVEAL: hold the world still while the disguise comes off, then let the
+        // mimic land its one free blow before the player gets the menu.
+        if (currentState == CombatState.MONSTER_REVEAL) {
+            mimicRevealTimer += delta;
+
+            // Phase 1 -> 2: the shudder is over. Burst, and swap the chest for the
+            // creature under cover of it.
+            if (revealingMimic == null && mimicRevealTimer >= MIMIC_SHUDDER_TIME) {
+                Monster mimic = createMimicMonster(mimicRevealDepth);
+                if (MimicReveal.swap(maze, mimicRevealTile, mimic)) {
+                    revealingMimic = mimic;
+                    playMimicBurst(mimicRevealTile, mimic);
+                } else {
+                    // The chest went away underneath us; abandon the reveal rather than
+                    // stranding the state machine.
+                    endMimicReveal();
+                    return;
+                }
+            }
+
+            // Phase 2 -> combat: the mimic lands its one free blow, then hands over.
+            if (mimicRevealTimer >= MIMIC_REVEAL_TIME) {
+                Monster mimic = revealingMimic;
+                endMimicReveal();
+                if (mimic != null) {
+                    monsterMeleeStrike(mimic);
+
+                    if (player.getStats().getCurrentHP() > 0) {
+                        startCombat(mimic);
+                    } else {
+                        // The free blow finished an already-wounded player. Hand off to
+                        // the DEFEAT branch rather than raising the death event here, so
+                        // death inversion and combat logging still run.
+                        this.monster = mimic;
+                        currentState = CombatState.DEFEAT;
+                    }
+                }
+            }
+            return;
+        }
+
         if (currentState == CombatState.MONSTER_TURN) {
             if (monsterAttackDelay > 0f)
                 monsterAttackDelay -= delta;
@@ -1858,6 +2095,26 @@ public class CombatManager {
                 if (item != null) {
                     dropSingleItem(item, pos, monster);
                 }
+            }
+        }
+
+        // 3b. Mimic Hoard: the chest's worth of loot it was digesting. Rolled here
+        // rather than carried on the disguise, because monster inventory does not
+        // survive a chunk unload (ChunkData.MonsterData) and a mimic fight can easily
+        // straddle one.
+        if (monster.getType() == Monster.MonsterType.MIMIC) {
+            List<Item> hoard = com.bpm.minotaur.generation.MimicHoard.roll(
+                    itemDataManager,
+                    (game != null) ? game.getAssetManager() : null,
+                    maze.getLevel(),
+                    player.getStats().getLevel(),
+                    player.getLuck(),
+                    random);
+            for (Item loot : hoard) {
+                dropSingleItem(loot, pos, monster);
+            }
+            if (!hoard.isEmpty()) {
+                eventManager.addEvent(new GameEvent("The mimic disgorges its hoard!", 2.5f));
             }
         }
 

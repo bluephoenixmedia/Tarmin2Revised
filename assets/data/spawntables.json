@@ -5,112 +5,128 @@
             "monsterBudget": 10,
             "itemBudget": 12,
             "containerBudget": 4,
-            "debrisBudget": 15
+            "debrisBudget": 15,
+            "mimicBudget": 0
         },
         {
             "level": 2,
             "monsterBudget": 10,
             "itemBudget": 12,
             "containerBudget": 4,
-            "debrisBudget": 6
+            "debrisBudget": 6,
+            "mimicBudget": 0
         },
         {
             "level": 3,
             "monsterBudget": 15,
             "itemBudget": 15,
             "containerBudget": 6,
-            "debrisBudget": 6
+            "debrisBudget": 6,
+            "mimicBudget": 0
         },
         {
             "level": 4,
             "monsterBudget": 15,
             "itemBudget": 15,
             "containerBudget": 6,
-            "debrisBudget": 7
+            "debrisBudget": 7,
+            "mimicBudget": 0
         },
         {
             "level": 5,
             "monsterBudget": 15,
             "itemBudget": 15,
             "containerBudget": 6,
-            "debrisBudget": 7
+            "debrisBudget": 7,
+            "mimicBudget": 0
         },
         {
             "level": 6,
             "monsterBudget": 20,
             "itemBudget": 18,
             "containerBudget": 8,
-            "debrisBudget": 9
+            "debrisBudget": 9,
+            "mimicBudget": 0
         },
         {
             "level": 7,
             "monsterBudget": 20,
             "itemBudget": 18,
             "containerBudget": 8,
-            "debrisBudget": 9
+            "debrisBudget": 9,
+            "mimicBudget": 0
         },
         {
             "level": 8,
             "monsterBudget": 20,
             "itemBudget": 18,
             "containerBudget": 8,
-            "debrisBudget": 10
+            "debrisBudget": 10,
+            "mimicBudget": 1
         },
         {
             "level": 9,
             "monsterBudget": 20,
             "itemBudget": 18,
             "containerBudget": 8,
-            "debrisBudget": 10
+            "debrisBudget": 10,
+            "mimicBudget": 1
         },
         {
             "level": 10,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 11
+            "debrisBudget": 11,
+            "mimicBudget": 1
         },
         {
             "level": 11,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 11
+            "debrisBudget": 11,
+            "mimicBudget": 2
         },
         {
             "level": 12,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 12
+            "debrisBudget": 12,
+            "mimicBudget": 2
         },
         {
             "level": 13,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 12
+            "debrisBudget": 12,
+            "mimicBudget": 2
         },
         {
             "level": 14,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 14
+            "debrisBudget": 14,
+            "mimicBudget": 2
         },
         {
             "level": 15,
             "monsterBudget": 25,
             "itemBudget": 20,
             "containerBudget": 10,
-            "debrisBudget": 15
+            "debrisBudget": 15,
+            "mimicBudget": 2
         }
     ],
     "defaultBudget": {
         "monsterBudget": 8,
         "itemBudget": 5,
         "containerBudget": 4,
-        "debrisBudget": 7
+        "debrisBudget": 7,
+        "mimicBudget": 2
     },
     "monsterSpawnTable": [
         {
@@ -295,12 +311,6 @@
         },
         {
             "type": "LICH",
-            "minLevel": 5,
-            "maxLevel": 99,
-            "weight": 3
-        },
-        {
-            "type": "MIMIC",
             "minLevel": 5,
             "maxLevel": 99,
             "weight": 3

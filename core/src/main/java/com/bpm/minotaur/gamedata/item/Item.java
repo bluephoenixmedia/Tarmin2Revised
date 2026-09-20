@@ -267,6 +267,20 @@ public class Item implements Renderable {
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
 
     private boolean isLocked;
+
+    // --- Mimic Disguise ---
+    // A mimic in the strata is a chest until the player reaches for it. The disguise
+    // lives on the Item; the creature only becomes a Monster at the moment of reveal.
+    private boolean isMimic = false;
+    /** True once the player has seen through the disguise (see MimicDetection). */
+    private boolean mimicSeen = false;
+    /**
+     * True once the perception check has been rolled for this mimic, pass or fail.
+     * Without this the roll would repeat every turn the player stands in front of
+     * the chest, which turns a 25% chance into a certainty within a few turns.
+     */
+    private boolean mimicRollSpent = false;
+
     private int range; // Removed final
     private int hydrationValue; // New
     private int nutrition; // New
@@ -1152,6 +1166,33 @@ public class Item implements Renderable {
 
     public boolean isLocked() {
         return this.isLocked;
+    }
+
+    /** True when this chest is a mimic waiting for the player to reach for it. */
+    public boolean isMimic() {
+        return this.isMimic;
+    }
+
+    public void setMimic(boolean isMimic) {
+        this.isMimic = isMimic;
+    }
+
+    /** True once the player has seen through this mimic's disguise. */
+    public boolean isMimicSeen() {
+        return this.mimicSeen;
+    }
+
+    public void setMimicSeen(boolean mimicSeen) {
+        this.mimicSeen = mimicSeen;
+    }
+
+    /** True once this mimic's perception check has been rolled, pass or fail. */
+    public boolean isMimicRollSpent() {
+        return this.mimicRollSpent;
+    }
+
+    public void setMimicRollSpent(boolean mimicRollSpent) {
+        this.mimicRollSpent = mimicRollSpent;
     }
 
     public void unlock() {

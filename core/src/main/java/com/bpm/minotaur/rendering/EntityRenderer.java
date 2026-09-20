@@ -125,6 +125,9 @@ public class EntityRenderer {
         }
     }
 
+    /** Free-running clock for the disguised-mimic idle bob; see drawItemTexture. */
+    private float mimicIdlePhase = 0f;
+
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
         render(shapeRenderer, player, maze, viewport, depthBuffer, firstPersonRenderer, worldManager, null);
@@ -136,6 +139,10 @@ public class EntityRenderer {
 
         if (depthBuffer == null)
             return;
+
+        // Advanced once per frame, not once per mimic: otherwise the bob would speed up
+        // with the number of mimics on screen.
+        mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
         this.currentWorldManager = worldManager;
         this.currentMaze = maze;
@@ -874,6 +881,14 @@ public class EntityRenderer {
                 // Normalize offsets (which are in pixels) to 0..1 range relative to texture size
                 offX = item.getTemplate().offsetX / texW;
                 offY = item.getTemplate().offsetY / texH;
+            }
+
+            // A disguised mimic breathes here too. This engine tints items by lighting
+            // alone, so a colour-based tell would be invisible -- the bob is the one
+            // cue that reads in both renderers.
+            if (item.isMimic()) {
+                offY += MimicBob.spriteOffset(mimicIdlePhase,
+                        item.getPosition().x, item.getPosition().y);
             }
 
             if (atFeet) {

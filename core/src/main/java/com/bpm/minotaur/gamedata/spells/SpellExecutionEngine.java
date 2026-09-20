@@ -125,7 +125,7 @@ public class SpellExecutionEngine {
     private static void resolveFireballBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.min(12, Math.max(4, spell.getRange()));
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -173,7 +173,7 @@ public class SpellExecutionEngine {
     private static void resolveMagicMissileBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                    GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.max(3, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -373,7 +373,7 @@ public class SpellExecutionEngine {
     private static void resolveProjectileSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int maxRange = Math.max(2, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -435,7 +435,7 @@ public class SpellExecutionEngine {
     private static void resolveBurstSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                           GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.min(8, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         GridPoint2 center = (hit != null && hit.collisionPoint != null)
                 ? hit.collisionPoint

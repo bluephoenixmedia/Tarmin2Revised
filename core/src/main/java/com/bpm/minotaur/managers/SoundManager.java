@@ -408,6 +408,19 @@ public class SoundManager {
         }
     }
 
+    /**
+     * The chest that doesn't creak. Pitched well below the ordinary roar so the player
+     * hears "that was not a lid" before the sprite has finished changing -- the cheapest
+     * tell in the mimic encounter, and the reason world chests now creak at all.
+     */
+    public void playMimicRevealSound() {
+        String key = modernSounds.containsKey("monster_roar_heavy") ? "monster_roar_heavy" : "monster_roar";
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.9f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.6f, 0.72f));
+        }
+    }
+
     public void playCoins() {
         if (modernSounds.containsKey("coins")) {
             long id = modernSounds.get("coins").play(0.8f);

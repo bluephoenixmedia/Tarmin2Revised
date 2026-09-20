@@ -153,7 +153,7 @@ public class ChunkData {
                     item.addModifier(mod);
                 }
             }
-            item.setStudyProgress(data.studyProgress);
+            data.applyTo(item);
             if (data.contents != null && !data.contents.isEmpty()) {
                 List<Item> insideItems = new ArrayList<>();
                 for (ItemData insideData : data.contents) {
@@ -306,6 +306,9 @@ public class ChunkData {
         public List<ItemModifier> modifiers = new ArrayList<>();
         public List<ItemData> contents = new ArrayList<>();
         public int studyProgress;
+        public boolean isMimic;
+        public boolean mimicSeen;
+        public boolean mimicRollSpent;
 
         public ItemData() {
         }
@@ -317,6 +320,9 @@ public class ChunkData {
             this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
             this.studyProgress = item.getStudyProgress();
+            this.isMimic = item.isMimic();
+            this.mimicSeen = item.isMimicSeen();
+            this.mimicRollSpent = item.isMimicRollSpent();
             if (item.getContents() != null && !item.getContents().isEmpty()) {
                 for (Item inside : item.getContents()) {
                     if (inside != null) {
@@ -324,6 +330,21 @@ public class ChunkData {
                     }
                 }
             }
+        }
+
+        /**
+         * Applies the non-constructor state this DTO carries onto a freshly built Item.
+         * Keeping it here means the write path and the read path stay in one place --
+         * a field added above without a matching line here would silently evaporate.
+         */
+        public void applyTo(Item item) {
+            if (item == null) {
+                return;
+            }
+            item.setStudyProgress(this.studyProgress);
+            item.setMimic(this.isMimic);
+            item.setMimicSeen(this.mimicSeen);
+            item.setMimicRollSpent(this.mimicRollSpent);
         }
     }
 

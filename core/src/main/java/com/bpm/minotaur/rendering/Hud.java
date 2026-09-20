@@ -1852,6 +1852,23 @@ public class Hud implements Disposable {
 
         // 4. Check Containers in front
         if (frontItem != null && frontItem.getCategory() == ItemCategory.CONTAINER) {
+            // A mimic the player has seen through stops pretending on the card. The
+            // detection roll is spent once and persisted, so this has to be the lasting
+            // record of it -- the player should not have to remember which chest it was
+            // three rooms later.
+            if (frontItem.isMimic() && frontItem.isMimicSeen()) {
+                worldInteractionCard.show(
+                        "[IT IS WATCHING YOU]",
+                        "[MIMIC]",
+                        "Mimic",
+                        "The lid breathes. Whatever this is, it is not a chest -- strike it before it strikes you.",
+                        "[ O ]",
+                        "Strike It First",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+
             boolean locked = frontItem.isLocked();
             worldInteractionCard.show(
                     locked ? "[LOCKED CONTAINER]" : "[TREASURE CONTAINER]",

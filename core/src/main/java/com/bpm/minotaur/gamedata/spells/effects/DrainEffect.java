@@ -37,7 +37,7 @@ public class DrainEffect implements SpellEffect {
 
         if (targetMonster == null) {
             CombatManager.HitResult hit = combatManager.raycastProjectile(
-                    player.getPosition(), player.getFacing(), 8, true);
+                    player.getPosition(), player.getFacing(), 8, true, true);
             if (hit.type == CombatManager.HitResult.HitType.MONSTER && hit.hitMonster != null) {
                 targetMonster = hit.hitMonster;
             } else {

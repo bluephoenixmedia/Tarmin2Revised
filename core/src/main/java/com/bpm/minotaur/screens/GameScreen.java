@@ -1431,6 +1431,7 @@ public class GameScreen extends BaseScreen {
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         player.tickFieldRestCooldown();
+        checkForMimicInFront();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }
@@ -1450,6 +1451,62 @@ public class GameScreen extends BaseScreen {
         if (worldManager != null && player != null && maze != null) {
             worldManager.updateExploration(player, maze);
         }
+    }
+
+    /**
+     * Rolls the mimic perception check against whatever chest the player is now facing.
+     *
+     * <p>Hooked to the turn rather than the render loop: at 60fps a per-frame roll would
+     * make detection certain the instant the player looked at a mimic. The roll is also
+     * spent on the Item, so walking away and back does not buy a second one.
+     */
+    private void checkForMimicInFront() {
+        if (player == null || maze == null) {
+            return;
+        }
+        Vector2 v = player.getFacing().getVector();
+        GridPoint2 front = new GridPoint2(
+                (int) (player.getPosition().x + v.x),
+                (int) (player.getPosition().y + v.y));
+
+        Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, front);
+        if (chest == null) {
+            return;
+        }
+
+        int wisdom = (player.getStats() != null) ? player.getStats().getWisdom() : 10;
+        if (com.bpm.minotaur.gamedata.monster.MimicDetection.attempt(chest, wisdom, mimicPerceptionRng)) {
+            eventManager.addEvent(new GameEvent("Something about that chest is wrong.", 3f));
+            hud.addMessage("Something about that chest is wrong.");
+        }
+    }
+
+    private final java.util.Random mimicPerceptionRng = new java.util.Random();
+
+    /**
+     * Resolves what the player just bumped into, dropping the disguise of a mimic they
+     * have already seen through.
+     *
+     * <p>Only a detected mimic can be struck this way. An unspotted one is still a chest
+     * as far as the player knows, and swinging at it would be knowledge they have not
+     * earned -- without that restriction a paranoid player could simply attack every
+     * chest in the dungeon and skip the encounter entirely.
+     *
+     * @return the monster to strike, or null if this is not a fight.
+     */
+    private Monster resolveBumpTarget(int tx, int ty) {
+        GridPoint2 tile = new GridPoint2(tx, ty);
+
+        Monster existing = maze.getMonsters().get(tile);
+        if (existing != null) {
+            return existing;
+        }
+
+        Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, tile);
+        if (chest != null && chest.isMimicSeen() && combatManager != null) {
+            return combatManager.revealMimicPreEmptively(tile, currentLevel);
+        }
+        return null;
     }
 
     private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
@@ -2114,7 +2171,7 @@ public class GameScreen extends BaseScreen {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerShieldBash(bumpTarget);
                     } else {
@@ -2156,7 +2213,7 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
 
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
@@ -2195,7 +2252,7 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
                     } else {
@@ -2781,6 +2838,35 @@ public class GameScreen extends BaseScreen {
                 (int) (player.getPosition().y + v.y));
 
         GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+        // MIMIC: this must run before Player.interact for two reasons. Every
+        // REGULAR_CHEST is force-locked at construction (Item.java) and the container
+        // branch returns early when the player has no key, so a check placed after it
+        // would only ever fire for key-carrying players. And that same branch does
+        // `maze.getItems().remove(targetTile)` -- letting a mimic reach it would delete
+        // the creature outright, so this path always returns rather than falling through.
+        Item mimicChest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, target);
+        if (mimicChest != null) {
+            if (combatManager != null
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                if (mimicChest.isMimicSeen()) {
+                    // Already seen through: reaching for it IS an attack, and the player
+                    // keeps the initiative their perception check bought them.
+                    Monster spotted = combatManager.revealMimicPreEmptively(target, maze.getLevel());
+                    if (spotted != null) {
+                        combatManager.playerMeleeStrike(spotted);
+                    }
+                } else {
+                    // Deliberately does not advance the turn: the mimic's free blow is
+                    // the cost of reaching for the chest, and letting the rest of the
+                    // level act while the reveal state is blocking invites the two state
+                    // machines to interleave.
+                    combatManager.triggerMimicAmbush(target, maze.getLevel());
+                }
+            }
+            needsAsciiRender = true;
+            return;
+        }
 
         // Check Decomposing Corpse (NetHack-style Bones remains)
         Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;

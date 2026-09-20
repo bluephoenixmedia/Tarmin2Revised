@@ -2428,6 +2428,16 @@ public class Player {
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             String containerName = itemInFront.getDisplayName();
 
+            // Every attempt on a world container makes a noise, including one that
+            // fails on the lock. This is the quiet half of the mimic tell: the sound a
+            // player expects when reaching for a chest is what makes its absence -- and
+            // the low roar that replaces it -- register before the sprite has changed.
+            // It has to fire before the lock check, or the most common case (a locked
+            // chest, and they all spawn locked) stays silent and the tell never forms.
+            if (soundManager != null) {
+                soundManager.playChestOpen();
+            }
+
             if (itemInFront.isLocked()) {
                 Item key = findKey();
                 if (key != null && itemInFront.unlocks(key)) {

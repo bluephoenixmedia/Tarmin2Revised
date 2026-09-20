@@ -22,7 +22,7 @@ public class MagicArrowEffect implements SpellEffect {
         Monster targetMonster = combatManager.getMonster();
 
         if (targetMonster == null) {
-            CombatManager.HitResult hit = combatManager.raycastProjectile(player.getPosition(), player.getFacing(), 8, true);
+            CombatManager.HitResult hit = combatManager.raycastProjectile(player.getPosition(), player.getFacing(), 8, true, true);
             if (hit.type == CombatManager.HitResult.HitType.MONSTER && hit.hitMonster != null) {
                 targetMonster = hit.hitMonster;
                 targetPos = targetMonster.getPosition();

@@ -216,6 +216,8 @@ public class SpawnManager {
 
         spawnContainers((int) (budget.containerBudget * 0.5f));
 
+        spawnMimics();
+
         // Debris was non-existent. Increased from 0.02 to 0.5.
         spawnDebris((int) (budget.debrisBudget * 0.5f));
 
@@ -531,6 +533,47 @@ public class SpawnManager {
                 spawnKey(containerColor);
             }
         }
+    }
+
+    /**
+     * Places disguised mimics: chests that are actually monsters waiting to be opened.
+     *
+     * <p>These draw from their own budget rather than converting containers, and they are
+     * deliberately built to be indistinguishable from the real thing -- same type, same
+     * colour, same lock state. They carry no loot (it is rolled on death instead, so
+     * nothing has to survive on a live monster) and spawn no key, since the reveal fires
+     * on the open attempt whether or not the player can actually work the lock.
+     */
+    private void spawnMimics() {
+        int count = com.bpm.minotaur.generation.MimicSpawnRule.rollCount(level, budget.mimicBudget, random);
+
+        for (int i = 0; i < count; i++) {
+            GridPoint2 spawnPoint = getEmptySpawnPoint();
+            if (spawnPoint == null)
+                break;
+
+            Item mimic = itemDataManager.createItem(ItemType.REGULAR_CHEST, spawnPoint.x, spawnPoint.y,
+                    realChestColor(), assetManager);
+            mimic.setMimic(true);
+            maze.addItem(mimic);
+
+            SpawnLogger.getInstance().logItemSpawn(mimic, "Mimic (Level Gen)");
+        }
+    }
+
+    /**
+     * The colour real chests spawn with, read from the container table so a mimic never
+     * stands out by being the wrong shade of chest.
+     */
+    private ItemColor realChestColor() {
+        if (spawnTableData != null && spawnTableData.containerSpawnTable != null) {
+            for (SpawnTableEntry entry : spawnTableData.containerSpawnTable) {
+                if ("REGULAR_CHEST".equals(entry.type) && entry.keyColor != null) {
+                    return entry.keyColor;
+                }
+            }
+        }
+        return ItemColor.CONTAINER_BLUE;
     }
 
     private void addLootToContainer(Item container) {
