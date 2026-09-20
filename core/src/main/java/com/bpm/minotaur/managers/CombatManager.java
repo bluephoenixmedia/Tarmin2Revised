@@ -493,6 +493,7 @@ public class CombatManager {
                 Gdx.app.log("CombatManager", "Player auto-turned to face " + directionToMonster);
             }
             soundManager.playCombatStartSound();
+            triggerCombatMusic(monster);
 
             // --- NEW: Start with Player Menu ---
             currentState = CombatState.PLAYER_MENU;
@@ -501,6 +502,22 @@ public class CombatManager {
 
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
         }
+    }
+
+    private void triggerCombatMusic(Monster monster) {
+        if (monster == null) return;
+        boolean isBoss = isBossMonster(monster);
+        if (isBoss) {
+            MusicManager.getInstance().playBossCombat("sounds/music/tarmin_boss_tension.wav");
+        } else {
+            MusicManager.getInstance().playCombatMusic("sounds/music/tarmin_fuxx.ogg");
+        }
+    }
+
+    private boolean isBossMonster(Monster monster) {
+        if (monster == null || monster.getType() == null) return false;
+        String typeName = monster.getType().name();
+        return typeName.contains("MINOTAUR") || typeName.contains("LICH") || typeName.contains("VAMPIRE");
     }
 
     public void playerMeleeStrike(Monster target) {
@@ -535,6 +552,7 @@ public class CombatManager {
             this.currentCombatTurns = 0;
             this.damageTakenInCombat = 0;
             BalanceLogger.getInstance().logCombatStart(player, target);
+            triggerCombatMusic(target);
         }
         this.currentCombatTurns++;
 
@@ -563,6 +581,9 @@ public class CombatManager {
     }
 
     public void monsterMeleeStrike(Monster attacker) {
+        if (attacker != null && this.monster != attacker && currentState == CombatState.INACTIVE) {
+            triggerCombatMusic(attacker);
+        }
         soundManager.playMonsterAttackSound(attacker);
         triggerAttackIndicator(attacker);
 
@@ -796,6 +817,7 @@ public class CombatManager {
         currentState = CombatState.INACTIVE;
         monster = null;
         monsterAttackDelay = 0f;
+        MusicManager.getInstance().exitCombat();
         Gdx.app.log("CombatManager", "Combat ended.");
     }
 
@@ -2266,6 +2288,9 @@ public class CombatManager {
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("THE MINOTAUR HAS FALLEN! Classic Mode and Pact of Torment unlocked!", 5.0f));
             }
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_sound_fx.ogg");
+        } else if (isBossMonster(monster)) {
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_sound_fx.ogg");
         }
     }
 

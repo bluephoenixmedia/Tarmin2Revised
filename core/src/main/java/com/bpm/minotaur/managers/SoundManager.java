@@ -86,11 +86,20 @@ public class SoundManager {
 
         float windDampen = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
+        float sfxScale = getEffectiveSfxVolume();
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
-            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * currentDampenFactor);
+            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * currentDampenFactor * sfxScale);
         }
         if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
-            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windDampen);
+            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windDampen * sfxScale);
+        }
+    }
+
+    public float getEffectiveSfxVolume() {
+        try {
+            return SettingsManager.getInstance().getSfxVolume();
+        } catch (Exception ignored) {
+            return 0.80f;
         }
     }
 
@@ -472,8 +481,12 @@ public class SoundManager {
     }
 
     public void playSound(String name) {
+        playSound(name, 1.0f);
+    }
+
+    public void playSound(String name, float baseVol) {
         if (modernSounds.containsKey(name)) {
-            modernSounds.get(name).play();
+            modernSounds.get(name).play(baseVol * getEffectiveSfxVolume());
         }
     }
 

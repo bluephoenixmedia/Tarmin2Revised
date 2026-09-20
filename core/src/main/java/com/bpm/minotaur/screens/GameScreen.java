@@ -169,9 +169,6 @@ public class GameScreen extends BaseScreen {
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
 
-        // Music stops when the player starts a game; dungeon uses atmospheric ambient soundscapes
-        MusicManager.getInstance().stop();
-
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
 
@@ -302,6 +299,36 @@ public class GameScreen extends BaseScreen {
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
+        }
+        updateMusicTrackForCurrentZone();
+    }
+
+    public void updateMusicTrackForCurrentZone() {
+        if (player == null || maze == null) return;
+        // Don't override combat music if combat is in progress
+        if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_SELECT_DICE
+                || combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_RESOLUTION
+                || combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_DELAY
+                || combatManager.getCurrentState() == CombatManager.CombatState.MONSTER_TURN
+                || combatManager.getCurrentState() == CombatManager.CombatState.MONSTER_REVEAL)) {
+            return;
+        }
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        boolean isShelter = maze.isHomeTile(px, py);
+
+        if (isShelter) {
+            MusicManager.getInstance().playShelterMusic("sounds/music/tarmin_ambient.ogg");
+        } else {
+            int strataDepth = Math.max(1, (currentLevel - 1) / 3 + 1);
+            if (strataDepth >= 3 || currentLevel >= 4) {
+                MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_catacombs_drone.wav");
+            } else {
+                MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_maze.mp3");
+            }
         }
     }
 
@@ -480,6 +507,8 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        MusicManager.getInstance().update(delta);
+
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
             hitPauseTimer -= delta;
@@ -1424,6 +1453,10 @@ public class GameScreen extends BaseScreen {
     }
 
     private void playerTurnTakesAction() {
+        if (MusicManager.getInstance().isResting()) {
+            MusicManager.getInstance().setResting(false);
+        }
+        updateMusicTrackForCurrentZone();
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         player.tickFieldRestCooldown();
@@ -1566,8 +1599,10 @@ public class GameScreen extends BaseScreen {
      * close in mid-rest even though spamming it is no longer possible.
      */
     private void performFieldRestAction() {
+        MusicManager.getInstance().setResting(true);
         Player.FieldRestResult result = player.attemptFieldRest(eventManager);
         if (!result.success) {
+            MusicManager.getInstance().setResting(false);
             return; // The refusal message was already queued by attemptFieldRest.
         }
 
@@ -3072,6 +3107,7 @@ public class GameScreen extends BaseScreen {
             ladder = maze.getLadders().get(inFront);
 
         if (ladder != null) {
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_enter_fx.ogg");
             GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
             List<Monster> pursuers = new ArrayList<>();
             if (this.maze != null) {
@@ -3137,6 +3173,7 @@ public class GameScreen extends BaseScreen {
                     hud.addMessage("You cannot ascend any higher.");
                 }
             }
+            updateMusicTrackForCurrentZone();
             playerTurnTakesAction();
         }
     }

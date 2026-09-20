@@ -25,6 +25,8 @@ public class SettingsScreen extends BaseScreen {
     // UI elements we need to update
     private TextButton difficultyButton;
     private TextButton modeButton;
+    private Label musicVolLabel;
+    private Label sfxVolLabel;
 
     public SettingsScreen(Tarmin2 game) {
         super(game);
@@ -105,6 +107,58 @@ public class SettingsScreen extends BaseScreen {
         table.add(modeButton).width(200);
         table.row().padTop(10);
 
+        // --- Music Volume ---
+        table.add(new Label("Music Volume", labelStyle)).left();
+        Table musicTable = new Table();
+        TextButton musicMinus = new TextButton("-", skin);
+        musicMinus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustMusicVolume(-0.10f);
+            }
+        });
+        musicTable.add(musicMinus).width(40).height(35);
+        int currentMusicPercent = Math.round(settingsManager.getMusicVolume() * 100);
+        musicVolLabel = new Label(currentMusicPercent + "%", labelStyle);
+        musicVolLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        musicTable.add(musicVolLabel).width(120);
+        TextButton musicPlus = new TextButton("+", skin);
+        musicPlus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustMusicVolume(0.10f);
+            }
+        });
+        musicTable.add(musicPlus).width(40).height(35);
+        table.add(musicTable).width(200);
+        table.row().padTop(10);
+
+        // --- SFX Volume ---
+        table.add(new Label("SFX Volume", labelStyle)).left();
+        Table sfxTable = new Table();
+        TextButton sfxMinus = new TextButton("-", skin);
+        sfxMinus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustSfxVolume(-0.10f);
+            }
+        });
+        sfxTable.add(sfxMinus).width(40).height(35);
+        int currentSfxPercent = Math.round(settingsManager.getSfxVolume() * 100);
+        sfxVolLabel = new Label(currentSfxPercent + "%", labelStyle);
+        sfxVolLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
+        sfxTable.add(sfxVolLabel).width(120);
+        TextButton sfxPlus = new TextButton("+", skin);
+        sfxPlus.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                adjustSfxVolume(0.10f);
+            }
+        });
+        sfxTable.add(sfxPlus).width(40).height(35);
+        table.add(sfxTable).width(200);
+        table.row().padTop(10);
+
         // --- Controls ---
         TextButton controlsButton = new TextButton("Controls", skin);
         controlsButton.addListener(new ChangeListener() {
@@ -150,6 +204,27 @@ public class SettingsScreen extends BaseScreen {
         boolean newMode = !settingsManager.isAdvancedMode();
         settingsManager.setAdvancedMode(newMode);
         modeButton.setText(newMode ? "Advanced" : "Original");
+    }
+
+    private void adjustMusicVolume(float delta) {
+        float current = settingsManager.getMusicVolume();
+        float newVol = Math.max(0.0f, Math.min(1.0f, Math.round((current + delta) * 10f) / 10f));
+        settingsManager.setMusicVolume(newVol);
+        if (musicVolLabel != null) {
+            musicVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+    }
+
+    private void adjustSfxVolume(float delta) {
+        float current = settingsManager.getSfxVolume();
+        float newVol = Math.max(0.0f, Math.min(1.0f, Math.round((current + delta) * 10f) / 10f));
+        settingsManager.setSfxVolume(newVol);
+        if (sfxVolLabel != null) {
+            sfxVolLabel.setText(Math.round(newVol * 100) + "%");
+        }
+        if (com.bpm.minotaur.managers.SoundManager.getInstance() != null) {
+            com.bpm.minotaur.managers.SoundManager.getInstance().playSound("ui_click");
+        }
     }
 
     @Override

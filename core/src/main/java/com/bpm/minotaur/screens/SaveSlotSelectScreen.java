@@ -347,7 +347,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
     private void startNewExpedition(int slotIndex, String mode) {
         MonsterPursuitManager.getInstance().clear();
         SaveManager.getInstance().startNewGame(slotIndex, mode, "Hero", "Warrior");
-        MusicManager.getInstance().stop();
+        MusicManager.getInstance().stopWithFade(0.5f);
 
         GameMode gameMode = "CLASSIC".equalsIgnoreCase(mode) ? GameMode.CLASSIC : GameMode.ADVANCED;
         game.setScreen(new GameScreen(game, 1, Difficulty.EASY, gameMode));
@@ -359,7 +359,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
     public static void launchResumeGame(Tarmin2 game, int slotIndex) {
         SaveManager.getInstance().setActiveSlotIndex(slotIndex);
-        MusicManager.getInstance().stop();
+        MusicManager.getInstance().stopWithFade(0.5f);
 
         WorldSaveData worldData = SaveManager.getInstance().loadActiveWorldData();
         int level = (worldData != null) ? worldData.currentLevel : 1;

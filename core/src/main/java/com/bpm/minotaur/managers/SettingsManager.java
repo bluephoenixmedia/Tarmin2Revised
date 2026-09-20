@@ -21,6 +21,8 @@ public class SettingsManager {
     private Difficulty currentDifficulty;
     private boolean isAdvancedMode;
     private boolean skipIntroVideo;
+    private float musicVolume = 0.70f;
+    private float sfxVolume = 0.80f;
     private final Map<String, Integer> keyBindings = new LinkedHashMap<>();
     private final Map<String, String> keyBindingDescriptions = new LinkedHashMap<>();
 
@@ -74,6 +76,11 @@ public class SettingsManager {
         // Load Skip Intro Video
         skipIntroVideo = prefs.getBoolean("skipIntroVideo", false);
 
+        // Load Audio Volumes (Defaults: Music 70%, SFX 80%)
+        musicVolume = prefs.getFloat("musicVolume", 0.70f);
+        sfxVolume = prefs.getFloat("sfxVolume", 0.80f);
+        MusicManager.getInstance().setMasterVolume(musicVolume);
+
         // Load Key Bindings
         keyBindings.clear();
         for (String action : keyBindingDescriptions.keySet()) {
@@ -88,6 +95,32 @@ public class SettingsManager {
     private Preferences getPrefs() {
         if (Gdx.app == null) return null;
         return Gdx.app.getPreferences(PREFS_NAME);
+    }
+
+    // --- Audio Volume Settings ---
+    public float getMusicVolume() {
+        return musicVolume;
+    }
+
+    public void setMusicVolume(float volume) {
+        this.musicVolume = Math.max(0.0f, Math.min(1.0f, volume));
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putFloat("musicVolume", this.musicVolume).flush();
+        }
+        MusicManager.getInstance().setMasterVolume(this.musicVolume);
+    }
+
+    public float getSfxVolume() {
+        return sfxVolume;
+    }
+
+    public void setSfxVolume(float volume) {
+        this.sfxVolume = Math.max(0.0f, Math.min(1.0f, volume));
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putFloat("sfxVolume", this.sfxVolume).flush();
+        }
     }
 
     // --- Skip Intro Video ---

@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.rendering.HudSkin;
 
 /**
@@ -65,6 +66,7 @@ public class PlayerDeathScreen extends BaseScreen {
 
     @Override
     public void show() {
+        MusicManager.getInstance().stop();
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
