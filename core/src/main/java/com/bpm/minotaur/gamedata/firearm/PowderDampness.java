@@ -45,8 +45,8 @@ public final class PowderDampness {
         return chance > 0f && random.nextFloat() < chance;
     }
 
-    /** Dampness after standing in rain or wading through liquid: soaked outright. */
-    public static float afterExposure(float dampness) {
+    /** Dampness after standing in rain or wading: soaked outright, whatever it was. */
+    public static float afterExposure() {
         return 1f;
     }
 

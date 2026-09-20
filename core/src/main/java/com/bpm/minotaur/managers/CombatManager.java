@@ -30,6 +30,9 @@ import com.bpm.minotaur.gamedata.bones.BonesData;
 import com.bpm.minotaur.gamedata.dice.Die;
 import com.bpm.minotaur.gamedata.monster.MonsterColor;
 import com.bpm.minotaur.gamedata.monster.MimicReveal;
+import com.bpm.minotaur.gamedata.firearm.FirearmProfile;
+import com.bpm.minotaur.gamedata.firearm.PowderDampness;
+import com.bpm.minotaur.gamedata.firearm.ReloadChannel;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import com.bpm.minotaur.utils.DiceRoller;
@@ -846,6 +849,90 @@ public class CombatManager {
     }
 
     // --- NEW: Helper to setup weapon and checks ---
+    // --- Firearms ---
+    /** The reload in progress, or null when nothing is being loaded. */
+    private ReloadChannel activeReload = null;
+    /** Rolls misfires; separate from the combat RNG so tests can pin one without the other. */
+    private final Random powderRandom = new Random();
+
+    public ReloadChannel getActiveReload() {
+        return activeReload;
+    }
+
+    /** True if this weapon draws shot rather than arrows. */
+    private boolean usesShot(Item weapon) {
+        return weapon != null && FirearmProfile.isFirearm(weapon.getType());
+    }
+
+    private boolean hasAmmoFor(Item weapon) {
+        return usesShot(weapon) ? player.getStats().getShot() > 0 : player.getArrows() > 0;
+    }
+
+    /**
+     * Spends one round and, for a firearm, starts the reload that follows it.
+     *
+     * <p>Single chokepoint on purpose: a firearm that fires without reloading is just a
+     * bow, and the reload is the entire balance for a 2d8 shot at bow range. Every path
+     * that spends a round goes through here.
+     */
+    private void consumeAmmoFor(Item weapon) {
+        if (usesShot(weapon)) {
+            player.getStats().decrementShot();
+            beginReload(weapon);
+        } else {
+            player.decrementArrow();
+        }
+    }
+
+    private String ammoNameFor(Item weapon) {
+        if (usesShot(weapon)) {
+            return "shot";
+        }
+        boolean crossbow = weapon != null && (weapon.getType() == Item.ItemType.CROSSBOW
+                || (weapon.getFriendlyName() != null
+                        && weapon.getFriendlyName().toLowerCase().contains("crossbow")));
+        return crossbow ? "bolts" : "arrows";
+    }
+
+    /**
+     * Advances any reload by one world turn. Called once per player turn.
+     *
+     * <p>Takes no interruption arguments: nothing in the world can break a reload, only
+     * the player's own choice to do something else, which goes through
+     * {@link #abandonReload}.
+     */
+    public void tickReload() {
+        if (activeReload == null) {
+            return;
+        }
+        if (activeReload.afterTurn() == ReloadChannel.Step.COMPLETE) {
+            eventManager.addEvent(new GameEvent("Loaded and primed.", 1.5f));
+            activeReload = null;
+        }
+    }
+
+    /**
+     * Gives up a reload in progress. The reload is the player's to abandon -- this is
+     * called when they choose to move or swing, never because they were hit.
+     */
+    public void abandonReload() {
+        if (activeReload == null) {
+            return;
+        }
+        activeReload = null;
+        eventManager.addEvent(new GameEvent("You break off loading.", 1.5f));
+    }
+
+    /** Begins the reload that follows a shot. */
+    private void beginReload(Item weapon) {
+        if (weapon == null || !FirearmProfile.isFirearm(weapon.getType())) {
+            return;
+        }
+        activeReload = new ReloadChannel(weapon.getType());
+        eventManager.addEvent(new GameEvent(
+                "Reloading -- " + activeReload.getTurnsRequired() + " turns.", 1.5f));
+    }
+
     private boolean prepareAttack() {
         Item weapon = player.getInventory().getRightHand();
 
@@ -853,10 +940,18 @@ public class CombatManager {
             this.pendingWeapon = weapon;
             this.pendingIsRanged = weapon.isRanged();
 
-            if (pendingIsRanged && weapon.getType() != Item.ItemType.DART && player.getArrows() <= 0) {
-                String ammoName = (weapon.getType() == Item.ItemType.CROSSBOW || (weapon.getFriendlyName() != null && weapon.getFriendlyName().toLowerCase().contains("crossbow"))) ? "bolts" : "arrows";
-                eventManager.addEvent(new GameEvent("You have no " + ammoName + "!", 2f));
+            if (pendingIsRanged && weapon.getType() != Item.ItemType.DART && !hasAmmoFor(weapon)) {
+                eventManager.addEvent(new GameEvent("You have no " + ammoNameFor(weapon) + "!", 2f));
                 passTurnToMonster();
+                return false;
+            }
+
+            // A fired firearm is empty until the reload finishes. Without this the
+            // multi-turn reload would be decorative -- nothing would stop the player
+            // firing again on the very next turn.
+            if (activeReload != null && FirearmProfile.isFirearm(weapon.getType())) {
+                eventManager.addEvent(new GameEvent(
+                        "Still loading -- " + activeReload.getTurnsRemaining() + " turn(s).", 1.5f));
                 return false;
             }
             return true;
@@ -910,6 +1005,7 @@ public class CombatManager {
             currentState = CombatState.INACTIVE; // Close menu if no enemy
         } else {
             // Pass Turn
+            tickReload();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
 
@@ -922,6 +1018,17 @@ public class CombatManager {
     }
 
     public void playerAttackInstant() {
+        // INACTIVE is allowed for ranged weapons only. Without it a bow could never
+        // open a fight -- firing required combat to already be underway, which is the
+        // reverse of what a ranged weapon is for. Melee still needs an engagement.
+        if (currentState == CombatState.INACTIVE) {
+            Item readied = player.getInventory().getRightHand();
+            if (readied == null || !readied.isRanged()) {
+                return;
+            }
+            openFireAtRange();
+            return;
+        }
         if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
             return;
 
@@ -929,25 +1036,24 @@ public class CombatManager {
         if (monster == null) {
             // 2. No target? Check Ranged
             if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
-                performRangedAttack(); // Re-use existing GameScreen method logic? No, move it here or dup.
-                // Re-implementing logic here safely:
-                HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), 8, true, true);
-                if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
-                    // Found one!
-                    // Trigger Ranged Attack on this monster
-                    startCombat(hit.hitMonster); // Engage!
-                    // Now we have a monster, proceed to resolve?
-                    // Or separate method to avoid recursion issues.
-                    // Let's manually resolve against hit.hitMonster
-                    resolveRangedAttackAgainst(hit.hitMonster);
-                } else {
-                    eventManager.addEvent(new GameEvent("No target in range.", 1.5f));
-                    currentState = CombatState.INACTIVE;
-                }
+                // Previously this called performRangedAttack(), which called straight
+                // back into this method with nothing changed between them -- unbounded
+                // recursion. Opening fire is resolved here and nowhere else.
+                openFireAtRange();
             } else {
                 eventManager.addEvent(new GameEvent("No monster to attack!", 1.5f));
                 currentState = CombatState.INACTIVE;
             }
+            return;
+        }
+
+        // An engaged target does not make a firearm a club. Ranged weapons resolve
+        // through the ranged path in combat too, or firing in the situation that
+        // actually matters would skip the misfire roll, the noise, the muzzle flash
+        // and the range check.
+        Item readiedInCombat = player.getInventory().getRightHand();
+        if (readiedInCombat != null && readiedInCombat.isRanged()) {
+            resolveRangedAttackAgainst(monster);
             return;
         }
 
@@ -979,7 +1085,16 @@ public class CombatManager {
             float flurryChance = agi >= 18 ? 0.35f : agi >= 14 ? 0.20f : 0f;
             if (flurryChance > 0f && random.nextFloat() < flurryChance) {
                 Item flurryWeapon = player.getInventory().getRightHand();
-                if (flurryWeapon != null) {
+                // The flurry re-enters resolveAttack, which spends another round --
+                // previously without checking there was one, so it could overdraw.
+                // Firearms are excluded outright: a second shot inside one turn is the
+                // one thing a reload exists to prevent. Bows keep their flurry.
+                boolean flurryAffordable = flurryWeapon != null
+                        && !usesShot(flurryWeapon)
+                        && (!flurryWeapon.isRanged()
+                                || flurryWeapon.getType() == Item.ItemType.DART
+                                || hasAmmoFor(flurryWeapon));
+                if (flurryAffordable) {
                     pendingWeapon = flurryWeapon;
                     eventManager.addEvent(new GameEvent("Flurry!", 0.8f));
                     resolveAttack(DiceRoller.roll("1d20"), true);
@@ -1047,21 +1162,179 @@ public class CombatManager {
         return true;
     }
 
+    /**
+     * The effective reach of a ranged weapon.
+     *
+     * <p>{@code getRange()} was previously never read on the player's own attacks -- the
+     * raycast was hardcoded to 8, so a longbow's 32 and a hand crossbow's 6 were both 8.
+     * Honouring it is what finally differentiates the ranged roster.
+     */
+    private int effectiveRange(Item weapon) {
+        if (weapon == null) {
+            return 8;
+        }
+        return Math.max(1, weapon.getRange());
+    }
+
+    /**
+     * Opens fire on whatever is down the player's facing, engaging it if something is
+     * there. This is the path that was previously unreachable: firing required combat to
+     * already be active, so a bow could never be used to start a fight.
+     */
+    private void openFireAtRange() {
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null || !weapon.isRanged()) {
+            return;
+        }
+        if (!prepareAttack()) {
+            return;
+        }
+
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(),
+                effectiveRange(weapon), true, true);
+
+        if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            startCombat(hit.hitMonster);
+            resolveRangedAttackAgainst(hit.hitMonster, hit);
+        } else if (!misfired(weapon)) {
+            // The shot is still spent, and still heard. Firing into an empty corridor
+            // costs you the ammunition and wakes the level just the same.
+            fireRangedEffects(weapon, hit);
+            consumeAmmoFor(weapon);
+            eventManager.addEvent(new GameEvent("No target in range.", 1.5f));
+            currentState = CombatState.INACTIVE;
+        } else {
+            currentState = CombatState.INACTIVE;
+        }
+    }
+
+    /**
+     * Resolves a shot that has a target.
+     *
+     * <p>Previously five TODO comments: it ignored {@code prepareAttack()}'s result so it
+     * fired at zero ammo, and triggered no animation and no sound.
+     */
     private void resolveRangedAttackAgainst(Monster target) {
-        // wasn't set?
-        // But startCombat sets it.
-        // If startCombat was called, we are good.
-        // But we need to ensure pendingWeapon is set.
-        prepareAttack(); // Sets pendingWeapon
+        resolveRangedAttackAgainst(target, null);
+    }
 
-        // Animate Projectile
-        // ... (Add projectile animation here akin to Magic Arrow?)
-        // Actually Weapons currently use WeaponOverlay slash.
-        // Ranged weapons should probably shoot a projectile.
+    /**
+     * @param tracedShot the path already traced by the caller, or null to trace one.
+     *        Reusing it avoids a second raycast, which would also re-run the
+     *        mimic-reveal side effect that a player-sourced trace carries.
+     */
+    private void resolveRangedAttackAgainst(Monster target, HitResult tracedShot) {
+        if (!prepareAttack()) {
+            return;
+        }
+        Item weapon = pendingWeapon;
 
-        // Trigger resolution
-        int d20Roll = DiceRoller.d20();
-        resolveAttack(d20Roll);
+        if (misfired(weapon)) {
+            passTurnToMonster();
+            return;
+        }
+
+        HitResult shot = (tracedShot != null) ? tracedShot
+                : raycastProjectile(player.getPosition(), player.getFacing(),
+                        effectiveRange(weapon), true, true);
+        fireRangedEffects(weapon, shot);
+
+        resolveAttack(DiceRoller.d20());
+    }
+
+    /**
+     * Rolls whether wet powder fizzles, and spends the round if it does.
+     *
+     * <p>A misfire costs the shot but not the reload -- losing both would stack a random
+     * failure on top of a multi-turn commitment, which reads as the game cheating rather
+     * than as a weapon with character.
+     *
+     * @return true if the shot was lost to damp powder.
+     */
+    private boolean misfired(Item weapon) {
+        if (!usesShot(weapon)
+                || !PowderDampness.rollMisfire(player.getStats().getPowderDampness(), powderRandom)) {
+            return false;
+        }
+        consumeAmmoFor(weapon);
+        soundManager.playFirearmMisfire();
+        eventManager.addEvent(new GameEvent("The powder fizzles -- misfire!", 2f));
+        return true;
+    }
+
+    /**
+     * Everything a shot does besides damage: the weapon animation, the report, the
+     * muzzle flash, and whatever the noise wakes.
+     */
+    private void fireRangedEffects(Item weapon, HitResult hit) {
+        boolean firearm = usesShot(weapon);
+
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.getWeaponOverlay().triggerAttack(weapon);
+            if (firearm) {
+                gs.addTrauma(0.4f);
+            }
+        }
+
+        Vector2 muzzle = player.getPosition().cpy()
+                .add(player.getDirectionVector().cpy().scl(0.6f));
+        Vector2 impact = (hit != null && hit.collisionPoint != null)
+                ? new Vector2(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f)
+                : muzzle.cpy().add(player.getDirectionVector().cpy().scl(effectiveRange(weapon)));
+
+        if (firearm) {
+            soundManager.playFirearmShot();
+            spawnMuzzleEffects(muzzle, impact);
+
+            int woken = com.bpm.minotaur.gamedata.firearm.GunshotNoise.wake(
+                    maze, player.getPosition(), weapon.getType());
+            if (woken > 0) {
+                eventManager.addEvent(new GameEvent(
+                        "The shot echoes -- " + woken + " thing(s) stir.", 2f));
+            }
+        } else {
+            // Bows keep a travelling arrow: the arc is what makes archery readable,
+            // where a gun's whole advantage is that it is already there.
+            soundManager.playBowShot();
+            if (animationManager != null) {
+                animationManager.addAnimation(new Animation(
+                        Animation.AnimationType.PROJECTILE_PLAYER,
+                        muzzle, impact,
+                        com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 0.25f,
+                        new String[] { "-" }));
+            }
+        }
+    }
+
+    /**
+     * Muzzle flash, powder smoke, and the impact burst.
+     *
+     * <p>A firearm shot is hitscan, so there is no travelling sprite to carry the moment
+     * -- the muzzle and the impact have to do all the work. Deliberately no screen flash:
+     * it fights the recoil kick already in the motion profile, and on every shot it stops
+     * being a thrill and becomes an irritation.
+     */
+    private void spawnMuzzleEffects(Vector2 muzzle, Vector2 impact) {
+        if (animationManager == null) {
+            return;
+        }
+        // Muzzle height follows the void-laser convention: a little below the eye line.
+        float muzzleY = 0.4f;
+
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.FIRE,
+                new com.badlogic.gdx.math.Vector3(muzzle.x, muzzleY, -muzzle.y), 0.7f, 0.18f);
+
+        // The powder smoke: slower and larger than the flash, and what actually sells
+        // the weapon as something other than a loud crossbow.
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.STANDARD,
+                new com.badlogic.gdx.math.Vector3(muzzle.x, muzzleY, -muzzle.y), 1.1f, 0.55f);
+
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.CONCUSSIVE,
+                new com.badlogic.gdx.math.Vector3(impact.x, 0.5f, -impact.y), 0.9f, 0.35f);
     }
 
     // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
@@ -1480,7 +1753,7 @@ public class CombatManager {
 
         // Consume ammunition for ranged weapons (bows, crossbows)
         if (attackWeapon != null && attackWeapon.isRanged() && attackWeapon.getType() != Item.ItemType.DART) {
-            player.decrementArrow();
+            consumeAmmoFor(attackWeapon);
         }
 
         int toHitBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
@@ -2100,6 +2373,9 @@ public class CombatManager {
 
     public void passTurnToMonster() {
         if (currentState == CombatState.PLAYER_TURN) {
+            // A combat turn is a world turn: the reload has to advance here too, or a
+            // gun could only ever be reloaded by backing out of the fight.
+            tickReload();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
             Gdx.app.log("CombatManager", "Player passed turn. Monster's turn.");
@@ -2322,11 +2598,22 @@ public class CombatManager {
         }
     }
 
+    /**
+     * Fires the equipped ranged weapon at whatever is in front of the player.
+     *
+     * <p>Used to delegate to {@code playerAttackInstant()}, which called straight back
+     * here with nothing changed between them -- unbounded recursion.
+     */
     public boolean performRangedAttack() {
         Item weapon = player.getInventory().getRightHand();
         if (weapon == null || !weapon.isRanged())
             return false;
-        playerAttackInstant(); // Default to instant for standard inputs if used
+
+        if (monster != null) {
+            resolveRangedAttackAgainst(monster);
+        } else {
+            openFireAtRange();
+        }
         return true;
     }
 

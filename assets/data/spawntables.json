@@ -3142,6 +3142,12 @@
                 "minLevel": 1,
                 "maxLevel": 99,
                 "weight": 12
+            },
+            {
+                "type": "SHOT_POUCH",
+                "minLevel": 2,
+                "maxLevel": 99,
+                "weight": 8
             }
         ]
     }

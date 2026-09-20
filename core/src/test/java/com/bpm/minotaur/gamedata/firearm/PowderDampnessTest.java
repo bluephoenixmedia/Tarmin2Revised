@@ -78,8 +78,7 @@ public class PowderDampnessTest {
     @Test
     public void testExposureSoaksThePlayerImmediately() {
         assertEquals("stepping into water soaks you outright", 1f,
-                PowderDampness.afterExposure(0f), 0.0001f);
-        assertEquals(1f, PowderDampness.afterExposure(0.5f), 0.0001f);
+                PowderDampness.afterExposure(), 0.0001f);
     }
 
     @Test

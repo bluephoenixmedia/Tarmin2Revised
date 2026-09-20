@@ -108,6 +108,13 @@ public final class MimicHoard {
                 continue;
             }
 
+            // A mimic's hoard goes through ItemSpawner directly, so the depth gate that
+            // SpawnManager applies to floor loot has to be applied here too -- otherwise
+            // a depth-1 mimic could disgorge a musket.
+            if (!FirearmSpawnRule.canSpawnAtDepth(type.name(), depth)) {
+                continue;
+            }
+
             ItemVariant variant = itemDataManager.getRandomVariantForItem(type, depth);
             if (variant == null) {
                 continue;

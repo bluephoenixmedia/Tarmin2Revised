@@ -99,6 +99,8 @@ public class Hud implements Disposable {
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
     private final Label arrowsValueLabel;
+    /** Ammunition and reload state. Shown, unlike arrowsValueLabel, which is orphaned. */
+    private final Label ammoLabel;
     private final Label directionLabel;
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
@@ -304,6 +306,7 @@ public class Hud implements Disposable {
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
+        ammoLabel = new Label("", smallStyle);
         treasureValueLabel = new Label("", smallStyle);
         directionLabel = new Label("", directionLabelStyle);
 
@@ -355,6 +358,7 @@ public class Hud implements Disposable {
         divDoomCol.add(dayNightLabel).left().row();
         divDoomCol.add(divinitiesLabel).left().padTop(2).row();
         divDoomCol.add(doomLabel).left().padTop(2).row();
+        divDoomCol.add(ammoLabel).left().padTop(2).row();
         vitalsSubRow.add(divDoomCol).left();
 
         barsCol.add(vitalsSubRow).left().row();
@@ -779,10 +783,38 @@ public class Hud implements Disposable {
         directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
         treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
 
+        // --- Ammunition & Reload ---
+        // A multi-turn reload the player cannot see the end of is indistinguishable
+        // from an unexplained inability to act, so the countdown is shown explicitly.
+        Item readied = player.getInventory().getRightHand();
+        boolean firearmReadied = readied != null
+                && com.bpm.minotaur.gamedata.firearm.FirearmProfile.isFirearm(readied.getType());
+        com.bpm.minotaur.gamedata.firearm.ReloadChannel reload =
+                (gameScreen != null && gameScreen.getCombatManager() != null)
+                        ? gameScreen.getCombatManager().getActiveReload()
+                        : null;
+
+        String ammoText = String.format("ARR: %d  SHOT: %d",
+                player.getArrows(), player.getStats().getShot());
+        if (reload != null) {
+            ammoText += String.format("  RELOADING %d", reload.getTurnsRemaining());
+        }
+        ammoLabel.setText(ammoText);
+
+        boolean shotEmpty = firearmReadied && player.getStats().getShot() <= 0;
+        if (reload != null) {
+            ammoLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+        } else if (shotEmpty) {
+            ammoLabel.setColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            ammoLabel.setColor(Color.LIGHT_GRAY);
+        }
+
         // --- Ranged Weapon / No Ammo Warning ---
         Item equippedWeapon = player.getInventory().getRightHand();
         boolean noAmmo = equippedWeapon != null && equippedWeapon.isRanged()
-                && equippedWeapon.getType() != Item.ItemType.DART && player.getArrows() <= 0;
+                && equippedWeapon.getType() != Item.ItemType.DART
+                && (firearmReadied ? player.getStats().getShot() <= 0 : player.getArrows() <= 0);
         arrowsValueLabel.setColor(noAmmo ? HudSkin.COL_HP_CRITICAL : Color.WHITE);
         if (noAmmo && !noAmmoWarningActive) {
             eventManager.addEvent(new GameEvent("No ammunition for your " + equippedWeapon.getDisplayName() + "!", 2.5f));

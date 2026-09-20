@@ -77,7 +77,8 @@ public class GhostPlayerMonster extends Monster {
                 setAiType(MonsterTemplate.AiType.AGGRESSIVE);
             }
 
-            // Ranged weapon check
+            // Ranged weapon check. Firearms are deliberately excluded -- see
+            // isRangedWeapon.
             if (pd.arrows > 0 && isRangedWeapon(pd.rightHand)) {
                 setHasRangedAttack(true);
                 setAttackRange(4);
@@ -114,8 +115,21 @@ public class GhostPlayerMonster extends Monster {
         return "1d6";
     }
 
+    /**
+     * Bows and crossbows only.
+     *
+     * <p>A ghost that died holding a musket does not shoot, and that is deliberate:
+     * firearms are player-only. Arming any monster with one means giving it a reload
+     * channel, a noise pulse and a misfire model of its own, none of which the AI has
+     * -- see docs/FEatures/firearm-monsters.md. A gun-armed ghost without them would be
+     * a bow that hits twice as hard, which is the outcome the whole firearm design
+     * exists to avoid.
+     */
     private boolean isRangedWeapon(ItemSaveData item) {
         if (item == null || item.type == null) return false;
+        if (com.bpm.minotaur.gamedata.firearm.FirearmProfile.isFirearm(item.type)) {
+            return false;
+        }
         String t = item.type.name().toUpperCase();
         return t.contains("BOW") || t.contains("CROSSBOW");
     }

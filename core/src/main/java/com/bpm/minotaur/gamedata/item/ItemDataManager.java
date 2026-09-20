@@ -90,10 +90,6 @@ public class ItemDataManager {
             }
         }
 
-        if (itemTemplates.containsKey(ItemType.BOW)) {
-            itemTemplates.get(ItemType.BOW).unlockId = "item_bow";
-            Gdx.app.log("ItemDataManager", "TESTING: Locked BOW with id 'item_bow'");
-        }
 
         initializeMissingTemplates();
 

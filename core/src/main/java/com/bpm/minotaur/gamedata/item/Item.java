@@ -1098,7 +1098,10 @@ public class Item implements Renderable {
     public boolean isAmmunition() {
         if (type == null)
             return false;
-        if (type == ItemType.QUIVER)
+        // SHOT_POUCH counts as ammunition so it categorises and spawns as such, but it
+        // feeds the separate firearm "shot" pool, never the arrow count. Anything
+        // branching on this must exclude it explicitly -- see Player.collectAmmunition.
+        if (type == ItemType.QUIVER || type == ItemType.SHOT_POUCH)
             return true;
         String name = type.name();
         return name.startsWith("ARROW_") || name.startsWith("QUARREL_") || name.startsWith("SLING_BULLET_")

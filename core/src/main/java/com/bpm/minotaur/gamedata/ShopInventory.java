@@ -37,6 +37,16 @@ public class ShopInventory {
             ItemType.POTION_GOLD, ItemType.POTION_SWIRLY, ItemType.POTION_BUBBLY
     };
 
+    /**
+     * Ammunition. Shot is the reason this pool exists: firearms draw from a resource
+     * that deliberately never litters the floor, so the merchant is one of only two
+     * ways to restock. Arrows ride along because a shop that sells bows and crossbows
+     * but no arrows was always an odd gap.
+     */
+    private static final ItemType[] AMMO_POOL = {
+            ItemType.SHOT_POUCH, ItemType.QUIVER
+    };
+
     private static final ItemType[] SPECIAL_POOL = {
             ItemType.RING_GOLD, ItemType.AMULET, ItemType.SCROLL,
             ItemType.WAND, ItemType.FOOD, ItemType.COINS
@@ -66,6 +76,8 @@ public class ShopInventory {
         addRandomItems(inv, POTION_POOL, rng.nextInt(3) + 3, itemDataManager, assetManager, level);
         // 1-2 specials
         addRandomItems(inv, SPECIAL_POOL, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
+        // 1-2 bundles of ammunition
+        addRandomItems(inv, AMMO_POOL, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
     }
 
     private void addRandomItems(Inventory inv, ItemType[] pool, int count,

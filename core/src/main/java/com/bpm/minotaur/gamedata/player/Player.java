@@ -683,8 +683,13 @@ public class Player {
             return false;
         }
 
+        // A shot pouch also answers true to isAmmunition() -- that is what makes it
+        // categorise and spawn as ammunition -- so the arrow test must exclude it
+        // explicitly. Relying on branch order here would mean anyone reordering these
+        // two lines silently converted shot into arrows.
         boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
-        boolean isArrows = item.getType() == Item.ItemType.QUIVER || item.isAmmunition();
+        boolean isArrows = !isShot
+                && (item.getType() == Item.ItemType.QUIVER || item.isAmmunition());
         if (!isShot && !isArrows) {
             return false;
         }

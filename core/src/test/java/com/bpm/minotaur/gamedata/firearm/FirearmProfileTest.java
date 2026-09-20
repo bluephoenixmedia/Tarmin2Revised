@@ -68,6 +68,31 @@ public class FirearmProfileTest {
         assertTrue("the blunderbuss is the loudest thing you can carry", musket < blunderbus);
     }
 
+    /**
+     * Every firearm must declare a depth. One added with a reload time but no depth
+     * would drop from level 1, which at 2d8 flattens the early game -- the exact
+     * failure the depth gate exists to prevent.
+     */
+    @Test
+    public void testEveryFirearmIsKeptOutOfTheShallows() {
+        for (Item.ItemType type : FirearmProfile.all()) {
+            assertTrue(type + " must not be findable at depth 1",
+                    FirearmProfile.minDepth(type) > 1);
+        }
+    }
+
+    @Test
+    public void testSidearmsSurfaceBeforeShoulderedGuns() {
+        assertTrue(FirearmProfile.minDepth(Item.ItemType.PISTOL_STARWHEEL)
+                < FirearmProfile.minDepth(Item.ItemType.MUSKET));
+    }
+
+    @Test
+    public void testNonFirearmsAreNotDepthGated() {
+        assertEquals(1, FirearmProfile.minDepth(Item.ItemType.BOW));
+        assertEquals(1, FirearmProfile.minDepth(null));
+    }
+
     @Test
     public void testSilentWeaponsMakeNoNoise() {
         assertEquals(0, FirearmProfile.noiseRadius(Item.ItemType.BOW));

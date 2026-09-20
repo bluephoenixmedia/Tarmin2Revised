@@ -1461,6 +1461,8 @@ public class GameScreen extends BaseScreen {
         player.getStatusManager().updateTurn();
         player.tickFieldRestCooldown();
         checkForMimicInFront();
+        combatManager.tickReload();
+        tickPowderDampness();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }
@@ -1508,6 +1510,38 @@ public class GameScreen extends BaseScreen {
             eventManager.addEvent(new GameEvent("Something about that chest is wrong.", 3f));
             hud.addMessage("Something about that chest is wrong.");
         }
+    }
+
+    /**
+     * Carries the player's powder dampness for the turn: soaked by rain or by wading,
+     * drying slowly once out of it.
+     *
+     * <p>Dampness lives on the player rather than being read from the weather at the
+     * moment a shot is fired. Weather wetness is outdoor-only and nearly all play is in
+     * the strata, so a live read would mean firearms never misfire in practice and the
+     * mechanic would never be seen.
+     */
+    private void tickPowderDampness() {
+        if (player == null || player.getStats() == null) {
+            return;
+        }
+
+        boolean exposed = false;
+
+        if (worldManager != null && worldManager.getWeatherManager() != null) {
+            exposed = com.bpm.minotaur.gamedata.firearm.PowderDampness
+                    .isSoakingWeather(worldManager.getWeatherManager().getWetness());
+        }
+
+        if (!exposed && maze != null && maze.getLiquidManager() != null) {
+            exposed = maze.getLiquidManager().hasLiquidAt(
+                    (int) player.getPosition().x, (int) player.getPosition().y);
+        }
+
+        float dampness = player.getStats().getPowderDampness();
+        player.getStats().setPowderDampness(exposed
+                ? com.bpm.minotaur.gamedata.firearm.PowderDampness.afterExposure()
+                : com.bpm.minotaur.gamedata.firearm.PowderDampness.afterDryTurn(dampness));
     }
 
     private final java.util.Random mimicPerceptionRng = new java.util.Random();
@@ -2219,6 +2253,7 @@ public class GameScreen extends BaseScreen {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
+                    combatManager.abandonReload();
                     Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerShieldBash(bumpTarget);
@@ -2236,7 +2271,16 @@ public class GameScreen extends BaseScreen {
                 Item weapon = player.getInventory().getRightHand();
                 if (weapon != null) {
                     if (weapon.isRanged()) {
+                        boolean wasExploring =
+                                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
                         combatManager.playerAttackInstant();
+                        // Firing costs a turn. Opening fire out of exploration used to be
+                        // free: ammunition spent, the level woken, and no turn passed --
+                        // so the reload never advanced either. In-combat shots pass their
+                        // turn through the combat state machine instead.
+                        if (wasExploring) {
+                            playerTurnTakesAction();
+                        }
                         return true;
                     } else if (weapon.isThrown()) {
                         if (combatManager.throwWeapon(weapon)) {
@@ -2261,6 +2305,7 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
+                    combatManager.abandonReload();
                     Monster bumpTarget = resolveBumpTarget(tx, ty);
 
                     if (bumpTarget != null) {
@@ -2300,6 +2345,7 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
+                    combatManager.abandonReload();
                     Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);

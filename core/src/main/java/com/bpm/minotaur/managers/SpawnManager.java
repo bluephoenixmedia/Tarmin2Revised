@@ -466,6 +466,23 @@ public class SpawnManager {
             String itemId = result.getKey();
             // ItemTemplate template = result.get().getValue();
 
+            // Shot never litters the floor. Scarcity is the third leg of what a
+            // black-powder weapon costs, alongside the reload and the noise; floor
+            // litter would put it on the same footing as arrows and a sustainable
+            // 2d8 firearm simply retires the bow. Containers and shops only.
+            if (ItemType.SHOT_POUCH.name().equals(itemId)) {
+                continue;
+            }
+
+            // Firearms are gated by depth here rather than through variant minLevel,
+            // because that gating does not work: getRandomVariantForItem falls back to
+            // variants.get(0) when nothing matches the level, so a minLevel is silently
+            // ignored. Fixing that properly would change spawning for every item in the
+            // game, so this stays narrow -- see FirearmSpawnRule.
+            if (!com.bpm.minotaur.generation.FirearmSpawnRule.canSpawnAtDepth(itemId, level)) {
+                continue;
+            }
+
             ItemType type;
             try {
                 type = ItemType.valueOf(itemId);

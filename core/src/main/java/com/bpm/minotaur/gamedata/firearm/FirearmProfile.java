@@ -33,22 +33,31 @@ public final class FirearmProfile {
      */
     private static final int MIN_AUDIBLE_RADIUS = 9;
 
-    private static final Map<Item.ItemType, Integer> RELOAD_TURNS = new EnumMap<>(Item.ItemType.class);
-    private static final Map<Item.ItemType, Integer> NOISE_RADIUS = new EnumMap<>(Item.ItemType.class);
+    /** Everything that distinguishes one firearm from another, on one line each. */
+    private static final class Spec {
+        final int reloadTurns;
+        final int noiseRadius;
+        final int minDepth;
 
-    static {
-        // Noise is the axis these five differ on. With their authored damage dice kept,
-        // it is what stops the blunderbuss simply retiring the pistol.
-        register(Item.ItemType.PISTOL_STARWHEEL, SIDEARM_RELOAD_TURNS, 9);
-        register(Item.ItemType.TUFENK, LONG_GUN_RELOAD_TURNS, 10);
-        register(Item.ItemType.MUSKET, LONG_GUN_RELOAD_TURNS, 12);
-        register(Item.ItemType.ARQUEBUS, LONG_GUN_RELOAD_TURNS, 12);
-        register(Item.ItemType.BLUNDERBUS, LONG_GUN_RELOAD_TURNS, 16);
+        Spec(int reloadTurns, int noiseRadius, int minDepth) {
+            this.reloadTurns = reloadTurns;
+            this.noiseRadius = Math.max(MIN_AUDIBLE_RADIUS, noiseRadius);
+            this.minDepth = minDepth;
+        }
     }
 
-    private static void register(Item.ItemType type, int reloadTurns, int noiseRadius) {
-        RELOAD_TURNS.put(type, reloadTurns);
-        NOISE_RADIUS.put(type, Math.max(MIN_AUDIBLE_RADIUS, noiseRadius));
+    private static final Map<Item.ItemType, Spec> SPECS = new EnumMap<>(Item.ItemType.class);
+
+    static {
+        // Noise and depth are the axes these five differ on. With their authored damage
+        // dice kept, noise is what stops the blunderbuss simply retiring the pistol, and
+        // depth is what stops a level-1 character finding a 2d8 weapon.
+        //                                          reload  noise  depth
+        SPECS.put(Item.ItemType.PISTOL_STARWHEEL, new Spec(SIDEARM_RELOAD_TURNS, 9, 2));
+        SPECS.put(Item.ItemType.BLUNDERBUS, new Spec(LONG_GUN_RELOAD_TURNS, 16, 2));
+        SPECS.put(Item.ItemType.TUFENK, new Spec(LONG_GUN_RELOAD_TURNS, 10, 6));
+        SPECS.put(Item.ItemType.ARQUEBUS, new Spec(LONG_GUN_RELOAD_TURNS, 12, 8));
+        SPECS.put(Item.ItemType.MUSKET, new Spec(LONG_GUN_RELOAD_TURNS, 12, 10));
     }
 
     private FirearmProfile() {
@@ -56,27 +65,32 @@ public final class FirearmProfile {
 
     /** Every weapon that burns powder. */
     public static Set<Item.ItemType> all() {
-        return Collections.unmodifiableSet(EnumSet.copyOf(RELOAD_TURNS.keySet()));
+        return Collections.unmodifiableSet(EnumSet.copyOf(SPECS.keySet()));
     }
 
     public static boolean isFirearm(Item.ItemType type) {
-        return type != null && RELOAD_TURNS.containsKey(type);
-    }
-
-    /** Convenience for the common case of asking about a held weapon. */
-    public static boolean isFirearmHeld(Item item) {
-        return item != null && isFirearm(item.getType());
+        return type != null && SPECS.containsKey(type);
     }
 
     /** Turns spent reloading after a shot, or 0 for anything that is not a firearm. */
     public static int reloadTurns(Item.ItemType type) {
-        Integer turns = RELOAD_TURNS.get(type);
-        return turns != null ? turns : 0;
+        Spec spec = SPECS.get(type);
+        return spec != null ? spec.reloadTurns : 0;
     }
 
     /** How far the report carries, in tiles, or 0 for a weapon that makes no report. */
     public static int noiseRadius(Item.ItemType type) {
-        Integer radius = NOISE_RADIUS.get(type);
-        return radius != null ? radius : 0;
+        Spec spec = SPECS.get(type);
+        return spec != null ? spec.noiseRadius : 0;
+    }
+
+    /**
+     * Shallowest depth this weapon may be found at; 1 for anything that is not a
+     * firearm. Kept here beside reload and noise so a new firearm cannot be added with
+     * a reload time but no depth and silently drop from level 1.
+     */
+    public static int minDepth(Item.ItemType type) {
+        Spec spec = SPECS.get(type);
+        return spec != null ? spec.minDepth : 1;
     }
 }
