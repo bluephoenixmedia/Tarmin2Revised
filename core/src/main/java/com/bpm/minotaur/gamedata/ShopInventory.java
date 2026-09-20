@@ -86,9 +86,14 @@ public class ShopInventory {
         for (ItemType t : pool) {
             try {
                 idm.getTemplate(t); // will throw if not present
-                available.add(t);
+                if (com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(t.name())) {
+                    available.add(t);
+                }
             } catch (Exception ignored) {
             }
+        }
+        if (available.isEmpty() && pool.length > 0) {
+            available.add(pool[0]);
         }
         if (available.isEmpty())
             return;

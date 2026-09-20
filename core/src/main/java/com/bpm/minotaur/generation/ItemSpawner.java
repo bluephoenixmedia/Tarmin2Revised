@@ -206,13 +206,14 @@ public class ItemSpawner {
         for (Map.Entry<String, ItemTemplate> entry : registry.entrySet()) {
             ItemTemplate t = entry.getValue();
 
+            if (t.unlockGated && !com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(entry.getKey())) {
+                continue; // Skip locked items
+            }
+
             if (t.probability > 0 && isCategoryMatch(t, category)) {
                 int weight = t.probability;
 
-                if (t.locked) {
-                    if (!com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(entry.getKey())) {
-                        continue; // Skip locked items
-                    }
+                if (t.unlockGated) {
                     // Boost weight for unlocked items to ensure they are seen
                     weight *= 3;
                 }

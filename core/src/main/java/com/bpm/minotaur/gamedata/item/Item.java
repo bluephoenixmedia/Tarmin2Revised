@@ -527,7 +527,7 @@ public class Item implements Renderable {
         TextureRegion tempRegion = null;
 
         if (template != null && template.texturePath != null && !template.texturePath.isEmpty()
-                && Gdx.app != null && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
+                && assetManager != null && Gdx.app != null && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
 
             // Check for Debris Atlas (Hardcoded for now)
             if (template.texturePath.contains("images/debris") && assetManager.isLoaded("packed/debris.atlas")) {

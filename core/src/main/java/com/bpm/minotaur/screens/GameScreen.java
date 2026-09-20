@@ -1206,11 +1206,15 @@ public class GameScreen extends BaseScreen {
             int divinitiesEarnedThisRun = telemetry.getDivinitiesEarned();
             telemetry.exportRun(epitaphCause);
 
+            // Roll discoveries unlocked for future expeditions
+            java.util.List<String> newUnlocks = com.bpm.minotaur.managers.UnlockManager.getInstance()
+                    .rollRunUnlocks(telemetry, depthReached);
+
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             soundManager.playPlayerDeathSound();
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
-                    divinitiesEarnedThisRun);
+                    divinitiesEarnedThisRun, newUnlocks);
             game.setScreen(deathScreen);
             return;
         }

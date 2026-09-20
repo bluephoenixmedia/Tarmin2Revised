@@ -181,7 +181,7 @@ public class ItemDataManager {
             }
         }
 
-        // initializeMissingTemplates(); // Moved to before procedural generation
+        applyUnlockGating();
 
         Gdx.app.log("ItemDataManager", "Loaded " + itemTemplates.size + " item templates.");
     }
@@ -239,6 +239,8 @@ public class ItemDataManager {
             loadedCount++;
         }
 
+        applyUnlockGating();
+
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new weapons.");
     }
 
@@ -285,6 +287,8 @@ public class ItemDataManager {
             loadedCount++;
         }
 
+        applyUnlockGating();
+
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
     }
 
@@ -296,6 +300,20 @@ public class ItemDataManager {
         }
         java.util.Collections.sort(types);
         return types;
+    }
+
+    public void applyUnlockGating() {
+        for (ObjectMap.Entry<ItemType, ItemTemplate> entry : itemTemplates.entries()) {
+            ItemType type = entry.key;
+            ItemTemplate t = entry.value;
+            if (t == null) continue;
+            if (type == ItemType.AXE) {
+                t.unlockGated = false;
+                continue;
+            }
+            int score = UnlockManager.calculateItemScore(t);
+            t.unlockGated = (score >= UnlockManager.UNLOCK_SCORE_THRESHOLD);
+        }
     }
 
     public ItemTemplate getTemplate(ItemType type) {
@@ -377,16 +395,6 @@ public class ItemDataManager {
         // -----------------------------------
 
         ItemTemplate template = getTemplate(type);
-
-        if (template.unlockId != null && !UnlockManager.getInstance().isUnlocked(template.unlockId)) {
-            Gdx.app.log("ItemDataManager",
-                    "Item locked: " + type.name() + " (Requires: " + template.unlockId + "). Spawning fallback.");
-            // Recursively create a fallback item (AXE) which we assume is unlocked.
-            // Ensure we don't infinitely recurse if AXE is also locked (it shouldn't be).
-            if (type != ItemType.AXE) {
-                return createItem(ItemType.AXE, x, y, ItemColor.GRAY, assetManager);
-            }
-        }
 
         // Standard item creation
         Item item = new Item(type, x, y, color, this, assetManager);

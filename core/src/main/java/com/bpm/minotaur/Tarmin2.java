@@ -89,6 +89,7 @@ public class Tarmin2 extends Game {
         encounterManager.load();
         itemDataManager.loadWeapons(); // Load extended weapon list
         itemDataManager.loadArmor(); // Load extended armor list
+        com.bpm.minotaur.managers.UnlockManager.getInstance().setItemDataManager(itemDataManager);
 
         Gdx.app.log("Tarmin2", "Loading SpawnTableData...");
         Json json = new Json();
