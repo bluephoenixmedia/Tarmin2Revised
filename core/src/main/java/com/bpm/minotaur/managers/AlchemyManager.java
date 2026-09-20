@@ -28,14 +28,26 @@ public class AlchemyManager {
     }
 
     private void initRecipes() {
-        // Recipe 1: Minor Feral Draught
+        // Recipe 1: Restorative Tincture
+        Map<ItemType, Integer> restInputs = new HashMap<>();
+        restInputs.put(ItemType.MOSS_CLUMP, 2);
+        restInputs.put(ItemType.TWISTED_ROOT, 1);
+        recipes.add(new Recipe("Restorative Tincture", ItemType.POTION_OF_HEALING, restInputs));
+
+        // Recipe 2: Antiseptic Salve
+        Map<ItemType, Integer> antiInputs = new HashMap<>();
+        antiInputs.put(ItemType.SLIME_RESIDUE, 2);
+        antiInputs.put(ItemType.MOSS_CLUMP, 1);
+        recipes.add(new Recipe("Antiseptic Salve", ItemType.POTION_VITALITY, antiInputs));
+
+        // Recipe 3: Minor Feral Draught
         // 3x Flesh + 1x Bone = Minor Feral Draught
         Map<ItemType, Integer> feralInputs = new HashMap<>();
         feralInputs.put(ItemType.GIB_FLESH, 3);
         feralInputs.put(ItemType.GIB_BONE, 1);
         recipes.add(new Recipe("Minor Feral Draught", ItemType.POTION_FERAL_DRAUGHT, feralInputs));
 
-        // Recipe 2: Titan's Sludge
+        // Recipe 4: Titan's Sludge
         // 1x Gib Bile + 2x Gib Organ = Titan's Sludge
         Map<ItemType, Integer> titanInputs = new HashMap<>();
         titanInputs.put(ItemType.GIB_BILE, 1);

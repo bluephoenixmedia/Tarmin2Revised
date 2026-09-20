@@ -215,7 +215,7 @@ public class ModernInventoryUI {
         // ── Right page: lower box (Tabbed Attributes / Item Details) ──
         rightBottomContainer = new Table();
         rightBottomContainer.top().left();
-        rightBottomContainer.setSize(760f, 250f);
+        rightBottomContainer.setSize(760f, 240f);
         rightBottomContainer.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
                                          config.getY(InventoryLayoutConfig.ATTRIBUTES));
 
@@ -273,10 +273,10 @@ public class ModernInventoryUI {
             }
         });
 
+        // Core stats are displayed comprehensively in the Attributes panel.
         coreStats.pack();
         coreStats.setPosition(config.getX(InventoryLayoutConfig.CORESTATS),
                               config.getY(InventoryLayoutConfig.CORESTATS));
-        root.addActor(coreStats);
 
         spellbook.pack();
         spellbook.setPosition(config.getX(InventoryLayoutConfig.SPELLBOOK),
@@ -294,7 +294,6 @@ public class ModernInventoryUI {
         debugOverlay.track(backpack, "BackpackPanel", Color.GREEN);
         debugOverlay.track(quickSlots, "QuickSlotsPanel", Color.ORANGE);
         debugOverlay.track(rightBottomContainer, "Attributes/Inspect", Color.MAGENTA);
-        debugOverlay.track(coreStats, "CoreStatsPanel", Color.YELLOW);
         debugOverlay.track(spellbook, "SpellbookPanel", new Color(0.4f, 0.8f, 1f, 1f));
         debugOverlay.track(alchemy, "AlchemyPanel", Color.RED);
         debugOverlay.setVisible(false); // hidden until F3 is pressed

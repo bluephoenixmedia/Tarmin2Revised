@@ -92,7 +92,6 @@ public class ShelterChestScreen extends BaseScreen {
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(18, 24, 18, 24);
         Label title = new Label("THE SHELTER STASH CHEST", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        title.setFontScale(1.3f);
         header.add(title).center().row();
         Label subtitle = new Label("Items stored here persist across expeditions and survive death",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -215,10 +214,9 @@ public class ShelterChestScreen extends BaseScreen {
 
     private TextButton createActionButton(String text) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.disabled = hudSkin.getSlotRecessed();
         TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.78f);
         setButtonEnabled(btn, false);
         return btn;
     }

@@ -84,7 +84,6 @@ public class SkillTreeScreen extends BaseScreen {
 
         Label title = new Label("CHARACTER PROGRESSION & SKILL TREE",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        title.setFontScale(1.25f);
         header.add(title).center().row();
 
         Table statsRow = new Table();
@@ -92,7 +91,6 @@ public class SkillTreeScreen extends BaseScreen {
 
         Label lvlLabel = new Label("LEVEL " + player.getLevel(),
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_ANTIQUE));
-        lvlLabel.setFontScale(0.9f);
         statsRow.add(lvlLabel).padRight(30);
 
         Label xpLabel = new Label("XP: " + player.getExperience() + " / " + player.getStats().getExperienceToNextLevel(),
@@ -228,7 +226,6 @@ public class SkillTreeScreen extends BaseScreen {
         col.top();
 
         Label titleLabel = new Label(title, new Label.LabelStyle(hudSkin.getFontHeader(), themeColor));
-        titleLabel.setFontScale(1.1f);
         col.add(titleLabel).center().row();
 
         Label subLabel = new Label(subtitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -236,7 +233,7 @@ public class SkillTreeScreen extends BaseScreen {
 
         // Group skills by Tier (1, 2, 3)
         for (int tier = 1; tier <= 3; tier++) {
-            Label tierLabel = new Label("─── TIER " + tier + " ───",
+            Label tierLabel = new Label("--- TIER " + tier + " ---",
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             col.add(tierLabel).center().padTop(tier > 1 ? 8 : 0).padBottom(6).row();
 
@@ -320,7 +317,6 @@ public class SkillTreeScreen extends BaseScreen {
         // Top line: Name + Open5e reference + Action Button
         Table headerRow = new Table();
         Label name = new Label(def.getName().toUpperCase(), new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        name.setFontScale(1.1f);
         headerRow.add(name).left();
 
         Label ref = new Label("  (" + def.getOpen5eReference() + " - Tier " + def.getTier() + " " + def.getDiscipline().name() + ")",
@@ -408,24 +404,22 @@ public class SkillTreeScreen extends BaseScreen {
 
     private TextButton createActionButton(String text) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.up = hudSkin.getPrimaryButtonUp();
         style.down = hudSkin.getPrimaryButtonDown();
         style.over = hudSkin.getPrimaryButtonDown();
         style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
         TextButton button = new TextButton(text, style);
-        button.getLabel().setFontScale(0.72f);
         return button;
     }
 
     private TextButton createMiniButton(String text) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontSmall();
         style.up = hudSkin.getPrimaryButtonUp();
         style.down = hudSkin.getPrimaryButtonDown();
         style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
         TextButton button = new TextButton(text, style);
-        button.getLabel().setFontScale(0.75f);
         return button;
     }
 

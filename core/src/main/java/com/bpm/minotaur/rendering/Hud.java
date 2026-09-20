@@ -566,7 +566,10 @@ public class Hud implements Disposable {
 
             // Header row: Key badge on the left, MP cost on the right
             Table headerRow = new Table();
-            spellBadgeLabels[i] = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
+            String slotKey = (i < com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS.length)
+                    ? com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i]
+                    : String.valueOf(i + 1);
+            spellBadgeLabels[i] = new Label("[" + slotKey + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
             spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_WATER_CYAN));
             headerRow.add(spellBadgeLabels[i]).left();
             headerRow.add().expandX();
@@ -654,7 +657,7 @@ public class Hud implements Disposable {
         stage.addActor(encounterWindow);
 
         // Traveling Merchant trading window
-        shopkeeperWindow = new ShopkeeperWindow(font);
+        shopkeeperWindow = new ShopkeeperWindow(font, hudSkin);
         stage.addActor(shopkeeperWindow);
 
         // Decomposing corpse bones awakening modal
@@ -2238,7 +2241,9 @@ public class Hud implements Disposable {
         float boxW = layout.width + 50;
         float boxH = 46;
         float boxX = (viewport.getWorldWidth() - boxW) / 2f;
-        float boxY = (toastTimer > 0f) ? 940f : 1000f; // Shift down if pickup toast is active
+        boolean hasBridge = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() > 0;
+        float baseY = hasBridge ? 950f : 1000f;
+        float boxY = (toastTimer > 0f) ? (baseY - 60f) : baseY;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);

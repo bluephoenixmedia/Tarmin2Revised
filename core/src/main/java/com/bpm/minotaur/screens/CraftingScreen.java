@@ -117,7 +117,6 @@ public class CraftingScreen extends BaseScreen {
         header.pad(18, 24, 18, 24);
         Label titleLabel = new Label(fieldMode ? "FIELD CRAFTING TOOLKIT" : "THE ARTISAN'S WORKSHOP",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        titleLabel.setFontScale(1.3f);
         header.add(titleLabel).center().row();
 
         Label subLabel = new Label(fieldMode
@@ -187,7 +186,7 @@ public class CraftingScreen extends BaseScreen {
 
     private TextButton createTabButton(String text, final int tabIndex) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.fontColor = Color.LIGHT_GRAY;
         style.overFontColor = HudSkin.COL_GOLD_BRIGHT;
         style.up = hudSkin.getSlotRecessed();
@@ -195,7 +194,6 @@ public class CraftingScreen extends BaseScreen {
         style.over = hudSkin.getTooltipBg();
 
         final TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.78f);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -479,7 +477,6 @@ public class CraftingScreen extends BaseScreen {
         previewCard.pad(18);
 
         Label nameLabel = new Label(selectedRecipe.name, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        nameLabel.setFontScale(1.1f);
         previewCard.add(nameLabel).left().row();
 
         Label catLabel = new Label("Category: " + selectedRecipe.category.name(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -541,7 +538,6 @@ public class CraftingScreen extends BaseScreen {
         targetCard.pad(15);
 
         Label itemNameLabel = new Label(selectedTargetItem.getDisplayName(), new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        itemNameLabel.setFontScale(1.1f);
         targetCard.add(itemNameLabel).left().row();
 
         String stats = (selectedTargetItem.isWeapon() ? "Damage: " + selectedTargetItem.getDamageDice() : "Armor Class: +" + selectedTargetItem.getArmorClassBonus())
@@ -937,7 +933,6 @@ public class CraftingScreen extends BaseScreen {
         style.disabled = hudSkin.getSlotRecessed();
 
         TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.8f);
         btn.getLabel().setWrap(false);
         btn.setDisabled(!enabled);
         btn.setTouchable(enabled ? Touchable.enabled : Touchable.disabled);

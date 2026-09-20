@@ -99,7 +99,6 @@ public class SpellbookScreen extends BaseScreen {
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(16, 24, 16, 24);
         Label title = new Label("SPELLBOOK", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        title.setFontScale(1.3f);
         header.add(title).center().row();
         mpLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_MP_BLUE));
         header.add(mpLabel).center().padTop(4).row();
@@ -460,13 +459,12 @@ public class SpellbookScreen extends BaseScreen {
 
     private TextButton createActionButton(String text) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.up = hudSkin.getPrimaryButtonUp();
         style.down = hudSkin.getPrimaryButtonDown();
         style.over = hudSkin.getPrimaryButtonDown();
         style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
         TextButton button = new TextButton(text, style);
-        button.getLabel().setFontScale(0.72f);
         return button;
     }
 

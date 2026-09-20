@@ -103,7 +103,7 @@ public class ModernStatBar extends Actor {
             text = customText;
         } else if (isTemperature) {
             float fahrenheit = (currentValue * 9.0f / 5.0f) + 32.0f;
-            text = String.format("%s: %.1f°F", labelName, fahrenheit);
+            text = String.format("%s: %.1f F", labelName, fahrenheit);
         } else if (showPercent) {
             int pct = Math.round(fillRatio * 100f);
             text = String.format("%s: %.0f/%.0f (%d%%)", labelName, currentValue, maxValue, pct);

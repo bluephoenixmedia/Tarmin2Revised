@@ -32,7 +32,7 @@ public class AlchemyPanel extends Table {
         }
 
         // Arrow
-        Label arrow = new Label("→",
+        Label arrow = new Label("->",
                 new Label.LabelStyle(skin.getFontHeader(), InventorySkin.COL_TEXT_HEADER));
 
         // Output slot (drag-from only; alchemy_output rejects drops in accepts())

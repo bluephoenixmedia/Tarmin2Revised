@@ -59,7 +59,7 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         stat(col1, "Armor Class", String.valueOf(player.getArmorClass()), COL_VAL);
         stat(col1, "Attack Spd", String.valueOf(player.getEffectiveSpeed()), COL_VAL);
         stat(col1, "Crit Chance", Math.round(player.getCritChance() * 100) + "%", COL_VAL);
-        stat(col1, "Crit Dmg", String.format("%.1f×", player.getCritMultiplier()), COL_VAL);
+        stat(col1, "Crit Dmg", String.format("%.1fx", player.getCritMultiplier()), COL_VAL);
         stat(col1, "Dodge", Math.round(player.getDodgeChance() * 100) + "%", COL_VAL);
         stat(col1, "Spell Power", "+" + player.getSpellPower(), COL_BLUE);
 
@@ -80,7 +80,7 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         stat(col3, "Hydration", player.getStats().getHydration() + "%", hydColor());
         stat(col3, "Toxicity", player.getStats().getToxicity() + "%", toxColor());
         float temp = player.getStats().getBodyTemperature();
-        stat(col3, "Body Temp", String.format("%.0f°C", temp), tempColor(temp));
+        stat(col3, "Body Temp", String.format("%.0f C", temp), tempColor(temp));
         stat(col3, "Stamina Pool", player.getEffectiveStamina() + " Dice", COL_VAL);
         stat(col3, "Arrows", String.valueOf(player.getArrows()), COL_VAL);
         stat(col3, "Treasure", String.valueOf(player.getTreasureScore()), COL_GOLD);
