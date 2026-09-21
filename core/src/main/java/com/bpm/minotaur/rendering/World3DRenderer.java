@@ -299,6 +299,12 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
         shader.setUniformf("u_doomFactor", doomFactor);
 
+        // Sky bounce: only outdoors on the surface, where there is actually a burning sky above.
+        boolean skyOverhead = (currentLevel == 1) && (!isIndoors || isInsideHome);
+        Color rimTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+        shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
+        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
             // Shelter Haven: warm hearth/lamp sanctuary ambient
@@ -312,7 +318,9 @@ public class World3DRenderer implements Disposable {
         } else {
             // Level 1 Outdoors: dynamically calibrated from Day/Night cycle and Weather
             float dayAmbient = (dnm != null) ? dnm.getAmbientLight() : 0.60f;
-            Color skyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+            // Damped, not the full sky palette: at full strength the volcanic tint eats world
+            // materials, turning hedge greens to olive-red mud (issue #104, Q22).
+            Color skyTint = (dnm != null) ? dnm.getWorldTint(scratchColor) : Color.WHITE;
             float weatherDim = (wm != null) ? wm.getGlobalLightDimmer() : 1.0f;
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint

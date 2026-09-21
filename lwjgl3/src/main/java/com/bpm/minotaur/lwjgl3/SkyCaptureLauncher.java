@@ -14,8 +14,10 @@ import com.bpm.minotaur.rendering.SkyCaptureHarness;
 public class SkyCaptureLauncher {
 
     public static void main(String[] args) {
-        String outputDir = (args != null && args.length > 0) ? args[0] : "../docs/ux/screenshots/sky";
-        new Lwjgl3Application(new SkyCaptureHarness(outputDir), getConfiguration());
+        boolean retroBanners = args != null && args.length > 0 && "--retro-banners".equals(args[0]);
+        String defaultDir = retroBanners ? "images/skybox" : "../docs/ux/screenshots/sky";
+        String outputDir = (args != null && args.length > 1) ? args[1] : defaultDir;
+        new Lwjgl3Application(new SkyCaptureHarness(outputDir, retroBanners), getConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getConfiguration() {

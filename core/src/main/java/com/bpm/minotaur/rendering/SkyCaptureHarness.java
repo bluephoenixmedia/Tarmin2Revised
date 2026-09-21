@@ -81,7 +81,34 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             new Shot("12_noon_castle_near", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 1f),
     };
 
+    /** Banner dimensions for the RETRO raycaster's static directional skyboxes. */
+    private static final int BANNER_WIDTH = 1024;
+    private static final int BANNER_HEIGHT = 320;
+
+    /** Fraction of the captured frame, measured from the top, that is sky above the horizon. */
+    private static final float BANNER_SKY_FRACTION = 0.64f;
+
+    /**
+     * The RETRO raycaster draws a flat directional PNG instead of the 3D dome. Rendering those
+     * banners out of the dome itself is the only way the two engines agree on what the sky looks
+     * like; hand-authoring them separately guarantees drift.
+     */
+    private static final Shot[] RETRO_BANNERS = {
+            new Shot("retro_skybox_castle", 0.42f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("retro_skybox_east", 0.42f, WeatherType.CLEAR, 0f, false, 0f, EAST, 0f),
+            new Shot("retro_skybox_south", 0.42f, WeatherType.CLEAR, 0f, false, 0f, SOUTH, 0f),
+            new Shot("retro_skybox_west", 0.42f, WeatherType.CLEAR, 0f, false, 0f, WEST, 0f),
+            new Shot("retro_skybox_castle_storm", 0.42f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
+            // MODERN render mode on the raycaster engine draws these instead; regenerated from
+            // the same dome so the two modes cannot drift apart either.
+            new Shot("skybox_castle", 0.42f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
+            new Shot("skybox_east", 0.42f, WeatherType.CLEAR, 0f, false, 0f, EAST, 0f),
+            new Shot("skybox_south", 0.42f, WeatherType.CLEAR, 0f, false, 0f, SOUTH, 0f),
+            new Shot("skybox_west", 0.42f, WeatherType.CLEAR, 0f, false, 0f, WEST, 0f),
+    };
+
     private final String outputDir;
+    private final boolean retroBanners;
     private Skybox3DRenderer skybox;
     private Viewport viewport;
     private DayNightManager dayNight;
@@ -90,7 +117,16 @@ public class SkyCaptureHarness extends ApplicationAdapter {
     private int frameInShot = 0;
 
     public SkyCaptureHarness(String outputDir) {
+        this(outputDir, false);
+    }
+
+    public SkyCaptureHarness(String outputDir, boolean retroBanners) {
         this.outputDir = outputDir;
+        this.retroBanners = retroBanners;
+    }
+
+    private Shot[] shots() {
+        return retroBanners ? RETRO_BANNERS : SHOTS;
     }
 
     @Override
@@ -108,12 +144,12 @@ public class SkyCaptureHarness extends ApplicationAdapter {
 
     @Override
     public void render() {
-        if (shotIndex >= SHOTS.length) {
+        if (shotIndex >= shots().length) {
             Gdx.app.exit();
             return;
         }
 
-        Shot shot = SHOTS[shotIndex];
+        Shot shot = shots()[shotIndex];
         dayNight.setTimeOfDay(shot.timeOfDay);
 
         skybox.renderDirect(viewport, dayNight, shot.weather, shot.cloudCover,
@@ -134,10 +170,22 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         for (int y = 0; y < HEIGHT; y++) {
             flipped.drawPixmap(raw, 0, y, 0, HEIGHT - 1 - y, WIDTH, 1);
         }
-        FileHandle out = Gdx.files.local(outputDir + "/" + name + ".png");
-        PixmapIO.writePNG(out, flipped);
         raw.dispose();
-        flipped.dispose();
+
+        Pixmap output = flipped;
+        if (retroBanners) {
+            // Keep only the sky above the horizon and squash it into a banner: the raycaster
+            // stretches this across the top of the view, so the ground half is never seen.
+            int skyHeight = (int) (HEIGHT * BANNER_SKY_FRACTION);
+            output = new Pixmap(BANNER_WIDTH, BANNER_HEIGHT, flipped.getFormat());
+            output.setFilter(Pixmap.Filter.BiLinear);
+            output.drawPixmap(flipped, 0, 0, WIDTH, skyHeight, 0, 0, BANNER_WIDTH, BANNER_HEIGHT);
+            flipped.dispose();
+        }
+
+        FileHandle out = Gdx.files.local(outputDir + "/" + name + ".png");
+        PixmapIO.writePNG(out, output);
+        output.dispose();
         Gdx.app.log("SkyCaptureHarness", "Wrote " + out.path());
     }
 
