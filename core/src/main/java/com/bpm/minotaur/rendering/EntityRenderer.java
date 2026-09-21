@@ -1540,6 +1540,7 @@ public class EntityRenderer {
         }
 
         for (Monster m : monsters) {
+            if (m.getCurrentHP() <= 0) continue;
             float dist = player.getPosition().dst(m.getPosition());
             if (fogEnabled && dist > fogDistance) continue;
             if (dist > 25f) continue; // Only show bars for visible monsters within reasonable range
@@ -1559,13 +1560,28 @@ public class EntityRenderer {
             if (transformY >= depthBuffer[screenX]) continue;
 
             int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-            int spriteHeight = (int) (baseSpriteHeight * m.scale.y);
-            int spriteWidth = (int) (baseSpriteHeight * m.scale.x);
+            float pulse = 0f;
+            float rangedTelegraph = m.getRangedAttackTelegraphProgress();
+            if (rangedTelegraph < 1f) {
+                pulse = (1f - rangedTelegraph) * 0.16f;
+            }
+            int spriteHeight = (int) (baseSpriteHeight * m.scale.y * (1f + pulse));
+            int spriteWidth = (int) (baseSpriteHeight * m.scale.x * (1f + pulse));
+
+            float offX = 0;
+            float offY = 0;
+            if (m.getTemplate() != null) {
+                offX = m.getTemplate().offsetX;
+                offY = m.getTemplate().offsetY;
+            }
+
+            float drawY = (camera.viewportHeight / 2f) - spriteHeight / 2.0f + (offY * spriteHeight);
+            float topBorder = drawY + spriteHeight;
 
             float barWidth = Math.max(20, spriteWidth * 0.8f);
             float barHeight = Math.max(4, baseSpriteHeight * 0.04f);
-            float barX = screenX - barWidth / 2f;
-            float barY = (camera.viewportHeight / 2f) + spriteHeight / 2f + barHeight + 2;
+            float barX = (screenX + offX * spriteWidth) - barWidth / 2f;
+            float barY = topBorder + 10f;
 
             float hpRatio = (m.getMaxHP() > 0) ? (float) m.getCurrentHP() / m.getMaxHP() : 0f;
 

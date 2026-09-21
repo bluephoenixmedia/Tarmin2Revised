@@ -1038,23 +1038,38 @@ public class World3DRenderer implements Disposable {
 
                     // Overhead Health Bar
                     float dist = player.getPosition().dst(m.getPosition());
-                    if (dist <= 25f && blankTexture != null) {
-                        float barY = (h / 2.0f) + 0.10f;
+                    if (dist <= 25f && blankTexture != null && m.getCurrentHP() > 0) {
+                        float topX = mex + camUp.x * h;
+                        float topY = monsterY + camUp.y * h;
+                        float topZ = mwz + camUp.z * h;
+                        float toTopX = topX - camera.position.x;
+                        float toTopY = topY - camera.position.y;
+                        float toTopZ = topZ - camera.position.z;
+                        float zCam = toTopX * camera.direction.x + toTopY * camera.direction.y + toTopZ * camera.direction.z;
+                        if (zCam < 0.1f) zCam = 0.1f;
+
+                        float pixelWorldHeight = (2.0f * zCam * MathUtils.tanDeg(camera.fieldOfView / 2.0f)) / camera.viewportHeight;
+                        float gapWorld = 10.0f * pixelWorldHeight;
+
+                        float barFeetX = mex + camUp.x * (h + gapWorld) - camDir.x * 0.002f;
+                        float barFeetY = monsterY + camUp.y * (h + gapWorld) - camDir.y * 0.002f;
+                        float barFeetZ = mwz + camUp.z * (h + gapWorld) - camDir.z * 0.002f;
+
                         float barW = Math.max(0.35f, w * 0.75f);
-                        float barH = 0.05f;
+                        float barH = Math.max(0.04f, 6.0f * pixelWorldHeight);
                         float hpRatio = (m.getMaxHP() > 0) ? Math.max(0f, Math.min(1f, (float) m.getCurrentHP() / m.getMaxHP())) : 0f;
 
                         // Dark background
-                        dynamicBatcher.addBillboard(ex, barY, wz, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
+                        dynamicBatcher.addBillboard(barFeetX, barFeetY, barFeetZ, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
 
                         // Health foreground
                         if (hpRatio > 0f) {
                             Color fgColor = (hpRatio > 0.5f) ? Color.GREEN : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
                             float fgW = barW * hpRatio;
                             float offset = -(barW - fgW) / 2.0f;
-                            float fgX = ex + camRight.x * offset;
-                            float fgY = barY + camRight.y * offset;
-                            float fgZ = wz + camRight.z * offset;
+                            float fgX = barFeetX + camRight.x * offset - camDir.x * 0.001f;
+                            float fgY = barFeetY + camRight.y * offset - camDir.y * 0.001f;
+                            float fgZ = barFeetZ + camRight.z * offset - camDir.z * 0.001f;
                             dynamicBatcher.addBillboard(fgX, fgY, fgZ, fgW, barH, new TextureRegion(blankTexture), fgColor, camRight, camUp, camDir);
                         }
                         dynamicBatcher.flush(shader, blankTexture);
@@ -1072,21 +1087,36 @@ public class World3DRenderer implements Disposable {
 
                     // Overhead Health Bar (mirrors Monster HP bar presentation)
                     float dist = player.getPosition().dst(sk.getPosition());
-                    if (dist <= 25f && blankTexture != null) {
-                        float barY = (h / 2.0f) + 0.10f;
+                    if (dist <= 25f && blankTexture != null && sk.getCurrentHP() > 0) {
+                        float topX = ex + camUp.x * h;
+                        float topY = camUp.y * h;
+                        float topZ = wz + camUp.z * h;
+                        float toTopX = topX - camera.position.x;
+                        float toTopY = topY - camera.position.y;
+                        float toTopZ = topZ - camera.position.z;
+                        float zCam = toTopX * camera.direction.x + toTopY * camera.direction.y + toTopZ * camera.direction.z;
+                        if (zCam < 0.1f) zCam = 0.1f;
+
+                        float pixelWorldHeight = (2.0f * zCam * MathUtils.tanDeg(camera.fieldOfView / 2.0f)) / camera.viewportHeight;
+                        float gapWorld = 10.0f * pixelWorldHeight;
+
+                        float barFeetX = ex + camUp.x * (h + gapWorld) - camDir.x * 0.002f;
+                        float barFeetY = camUp.y * (h + gapWorld) - camDir.y * 0.002f;
+                        float barFeetZ = wz + camUp.z * (h + gapWorld) - camDir.z * 0.002f;
+
                         float barW = Math.max(0.35f, w * 0.75f);
-                        float barH = 0.05f;
+                        float barH = Math.max(0.04f, 6.0f * pixelWorldHeight);
                         float hpRatio = (sk.getMaxHP() > 0)
                                 ? Math.max(0f, Math.min(1f, (float) sk.getCurrentHP() / sk.getMaxHP())) : 0f;
 
-                        dynamicBatcher.addBillboard(ex, barY, wz, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
+                        dynamicBatcher.addBillboard(barFeetX, barFeetY, barFeetZ, barW, barH, new TextureRegion(blankTexture), new Color(0.25f, 0f, 0f, 0.85f), camRight, camUp, camDir);
                         if (hpRatio > 0f) {
                             Color fgColor = (hpRatio > 0.5f) ? Color.GREEN : (hpRatio > 0.25f) ? Color.YELLOW : Color.RED;
                             float fgW = barW * hpRatio;
                             float offset = -(barW - fgW) / 2.0f;
-                            float fgX = ex + camRight.x * offset;
-                            float fgY = barY + camRight.y * offset;
-                            float fgZ = wz + camRight.z * offset;
+                            float fgX = barFeetX + camRight.x * offset - camDir.x * 0.001f;
+                            float fgY = barFeetY + camRight.y * offset - camDir.y * 0.001f;
+                            float fgZ = barFeetZ + camRight.z * offset - camDir.z * 0.001f;
                             dynamicBatcher.addBillboard(fgX, fgY, fgZ, fgW, barH, new TextureRegion(blankTexture), fgColor, camRight, camUp, camDir);
                         }
                         dynamicBatcher.flush(shader, blankTexture);
