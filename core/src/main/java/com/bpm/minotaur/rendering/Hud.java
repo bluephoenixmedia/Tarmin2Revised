@@ -346,10 +346,16 @@ public class Hud implements Disposable {
         levelBadgeTable.add(levelBadgeLabel).pad(2, 8, 2, 8);
         portraitCol.add(levelBadgeTable).padTop(4).row();
 
+        // One width for the whole column. The bars were pinned to 235 while the stat row beneath
+        // them (compass + silhouette + four labels) was wider, so the block visibly overhung its
+        // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
+        final float VITALS_WIDTH = 300f;
+
         Table barsCol = new Table();
-        barsCol.add(hpBar).width(235).height(22).padBottom(4).row();
-        barsCol.add(mpBar).width(235).height(22).padBottom(4).row();
-        barsCol.add(expBar).width(235).height(14).padBottom(6).row();
+        barsCol.add(hpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
+        barsCol.add(mpBar).width(VITALS_WIDTH).height(22).padBottom(4).row();
+        // Matches HP/MP height: at 14px an empty EXP gauge read as a text line, not a bar.
+        barsCol.add(expBar).width(VITALS_WIDTH).height(22).padBottom(6).row();
 
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
@@ -359,9 +365,9 @@ public class Hud implements Disposable {
         divDoomCol.add(divinitiesLabel).left().padTop(2).row();
         divDoomCol.add(doomLabel).left().padTop(2).row();
         divDoomCol.add(ammoLabel).left().padTop(2).row();
-        vitalsSubRow.add(divDoomCol).left();
+        vitalsSubRow.add(divDoomCol).left().expandX().fillX().minWidth(0f);
 
-        barsCol.add(vitalsSubRow).left().row();
+        barsCol.add(vitalsSubRow).width(VITALS_WIDTH).left().row();
 
         vitalsZone.add(portraitCol).padRight(12);
         vitalsZone.add(barsCol).expand().fill();
@@ -866,7 +872,7 @@ public class Hud implements Disposable {
             if (spellId != null && !spellId.isEmpty()) {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                 if (st != null) {
-                    spellNameLabels[i].setText(st.getName());
+                    spellNameLabels[i].setText(toDisplayCase(st.getName()));
                     spellCostLabels[i].setText(st.getMpCost() == 0 ? "-" : String.valueOf(st.getMpCost()));
                     boolean canCast = player.hasEnoughMana(st.getMpCost());
                     if (canCast) {
@@ -883,7 +889,7 @@ public class Hud implements Disposable {
                 } else {
                     spellSlots[i].setBackground(hudSkin.getSlotRecessed());
                     spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
-                    spellNameLabels[i].setText(spellId);
+                    spellNameLabels[i].setText(toDisplayCase(spellId));
                     spellNameLabels[i].setColor(Color.WHITE);
                     spellCostLabels[i].setText("");
                 }
@@ -2373,14 +2379,57 @@ public class Hud implements Disposable {
         stage.getViewport().update(width, height, true);
     }
 
+    /**
+     * The minimap's reserved box in the top-right of the 1920x1080 stage.
+     *
+     * <p>Public because the status pills sit directly beneath it. They used to position
+     * themselves independently at the same corner, so the bleeding badge was drawn straight over
+     * the map. Anything anchored top-right should measure from this box rather than re-deriving
+     * a corner of its own.
+     */
+    public static final float MINIMAP_MARGIN_RIGHT = 20f;
+    public static final float MINIMAP_MARGIN_TOP = 20f;
+    public static final float MINIMAP_MAX_SIZE = 300f;
+
+    /** Y coordinate where the reserved minimap box ends, for widgets stacking below it. */
+    public static float minimapZoneBottom() {
+        return 1080f - MINIMAP_MARGIN_TOP - MINIMAP_MAX_SIZE;
+    }
+
+    /**
+     * Normalises a spell name for the hotbar.
+     *
+     * <p>Spell data mixes cases -- "Fireball" sits next to "LIGHTNING" -- so one slot shouted
+     * while its neighbours did not. Names already in mixed case are left alone; only all-caps
+     * entries are brought down.
+     */
+    private static String toDisplayCase(String name) {
+        if (name == null || name.isEmpty()) return name;
+        if (!name.equals(name.toUpperCase())) return name;
+
+        StringBuilder out = new StringBuilder(name.length());
+        boolean startOfWord = true;
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c == ' ' || c == '_' || c == '-') {
+                startOfWord = true;
+                out.append(c == '_' ? ' ' : c);
+            } else {
+                out.append(startOfWord ? Character.toUpperCase(c) : Character.toLowerCase(c));
+                startOfWord = false;
+            }
+        }
+        return out.toString();
+    }
+
     private void drawAutomap() {
         if (maze == null || player == null || worldManager == null)
             return;
 
         // Configuration
-        float maxMapSize = 300f; // Maximum dimension (width or height)
-        float mapRightMargin = 20f;
-        float mapTopMargin = 20f;
+        float maxMapSize = MINIMAP_MAX_SIZE;
+        float mapRightMargin = MINIMAP_MARGIN_RIGHT;
+        float mapTopMargin = MINIMAP_MARGIN_TOP;
 
         // Fetch Biome Data for Fog
         GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
@@ -2415,10 +2464,19 @@ public class Hud implements Disposable {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0f, 0f, 0f, 0.5f); // Semi-transparent black
+        // Opaque enough to own its area. At 50% the map was legible only when the world behind
+        // it happened to be dark, which stopped being true once the sky started burning.
+        shapeRenderer.setColor(HudSkin.COL_PANEL_BG.r, HudSkin.COL_PANEL_BG.g,
+                HudSkin.COL_PANEL_BG.b, 0.88f);
+        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.end();
 
-        // Draw rect with small padding (5px) around the ACTUAL size
-        shapeRenderer.rect(startX - 5, startY - 5, actualMapWidth + 10, actualMapHeight + 10);
+        // Border, so the map reads as a panel rather than as lines floating on the world.
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(HudSkin.COL_GOLD_MUTED);
+        shapeRenderer.rect(startX - 6, startY - 6, actualMapWidth + 12, actualMapHeight + 12);
+        shapeRenderer.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         // --- 2. Draw Visited Tiles (Walls/Floor) ---
         shapeRenderer.end();

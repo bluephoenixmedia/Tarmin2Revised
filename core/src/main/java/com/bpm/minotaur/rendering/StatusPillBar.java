@@ -170,8 +170,11 @@ public class StatusPillBar extends Table {
         }
 
         pack();
-        // Position at top-right of 1920x1080 stage, balancing the top-left dungeon tag (y=1000ish)
-        setPosition(1920f - 28f - getWidth(), 1080f - 24f - getHeight());
+        // Directly beneath the minimap's reserved box, not on top of it. Both widgets used to
+        // anchor themselves to the top-right corner independently, so the bleeding badge was
+        // drawn over the map and clipped at the screen edge.
+        setPosition(1920f - Hud.MINIMAP_MARGIN_RIGHT - getWidth(),
+                Hud.minimapZoneBottom() - 12f - getHeight());
     }
 
     private void addPill(String labelText, Color accentColor, String tooltipTitle, String tooltipCategory,
