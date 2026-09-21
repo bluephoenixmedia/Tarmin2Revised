@@ -139,9 +139,9 @@ public class FirstPersonRenderer {
         retroSkyboxSouth = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south.png"));
         retroSkyboxWest = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west.png"));
         retroSkyboxNorthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.png"));
-        retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east_storm.jpg"));
-        retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south_storm.jpg"));
-        retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west_storm.jpg"));
+        retroSkyboxEastStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_east_storm.png"));
+        retroSkyboxSouthStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_south_storm.png"));
+        retroSkyboxWestStorm = new Texture(Gdx.files.internal("images/skybox/retro_skybox_west_storm.png"));
 
         // Create 1x1 white texture
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);

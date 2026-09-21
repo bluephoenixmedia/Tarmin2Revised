@@ -40,9 +40,16 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         final float flash;
         final float headingRadians;
         final float northProgress;
+        final float doom;
 
         Shot(String name, float timeOfDay, WeatherType weather, float cloudCover,
              boolean stormy, float flash, float headingRadians, float northProgress) {
+            this(name, timeOfDay, weather, cloudCover, stormy, flash, headingRadians,
+                    northProgress, 0f);
+        }
+
+        Shot(String name, float timeOfDay, WeatherType weather, float cloudCover,
+             boolean stormy, float flash, float headingRadians, float northProgress, float doom) {
             this.name = name;
             this.timeOfDay = timeOfDay;
             this.weather = weather;
@@ -51,6 +58,7 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             this.flash = flash;
             this.headingRadians = headingRadians;
             this.northProgress = northProgress;
+            this.doom = doom;
         }
     }
 
@@ -72,6 +80,8 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             new Shot("06_noon_storm_north", 0.50f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
             new Shot("07_noon_storm_flash", 0.50f, WeatherType.STORM, 1f, true, 0.9f, NORTH, 0f),
             new Shot("08_night_storm_north", 0.95f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
+            new Shot("08b_dawn_storm_north", 0.24f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
+            new Shot("08c_dusk_storm_north", 0.72f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
 
             // Bearings: fire concentrates north, so the other three must read as smoke, not fire.
             new Shot("09_noon_clear_east", 0.50f, WeatherType.CLEAR, 0f, false, 0f, EAST, 0f),
@@ -80,6 +90,12 @@ public class SkyCaptureHarness extends ApplicationAdapter {
 
             // Castle approach: the landmark should grow and close as the expedition pushes north.
             new Shot("12_noon_castle_near", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 1f),
+
+            // Doom is the primary driver: zero doom must already match the reference art, and
+            // full doom must be visibly, categorically worse rather than merely darker.
+            new Shot("13_noon_doom_50", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 0.5f),
+            new Shot("14_noon_doom_100", 0.50f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
+            new Shot("15_night_doom_100", 0.95f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f, 1f),
     };
 
     /** Banner dimensions for the RETRO raycaster's static directional skyboxes. */
@@ -100,6 +116,9 @@ public class SkyCaptureHarness extends ApplicationAdapter {
             new Shot("retro_skybox_south", 0.42f, WeatherType.CLEAR, 0f, false, 0f, SOUTH, 0f),
             new Shot("retro_skybox_west", 0.42f, WeatherType.CLEAR, 0f, false, 0f, WEST, 0f),
             new Shot("retro_skybox_castle_storm", 0.42f, WeatherType.STORM, 1f, true, 0f, NORTH, 0f),
+            new Shot("retro_skybox_east_storm", 0.42f, WeatherType.STORM, 1f, true, 0f, EAST, 0f),
+            new Shot("retro_skybox_south_storm", 0.42f, WeatherType.STORM, 1f, true, 0f, SOUTH, 0f),
+            new Shot("retro_skybox_west_storm", 0.42f, WeatherType.STORM, 1f, true, 0f, WEST, 0f),
             // MODERN render mode on the raycaster engine draws these instead; regenerated from
             // the same dome so the two modes cannot drift apart either.
             new Shot("skybox_castle", 0.42f, WeatherType.CLEAR, 0f, false, 0f, NORTH, 0f),
@@ -114,12 +133,10 @@ public class SkyCaptureHarness extends ApplicationAdapter {
     private Viewport viewport;
     private DayNightManager dayNight;
 
+    private final Skybox3DRenderer.SkyState state = new Skybox3DRenderer.SkyState();
+
     private int shotIndex = 0;
     private int frameInShot = 0;
-
-    public SkyCaptureHarness(String outputDir) {
-        this(outputDir, false);
-    }
 
     public SkyCaptureHarness(String outputDir, boolean retroBanners) {
         this.outputDir = outputDir;
@@ -171,8 +188,20 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         Shot shot = shots()[shotIndex];
         dayNight.setTimeOfDay(shot.timeOfDay);
 
-        skybox.renderDirect(viewport, dayNight, shot.weather, shot.cloudCover,
-                shot.stormy, shot.flash, shot.headingRadians, shot.northProgress, 1f / 60f);
+        state.dayNight = dayNight;
+        state.camX = 0f;
+        state.camZ = 0f;
+        state.forwardX = (float) Math.sin(shot.headingRadians);
+        state.forwardZ = -(float) Math.cos(shot.headingRadians);
+        state.weather = shot.weather;
+        state.cloudCover = shot.cloudCover;
+        state.flash = shot.flash;
+        state.stormy = shot.stormy;
+        state.doom = shot.doom;
+        state.chunkYProgress = shot.northProgress * 25f;
+        state.chunkX = 0;
+
+        skybox.renderDirect(viewport, state, 1f / 60f);
 
         frameInShot++;
         if (frameInShot > WARMUP_FRAMES) {

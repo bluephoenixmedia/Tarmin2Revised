@@ -244,7 +244,7 @@ public class DayNightManager {
     // --- Private helpers ---
 
     private void recomputeSkyTint() {
-        recomputeSkyTintInternal();
+        applyPhasePalette();
         // Zenith trails the sky tint: much darker, pushed toward purple, never toward white.
         zenithTint.set(
                 skyTint.r * 0.26f + 0.04f,
@@ -253,7 +253,7 @@ public class DayNightManager {
                 1f);
     }
 
-    private void recomputeSkyTintInternal() {
+    private void applyPhasePalette() {
         if (timeOfDay < DAWN_START) {
             skyTint.set(COL_NIGHT);
         } else if (timeOfDay < DAY_START) {

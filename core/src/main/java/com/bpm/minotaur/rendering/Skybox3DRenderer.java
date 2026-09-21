@@ -50,6 +50,7 @@ public class Skybox3DRenderer {
     private final Color zenithTint = new Color(Color.BLACK);
     private float smokeFloor = SMOKE_FLOOR_BASE;
     private float doom01 = 0f;
+    private final SkyState worldSkyState = new SkyState();
 
     private final PerspectiveCamera camera;
     private final ModelBatch modelBatch;
@@ -200,18 +201,48 @@ public class Skybox3DRenderer {
                 ? worldManager.getCurrentPlayerChunkId()
                 : new com.badlogic.gdx.math.GridPoint2(0, 0);
 
-        updateSky(delta,
-                player.getPosition().x * PARALLAX_SCALE,
-                -player.getPosition().y * PARALLAX_SCALE,
-                player.getDirectionVector().x,
-                -player.getDirectionVector().y, // Maze Y -> World -Z
-                (worldManager != null) ? worldManager.getDayNightManager() : null,
-                (weather != null) ? weather.getCurrentWeather() : WeatherType.CLEAR,
-                (weather != null) ? weather.getCloudCover() : 0f,
-                (weather != null) ? weather.getFlashIntensity() : 0f,
-                weather != null && weather.isStormy(),
-                chunk.y + (player.getPosition().y / 16f),
-                chunk.x);
+        worldSkyState.camX = player.getPosition().x * PARALLAX_SCALE;
+        worldSkyState.camZ = -player.getPosition().y * PARALLAX_SCALE;
+        worldSkyState.forwardX = player.getDirectionVector().x;
+        worldSkyState.forwardZ = -player.getDirectionVector().y; // Maze Y -> World -Z
+        worldSkyState.dayNight = (worldManager != null) ? worldManager.getDayNightManager() : null;
+        worldSkyState.weather = (weather != null) ? weather.getCurrentWeather() : WeatherType.CLEAR;
+        worldSkyState.cloudCover = (weather != null) ? weather.getCloudCover() : 0f;
+        worldSkyState.flash = (weather != null) ? weather.getFlashIntensity() : 0f;
+        worldSkyState.stormy = weather != null && weather.isStormy();
+        worldSkyState.doom = MathUtils.clamp(
+                DoomManager.getInstance().getBridgeIntegrity() / 100f, 0f, 1f);
+        worldSkyState.chunkYProgress = chunk.y + (player.getPosition().y / 16f);
+        worldSkyState.chunkX = chunk.x;
+
+        updateSky(delta, worldSkyState);
+    }
+
+    /**
+     * Everything the sky needs to know about the world for one frame.
+     *
+     * <p>Bundled rather than passed as a dozen loose parameters so the production path and the
+     * capture harness cannot drift apart on argument order, and so doom arrives as state rather
+     * than being read from a singleton deep inside the update -- which previously made doom
+     * impossible to vary from a capture.
+     *
+     * <p>Mutable and reused per frame: this is filled every frame on the render path.
+     */
+    public static final class SkyState {
+        public float camX;
+        public float camZ;
+        public float forwardX;
+        public float forwardZ;
+        public DayNightManager dayNight;
+        public WeatherType weather = WeatherType.CLEAR;
+        public float cloudCover;
+        public float flash;
+        public boolean stormy;
+        /** 0 = expedition start, 1 = fully doomed. Drives smoke density and wind speed. */
+        public float doom;
+        /** Progress north in chunks; the castle closes and grows across the first 25. */
+        public float chunkYProgress;
+        public int chunkX;
     }
 
     /**
@@ -225,8 +256,16 @@ public class Skybox3DRenderer {
             material.remove(TextureAttribute.Diffuse);
             material.set(ColorAttribute.createDiffuse(0.050f, 0.042f, 0.055f, 1f));
             material.set(ColorAttribute.createSpecular(0f, 0f, 0f, 1f));
-            // A trace of emissive keeps the stone from going flat black against a dark zenith.
-            material.set(ColorAttribute.createEmissive(0.10f, 0.030f, 0.010f, 1f));
+
+            // Apertures that are meant to glow keep their authored emissive. Blanket-setting it
+            // here would erase exactly the lava slits and chevrons the materials exist to carry.
+            ColorAttribute emissive = (ColorAttribute) material.get(ColorAttribute.Emissive);
+            boolean alreadyGlows = emissive != null
+                    && (emissive.color.r + emissive.color.g + emissive.color.b) > 0.45f;
+            if (!alreadyGlows) {
+                // A trace of emissive keeps stone from going flat black against a dark zenith.
+                material.set(ColorAttribute.createEmissive(0.10f, 0.030f, 0.010f, 1f));
+            }
         }
     }
 
@@ -237,12 +276,16 @@ public class Skybox3DRenderer {
      * rendered without a running game -- which is what the capture harness uses to produce
      * regression screenshots across time-of-day, weather and doom states.
      */
-    public void updateSky(float delta, float camX, float camZ, float fwdX, float fwdZ,
-                          DayNightManager dayNight, WeatherType weatherType, float cloudCover,
-                          float flash, boolean stormy, float chunkYProgress, int chunkX) {
+    public void updateSky(float delta, SkyState state) {
         if (!isInitialized) return;
 
         totalTime += delta;
+
+        float camX = state.camX;
+        float camZ = state.camZ;
+        float fwdX = state.forwardX;
+        float fwdZ = state.forwardZ;
+        DayNightManager dayNight = state.dayNight;
 
         // 1. Camera Alignment (Direction tracks player view continuous vector)
         camera.position.set(camX, 0.5f, camZ);
@@ -254,14 +297,14 @@ public class Skybox3DRenderer {
         domeTransform.idt().setToTranslation(camX, 0.5f, camZ);
 
         // 2. Weather Dynamics
-        isStormy = stormy;
-        currentWeather = weatherType;
-        currentFlash = flash;
-        currentCloudCover = cloudCover;
+        isStormy = state.stormy;
+        currentWeather = state.weather;
+        currentFlash = state.flash;
+        currentCloudCover = state.cloudCover;
 
         // 2B. Doom drives the sky harder than weather does. At zero doom the sky already matches
         // the reference art; at full doom the smoke closes over completely.
-        doom01 = MathUtils.clamp(DoomManager.getInstance().getBridgeIntegrity() / 100f, 0f, 1f);
+        doom01 = MathUtils.clamp(state.doom, 0f, 1f);
         smokeFloor = MathUtils.lerp(SMOKE_FLOOR_BASE, SMOKE_FLOOR_DOOM, doom01);
 
         // 3. Day/Night Lighting & Celestial Disk Positions
@@ -313,12 +356,12 @@ public class Skybox3DRenderer {
 
         // Dynamic Castle Tarmin Landmark Parallax (North: World -Z)
         if (castleInstance != null) {
-            float chunkY = chunkYProgress;
+            float chunkY = state.chunkYProgress;
             // Reduced progress rate towards Castle Tarmin by 80% (paced over 25 chunks north)
             float northProgress = Math.min(Math.max(chunkY / 25.0f, 0f), 1.0f);
             float currentDist = LANDMARK_DISTANCE - (northProgress * 55f); // 140f down to 85f
             float currentScale = 2.025f * (1.0f + (northProgress * 0.85f));
-            float castleX = (chunkX * 2.5f);
+            float castleX = (state.chunkX * 2.5f);
             castleInstance.transform.idt()
                     .setToTranslation(camX + castleX, -6f, -currentDist)
                     .scale(currentScale, currentScale, currentScale);
@@ -343,19 +386,11 @@ public class Skybox3DRenderer {
     /**
      * Renders the sky from explicit state, for capture and regression screenshots.
      *
-     * @param headingRadians compass bearing the camera faces; 0 looks north, toward Castle Tarmin.
-     * @param northProgress  0 = expedition start, 1 = fully closed on the castle.
      */
-    public void renderDirect(Viewport viewport, DayNightManager dayNight, WeatherType weatherType,
-                             float cloudCover, boolean stormy, float flash,
-                             float headingRadians, float northProgress, float delta) {
+    public void renderDirect(Viewport viewport, SkyState state, float delta) {
         if (!isInitialized) return;
-        updateSky(delta, 0f, 0f,
-                (float) Math.sin(headingRadians),
-                -(float) Math.cos(headingRadians),
-                dayNight, weatherType, cloudCover, flash, stormy,
-                northProgress * 25f, 0);
-        renderPass(viewport, (dayNight != null) ? dayNight.getSkyTint() : Color.NAVY);
+        updateSky(delta, state);
+        renderPass(viewport, (state.dayNight != null) ? state.dayNight.getSkyTint() : Color.NAVY);
     }
 
     private void renderPass(Viewport viewport, Color skyColor) {
@@ -390,6 +425,7 @@ public class Skybox3DRenderer {
             stormShader.setUniformf("u_stormIntensity", isStormy ? 1.0f : 0.2f);
             stormShader.setUniformf("u_cloudCover", currentCloudCover);
             stormShader.setUniformf("u_smokeFloor", smokeFloor);
+            stormShader.setUniformf("u_doom", doom01);
             stormShader.setUniformf("u_zenithColor", zenithTint.r, zenithTint.g, zenithTint.b);
             stormShader.setUniformf("u_flashIntensity", currentFlash);
             // Doom drives the whole sky faster, not just darker.

@@ -1,4 +1,6 @@
-# Castle Tarmin -- blackened volcanic stone read as a silhouette against the burning horizon.
+# Castle Tarmin -- FALLBACK MESH ONLY. The loader prefers castle_citadel.obj, whose silhouette
+# is far better; this file is what renders if the citadel is ever missing.
+# Blackened volcanic stone read as a silhouette against the burning horizon.
 # At 140 units the shape is all that survives, so surface detail is spent on glowing apertures
 # rather than on stone colour. See issue #104.
 

@@ -22,6 +22,8 @@ com.bpm.minotaur/
 │   └── spawntables/                ← SpawnTableData, SpawnTableEntry, WeightedRandomList
 ├── managers/                       ← 21 singleton + context managers
 ├── rendering/                      ← All renderers, overlays, HUD, animation
+│                                     (incl. SkyCaptureHarness, a dev capture tool
+│                                      launched via gradlew runSkyCapture)
 ├── generation/                     ← Procedural maze/biome generators, factories, spawners
 ├── paperdoll/                      ← PaperDoll2DWidget, calibration/ (LayerCalibration, CalibrationStore, PaperdollLayerMap); legacy PaperDollWidget, VerletPhysics
 ├── weather/                        ← WeatherManager, WeatherRenderer, WeatherType, WeatherIntensity

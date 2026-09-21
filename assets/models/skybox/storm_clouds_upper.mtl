@@ -1,5 +1,7 @@
-# Eruption plume bank -- reclaimed storm cloud geometry, re-materialed as volcanic smoke lit
-# from beneath by the burning horizon. Placed north, behind Castle Tarmin. See issue #104.
+# Volcanic smoke materials for the reclaimed storm cloud meshes. NOT CURRENTLY LOADED: this
+# geometry is a horizontal overcast slab, so at any usable scale it reads as a lumpy ceiling
+# overhead rather than a plume off the northern ridge. The plumes are procedural instead
+# (storm_skydome.frag, section 1D). Kept so the meshes stay usable as a cloud bank. See #104.
 
 newmtl MatStormCloudUpper
 Ns 1.000000

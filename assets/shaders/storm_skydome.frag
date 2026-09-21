@@ -17,6 +17,8 @@ uniform float u_windSpeed;
 uniform float u_cloudCover;
 // Always-on volcanic smoke ceiling, independent of weather. Weather adds to it, never clears it.
 uniform float u_smokeFloor;
+// 0 = expedition start, 1 = fully doomed. The primary driver of how bad the sky looks.
+uniform float u_doom;
 // Colour of the top of the vault: kept dark so the fire stays a horizon band, not a flood.
 uniform vec3 u_zenithColor;
 
@@ -75,7 +77,9 @@ void main() {
     // --- 1. BASE ATMOSPHERIC SKY GRADIENT ---
     // Hot at the horizon, choked purple-black at the zenith. The steeper falloff keeps the fire
     // a tight band above the walls rather than washing the whole view orange.
-    vec3 zenithSky = u_zenithColor;
+    // At full doom the vault itself ignites: the zenith stops being smothered purple and starts
+    // being lit, which is the single clearest read that things have gone badly wrong.
+    vec3 zenithSky = mix(u_zenithColor, vec3(0.40, 0.05, 0.04), u_doom);
     vec3 horizonSky = mix(u_horizonColor, u_skyTint, 0.72) * 1.15;
     vec3 skyBase = mix(horizonSky, zenithSky, pow(up, 0.42));
 
@@ -88,13 +92,13 @@ void main() {
     // --- 1D. ERUPTION PLUMES ---
     // Columns of fire and smoke rising off the northern ridge. Procedural rather than modelled:
     // these have to churn and rise continuously, which sprite or mesh plumes do badly.
-    float plumeBand = smoothstep(0.50, 1.0, northness);
+    float plumeBand = smoothstep(0.50 - 0.28 * u_doom, 1.0, northness);
     if (plumeBand > 0.01) {
         float across = flatDir.x / flatLen;
         float colNoise = fbm(vec2(across * 4.5, up * 2.2 - u_time * 0.14));
         float column = smoothstep(0.42, 0.86, colNoise);
         float rise = exp(-up * 3.0);
-        skyBase += vec3(1.0, 0.30, 0.05) * column * rise * plumeBand * 0.95;
+        skyBase += vec3(1.0, 0.30, 0.05) * column * rise * plumeBand * (0.95 + 0.85 * u_doom);
     }
 
     // --- 1C. CELESTIAL SMEAR ---
@@ -185,6 +189,21 @@ void main() {
     // Below the horizon the dome must not glow: the ground is not on fire, the sky is.
     float below = clamp(-v_dir.y, 0.0, 1.0);
     finalColor *= 1.0 - below * 0.82;
+
+    // --- 7. DOOM HEAT-LIGHTNING ---
+    // Weather owns storm lightning. This is the sky flickering with its own light, so a doomed
+    // sky stays restless even in clear weather.
+    if (u_doom > 0.05) {
+        float tick = hash21(vec2(floor(u_time * 2.0), 3.0));
+        float doomFlash = step(1.0 - 0.10 * u_doom, tick);
+        finalColor += vec3(1.0, 0.45, 0.20) * doomFlash * u_doom * 0.40;
+    }
+
+    // --- 8. BANDING ---
+    // Deliberate quantisation. The game renders at full resolution but its surfaces are flat and
+    // limited-palette; a perfectly smooth sky behind them reads as a photograph glued on, and
+    // makes the walls look cheap by comparison.
+    finalColor = floor(finalColor * 26.0 + 0.5) / 26.0;
 
     gl_FragColor = vec4(finalColor, 1.0);
 }
