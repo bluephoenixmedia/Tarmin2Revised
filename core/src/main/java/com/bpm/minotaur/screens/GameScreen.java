@@ -68,6 +68,8 @@ public class GameScreen extends BaseScreen {
     private final DebugRenderer debugRenderer = new DebugRenderer();
     private final FirstPersonRenderer firstPersonRenderer = new FirstPersonRenderer();
     private final World3DRenderer world3DRenderer = new World3DRenderer();
+    private final com.bpm.minotaur.rendering.EmberOverlay emberOverlay =
+            new com.bpm.minotaur.rendering.EmberOverlay();
     private final EntityRenderer entityRenderer = new EntityRenderer(game.getItemDataManager(), game.getAssetManager());
     private final com.bpm.minotaur.rendering.vfx.LaserBeamRenderer laserBeamRenderer =
             new com.bpm.minotaur.rendering.vfx.LaserBeamRenderer();
@@ -765,6 +767,24 @@ public class GameScreen extends BaseScreen {
         }
 
         // Moved CombatDiceOverlay to end of frame
+
+        // --- HIGH-DOOM EMBERS (in the play area, over the world, inside the CRT pass) ---
+        // Only under open sky on the surface: these are cinders falling out of the burning sky,
+        // so they have no business underground or beneath a roof.
+        float emberDoom = 0f;
+        if (player != null && maze != null && currentLevel == 1
+                && !maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
+            emberDoom = com.badlogic.gdx.math.MathUtils.clamp(
+                    com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() / 100f,
+                    0f, 1f);
+        }
+        emberOverlay.update(Gdx.graphics.getDeltaTime(), emberDoom, VIRTUAL_WIDTH, HUD_HEIGHT, GAME_HEIGHT);
+        if (emberDoom > 0f) {
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
+            emberOverlay.render(game.getBatch(), emberDoom);
+            game.getBatch().end();
+        }
 
         if (renderToFbo) {
             fbo.end();
@@ -2787,6 +2807,7 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        emberOverlay.dispose();
         if (player != null && worldManager != null) {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
         }
