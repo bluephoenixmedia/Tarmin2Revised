@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.managers.MusicManager;
+import com.bpm.minotaur.rendering.DiscoveryCard;
 import com.bpm.minotaur.rendering.HudSkin;
 
 /**
@@ -34,6 +35,11 @@ public class PlayerDeathScreen extends BaseScreen {
     private final int monstersSlain;
     private final int divinitiesEarned;
     private final java.util.List<String> newUnlocks;
+    /**
+     * The unlocked item types, when the caller has them. Cards need the type rather than the
+     * display name, because icons are keyed on it in the packed atlases.
+     */
+    private final java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes;
     private final HudSkin hudSkin;
 
     private Stage stage;
@@ -56,7 +62,17 @@ public class PlayerDeathScreen extends BaseScreen {
                              float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore,
                              String epitaphCause, int depthReached, int monstersSlain, int divinitiesEarned,
                              java.util.List<String> newUnlocks) {
+        this(game, parentScreen, deathCount, maxDeaths, bridgeIntegrity, lostItems, retainedItems,
+                defeatLore, epitaphCause, depthReached, monstersSlain, divinitiesEarned, newUnlocks, null);
+    }
+
+    public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
+                             float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore,
+                             String epitaphCause, int depthReached, int monstersSlain, int divinitiesEarned,
+                             java.util.List<String> newUnlocks,
+                             java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes) {
         super(game);
+        this.newUnlockTypes = newUnlockTypes;
         this.parentScreen = parentScreen;
         this.deathCount = deathCount;
         this.maxDeaths = maxDeaths;
@@ -95,137 +111,188 @@ public class PlayerDeathScreen extends BaseScreen {
 
         Table root = new Table();
         root.setFillParent(true);
-        root.pad(40, 50, 40, 50);
+        root.center().pad(28, 50, 28, 50);
 
-        // --- HEADER BANNER ---
+        root.add(buildHeader()).growX().row();
+        root.add(buildTrophyRow()).padTop(26f).row();
+        root.add(buildStatRow()).growX().padTop(26f).row();
+        root.add(buildFooter()).padTop(26f).row();
+
+        stage.addActor(root);
+    }
+
+    private Table buildHeader() {
         Table header = new Table();
         header.setBackground(hudSkin.getDoubleBorderPanel());
-        header.pad(20, 40, 20, 40);
+        header.pad(14f);
 
-        Label perishedLabel = new Label("YOU HAVE FALLEN", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
-        header.add(perishedLabel).center().row();
+        Label title = new Label("YOU HAVE FALLEN",
+                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
+        header.add(title).row();
 
-        Label loreLabel = new Label(defeatLore, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        header.add(loreLabel).center().padTop(8).row();
+        Label cause = new Label(epitaphCause,
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEXT_ON_DARK));
+        cause.setWrap(true);
+        cause.setAlignment(com.badlogic.gdx.utils.Align.center);
+        header.add(cause).growX().padTop(6f).row();
+        return header;
+    }
 
-        root.add(header).fillX().padBottom(24).row();
+    /**
+     * The discoveries, as the centrepiece.
+     *
+     * <p>Most deaths unlock nothing, so the empty case is designed rather than left to collapse
+     * into a hole where the best thing on the screen should be.
+     */
+    private Table buildTrophyRow() {
+        Table row = new Table();
 
-        // --- BODY: Three Column Overview Cards ---
-        Table body = new Table();
+        java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> types = newUnlockTypes;
+        int count = (types != null) ? types.size() : (newUnlocks != null ? newUnlocks.size() : 0);
 
-        // 1. Left Card: Tarmin's Hunger / Doom Clock
-        Table doomCard = new Table();
-        doomCard.setBackground(hudSkin.getDoubleBorderPanel());
-        doomCard.pad(22);
-
-        Label doomTitle = new Label("TARMIN'S HUNGER", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        doomCard.add(doomTitle).left().padBottom(14).row();
-
-        Label deathStat = new Label(String.format("EXPEDITION DEMISE:  %d  /  %d", deathCount, maxDeaths),
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        doomCard.add(deathStat).left().padBottom(8).row();
-
-        Label bridgeStat = new Label(String.format("BRIDGE INTEGRITY:  %d%%", (int) bridgeIntegrity),
-                new Label.LabelStyle(hudSkin.getFontMain(), bridgeIntegrity <= 30f ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_GOLD_ANTIQUE));
-        doomCard.add(bridgeStat).left().padBottom(16).row();
-
-        Label doomDesc = new Label("The Minotaur stirs beneath Castle Tarmin. With every demise, the boundary holding back the apocalyptic tide weakens. Should 50 deaths occur, the sacrificial ritual will consume all memory of your journey.",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        doomDesc.setWrap(true);
-        doomCard.add(doomDesc).width(500).left().expandY().top().row();
-
-        body.add(doomCard).width(560).expandY().fillY().padRight(20);
-
-        // 2. Center Card: Expedition Epitaph & Milestones
-        Table epitaphCard = new Table();
-        epitaphCard.setBackground(hudSkin.getDoubleBorderPanel());
-        epitaphCard.pad(22);
-
-        Label epitaphTitle = new Label("EXPEDITION EPITAPH", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        epitaphCard.add(epitaphTitle).left().padBottom(14).row();
-
-        Label causeLbl = new Label("CAUSE: " + epitaphCause,
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_HP_CRITICAL));
-        causeLbl.setWrap(true);
-        epitaphCard.add(causeLbl).width(530).left().padBottom(10).row();
-
-        Label depthLbl = new Label(String.format("STRATA REACHED:  Depth %d", depthReached),
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        epitaphCard.add(depthLbl).left().padBottom(6).row();
-
-        Label killsLbl = new Label(String.format("FOES VANQUISHED:  %d", monstersSlain),
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
-        epitaphCard.add(killsLbl).left().padBottom(6).row();
-
-        Label divEarnedLbl = new Label(String.format("DIVINITIES COLLECTED:  +%d", divinitiesEarned),
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
-        epitaphCard.add(divEarnedLbl).left().padBottom(14).row();
-
-        if (newUnlocks != null && !newUnlocks.isEmpty()) {
-            Label unlockTitle = new Label("DISCOVERIES UNLOCKED FOR FUTURE EXPEDITIONS:",
-                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
-            epitaphCard.add(unlockTitle).width(530).left().padTop(6).padBottom(4).row();
-
-            StringBuilder sb = new StringBuilder();
-            for (String unlock : newUnlocks) {
-                sb.append("- ").append(unlock).append("\n");
-            }
-            Label unlockItems = new Label(sb.toString().trim(),
-                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
-            unlockItems.setWrap(true);
-            epitaphCard.add(unlockItems).width(530).left().padBottom(6).row();
-
-            Label unlockNote = new Label("These discoveries will now appear in future dungeon loot and merchant inventories.",
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-            unlockNote.setWrap(true);
-            epitaphCard.add(unlockNote).width(530).left().expandY().top().row();
-        } else {
-            Label unlockDesc = new Label("Progression Note: Every expedition attunes the procedural generation of future mazes. Deeper delves and greater triumphs will yield further discoveries for future runs.",
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-            unlockDesc.setWrap(true);
-            epitaphCard.add(unlockDesc).width(530).left().expandY().top().row();
+        if (count == 0) {
+            Label none = new Label("THE DEPTHS YIELDED NOTHING",
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEXT_MUTED));
+            row.add(none).padTop(28f).padBottom(28f).row();
+            return row;
         }
 
-        body.add(epitaphCard).width(590).expandY().fillY().padRight(20);
+        com.bpm.minotaur.gamedata.item.ItemDataManager itemData =
+                com.bpm.minotaur.managers.UnlockManager.getInstance().getItemDataManager();
+        com.badlogic.gdx.assets.AssetManager assets = game.getAssetManager();
 
-        // 3. Right Card: Casualties & Stash Status
-        Table lootCard = new Table();
-        lootCard.setBackground(hudSkin.getDoubleBorderPanel());
-        lootCard.pad(22);
+        Table cards = new Table();
+        for (int i = 0; i < count; i++) {
+            com.bpm.minotaur.gamedata.item.Item.ItemType type = (types != null) ? types.get(i) : null;
+            String friendly;
+            if (type != null) {
+                friendly = com.bpm.minotaur.managers.UnlockManager.getInstance().displayNameFor(type);
+            } else {
+                friendly = newUnlocks.get(i);
+            }
+            DiscoveryCard card = new DiscoveryCard(hudSkin, type, friendly, itemData, assets, i * 0.25f);
+            cards.add(card).size(DiscoveryCard.CARD_WIDTH, DiscoveryCard.CARD_HEIGHT).padLeft(14f).padRight(14f);
+        }
+        row.add(cards).row();
 
-        Label lootTitle = new Label("EXPEDITION CASUALTIES", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        lootCard.add(lootTitle).left().padBottom(14).row();
-
-        Label lostLbl = new Label(String.format("UNEQUIPPED ITEMS LOST:  %d", lostItems),
-                new Label.LabelStyle(hudSkin.getFontMain(), lostItems > 0 ? HudSkin.COL_HP_RED : HudSkin.COL_FOOD_GREEN));
-        lootCard.add(lostLbl).left().padBottom(6).row();
-
-        Label keptLbl = new Label(String.format("ITEMS SECURED (Retention):  %d", retainedItems),
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
-        lootCard.add(keptLbl).left().padBottom(6).row();
-
-        Label kitLbl = new Label("TRAVEL CRAFTING KITS:  PRESERVED",
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
-        lootCard.add(kitLbl).left().padBottom(6).row();
-
-        Label eqLbl = new Label("EQUIPPED WEAPONS & ARMOR:  PRESERVED",
-                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
-        lootCard.add(eqLbl).left().padBottom(14).row();
-
-        Label stashDesc = new Label("Your Stash Chest inside the Starting Shelter remains safe. The ruins and wilderness beyond will reconfigure from fresh Ley-lines, rolling new terrain, monsters, and treasures for your next delve.",
+        Label caption = new Label("WRESTED FROM THE DEPTHS",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        stashDesc.setWrap(true);
-        lootCard.add(stashDesc).width(500).left().expandY().top().row();
+        row.add(caption).padTop(10f).row();
+        return row;
+    }
 
-        body.add(lootCard).width(560).expandY().fillY();
+    private Table buildStatRow() {
+        Table row = new Table();
+        row.add(buildHungerPanel()).growX().uniformX().padRight(18f);
+        row.add(buildEpitaphPanel()).growX().uniformX().padRight(18f);
+        row.add(buildCasualtiesPanel()).growX().uniformX();
+        return row;
+    }
 
-        root.add(body).expand().fill().padBottom(24).row();
+    private Table buildHungerPanel() {
+        Table panel = newPanel("TARMIN'S HUNGER");
+        addStat(panel, "DEMISE", deathCount + " / " + maxDeaths);
+        addStat(panel, "BRIDGE", ((int) bridgeIntegrity) + "%");
+        panel.add(buildBridgeBar()).growX().height(14f).padTop(4f).colspan(2).row();
 
-        // --- FOOTER: AWAKEN CTA BUTTON ---
+        // One escalating line instead of a fixed lore paragraph. The paragraph was identical on
+        // every death, so by the tenth it was furniture; this makes the panel read as a meter.
+        float pressure = (maxDeaths > 0) ? (deathCount / (float) maxDeaths) : 0f;
+        String line;
+        Color lineColor;
+        if (pressure >= 0.9f) {
+            line = "The ritual is all but complete.";
+            lineColor = HudSkin.COL_HP_CRITICAL;
+        } else if (pressure >= 0.6f) {
+            line = "The boundary is failing.";
+            lineColor = HudSkin.COL_HP_ON_DARK;
+        } else if (pressure >= 0.3f) {
+            line = "The Minotaur stirs beneath the castle.";
+            lineColor = HudSkin.COL_TEMP_ON_DARK;
+        } else {
+            line = "Something beneath the castle took note.";
+            lineColor = HudSkin.COL_TEXT_MUTED;
+        }
+        Label lore = new Label(line, new Label.LabelStyle(hudSkin.getFontSmall(), lineColor));
+        lore.setWrap(true);
+        panel.add(lore).growX().colspan(2).padTop(10f).row();
+        return panel;
+    }
+
+    private Table buildEpitaphPanel() {
+        Table panel = newPanel("EXPEDITION EPITAPH");
+        addStat(panel, "DEPTH", String.valueOf(depthReached));
+        addStat(panel, "FOES", String.valueOf(monstersSlain));
+        addStat(panel, "DIVINITY", "+" + divinitiesEarned);
+        return panel;
+    }
+
+    private Table buildCasualtiesPanel() {
+        Table panel = newPanel("EXPEDITION CASUALTIES");
+        addStat(panel, "LOST", String.valueOf(lostItems));
+        addStat(panel, "SECURED", String.valueOf(retainedItems));
+        addStat(panel, "KITS", "PRESERVED");
+        addStat(panel, "GEAR", "PRESERVED");
+        return panel;
+    }
+
+    private Table newPanel(String title) {
+        Table panel = new Table();
+        panel.setBackground(hudSkin.getDoubleBorderPanel());
+        panel.pad(14f);
+        panel.top();
+        Label heading = new Label(title,
+                new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+        heading.setWrap(true);
+        panel.add(heading).growX().colspan(2).padBottom(8f).row();
+        return panel;
+    }
+
+    /**
+     * Adds a label/value pair.
+     *
+     * <p>Every label wraps and every cell grows rather than being pinned to a pixel width. Pinning
+     * the cells while leaving the labels unwrapped is what made the old panels overflow into each
+     * other, which docs/UX/ux-standard.md already warned against.
+     */
+    private void addStat(Table panel, String label, String value) {
+        Label l = new Label(label, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
+        Label v = new Label(value, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_ON_DARK));
+        // Only the label column absorbs slack. Growing both pushed the value past the panel edge,
+        // and a single unbreakable token like PRESERVED cannot wrap its way back inside.
+        panel.add(l).left().expandX().fillX().padBottom(3f);
+        panel.add(v).right().padBottom(3f).row();
+    }
+
+    /** Bridge integrity as a bar: 2% as bare text carries no weight. */
+    private Table buildBridgeBar() {
+        float fraction = com.badlogic.gdx.math.MathUtils.clamp(bridgeIntegrity / 100f, 0f, 1f);
+
+        com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable pixel =
+                new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(
+                        new com.badlogic.gdx.graphics.g2d.TextureRegion(hudSkin.getWhitePixel()));
+
+        Table bar = new Table();
+        Image track = new Image(pixel);
+        track.setColor(HudSkin.COL_STONE_DARK);
+        Image fill = new Image(pixel);
+        fill.setColor(fraction >= 0.9f ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_HP_RED);
+
+        com.badlogic.gdx.scenes.scene2d.ui.Stack stack = new com.badlogic.gdx.scenes.scene2d.ui.Stack();
+        Table trackWrap = new Table();
+        trackWrap.add(track).grow();
+        Table fillWrap = new Table();
+        fillWrap.add(fill).growY().width(Math.max(2f, fraction * 220f)).left();
+        fillWrap.left();
+        stack.add(trackWrap);
+        stack.add(fillWrap);
+
+        bar.add(stack).grow();
+        return bar;
+    }
+
+    private Table buildFooter() {
         Table footer = new Table();
-        footer.setBackground(hudSkin.getPanelBg());
-        footer.pad(18, 30, 18, 30);
-
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = hudSkin.getFontHeader();
         btnStyle.up = hudSkin.getPrimaryButtonUp();
@@ -234,19 +301,15 @@ public class PlayerDeathScreen extends BaseScreen {
         btnStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
         btnStyle.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
 
-        TextButton awakenBtn = new TextButton("AWAKEN IN THE SHELTER  [ENTER / SPACE]", btnStyle);
-        awakenBtn.getLabel().setFontScale(1.0f);
-        awakenBtn.addListener(new ClickListener() {
+        TextButton awaken = new TextButton("AWAKEN IN THE SHELTER   [ENTER / SPACE]", btnStyle);
+        awaken.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 awakenInShelter();
             }
         });
-
-        footer.add(awakenBtn).minWidth(680).height(64).center();
-        root.add(footer).fillX();
-
-        stage.addActor(root);
+        footer.add(awaken).minWidth(760f).height(64f);
+        return footer;
     }
 
     private void awakenInShelter() {

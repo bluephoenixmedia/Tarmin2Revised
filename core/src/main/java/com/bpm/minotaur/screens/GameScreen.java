@@ -1248,13 +1248,20 @@ public class GameScreen extends BaseScreen {
             telemetry.exportRun(epitaphCause);
 
             // Roll discoveries unlocked for future expeditions
-            java.util.List<String> newUnlocks = com.bpm.minotaur.managers.UnlockManager.getInstance()
-                    .rollRunUnlocks(telemetry, depthReached);
+            // Types, not just names: the death screen shows each discovery as a card with its
+            // icon, and icons are keyed on the item type.
+            java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes =
+                    com.bpm.minotaur.managers.UnlockManager.getInstance()
+                            .rollRunUnlockTypes(telemetry, depthReached);
+            java.util.List<String> newUnlocks = new ArrayList<>();
+            for (com.bpm.minotaur.gamedata.item.Item.ItemType t : newUnlockTypes) {
+                newUnlocks.add(com.bpm.minotaur.managers.UnlockManager.getInstance().displayNameFor(t));
+            }
 
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
-                    divinitiesEarnedThisRun, newUnlocks);
+                    divinitiesEarnedThisRun, newUnlocks, newUnlockTypes);
             beginDeathSequence(deathScreen);
             return;
         }
@@ -3461,6 +3468,10 @@ public class GameScreen extends BaseScreen {
         return combatDiceOverlay;
     }
 
+    /**
+     * Debug kill. Routes through the normal death path, so it replays the full cinematic --
+     * which is the only practical way to review the collapse without dying for real.
+     */
     public void killPlayer() {
         if (player != null && player.getStats() != null) {
             player.getStats().setCurrentHP(0);

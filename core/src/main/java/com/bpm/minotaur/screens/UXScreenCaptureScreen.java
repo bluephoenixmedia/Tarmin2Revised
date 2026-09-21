@@ -232,10 +232,33 @@ public class UXScreenCaptureScreen extends BaseScreen {
 
         // 08: Player Death Screen
         tasks.add(new CaptureTask("08_player_death", "Player Death & Epitaph Screen", () -> {
-            PlayerDeathScreen s = new PlayerDeathScreen(game, sharedGameScreen, 1, 3, 66.7f, 4, 8,
+            PlayerDeathScreen s = new PlayerDeathScreen(game, sharedGameScreen, 1, 50, 96f, 15, 0,
                     "Your physical vessel collapsed to venom in the catacombs...",
-                    "Slain by Giant Scorpion", 3, 14, 250,
-                    Arrays.asList("Unarmed Focus Perk", "Herbal Salve Recipe", "Arcane Ward"));
+                    "Fell to a Harpy at Strata Depth 2 on turn 748", 2, 9, 9,
+                    Arrays.asList("Javelin, Stone, Two-Handed", "Scythe", "Lance, Flight"),
+                    Arrays.asList(com.bpm.minotaur.gamedata.item.Item.ItemType.JAVELIN_STONE_TWO_HANDED,
+                            com.bpm.minotaur.gamedata.item.Item.ItemType.SCYTHE,
+                            com.bpm.minotaur.gamedata.item.Item.ItemType.LANCE_FLIGHT));
+            setSubScreen(s, null);
+        }));
+
+        // 08a: the case nobody sees while testing -- most deaths unlock nothing, so the empty
+        // trophy row is the layout most likely to be wrong.
+        tasks.add(new CaptureTask("08a_player_death_no_unlocks", "Player Death, No Discoveries", () -> {
+            PlayerDeathScreen s = new PlayerDeathScreen(game, sharedGameScreen, 3, 50, 92f, 22, 2,
+                    "Your physical vessel collapsed in the labyrinth...",
+                    "Bled out from untended wounds at Strata Depth 1 on turn 210", 1, 2, 0,
+                    java.util.Collections.emptyList());
+            setSubScreen(s, null);
+        }));
+
+        // 08b: the far end of the doom curve, where Tarmin's Hunger should read as urgent.
+        tasks.add(new CaptureTask("08b_player_death_high_doom", "Player Death, Near Apocalypse", () -> {
+            PlayerDeathScreen s = new PlayerDeathScreen(game, sharedGameScreen, 47, 50, 6f, 31, 4,
+                    "Your physical vessel collapsed in the labyrinth...",
+                    "Fell to a Minotaur at Strata Depth 7 on turn 1902", 7, 88, 140,
+                    Arrays.asList("Axe, Battle"),
+                    Arrays.asList(com.bpm.minotaur.gamedata.item.Item.ItemType.AXE_BATTLE));
             setSubScreen(s, null);
         }));
 

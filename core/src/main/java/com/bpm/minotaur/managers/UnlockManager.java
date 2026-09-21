@@ -208,8 +208,42 @@ public class UnlockManager {
         }
     }
 
+    /**
+     * Display names of this run's unlocks.
+     *
+     * <p>Kept for callers that only render text. Anything that needs an icon should use
+     * {@link #rollRunUnlockTypes} instead, since the item type is what the atlas is keyed on.
+     */
     public List<String> rollRunUnlocks(com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached) {
-        List<String> newlyUnlocked = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : rollRunUnlockTypes(telemetry, maxFloorReached)) {
+            names.add(displayNameFor(type));
+        }
+        return names;
+    }
+
+    /** The item data the unlock roll is resolved against, for callers that need templates. */
+    public com.bpm.minotaur.gamedata.item.ItemDataManager getItemDataManager() {
+        return itemDataManager;
+    }
+
+    /** The friendly name an unlocked type should be shown under, falling back to its enum name. */
+    public String displayNameFor(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        if (type == null) return "";
+        com.bpm.minotaur.gamedata.item.ItemTemplate t =
+                (itemDataManager != null) ? itemDataManager.getTemplate(type) : null;
+        return (t != null && t.friendlyName != null) ? t.friendlyName : type.name();
+    }
+
+    /**
+     * Rolls this run's unlocks and returns the item types granted.
+     *
+     * <p>Returns types rather than names because the death screen shows each discovery as a card
+     * with its icon, and icons are looked up from the packed atlases by item type.
+     */
+    public List<com.bpm.minotaur.gamedata.item.Item.ItemType> rollRunUnlockTypes(
+            com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached) {
+        List<com.bpm.minotaur.gamedata.item.Item.ItemType> newlyUnlocked = new ArrayList<>();
         if (itemDataManager == null || data == null) {
             return newlyUnlocked;
         }
@@ -266,9 +300,7 @@ public class UnlockManager {
         for (int i = 0; i < grantCount; i++) {
             com.bpm.minotaur.gamedata.item.Item.ItemType unlockedType = eligible.get(i);
             unlockContent(unlockedType.name());
-            com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(unlockedType);
-            String displayName = (t != null && t.friendlyName != null) ? t.friendlyName : unlockedType.name();
-            newlyUnlocked.add(displayName);
+            newlyUnlocked.add(unlockedType);
         }
 
         return newlyUnlocked;
