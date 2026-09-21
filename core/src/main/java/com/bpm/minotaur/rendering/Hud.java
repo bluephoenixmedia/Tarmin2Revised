@@ -1877,6 +1877,18 @@ public class Hud implements Disposable {
                 );
                 return;
             }
+            if (frontItem.getType() == Item.ItemType.HOME_ARCHIVE_LECTERN) {
+                worldInteractionCard.show(
+                        "[SHELTER HUB]",
+                        "[CHRONICLE & CODEX]",
+                        "Archive Lectern",
+                        "An ancient stone lectern holding the Chronicle of Tarmin. Review unlocked armory relics, unsealed arcana, and shelter renovations.",
+                        "[ O ]",
+                        "Examine Archive Lectern",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
             if (frontItem.getType() == Item.ItemType.BRASS_LANTERN) {
                 worldInteractionCard.show(
                         "[SHELTER HAVEN]",

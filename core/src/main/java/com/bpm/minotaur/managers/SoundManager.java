@@ -490,6 +490,15 @@ public class SoundManager {
         }
     }
 
+    public void playBookFlipSound() {
+        if (modernSounds.containsKey("book_flip")) {
+            long id = modernSounds.get("book_flip").play(0.85f);
+            modernSounds.get("book_flip").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        } else if (retroAudioDevice != null) {
+            playScrollUnfurl();
+        }
+    }
+
     /**
      * The chest that doesn't creak. Pitched well below the ordinary roar so the player
      * hears "that was not a lid" before the sprite has finished changing -- the cheapest

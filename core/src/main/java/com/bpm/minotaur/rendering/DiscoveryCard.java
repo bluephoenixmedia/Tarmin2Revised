@@ -141,7 +141,7 @@ public class DiscoveryCard extends Table {
      * <p>Mirrors the atlas convention used when instantiating a real item: the texture path names
      * both the atlas and, via its basename, the region.
      */
-    private static TextureRegion resolveIcon(Item.ItemType type, ItemDataManager itemData,
+    public static TextureRegion resolveIcon(Item.ItemType type, ItemDataManager itemData,
                                              AssetManager assets) {
         if (type == null || itemData == null || assets == null) return null;
         if (Gdx.app != null && Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.HeadlessDesktop) {

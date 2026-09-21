@@ -671,6 +671,63 @@
             }
         ]
     },
+    "HOME_ARCHIVE_LECTERN": {
+        "friendlyName": "Archive Lectern",
+        "texturePath": "images/items/book.png",
+        "isImpassable": true,
+        "spriteData": [
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            ".......##########.......",
+            "........########........",
+            ".........######.........",
+            "..........####..........",
+            "..........####..........",
+            "..........####..........",
+            ".........######.........",
+            "........########........",
+            ".......##########.......",
+            "......############......",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "description": "An ancient stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.",
+        "baseValue": 0,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": false,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "GOLD",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 1
+            }
+        ]
+    },
     "PROJECTILE": {
         "friendlyName": "Projectile",
         "texturePath": "images/weapons/big_bolt.png",

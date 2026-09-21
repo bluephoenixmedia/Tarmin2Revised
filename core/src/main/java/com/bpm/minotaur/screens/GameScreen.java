@@ -3194,6 +3194,15 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_ARCHIVE_LECTERN) {
+            if (soundManager != null) {
+                soundManager.playBookFlipSound();
+            }
+            CodexScreen codexScreen = new CodexScreen(game, this, player);
+            game.setScreen(codexScreen);
+            return;
+        }
+
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_CHEST) {
             ShelterChest chest = ShelterChest.getInstance();
             if (chest.isEmpty()) {

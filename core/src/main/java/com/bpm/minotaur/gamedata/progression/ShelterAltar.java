@@ -52,7 +52,8 @@ public class ShelterAltar {
         CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
         CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
         LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
-        TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null);
+        TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null),
+        ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null);
 
         private final String displayName;
         private final String description;
@@ -190,7 +191,7 @@ public class ShelterAltar {
             java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
             if (points != null) {
                 for (com.badlogic.gdx.math.GridPoint2 pt : points) {
-                    com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN)
+                    com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
                             ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
                             : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
                     com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);

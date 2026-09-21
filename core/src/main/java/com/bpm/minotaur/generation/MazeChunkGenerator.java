@@ -93,11 +93,11 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "............",
             "............",
-            "...##D###...",
-            "...#L.AC#...",
-            "...WT..N#...",
-            "...#F.BL#...",
-            "...######...",
+            "...##D####..",
+            "...#L.ACR#..",
+            "...WT...N#..",
+            "...#F..BL#..",
+            "...#######..",
             "............",
             "............",
             "............",
@@ -548,7 +548,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                             // --- FIX: Home Zone Logic ---
                             // Include ALL home tiles (including walls, door, window, and props) in the list so
                             // the game knows this entire footprint is the "Home Zone" (Sheltered from weather).
-                            boolean isHomeZone = (tileY >= 3 && tileY <= 7 && tx >= 3 && tx <= 8);
+                            boolean isHomeZone = (tileY >= 3 && tileY <= 7 && tx >= 3 && tx <= 9);
 
                             if (isHomeZone) {
                                 int gameX = mapX * 12 + tx;
@@ -728,6 +728,14 @@ public class MazeChunkGenerator implements IChunkGenerator {
                             com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY)) {
                         maze.addItem(
                                 itemDataManager.createItem(Item.ItemType.HOME_TRAINING_DUMMY, x, y, ItemColor.TAN, assetManager));
+                    }
+                } else if (c == 'R') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN)) {
+                        maze.addItem(
+                                itemDataManager.createItem(Item.ItemType.HOME_ARCHIVE_LECTERN, x, y, ItemColor.GOLD, assetManager));
                     }
                 }
             }
