@@ -197,8 +197,6 @@ assets/models/*
 !assets/models/gate/
 !assets/models/camp/
 !assets/models/camp/**
-!assets/models/player/
-!assets/models/player/**
 /monsters/
 assets/images/BearFX Explosions/
 assets/images/monsters/Super Pixel Effects*/

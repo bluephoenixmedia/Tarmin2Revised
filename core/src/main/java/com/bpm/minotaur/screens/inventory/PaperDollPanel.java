@@ -109,7 +109,6 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     private com.bpm.minotaur.paperdoll.PaperDoll2DWidget paperDoll2DWidget;
     // Legacy paper doll widget reference
     private PaperDollWidget paperDollWidget;
-    private com.bpm.minotaur.paperdoll.PaperDoll3DWidget paperDoll3DWidget;
 
     // Frame overlay — stored so attachPaperDollWidget can insert before it
     // private Image frameOverlayImage;
@@ -263,19 +262,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         widget.setSize(PORTRAIT_W + 40f, PORTRAIT_H + 40f);
     }
 
-    /**
-     * Attaches the interactive 3D paper doll viewport.
-     */
-    public void attachPaperDoll3DWidget(com.bpm.minotaur.paperdoll.PaperDoll3DWidget widget) {
-        this.paperDoll3DWidget = widget;
-        widget.setPosition(PORTRAIT_X, PORTRAIT_Y);
-        widget.setSize(PORTRAIT_W, PORTRAIT_H);
-        addActorAt(0, widget);
-    }
 
-    public com.bpm.minotaur.paperdoll.PaperDoll3DWidget getPaperDoll3DWidget() {
-        return paperDoll3DWidget;
-    }
 
     public void refresh() {
         PlayerEquipment eq = player.getEquipment();
@@ -324,13 +311,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     }
 
     private void syncPaperDoll(PlayerEquipment eq) {
-        if (paperDoll3DWidget != null) {
-            paperDoll3DWidget.syncEquipment(
-                    player.getInventory().getRightHand(),
-                    player.getInventory().getLeftHand(),
-                    eq.getWornChest(),
-                    eq.getWornHelmet());
-        }
+
 
         if (paperDoll2DWidget != null) {
             paperDoll2DWidget.clearEquipment();
@@ -384,9 +365,6 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     public void dispose() {
         if (paperDoll2DWidget != null) {
             paperDoll2DWidget.dispose();
-        }
-        if (paperDoll3DWidget != null) {
-            paperDoll3DWidget.dispose();
         }
     }
 
