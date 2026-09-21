@@ -192,5 +192,51 @@ public class WeaponRespawnAndArchetypeTest {
         overlay.forceRefreshEquipment(axe, null);
         assertEquals("Archetype remains intact after refresh", AnimationArchetype.AXE_CHOPPING, overlay.getMainHandArchetype());
         assertFalse("Overlay is clean and idle ready", overlay.isActive());
+
+        // Verify that if rightHand is null on death/reset, overlay clears main hand texture and archetype becomes BRAWLING
+        overlay.forceRefreshEquipment(null, null);
+        assertNull("Main hand item is null when unequipped on reset", overlay.getMainHandItem());
+        assertNull("Main hand texture is null when unequipped on reset", overlay.getMainHandTexture());
+        assertEquals("Archetype reverts to BRAWLING when unequipped", AnimationArchetype.BRAWLING, overlay.getMainHandArchetype());
+    }
+
+    @Test
+    public void testUnequippedWeaponDoesNotRenderAfterDeathAndReset() {
+        FirstPersonWeaponOverlay overlay = new FirstPersonWeaponOverlay(null, null);
+
+        Item sword = createItem(ItemType.SWORD, "Broadsword", true, false, false);
+        overlay.setEquipment(sword, null);
+        assertEquals(sword, overlay.getMainHandItem());
+        assertEquals(AnimationArchetype.SLASHING_1H, overlay.getMainHandArchetype());
+
+        // Set preview as if tuner was opened
+        Item previewSword = createItem(ItemType.SWORD, "Tuner Sword", true, false, false);
+        overlay.setPreview(previewSword, null);
+        overlay.setEquipment(sword, null);
+        assertEquals("Preview overrides equipped item while set", previewSword, overlay.getMainHandItem());
+
+        // On reset, preview is cleared and active state stopped
+        overlay.reset();
+        overlay.setEquipment(sword, null);
+        assertEquals("After reset, real sword is equipped", sword, overlay.getMainHandItem());
+
+        // Death and reset with empty hands (player weapon not equipped)
+        overlay.forceRefreshEquipment(null, null);
+        assertNull("Main hand item must be null", overlay.getMainHandItem());
+        assertNull("Main hand texture must be null", overlay.getMainHandTexture());
+        assertNull("Off hand item must be null", overlay.getOffHandItem());
+        assertNull("Off hand texture must be null", overlay.getOffHandTexture());
+        assertEquals(AnimationArchetype.BRAWLING, overlay.getMainHandArchetype());
+
+        // Re-equipping sets item back
+        overlay.setEquipment(sword, null);
+        assertEquals(sword, overlay.getMainHandItem());
+        assertEquals(AnimationArchetype.SLASHING_1H, overlay.getMainHandArchetype());
+
+        // Calling clearEquipment explicitly clears everything
+        overlay.clearEquipment();
+        assertNull(overlay.getMainHandItem());
+        assertNull(overlay.getMainHandTexture());
+        assertEquals(AnimationArchetype.BRAWLING, overlay.getMainHandArchetype());
     }
 }

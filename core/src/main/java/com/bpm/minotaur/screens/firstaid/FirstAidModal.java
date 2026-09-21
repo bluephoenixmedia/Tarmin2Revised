@@ -170,8 +170,10 @@ public class FirstAidModal extends BaseScreen {
         limbColumnTable.clear();
         InjuryManager im = player.getInjuryManager();
 
+        int partIdx = 1;
         for (BodyPart part : BodyPart.values()) {
             final BodyPart currentPart = part;
+            final int keyNum = partIdx++;
             boolean isSelected = (currentPart == selectedPart);
 
             Table limbRow = new Table();
@@ -200,7 +202,7 @@ public class FirstAidModal extends BaseScreen {
             }
 
             Table textCol = new Table();
-            Label nameLbl = new Label(part.getDisplayName().toUpperCase(),
+            Label nameLbl = new Label("[" + keyNum + "] " + part.getDisplayName().toUpperCase(),
                     new Label.LabelStyle(hudSkin.getFontMain(), isSelected ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE));
             Label statLbl = new Label(statusText,
                     new Label.LabelStyle(hudSkin.getFontSmall(), statusColor));
@@ -410,15 +412,15 @@ public class FirstAidModal extends BaseScreen {
     private String getSupplySubtext(Item item) {
         if (item == null || item.getType() == null) return "";
         String name = item.getType().name();
-        if (name.startsWith("POTION_OF_HEALING")) return "Curative Elixir — 0% Risk, Knits tissue & stops bleed";
-        if (name.equals("POTION_VITALITY") || name.equals("GLOWING_LICHEN")) return "Purifying Antidote — Breaks systemic fever";
-        if (name.equals("SPIDER_SILK")) return "Sterile Suture — 0% Risk, Seals lacerations";
-        if (name.equals("DIRTY_CLOTH")) return "Makeshift Rag — 35% INFECTION RISK! Stops bleed";
-        if (name.contains("BONE") || name.contains("ROPE")) return "Rigid Debris — 0% Risk, Splints bone fractures";
-        if (name.equals("SLIME_RESIDUE")) return "Cooling Gel — 0% Risk, Soothes severe burns";
-        if (name.equals("MOSS_CLUMP")) return "Antiseptic Dressing — 0% Risk, Bandages flesh";
-        if (name.equals("TWISTED_ROOT")) return "Astringent Poultice — 0% Risk, Hemostatic seal";
-        if (name.contains("WATER")) return "Fresh Water — Flushes wound grime";
+        if (name.startsWith("POTION_OF_HEALING")) return "Curative Elixir - 0% Risk, Knits tissue & stops bleed";
+        if (name.equals("POTION_VITALITY") || name.equals("GLOWING_LICHEN")) return "Purifying Antidote - Breaks systemic fever";
+        if (name.equals("SPIDER_SILK")) return "Sterile Suture - 0% Risk, Seals lacerations";
+        if (name.equals("DIRTY_CLOTH")) return "Makeshift Rag - 35% INFECTION RISK! Stops bleed";
+        if (name.contains("BONE") || name.contains("ROPE")) return "Rigid Debris - 0% Risk, Splints bone fractures";
+        if (name.equals("SLIME_RESIDUE")) return "Cooling Gel - 0% Risk, Soothes severe burns";
+        if (name.equals("MOSS_CLUMP")) return "Antiseptic Dressing - 0% Risk, Bandages flesh";
+        if (name.equals("TWISTED_ROOT")) return "Astringent Poultice - 0% Risk, Hemostatic seal";
+        if (name.contains("WATER")) return "Fresh Water - Flushes wound grime";
         return "Field medical utility";
     }
 
@@ -430,7 +432,8 @@ public class FirstAidModal extends BaseScreen {
         // Feedback message
         feedbackLabel = new Label("Select an anatomical quadrant and treatment item to proceed.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE));
-        footer.add(feedbackLabel).left().expandX();
+        feedbackLabel.setEllipsis(true);
+        footer.add(feedbackLabel).left().width(740f).padRight(16f);
 
         // 1. Crude Direct Pressure Button (Emergency Bare Hands)
         TextButton.TextButtonStyle crudeStyle = new TextButton.TextButtonStyle();
@@ -439,7 +442,7 @@ public class FirstAidModal extends BaseScreen {
         crudeStyle.down = hudSkin.getSlotActive();
         crudeStyle.fontColor = HudSkin.COL_GOLD_ANTIQUE;
 
-        crudePressureBtn = new TextButton("Crude Direct Pressure (Bare Hands)", crudeStyle);
+        crudePressureBtn = new TextButton("[P] Crude Pressure", crudeStyle);
         crudePressureBtn.pad(8f, 16f, 8f, 16f);
         crudePressureBtn.addListener(new ClickListener() {
             @Override
@@ -458,7 +461,7 @@ public class FirstAidModal extends BaseScreen {
         treatStyle.disabledFontColor = HudSkin.COL_GOLD_MUTED;
         treatStyle.disabled = hudSkin.getSlotRecessed();
 
-        applyTreatmentBtn = new TextButton("Apply Treatment", treatStyle);
+        applyTreatmentBtn = new TextButton("[ENTER] Apply Treatment", treatStyle);
         applyTreatmentBtn.pad(8f, 20f, 8f, 20f);
         applyTreatmentBtn.addListener(new ClickListener() {
             @Override
@@ -475,7 +478,7 @@ public class FirstAidModal extends BaseScreen {
         closeStyle.down = hudSkin.getSlotActive();
         closeStyle.fontColor = Color.WHITE;
 
-        TextButton closeBtn = new TextButton("Close [ESC]", closeStyle);
+        TextButton closeBtn = new TextButton("[ESC] Return", closeStyle);
         closeBtn.pad(8f, 16f, 8f, 16f);
         closeBtn.addListener(new ClickListener() {
             @Override
@@ -552,6 +555,10 @@ public class FirstAidModal extends BaseScreen {
             closeModal();
             return true;
         }
+        if (keycode == Input.Keys.P) {
+            applyCrudePressure();
+            return true;
+        }
         if (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE) {
             if (selectedItem != null) {
                 applyTreatmentWithItem();
@@ -559,6 +566,17 @@ public class FirstAidModal extends BaseScreen {
                 applyCrudePressure();
             }
             return true;
+        }
+        if (keycode >= Input.Keys.NUM_1 && keycode <= Input.Keys.NUM_4) {
+            int idx = keycode - Input.Keys.NUM_1;
+            BodyPart[] parts = BodyPart.values();
+            if (idx < parts.length) {
+                selectedPart = parts[idx];
+                refreshLimbButtons();
+                refreshDiagnosis();
+                refreshSupplies();
+                return true;
+            }
         }
         return false;
     }

@@ -47,18 +47,28 @@ public class ShelterAltar {
     private final java.util.Map<StatType, Integer> ascensionTiers = new java.util.EnumMap<>(StatType.class);
 
     public enum Station {
-        BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG),
-        STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST),
-        CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT),
-        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH),
-        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN);
+        BED("Bed / Sleeping Bag", "Enables resting to restore 100% HP & MP, clearing ailments, and saving the game without delve cooldowns.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_SLEEPING_BAG, null),
+        STASH_CHEST("Stash Chest", "A secure chest to store surplus weapons, armor, and treasures safely between delves.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CHEST, null),
+        CAMPFIRE("Shelter Fire Pot", "A warm hearth providing continuous illumination and an indoor cooking station. Also teaches you to pack Portable Cookware, letting you cook on expedition.", 20, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_FIRE_POT, com.bpm.minotaur.gamedata.item.Item.ItemType.COOKING_KIT),
+        CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
+        LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
+        TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null);
 
         private final String displayName;
         private final String description;
         private final int cost;
         private final com.bpm.minotaur.gamedata.item.Item.ItemType itemType;
+        /**
+         * The travelling counterpart of this station, or null if it has none. Owning the
+         * station is what earns the kit -- see FieldKitGrant. Kept here beside itemType so
+         * a station's two item facts live on one line.
+         */
+        private final com.bpm.minotaur.gamedata.item.Item.ItemType portableKit;
 
-        Station(String displayName, String description, int cost, com.bpm.minotaur.gamedata.item.Item.ItemType itemType) {
+        Station(String displayName, String description, int cost,
+                com.bpm.minotaur.gamedata.item.Item.ItemType itemType,
+                com.bpm.minotaur.gamedata.item.Item.ItemType portableKit) {
+            this.portableKit = portableKit;
             this.displayName = displayName;
             this.description = description;
             this.cost = cost;
@@ -69,6 +79,9 @@ public class ShelterAltar {
         public String getDescription() { return description; }
         public int getCost() { return cost; }
         public com.bpm.minotaur.gamedata.item.Item.ItemType getItemType() { return itemType; }
+
+        /** The portable counterpart this station teaches, or null if it has none. */
+        public com.bpm.minotaur.gamedata.item.Item.ItemType getPortableKit() { return portableKit; }
     }
 
     public static final int MAX_TIER = 3;
@@ -111,12 +124,18 @@ public class ShelterAltar {
         repertoireTier = 0;
         monumentTier = 0;
         arcaneTier = 0;
+        crestsOfValor = 0;
+        ascensionTiers.clear();
         unlockedStations.clear();
         canCommune = true;
     }
 
     public boolean hasStation(Station station) {
         return unlockedStations.contains(station);
+    }
+
+    public boolean isSkillTreeUnlocked() {
+        return hasStation(Station.TRAINING_DUMMY);
     }
 
     public void setStationUnlocked(Station station, boolean unlocked) {
@@ -301,6 +320,18 @@ public class ShelterAltar {
         }
         save();
         return true;
+    }
+
+    /**
+     * What Arcane Attunement adds to every Tome Choice: tier 1 shows 4 options,
+     * tier 2 adds a reroll, tier 3 shows 5 options and lets the Tome of Tarmin
+     * offer level 8 spells.
+     */
+    public com.bpm.minotaur.gamedata.spells.TomeChoice.Perks getTomeChoicePerks() {
+        int options = 3 + (arcaneTier >= 1 ? 1 : 0) + (arcaneTier >= 3 ? 1 : 0);
+        int rerolls = arcaneTier >= 2 ? 1 : 0;
+        int tarminMaxLevel = com.bpm.minotaur.gamedata.spells.Tome.TARMIN.getMaxSpellLevel() + (arcaneTier >= 3 ? 1 : 0);
+        return new com.bpm.minotaur.gamedata.spells.TomeChoice.Perks(options, rerolls, tarminMaxLevel);
     }
 
     /** Spell ids unsealed for loot spawning by the current Arcane Attunement tier. */

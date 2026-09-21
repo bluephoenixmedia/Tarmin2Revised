@@ -175,10 +175,13 @@ public class Item implements Renderable {
         WAND_A, WAND_B, WAND_C, WAND_D, WAND_E, WAND_F, WAND_G, WAND_H,
 
         // Home Props
-        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR,
+        HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,
+
+        // Powder and ball for firearms. Its own resource, never mixed with arrows.
+        SHOT_POUCH,
 
         // Corpse & Resources
         CORPSE, MEAT, COOKED_MEAT, BONE, CHITIN, TOOTH, CLAW, NAIL, BLOOD_VIAL, ORGAN, LEATHER_SCRAP, MYSTERIOUS_PORTAL,
@@ -267,6 +270,20 @@ public class Item implements Renderable {
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
 
     private boolean isLocked;
+
+    // --- Mimic Disguise ---
+    // A mimic in the strata is a chest until the player reaches for it. The disguise
+    // lives on the Item; the creature only becomes a Monster at the moment of reveal.
+    private boolean isMimic = false;
+    /** True once the player has seen through the disguise (see MimicDetection). */
+    private boolean mimicSeen = false;
+    /**
+     * True once the perception check has been rolled for this mimic, pass or fail.
+     * Without this the roll would repeat every turn the player stands in front of
+     * the chest, which turns a 25% chance into a certainty within a few turns.
+     */
+    private boolean mimicRollSpent = false;
+
     private int range; // Removed final
     private int hydrationValue; // New
     private int nutrition; // New
@@ -510,7 +527,7 @@ public class Item implements Renderable {
         TextureRegion tempRegion = null;
 
         if (template != null && template.texturePath != null && !template.texturePath.isEmpty()
-                && Gdx.app != null && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
+                && assetManager != null && Gdx.app != null && Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
 
             // Check for Debris Atlas (Hardcoded for now)
             if (template.texturePath.contains("images/debris") && assetManager.isLoaded("packed/debris.atlas")) {
@@ -881,7 +898,19 @@ public class Item implements Renderable {
     }
 
     public String getArmorCategory() {
-        return template != null ? template.armorCategory : "LIGHT";
+        if (template != null && template.armorCategory != null) {
+            return template.armorCategory;
+        }
+        if (type != null) {
+            String name = type.name();
+            if (name.contains("PLATE") || name.contains("SPLINT") || name.contains("CHAINMAIL_ARMOR")) {
+                return "HEAVY";
+            }
+            if (name.contains("SCALE") || name.contains("MAIL") || name.contains("HAUBERK")) {
+                return "MEDIUM";
+            }
+        }
+        return "LIGHT";
     }
 
     public boolean hasStealthDisadvantage() {
@@ -1069,7 +1098,10 @@ public class Item implements Renderable {
     public boolean isAmmunition() {
         if (type == null)
             return false;
-        if (type == ItemType.QUIVER)
+        // SHOT_POUCH counts as ammunition so it categorises and spawns as such, but it
+        // feeds the separate firearm "shot" pool, never the arrow count. Anything
+        // branching on this must exclude it explicitly -- see Player.collectAmmunition.
+        if (type == ItemType.QUIVER || type == ItemType.SHOT_POUCH)
             return true;
         String name = type.name();
         return name.startsWith("ARROW_") || name.startsWith("QUARREL_") || name.startsWith("SLING_BULLET_")
@@ -1152,6 +1184,33 @@ public class Item implements Renderable {
 
     public boolean isLocked() {
         return this.isLocked;
+    }
+
+    /** True when this chest is a mimic waiting for the player to reach for it. */
+    public boolean isMimic() {
+        return this.isMimic;
+    }
+
+    public void setMimic(boolean isMimic) {
+        this.isMimic = isMimic;
+    }
+
+    /** True once the player has seen through this mimic's disguise. */
+    public boolean isMimicSeen() {
+        return this.mimicSeen;
+    }
+
+    public void setMimicSeen(boolean mimicSeen) {
+        this.mimicSeen = mimicSeen;
+    }
+
+    /** True once this mimic's perception check has been rolled, pass or fail. */
+    public boolean isMimicRollSpent() {
+        return this.mimicRollSpent;
+    }
+
+    public void setMimicRollSpent(boolean mimicRollSpent) {
+        this.mimicRollSpent = mimicRollSpent;
     }
 
     public void unlock() {

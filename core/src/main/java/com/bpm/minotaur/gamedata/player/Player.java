@@ -1,5 +1,11 @@
 package com.bpm.minotaur.gamedata.player;
 
+import com.bpm.minotaur.gamedata.monster.HostileSight;
+import com.bpm.minotaur.gamedata.progression.ShelterAltar;
+import com.bpm.minotaur.gamedata.spells.SpellDataManager;
+import com.bpm.minotaur.gamedata.spells.SpellTemplate;
+import com.bpm.minotaur.gamedata.spells.Tome;
+import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
@@ -393,37 +399,51 @@ public class Player {
         return -1;
     }
 
-    // --- Tome Study ---
+    // --- Tome Study & Tome Choice ---
 
+    private final Random tomeRng = new Random();
     private TomeStudy activeTomeStudy;
+    private TomeChoice pendingTomeChoice;
 
     /** The field study being channelled, or null. */
     public TomeStudy getActiveTomeStudy() {
         return activeTomeStudy;
     }
 
+    /** The Tome Choice waiting for the player to pick a spell, or null. */
+    public TomeChoice getPendingTomeChoice() {
+        return pendingTomeChoice;
+    }
+
     /**
      * Opens a Tome. In the Shelter the study completes at once; in the field it
      * becomes a channelled study the caller advances turn by turn with
-     * {@link #advanceTomeStudy}. Refused while a hostile is in view.
+     * {@link #advanceTomeStudy}. Refused while a hostile is in view, and for a
+     * repeat Tome with nothing left to teach.
      *
      * @return true if the study completed or began
      */
     public boolean beginTomeStudy(Item tome, Maze maze, GameEventManager eventManager) {
-        if (tome == null || !TomeStudy.isTome(tome.getType())) {
+        Tome kind = tome != null ? Tome.of(tome.getType()) : null;
+        if (kind == null || pendingTomeChoice != null) {
+            return false;
+        }
+        if (unlockedSpellSlots >= kind.getSlotNumber()
+                && TomeChoice.candidates(kind, knownSpellIds, tomeChoicePerks()).isEmpty()) {
+            eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return false;
         }
         if (maze != null && maze.isHomeTile((int) position.x, (int) position.y)) {
             finishTomeStudy(tome, eventManager);
             return true;
         }
-        if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
+        if (HostileSight.anyInView(maze, position)) {
             eventManager.addEvent(new GameEvent("A hostile is in view -- you cannot study now.", 2.0f));
             return false;
         }
-        activeTomeStudy = new TomeStudy(tome, getCurrentHP());
+        activeTomeStudy = new TomeStudy(tome, stats.getWoundsTaken());
         int left = activeTomeStudy.getTurnsRequired() - activeTomeStudy.getTurnsDone();
-        eventManager.addEvent(new GameEvent("You open the " + tome.getDisplayName() + " and begin to study... ("
+        eventManager.addEvent(new GameEvent("You open the " + kind.getDisplayName() + " and begin to study... ("
                 + left + " turns). Any action breaks your concentration.", 3.0f));
         return true;
     }
@@ -434,8 +454,7 @@ public class Player {
             return TomeStudy.Step.COMPLETE;
         }
         TomeStudy study = activeTomeStudy;
-        TomeStudy.Step step = study.afterTurn(getCurrentHP(),
-                com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position));
+        TomeStudy.Step step = study.afterTurn(stats.getWoundsTaken(), HostileSight.anyInView(maze, position));
         switch (step) {
             case COMPLETE:
                 activeTomeStudy = null;
@@ -465,18 +484,102 @@ public class Player {
         eventManager.addEvent(new GameEvent("You close the Tome. " + studyProgressText(study), 2.0f));
     }
 
+    /** Drops the active study without a message, e.g. when the player dies; progress is kept. */
+    public void abandonTomeStudy() {
+        activeTomeStudy = null;
+    }
+
     private static String studyProgressText(TomeStudy study) {
         return "(" + study.getTurnsDone() + "/" + study.getTurnsRequired() + " turns studied)";
     }
 
+    /**
+     * A finished study opens the Tome Choice. Nothing is granted until a spell is
+     * chosen, so the Tome is never lost to an unanswered choice. A first-time Tome
+     * with nothing left to offer still unlocks its slot, and is kept to sell.
+     */
     private void finishTomeStudy(Item tome, GameEventManager eventManager) {
-        int slots = TomeStudy.slotsUnlockedBy(tome.getType());
-        boolean newSlot = slots > unlockedSpellSlots;
-        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, slots));
+        if (!inventory.contains(tome)) {
+            return;
+        }
+        Tome kind = Tome.of(tome.getType());
+        pendingTomeChoice = TomeChoice.offer(kind, tome, knownSpellIds, tomeChoicePerks(), tomeRng);
+        if (pendingTomeChoice == null) {
+            unlockTomeSlot(kind, eventManager);
+            eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
+            return;
+        }
+        eventManager.addEvent(new GameEvent("The " + kind.getDisplayName() + " reveals its secrets. Choose a spell to learn.", 3.0f));
+    }
+
+    /**
+     * Learns the chosen spell from the pending Tome Choice, unlocks the Tome's
+     * slot if it is new (preparing the spell there), and uses up the Tome.
+     *
+     * @return false if the spell was not one of the options
+     */
+    public boolean chooseTomeSpell(String spellId, GameEventManager eventManager) {
+        String id = spellId != null ? spellId.toUpperCase(java.util.Locale.ROOT) : null;
+        if (pendingTomeChoice == null || id == null || !pendingTomeChoice.getOptions().contains(id)) {
+            return false;
+        }
+        TomeChoice choice = pendingTomeChoice;
+        pendingTomeChoice = null;
+        if (grantTome(choice.getTomeItem(), choice.getTome(), eventManager)) {
+            learnSpellId(id);
+            prepareSpell(choice.getTome().getSlotNumber() - 1, id);
+        } else {
+            learnAndPrepareIfSlotFree(id);
+        }
+        SpellTemplate spell = SpellDataManager.getSpell(id);
+        eventManager.addEvent(new GameEvent("Learned " + (spell != null ? spell.getName() : id) + "!", 3.0f));
+        return true;
+    }
+
+    /** Whether the pending Tome Choice has a reroll that would show a new spell. */
+    public boolean canRerollTomeChoice() {
+        return pendingTomeChoice != null && pendingTomeChoice.canReroll(knownSpellIds);
+    }
+
+    /** Spends one of the Tome Choice's rerolls on fresh options. */
+    public boolean rerollTomeChoice() {
+        return pendingTomeChoice != null && pendingTomeChoice.reroll(knownSpellIds, tomeRng);
+    }
+
+    /**
+     * Brings back a Tome Choice saved before it was answered, bound to a carried
+     * Tome of the same kind. Does nothing if no such Tome is carried.
+     */
+    public void restorePendingTomeChoice(Item.ItemType tomeType, List<String> options, int rerollsLeft) {
+        Tome kind = Tome.of(tomeType);
+        if (kind == null || options == null || options.isEmpty()) {
+            return;
+        }
+        for (Item carried : inventory.getAllItems()) {
+            if (carried.getType() == tomeType) {
+                pendingTomeChoice = TomeChoice.restore(kind, carried, options, rerollsLeft, tomeChoicePerks());
+                return;
+            }
+        }
+    }
+
+    /** Uses up the Tome and unlocks its slot; returns whether the slot was newly unlocked. */
+    private boolean grantTome(Item tome, Tome kind, GameEventManager eventManager) {
         inventory.removeItem(tome);
+        return unlockTomeSlot(kind, eventManager);
+    }
+
+    private boolean unlockTomeSlot(Tome kind, GameEventManager eventManager) {
+        boolean newSlot = kind.getSlotNumber() > unlockedSpellSlots;
+        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, kind.getSlotNumber()));
         eventManager.addEvent(new GameEvent(newSlot
-                ? "Studied the " + tome.getDisplayName() + "! Spell Slot " + slots + " unlocked!"
-                : "Studied the " + tome.getDisplayName() + ".", 3.0f));
+                ? "Studied the " + kind.getDisplayName() + "! Spell Slot " + kind.getSlotNumber() + " unlocked!"
+                : "Studied the " + kind.getDisplayName() + ".", 3.0f));
+        return newSlot;
+    }
+
+    private static TomeChoice.Perks tomeChoicePerks() {
+        return ShelterAltar.getInstance().getTomeChoicePerks();
     }
 
     public boolean hasEnoughMana(int cost) {
@@ -561,6 +664,64 @@ public class Player {
         initStartingSpells();
     }
 
+    /**
+     * Picks up a bundle of ammunition, if that is what this tile holds.
+     *
+     * <p>Arrows and shot are separate pools on purpose: sharing one would let a musket
+     * ball fire from a longbow, and would refill the scarce resource that gates a 2d8
+     * shot from every arrow drop in the dungeon. Shot therefore comes in far smaller
+     * bundles, and is checked first because a shot pouch is also ammunition.
+     *
+     * <p>Consolidated from three identical copies (item at feet, item in front, and
+     * auto-pickup on step) so the two resources cannot drift apart.
+     *
+     * @return true if the item was ammunition and has been consumed.
+     */
+    private boolean collectAmmunition(Item item, GridPoint2 tile, Maze maze,
+            GameEventManager eventManager, SoundManager soundManager) {
+        if (item == null || maze == null) {
+            return false;
+        }
+
+        // A shot pouch also answers true to isAmmunition() -- that is what makes it
+        // categorise and spawn as ammunition -- so the arrow test must exclude it
+        // explicitly. Relying on branch order here would mean anyone reordering these
+        // two lines silently converted shot into arrows.
+        boolean isShot = item.getType() == Item.ItemType.SHOT_POUCH;
+        boolean isArrows = !isShot
+                && (item.getType() == Item.ItemType.QUIVER || item.isAmmunition());
+        if (!isShot && !isArrows) {
+            return false;
+        }
+
+        if (soundManager != null) {
+            soundManager.playPickupItemSound();
+        }
+
+        int found;
+        int total;
+        String resource;
+        if (isShot) {
+            found = new Random().nextInt(3) + 2; // 2-4: deliberately scarce
+            stats.addShot(found);
+            total = stats.getShot();
+            resource = "Shot";
+        } else {
+            found = new Random().nextInt(7) + 8; // 8-14, unchanged
+            stats.addArrows(found);
+            total = stats.getArrows();
+            resource = "Arrows";
+        }
+
+        maze.getItems().remove(tile);
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(
+                    "Collected " + found + " " + item.getDisplayName() + "! Total: " + total, 2.5f));
+        }
+        BalanceLogger.getInstance().logEconomy("RES_GAIN", resource, found);
+        return true;
+    }
+
     public interface ItemPickupListener {
         void onItemPickedUp(Item item);
     }
@@ -611,18 +772,28 @@ public class Player {
         }
 
         if (item.isWeapon()) {
-            Item oldWeapon = inventory.getRightHand();
-            if (oldWeapon != null && oldWeapon.getGrantedDie() != null) {
-                stats.getDicePool().remove(oldWeapon.getGrantedDie());
+            if (combatManager != null) {
+                boolean threw = combatManager.throwWeapon(item);
+                if (threw) {
+                    inventory.getQuickSlots()[slotIndex] = null;
+                    return true;
+                }
+                return false;
+            } else {
+                inventory.getQuickSlots()[slotIndex] = null;
+                inventory.removeItem(item);
+                if (maze != null && position != null && facing != null) {
+                    item.setPosition(position.x + facing.getVector().x, position.y + facing.getVector().y);
+                    maze.addItem(item);
+                }
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("Threw " + item.getDisplayName() + "!", 1.5f));
+                }
+                if (soundManager != null) {
+                    soundManager.playWeaponSwing();
+                }
+                return true;
             }
-            if (item.getGrantedDie() != null) {
-                stats.getDicePool().add(item.getGrantedDie());
-            }
-            inventory.setRightHand(item);
-            inventory.getQuickSlots()[slotIndex] = oldWeapon;
-            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Right Hand.", 2.0f));
-            soundManager.playPickupItemSound();
-            return true;
         }
 
         if (item.isShield()) {
@@ -635,8 +806,12 @@ public class Player {
             }
             inventory.setLeftHand(item);
             inventory.getQuickSlots()[slotIndex] = oldShield;
-            eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Left Hand.", 2.0f));
-            soundManager.playPickupItemSound();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("Swapped to " + item.getDisplayName() + " in Left Hand.", 2.0f));
+            }
+            if (soundManager != null) {
+                soundManager.playPickupItemSound();
+            }
             return true;
         }
 
@@ -761,13 +936,7 @@ public class Player {
                 return;
             }
 
-            if (itemAtFeet.getType() == Item.ItemType.QUIVER || itemAtFeet.isAmmunition()) {
-                soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(7) + 8;
-                stats.addArrows(arrowsFound);
-                maze.getItems().remove(playerTile2);
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemAtFeet.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
+            if (collectAmmunition(itemAtFeet, playerTile2, maze, eventManager, soundManager)) {
                 return;
             }
 
@@ -828,16 +997,7 @@ public class Player {
                 // ---------------
                 return;
             }
-            if (itemInFront.getType() == Item.ItemType.QUIVER || itemInFront.isAmmunition()) {
-                soundManager.playPickupItemSound();
-                int arrowsFound = new Random().nextInt(7) + 8;
-                stats.addArrows(arrowsFound);
-                maze.getItems().remove(targetTile);
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + itemInFront.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-
-                // --- LOGGING ---
-                BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
-                // ---------------
+            if (collectAmmunition(itemInFront, targetTile, maze, eventManager, soundManager)) {
                 return;
             }
             if (itemInFront.getType() == Item.ItemType.FLOUR_SACK) {
@@ -928,7 +1088,7 @@ public class Player {
         }
 
         // --- Tarmin Milestone Tomes: studied (instant in the Shelter, channelled in the field) ---
-        if (TomeStudy.isTome(item.getType())) {
+        if (Tome.of(item.getType()) != null) {
             beginTomeStudy(item, maze, eventManager);
             return;
         }
@@ -1922,24 +2082,17 @@ public class Player {
             int warStrengthGained = 5;
             int spiritualStrengthGained = 5;
 
-            // Check for Level Up
-            if (stats.canLevelUp()) {
-                performLevelUp(eventManager); // Call the private helper that calls stats.performLevelUp()
-                // Don't consume food if leveling up? Or maybe require food TO level up?
-                // Let's require food to level up as well.
-            } else {
-                // Standard Rest (Heal)
-                this.setWarStrength(
-                        Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
-                stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
-                        stats.getSpiritualStrength() + spiritualStrengthGained));
-                equipment.fullyRechargeRings();
+            // Standard Rest (Heal)
+            this.setWarStrength(
+                    Math.min(this.getEffectiveMaxWarStrength(), this.getWarStrength() + warStrengthGained));
+            stats.setSpiritualStrength(Math.min(this.getEffectiveMaxSpiritualStrength(),
+                    stats.getSpiritualStrength() + spiritualStrengthGained));
+            equipment.fullyRechargeRings();
 
-                eventManager.addEvent(new GameEvent(
-                        ("WS restored to " + stats.getWarStrength() + ", SS restored to "
-                                + stats.getSpiritualStrength() + ". Magic rings recharged."),
-                        2f));
-            }
+            eventManager.addEvent(new GameEvent(
+                    ("HP restored to " + stats.getCurrentHP() + ", MP restored to "
+                            + stats.getCurrentMP() + ". Magic rings recharged."),
+                    2f));
 
             // --- LOGGING ---
             BalanceLogger.getInstance().logEconomy("RES_USED", "Food", 1);
@@ -2197,20 +2350,8 @@ public class Player {
             maze.getLiquidManager().onPlayerStep(nextX, nextY, this, eventManager);
         }
 
-        // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts) on step ---
-        Item steppedItem = maze.getItems().get(nextTile);
-        if (steppedItem != null && (steppedItem.getType() == Item.ItemType.QUIVER || steppedItem.isAmmunition())) {
-            if (soundManager != null) {
-                soundManager.playPickupItemSound();
-            }
-            int arrowsFound = new Random().nextInt(7) + 8;
-            stats.addArrows(arrowsFound);
-            maze.getItems().remove(nextTile);
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("Collected " + arrowsFound + " " + steppedItem.getDisplayName() + "! Total: " + stats.getArrows(), 2.5f));
-            }
-            BalanceLogger.getInstance().logEconomy("RES_GAIN", "Arrows", arrowsFound);
-        }
+        // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts / Shot) on step ---
+        collectAmmunition(maze.getItems().get(nextTile), nextTile, maze, eventManager, soundManager);
 
         // --- VOID SIGHT LORE INSCRIPTIONS ---
         if (com.bpm.minotaur.managers.DimensionalManager.getInstance().isInVoid()) {
@@ -2324,6 +2465,16 @@ public class Player {
 
         if (itemInFront != null && itemInFront.getCategory() == ItemCategory.CONTAINER) {
             String containerName = itemInFront.getDisplayName();
+
+            // Every attempt on a world container makes a noise, including one that
+            // fails on the lock. This is the quiet half of the mimic tell: the sound a
+            // player expects when reaching for a chest is what makes its absence -- and
+            // the low roar that replaces it -- register before the sprite has changed.
+            // It has to fire before the lock check, or the most common case (a locked
+            // chest, and they all spawn locked) stays silent and the tell never forms.
+            if (soundManager != null) {
+                soundManager.playChestOpen();
+            }
 
             if (itemInFront.isLocked()) {
                 Item key = findKey();
@@ -2575,21 +2726,46 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean readyToLevel = stats.addExperience(amount);
+        boolean leveled = stats.addExperience(amount);
 
-        eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
-        if (readyToLevel) {
-            eventManager
-                    .addEvent(new GameEvent("You have enough experience to level up! Sleep in a bed to advance.", 3f));
+            if (leveled) {
+                if (soundManager != null) {
+                    soundManager.playPlayerLevelUpSound();
+                }
+                eventManager.addEvent(new GameEvent("LEVEL UP! Reached Level " + stats.getLevel() + "!", 3.5f));
+                eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
+            }
         }
+    }
+
+    public boolean hasSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        return stats != null && stats.hasSkill(skill);
+    }
+
+    public boolean canDualWield() {
+        return stats != null && stats.canDualWield();
+    }
+
+    public boolean allocateAttribute(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        return stats != null && stats.allocateAttribute(stat);
+    }
+
+    public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        return stats != null && stats.learnSkill(skill);
     }
 
     private void performLevelUp(GameEventManager eventManager) {
         stats.performLevelUp();
-        soundManager.playPlayerLevelUpSound();
-        eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
-        eventManager.addEvent(new GameEvent("Attack Bonus increased to +" + stats.getAttackModifier() + "!", 2f));
+        if (soundManager != null) {
+            soundManager.playPlayerLevelUpSound();
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
+            eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
+        }
     }
 
     public void takeStatusEffectDamage(int amount, DamageType type) {
@@ -3034,5 +3210,9 @@ public class Player {
         if (worn.isEmpty())
             return null;
         return worn.get(new Random().nextInt(worn.size()));
+    }
+
+    public boolean isWearingHeavyArmor() {
+        return equipment != null && equipment.isWearingHeavyArmor();
     }
 }

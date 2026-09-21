@@ -96,7 +96,6 @@ public class ShelterAltarScreen extends BaseScreen {
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(16, 24, 16, 24);
         Label title = new Label("THE ANCIENT STONE ALTAR", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        title.setFontScale(1.3f);
         header.add(title).center().row();
         Label subtitle = new Label("Banked Divinities survive death -- commune for respite, expand the shelter, or sacrifice offerings",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -154,9 +153,8 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private TextButton createTabButton(String label, Tab tab) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         TextButton btn = new TextButton(label, style);
-        btn.getLabel().setFontScale(0.75f);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -276,7 +274,29 @@ public class ShelterAltarScreen extends BaseScreen {
         ShelterAltar altar = ShelterAltar.getInstance();
         boolean success = altar.unlockStation(station, parentScreen.getMaze(), game.getItemDataManager(), game.getAssetManager());
         if (success) {
-            statusLabel.setText(station.getDisplayName() + " materialized into the shelter!");
+            StringBuilder message = new StringBuilder(station.getDisplayName() + " materialized into the shelter!");
+
+            // The portable counterpart arrives with the station, not on the player's next
+            // death -- otherwise buying the bench would mean having to die to collect the
+            // field toolkit it teaches.
+            com.bpm.minotaur.gamedata.progression.FieldKitGrant.Result kits =
+                    com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
+                            altar.getUnlockedStations(),
+                            parentScreen.getPlayer().getInventory(),
+                            game.getItemDataManager(),
+                            game.getAssetManager());
+
+            for (com.bpm.minotaur.gamedata.item.Item kit : kits.getGranted()) {
+                message.append(" ").append(kit.getDisplayName()).append(" packed for the field.");
+            }
+            // The divinities are already spent, so a pack too full to take the kit has to
+            // be said here -- the player is looking at this label, not the world HUD.
+            for (com.bpm.minotaur.gamedata.item.Item kit : kits.getNoRoom()) {
+                message.append(" Your pack is too full for the ").append(kit.getDisplayName())
+                        .append(" -- make room and it will be issued on your next expedition.");
+            }
+
+            statusLabel.setText(message.toString());
             if (parentScreen.getSoundManager() != null) {
                 parentScreen.getSoundManager().playDimensionalWarpSound();
             }
@@ -336,7 +356,8 @@ public class ShelterAltarScreen extends BaseScreen {
         body.add(monumentCard).width(380).expandY().fillY().padRight(20);
 
         Table arcaneCard = buildTreeCard("ARCANE ATTUNEMENT",
-                "Unseals higher spell circles into scroll loot at each tier. Spell slots come from Tomes found in the strata.");
+                "Unseals higher spell circles into scroll loot and widens every Tome Choice: "
+                        + "4 spells to choose from, then a reroll, then 5 spells and level 8 magic from the Tome of Tarmin.");
         arcaneTierLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_ANTIQUE));
         arcaneCard.add(arcaneTierLabel).left().padTop(10).row();
         arcaneBtn = createActionButton("UPGRADE ATTUNEMENT");
@@ -407,7 +428,11 @@ public class ShelterAltarScreen extends BaseScreen {
                         + Math.round(altar.getStatueEventFrequency() * 100) + "% of the time per chunk.";
                 break;
             case ARCANE_ATTUNEMENT:
-                message = "Attunement deepened! Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
+                com.bpm.minotaur.gamedata.spells.TomeChoice.Perks perks = altar.getTomeChoicePerks();
+                message = "Attunement deepened! Tome Choices now show " + perks.options() + " spells"
+                        + (perks.rerolls() > 0 ? " with " + perks.rerolls() + " reroll" : "")
+                        + (perks.tarminMaxLevel() > com.bpm.minotaur.gamedata.spells.Tome.TARMIN.getMaxSpellLevel() ? ", and the Tome of Tarmin reaches level " + perks.tarminMaxLevel() : "")
+                        + ". Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
                 break;
             default:
                 message = "Upgrade purchased.";
@@ -534,10 +559,9 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private TextButton createActionButton(String text) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.disabled = hudSkin.getSlotRecessed();
         TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.72f);
         setButtonEnabled(btn, false);
         return btn;
     }
@@ -556,7 +580,6 @@ public class ShelterAltarScreen extends BaseScreen {
         banner.pad(12, 20, 12, 20);
         Label bannerTitle = new Label("ALTAR OF ASCENSION -- PERMANENT ATTRIBUTE EMPOWERMENT",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        bannerTitle.setFontScale(1.05f);
         banner.add(bannerTitle).left().row();
 
         Label bannerSub = new Label("Banked Crests of Valor: " + altar.getCrestsOfValor() + " | Slay colosseum combatants to harvest Crests. Tiers survive death permanently.",
@@ -576,7 +599,6 @@ public class ShelterAltarScreen extends BaseScreen {
 
             Label nameLbl = new Label(stat.getDisplayName().toUpperCase(),
                     new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-            nameLbl.setFontScale(0.9f);
             card.add(nameLbl).left().padBottom(4).row();
 
             Label descLbl = new Label(stat.getDescription(),

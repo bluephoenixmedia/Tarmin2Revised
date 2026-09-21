@@ -50,6 +50,20 @@ public class HudSkin implements Disposable {
     public static final Color COL_TEMP_ORANGE      = Color.valueOf("E8A63A");
     public static final Color COL_TOX              = Color.valueOf("7A2A20");
 
+    // --- Menu text on dark panels -------------------------------------------
+    // The status colours above are tuned to read as bars over a lit dungeon. As small
+    // text on a near-black menu panel the same values are too dark -- "HP: 82/100" on
+    // the save-slot card is the clearest example. These are the on-dark equivalents;
+    // the originals are left untouched so the in-world HUD is unaffected.
+    public static final Color COL_HP_ON_DARK       = Color.valueOf("F07A62");
+    public static final Color COL_MP_ON_DARK       = Color.valueOf("7FA8E8");
+    public static final Color COL_FOOD_ON_DARK     = Color.valueOf("A8D46E");
+    public static final Color COL_TEMP_ON_DARK     = Color.valueOf("FFC46A");
+    /** Body copy on a dark panel: brighter than LIGHT_GRAY, still quieter than gold. */
+    public static final Color COL_TEXT_ON_DARK     = Color.valueOf("D8CDBA");
+    /** De-emphasised text (timestamps, empty states) that must still be legible. */
+    public static final Color COL_TEXT_MUTED       = Color.valueOf("9A8F7E");
+
     // Palette: Parchment/Vellum cards (recipes, instructions, shelter-hub prompts)
     public static final Color COL_PARCHMENT_TOP     = Color.valueOf("E6D3A8");
     public static final Color COL_PARCHMENT_BOTTOM  = Color.valueOf("CBB385");
@@ -84,6 +98,7 @@ public class HudSkin implements Disposable {
     // Fonts
     private BitmapFont fontMain;
     private BitmapFont fontSmall;
+    private BitmapFont fontMicro;
     private BitmapFont fontLog;
     private BitmapFont fontHeader;
     private BitmapFont fontCompass;
@@ -457,7 +472,7 @@ public class HudSkin implements Disposable {
         fillVerticalGradient(pUp, border, border, sz - border * 2, sz - border * 2, COL_GOLD_ANTIQUE, Color.valueOf("C99A3C"));
         Texture texUp = register(new Texture(pUp));
         pUp.dispose();
-        primaryButtonUp = new NinePatchDrawable(new NinePatch(texUp, border, border, border, border));
+        primaryButtonUp = withLabelPadding(new NinePatchDrawable(new NinePatch(texUp, border, border, border, border)));
 
         Pixmap pDown = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
         pDown.setColor(COL_STONE_MID);
@@ -465,8 +480,24 @@ public class HudSkin implements Disposable {
         fillVerticalGradient(pDown, border, border, sz - border * 2, sz - border * 2, Color.valueOf("D9AF52"), Color.valueOf("A87E2E"));
         Texture texDown = register(new Texture(pDown));
         pDown.dispose();
-        primaryButtonDown = new NinePatchDrawable(new NinePatch(texDown, border, border, border, border));
+        primaryButtonDown = withLabelPadding(new NinePatchDrawable(new NinePatch(texDown, border, border, border, border)));
     }
+
+    /**
+     * Horizontal breathing room between a button's label and its own edge.
+     *
+     * <p>Scene2D lays a button's content out inside its background drawable's pad, so
+     * setting it here gives every button that uses these styles the same inset. Without
+     * it a button sized to its label has the text touching both borders -- visible once
+     * fixed-width button cells were allowed to grow to fit their labels.
+     */
+    private static Drawable withLabelPadding(NinePatchDrawable drawable) {
+        drawable.setLeftWidth(BUTTON_LABEL_INSET);
+        drawable.setRightWidth(BUTTON_LABEL_INSET);
+        return drawable;
+    }
+
+    private static final float BUTTON_LABEL_INSET = 22f;
 
     /** Diagonal hazard-stripe placeholder texture for items without a real icon. */
     private void buildHazardStripeIcon() {
@@ -506,6 +537,22 @@ public class HudSkin implements Disposable {
         screenBackdrop = new TiledDrawable(new TextureRegion(tex));
     }
 
+    /**
+     * Extra breathing room between wrapped lines, as a multiple of the font's own metric.
+     *
+     * <p>intellivision.ttf is a pixel face whose natural line height leaves wrapped text
+     * touching -- descenders on one line collide with capitals on the next, which was
+     * visible anywhere a Label had setWrap(true) (39 sites across 12 files). Fixing it at
+     * the font rather than per-label means the next wrapped label is correct by default.
+     */
+    private static final float LINE_SPACING = 1.35f;
+
+    /** Applies {@link #LINE_SPACING} to a freshly generated font. */
+    private static BitmapFont withLineSpacing(BitmapFont font) {
+        font.getData().setLineHeight(font.getData().lineHeight * LINE_SPACING);
+        return font;
+    }
+
     private void loadFonts() {
         FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Gdx.files.internal("fonts/intellivision.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -515,27 +562,32 @@ public class HudSkin implements Disposable {
         // Main stat font (size 18)
         param.size = 18;
         param.color = Color.WHITE;
-        fontMain = gen.generateFont(param);
+        fontMain = withLineSpacing(gen.generateFont(param));
 
         // Small badge font (size 14) for hotkeys [1]-[6] and tooltips
         param.size = 14;
         param.color = COL_GOLD_BRIGHT;
-        fontSmall = gen.generateFont(param);
+        fontSmall = withLineSpacing(gen.generateFont(param));
+
+        // Micro font (size 12) for tight quick-cast labels and hotbars without scaling artifacts
+        param.size = 12;
+        param.color = Color.WHITE;
+        fontMicro = withLineSpacing(gen.generateFont(param));
 
         // Log font (size 17) for action chronicle
         param.size = 17;
         param.color = Color.WHITE;
-        fontLog = gen.generateFont(param);
+        fontLog = withLineSpacing(gen.generateFont(param));
 
         // Header font (size 19, Gold)
         param.size = 19;
         param.color = COL_GOLD_BRIGHT;
-        fontHeader = gen.generateFont(param);
+        fontHeader = withLineSpacing(gen.generateFont(param));
 
         // Compass heading font (size 22, bold gold)
         param.size = 22;
         param.color = COL_GOLD_BRIGHT;
-        fontCompass = gen.generateFont(param);
+        fontCompass = withLineSpacing(gen.generateFont(param));
 
         gen.dispose();
     }
@@ -561,6 +613,7 @@ public class HudSkin implements Disposable {
 
     public BitmapFont getFontMain() { return fontMain; }
     public BitmapFont getFontSmall() { return fontSmall; }
+    public BitmapFont getFontMicro() { return fontMicro; }
     public BitmapFont getFontLog() { return fontLog; }
     public BitmapFont getFontHeader() { return fontHeader; }
     public BitmapFont getFontCompass() { return fontCompass; }
@@ -574,6 +627,7 @@ public class HudSkin implements Disposable {
 
         if (fontMain != null) fontMain.dispose();
         if (fontSmall != null) fontSmall.dispose();
+        if (fontMicro != null) fontMicro.dispose();
         if (fontLog != null) fontLog.dispose();
         if (fontHeader != null) fontHeader.dispose();
         if (fontCompass != null) fontCompass.dispose();

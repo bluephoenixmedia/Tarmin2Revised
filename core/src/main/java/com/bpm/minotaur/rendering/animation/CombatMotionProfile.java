@@ -31,6 +31,7 @@ public class CombatMotionProfile {
     public String comboName = "STRIKE";
     public boolean isFinisher = false;
     public boolean isOffHand = false;
+    public boolean isDualStrike = false;
 
     public boolean isThrust = false;
     public boolean isRangedDraw = false;
@@ -60,6 +61,7 @@ public class CombatMotionProfile {
         c.comboName = this.comboName;
         c.isFinisher = this.isFinisher;
         c.isOffHand = this.isOffHand;
+        c.isDualStrike = this.isDualStrike;
         c.isThrust = this.isThrust;
         c.isRangedDraw = this.isRangedDraw;
         c.isRangedKick = this.isRangedKick;
@@ -226,6 +228,7 @@ public class CombatMotionProfile {
 
             CombatMotionProfile finisher = createSlashingStrike(2, false, "SCISSOR FINISHER", 1.40f, 0.45f);
             finisher.isFinisher = true;
+            finisher.isDualStrike = true;
             finisher.duration = 0.36f;
             chain.add(strike1);
             chain.add(strike2);

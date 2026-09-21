@@ -4,7 +4,7 @@
     "name": "Mote of Light",
     "level": 0,
     "school": "evocation",
-    "mpCost": 0,
+    "mpCost": 2,
     "range": 0,
     "targetType": "SELF",
     "damageDice": "0",
@@ -20,6 +20,7 @@
   },
   "ACID_ARROW": {
     "id": "ACID_ARROW",
+    "tomePools": ["ELEMENTS"],
     "name": "Acid Arrow",
     "level": 2,
     "school": "evocation",
@@ -39,6 +40,7 @@
   },
   "ACID_SPLASH": {
     "id": "ACID_SPLASH",
+    "tomePools": ["INITIATE"],
     "name": "Acid Splash",
     "level": 0,
     "school": "conjuration",
@@ -495,6 +497,7 @@
   },
   "BESTOW_CURSE": {
     "id": "BESTOW_CURSE",
+    "tomePools": ["ARCANE"],
     "name": "Bestow Curse",
     "level": 3,
     "school": "necromancy",
@@ -571,6 +574,7 @@
   },
   "BLIGHT": {
     "id": "BLIGHT",
+    "tomePools": ["ARCANE"],
     "name": "Blight",
     "level": 4,
     "school": "necromancy",
@@ -609,6 +613,7 @@
   },
   "BLINK": {
     "id": "BLINK",
+    "tomePools": ["ARCANE"],
     "name": "Blink",
     "level": 3,
     "school": "transmutation",
@@ -666,6 +671,7 @@
   },
   "BURNING_HANDS": {
     "id": "BURNING_HANDS",
+    "tomePools": ["INITIATE", "ELEMENTS"],
     "name": "Burning Hands",
     "level": 1,
     "school": "evocation",
@@ -685,6 +691,7 @@
   },
   "CALL_LIGHTNING": {
     "id": "CALL_LIGHTNING",
+    "tomePools": ["ELEMENTS"],
     "name": "Call Lightning",
     "level": 3,
     "school": "conjuration",
@@ -723,6 +730,7 @@
   },
   "CHAIN_LIGHTNING": {
     "id": "CHAIN_LIGHTNING",
+    "tomePools": ["TARMIN"],
     "name": "Chain Lightning",
     "level": 6,
     "school": "evocation",
@@ -761,6 +769,7 @@
   },
   "CHILL_TOUCH": {
     "id": "CHILL_TOUCH",
+    "tomePools": ["INITIATE"],
     "name": "Chill Touch",
     "level": 0,
     "school": "necromancy",
@@ -780,6 +789,7 @@
   },
   "CIRCLE_OF_DEATH": {
     "id": "CIRCLE_OF_DEATH",
+    "tomePools": ["TARMIN"],
     "name": "Circle of Death",
     "level": 6,
     "school": "necromancy",
@@ -837,6 +847,7 @@
   },
   "CLOUDKILL": {
     "id": "CLOUDKILL",
+    "tomePools": ["ARCANE", "TARMIN"],
     "name": "Cloudkill",
     "level": 5,
     "school": "conjuration",
@@ -970,6 +981,7 @@
   },
   "CONE_OF_COLD": {
     "id": "CONE_OF_COLD",
+    "tomePools": ["ARCANE", "TARMIN"],
     "name": "Cone of Cold",
     "level": 5,
     "school": "evocation",
@@ -1445,6 +1457,7 @@
   },
   "DELAYED_BLAST_FIREBALL": {
     "id": "DELAYED_BLAST_FIREBALL",
+    "tomePools": ["TARMIN"],
     "name": "Delayed Blast Fireball",
     "level": 7,
     "school": "evocation",
@@ -1559,6 +1572,7 @@
   },
   "DIMENSION_DOOR": {
     "id": "DIMENSION_DOOR",
+    "tomePools": ["ARCANE"],
     "name": "Dimension Door",
     "level": 4,
     "school": "conjuration",
@@ -1806,6 +1820,7 @@
   },
   "EARTHQUAKE": {
     "id": "EARTHQUAKE",
+    "tomePools": ["TARMIN"],
     "name": "Earthquake",
     "level": 8,
     "school": "evocation",
@@ -2091,6 +2106,7 @@
   },
   "FEEBLEMIND": {
     "id": "FEEBLEMIND",
+    "tomePools": ["TARMIN"],
     "name": "Feeblemind",
     "level": 8,
     "school": "enchantment",
@@ -2186,6 +2202,7 @@
   },
   "FINGER_OF_DEATH": {
     "id": "FINGER_OF_DEATH",
+    "tomePools": ["TARMIN"],
     "name": "Finger of Death",
     "level": 7,
     "school": "necromancy",
@@ -2205,6 +2222,7 @@
   },
   "FIRE_BOLT": {
     "id": "FIRE_BOLT",
+    "tomePools": ["INITIATE"],
     "name": "Fire Bolt",
     "level": 0,
     "school": "evocation",
@@ -2224,6 +2242,7 @@
   },
   "FIRE_SHIELD": {
     "id": "FIRE_SHIELD",
+    "tomePools": ["ARCANE"],
     "name": "Fire Shield",
     "level": 4,
     "school": "evocation",
@@ -2243,6 +2262,7 @@
   },
   "FIRE_STORM": {
     "id": "FIRE_STORM",
+    "tomePools": ["TARMIN"],
     "name": "Fire Storm",
     "level": 7,
     "school": "evocation",
@@ -2262,6 +2282,7 @@
   },
   "FIREBALL": {
     "id": "FIREBALL",
+    "tomePools": ["ELEMENTS"],
     "name": "Fireball",
     "level": 3,
     "school": "evocation",
@@ -2300,6 +2321,7 @@
   },
   "FLAME_STRIKE": {
     "id": "FLAME_STRIKE",
+    "tomePools": ["ARCANE", "TARMIN"],
     "name": "Flame Strike",
     "level": 5,
     "school": "evocation",
@@ -2319,6 +2341,7 @@
   },
   "FLAMING_SPHERE": {
     "id": "FLAMING_SPHERE",
+    "tomePools": ["ELEMENTS"],
     "name": "Flaming Sphere",
     "level": 2,
     "school": "conjuration",
@@ -2490,6 +2513,7 @@
   },
   "FREEZING_SPHERE": {
     "id": "FREEZING_SPHERE",
+    "tomePools": ["TARMIN"],
     "name": "Freezing Sphere",
     "level": 6,
     "school": "evocation",
@@ -2794,6 +2818,7 @@
   },
   "GUIDING_BOLT": {
     "id": "GUIDING_BOLT",
+    "tomePools": ["INITIATE"],
     "name": "Guiding Bolt",
     "level": 1,
     "school": "evocation",
@@ -2870,6 +2895,7 @@
   },
   "HARM": {
     "id": "HARM",
+    "tomePools": ["TARMIN"],
     "name": "Harm",
     "level": 6,
     "school": "necromancy",
@@ -2946,6 +2972,7 @@
   },
   "HEAT_METAL": {
     "id": "HEAT_METAL",
+    "tomePools": ["ELEMENTS"],
     "name": "Heat Metal",
     "level": 2,
     "school": "transmutation",
@@ -2965,6 +2992,7 @@
   },
   "HELLISH_REBUKE": {
     "id": "HELLISH_REBUKE",
+    "tomePools": ["ELEMENTS"],
     "name": "Hellish Rebuke",
     "level": 1,
     "school": "evocation",
@@ -3136,6 +3164,7 @@
   },
   "ICE_STORM": {
     "id": "ICE_STORM",
+    "tomePools": ["ARCANE"],
     "name": "Ice Storm",
     "level": 4,
     "school": "evocation",
@@ -3212,6 +3241,7 @@
   },
   "INCENDIARY_CLOUD": {
     "id": "INCENDIARY_CLOUD",
+    "tomePools": ["TARMIN"],
     "name": "Incendiary Cloud",
     "level": 8,
     "school": "conjuration",
@@ -3231,6 +3261,7 @@
   },
   "INFLICT_WOUNDS": {
     "id": "INFLICT_WOUNDS",
+    "tomePools": ["INITIATE"],
     "name": "Inflict Wounds",
     "level": 1,
     "school": "necromancy",
@@ -3250,6 +3281,7 @@
   },
   "INSECT_PLAGUE": {
     "id": "INSECT_PLAGUE",
+    "tomePools": ["ARCANE"],
     "name": "Insect Plague",
     "level": 5,
     "school": "conjuration",
@@ -3424,7 +3456,7 @@
     "name": "Light",
     "level": 0,
     "school": "evocation",
-    "mpCost": 0,
+    "mpCost": 2,
     "range": 1,
     "targetType": "TOUCH",
     "damageDice": "1d8",
@@ -3440,6 +3472,7 @@
   },
   "LIGHTNING_BOLT": {
     "id": "LIGHTNING_BOLT",
+    "tomePools": ["ELEMENTS", "ARCANE"],
     "name": "Lightning Bolt",
     "level": 3,
     "school": "evocation",
@@ -3535,6 +3568,7 @@
   },
   "MAGE_ARMOR": {
     "id": "MAGE_ARMOR",
+    "tomePools": ["INITIATE"],
     "name": "Mage Armor",
     "level": 1,
     "school": "abjuration",
@@ -3611,6 +3645,7 @@
   },
   "MAGIC_MISSILE": {
     "id": "MAGIC_MISSILE",
+    "tomePools": ["INITIATE"],
     "name": "Magic Missile",
     "level": 1,
     "school": "evocation",
@@ -4105,6 +4140,7 @@
   },
   "PHANTASMAL_KILLER": {
     "id": "PHANTASMAL_KILLER",
+    "tomePools": ["ARCANE"],
     "name": "Phantasmal Killer",
     "level": 4,
     "school": "illusion",
@@ -4219,10 +4255,11 @@
   },
   "POISON_SPRAY": {
     "id": "POISON_SPRAY",
+    "tomePools": ["INITIATE"],
     "name": "Poison Spray",
     "level": 0,
     "school": "conjuration",
-    "mpCost": 0,
+    "mpCost": 2,
     "range": 2,
     "targetType": "PROJECTILE",
     "damageDice": "1d12",
@@ -4333,6 +4370,7 @@
   },
   "PRISMATIC_SPRAY": {
     "id": "PRISMATIC_SPRAY",
+    "tomePools": ["TARMIN"],
     "name": "Prismatic Spray",
     "level": 7,
     "school": "evocation",
@@ -4561,6 +4599,7 @@
   },
   "RAY_OF_FROST": {
     "id": "RAY_OF_FROST",
+    "tomePools": ["INITIATE"],
     "name": "Ray of Frost",
     "level": 0,
     "school": "evocation",
@@ -4751,6 +4790,7 @@
   },
   "SACRED_FLAME": {
     "id": "SACRED_FLAME",
+    "tomePools": ["INITIATE"],
     "name": "Sacred Flame",
     "level": 0,
     "school": "evocation",
@@ -4789,6 +4829,7 @@
   },
   "SCORCHING_RAY": {
     "id": "SCORCHING_RAY",
+    "tomePools": ["ELEMENTS"],
     "name": "Scorching Ray",
     "level": 2,
     "school": "evocation",
@@ -4941,6 +4982,7 @@
   },
   "SHATTER": {
     "id": "SHATTER",
+    "tomePools": ["ELEMENTS"],
     "name": "Shatter",
     "level": 2,
     "school": "evocation",
@@ -4960,6 +5002,7 @@
   },
   "SHIELD": {
     "id": "SHIELD",
+    "tomePools": ["INITIATE"],
     "name": "Shield",
     "level": 1,
     "school": "abjuration",
@@ -5017,6 +5060,7 @@
   },
   "SHOCKING_GRASP": {
     "id": "SHOCKING_GRASP",
+    "tomePools": ["INITIATE"],
     "name": "Shocking Grasp",
     "level": 0,
     "school": "evocation",
@@ -5302,6 +5346,7 @@
   },
   "STINKING_CLOUD": {
     "id": "STINKING_CLOUD",
+    "tomePools": ["ARCANE"],
     "name": "Stinking Cloud",
     "level": 3,
     "school": "conjuration",
@@ -5397,6 +5442,7 @@
   },
   "SUNBEAM": {
     "id": "SUNBEAM",
+    "tomePools": ["TARMIN"],
     "name": "Sunbeam",
     "level": 6,
     "school": "evocation",
@@ -5416,6 +5462,7 @@
   },
   "SUNBURST": {
     "id": "SUNBURST",
+    "tomePools": ["TARMIN"],
     "name": "Sunburst",
     "level": 8,
     "school": "evocation",
@@ -5492,6 +5539,7 @@
   },
   "TELEPORT": {
     "id": "TELEPORT",
+    "tomePools": ["TARMIN"],
     "name": "Teleport",
     "level": 7,
     "school": "conjuration",
@@ -5549,6 +5597,7 @@
   },
   "THUNDERWAVE": {
     "id": "THUNDERWAVE",
+    "tomePools": ["INITIATE", "ELEMENTS"],
     "name": "Thunderwave",
     "level": 1,
     "school": "evocation",
@@ -5556,7 +5605,7 @@
     "range": 1,
     "targetType": "SELF",
     "damageDice": "2d8",
-    "damageType": "FORCE",
+    "damageType": "THUNDER",
     "domain": "SPIRITUAL",
     "duration": "Instantaneous",
     "statusEffect": null,
@@ -5777,6 +5826,7 @@
   },
   "VICIOUS_MOCKERY": {
     "id": "VICIOUS_MOCKERY",
+    "tomePools": ["INITIATE"],
     "name": "Vicious Mockery",
     "level": 0,
     "school": "enchantment",

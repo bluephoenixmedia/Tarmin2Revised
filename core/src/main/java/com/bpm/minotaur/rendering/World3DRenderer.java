@@ -131,6 +131,8 @@ public class World3DRenderer implements Disposable {
     private final Color currentDirLightColor = new Color(0f, 0f, 0f, 1f);
     private final Color targetDirLightColor = new Color(0f, 0f, 0f, 1f);
     private final Color scratchColor = new Color();
+    // Separate from scratchColor: both are live within the same uniform-upload block.
+    private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
     public World3DRenderer() {
@@ -299,6 +301,14 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
         shader.setUniformf("u_doomFactor", doomFactor);
 
+        // Sky bounce: only outdoors on the surface, under open sky. The shelter has a roof, so
+        // it gets no bounce even though the skybox still draws through its windows.
+        boolean skyOverhead = (currentLevel == 1) && !isIndoors;
+        // Damped like the ambient: the rim tints surfaces, it does not repaint them.
+        Color rimTint = (dnm != null) ? dnm.getWorldTint(rimScratchColor) : Color.WHITE;
+        shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
+        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
             // Shelter Haven: warm hearth/lamp sanctuary ambient
@@ -312,7 +322,9 @@ public class World3DRenderer implements Disposable {
         } else {
             // Level 1 Outdoors: dynamically calibrated from Day/Night cycle and Weather
             float dayAmbient = (dnm != null) ? dnm.getAmbientLight() : 0.60f;
-            Color skyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+            // Damped, not the full sky palette: at full strength the volcanic tint eats world
+            // materials, turning hedge greens to olive-red mud (issue #104, Q22).
+            Color skyTint = (dnm != null) ? dnm.getWorldTint(scratchColor) : Color.WHITE;
             float weatherDim = (wm != null) ? wm.getGlobalLightDimmer() : 1.0f;
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint
@@ -926,7 +938,15 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /**
+     * Free-running clock for the mimic idle bob and reveal shudder. Driven by wall time
+     * rather than a per-item timer so chests breathe out of phase with one another.
+     */
+    private float mimicIdlePhase = 0f;
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
+        mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
+
         List<Renderable> entities = new ArrayList<>();
         entities.addAll(maze.getItems().values());
 
@@ -1137,6 +1157,30 @@ public class World3DRenderer implements Disposable {
                         w = Math.min(0.40f, w * 0.85f);
                     }
 
+                    // --- MIMIC TELLS ---
+                    // A disguised mimic breathes. This is the always-on tell every
+                    // player gets regardless of Wisdom: too small to notice in passing,
+                    // learnable once you know to look for it.
+                    // TODO: replace with the dedicated mimic_chest.png silhouette variant
+                    // once the asset exists -- swap it in at spawn and delete this bob.
+                    if (it.isMimic()) {
+                        float bob = MimicBob.worldOffset(mimicIdlePhase, ex, ey);
+                        renderFeetY += bob;
+                        h *= 1.0f + bob * 0.5f;
+                    }
+
+                    // Once the player has reached for it, the lid thrashes: a beat of
+                    // warning before the burst covers the swap.
+                    GridPoint2 shudderTile = (combatManager != null) ? combatManager.getMimicRevealTile() : null;
+                    if (shudderTile != null && shudderTile.x == (int) ex && shudderTile.y == (int) ey) {
+                        float progress = combatManager.getMimicShudderProgress();
+                        float violence = 0.02f + progress * 0.05f;
+                        renderX += (float) Math.sin(mimicIdlePhase * 11f) * violence;
+                        renderFeetY += Math.abs((float) Math.sin(mimicIdlePhase * 17f)) * violence;
+                        w *= 1.0f + progress * 0.22f;
+                        h *= 1.0f + progress * 0.22f;
+                    }
+
                     dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, it.getColor(), camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
@@ -1164,7 +1208,12 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
-                    dynamicBatcher.addBillboard(ex, 0.0f, wz, sw, sh, reg, tint, camRight, camUp, camDir);
+                    float feetY = 0.0f;
+                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                        feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
+                    }
+
+                    dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Ladder) {

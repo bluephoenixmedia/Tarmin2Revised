@@ -103,16 +103,49 @@ public class DayNightManagerTest {
     public void testDirectionalLightColors() {
         Color lightColor = new Color();
 
-        // Noon: warm white daylight
+        // Noon: the key light is volcanic rather than solar -- warm and red-dominant, but damped
+        // by WORLD_TINT_STRENGTH so world materials stay readable (issue #104).
         manager.setTimeOfDay(0.50f);
         manager.getDirectionalLightColor(lightColor);
-        assertTrue(lightColor.r > 0.8f);
-        assertTrue(lightColor.g > 0.8f);
+        assertTrue("Volcanic daylight should be red-dominant", lightColor.r > lightColor.g);
+        assertTrue("Firelight keeps more green than blue", lightColor.g > lightColor.b);
+        assertTrue("Daylight should still read as bright", lightColor.r > 0.8f);
+        assertTrue("World light must stay damped, not fully volcanic", lightColor.g > 0.5f);
 
         // Midnight: cool moonlight
         manager.setTimeOfDay(0.0f);
         manager.getDirectionalLightColor(lightColor);
         assertTrue(lightColor.b > lightColor.r); // Blue dominates
+    }
+
+    @Test
+    public void testVolcanicSkyPaletteAndWorldTintClamp() {
+        manager.setTimeOfDay(0.50f); // Noon
+
+        // The sky itself burns: the palette is volcanic at every hour, never neutral white.
+        Color sky = manager.getSkyTint();
+        assertTrue("Noon sky must be red-dominant, not white", sky.r > sky.g + 0.3f);
+
+        // The zenith stays dark so the fire reads as a band above the walls, not a flood.
+        Color zenith = manager.getZenithTint();
+        assertTrue("Zenith must be far darker than the sky tint", zenith.r < sky.r * 0.5f);
+        assertTrue("Zenith leans purple rather than orange", zenith.b > zenith.g);
+
+        // World lighting only leans toward the palette -- it never matches it.
+        Color world = manager.getWorldTint(new Color());
+        assertTrue("World tint must sit between neutral and the sky", world.g > sky.g);
+        assertTrue("World tint must still follow the sky", world.g < 1.0f);
+    }
+
+    @Test
+    public void testSkyTintIsVolcanicAtEveryPhase() {
+        // No hour of the day may return to a neutral or cool-dominant sky.
+        float[] hours = {0.00f, 0.26f, 0.50f, 0.72f, 0.90f};
+        for (float t : hours) {
+            manager.setTimeOfDay(t);
+            Color sky = manager.getSkyTint();
+            assertTrue("Sky must stay warm-dominant at t=" + t, sky.r > sky.b);
+        }
     }
 
     @Test

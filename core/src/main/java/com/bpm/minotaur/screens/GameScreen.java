@@ -169,15 +169,6 @@ public class GameScreen extends BaseScreen {
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
 
-        switch (level) {
-            case 1:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_maze.mp3");
-                break;
-            default:
-                MusicManager.getInstance().playTrack("sounds/music/tarmin_fuxx.ogg");
-                break;
-        }
-
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
 
@@ -299,12 +290,48 @@ public class GameScreen extends BaseScreen {
             hud.setDiscoveryManager(this.discoveryManager);
             player.setItemPickupListener(item -> hud.showPickupToast(item));
             inputMultiplexer.clear();
+            // First in line so a key or click anywhere, HUD included, only breaks a study's
+            // concentration instead of also moving, attacking or pressing a button.
+            inputMultiplexer.addProcessor(tomeStudyBreaker);
             // The F11 weapon tuner passes everything through while closed, and while open
             // has to see the arrows before the game turns them into movement.
             inputMultiplexer.addProcessor(weaponTunerPanel);
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
+        }
+        if (weaponOverlay != null && player != null && player.getInventory() != null) {
+            weaponOverlay.setEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+        }
+        updateMusicTrackForCurrentZone();
+    }
+
+    public void updateMusicTrackForCurrentZone() {
+        if (player == null || maze == null) return;
+        // Don't override combat music if combat is in progress
+        if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN
+                || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_SELECT_DICE
+                || combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_RESOLUTION
+                || combatManager.getCurrentState() == CombatManager.CombatState.PHYSICS_DELAY
+                || combatManager.getCurrentState() == CombatManager.CombatState.MONSTER_TURN
+                || combatManager.getCurrentState() == CombatManager.CombatState.MONSTER_REVEAL)) {
+            return;
+        }
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        boolean isShelter = maze.isHomeTile(px, py);
+
+        if (isShelter) {
+            MusicManager.getInstance().playShelterMusic("sounds/music/tarmin_ambient.ogg");
+        } else {
+            int strataDepth = Math.max(1, (currentLevel - 1) / 3 + 1);
+            if (strataDepth >= 3 || currentLevel >= 4) {
+                MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_catacombs_drone.wav");
+            } else {
+                MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_maze.mp3");
+            }
         }
     }
 
@@ -483,6 +510,8 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
+        MusicManager.getInstance().update(delta);
+
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
             hitPauseTimer -= delta;
@@ -546,6 +575,10 @@ public class GameScreen extends BaseScreen {
             eventManager.update(delta);
             handleSystemEvents();
             updateTomeStudy(delta);
+            if (player != null && player.getPendingTomeChoice() != null) {
+                game.setScreen(new SpellbookScreen(game, this, player, maze));
+                return;
+            }
 
             if (worldManager != null) {
                 worldManager.update(delta);
@@ -1173,11 +1206,15 @@ public class GameScreen extends BaseScreen {
             int divinitiesEarnedThisRun = telemetry.getDivinitiesEarned();
             telemetry.exportRun(epitaphCause);
 
+            // Roll discoveries unlocked for future expeditions
+            java.util.List<String> newUnlocks = com.bpm.minotaur.managers.UnlockManager.getInstance()
+                    .rollRunUnlocks(telemetry, depthReached);
+
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             soundManager.playPlayerDeathSound();
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
-                    divinitiesEarnedThisRun);
+                    divinitiesEarnedThisRun, newUnlocks);
             game.setScreen(deathScreen);
             return;
         }
@@ -1313,6 +1350,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setHydration(80.0f);
         player.getStats().setToxicity(0);
         player.getStatusManager().clearEffects();
+        player.abandonTomeStudy();
         // The Player instance survives death, so anatomical trauma must be wiped
         // explicitly -- otherwise open wounds, bleeding, and fever follow the
         // character into the next expedition and can bleed them out before their
@@ -1321,14 +1359,14 @@ public class GameScreen extends BaseScreen {
             player.getInjuryManager().cureAll();
         }
 
-        // Only re-arm a starter weapon/cross if the player somehow has nothing equipped
+        // Only re-arm a starter weapon if the player somehow has nothing in hand. The
+        // off-hand is deliberately left empty: a new game starts with an empty left hand,
+        // so re-arming it here handed out a free WOODEN_CROSS on essentially every death.
+        // That is not cosmetic -- the cross is a Spiritual weapon, and Bad monsters are
+        // immune to War damage, so it quietly gifted the counter to a whole category.
         if (player.getInventory().getRightHand() == null) {
             Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
             player.getInventory().setRightHand(starterWeapon);
-        }
-        if (player.getInventory().getLeftHand() == null) {
-            Item starterCross = game.getItemDataManager().createItem(Item.ItemType.WOODEN_CROSS, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setLeftHand(starterCross);
         }
 
         // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
@@ -1342,15 +1380,11 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
 
-        // Travel crafting kits: guarantee the player always retains the portable field kits
-        if (!player.getInventory().hasItemOfType(Item.ItemType.CRAFTING_TOOLKIT)) {
-            Item craftingToolkit = game.getItemDataManager().createItem(Item.ItemType.CRAFTING_TOOLKIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().pickupToBackpack(craftingToolkit);
-        }
-        if (!player.getInventory().hasItemOfType(Item.ItemType.COOKING_KIT)) {
-            Item cookingKit = game.getItemDataManager().createItem(Item.ItemType.COOKING_KIT, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().pickupToBackpack(cookingKit);
-        }
+        // Travel kits: replace any the player has paid for at the Altar but no longer
+        // carries. They are not a death handout -- owning the Crafting Bench or Fire Pot
+        // is what earns the portable version, and this is only the top-up for one lost
+        // in the field.
+        grantOwedFieldKits();
 
         // Shelter Altar Provisions tier: extra rations at the start of each expedition
         int bonusProvisions = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getBonusProvisionCount();
@@ -1426,9 +1460,16 @@ public class GameScreen extends BaseScreen {
     }
 
     private void playerTurnTakesAction() {
+        if (MusicManager.getInstance().isResting()) {
+            MusicManager.getInstance().setResting(false);
+        }
+        updateMusicTrackForCurrentZone();
         processPlayerStatusEffects();
         player.getStatusManager().updateTurn();
         player.tickFieldRestCooldown();
+        checkForMimicInFront();
+        combatManager.tickReload();
+        tickPowderDampness();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }
@@ -1450,6 +1491,114 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /**
+     * Rolls the mimic perception check against whatever chest the player is now facing.
+     *
+     * <p>Hooked to the turn rather than the render loop: at 60fps a per-frame roll would
+     * make detection certain the instant the player looked at a mimic. The roll is also
+     * spent on the Item, so walking away and back does not buy a second one.
+     */
+    private void checkForMimicInFront() {
+        if (player == null || maze == null) {
+            return;
+        }
+        Vector2 v = player.getFacing().getVector();
+        GridPoint2 front = new GridPoint2(
+                (int) (player.getPosition().x + v.x),
+                (int) (player.getPosition().y + v.y));
+
+        Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, front);
+        if (chest == null) {
+            return;
+        }
+
+        int wisdom = (player.getStats() != null) ? player.getStats().getWisdom() : 10;
+        if (com.bpm.minotaur.gamedata.monster.MimicDetection.attempt(chest, wisdom, mimicPerceptionRng)) {
+            eventManager.addEvent(new GameEvent("Something about that chest is wrong.", 3f));
+            hud.addMessage("Something about that chest is wrong.");
+        }
+    }
+
+    /**
+     * Carries the player's powder dampness for the turn: soaked by rain or by wading,
+     * drying slowly once out of it.
+     *
+     * <p>Dampness lives on the player rather than being read from the weather at the
+     * moment a shot is fired. Weather wetness is outdoor-only and nearly all play is in
+     * the strata, so a live read would mean firearms never misfire in practice and the
+     * mechanic would never be seen.
+     */
+    private void tickPowderDampness() {
+        if (player == null || player.getStats() == null) {
+            return;
+        }
+
+        boolean exposed = false;
+
+        if (worldManager != null && worldManager.getWeatherManager() != null) {
+            exposed = com.bpm.minotaur.gamedata.firearm.PowderDampness
+                    .isSoakingWeather(worldManager.getWeatherManager().getWetness());
+        }
+
+        if (!exposed && maze != null && maze.getLiquidManager() != null) {
+            exposed = maze.getLiquidManager().hasLiquidAt(
+                    (int) player.getPosition().x, (int) player.getPosition().y);
+        }
+
+        float dampness = player.getStats().getPowderDampness();
+        player.getStats().setPowderDampness(exposed
+                ? com.bpm.minotaur.gamedata.firearm.PowderDampness.afterExposure()
+                : com.bpm.minotaur.gamedata.firearm.PowderDampness.afterDryTurn(dampness));
+    }
+
+    private final java.util.Random mimicPerceptionRng = new java.util.Random();
+
+    /**
+     * Resolves what the player just bumped into, dropping the disguise of a mimic they
+     * have already seen through.
+     *
+     * <p>Only a detected mimic can be struck this way. An unspotted one is still a chest
+     * as far as the player knows, and swinging at it would be knowledge they have not
+     * earned -- without that restriction a paranoid player could simply attack every
+     * chest in the dungeon and skip the encounter entirely.
+     *
+     * @return the monster to strike, or null if this is not a fight.
+     */
+    private Monster resolveBumpTarget(int tx, int ty) {
+        GridPoint2 tile = new GridPoint2(tx, ty);
+
+        Monster existing = maze.getMonsters().get(tile);
+        if (existing != null) {
+            return existing;
+        }
+
+        Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, tile);
+        if (chest != null && chest.isMimicSeen() && combatManager != null) {
+            return combatManager.revealMimicPreEmptively(tile, currentLevel);
+        }
+        return null;
+    }
+
+    private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
+        @Override
+        public boolean keyDown(int keycode) {
+            return breakTomeStudy();
+        }
+
+        @Override
+        public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            return breakTomeStudy();
+        }
+    };
+
+    private boolean breakTomeStudy() {
+        if (player == null || player.getActiveTomeStudy() == null) {
+            return false;
+        }
+        player.cancelTomeStudy(eventManager);
+        return true;
+    }
+
     /** Real-time seconds between the world turns of a Tome being studied in the field. */
     private static final float TOME_STUDY_SECONDS_PER_TURN = 0.25f;
     private float tomeStudyTimer;
@@ -1469,11 +1618,11 @@ public class GameScreen extends BaseScreen {
         }
         tomeStudyTimer = 0f;
         playerTurnTakesAction();
+        player.advanceTomeStudy(maze, eventManager);
+        // A monster that engaged without being seen (e.g. invisible) still ends the study.
         if (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
             player.cancelTomeStudy(eventManager);
-            return;
         }
-        player.advanceTomeStudy(maze, eventManager);
     }
 
     /** World ticks a field Rest (H) advances per press, so a nearby monster can close in during it. */
@@ -1491,8 +1640,10 @@ public class GameScreen extends BaseScreen {
      * close in mid-rest even though spamming it is no longer possible.
      */
     private void performFieldRestAction() {
+        MusicManager.getInstance().setResting(true);
         Player.FieldRestResult result = player.attemptFieldRest(eventManager);
         if (!result.success) {
+            MusicManager.getInstance().setResting(false);
             return; // The refusal message was already queued by attemptFieldRest.
         }
 
@@ -1748,9 +1899,9 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
-        // Any key breaks the concentration of a Tome being studied (and does nothing else).
-        if (player != null && player.getActiveTomeStudy() != null) {
-            player.cancelTomeStudy(eventManager);
+        // --- Forward keyboard input to active BonesAwakenModal ---
+        if (hud != null && hud.getBonesAwakenModal() != null && hud.getBonesAwakenModal().isVisible()) {
+            hud.getBonesAwakenModal().handleInput(keycode);
             return true;
         }
 
@@ -1928,6 +2079,17 @@ public class GameScreen extends BaseScreen {
                         Vector2 dir = player.getFacing().getVector();
                         int fx = (int) (player.getPosition().x + dir.x);
                         int fy = (int) (player.getPosition().y + dir.y);
+                        GridPoint2 targetTile = new GridPoint2(fx, fy);
+                        GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
+
+                        // Check Decomposing Corpse (Hero Remains / NetHack bones)
+                        Scenery scFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(targetTile) : null;
+                        Scenery scFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
+                        if ((scFront != null && scFront.isDecomposingCorpse()) || (scFeet != null && scFeet.isDecomposingCorpse())) {
+                            interactWithWorldObject();
+                            return true;
+                        }
+
                         if (maze.getGameObjectAt(fx, fy) instanceof Window) {
                             interactWithWorldObject();
                             return true;
@@ -2098,7 +2260,8 @@ public class GameScreen extends BaseScreen {
                     Vector2 dir = player.getFacing().getVector();
                     int tx = (int) Math.floor(player.getPosition().x + dir.x);
                     int ty = (int) Math.floor(player.getPosition().y + dir.y);
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    combatManager.abandonReload();
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerShieldBash(bumpTarget);
                     } else {
@@ -2115,7 +2278,16 @@ public class GameScreen extends BaseScreen {
                 Item weapon = player.getInventory().getRightHand();
                 if (weapon != null) {
                     if (weapon.isRanged()) {
+                        boolean wasExploring =
+                                combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
                         combatManager.playerAttackInstant();
+                        // Firing costs a turn. Opening fire out of exploration used to be
+                        // free: ammunition spent, the level woken, and no turn passed --
+                        // so the reload never advanced either. In-combat shots pass their
+                        // turn through the combat state machine instead.
+                        if (wasExploring) {
+                            playerTurnTakesAction();
+                        }
                         return true;
                     } else if (weapon.isThrown()) {
                         if (combatManager.throwWeapon(weapon)) {
@@ -2140,7 +2312,8 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    combatManager.abandonReload();
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
 
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
@@ -2179,7 +2352,8 @@ public class GameScreen extends BaseScreen {
                         return true;
                     }
 
-                    Monster bumpTarget = maze.getMonsters().get(new GridPoint2(tx, ty));
+                    combatManager.abandonReload();
+                    Monster bumpTarget = resolveBumpTarget(tx, ty);
                     if (bumpTarget != null) {
                         combatManager.playerMeleeStrike(bumpTarget);
                     } else {
@@ -2218,7 +2392,10 @@ public class GameScreen extends BaseScreen {
                     return true;
                 case Input.Keys.U:
                     player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
-                    playerTurnTakesAction();
+                    // A Tome study spends its own turns as it is channelled.
+                    if (player.getActiveTomeStudy() == null) {
+                        playerTurnTakesAction();
+                    }
                     return true;
                 case Input.Keys.Z:
                     if (player.castPreparedSpell(0, maze, eventManager, combatManager)) {
@@ -2330,6 +2507,9 @@ public class GameScreen extends BaseScreen {
                     openFieldCrafting();
                     return true;
                 case Input.Keys.K:
+                    openSkillTree();
+                    return true;
+                case Input.Keys.J:
                     openFieldCooking();
                     return true;
             }
@@ -2347,6 +2527,11 @@ public class GameScreen extends BaseScreen {
                     combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
             }
+            return true;
+        }
+
+        if (keycode == SettingsManager.getInstance().getKey("SKILL_TREE")) {
+            openSkillTree();
             return true;
         }
 
@@ -2581,7 +2766,9 @@ public class GameScreen extends BaseScreen {
                 break;
             case NORMAL:
                 player.useItem(item, eventManager, discoveryManager, maze);
-                playerTurnTakesAction();
+                if (player.getActiveTomeStudy() == null) {
+                    playerTurnTakesAction();
+                }
                 break;
             default:
                 break;
@@ -2761,6 +2948,35 @@ public class GameScreen extends BaseScreen {
 
         GridPoint2 currentTile = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);
 
+        // MIMIC: this must run before Player.interact for two reasons. Every
+        // REGULAR_CHEST is force-locked at construction (Item.java) and the container
+        // branch returns early when the player has no key, so a check placed after it
+        // would only ever fire for key-carrying players. And that same branch does
+        // `maze.getItems().remove(targetTile)` -- letting a mimic reach it would delete
+        // the creature outright, so this path always returns rather than falling through.
+        Item mimicChest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, target);
+        if (mimicChest != null) {
+            if (combatManager != null
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                if (mimicChest.isMimicSeen()) {
+                    // Already seen through: reaching for it IS an attack, and the player
+                    // keeps the initiative their perception check bought them.
+                    Monster spotted = combatManager.revealMimicPreEmptively(target, maze.getLevel());
+                    if (spotted != null) {
+                        combatManager.playerMeleeStrike(spotted);
+                    }
+                } else {
+                    // Deliberately does not advance the turn: the mimic's free blow is
+                    // the cost of reaching for the chest, and letting the rest of the
+                    // level act while the reveal state is blocking invites the two state
+                    // machines to interleave.
+                    combatManager.triggerMimicAmbush(target, maze.getLevel());
+                }
+            }
+            needsAsciiRender = true;
+            return;
+        }
+
         // Check Decomposing Corpse (NetHack-style Bones remains)
         Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;
         Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
@@ -2867,6 +3083,34 @@ public class GameScreen extends BaseScreen {
     }
 
     /**
+     * Tops the player up with any portable field kit they unlocked at the Altar but are no
+     * longer carrying, reporting anything their pack had no room for.
+     *
+     * <p>The purchase path grants separately, at the Altar, so buying a station does not
+     * require dying to collect the kit it teaches.
+     */
+    private void grantOwedFieldKits() {
+        if (player == null) {
+            return;
+        }
+
+        com.bpm.minotaur.gamedata.progression.FieldKitGrant.Result result =
+                com.bpm.minotaur.gamedata.progression.FieldKitGrant.grantOwed(
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getUnlockedStations(),
+                        player.getInventory(),
+                        game.getItemDataManager(),
+                        game.getAssetManager());
+
+        // A full pack used to swallow the grant without a word, which is why the kits
+        // seemed to appear only sometimes. Say so instead.
+        if (hud != null) {
+            for (Item kit : result.getNoRoom()) {
+                hud.addMessage("No room for your " + kit.getDisplayName() + " -- free a pack slot.");
+            }
+        }
+    }
+
+    /**
      * Opens the crafting workshop in portable field-kit mode: requires a Crafting Toolkit
      * in the pack, and works with carried materials only (no Shelter Chest access).
      */
@@ -2903,6 +3147,13 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    public void openSkillTree() {
+        if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
+            game.setScreen(new SkillTreeScreen(game, this, player, maze));
+        }
+    }
+
     public void pickupWorldItem() {
         player.interactWithItem(maze, eventManager, soundManager, discoveryManager);
         playerTurnTakesAction();
@@ -2926,6 +3177,7 @@ public class GameScreen extends BaseScreen {
             ladder = maze.getLadders().get(inFront);
 
         if (ladder != null) {
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_enter_fx.ogg");
             GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
             List<Monster> pursuers = new ArrayList<>();
             if (this.maze != null) {
@@ -2991,6 +3243,7 @@ public class GameScreen extends BaseScreen {
                     hud.addMessage("You cannot ascend any higher.");
                 }
             }
+            updateMusicTrackForCurrentZone();
             playerTurnTakesAction();
         }
     }
@@ -3013,6 +3266,21 @@ public class GameScreen extends BaseScreen {
 
     public SoundManager getSoundManager() {
         return soundManager;
+    }
+
+    public Hud getHud() {
+        return hud;
+    }
+
+    public CraftingManager getCraftingManager() {
+        if (craftingManager == null) {
+            craftingManager = new CraftingManager(game.getItemDataManager(), game.getAssetManager());
+        }
+        return craftingManager;
+    }
+
+    public CombatDiceOverlay getCombatDiceOverlay() {
+        return combatDiceOverlay;
     }
 
     public void killPlayer() {

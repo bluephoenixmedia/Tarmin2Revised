@@ -99,6 +99,8 @@ public class Hud implements Disposable {
     private final Label warStrengthValueLabel;
     private final Label spiritualStrengthValueLabel;
     private final Label arrowsValueLabel;
+    /** Ammunition and reload state. Shown, unlike arrowsValueLabel, which is orphaned. */
+    private final Label ammoLabel;
     private final Label directionLabel;
     private final Label dungeonLevelLabel;
     private final Label monsterStrengthLabel;
@@ -121,6 +123,7 @@ public class Hud implements Disposable {
     // --- 5-Slot Spell Quick-Cast Hotbar ---
     private final Table spellHotbarTable;
     private final Table[] spellSlots = new Table[5];
+    private final Label[] spellBadgeLabels = new Label[5];
     private final Label[] spellNameLabels = new Label[5];
     private final Label[] spellCostLabels = new Label[5];
 
@@ -303,6 +306,7 @@ public class Hud implements Disposable {
         dayNightLabel = new Label("06:00 DAWN", smallGoldStyle);
         levelBadgeLabel = new Label("LVL 1", smallGoldStyle);
         arrowsValueLabel = new Label("", smallStyle);
+        ammoLabel = new Label("", smallStyle);
         treasureValueLabel = new Label("", smallStyle);
         directionLabel = new Label("", directionLabelStyle);
 
@@ -354,6 +358,7 @@ public class Hud implements Disposable {
         divDoomCol.add(dayNightLabel).left().row();
         divDoomCol.add(divinitiesLabel).left().padTop(2).row();
         divDoomCol.add(doomLabel).left().padTop(2).row();
+        divDoomCol.add(ammoLabel).left().padTop(2).row();
         vitalsSubRow.add(divDoomCol).left();
 
         barsCol.add(vitalsSubRow).left().row();
@@ -398,7 +403,11 @@ public class Hud implements Disposable {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
                     Item item = player.getInventory().getQuickSlots()[slotIdx];
                     Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                    hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, "Hotkey " + (slotIdx + 1));
+                    String hotkeyHint = "Hotkey " + (slotIdx + 1);
+                    if (item != null && item.isWeapon()) {
+                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]";
+                    }
+                    hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, hotkeyHint);
                 }
 
                 @Override
@@ -543,30 +552,31 @@ public class Hud implements Disposable {
 
         // --- Assemble 5-Slot Spell Quick-Cast Hotbar ---
         spellHotbarTable = new Table();
-        spellHotbarTable.setBackground(hudSkin.getDashboardBg());
-        spellHotbarTable.pad(2f, 4f, 2f, 4f);
-        Label spellTitle = new Label("SPL", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        spellHotbarTable.add(spellTitle).padRight(4);
+        spellHotbarTable.setBackground(hudSkin.getPanelBg());
+        spellHotbarTable.pad(4f);
 
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
             spellSlots[i] = new Table();
             spellSlots[i].setBackground(hudSkin.getSlotRecessed());
-            spellSlots[i].top().left();
+            spellSlots[i].pad(2f, 5f, 2f, 5f);
+            spellSlots[i].top();
 
-            Label badge = new Label("[" + (i + 1) + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
-            badge.setFontScale(0.7f);
-            spellSlots[i].add(badge).padLeft(1).padTop(1).row();
-
-            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontSmall(), Color.CYAN));
-            spellNameLabels[i].setFontScale(0.62f);
+            // One row: [key] name  cost. Stacking the badge above the name meant two
+            // lines competing for a slot barely tall enough for one, which is what made
+            // them overlap. The full name, school and description are on hover.
+            String slotKey = (i < com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS.length)
+                    ? com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i]
+                    : String.valueOf(i + 1);
+            spellBadgeLabels[i] = new Label("[" + slotKey + "]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
+            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.valueOf("4DEEEA")));
             spellNameLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellNameLabels[i]).width(52).padLeft(1).row();
+            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_MP_ON_DARK));
 
-            spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-            spellCostLabels[i].setFontScale(0.62f);
-            spellCostLabels[i].setEllipsis(true);
-            spellSlots[i].add(spellCostLabels[i]).width(52).padLeft(1);
+            spellSlots[i].add(spellBadgeLabels[i]).left().padRight(7f);
+            // minWidth(0) lets the cell shrink so the ellipsis actually engages.
+            spellSlots[i].add(spellNameLabels[i]).expandX().fillX().minWidth(0f).left();
+            spellSlots[i].add(spellCostLabels[i]).right().padLeft(4f);
 
             spellSlots[i].addListener(new ClickListener() {
                 @Override
@@ -585,7 +595,16 @@ public class Hud implements Disposable {
                         com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                         if (st != null) {
                             Vector2 pos = spellSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                            hudTooltip.showSpell(st.getName(), st.getSchool(), st.getMpCost(), st.getDescription(), pos.x + 38f, pos.y, "Shift+" + (slotIdx + 1));
+                            String hotkeyStr;
+                            switch (slotIdx) {
+                                case 0: hotkeyStr = "Z or Shift+1"; break;
+                                case 1: hotkeyStr = "X or Shift+2"; break;
+                                case 2: hotkeyStr = "V or Shift+3"; break;
+                                case 3: hotkeyStr = "B or Shift+4"; break;
+                                case 4: hotkeyStr = "N or Shift+5"; break;
+                                default: hotkeyStr = "Shift+" + (slotIdx + 1); break;
+                            }
+                            hudTooltip.showSpell(st.getName(), st.getSchool(), st.getMpCost(), st.getDescription(), pos.x + 52f, pos.y, hotkeyStr);
                         }
                     }
                 }
@@ -595,7 +614,7 @@ public class Hud implements Disposable {
                 }
             });
 
-            spellHotbarTable.add(spellSlots[i]).size(56, 40).pad(1);
+            spellHotbarTable.add(spellSlots[i]).size(168f, 24f).pad(2f);
         }
 
         spellHotbarTable.pack();
@@ -635,7 +654,7 @@ public class Hud implements Disposable {
         stage.addActor(encounterWindow);
 
         // Traveling Merchant trading window
-        shopkeeperWindow = new ShopkeeperWindow(font);
+        shopkeeperWindow = new ShopkeeperWindow(font, hudSkin);
         stage.addActor(shopkeeperWindow);
 
         // Decomposing corpse bones awakening modal
@@ -722,7 +741,14 @@ public class Hud implements Disposable {
 
         mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
         expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
-        levelBadgeLabel.setText("LVL " + player.getLevel());
+        int unallocated = player.getStats().getUnallocatedAttributePoints() + player.getStats().getUnallocatedSkillPoints();
+        if (unallocated > 0) {
+            levelBadgeLabel.setText("LVL " + player.getLevel() + " [K: +" + unallocated + "]");
+            levelBadgeLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
+        } else {
+            levelBadgeLabel.setText("LVL " + player.getLevel());
+            levelBadgeLabel.setColor(HudSkin.COL_GOLD_MUTED);
+        }
 
         warStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
         spiritualStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentMP(), player.getMaxMP())));
@@ -761,10 +787,38 @@ public class Hud implements Disposable {
         directionLabel.setText(checkScramble(player.getFacing().name().substring(0, 1)));
         treasureValueLabel.setText(checkScramble(String.format("%d", player.getTreasureScore())));
 
+        // --- Ammunition & Reload ---
+        // A multi-turn reload the player cannot see the end of is indistinguishable
+        // from an unexplained inability to act, so the countdown is shown explicitly.
+        Item readied = player.getInventory().getRightHand();
+        boolean firearmReadied = readied != null
+                && com.bpm.minotaur.gamedata.firearm.FirearmProfile.isFirearm(readied.getType());
+        com.bpm.minotaur.gamedata.firearm.ReloadChannel reload =
+                (gameScreen != null && gameScreen.getCombatManager() != null)
+                        ? gameScreen.getCombatManager().getActiveReload()
+                        : null;
+
+        String ammoText = String.format("ARR: %d  SHOT: %d",
+                player.getArrows(), player.getStats().getShot());
+        if (reload != null) {
+            ammoText += String.format("  RELOADING %d", reload.getTurnsRemaining());
+        }
+        ammoLabel.setText(ammoText);
+
+        boolean shotEmpty = firearmReadied && player.getStats().getShot() <= 0;
+        if (reload != null) {
+            ammoLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+        } else if (shotEmpty) {
+            ammoLabel.setColor(HudSkin.COL_HP_CRITICAL);
+        } else {
+            ammoLabel.setColor(Color.LIGHT_GRAY);
+        }
+
         // --- Ranged Weapon / No Ammo Warning ---
         Item equippedWeapon = player.getInventory().getRightHand();
         boolean noAmmo = equippedWeapon != null && equippedWeapon.isRanged()
-                && equippedWeapon.getType() != Item.ItemType.DART && player.getArrows() <= 0;
+                && equippedWeapon.getType() != Item.ItemType.DART
+                && (firearmReadied ? player.getStats().getShot() <= 0 : player.getArrows() <= 0);
         arrowsValueLabel.setColor(noAmmo ? HudSkin.COL_HP_CRITICAL : Color.WHITE);
         if (noAmmo && !noAmmoWarningActive) {
             eventManager.addEvent(new GameEvent("No ammunition for your " + equippedWeapon.getDisplayName() + "!", 2.5f));
@@ -801,9 +855,11 @@ public class Hud implements Disposable {
         int unlockedSpellSlots = player.getUnlockedSpellSlots();
         for (int i = 0; i < 5; i++) {
             if (i >= unlockedSpellSlots) {
+                spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                spellBadgeLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
                 spellNameLabels[i].setText("LOCKED");
+                spellNameLabels[i].setColor(HudSkin.COL_TEXT_MUTED);
                 spellCostLabels[i].setText("");
-                spellNameLabels[i].setColor(Color.DARK_GRAY);
                 continue;
             }
             String spellId = player.getPreparedSpell(i);
@@ -811,18 +867,32 @@ public class Hud implements Disposable {
                 com.bpm.minotaur.gamedata.spells.SpellTemplate st = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getSpell(spellId);
                 if (st != null) {
                     spellNameLabels[i].setText(st.getName());
-                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "Cantrip" : st.getMpCost() + " MP");
+                    spellCostLabels[i].setText(st.getMpCost() == 0 ? "-" : String.valueOf(st.getMpCost()));
                     boolean canCast = player.hasEnoughMana(st.getMpCost());
-                    spellNameLabels[i].setColor(canCast ? Color.CYAN : Color.GRAY);
-                    spellCostLabels[i].setColor(canCast ? Color.LIGHT_GRAY : Color.DARK_GRAY);
+                    if (canCast) {
+                        spellSlots[i].setBackground(hudSkin.getSlotActive());
+                        spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                        spellNameLabels[i].setColor(Color.valueOf("4DEEEA"));
+                        spellCostLabels[i].setColor(HudSkin.COL_WATER_CYAN);
+                    } else {
+                        spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                        spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
+                        spellNameLabels[i].setColor(Color.GRAY);
+                        spellCostLabels[i].setColor(HudSkin.COL_HP_CRITICAL);
+                    }
                 } else {
+                    spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                    spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                     spellNameLabels[i].setText(spellId);
+                    spellNameLabels[i].setColor(Color.WHITE);
                     spellCostLabels[i].setText("");
                 }
             } else {
+                spellSlots[i].setBackground(hudSkin.getSlotRecessed());
+                spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                 spellNameLabels[i].setText("---");
-                spellCostLabels[i].setText("");
                 spellNameLabels[i].setColor(Color.DARK_GRAY);
+                spellCostLabels[i].setText("");
             }
         }
 
@@ -1852,6 +1922,23 @@ public class Hud implements Disposable {
 
         // 4. Check Containers in front
         if (frontItem != null && frontItem.getCategory() == ItemCategory.CONTAINER) {
+            // A mimic the player has seen through stops pretending on the card. The
+            // detection roll is spent once and persisted, so this has to be the lasting
+            // record of it -- the player should not have to remember which chest it was
+            // three rooms later.
+            if (frontItem.isMimic() && frontItem.isMimicSeen()) {
+                worldInteractionCard.show(
+                        "[IT IS WATCHING YOU]",
+                        "[MIMIC]",
+                        "Mimic",
+                        "The lid breathes. Whatever this is, it is not a chest -- strike it before it strikes you.",
+                        "[ O ]",
+                        "Strike It First",
+                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                );
+                return;
+            }
+
             boolean locked = frontItem.isLocked();
             worldInteractionCard.show(
                     locked ? "[LOCKED CONTAINER]" : "[TREASURE CONTAINER]",
@@ -2151,7 +2238,9 @@ public class Hud implements Disposable {
         float boxW = layout.width + 50;
         float boxH = 46;
         float boxX = (viewport.getWorldWidth() - boxW) / 2f;
-        float boxY = (toastTimer > 0f) ? 940f : 1000f; // Shift down if pickup toast is active
+        boolean hasBridge = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() > 0;
+        float baseY = hasBridge ? 950f : 1000f;
+        float boxY = (toastTimer > 0f) ? (baseY - 60f) : baseY;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
@@ -2712,6 +2801,9 @@ public class Hud implements Disposable {
     }
 
     // --- NEW: Tarmin's Hunger UI ---
+    private static final Color TOME_STUDY_FILL_LIGHT = Color.valueOf("8A6BD1");
+    private static final Color TOME_STUDY_FILL_DARK = Color.valueOf("5B3F9E");
+
     /** Progress of a Tome being studied in the field, centred in the field of view. */
     private void drawTomeStudyBar() {
         com.bpm.minotaur.gamedata.player.TomeStudy study = player.getActiveTomeStudy();
@@ -2729,9 +2821,9 @@ public class Hud implements Disposable {
         shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
         shapeRenderer.rect(x, y, maxW, h);
         if (fraction > 0) {
-            shapeRenderer.setColor(Color.valueOf("8A6BD1"));
+            shapeRenderer.setColor(TOME_STUDY_FILL_LIGHT);
             shapeRenderer.rect(x, y + h / 2f, maxW * fraction, h / 2f);
-            shapeRenderer.setColor(Color.valueOf("5B3F9E"));
+            shapeRenderer.setColor(TOME_STUDY_FILL_DARK);
             shapeRenderer.rect(x, y, maxW * fraction, h / 2f);
         }
         shapeRenderer.end();

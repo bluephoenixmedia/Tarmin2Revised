@@ -120,7 +120,6 @@ public class CookingScreen extends BaseScreen {
         header.pad(16, 24, 16, 24);
         Label titleLabel = new Label(fieldMode ? "PORTABLE COOKWARE" : "THE SHELTER COOKING HEARTH",
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        titleLabel.setFontScale(1.3f);
         header.add(titleLabel).center().row();
 
         Label subLabel = new Label(fieldMode
@@ -203,7 +202,7 @@ public class CookingScreen extends BaseScreen {
 
     private TextButton createTabButton(String text, final int tabIndex) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         style.fontColor = Color.LIGHT_GRAY;
         style.overFontColor = HudSkin.COL_GOLD_BRIGHT;
         style.up = hudSkin.getSlotRecessed();
@@ -211,7 +210,6 @@ public class CookingScreen extends BaseScreen {
         style.over = hudSkin.getSlotActive();
 
         TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.75f);
         btn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -240,12 +238,11 @@ public class CookingScreen extends BaseScreen {
         style.disabled = hudSkin.getSlotRecessed();
 
         TextButton btn = new TextButton(text, style);
-        btn.getLabel().setFontScale(0.78f);
         btn.setDisabled(!enabled);
         return btn;
     }
 
-    private void switchTab(int tabIndex) {
+    public void switchTab(int tabIndex) {
         this.currentTab = tabIndex;
         updateTabButtonStyles();
         refreshRightPanel();

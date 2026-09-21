@@ -95,7 +95,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "............",
             "...##D###...",
             "...#L.AC#...",
-            "...W...N#...",
+            "...WT..N#...",
             "...#F.BL#...",
             "...######...",
             "............",
@@ -720,6 +720,14 @@ public class MazeChunkGenerator implements IChunkGenerator {
                         maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
                                 LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
                                 LightSource.FlickerProfile.LANTERN_BREATH));
+                    }
+                } else if (c == 'T') {
+                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY, x, y);
+                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY)) {
+                        maze.addItem(
+                                itemDataManager.createItem(Item.ItemType.HOME_TRAINING_DUMMY, x, y, ItemColor.TAN, assetManager));
                     }
                 }
             }

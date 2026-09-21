@@ -70,6 +70,7 @@ public class ModernInventoryUI {
     private Texture paperDollTexture;
     private Texture headTexture;
     private Texture bgTexture;
+    private com.bpm.minotaur.paperdoll.PaperDoll3DWidget doll3DWidget;
 
     /** Debug overlay — press F3 in-game to toggle. */
     private final InventoryDebugOverlay debugOverlay;
@@ -114,6 +115,8 @@ public class ModernInventoryUI {
         // ── Panels ────────────────────────────────────────────────────
         paperDoll = new PaperDollPanel(player, skin, dnd, idm, paperDollTexture);
         paperDoll.attachPaperDollWidget(doll2DWidget);
+        doll3DWidget = new com.bpm.minotaur.paperdoll.PaperDoll3DWidget();
+        paperDoll.attachPaperDoll3DWidget(doll3DWidget);
 
         coreStats = new CoreStatsPanel(player, skin);
         spellbook = new SpellbookPanel(player, skin);
@@ -143,7 +146,6 @@ public class ModernInventoryUI {
         backpack.setBus(bus);
         quickSlots.setBus(bus);
         paperDoll.setBus(bus);
-        spellbook.setBus(bus);
 
         // ── Event subscriptions ───────────────────────────────────────
         bus.subscribe(paperDoll);
@@ -151,7 +153,6 @@ public class ModernInventoryUI {
         bus.subscribe(backpack);
         bus.subscribe(quickSlots);
         bus.subscribe(attributes);
-        bus.subscribe(spellbook);
 
         // ── Backpack slot right-click → drop ─────────────────────────
         wireBackpackInteractions();
@@ -217,7 +218,7 @@ public class ModernInventoryUI {
         // ── Right page: lower box (Tabbed Attributes / Item Details) ──
         rightBottomContainer = new Table();
         rightBottomContainer.top().left();
-        rightBottomContainer.setSize(760f, 250f);
+        rightBottomContainer.setSize(760f, 240f);
         rightBottomContainer.setPosition(config.getX(InventoryLayoutConfig.ATTRIBUTES),
                                          config.getY(InventoryLayoutConfig.ATTRIBUTES));
 
@@ -275,10 +276,10 @@ public class ModernInventoryUI {
             }
         });
 
+        // Core stats are displayed comprehensively in the Attributes panel.
         coreStats.pack();
         coreStats.setPosition(config.getX(InventoryLayoutConfig.CORESTATS),
                               config.getY(InventoryLayoutConfig.CORESTATS));
-        root.addActor(coreStats);
 
         spellbook.pack();
         spellbook.setPosition(config.getX(InventoryLayoutConfig.SPELLBOOK),
@@ -296,7 +297,6 @@ public class ModernInventoryUI {
         debugOverlay.track(backpack, "BackpackPanel", Color.GREEN);
         debugOverlay.track(quickSlots, "QuickSlotsPanel", Color.ORANGE);
         debugOverlay.track(rightBottomContainer, "Attributes/Inspect", Color.MAGENTA);
-        debugOverlay.track(coreStats, "CoreStatsPanel", Color.YELLOW);
         debugOverlay.track(spellbook, "SpellbookPanel", new Color(0.4f, 0.8f, 1f, 1f));
         debugOverlay.track(alchemy, "AlchemyPanel", Color.RED);
         debugOverlay.setVisible(false); // hidden until F3 is pressed
@@ -372,6 +372,8 @@ public class ModernInventoryUI {
             headTexture.dispose();
         if (bgTexture != null)
             bgTexture.dispose();
+        if (doll3DWidget != null)
+            doll3DWidget.dispose();
         debugOverlay.dispose(); // disposes the internal ShapeRenderer
     }
 

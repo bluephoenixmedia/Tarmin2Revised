@@ -434,9 +434,11 @@ public class WorldManager {
         }
 
         // Place Decomposing Corpse if an active bones encounter was rolled for this floor
+        // Never spawn in starting shelter sanctuary chunk (0, 0) on Level 1
         if (gameMode == GameMode.ADVANCED) {
             BonesData activeBones = BonesManager.getInstance().getActiveFloorBones();
-            if (activeBones != null && activeBones.chunkX == -1) {
+            boolean isStartingShelterChunk = (currentLevel == 1 && chunkId.x == 0 && chunkId.y == 0);
+            if (activeBones != null && activeBones.chunkX == -1 && !isStartingShelterChunk) {
                 GridPoint2 corpseTile = findBonesPlacementTile(newMaze);
                 if (corpseTile != null) {
                     activeBones.chunkX = chunkId.x;
@@ -1010,7 +1012,7 @@ public class WorldManager {
         }
     }
 
-    private GridPoint2 findBonesPlacementTile(Maze maze) {
+    public static GridPoint2 findBonesPlacementTile(Maze maze) {
         if (maze == null) return null;
         int width = maze.getWidth();
         int height = maze.getHeight();
@@ -1026,6 +1028,7 @@ public class WorldManager {
                     if (x > 1 && x < width - 2 && y > 1 && y < height - 2) {
                         GridPoint2 pt = new GridPoint2(x, y);
                         if (!maze.isWall(x, y)
+                                && !maze.isHomeTile(x, y)
                                 && (maze.getScenery() == null || !maze.getScenery().containsKey(pt))
                                 && (maze.getItems() == null || !maze.getItems().containsKey(pt))
                                 && (maze.getMonsters() == null || !maze.getMonsters().containsKey(pt))

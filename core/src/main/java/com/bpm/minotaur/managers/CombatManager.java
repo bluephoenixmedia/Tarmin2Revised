@@ -15,6 +15,7 @@ import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.monster.MonsterTemplate;
+import com.bpm.minotaur.gamedata.monster.MonsterProjectileRegistry;
 
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.rendering.Animation;
@@ -22,10 +23,16 @@ import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.screens.GameOverScreen;
 import com.bpm.minotaur.screens.GameScreen;
 import com.bpm.minotaur.gamedata.injury.InjuryRecord;
+import com.bpm.minotaur.gamedata.progression.SkillId;
 import com.bpm.minotaur.gamedata.monster.GhostPlayerMonster;
 import com.bpm.minotaur.gamedata.bones.BonesData;
 
 import com.bpm.minotaur.gamedata.dice.Die;
+import com.bpm.minotaur.gamedata.monster.MonsterColor;
+import com.bpm.minotaur.gamedata.monster.MimicReveal;
+import com.bpm.minotaur.gamedata.firearm.FirearmProfile;
+import com.bpm.minotaur.gamedata.firearm.PowderDampness;
+import com.bpm.minotaur.gamedata.firearm.ReloadChannel;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import com.bpm.minotaur.utils.DiceRoller;
@@ -42,6 +49,16 @@ public class CombatManager {
         PHYSICS_RESOLUTION, // Rolling
         PHYSICS_DELAY, // Viewing Result
         MONSTER_TURN,
+        /**
+         * A mimic is shedding its chest disguise.
+         *
+         * <p>Movement and attack input is dropped for the duration, because those sites
+         * gate on INACTIVE/PLAYER_TURN/PLAYER_MENU. Note this is not a blanket lock:
+         * a few keys (interact, pick up) are not state-gated and guard themselves
+         * instead -- see GameScreen.interactWithWorldObject, which must never let a
+         * mimic reach the container branch.
+         */
+        MONSTER_REVEAL,
         VICTORY,
         DEFEAT
     }
@@ -208,7 +225,23 @@ public class CombatManager {
         this.worldManager = worldManager;
     }
 
+    /**
+     * Traces a projectile path without disturbing anything. Safe for speculative or
+     * targeting-preview use.
+     */
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer) {
+        return raycastProjectile(origin, direction, maxRange, sourceIsPlayer, false);
+    }
+
+    /**
+     * @param revealDisguises when true, a mimic the player has already seen through is
+     *        dropped out of its disguise as the ray reaches it, making it a valid target.
+     *        This <em>mutates the world</em> -- it spawns a monster, plays a sound and
+     *        shakes the camera -- so only genuine attacks should pass true. A trace used
+     *        merely to ask "is there anything in range?" must not.
+     */
+    public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
+            boolean revealDisguises) {
         int startX = (int) origin.x;
         int startY = (int) origin.y;
 
@@ -252,12 +285,180 @@ public class CombatManager {
                     return new HitResult(currentPos, HitResult.HitType.PLAYER, null);
                 }
             }
+            // A mimic the player has already seen through is a legitimate target at
+            // range: spotting one should pay off the same way for an archer as it does
+            // for a fighter. An unspotted mimic stays invisible to projectiles, so area
+            // fire cannot be used to sweep a room for chests that bite.
+            if (revealDisguises && sourceIsPlayer) {
+                Item disguised = MimicReveal.disguisedMimicAt(maze, currentPos);
+                if (disguised != null && disguised.isMimicSeen()) {
+                    revealMimicPreEmptively(currentPos, maze.getLevel());
+                }
+            }
+
             if (maze.getMonsters().containsKey(currentPos)) {
                 Monster m = maze.getMonsters().get(currentPos);
                 return new HitResult(currentPos, HitResult.HitType.MONSTER, m);
             }
         }
         return new HitResult(new GridPoint2(currentX, currentY), HitResult.HitType.NOTHING, null);
+    }
+
+    // --- Mimic Reveal ---
+    /** Total length of the shudder-then-burst morph. */
+    private static final float MIMIC_REVEAL_TIME = 0.5f;
+    /** How long the chest shudders before the burst masks the swap. */
+    public static final float MIMIC_SHUDDER_TIME = 0.15f;
+    private float mimicRevealTimer = 0f;
+    private Monster revealingMimic = null;
+    private GridPoint2 mimicRevealTile = null;
+    private int mimicRevealDepth = 1;
+
+    /**
+     * How far into the shudder the disguised chest is, 0..1, or 0 when nothing is
+     * revealing. The renderer uses this to shake the chest billboard; once the burst
+     * takes over, the chest is gone and this returns to 0.
+     */
+    public float getMimicShudderProgress() {
+        if (currentState != CombatState.MONSTER_REVEAL || revealingMimic != null) {
+            return 0f;
+        }
+        return Math.min(1f, mimicRevealTimer / MIMIC_SHUDDER_TIME);
+    }
+
+    /** The tile whose chest is currently shuddering, or null. */
+    public GridPoint2 getMimicRevealTile() {
+        return (currentState == CombatState.MONSTER_REVEAL && revealingMimic == null) ? mimicRevealTile : null;
+    }
+
+    /**
+     * Builds the monster a disguised chest has been hiding all along.
+     *
+     * <p>Deliberately not routed through MonsterFactory: the factory would roll an
+     * inventory, and a mimic's loot is rolled at death instead precisely so that nothing
+     * has to survive on a live monster across a chunk unload.
+     */
+    private Monster createMimicMonster(int depth) {
+        com.bpm.minotaur.gamedata.monster.MonsterDataManager monsterData =
+                (game != null) ? game.getMonsterDataManager() : null;
+
+        // Without a data manager there is no monsters.json template to build from, and
+        // the templated constructor dereferences it unguarded. Fall back to the
+        // stat-only constructor so a reveal degrades into a plain mimic rather than
+        // throwing -- the templated path is the norm; this keeps headless runs alive.
+        if (monsterData == null) {
+            Monster fallback = new Monster(Monster.MonsterType.MIMIC, MIMIC_FALLBACK_HP, MIMIC_FALLBACK_AC);
+            fallback.scaleStats(Math.max(1, depth));
+            fallback.setCurrentHP(fallback.getMaxHP());
+            return fallback;
+        }
+
+        Monster mimic = new Monster(Monster.MonsterType.MIMIC, 0, 0, MonsterColor.WHITE,
+                monsterData, (game != null) ? game.getAssetManager() : null);
+        mimic.scaleStats(Math.max(1, depth));
+        mimic.setCurrentHP(mimic.getMaxHP());
+        return mimic;
+    }
+
+    /** Mirrors the MIMIC entry in monsters.json, for the no-template fallback above. */
+    private static final int MIMIC_FALLBACK_HP = 50;
+    private static final int MIMIC_FALLBACK_AC = 12;
+
+    /**
+     * The ambush: the player reached for a chest and it was a mimic.
+     *
+     * <p>Control is taken away for the length of the morph, then the mimic lands one
+     * free blow before combat opens. Without that blow the disguise would be pure
+     * theatre -- mechanically identical to a monster standing in a corridor, which is
+     * the thing this feature exists to stop being.
+     */
+    public void triggerMimicAmbush(GridPoint2 tile, int depth) {
+        if (currentState != CombatState.INACTIVE) {
+            return;
+        }
+        if (MimicReveal.disguisedMimicAt(maze, tile) == null) {
+            return;
+        }
+
+        // The chest is deliberately left standing for the length of the shudder: the
+        // player needs a beat to register that the thing they touched moved, before the
+        // burst covers the swap. It is replaced in update() at the phase boundary.
+        mimicRevealTile = new GridPoint2(tile);
+        mimicRevealDepth = depth;
+        revealingMimic = null;
+        mimicRevealTimer = 0f;
+        currentState = CombatState.MONSTER_REVEAL;
+
+        playMimicAmbushJolt();
+        eventManager.addEvent(new GameEvent("The chest lunges at you!", 2.5f));
+    }
+
+    /**
+     * The player struck first at a chest they had already seen through.
+     *
+     * <p>No blocking state and no free blow: the player owns the initiative here, which
+     * is exactly what spotting the mimic bought them. The morph still plays, but the
+     * world keeps running underneath it.
+     */
+    public Monster revealMimicPreEmptively(GridPoint2 tile, int depth) {
+        Monster mimic = createMimicMonster(depth);
+        if (!MimicReveal.swap(maze, tile, mimic)) {
+            return null;
+        }
+
+        playMimicAmbushJolt();
+        playMimicBurst(tile, mimic);
+        eventManager.addEvent(new GameEvent("You strike before the mimic can spring!", 2.5f));
+        return mimic;
+    }
+
+    /**
+     * The opening jolt: low roar and a camera kick on the frame the lid moves.
+     *
+     * <p>The hit pause is deliberately far shorter than the shudder. {@code hitPauseTimer}
+     * freezes the entire update block, animations included, so a pause as long as the
+     * morph would stall the very thing it is meant to punctuate.
+     */
+    private void playMimicAmbushJolt() {
+        if (soundManager != null) {
+            soundManager.playMimicRevealSound();
+        }
+
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.addTrauma(0.45f);
+            gs.triggerHitPause(0.08f);
+        }
+    }
+
+    /** Clears the reveal bookkeeping and returns the state machine to rest. */
+    private void endMimicReveal() {
+        revealingMimic = null;
+        mimicRevealTile = null;
+        mimicRevealTimer = 0f;
+        currentState = CombatState.INACTIVE;
+    }
+
+    /** The burst that masks the chest-to-monster swap. */
+    private void playMimicBurst(GridPoint2 tile, Monster mimic) {
+        if (animationManager != null) {
+            animationManager.spawnExplosion(
+                    com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.CONCUSSIVE,
+                    new com.badlogic.gdx.math.Vector3(tile.x + 0.5f, 0.5f, tile.y + 0.5f),
+                    1.4f, MIMIC_REVEAL_TIME - MIMIC_SHUDDER_TIME);
+        }
+
+        // The retro raycaster never draws SPRITE_EXPLOSION_3D, so it gets the swap plus
+        // a spray of gibs -- the same beat told in the engine's own visual language.
+        if (mimic != null) {
+            com.bpm.minotaur.gamedata.gore.GoreManager gore = maze.getGoreManager();
+            if (gore != null) {
+                gore.spawnRetroGibs(
+                        new com.badlogic.gdx.math.Vector3(tile.x + 0.5f, 0.5f, tile.y + 0.5f),
+                        mimic.getSpriteData(),
+                        com.badlogic.gdx.graphics.Color.GOLDENROD);
+            }
+        }
     }
 
     public void startCombat(Monster monster) {
@@ -295,6 +496,7 @@ public class CombatManager {
                 Gdx.app.log("CombatManager", "Player auto-turned to face " + directionToMonster);
             }
             soundManager.playCombatStartSound();
+            triggerCombatMusic(monster);
 
             // --- NEW: Start with Player Menu ---
             currentState = CombatState.PLAYER_MENU;
@@ -303,6 +505,22 @@ public class CombatManager {
 
             monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
         }
+    }
+
+    private void triggerCombatMusic(Monster monster) {
+        if (monster == null) return;
+        boolean isBoss = isBossMonster(monster);
+        if (isBoss) {
+            MusicManager.getInstance().playBossCombat("sounds/music/tarmin_boss_tension.wav");
+        } else {
+            MusicManager.getInstance().playCombatMusic("sounds/music/tarmin_fuxx.ogg");
+        }
+    }
+
+    private boolean isBossMonster(Monster monster) {
+        if (monster == null || monster.getType() == null) return false;
+        String typeName = monster.getType().name();
+        return typeName.contains("MINOTAUR") || typeName.contains("LICH") || typeName.contains("VAMPIRE");
     }
 
     public void playerMeleeStrike(Monster target) {
@@ -337,6 +555,7 @@ public class CombatManager {
             this.currentCombatTurns = 0;
             this.damageTakenInCombat = 0;
             BalanceLogger.getInstance().logCombatStart(player, target);
+            triggerCombatMusic(target);
         }
         this.currentCombatTurns++;
 
@@ -365,6 +584,9 @@ public class CombatManager {
     }
 
     public void monsterMeleeStrike(Monster attacker) {
+        if (attacker != null && this.monster != attacker && currentState == CombatState.INACTIVE) {
+            triggerCombatMusic(attacker);
+        }
         soundManager.playMonsterAttackSound(attacker);
         triggerAttackIndicator(attacker);
 
@@ -385,6 +607,16 @@ public class CombatManager {
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordDamageMitigated(blocked);
             }
             dmg = applyGuardMitigation(dmg);
+
+            // HEAVY_ARMOR_MASTERY: Nonmagical physical damage reduced by 3 while wearing heavy armor
+            if (player.hasSkill(SkillId.HEAVY_ARMOR_MASTERY) && player.isWearingHeavyArmor()) {
+                int reduced = Math.min(3, dmg);
+                dmg = Math.max(0, dmg - 3);
+                if (reduced > 0) {
+                    eventManager.addEvent(new GameEvent("Heavy Armor Master absorbed " + reduced + " dmg!", 1.2f));
+                }
+            }
+
             actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
             showPlayerDamageText(actualDamage);
             bleedPlayer(actualDamage);
@@ -588,6 +820,7 @@ public class CombatManager {
         currentState = CombatState.INACTIVE;
         monster = null;
         monsterAttackDelay = 0f;
+        MusicManager.getInstance().exitCombat();
         Gdx.app.log("CombatManager", "Combat ended.");
     }
 
@@ -616,6 +849,90 @@ public class CombatManager {
     }
 
     // --- NEW: Helper to setup weapon and checks ---
+    // --- Firearms ---
+    /** The reload in progress, or null when nothing is being loaded. */
+    private ReloadChannel activeReload = null;
+    /** Rolls misfires; separate from the combat RNG so tests can pin one without the other. */
+    private final Random powderRandom = new Random();
+
+    public ReloadChannel getActiveReload() {
+        return activeReload;
+    }
+
+    /** True if this weapon draws shot rather than arrows. */
+    private boolean usesShot(Item weapon) {
+        return weapon != null && FirearmProfile.isFirearm(weapon.getType());
+    }
+
+    private boolean hasAmmoFor(Item weapon) {
+        return usesShot(weapon) ? player.getStats().getShot() > 0 : player.getArrows() > 0;
+    }
+
+    /**
+     * Spends one round and, for a firearm, starts the reload that follows it.
+     *
+     * <p>Single chokepoint on purpose: a firearm that fires without reloading is just a
+     * bow, and the reload is the entire balance for a 2d8 shot at bow range. Every path
+     * that spends a round goes through here.
+     */
+    private void consumeAmmoFor(Item weapon) {
+        if (usesShot(weapon)) {
+            player.getStats().decrementShot();
+            beginReload(weapon);
+        } else {
+            player.decrementArrow();
+        }
+    }
+
+    private String ammoNameFor(Item weapon) {
+        if (usesShot(weapon)) {
+            return "shot";
+        }
+        boolean crossbow = weapon != null && (weapon.getType() == Item.ItemType.CROSSBOW
+                || (weapon.getFriendlyName() != null
+                        && weapon.getFriendlyName().toLowerCase().contains("crossbow")));
+        return crossbow ? "bolts" : "arrows";
+    }
+
+    /**
+     * Advances any reload by one world turn. Called once per player turn.
+     *
+     * <p>Takes no interruption arguments: nothing in the world can break a reload, only
+     * the player's own choice to do something else, which goes through
+     * {@link #abandonReload}.
+     */
+    public void tickReload() {
+        if (activeReload == null) {
+            return;
+        }
+        if (activeReload.afterTurn() == ReloadChannel.Step.COMPLETE) {
+            eventManager.addEvent(new GameEvent("Loaded and primed.", 1.5f));
+            activeReload = null;
+        }
+    }
+
+    /**
+     * Gives up a reload in progress. The reload is the player's to abandon -- this is
+     * called when they choose to move or swing, never because they were hit.
+     */
+    public void abandonReload() {
+        if (activeReload == null) {
+            return;
+        }
+        activeReload = null;
+        eventManager.addEvent(new GameEvent("You break off loading.", 1.5f));
+    }
+
+    /** Begins the reload that follows a shot. */
+    private void beginReload(Item weapon) {
+        if (weapon == null || !FirearmProfile.isFirearm(weapon.getType())) {
+            return;
+        }
+        activeReload = new ReloadChannel(weapon.getType());
+        eventManager.addEvent(new GameEvent(
+                "Reloading -- " + activeReload.getTurnsRequired() + " turns.", 1.5f));
+    }
+
     private boolean prepareAttack() {
         Item weapon = player.getInventory().getRightHand();
 
@@ -623,10 +940,18 @@ public class CombatManager {
             this.pendingWeapon = weapon;
             this.pendingIsRanged = weapon.isRanged();
 
-            if (pendingIsRanged && weapon.getType() != Item.ItemType.DART && player.getArrows() <= 0) {
-                String ammoName = (weapon.getType() == Item.ItemType.CROSSBOW || (weapon.getFriendlyName() != null && weapon.getFriendlyName().toLowerCase().contains("crossbow"))) ? "bolts" : "arrows";
-                eventManager.addEvent(new GameEvent("You have no " + ammoName + "!", 2f));
+            if (pendingIsRanged && weapon.getType() != Item.ItemType.DART && !hasAmmoFor(weapon)) {
+                eventManager.addEvent(new GameEvent("You have no " + ammoNameFor(weapon) + "!", 2f));
                 passTurnToMonster();
+                return false;
+            }
+
+            // A fired firearm is empty until the reload finishes. Without this the
+            // multi-turn reload would be decorative -- nothing would stop the player
+            // firing again on the very next turn.
+            if (activeReload != null && FirearmProfile.isFirearm(weapon.getType())) {
+                eventManager.addEvent(new GameEvent(
+                        "Still loading -- " + activeReload.getTurnsRemaining() + " turn(s).", 1.5f));
                 return false;
             }
             return true;
@@ -676,10 +1001,13 @@ public class CombatManager {
     }
 
     private void closeMenuOrPassTurn() {
-        if (monster == null) {
-            currentState = CombatState.INACTIVE; // Close menu if no enemy
+        if (currentState == CombatState.VICTORY || currentState == CombatState.DEFEAT || currentState == CombatState.INACTIVE || monster == null || monster.getCurrentHP() <= 0) {
+            if (currentState != CombatState.VICTORY && currentState != CombatState.DEFEAT) {
+                currentState = CombatState.INACTIVE; // Close menu if no enemy
+            }
         } else {
             // Pass Turn
+            tickReload();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
 
@@ -692,6 +1020,17 @@ public class CombatManager {
     }
 
     public void playerAttackInstant() {
+        // INACTIVE is allowed for ranged weapons only. Without it a bow could never
+        // open a fight -- firing required combat to already be underway, which is the
+        // reverse of what a ranged weapon is for. Melee still needs an engagement.
+        if (currentState == CombatState.INACTIVE) {
+            Item readied = player.getInventory().getRightHand();
+            if (readied == null || !readied.isRanged()) {
+                return;
+            }
+            openFireAtRange();
+            return;
+        }
         if (currentState != CombatState.PLAYER_TURN && currentState != CombatState.PLAYER_MENU)
             return;
 
@@ -699,25 +1038,24 @@ public class CombatManager {
         if (monster == null) {
             // 2. No target? Check Ranged
             if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
-                performRangedAttack(); // Re-use existing GameScreen method logic? No, move it here or dup.
-                // Re-implementing logic here safely:
-                HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), 8, true);
-                if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
-                    // Found one!
-                    // Trigger Ranged Attack on this monster
-                    startCombat(hit.hitMonster); // Engage!
-                    // Now we have a monster, proceed to resolve?
-                    // Or separate method to avoid recursion issues.
-                    // Let's manually resolve against hit.hitMonster
-                    resolveRangedAttackAgainst(hit.hitMonster);
-                } else {
-                    eventManager.addEvent(new GameEvent("No target in range.", 1.5f));
-                    currentState = CombatState.INACTIVE;
-                }
+                // Previously this called performRangedAttack(), which called straight
+                // back into this method with nothing changed between them -- unbounded
+                // recursion. Opening fire is resolved here and nowhere else.
+                openFireAtRange();
             } else {
                 eventManager.addEvent(new GameEvent("No monster to attack!", 1.5f));
                 currentState = CombatState.INACTIVE;
             }
+            return;
+        }
+
+        // An engaged target does not make a firearm a club. Ranged weapons resolve
+        // through the ranged path in combat too, or firing in the situation that
+        // actually matters would skip the misfire roll, the noise, the muzzle flash
+        // and the range check.
+        Item readiedInCombat = player.getInventory().getRightHand();
+        if (readiedInCombat != null && readiedInCombat.isRanged()) {
+            resolveRangedAttackAgainst(monster);
             return;
         }
 
@@ -749,7 +1087,16 @@ public class CombatManager {
             float flurryChance = agi >= 18 ? 0.35f : agi >= 14 ? 0.20f : 0f;
             if (flurryChance > 0f && random.nextFloat() < flurryChance) {
                 Item flurryWeapon = player.getInventory().getRightHand();
-                if (flurryWeapon != null) {
+                // The flurry re-enters resolveAttack, which spends another round --
+                // previously without checking there was one, so it could overdraw.
+                // Firearms are excluded outright: a second shot inside one turn is the
+                // one thing a reload exists to prevent. Bows keep their flurry.
+                boolean flurryAffordable = flurryWeapon != null
+                        && !usesShot(flurryWeapon)
+                        && (!flurryWeapon.isRanged()
+                                || flurryWeapon.getType() == Item.ItemType.DART
+                                || hasAmmoFor(flurryWeapon));
+                if (flurryAffordable) {
                     pendingWeapon = flurryWeapon;
                     eventManager.addEvent(new GameEvent("Flurry!", 0.8f));
                     resolveAttack(DiceRoller.roll("1d20"), true);
@@ -761,7 +1108,7 @@ public class CombatManager {
     public boolean throwWeapon(Item weapon) {
         if (weapon == null) return false;
         int maxRange = Math.max(3, weapon.getRange());
-        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true);
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true);
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = hit.collisionPoint != null ?
@@ -803,12 +1150,21 @@ public class CombatManager {
             } else {
                 eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " glanced off " + target.getType() + "!", 1.0f));
             }
-            weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
-            maze.addItem(weapon);
+            if (hit.collisionPoint != null) {
+                weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+            }
+            if (maze != null) {
+                maze.addItem(weapon);
+            }
         } else {
             eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " clatters to the stone.", 1.0f));
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
+            } else {
+                Vector2 landPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(maxRange));
+                weapon.setPosition((int) landPos.x + 0.5f, (int) landPos.y + 0.5f);
+            }
+            if (maze != null) {
                 maze.addItem(weapon);
             }
         }
@@ -817,21 +1173,179 @@ public class CombatManager {
         return true;
     }
 
+    /**
+     * The effective reach of a ranged weapon.
+     *
+     * <p>{@code getRange()} was previously never read on the player's own attacks -- the
+     * raycast was hardcoded to 8, so a longbow's 32 and a hand crossbow's 6 were both 8.
+     * Honouring it is what finally differentiates the ranged roster.
+     */
+    private int effectiveRange(Item weapon) {
+        if (weapon == null) {
+            return 8;
+        }
+        return Math.max(1, weapon.getRange());
+    }
+
+    /**
+     * Opens fire on whatever is down the player's facing, engaging it if something is
+     * there. This is the path that was previously unreachable: firing required combat to
+     * already be active, so a bow could never be used to start a fight.
+     */
+    private void openFireAtRange() {
+        Item weapon = player.getInventory().getRightHand();
+        if (weapon == null || !weapon.isRanged()) {
+            return;
+        }
+        if (!prepareAttack()) {
+            return;
+        }
+
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(),
+                effectiveRange(weapon), true, true);
+
+        if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            startCombat(hit.hitMonster);
+            resolveRangedAttackAgainst(hit.hitMonster, hit);
+        } else if (!misfired(weapon)) {
+            // The shot is still spent, and still heard. Firing into an empty corridor
+            // costs you the ammunition and wakes the level just the same.
+            fireRangedEffects(weapon, hit);
+            consumeAmmoFor(weapon);
+            eventManager.addEvent(new GameEvent("No target in range.", 1.5f));
+            currentState = CombatState.INACTIVE;
+        } else {
+            currentState = CombatState.INACTIVE;
+        }
+    }
+
+    /**
+     * Resolves a shot that has a target.
+     *
+     * <p>Previously five TODO comments: it ignored {@code prepareAttack()}'s result so it
+     * fired at zero ammo, and triggered no animation and no sound.
+     */
     private void resolveRangedAttackAgainst(Monster target) {
-        // wasn't set?
-        // But startCombat sets it.
-        // If startCombat was called, we are good.
-        // But we need to ensure pendingWeapon is set.
-        prepareAttack(); // Sets pendingWeapon
+        resolveRangedAttackAgainst(target, null);
+    }
 
-        // Animate Projectile
-        // ... (Add projectile animation here akin to Magic Arrow?)
-        // Actually Weapons currently use WeaponOverlay slash.
-        // Ranged weapons should probably shoot a projectile.
+    /**
+     * @param tracedShot the path already traced by the caller, or null to trace one.
+     *        Reusing it avoids a second raycast, which would also re-run the
+     *        mimic-reveal side effect that a player-sourced trace carries.
+     */
+    private void resolveRangedAttackAgainst(Monster target, HitResult tracedShot) {
+        if (!prepareAttack()) {
+            return;
+        }
+        Item weapon = pendingWeapon;
 
-        // Trigger resolution
-        int d20Roll = DiceRoller.d20();
-        resolveAttack(d20Roll);
+        if (misfired(weapon)) {
+            passTurnToMonster();
+            return;
+        }
+
+        HitResult shot = (tracedShot != null) ? tracedShot
+                : raycastProjectile(player.getPosition(), player.getFacing(),
+                        effectiveRange(weapon), true, true);
+        fireRangedEffects(weapon, shot);
+
+        resolveAttack(DiceRoller.d20());
+    }
+
+    /**
+     * Rolls whether wet powder fizzles, and spends the round if it does.
+     *
+     * <p>A misfire costs the shot but not the reload -- losing both would stack a random
+     * failure on top of a multi-turn commitment, which reads as the game cheating rather
+     * than as a weapon with character.
+     *
+     * @return true if the shot was lost to damp powder.
+     */
+    private boolean misfired(Item weapon) {
+        if (!usesShot(weapon)
+                || !PowderDampness.rollMisfire(player.getStats().getPowderDampness(), powderRandom)) {
+            return false;
+        }
+        consumeAmmoFor(weapon);
+        soundManager.playFirearmMisfire();
+        eventManager.addEvent(new GameEvent("The powder fizzles -- misfire!", 2f));
+        return true;
+    }
+
+    /**
+     * Everything a shot does besides damage: the weapon animation, the report, the
+     * muzzle flash, and whatever the noise wakes.
+     */
+    private void fireRangedEffects(Item weapon, HitResult hit) {
+        boolean firearm = usesShot(weapon);
+
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            gs.getWeaponOverlay().triggerAttack(weapon);
+            if (firearm) {
+                gs.addTrauma(0.4f);
+            }
+        }
+
+        Vector2 muzzle = player.getPosition().cpy()
+                .add(player.getDirectionVector().cpy().scl(0.6f));
+        Vector2 impact = (hit != null && hit.collisionPoint != null)
+                ? new Vector2(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f)
+                : muzzle.cpy().add(player.getDirectionVector().cpy().scl(effectiveRange(weapon)));
+
+        if (firearm) {
+            soundManager.playFirearmShot();
+            spawnMuzzleEffects(muzzle, impact);
+
+            int woken = com.bpm.minotaur.gamedata.firearm.GunshotNoise.wake(
+                    maze, player.getPosition(), weapon.getType());
+            if (woken > 0) {
+                eventManager.addEvent(new GameEvent(
+                        "The shot echoes -- " + woken + " thing(s) stir.", 2f));
+            }
+        } else {
+            // Bows keep a travelling arrow: the arc is what makes archery readable,
+            // where a gun's whole advantage is that it is already there.
+            soundManager.playBowShot();
+            if (animationManager != null) {
+                animationManager.addAnimation(new Animation(
+                        Animation.AnimationType.PROJECTILE_PLAYER,
+                        muzzle, impact,
+                        com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 0.25f,
+                        new String[] { "-" }));
+            }
+        }
+    }
+
+    /**
+     * Muzzle flash, powder smoke, and the impact burst.
+     *
+     * <p>A firearm shot is hitscan, so there is no travelling sprite to carry the moment
+     * -- the muzzle and the impact have to do all the work. Deliberately no screen flash:
+     * it fights the recoil kick already in the motion profile, and on every shot it stops
+     * being a thrill and becomes an irritation.
+     */
+    private void spawnMuzzleEffects(Vector2 muzzle, Vector2 impact) {
+        if (animationManager == null) {
+            return;
+        }
+        // Muzzle height follows the void-laser convention: a little below the eye line.
+        float muzzleY = 0.4f;
+
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.FIRE,
+                new com.badlogic.gdx.math.Vector3(muzzle.x, muzzleY, -muzzle.y), 0.7f, 0.18f);
+
+        // The powder smoke: slower and larger than the flash, and what actually sells
+        // the weapon as something other than a loud crossbow.
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.STANDARD,
+                new com.badlogic.gdx.math.Vector3(muzzle.x, muzzleY, -muzzle.y), 1.1f, 0.55f);
+
+        animationManager.spawnExplosion(
+                com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType.CONCUSSIVE,
+                new com.badlogic.gdx.math.Vector3(impact.x, 0.5f, -impact.y), 0.9f, 0.35f);
     }
 
     // --- RENAMED: Physics Attack (KEY 7) - With Animation ---
@@ -895,8 +1409,9 @@ public class CombatManager {
 
         if (itemToUse != null) {
             if (itemToUse.isWeapon() || itemToUse.isShield()) {
-                player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze, this);
-                closeMenuOrPassTurn();
+                if (player.useQuickSlot(slotIndex, eventManager, discoveryManager, maze, this)) {
+                    closeMenuOrPassTurn();
+                }
             } else {
                 player.useItem(itemToUse, eventManager, discoveryManager, maze, this);
                 closeMenuOrPassTurn();
@@ -1239,12 +1754,21 @@ public class CombatManager {
         if (monster == null)
             return;
 
-        // Consume ammunition for ranged weapons (bows, crossbows)
-        if (pendingWeapon != null && pendingWeapon.isRanged() && pendingWeapon.getType() != Item.ItemType.DART) {
-            player.decrementArrow();
+        // Determine attacking weapon: if off-hand combo strike, use left hand weapon
+        Item attackWeapon = pendingWeapon;
+        if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
+            Item leftHand = player.getInventory().getLeftHand();
+            if (leftHand != null) {
+                attackWeapon = leftHand;
+            }
         }
 
-        int toHitBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
+        // Consume ammunition for ranged weapons (bows, crossbows)
+        if (attackWeapon != null && attackWeapon.isRanged() && attackWeapon.getType() != Item.ItemType.DART) {
+            consumeAmmoFor(attackWeapon);
+        }
+
+        int toHitBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseToHitBonus() : player.getToHitBonus();
         if (player.getInjuryManager() != null) {
             toHitBonus += player.getInjuryManager().getEffectiveAttackModifier();
         }
@@ -1276,17 +1800,17 @@ public class CombatManager {
         if (isHit || isGlancing) {
             DamageType dmgType = DamageType.PHYSICAL;
             String damageDice = "1d2";
-            boolean isArcaneSpark = isBookWeapon(pendingWeapon);
+            boolean isArcaneSpark = isBookWeapon(attackWeapon);
             if (isArcaneSpark) {
                 // Tome Weapon Attack: a Spiritual Arcane Spark replaces the book's own
                 // damage dice entirely -- see arcaneSparkDamage() for the 1d4+INT roll.
                 dmgType = DamageType.SPIRITUAL;
                 damageDice = ARCANE_SPARK_DICE;
-            } else if (pendingWeapon != null) {
-                damageDice = player.getInventory().getActiveDamageDice(pendingWeapon);
+            } else if (attackWeapon != null) {
+                damageDice = player.getInventory().getActiveDamageDice(attackWeapon);
                 if (damageDice == null || damageDice.isEmpty()) damageDice = "1d4";
-                if ("SPIRITUAL".equalsIgnoreCase(pendingWeapon.getDamageType()) ||
-                        pendingWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
+                if ("SPIRITUAL".equalsIgnoreCase(attackWeapon.getDamageType()) ||
+                        attackWeapon.getCategory() == com.bpm.minotaur.gamedata.item.ItemCategory.SPIRITUAL_WEAPON) {
                     dmgType = DamageType.SPIRITUAL;
                 }
             }
@@ -1302,15 +1826,55 @@ public class CombatManager {
                 if (isArcaneSpark) {
                     int intModifier = (player.getEffectiveIntelligence() - 10) / 2;
                     totalDamage = arcaneSparkDamage(intModifier, DiceRoller.roll(damageDice));
+                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                    // Dual Strike (Scissor Finisher): Rolls main hand + off hand damage together!
+                    int mainBase = DiceRoller.roll(damageDice);
+                    int mainBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                    int mainDmg = Math.max(1, mainBase + mainBonus);
+
+                    Item offHand = player.getInventory().getLeftHand();
+                    int offDmg = 0;
+                    if (offHand != null) {
+                        String offDice = player.getInventory().getActiveDamageDice(offHand);
+                        if (offDice == null || offDice.isEmpty()) offDice = "1d4";
+                        int offBase = DiceRoller.roll(offDice);
+                        int offBonus = offHand.isFinesse() ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                        offDmg = Math.max(1, offBase + offBonus);
+                    }
+                    totalDamage = mainDmg + offDmg;
+
+                    // Whirlwind Executioner: +50% dual-strike damage
+                    if (player.hasSkill(SkillId.WHIRLWIND_EXECUTIONER)) {
+                        totalDamage = (int) (totalDamage * 1.5f);
+                        eventManager.addEvent(new GameEvent("WHIRLWIND EXECUTIONER! Devastating dual strike!", 1.2f));
+                    }
+                } else if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
+                    int baseDamage = DiceRoller.roll(damageDice);
+                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : (player.getDamageBonus() / 2);
+                    totalDamage = Math.max(1, baseDamage + damageBonus);
                 } else {
                     int baseDamage = DiceRoller.roll(damageDice);
-                    int damageBonus = (pendingWeapon != null && pendingWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
+                    int damageBonus = (attackWeapon != null && attackWeapon.isFinesse()) ? player.getFinesseDamageBonus() : player.getDamageBonus();
                     totalDamage = Math.max(1, baseDamage + damageBonus);
                 }
 
                 // Combo Damage Multiplier
                 if (currentMotionProfile != null && currentMotionProfile.damageMultiplier > 0f) {
                     totalDamage = Math.max(1, (int) (totalDamage * currentMotionProfile.damageMultiplier));
+                }
+
+                // Brutal Cleave Perk: +20% damage on finisher strikes
+                if (currentMotionProfile != null && currentMotionProfile.isFinisher && player.hasSkill(SkillId.BRUTAL_CLEAVE)) {
+                    totalDamage = (int) (totalDamage * 1.20f);
+                }
+
+                // Deadeye Sniper Perk: +25% damage on ranged attack at distance >= 3
+                if (attackWeapon != null && attackWeapon.isRanged() && player.hasSkill(SkillId.DEADEYE_SNIPER)) {
+                    float dist = player.getPosition().dst(monster.getPosition());
+                    if (dist >= 3.0f) {
+                        totalDamage = (int) (totalDamage * 1.25f);
+                        eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
+                    }
                 }
 
                 // Glancing Blow: 35% base damage
@@ -1333,15 +1897,44 @@ public class CombatManager {
                     eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
                 }
 
+                int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit);
+
+                // Brutal Cleave: Overkill damage cleaves into adjacent monster
+                if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {
+                    int overkill = totalDamage - monsterHpBefore;
+                    if (overkill > 0) {
+                        int cleaveDmg = Math.max(1, overkill / 2);
+                        GridPoint2 mPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
+                        for (Direction d : Direction.values()) {
+                            GridPoint2 adjPos = new GridPoint2(mPos.x + (int) d.getVector().x, mPos.y + (int) d.getVector().y);
+                            Monster adjMonster = maze.getMonsters().get(adjPos);
+                            if (adjMonster != null && adjMonster != monster && adjMonster.getCurrentHP() > 0) {
+                                int cleaved = adjMonster.takeDamage(cleaveDmg, DamageType.PHYSICAL, false);
+                                eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getMonsterType() + " for " + cleaved + " dmg!", 1.5f));
+                                showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
+                                if (adjMonster.getCurrentHP() <= 0) {
+                                    maze.getMonsters().remove(adjPos);
+                                    player.getStats().addExperience(adjMonster.getBaseExperience());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 Monster.Affinity affinity = monster.getAffinity(dmgType);
                 String dmgPrefix = "";
                 com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
 
                 String comboTag = "";
                 if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
-                    if (currentMotionProfile.isFinisher) {
+                    if (currentMotionProfile.isDualStrike) {
+                        comboTag = "DUAL SCISSOR! ";
+                    } else if (currentMotionProfile.isFinisher) {
                         comboTag = "FINISHER! ";
+                    } else if (currentMotionProfile.isOffHand) {
+                        comboTag = "OFF-HAND! ";
                     } else {
                         comboTag = "COMBO x" + (currentMotionProfile.comboStep + 1) + "! ";
                     }
@@ -1354,6 +1947,9 @@ public class CombatManager {
                     dmgPrefix = "GLANCE! ";
                     textColor = com.badlogic.gdx.graphics.Color.CYAN;
                     eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
+                } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
+                    dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
+                    textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
                 } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
                     dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.GOLD;
@@ -1528,7 +2124,7 @@ public class CombatManager {
 
     public boolean performMonsterRangedAttack(Monster attacker) {
         int range = attacker.getAttackRange();
-        Item weapon = attacker.getInventory().getRightHand();
+        Item weapon = (attacker.getInventory() != null) ? attacker.getInventory().getRightHand() : null;
         boolean hasRangedWeapon = (weapon != null && weapon.isRanged());
 
         if (!attacker.hasRangedAttack() && !hasRangedWeapon)
@@ -1552,41 +2148,95 @@ public class CombatManager {
         if (finalResult.type != HitResult.HitType.PLAYER)
             return false;
 
+        // Retrieve Projectile Archetype
+        MonsterProjectileRegistry.MonsterProjectileDefinition projDef =
+                MonsterProjectileRegistry.get(attacker.getRangedProjectile());
+
+        // Visual Windup & Telegraph on Attacker
+        attacker.triggerRangedAttackTelegraph(projDef.getColor(), 0.35f);
+
+        // Sound cue
+        if (soundManager != null) {
+            String sKey = projDef.getSoundKey();
+            if (sKey != null && !sKey.isEmpty()) {
+                soundManager.playSound(sKey);
+            } else {
+                soundManager.playMonsterAttackSound(attacker);
+            }
+        }
+
+        // Ballistic Projectile Animation
         float dist = attacker.getPosition().dst(player.getPosition());
-        float animDuration = dist / PROJECTILE_SPEED;
+        float speed = projDef.getSpeed() > 0 ? projDef.getSpeed() : PROJECTILE_SPEED;
+        float animDuration = dist / speed;
         animationManager.addAnimation(
-                new Animation(Animation.AnimationType.PROJECTILE_MONSTER, attacker.getPosition(), player.getPosition(),
-                        attacker.getColor(), animDuration, itemDataManager.getTemplate(Item.ItemType.DART).spriteData));
-        soundManager.playMonsterAttackSound(attacker);
+                new Animation(Animation.AnimationType.PROJECTILE_MONSTER,
+                        attacker.getPosition(), player.getPosition(),
+                        projDef.getColor(), animDuration, projDef.getSpriteData()));
 
         // --- ATTACK ROLL ---
         int attackBonus = 2 + (attacker.getDexterity() / 5);
         int d20Roll = DiceRoller.d20();
+        boolean isCrit = (d20Roll == 20);
         int attackRoll = d20Roll + attackBonus;
         int targetAC = player.getArmorClass();
 
         int actualDamage = 0;
-        if (attackRoll >= targetAC) {
-            int dmg = attacker.getMaxHP() / 4; // Ranged default? Or use weapon?
-            if (hasRangedWeapon) {
-                dmg = DiceRoller.roll(weapon.getDamageDice());
-            } else {
-                dmg = DiceRoller.roll(attacker.getDamageDice());
+        if (isCrit || attackRoll >= targetAC) {
+            String dice = attacker.getRangedDamageDice();
+            if (dice == null || dice.isEmpty()) {
+                dice = (hasRangedWeapon && weapon != null) ? weapon.getDamageDice() : attacker.getDamageDice();
+            }
+            int dmg = DiceRoller.roll(dice);
+            if (isCrit) {
+                dmg += DiceRoller.roll(dice);
             }
             if (dmg < 1)
                 dmg = 1;
 
-            actualDamage = player.takeDamage(dmg, DamageType.PHYSICAL);
+            DamageType damageType = attacker.getRangedDamageType();
+            if (damageType == null) {
+                damageType = projDef.getDefaultDamageType();
+            }
+
+            actualDamage = player.takeDamage(dmg, damageType);
 
             if (actualDamage > 0) {
-                maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+                if (damageType == DamageType.PHYSICAL) {
+                    maze.addBlood((int) player.getPosition().x, (int) player.getPosition().y, 0.03f);
+                }
+                showPlayerDamageText(actualDamage, isCrit, damageType);
+
+                // 3D Impact Burst (BearFX Explosion)
+                if (projDef.getExplosionType() != null) {
+                    GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                    float wx = cid.x * 36.0f + player.getPosition().x;
+                    float wz = cid.y * 36.0f + player.getPosition().y;
+                    Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+                    animationManager.addAnimation(new Animation(projDef.getExplosionType(), hitPos, 1.8f, 0.55f));
+                }
+
+                // On-Hit Status Effect
+                String effectStr = attacker.getRangedEffect();
+                if (effectStr != null && !effectStr.isEmpty()) {
+                    if (Math.random() <= attacker.getRangedEffectChance()) {
+                        try {
+                            StatusEffectType effType = StatusEffectType.valueOf(effectStr.toUpperCase());
+                            player.getStatusManager().addEffect(effType, 6, 1, true);
+                            eventManager.addEvent(new GameEvent("You are afflicted with " + effType.name() + "!", 2.0f));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+
+                String critPrefix = isCrit ? "Critical Hit! " : "";
                 eventManager.addEvent(
-                        new GameEvent(attacker.getMonsterType() + " shoots you for " + actualDamage + "!", 1.5f));
+                        new GameEvent(critPrefix + attacker.getMonsterType() + " hits you with " + projDef.getName() + " for " + actualDamage + " " + damageType.name().toLowerCase() + " damage!", 2.0f));
             } else {
-                eventManager.addEvent(new GameEvent("Armor deflected the shot!", 1.5f));
+                eventManager.addEvent(new GameEvent("Armor deflected the " + projDef.getName().toLowerCase() + "!", 1.5f));
             }
         } else {
-            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires and misses!", 1.5f));
+            eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " fires " + projDef.getName().toLowerCase() + " and misses!", 1.5f));
         }
 
         if (actualDamage > 0)
@@ -1667,6 +2317,47 @@ public class CombatManager {
             return;
         }
 
+        // MIMIC REVEAL: hold the world still while the disguise comes off, then let the
+        // mimic land its one free blow before the player gets the menu.
+        if (currentState == CombatState.MONSTER_REVEAL) {
+            mimicRevealTimer += delta;
+
+            // Phase 1 -> 2: the shudder is over. Burst, and swap the chest for the
+            // creature under cover of it.
+            if (revealingMimic == null && mimicRevealTimer >= MIMIC_SHUDDER_TIME) {
+                Monster mimic = createMimicMonster(mimicRevealDepth);
+                if (MimicReveal.swap(maze, mimicRevealTile, mimic)) {
+                    revealingMimic = mimic;
+                    playMimicBurst(mimicRevealTile, mimic);
+                } else {
+                    // The chest went away underneath us; abandon the reveal rather than
+                    // stranding the state machine.
+                    endMimicReveal();
+                    return;
+                }
+            }
+
+            // Phase 2 -> combat: the mimic lands its one free blow, then hands over.
+            if (mimicRevealTimer >= MIMIC_REVEAL_TIME) {
+                Monster mimic = revealingMimic;
+                endMimicReveal();
+                if (mimic != null) {
+                    monsterMeleeStrike(mimic);
+
+                    if (player.getStats().getCurrentHP() > 0) {
+                        startCombat(mimic);
+                    } else {
+                        // The free blow finished an already-wounded player. Hand off to
+                        // the DEFEAT branch rather than raising the death event here, so
+                        // death inversion and combat logging still run.
+                        this.monster = mimic;
+                        currentState = CombatState.DEFEAT;
+                    }
+                }
+            }
+            return;
+        }
+
         if (currentState == CombatState.MONSTER_TURN) {
             if (monsterAttackDelay > 0f)
                 monsterAttackDelay -= delta;
@@ -1694,6 +2385,9 @@ public class CombatManager {
 
     public void passTurnToMonster() {
         if (currentState == CombatState.PLAYER_TURN) {
+            // A combat turn is a world turn: the reload has to advance here too, or a
+            // gun could only ever be reloaded by backing out of the fight.
+            tickReload();
             processPlayerStatusEffects();
             player.getStatusManager().updateTurn();
             Gdx.app.log("CombatManager", "Player passed turn. Monster's turn.");
@@ -1806,6 +2500,26 @@ public class CombatManager {
             }
         }
 
+        // 3b. Mimic Hoard: the chest's worth of loot it was digesting. Rolled here
+        // rather than carried on the disguise, because monster inventory does not
+        // survive a chunk unload (ChunkData.MonsterData) and a mimic fight can easily
+        // straddle one.
+        if (monster.getType() == Monster.MonsterType.MIMIC) {
+            List<Item> hoard = com.bpm.minotaur.generation.MimicHoard.roll(
+                    itemDataManager,
+                    (game != null) ? game.getAssetManager() : null,
+                    maze.getLevel(),
+                    player.getStats().getLevel(),
+                    player.getLuck(),
+                    random);
+            for (Item loot : hoard) {
+                dropSingleItem(loot, pos, monster);
+            }
+            if (!hoard.isEmpty()) {
+                eventManager.addEvent(new GameEvent("The mimic disgorges its hoard!", 2.5f));
+            }
+        }
+
         // 4. Spellcaster Magical Spoils Drop
         if (monster.isSpellcaster() && monster.getSpellbook() != null) {
             // 40% chance for Tome or Arcane Book / Scroll
@@ -1862,6 +2576,9 @@ public class CombatManager {
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("THE MINOTAUR HAS FALLEN! Classic Mode and Pact of Torment unlocked!", 5.0f));
             }
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_sound_fx.ogg");
+        } else if (isBossMonster(monster)) {
+            MusicManager.getInstance().playStinger("sounds/music/tarmin_sound_fx.ogg");
         }
     }
 
@@ -1893,11 +2610,22 @@ public class CombatManager {
         }
     }
 
+    /**
+     * Fires the equipped ranged weapon at whatever is in front of the player.
+     *
+     * <p>Used to delegate to {@code playerAttackInstant()}, which called straight back
+     * here with nothing changed between them -- unbounded recursion.
+     */
     public boolean performRangedAttack() {
         Item weapon = player.getInventory().getRightHand();
         if (weapon == null || !weapon.isRanged())
             return false;
-        playerAttackInstant(); // Default to instant for standard inputs if used
+
+        if (monster != null) {
+            resolveRangedAttackAgainst(monster);
+        } else {
+            openFireAtRange();
+        }
         return true;
     }
 

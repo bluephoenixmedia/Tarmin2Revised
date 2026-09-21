@@ -42,12 +42,18 @@ public class PlayerSaveData {
     public int level = 1;
     public int experience = 0;
     public int experienceToNextLevel = 300;
+    public int unallocatedAttributePoints = 0;
+    public int unallocatedSkillPoints = 0;
+    public List<String> unlockedSkills = new ArrayList<>();
 
     public float satiety = 80f;
     public float hydration = 80f;
     public float bodyTemperature = 37f;
     public int toxicity = 0;
     public int arrows = 0;
+    public int shot = 0;
+    /** Carried powder dampness, 0..1; see PowderDampness. */
+    public float powderDampness = 0f;
     public int treasureScore = 0;
 
     // Equipment
@@ -80,6 +86,11 @@ public class PlayerSaveData {
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
     public List<String> knownSpells = new ArrayList<>();
+    // A Tome Choice still waiting for its pick (null when none), saved as offered so a
+    // reload cannot redraw it.
+    public Item.ItemType pendingTomeType;
+    public List<String> pendingTomeOptions = new ArrayList<>();
+    public int pendingTomeRerolls;
 
     // Blood on the father's skin and splashes not yet settled onto the paperdoll. Blood
     // on worn items travels inside each ItemSaveData.
@@ -129,7 +140,15 @@ public class PlayerSaveData {
             this.bodyTemperature = stats.getBodyTemperature();
             this.toxicity = stats.getToxicity();
             this.arrows = stats.getArrows();
+            this.shot = stats.getShot();
+            this.powderDampness = stats.getPowderDampness();
             this.treasureScore = stats.getTreasureScore();
+
+            this.unallocatedAttributePoints = stats.getUnallocatedAttributePoints();
+            this.unallocatedSkillPoints = stats.getUnallocatedSkillPoints();
+            for (com.bpm.minotaur.gamedata.progression.SkillId s : stats.getUnlockedSkills()) {
+                this.unlockedSkills.add(s.name());
+            }
         }
 
         // Equipment
@@ -176,6 +195,12 @@ public class PlayerSaveData {
         this.knownSpellIds = new ArrayList<>(player.getKnownSpellIds());
         java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
         this.unlockedSpellSlots = player.getUnlockedSpellSlots();
+        com.bpm.minotaur.gamedata.spells.TomeChoice pending = player.getPendingTomeChoice();
+        if (pending != null && pending.getTomeItem() != null) {
+            this.pendingTomeType = pending.getTomeItem().getType();
+            this.pendingTomeOptions.addAll(pending.getOptions());
+            this.pendingTomeRerolls = pending.getRerollsLeft();
+        }
     }
 
     public void applyToPlayer(Player player, ItemDataManager itemDataManager, AssetManager assetManager) {
@@ -221,7 +246,19 @@ public class PlayerSaveData {
             stats.setBodyTemperature(bodyTemperature);
             stats.setToxicity(toxicity);
             stats.setArrows(arrows);
+            stats.setShot(shot);
+            stats.setPowderDampness(powderDampness);
             stats.setTreasureScore(treasureScore);
+
+            stats.setUnallocatedAttributePoints(unallocatedAttributePoints);
+            stats.setUnallocatedSkillPoints(unallocatedSkillPoints);
+            if (unlockedSkills != null) {
+                for (String s : unlockedSkills) {
+                    try {
+                        stats.unlockSkill(com.bpm.minotaur.gamedata.progression.SkillId.valueOf(s));
+                    } catch (Exception ignored) {}
+                }
+            }
         }
 
         // Equipment
@@ -276,6 +313,7 @@ public class PlayerSaveData {
         // Spells
         if (knownSpellIds != null) {
             player.restoreSpellbook(knownSpellIds, preparedSpells, unlockedSpellSlots);
+            player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);
         } else if (knownSpells != null) {
             // Legacy save: keep the starting spellbook and add any legacy name that is a real spell id.
             for (String spName : knownSpells) {

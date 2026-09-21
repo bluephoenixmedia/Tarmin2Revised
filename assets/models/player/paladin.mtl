@@ -1,0 +1,6 @@
+newmtl Paladin_Mat
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.1 0.1 0.1
+d 1.0
+map_Kd Paladin_diffuse.png

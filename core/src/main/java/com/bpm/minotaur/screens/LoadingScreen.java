@@ -9,7 +9,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.audio.Music;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.video.JavaCVVideoPlayer;
 
 /**
@@ -41,18 +43,27 @@ public class LoadingScreen extends ScreenAdapter {
     private JavaCVVideoPlayer videoPlayer;
     private boolean videoFinished = false;
     private boolean videoError = false;
+    private boolean musicStarted = false;
+    private final boolean autoProceed;
+    private boolean proceeded = false;
 
     public LoadingScreen(Tarmin2 game) {
+        this(game, true);
+    }
+
+    public LoadingScreen(Tarmin2 game, boolean autoProceed) {
         this.game = game;
+        this.autoProceed = autoProceed;
         this.assetManager = game.getAssetManager();
         this.batch = game.getBatch();
 
         this.font = new BitmapFont();
         this.font.getData().setScale(1.6f);
 
-        boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo();
+        boolean skipIntro = com.bpm.minotaur.managers.SettingsManager.getInstance().isSkipIntroVideo()
+                || Tarmin2.isCaptureBaseline() || Tarmin2.isCapturePolished();
         if (skipIntro) {
-            Gdx.app.log("LoadingScreen", "Intro video skipped by configuration.");
+            Gdx.app.log("LoadingScreen", "Intro video skipped by configuration or capture mode.");
             videoFinished = true;
             return;
         }
@@ -60,6 +71,7 @@ public class LoadingScreen extends ScreenAdapter {
         // Initialize VideoPlayer
         try {
             videoPlayer = new JavaCVVideoPlayer();
+            videoPlayer.setMuted(true);
 
             // Try internal handle first
             FileHandle videoFile = Gdx.files.internal("video/stinger_studio.mp4");
@@ -104,6 +116,20 @@ public class LoadingScreen extends ScreenAdapter {
                     } catch (Exception ignored) {
                     }
                 }
+                // Ensure music is started if user skipped before video started
+                if (!musicStarted) {
+                    musicStarted = true;
+                    MusicManager.getInstance().playTrack("sounds/music/tarmin_core.mp3");
+                }
+            }
+        }
+
+        // Start music once the video starts playing / displaying frames
+        if (!musicStarted && videoPlayer != null && !videoFinished && !videoError) {
+            if (videoPlayer.isPlaying() || videoPlayer.getTexture() != null) {
+                musicStarted = true;
+                MusicManager.getInstance().playTrack("sounds/music/tarmin_core.mp3");
+                Gdx.app.log("LoadingScreen", "Started music playback in sync with video: tarmin_core.mp3");
             }
         }
 
@@ -184,7 +210,8 @@ public class LoadingScreen extends ScreenAdapter {
         boolean assetsLoaded = assetManager.update(assetBudgetMs);
 
         // Check if we can proceed to MainMenu
-        if (assetsLoaded && (videoFinished || videoError)) {
+        if (autoProceed && !proceeded && assetsLoaded && (videoFinished || videoError)) {
+            proceeded = true;
             Gdx.app.log("LoadingScreen", "Asset loading and video sequence complete!");
             game.proceedToMainMenu();
         }
@@ -207,6 +234,7 @@ public class LoadingScreen extends ScreenAdapter {
             videoPlayer.dispose();
             videoPlayer = null;
         }
+        // Music continues playing into MainMenuScreen
     }
 
     @Override

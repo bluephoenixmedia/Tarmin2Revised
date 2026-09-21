@@ -267,6 +267,27 @@ task runSpawnTest(type: JavaExec) {
     ignoreExitValue = true
 }
 
+task runSkyCapture(type: JavaExec) {
+    group = "debug"
+    description = "Captures the volcanic sky across time-of-day, weather and heading states"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SkyCaptureLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
+task runRetroSkyBanners(type: JavaExec) {
+    group = "debug"
+    description = "Regenerates the RETRO raycaster's directional skybox banners from the 3D dome"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SkyCaptureLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    args '--retro-banners'
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
 task runSpritePreviewer(type: JavaExec) {
     group = "debug"
     description = "Runs the Sprite Previewer Tool"

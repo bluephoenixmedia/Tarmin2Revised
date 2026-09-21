@@ -19,6 +19,7 @@ import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
 import com.bpm.minotaur.screens.GameScreen;
+import com.bpm.minotaur.gamedata.progression.SkillId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,13 +48,24 @@ public class SpellExecutionEngine {
         }
 
         // Check MP (Cantrips level 0 cost 0 MP)
-        if (spell.getMpCost() > 0 && !player.hasEnoughMana(spell.getMpCost())) {
-            eventManager.addEvent(new GameEvent("Not enough MP! (" + spell.getMpCost() + " required)", 1.5f));
+        int effectiveCost = spell.getMpCost();
+        if (effectiveCost > 0) {
+            if (player.hasSkill(SkillId.SPELL_WEAVER)) {
+                effectiveCost = Math.max(1, effectiveCost - 1);
+            }
+            if (player.hasSkill(SkillId.RUNIC_CONSERVATION) && com.badlogic.gdx.math.MathUtils.randomBoolean(0.25f)) {
+                effectiveCost = 0;
+                eventManager.addEvent(new GameEvent("RUNIC CONSERVATION: Free spell cast!", 1.5f));
+            }
+        }
+
+        if (effectiveCost > 0 && !player.hasEnoughMana(effectiveCost)) {
+            eventManager.addEvent(new GameEvent("Not enough MP! (" + effectiveCost + " required)", 1.5f));
             return false;
         }
 
-        if (spell.getMpCost() > 0) {
-            player.deductMana(spell.getMpCost());
+        if (effectiveCost > 0) {
+            player.deductMana(effectiveCost);
         }
 
         VisualArchetype archetype = spell.getVisualArchetypeEnum();
@@ -75,6 +87,13 @@ public class SpellExecutionEngine {
         }
 
         eventManager.addEvent(new GameEvent("Cast " + spell.getName() + "!", 1.5f));
+
+        // Healing is cast on yourself whatever its 5e range, so a Cure Wounds never
+        // wounds the monster standing in front of you.
+        if (isHealing(spell)) {
+            resolveSelfSpell(spell, archetype, player, maze, eventManager, gs);
+            return true;
+        }
 
         // 4. Check for Iconic Bespoke Flourishes (The Fab Five)
         String bespoke = spell.getBespokeEffect();
@@ -118,7 +137,7 @@ public class SpellExecutionEngine {
     private static void resolveFireballBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.min(12, Math.max(4, spell.getRange()));
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -166,7 +185,7 @@ public class SpellExecutionEngine {
     private static void resolveMagicMissileBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                    GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.max(3, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -279,7 +298,7 @@ public class SpellExecutionEngine {
         Monster target = maze.getMonsters().get(targetTile);
 
         if (target != null && target.getCurrentHP() > 0) {
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+            int dmg = calculateSpellDamage(spell, player);
             int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
@@ -323,12 +342,15 @@ public class SpellExecutionEngine {
     // STANDARD ARCHETYPE HANDLERS
     // =========================================================================
 
+    private static boolean isHealing(SpellTemplate spell) {
+        String name = spell.getName().toLowerCase();
+        return name.contains("cure") || name.contains("heal") || name.equals("aid") || name.contains("restoration");
+    }
+
     private static void resolveSelfSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                          GameEventManager eventManager, GameScreen gs) {
-        String name = spell.getName().toLowerCase();
-
         // Healing
-        if (name.contains("cure") || name.contains("heal") || name.contains("aid") || name.contains("restoration")) {
+        if (isHealing(spell)) {
             int amount = DiceRoller.roll(spell.getDamageDice());
             amount = Math.max(1, amount + player.getWisdomModifier());
             player.heal(amount);
@@ -363,7 +385,7 @@ public class SpellExecutionEngine {
     private static void resolveProjectileSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int maxRange = Math.max(2, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true) : null;
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
         Vector2 targetPos = (hit != null && hit.collisionPoint != null)
@@ -399,8 +421,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
-            dmg = Math.max(1, dmg);
+            int dmg = calculateSpellDamage(spell, player);
 
             int actualDmg = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
@@ -425,7 +446,7 @@ public class SpellExecutionEngine {
     private static void resolveBurstSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                           GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int castRange = Math.min(8, spell.getRange());
-        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true) : null;
+        HitResult hit = (combatManager != null) ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, true) : null;
 
         GridPoint2 center = (hit != null && hit.collisionPoint != null)
                 ? hit.collisionPoint
@@ -465,7 +486,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+            int dmg = calculateSpellDamage(spell, player);
             int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
@@ -492,8 +513,7 @@ public class SpellExecutionEngine {
                     continue;
                 }
 
-                int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
-                dmg = Math.max(1, dmg);
+                int dmg = calculateSpellDamage(spell, player);
 
                 int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
@@ -505,6 +525,14 @@ public class SpellExecutionEngine {
             }
         }
         return hits;
+    }
+
+    private static int calculateSpellDamage(SpellTemplate spell, Player player) {
+        int dmg = DiceRoller.roll(spell.getDamageDice()) + player.getSpellPower();
+        if (player.hasSkill(SkillId.PRIMORDIAL_FOCUS)) {
+            dmg = (int) (dmg * 1.25f);
+        }
+        return Math.max(1, dmg);
     }
 
     private static void handleKill(Monster target, GridPoint2 pos, Player player, Maze maze,

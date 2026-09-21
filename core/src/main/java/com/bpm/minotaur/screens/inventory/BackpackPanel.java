@@ -11,9 +11,9 @@ import java.util.List;
 
 public class BackpackPanel extends WidgetGroup implements InventoryEventBus.Listener {
 
-    private static final int   COLS       = 8;  // number of columns in the grid
+    private static final int   COLS       = 7;  // number of columns in the grid (7x6 = 42 slots)
     private static final int   ROWS       = 6;  // number of rows in the grid
-    private static final int   SLOT_COUNT = COLS * ROWS; // 48 total slots
+    private static final int   SLOT_COUNT = COLS * ROWS; // 42 total slots (Inventory.MAX_BACKPACK_SIZE)
 
     /** Visual size of each slot icon in stage pixels. */
     private static final float SLOT_SIZE  = 56f;

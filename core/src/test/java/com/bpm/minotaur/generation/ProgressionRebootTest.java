@@ -77,6 +77,7 @@ public class ProgressionRebootTest {
         assertFalse("Shelter must start without Campfire", altar.hasStation(ShelterAltar.Station.CAMPFIRE));
         assertFalse("Shelter must start without Crafting Bench", altar.hasStation(ShelterAltar.Station.CRAFTING_BENCH));
         assertFalse("Shelter must start without Lantern", altar.hasStation(ShelterAltar.Station.LANTERN));
+        assertFalse("Shelter must start without Training Grounds", altar.hasStation(ShelterAltar.Station.TRAINING_DUMMY));
     }
 
     @Test

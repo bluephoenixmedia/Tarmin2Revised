@@ -443,6 +443,62 @@
             }
         ]
     },
+    "HOME_TRAINING_DUMMY": {
+        "friendlyName": "Training Grounds",
+        "texturePath": "images/items/training_dummy.png",
+        "isImpassable": true,
+        "spriteData": [
+            "........................",
+            "........................",
+            "..........####..........",
+            "..........#..#..........",
+            ".........######.........",
+            "........########........",
+            ".........######.........",
+            "..........####..........",
+            "...........##...........",
+            "........########........",
+            "........########........",
+            "........########........",
+            "...........##...........",
+            "...........##...........",
+            "..........####..........",
+            "..........#..#..........",
+            "..........#..#..........",
+            ".........######.........",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "baseValue": 0,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": true,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "TAN",
+                "minLevel": 1,
+                "maxLevel": 99,
+                "weight": 1
+            }
+        ]
+    },
     "HOME_FIRE_POT": {
         "friendlyName": "Cooking Fire",
         "texturePath": "images/items/cookingpot.png",
@@ -2155,6 +2211,94 @@
         "category": "AMMUNITION",
         "isAmmunition": true,
         "probability": 25
+    },
+    "SHOT_POUCH": {
+        "friendlyName": "Pouch of Shot",
+        "texturePath": "images/items/quiver.png",
+        "spriteData": [
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "..........##............",
+            "........##..#...........",
+            ".......##..#............",
+            "........#.#.............",
+            "........#########.......",
+            "........#########.......",
+            "........#########.......",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................",
+            "........................"
+        ],
+        "baseValue": 12,
+        "damageDice": 0,
+        "armorClassBonus": 0,
+        "isWeapon": false,
+        "isRanged": false,
+        "isArmor": false,
+        "isPotion": false,
+        "isFood": false,
+        "isTreasure": false,
+        "isKey": false,
+        "isUsable": false,
+        "isContainer": false,
+        "isRing": false,
+        "scale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "variants": [
+            {
+                "color": "BLUE",
+                "minLevel": 1,
+                "maxLevel": 7,
+                "weight": 1
+            },
+            {
+                "color": "GRAY_SPIRITUAL",
+                "minLevel": 3,
+                "maxLevel": 7,
+                "weight": 3
+            },
+            {
+                "color": "WHITE_SPIRITUAL",
+                "minLevel": 5,
+                "maxLevel": 14,
+                "weight": 5
+            },
+            {
+                "color": "PINK",
+                "minLevel": 8,
+                "maxLevel": 14,
+                "weight": 8
+            },
+            {
+                "color": "RED",
+                "minLevel": 13,
+                "maxLevel": 99,
+                "weight": 13
+            },
+            {
+                "color": "PURPLE",
+                "minLevel": 21,
+                "maxLevel": 99,
+                "weight": 21
+            }
+        ],
+        "category": "AMMUNITION",
+        "isAmmunition": true,
+        "probability": 6
     },
     "WAR_BOOK": {
         "friendlyName": "War Book",

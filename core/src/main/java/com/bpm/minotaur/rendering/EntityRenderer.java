@@ -125,6 +125,9 @@ public class EntityRenderer {
         }
     }
 
+    /** Free-running clock for the disguised-mimic idle bob; see drawItemTexture. */
+    private float mimicIdlePhase = 0f;
+
     public void render(ShapeRenderer shapeRenderer, Player player, Maze maze, Viewport viewport,
             float[] depthBuffer, FirstPersonRenderer firstPersonRenderer, WorldManager worldManager) {
         render(shapeRenderer, player, maze, viewport, depthBuffer, firstPersonRenderer, worldManager, null);
@@ -136,6 +139,10 @@ public class EntityRenderer {
 
         if (depthBuffer == null)
             return;
+
+        // Advanced once per frame, not once per mimic: otherwise the bob would speed up
+        // with the number of mimics on screen.
+        mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
         this.currentWorldManager = worldManager;
         this.currentMaze = maze;
@@ -702,8 +709,13 @@ public class EntityRenderer {
             int screenX = (int) ((camera.viewportWidth / 2) * (1 + transformX / transformY));
 
             int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-            int spriteHeight = (int) (baseSpriteHeight * monster.scale.y);
-            int spriteWidth = (int) (baseSpriteHeight * monster.scale.x);
+            float pulse = 0f;
+            float rangedTelegraph = monster.getRangedAttackTelegraphProgress();
+            if (rangedTelegraph < 1f) {
+                pulse = (1f - rangedTelegraph) * 0.16f;
+            }
+            int spriteHeight = (int) (baseSpriteHeight * monster.scale.y * (1f + pulse));
+            int spriteWidth = (int) (baseSpriteHeight * monster.scale.x * (1f + pulse));
 
             float offX = 0;
             float offY = 0;
@@ -764,6 +776,13 @@ public class EntityRenderer {
                 float flashStrength = (1f - spellFlash) * 0.85f;
                 Color sc = monster.getSpellFlashColor();
                 monsterLight.lerp(sc, flashStrength);
+            }
+
+            // Ranged attack telegraph flash: chromatic windup aura
+            if (rangedTelegraph < 1f && monster.getRangedAttackTelegraphColor() != null) {
+                float flashStrength = (1f - rangedTelegraph) * 0.90f;
+                Color rc = monster.getRangedAttackTelegraphColor();
+                monsterLight.lerp(rc, flashStrength);
             }
 
             if (inPitchDarkness) {
@@ -862,6 +881,14 @@ public class EntityRenderer {
                 // Normalize offsets (which are in pixels) to 0..1 range relative to texture size
                 offX = item.getTemplate().offsetX / texW;
                 offY = item.getTemplate().offsetY / texH;
+            }
+
+            // A disguised mimic breathes here too. This engine tints items by lighting
+            // alone, so a colour-based tell would be invisible -- the bob is the one
+            // cue that reads in both renderers.
+            if (item.isMimic()) {
+                offY += MimicBob.spriteOffset(mimicIdlePhase,
+                        item.getPosition().x, item.getPosition().y);
             }
 
             if (atFeet) {
@@ -1045,8 +1072,13 @@ public class EntityRenderer {
             Camera camera, Viewport viewport, float[] depthBuffer) {
         int spriteScreenY = (int) (camera.viewportHeight / 2);
         int baseSpriteHeight = (int) Math.abs(camera.viewportHeight / transformY);
-        int spriteHeight = (int) (baseSpriteHeight * monster.scale.y);
-        int spriteWidth = (int) (baseSpriteHeight * monster.scale.x);
+        float retroPulse = 0f;
+        float retroRanged = monster.getRangedAttackTelegraphProgress();
+        if (retroRanged < 1f) {
+            retroPulse = (1f - retroRanged) * 0.16f;
+        }
+        int spriteHeight = (int) (baseSpriteHeight * monster.scale.y * (1f + retroPulse));
+        int spriteWidth = (int) (baseSpriteHeight * monster.scale.x * (1f + retroPulse));
         float drawY = spriteScreenY - spriteHeight / 2.0f;
         if (monster.getSpriteData() != null) {
             drawAsciiSprite(shapeRenderer, monster, monster.getSpriteData(), screenX, transformY, camera, viewport,
@@ -1080,6 +1112,7 @@ public class EntityRenderer {
         } else {
             drawY = (camera.viewportHeight / 2) - spriteHeight / 2.0f;
         }
+        drawY += scenery.getPixelOffsetY();
         String[] spriteData = scenery.getSpriteData();
         if (spriteData != null) {
             drawAsciiSprite(shapeRenderer, scenery, spriteData, screenX, transformY, camera, viewport, depthBuffer,
@@ -1463,6 +1496,7 @@ public class EntityRenderer {
             // We want the sprite bottom to be there.
 
             drawY = (camera.viewportHeight / 2) - (baseSpriteHeight / 2.0f);
+            drawY += scenery.getPixelOffsetY();
 
             // If we use standard centering logic:
             // drawY = center - height/2 = center - (scale*base)/2.

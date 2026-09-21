@@ -4,22 +4,30 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Json;
 import com.bpm.minotaur.gamedata.UnlockData;
-import java.util.Map;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class UnlockManager {
     private static final UnlockManager INSTANCE = new UnlockManager();
-    private String saveFile = "saves/profile.json";
+    public static final String DEFAULT_SAVE_FILE = "saves/unlocks.json";
+    public static final String LEGACY_PROFILE_FILE = "saves/profile.json";
+    public static final int UNLOCK_SCORE_THRESHOLD = 310;
 
+    private String saveFile = DEFAULT_SAVE_FILE;
     private UnlockData data;
     private final Json json;
     private com.bpm.minotaur.gamedata.item.ItemDataManager itemDataManager;
 
     // Session tracking
-    private java.util.List<String> sessionUnlocks = new java.util.ArrayList<>();
+    private final List<String> sessionUnlocks = new ArrayList<>();
 
     private UnlockManager() {
         json = new Json();
         json.setUsePrototypes(false);
+        json.setIgnoreUnknownFields(true);
         load();
     }
 
@@ -29,178 +37,105 @@ public class UnlockManager {
 
     public void setSaveFile(String path) {
         this.saveFile = path;
-        load(); // Reload from new path
+        load();
     }
 
     public void load() {
-        if (Gdx.files == null) {
-            data = new UnlockData();
-            return;
-        }
-        FileHandle file = Gdx.files.local(saveFile);
+        FileHandle file = getFileHandle(saveFile);
         if (file.exists()) {
             try {
                 data = json.fromJson(UnlockData.class, file);
+                if (data == null) {
+                    data = new UnlockData();
+                }
                 if (Gdx.app != null) {
-                    Gdx.app.log("UnlockManager", "Profile loaded successfully.");
+                    Gdx.app.log("UnlockManager", "Unlocks loaded successfully from " + saveFile);
                 }
             } catch (Exception e) {
                 if (Gdx.app != null) {
-                    Gdx.app.error("UnlockManager", "Failed to load profile, creating new.", e);
+                    Gdx.app.error("UnlockManager", "Failed to load unlocks from " + saveFile + ", creating new.", e);
                 }
                 data = new UnlockData();
             }
         } else {
             data = new UnlockData();
+            checkAndMigrateLegacyProfile();
             save();
         }
     }
 
+    private void checkAndMigrateLegacyProfile() {
+        try {
+            FileHandle legacyFile = getFileHandle(LEGACY_PROFILE_FILE);
+            if (legacyFile.exists()) {
+                String content = legacyFile.readString("UTF-8");
+                if (content.contains("unlockedContent")) {
+                    UnlockData legacyData = json.fromJson(UnlockData.class, legacyFile);
+                    if (legacyData != null && legacyData.unlockedContent != null && !legacyData.unlockedContent.isEmpty()) {
+                        data.unlockedContent.addAll(legacyData.unlockedContent);
+                        if (Gdx.app != null) {
+                            Gdx.app.log("UnlockManager", "Migrated " + legacyData.unlockedContent.size() + " unlocks from legacy profile.json");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (Gdx.app != null) {
+                Gdx.app.error("UnlockManager", "Legacy migration check failed", e);
+            }
+        }
+    }
+
     public void save() {
-        if (Gdx.files == null) {
+        if (data == null) {
             return;
         }
         try {
-            FileHandle file = Gdx.files.local(saveFile);
-            file.writeString(json.prettyPrint(data), false);
+            FileHandle file = getFileHandle(saveFile);
+            SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
             if (Gdx.app != null) {
-                Gdx.app.error("UnlockManager", "Failed to save profile.", e);
+                Gdx.app.error("UnlockManager", "Failed to save unlocks to " + saveFile, e);
             }
         }
+    }
+
+    private FileHandle getFileHandle(String path) {
+        if (Gdx.files != null) {
+            return Gdx.files.local(path);
+        }
+        return new FileHandle(new File(path));
     }
 
     public void setItemDataManager(com.bpm.minotaur.gamedata.item.ItemDataManager manager) {
         this.itemDataManager = manager;
-        // Generate plan if missing OR if content was wiped/invalid.
-        // Assuming empty map means no plan.
-        if (data.unlockPlan.isEmpty()) {
-            generateUnlockPlan();
-        }
     }
 
-    public java.util.List<String> getSessionUnlocks() {
-        return sessionUnlocks;
+    public List<String> getSessionUnlocks() {
+        return Collections.unmodifiableList(sessionUnlocks);
     }
 
-    private void generateUnlockPlan() {
-        if (itemDataManager == null)
-            return;
-        Gdx.app.log("UnlockManager", "Generating progressive unlock plan...");
-
-        java.util.List<com.bpm.minotaur.gamedata.item.ItemTemplate> lockedItems = new java.util.ArrayList<>();
-
-        // 1. Gather all locked items
-        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : com.bpm.minotaur.gamedata.item.Item.ItemType
-                .values()) {
-            try {
-                com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
-                // Check if actually locked in template AND not yet unlocked in profile
-                if (t.locked && !data.unlockedContent.contains(type.name())) {
-                    lockedItems.add(t);
-                }
-            } catch (Exception e) {
-                // Ignore missing templates
-            }
-        }
-
-        // 2. Sort by Value/Power
-        lockedItems.sort((a, b) -> Integer.compare(calculateItemScore(a), calculateItemScore(b)));
-
-        if (lockedItems.isEmpty()) {
-            Gdx.app.log("UnlockManager", "No locked items found to plan for.");
-            return;
-        }
-
-        // 3. Assign Requirements progressively
-        java.util.Random rng = new java.util.Random();
-
-        long currentSteps = Math.max(data.totalSteps, 100);
-        long currentDoors = Math.max(data.totalDoorsOpened, 10);
-        long currentKills = 10; // Start low
-        int currentLevel = 1;
-
-        for (int i = 0; i < lockedItems.size(); i++) {
-            com.bpm.minotaur.gamedata.item.ItemTemplate item = lockedItems.get(i);
-
-            // Determine Gate Type
-            UnlockData.UnlockRequirement.GateType gate = UnlockData.UnlockRequirement.GateType.values()[rng.nextInt(4)];
-            long target = 0;
-
-            // Progressive scaling factor (0.0 to 1.0)
-            float progress = (float) i / lockedItems.size();
-
-            switch (gate) {
-                case TOTAL_STEPS:
-                    currentSteps += 250 + (long) (progress * 2500); // Reduced halves
-                    target = currentSteps;
-                    break;
-                case TOTAL_DOORS:
-                    currentDoors += 3 + (long) (progress * 25);
-                    target = currentDoors;
-                    break;
-                case MONSTER_KILLS:
-                    currentKills += 5 + (long) (progress * 50);
-                    target = currentKills;
-                    break;
-                case DEEPEST_LEVEL:
-                    if (progress < 0.2f)
-                        currentLevel = Math.max(currentLevel, 2);
-                    else if (progress < 0.5f)
-                        currentLevel = Math.max(currentLevel, 4); // Lowered
-                    else
-                        currentLevel = Math.max(currentLevel, 8); // Lowered
-
-                    // Add slight random variance
-                    target = currentLevel + rng.nextInt(2);
-                    break;
-            }
-
-            // Map ItemType Name (ID) to Requirement
-            String id = findIdForTemplate(item);
-            if (id != null) {
-                data.unlockPlan.put(id, new UnlockData.UnlockRequirement(gate, target));
-            }
-        }
-        save();
-    }
-
-    private int calculateItemScore(com.bpm.minotaur.gamedata.item.ItemTemplate t) {
+    public static int calculateItemScore(com.bpm.minotaur.gamedata.item.ItemTemplate t) {
+        if (t == null) return 0;
         int score = t.baseValue;
         if (t.isArmor)
             score += t.armorClassBonus * 100;
         if (t.isWeapon) {
-            // Rough damage est: "1d6" -> 3.5
             if (t.damageDice != null && t.damageDice.contains("d")) {
                 String[] parts = t.damageDice.split("d");
                 try {
                     int d = Integer.parseInt(parts[1]);
                     int n = Integer.parseInt(parts[0]);
                     score += n * d * 50;
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }
         return score;
     }
 
-    private String findIdForTemplate(com.bpm.minotaur.gamedata.item.ItemTemplate t) {
-        // This is slow, but runs once per profile gen
-        try {
-            for (com.bpm.minotaur.gamedata.item.Item.ItemType type : com.bpm.minotaur.gamedata.item.Item.ItemType
-                    .values()) {
-                try {
-                    if (itemDataManager.getTemplate(type) == t)
-                        return type.name();
-                } catch (Exception e) {
-                }
-            }
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
     public void incrementStat(String statName, int amount) {
+        if (data == null) return;
         switch (statName) {
             case "steps":
                 data.totalSteps += amount;
@@ -211,72 +146,132 @@ public class UnlockManager {
             default:
                 break;
         }
-        checkUnlocks(); // Check for new unlocks after stat update
     }
 
     public void recordKill(String monsterType) {
+        if (data == null) return;
         int current = data.monsterKills.getOrDefault(monsterType, 0);
         data.monsterKills.put(monsterType, current + 1);
-        save();
-        checkUnlocks();
     }
 
     public void updateDeepestLevel(int level) {
+        if (data == null) return;
         if (level > data.deepestLevelReached) {
             data.deepestLevelReached = level;
             save();
-            checkUnlocks();
         }
     }
 
     public boolean isUnlocked(String contentId) {
-        if (contentId == null || contentId.isEmpty())
+        if (contentId == null || contentId.isEmpty()) {
+            return false;
+        }
+        if (data != null && data.unlockedContent.contains(contentId)) {
             return true;
-        return data.unlockedContent.contains(contentId);
-    }
-
-    private void checkUnlocks() {
-        if (data.unlockPlan.isEmpty())
-            return;
-
-        java.util.Iterator<Map.Entry<String, UnlockData.UnlockRequirement>> it = data.unlockPlan.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, UnlockData.UnlockRequirement> entry = it.next();
-            String id = entry.getKey();
-            UnlockData.UnlockRequirement req = entry.getValue();
-            boolean met = false;
-
-            switch (req.type) {
-                case TOTAL_STEPS:
-                    met = data.totalSteps >= req.targetValue;
-                    break;
-                case TOTAL_DOORS:
-                    met = data.totalDoorsOpened >= req.targetValue;
-                    break;
-                case MONSTER_KILLS:
-                    long totalKills = data.monsterKills.values().stream().mapToInt(Integer::intValue).sum();
-                    met = totalKills >= req.targetValue;
-                    break;
-                case DEEPEST_LEVEL:
-                    met = data.deepestLevelReached >= req.targetValue;
-                    break;
-            }
-
-            if (met) {
-                // Must call internal unlock to avoid recursion/checks issues if any
-                unlockContent(id);
-                it.remove(); // Remove from plan (moved to unlockedContent)
+        }
+        if (itemDataManager != null) {
+            try {
+                com.bpm.minotaur.gamedata.item.Item.ItemType type =
+                        com.bpm.minotaur.gamedata.item.Item.ItemType.valueOf(contentId);
+                com.bpm.minotaur.gamedata.item.ItemTemplate template = itemDataManager.getTemplate(type);
+                if (template != null && !template.unlockGated) {
+                    return true;
+                }
+            } catch (Exception ignored) {
             }
         }
+        return false;
+    }
+
+    public boolean isItemGated(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        if (type == null || itemDataManager == null) {
+            return false;
+        }
+        com.bpm.minotaur.gamedata.item.ItemTemplate template = itemDataManager.getTemplate(type);
+        return template != null && template.unlockGated;
+    }
+
+    public void resetForTesting() {
+        data = new UnlockData();
+        sessionUnlocks.clear();
     }
 
     public void unlockContent(String contentId) {
+        if (data == null) return;
         if (!data.unlockedContent.contains(contentId)) {
             data.unlockedContent.add(contentId);
-            sessionUnlocks.add(contentId); // Track for this session
-            Gdx.app.log("UnlockManager", "!!! UNLOCKED NEW CONTENT: " + contentId + " !!!");
+            sessionUnlocks.add(contentId);
+            if (Gdx.app != null) {
+                Gdx.app.log("UnlockManager", "!!! UNLOCKED NEW CONTENT: " + contentId + " !!!");
+            }
             save();
         }
+    }
+
+    public List<String> rollRunUnlocks(com.bpm.minotaur.telemetry.TelemetryManager telemetry, int maxFloorReached) {
+        List<String> newlyUnlocked = new ArrayList<>();
+        if (itemDataManager == null || data == null) {
+            return newlyUnlocked;
+        }
+
+        int strataReached = Math.max(1, (maxFloorReached - 1) / 3 + 1);
+        if (telemetry != null && telemetry.getStrataReached() > strataReached) {
+            strataReached = telemetry.getStrataReached();
+        }
+
+        int milestoneCount = 0;
+        if (telemetry != null) {
+            if (maxFloorReached > 1 && (strataReached > 1 || maxFloorReached > data.deepestLevelReached)) {
+                milestoneCount++;
+            }
+            if (telemetry.getTotalMonstersKilled() >= 25) {
+                milestoneCount++;
+            }
+            if (telemetry.getDivinitiesEarned() >= 50) {
+                milestoneCount++;
+            }
+            if (telemetry.getTurnsLived() >= 300) {
+                milestoneCount++;
+            }
+        }
+        int unlocksToGrant = Math.min(3, 1 + milestoneCount);
+
+        int maxEligibleScore = UNLOCK_SCORE_THRESHOLD + (strataReached * 250);
+        List<com.bpm.minotaur.gamedata.item.Item.ItemType> boundedPool = new ArrayList<>();
+        List<com.bpm.minotaur.gamedata.item.Item.ItemType> fallbackPool = new ArrayList<>();
+
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : com.bpm.minotaur.gamedata.item.Item.ItemType.values()) {
+            try {
+                com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
+                if (t != null && t.unlockGated && !data.unlockedContent.contains(type.name())) {
+                    int score = calculateItemScore(t);
+                    fallbackPool.add(type);
+                    if (score <= maxEligibleScore) {
+                        boundedPool.add(type);
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        List<com.bpm.minotaur.gamedata.item.Item.ItemType> eligible =
+                (!boundedPool.isEmpty()) ? boundedPool : fallbackPool;
+
+        if (eligible.isEmpty()) {
+            return newlyUnlocked;
+        }
+
+        Collections.shuffle(eligible);
+        int grantCount = Math.min(unlocksToGrant, eligible.size());
+        for (int i = 0; i < grantCount; i++) {
+            com.bpm.minotaur.gamedata.item.Item.ItemType unlockedType = eligible.get(i);
+            unlockContent(unlockedType.name());
+            com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(unlockedType);
+            String displayName = (t != null && t.friendlyName != null) ? t.friendlyName : unlockedType.name();
+            newlyUnlocked.add(displayName);
+        }
+
+        return newlyUnlocked;
     }
 
     public UnlockData getData() {

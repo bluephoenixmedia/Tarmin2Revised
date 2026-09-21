@@ -37,6 +37,16 @@ public class ShopInventory {
             ItemType.POTION_GOLD, ItemType.POTION_SWIRLY, ItemType.POTION_BUBBLY
     };
 
+    /**
+     * Ammunition. Shot is the reason this pool exists: firearms draw from a resource
+     * that deliberately never litters the floor, so the merchant is one of only two
+     * ways to restock. Arrows ride along because a shop that sells bows and crossbows
+     * but no arrows was always an odd gap.
+     */
+    private static final ItemType[] AMMO_POOL = {
+            ItemType.SHOT_POUCH, ItemType.QUIVER
+    };
+
     private static final ItemType[] SPECIAL_POOL = {
             ItemType.RING_GOLD, ItemType.AMULET, ItemType.SCROLL,
             ItemType.WAND, ItemType.FOOD, ItemType.COINS
@@ -66,6 +76,8 @@ public class ShopInventory {
         addRandomItems(inv, POTION_POOL, rng.nextInt(3) + 3, itemDataManager, assetManager, level);
         // 1-2 specials
         addRandomItems(inv, SPECIAL_POOL, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
+        // 1-2 bundles of ammunition
+        addRandomItems(inv, AMMO_POOL, rng.nextInt(2) + 1, itemDataManager, assetManager, level);
     }
 
     private void addRandomItems(Inventory inv, ItemType[] pool, int count,
@@ -74,9 +86,14 @@ public class ShopInventory {
         for (ItemType t : pool) {
             try {
                 idm.getTemplate(t); // will throw if not present
-                available.add(t);
+                if (com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(t.name())) {
+                    available.add(t);
+                }
             } catch (Exception ignored) {
             }
+        }
+        if (available.isEmpty() && pool.length > 0) {
+            available.add(pool[0]);
         }
         if (available.isEmpty())
             return;
@@ -99,6 +116,24 @@ public class ShopInventory {
     public static int getBuyPrice(Item item, ItemDataManager idm) {
         int base = getBaseValue(item, idm);
         return Math.max(1, (int) (base * MARKUP));
+    }
+
+    /**
+     * What the merchant will actually charge, restitution discount included.
+     *
+     * <p>Lives here rather than in the shop window so the list and the till cannot quote
+     * different numbers. A shop that advertises one price and charges another is worse
+     * than one that shows no prices at all.
+     *
+     * @param restitutionDiscount 0..1; the apology discount owed after one of the
+     *        merchant's strays clips the player.
+     */
+    public static int getEffectiveBuyPrice(Item item, ItemDataManager idm, float restitutionDiscount) {
+        int price = getBuyPrice(item, idm);
+        if (restitutionDiscount > 0f) {
+            price = Math.max(1, Math.round(price * (1f - restitutionDiscount)));
+        }
+        return price;
     }
 
     public static int getSellPrice(Item item, ItemDataManager idm) {

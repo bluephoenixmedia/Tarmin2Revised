@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bpm.minotaur.Tarmin2;
+import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.rendering.HudSkin;
 
 /**
@@ -32,6 +33,7 @@ public class PlayerDeathScreen extends BaseScreen {
     private final int depthReached;
     private final int monstersSlain;
     private final int divinitiesEarned;
+    private final java.util.List<String> newUnlocks;
     private final HudSkin hudSkin;
 
     private Stage stage;
@@ -40,12 +42,20 @@ public class PlayerDeathScreen extends BaseScreen {
     public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
                              float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore) {
         this(game, parentScreen, deathCount, maxDeaths, bridgeIntegrity, lostItems, retainedItems, defeatLore,
-             "Fell in the Labyrinth", 1, 0, 0);
+             "Fell in the Labyrinth", 1, 0, 0, null);
     }
 
     public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
                              float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore,
                              String epitaphCause, int depthReached, int monstersSlain, int divinitiesEarned) {
+        this(game, parentScreen, deathCount, maxDeaths, bridgeIntegrity, lostItems, retainedItems, defeatLore,
+             epitaphCause, depthReached, monstersSlain, divinitiesEarned, null);
+    }
+
+    public PlayerDeathScreen(Tarmin2 game, GameScreen parentScreen, int deathCount, int maxDeaths,
+                             float bridgeIntegrity, int lostItems, int retainedItems, String defeatLore,
+                             String epitaphCause, int depthReached, int monstersSlain, int divinitiesEarned,
+                             java.util.List<String> newUnlocks) {
         super(game);
         this.parentScreen = parentScreen;
         this.deathCount = deathCount;
@@ -60,11 +70,13 @@ public class PlayerDeathScreen extends BaseScreen {
         this.depthReached = Math.max(1, depthReached);
         this.monstersSlain = monstersSlain;
         this.divinitiesEarned = divinitiesEarned;
+        this.newUnlocks = newUnlocks;
         this.hudSkin = new HudSkin();
     }
 
     @Override
     public void show() {
+        MusicManager.getInstance().stop();
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
 
         InputMultiplexer multiplexer = new InputMultiplexer();
@@ -91,7 +103,6 @@ public class PlayerDeathScreen extends BaseScreen {
         header.pad(20, 40, 20, 40);
 
         Label perishedLabel = new Label("YOU HAVE FALLEN", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL));
-        perishedLabel.setFontScale(1.8f);
         header.add(perishedLabel).center().row();
 
         Label loreLabel = new Label(defeatLore, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
@@ -150,10 +161,30 @@ public class PlayerDeathScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
         epitaphCard.add(divEarnedLbl).left().padBottom(14).row();
 
-        Label unlockDesc = new Label("Progression Note: Foes defeated and depths chartered have permanently attuned the procedural generation of future mazes. Spend banked Divinities at the Shelter Altar to unlock advanced supplies and relics.",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        unlockDesc.setWrap(true);
-        epitaphCard.add(unlockDesc).width(530).left().expandY().top().row();
+        if (newUnlocks != null && !newUnlocks.isEmpty()) {
+            Label unlockTitle = new Label("DISCOVERIES UNLOCKED FOR FUTURE EXPEDITIONS:",
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN));
+            epitaphCard.add(unlockTitle).width(530).left().padTop(6).padBottom(4).row();
+
+            StringBuilder sb = new StringBuilder();
+            for (String unlock : newUnlocks) {
+                sb.append("- ").append(unlock).append("\n");
+            }
+            Label unlockItems = new Label(sb.toString().trim(),
+                    new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+            unlockItems.setWrap(true);
+            epitaphCard.add(unlockItems).width(530).left().padBottom(6).row();
+
+            Label unlockNote = new Label("These discoveries will now appear in future dungeon loot and merchant inventories.",
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            unlockNote.setWrap(true);
+            epitaphCard.add(unlockNote).width(530).left().expandY().top().row();
+        } else {
+            Label unlockDesc = new Label("Progression Note: Every expedition attunes the procedural generation of future mazes. Deeper delves and greater triumphs will yield further discoveries for future runs.",
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            unlockDesc.setWrap(true);
+            epitaphCard.add(unlockDesc).width(530).left().expandY().top().row();
+        }
 
         body.add(epitaphCard).width(590).expandY().fillY().padRight(20);
 
@@ -212,7 +243,7 @@ public class PlayerDeathScreen extends BaseScreen {
             }
         });
 
-        footer.add(awakenBtn).width(680).height(64).center();
+        footer.add(awakenBtn).minWidth(680).height(64).center();
         root.add(footer).fillX();
 
         stage.addActor(root);

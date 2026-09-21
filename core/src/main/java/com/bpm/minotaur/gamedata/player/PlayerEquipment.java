@@ -140,6 +140,10 @@ public class PlayerEquipment {
         return "LIGHT";
     }
 
+    public boolean isWearingHeavyArmor() {
+        return "HEAVY".equalsIgnoreCase(getArmorTier());
+    }
+
     public int getMaxDexBonus() {
         if (wornChest != null) {
             return wornChest.getMaxDexBonus();

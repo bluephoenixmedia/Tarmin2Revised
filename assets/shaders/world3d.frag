@@ -25,6 +25,11 @@ uniform vec3 u_fogColor;
 uniform vec3 u_ambientColor;
 uniform float u_doomFactor;
 
+// Volcanic sky bounce: colour and strength of the light the burning sky throws down onto
+// upward-facing surfaces. Zero indoors and underground, where there is no sky to bounce.
+uniform vec3 u_skyRimColor;
+uniform float u_skyRimStrength;
+
 // Directional celestial lighting (Sun / Moon)
 uniform vec3 u_dirLightDir;
 uniform vec3 u_dirLightColor;
@@ -123,6 +128,13 @@ void main() {
         // Clamp maximum light brightness
         accumulatedLight = min(accumulatedLight, vec3(2.2));
         finalColor = vec4(baseColor.rgb * accumulatedLight, baseColor.a);
+
+        // Upward-facing surfaces catch the burning sky. Multiplying through baseColor tints the
+        // surface rather than washing it out, so materials keep their identity under the glow.
+        if (u_skyRimStrength > 0.001) {
+            float skyFacing = max(v_normal.y, 0.0);
+            finalColor.rgb += baseColor.rgb * u_skyRimColor * (skyFacing * u_skyRimStrength);
+        }
     }
 
     // Distance Fog

@@ -126,6 +126,17 @@ public class Monster implements Renderable {
     private int dexterity;
     private boolean hasRangedAttack;
     private int attackRange;
+    private String rangedProjectile = "ARROW";
+    private String rangedDamageDice = null;
+    private DamageType rangedDamageType = null;
+    private String rangedEffect = null;
+    private float rangedEffectChance = 0.5f;
+    private float rangedPreferredDistance = 4f;
+    private int rangedShotCooldown;
+
+    private long lastRangedTelegraphTimeMillis = -1L;
+    private Color rangedTelegraphColor = null;
+    private float rangedTelegraphDurationSec = 0.35f;
 
     // --- AI Fields ---
     private MonsterTemplate.AiType aiType;
@@ -270,6 +281,12 @@ public class Monster implements Renderable {
         this.dexterity = template.dexterity;
         this.hasRangedAttack = template.hasRangedAttack;
         this.attackRange = template.attackRange;
+        this.rangedProjectile = template.rangedProjectile != null ? template.rangedProjectile : "ARROW";
+        this.rangedDamageDice = template.rangedDamageDice;
+        this.rangedDamageType = template.rangedDamageType;
+        this.rangedEffect = template.rangedEffect;
+        this.rangedEffectChance = template.rangedEffectChance;
+        this.rangedPreferredDistance = template.rangedPreferredDistance > 0 ? template.rangedPreferredDistance : 4f;
 
         // Apply color-tier HP multiplier (elite/rare variants are proportionally tougher).
         float colorMult = color.getStrengthMultiplier();
@@ -365,6 +382,26 @@ public class Monster implements Renderable {
 
     public Color getSpellFlashColor() {
         return spellFlashColor;
+    }
+
+    public void triggerRangedAttackTelegraph(Color color, float durationSec) {
+        this.rangedTelegraphColor = color != null ? color.cpy() : Color.WHITE;
+        this.rangedTelegraphDurationSec = durationSec > 0 ? durationSec : 0.35f;
+        this.lastRangedTelegraphTimeMillis = System.currentTimeMillis();
+    }
+
+    public float getRangedAttackTelegraphProgress() {
+        if (lastRangedTelegraphTimeMillis < 0) return 1f;
+        float elapsed = (System.currentTimeMillis() - lastRangedTelegraphTimeMillis) / 1000f;
+        return Math.min(1f, elapsed / rangedTelegraphDurationSec);
+    }
+
+    public Color getRangedAttackTelegraphColor() {
+        return rangedTelegraphColor;
+    }
+
+    public boolean isRangedTelegraphing() {
+        return getRangedAttackTelegraphProgress() < 1f;
     }
 
     // --- AI Getters ---
@@ -657,11 +694,92 @@ public class Monster implements Renderable {
     }
 
     public boolean hasRangedAttack() {
-        return hasRangedAttack;
+        if (hasRangedAttack) return true;
+        MonsterTemplate t = getTemplate();
+        return t != null && t.hasRangedAttack;
     }
 
     public int getAttackRange() {
-        return attackRange;
+        if (attackRange > 0) return attackRange;
+        MonsterTemplate t = getTemplate();
+        return (t != null && t.attackRange > 0) ? t.attackRange : 6;
+    }
+
+    public String getRangedProjectile() {
+        if (rangedProjectile != null) return rangedProjectile;
+        MonsterTemplate t = getTemplate();
+        return (t != null && t.rangedProjectile != null) ? t.rangedProjectile : "ARROW";
+    }
+
+    public void setRangedProjectile(String rangedProjectile) {
+        this.rangedProjectile = rangedProjectile;
+    }
+
+    public String getRangedDamageDice() {
+        if (rangedDamageDice != null) return rangedDamageDice;
+        MonsterTemplate t = getTemplate();
+        if (t != null && t.rangedDamageDice != null) return t.rangedDamageDice;
+        return getDamageDice();
+    }
+
+    public void setRangedDamageDice(String rangedDamageDice) {
+        this.rangedDamageDice = rangedDamageDice;
+    }
+
+    public DamageType getRangedDamageType() {
+        if (rangedDamageType != null) return rangedDamageType;
+        MonsterTemplate t = getTemplate();
+        if (t != null && t.rangedDamageType != null) return t.rangedDamageType;
+        return (t != null && t.damageType != null) ? t.damageType : DamageType.PHYSICAL;
+    }
+
+    public void setRangedDamageType(DamageType rangedDamageType) {
+        this.rangedDamageType = rangedDamageType;
+    }
+
+    public String getRangedEffect() {
+        if (rangedEffect != null) return rangedEffect;
+        MonsterTemplate t = getTemplate();
+        return t != null ? t.rangedEffect : null;
+    }
+
+    public void setRangedEffect(String rangedEffect) {
+        this.rangedEffect = rangedEffect;
+    }
+
+    public float getRangedEffectChance() {
+        if (rangedEffectChance > 0) return rangedEffectChance;
+        MonsterTemplate t = getTemplate();
+        return t != null ? t.rangedEffectChance : 0.5f;
+    }
+
+    public void setRangedEffectChance(float rangedEffectChance) {
+        this.rangedEffectChance = rangedEffectChance;
+    }
+
+    /** Turns left before this monster may shoot again; spent walking toward the player. */
+    public int getRangedShotCooldown() {
+        return rangedShotCooldown;
+    }
+
+    public void setRangedShotCooldown(int turns) {
+        this.rangedShotCooldown = Math.max(0, turns);
+    }
+
+    public void tickRangedShotCooldown() {
+        if (rangedShotCooldown > 0) {
+            rangedShotCooldown--;
+        }
+    }
+
+    public float getRangedPreferredDistance() {
+        if (rangedPreferredDistance > 0) return rangedPreferredDistance;
+        MonsterTemplate t = getTemplate();
+        return (t != null && t.rangedPreferredDistance > 0) ? t.rangedPreferredDistance : 4f;
+    }
+
+    public void setRangedPreferredDistance(float rangedPreferredDistance) {
+        this.rangedPreferredDistance = rangedPreferredDistance;
     }
 
     public int getArmorClass() {
@@ -677,6 +795,9 @@ public class Monster implements Renderable {
     }
 
     public com.bpm.minotaur.gamedata.Inventory getInventory() {
+        if (inventory == null) {
+            inventory = new com.bpm.minotaur.gamedata.Inventory();
+        }
         return inventory;
     }
 
@@ -725,6 +846,14 @@ public class Monster implements Renderable {
             this.currentHP = template.maxHP;
             this.armorClass = template.armorClass;
             this.damageDice = template.damageDice;
+            this.hasRangedAttack = template.hasRangedAttack;
+            this.attackRange = template.attackRange;
+            this.rangedProjectile = template.rangedProjectile;
+            this.rangedDamageDice = template.rangedDamageDice;
+            this.rangedDamageType = template.rangedDamageType;
+            this.rangedEffect = template.rangedEffect;
+            this.rangedEffectChance = template.rangedEffectChance;
+            this.rangedPreferredDistance = template.rangedPreferredDistance;
         }
     }
 

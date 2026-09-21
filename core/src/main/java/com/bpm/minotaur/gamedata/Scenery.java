@@ -24,6 +24,7 @@ public class Scenery implements Renderable {
     private double distanceToPlayer;
     private final boolean impassable;
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
+    private float pixelOffsetY = 0f;
     private Texture texture; // Optional texture for Modern rendering
     private String texturePath;
     private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
@@ -61,6 +62,7 @@ public class Scenery implements Renderable {
             case DECOMPOSING_CORPSE:
                 this.impassable = true;
                 this.scale.set(1.0f, 0.55f); // Low lying skeletal remains billboard
+                this.pixelOffsetY = -50f; // Lowered by ~50 pixels to rest flat on the floor
                 break;
             case BUSH:
                 this.impassable = false;
@@ -130,6 +132,14 @@ public class Scenery implements Renderable {
     // --- NEW: Added getScale() method ---
     public Vector2 getScale() {
         return scale;
+    }
+
+    public float getPixelOffsetY() {
+        return pixelOffsetY;
+    }
+
+    public void setPixelOffsetY(float pixelOffsetY) {
+        this.pixelOffsetY = pixelOffsetY;
     }
 
     /**

@@ -41,6 +41,20 @@ public class ShopkeeperWindow extends Table {
     private GameEventManager eventManager;
     private ItemDataManager itemDataManager;
     private BitmapFont font;
+
+    /** Width of each of the two list panels. */
+    private static final float PANEL_WIDTH = 500f;
+    /**
+     * Width reserved for the price column.
+     *
+     * <p>Prices used to be appended to the item name in one space-padded string
+     * ({@code "%-28s %5dg"}), which only lined up for short, unmodified names. A display
+     * name carries its prefix, enchantment and suffix -- "Vicious Longsword +2 of Flame"
+     * -- so on any decorated item the padding did nothing and the price was pushed past
+     * the panel edge and clipped out of sight entirely. Giving it its own cell means the
+     * price is always visible and always in the same place.
+     */
+    private static final float PRICE_COLUMN_WIDTH = 96f;
     private Runnable onClose;
 
     // ── UI Children ──────────────────────────────────────────────────────────
@@ -62,36 +76,53 @@ public class ShopkeeperWindow extends Table {
     private boolean focusOnShop = true; // true = left panel active, false = right
 
     // ── Style resources (created once) ───────────────────────────────────────
-    private TextureRegionDrawable rowNormal;
-    private TextureRegionDrawable rowSelected;
+    // ── Style resources (created once) ───────────────────────────────────────
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable rowNormal;
+    private com.badlogic.gdx.scenes.scene2d.utils.Drawable rowSelected;
     private Texture bgTexture;
+    private HudSkin hudSkin;
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public ShopkeeperWindow(BitmapFont font) {
+        this(font, null);
+    }
+
+    public ShopkeeperWindow(BitmapFont font, HudSkin hudSkin) {
         this.font = font;
+        this.hudSkin = hudSkin;
 
-        Label.LabelStyle titleStyle = new Label.LabelStyle(font, Color.GOLD);
-        Label.LabelStyle bodyStyle = new Label.LabelStyle(font, Color.WHITE);
-        Label.LabelStyle statusStyle = new Label.LabelStyle(font, Color.LIGHT_GRAY);
+        Label.LabelStyle titleStyle = new Label.LabelStyle(
+                (hudSkin != null) ? hudSkin.getFontHeader() : font, HudSkin.COL_GOLD_BRIGHT);
+        Label.LabelStyle bodyStyle = new Label.LabelStyle(
+                (hudSkin != null) ? hudSkin.getFontMain() : font, Color.WHITE);
+        Label.LabelStyle headerStyle = new Label.LabelStyle(
+                (hudSkin != null) ? hudSkin.getFontSmall() : font, HudSkin.COL_GOLD_MUTED);
+        Label.LabelStyle statusStyle = new Label.LabelStyle(
+                (hudSkin != null) ? hudSkin.getFontSmall() : font, HudSkin.COL_GOLD_ANTIQUE);
 
-        // background
-        bgTexture = new Texture(Gdx.files.internal("images/hud_bg.png"));
-        int split = 60;
-        com.badlogic.gdx.graphics.g2d.NinePatch patch = new com.badlogic.gdx.graphics.g2d.NinePatch(bgTexture, split,
-                split, split, split);
-        this.setBackground(new com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable(patch));
+        if (hudSkin != null) {
+            this.setBackground(hudSkin.getDoubleBorderPanel());
+            rowNormal = hudSkin.getSlotRecessed();
+            rowSelected = hudSkin.getSlotActive();
+            this.pad(24f);
+        } else {
+            bgTexture = new Texture(Gdx.files.internal("images/hud_bg.png"));
+            int split = 60;
+            com.badlogic.gdx.graphics.g2d.NinePatch patch = new com.badlogic.gdx.graphics.g2d.NinePatch(bgTexture, split,
+                    split, split, split);
+            this.setBackground(new com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable(patch));
+            rowNormal = makeRowDrawable(new Color(0.08f, 0.08f, 0.08f, 0.9f));
+            rowSelected = makeRowDrawable(new Color(0.25f, 0.20f, 0.05f, 0.9f));
+            this.pad(split);
+        }
 
-        rowNormal = makeRowDrawable(new Color(0.08f, 0.08f, 0.08f, 0.9f));
-        rowSelected = makeRowDrawable(new Color(0.25f, 0.20f, 0.05f, 0.9f));
-
-        this.pad(split);
         this.defaults().space(6);
         this.align(Align.top);
 
         // ─── Row 1: Title + gold ──────────────────────────────────────────
         titleLabel = new Label("TRAVELING MERCHANT", titleStyle);
         titleLabel.setAlignment(Align.center);
-        goldLabel = new Label("Gold: 0", bodyStyle);
+        goldLabel = new Label("Gold: 0g", bodyStyle);
         goldLabel.setAlignment(Align.right);
 
         Table topRow = new Table();
@@ -100,8 +131,8 @@ public class ShopkeeperWindow extends Table {
         this.add(topRow).growX().padBottom(10).row();
 
         // ─── Row 2: Two panels ────────────────────────────────────────────
-        Label shopHeader = new Label("[ SHOP ]", titleStyle);
-        Label playerHeader = new Label("[ YOUR ITEMS ]", titleStyle);
+        Label shopHeader = new Label("[ SHOP STOCK ]", titleStyle);
+        Label playerHeader = new Label("[ YOUR BACKPACK ]", titleStyle);
 
         shopListTable = new Table();
         playerListTable = new Table();
@@ -113,17 +144,29 @@ public class ShopkeeperWindow extends Table {
         panelsRow.add(shopHeader).center().expandX().padBottom(4);
         panelsRow.add(playerHeader).center().expandX().padBottom(4);
         panelsRow.row();
-        panelsRow.add(shopScroll).width(500).height(400).top().padRight(20);
-        panelsRow.add(playerScroll).width(500).height(400).top();
+        // Column headings, laid out with the same price-column width as the rows below
+        // so the numbers sit under their label rather than wherever the name ends.
+        panelsRow.add(columnHeader("ITEM", "BUY", headerStyle)).width(PANEL_WIDTH).padRight(20);
+        panelsRow.add(columnHeader("ITEM", "SELL", headerStyle)).width(PANEL_WIDTH);
+        panelsRow.row();
+        panelsRow.add(shopScroll).width(PANEL_WIDTH).height(410).top().padRight(20);
+        panelsRow.add(playerScroll).width(PANEL_WIDTH).height(410).top();
         this.add(panelsRow).growX().row();
 
         // ─── Row 3: Buttons ───────────────────────────────────────────────
-        TextButton.TextButtonStyle btnStyle = makeButtonStyle();
-        TextButton buyBtn = new TextButton("[B] BUY", btnStyle);
-        TextButton sellBtn = new TextButton("[V] SELL", btnStyle);
-        TextButton tabBtn = new TextButton("[TAB] SWITCH PANEL", btnStyle);
-        TextButton gemBtn = new TextButton("[G] EXCHANGE GEMS", btnStyle);
-        TextButton closeBtn = new TextButton("[ESC] CLOSE", btnStyle);
+        TextButton.TextButtonStyle primaryBtnStyle = new TextButton.TextButtonStyle();
+        primaryBtnStyle.font = (hudSkin != null) ? hudSkin.getFontSmall() : font;
+        primaryBtnStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        primaryBtnStyle.up = (hudSkin != null) ? hudSkin.getPrimaryButtonUp() : makeRowDrawable(new Color(0.85f, 0.70f, 0.25f, 1f));
+        primaryBtnStyle.down = (hudSkin != null) ? hudSkin.getPrimaryButtonDown() : makeRowDrawable(new Color(0.65f, 0.50f, 0.15f, 1f));
+
+        TextButton.TextButtonStyle secBtnStyle = makeButtonStyle();
+
+        TextButton buyBtn = new TextButton("[B] BUY", primaryBtnStyle);
+        TextButton sellBtn = new TextButton("[V] SELL", secBtnStyle);
+        TextButton tabBtn = new TextButton("[TAB] SWITCH", secBtnStyle);
+        TextButton gemBtn = new TextButton("[G] GEMS", secBtnStyle);
+        TextButton closeBtn = new TextButton("[ESC] CLOSE", secBtnStyle);
 
         buyBtn.addListener(new ClickListener() {
             @Override
@@ -157,15 +200,16 @@ public class ShopkeeperWindow extends Table {
         });
 
         Table btnRow = new Table();
-        btnRow.add(buyBtn).width(200).padRight(10);
-        btnRow.add(sellBtn).width(200).padRight(10);
-        btnRow.add(gemBtn).width(220).padRight(10);
-        btnRow.add(tabBtn).width(260).padRight(10);
-        btnRow.add(closeBtn).width(200);
-        this.add(btnRow).padTop(10).row();
+        btnRow.add(buyBtn).width(150).height(42).padRight(12);
+        btnRow.add(sellBtn).width(150).height(42).padRight(12);
+        btnRow.add(gemBtn).width(160).height(42).padRight(12);
+        btnRow.add(tabBtn).width(180).height(42).padRight(12);
+        btnRow.add(closeBtn).width(160).height(42);
+        this.add(btnRow).padTop(12).row();
 
         // ─── Row 4: Status ────────────────────────────────────────────────
         statusLabel = new Label("", statusStyle);
+        statusLabel.setAlignment(Align.center);
         this.add(statusLabel).growX().padTop(6).row();
 
         this.setVisible(false);
@@ -190,8 +234,8 @@ public class ShopkeeperWindow extends Table {
         refresh();
 
         this.pack();
-        float w = Math.max(1100, getPrefWidth());
-        float h = Math.max(700, getPrefHeight());
+        float w = 1240f;
+        float h = 760f;
         this.setSize(w, h);
 
         if (getStage() != null) {
@@ -204,7 +248,7 @@ public class ShopkeeperWindow extends Table {
         this.toFront();
 
         Gdx.input.setCursorCatched(false);
-        status("B=Buy, V=Sell, G=Exchange Gems, TAB=Switch Panel");
+        status("Select an item to buy or sell.");
     }
 
     // ── Keyboard input ────────────────────────────────────────────────────────
@@ -250,13 +294,10 @@ public class ShopkeeperWindow extends Table {
         }
         int idx = Math.min(shopSelection, shopItems.size() - 1);
         Item item = shopItems.get(idx);
-        int price = ShopInventory.getBuyPrice(item, itemDataManager);
+        int price = effectiveBuyPrice(item);
         // Restitution: after one of his strays clips the player, the next purchase is on
         // better terms -- spent the moment a trade goes through, not on every trade after.
         boolean applyingRestitution = shopkeeper.getRestitutionDiscount() > 0f;
-        if (applyingRestitution) {
-            price = Math.max(1, Math.round(price * (1f - shopkeeper.getRestitutionDiscount())));
-        }
         int gold = player.getStats().getTreasureScore();
 
         if (gold < price) {
@@ -344,6 +385,57 @@ public class ShopkeeperWindow extends Table {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * What this item will actually cost, restitution discount included.
+     *
+     * <p>Shared by the list and by {@code doBuy} on purpose: a shop that advertises one
+     * number and charges another is worse than one that shows no prices at all, and the
+     * discount is exactly the sort of thing that drifts when two places compute it.
+     */
+    private int effectiveBuyPrice(Item item) {
+        float discount = (shopkeeper != null) ? shopkeeper.getRestitutionDiscount() : 0f;
+        return ShopInventory.getEffectiveBuyPrice(item, itemDataManager, discount);
+    }
+
+    /**
+     * One list row: the item's name on the left, its price in a fixed column on the right.
+     *
+     * <p>The two live in separate cells rather than one padded string. A display name
+     * carries its prefix, enchantment and suffix, so it can run well past any fixed pad
+     * -- and when it did, the price was pushed off the panel and clipped. Here a long
+     * name ellipsises and the price stays put.
+     */
+    private Table priceRow(String name, int price, boolean selected, Color priceColor,
+            com.badlogic.gdx.scenes.scene2d.utils.Drawable background) {
+        BitmapFont usedFont = (hudSkin != null) ? hudSkin.getFontMain() : font;
+        Label nameLabel = new Label(name, new Label.LabelStyle(usedFont,
+                selected ? HudSkin.COL_GOLD_BRIGHT : Color.WHITE));
+        nameLabel.setEllipsis(true);
+
+        Label priceLabel = new Label(price + "g", new Label.LabelStyle(usedFont, priceColor));
+        priceLabel.setAlignment(Align.right);
+
+        Table row = new Table();
+        row.setBackground(background);
+        // The name cell must be allowed to shrink, or the ellipsis never engages and the
+        // row simply overflows the panel again.
+        row.add(nameLabel).expandX().fillX().left().minWidth(0).pad(6, 10, 6, 10);
+        row.add(priceLabel).width(PRICE_COLUMN_WIDTH).right().pad(6, 0, 6, 10);
+        return row;
+    }
+
+    /** Column headings for a list panel, aligned to the same price column as its rows. */
+    private Table columnHeader(String nameHeading, String priceHeading, Label.LabelStyle style) {
+        Label nameLabel = new Label(nameHeading, style);
+        Label priceLabel = new Label(priceHeading, style);
+        priceLabel.setAlignment(Align.right);
+
+        Table header = new Table();
+        header.add(nameLabel).expandX().fillX().left().minWidth(0).pad(0, 8, 2, 8);
+        header.add(priceLabel).width(PRICE_COLUMN_WIDTH).right().pad(0, 0, 2, 8);
+        return header;
+    }
+
     private void refresh() {
         if (player == null || shopkeeper == null)
             return;
@@ -355,19 +447,20 @@ public class ShopkeeperWindow extends Table {
         shopListTable.clearChildren();
         for (int i = 0; i < shopItems.size(); i++) {
             Item it = shopItems.get(i);
-            int price = ShopInventory.getBuyPrice(it, itemDataManager);
-            String txt = String.format("%-28s %5dg", it.getDisplayName(), price);
-            Label lbl = new Label(txt, new Label.LabelStyle(font,
-                    (focusOnShop && i == shopSelection) ? Color.GOLD : Color.WHITE));
+            boolean selected = focusOnShop && i == shopSelection;
+            int price = effectiveBuyPrice(it);
+            boolean affordable = player.getStats().getTreasureScore() >= price;
 
-            TextureRegionDrawable bg = (focusOnShop && i == shopSelection) ? rowSelected : rowNormal;
-            Table row = new Table();
-            row.setBackground(bg);
-            row.add(lbl).expandX().left().pad(4, 8, 4, 8);
+            com.badlogic.gdx.scenes.scene2d.utils.Drawable bg = selected ? rowSelected : rowNormal;
+            Table row = priceRow(it.getDisplayName(), price, selected,
+                    // What you cannot afford is greyed, so the constraint is visible
+                    // before the player commits to a purchase that will be refused.
+                    affordable ? HudSkin.COL_GOLD_ANTIQUE : Color.GRAY, bg);
             shopListTable.add(row).growX().padBottom(2).row();
         }
         if (shopItems.isEmpty()) {
-            shopListTable.add(new Label("Out of stock.", new Label.LabelStyle(font, Color.GRAY))).row();
+            BitmapFont emptyFont = (hudSkin != null) ? hudSkin.getFontSmall() : font;
+            shopListTable.add(new Label("Out of stock.", new Label.LabelStyle(emptyFont, HudSkin.COL_GOLD_MUTED))).row();
         }
 
         // ── Player items ──
@@ -375,23 +468,20 @@ public class ShopkeeperWindow extends Table {
         playerListTable.clearChildren();
         for (int i = 0; i < playerItems.size(); i++) {
             Item it = playerItems.get(i);
+            boolean selected = !focusOnShop && i == playerSelection;
             int price = ShopInventory.getSellPrice(it, itemDataManager);
-            String txt = String.format("%-28s %5dg", it.getDisplayName(), price);
-            Label lbl = new Label(txt, new Label.LabelStyle(font,
-                    (!focusOnShop && i == playerSelection) ? Color.GOLD : Color.WHITE));
 
-            TextureRegionDrawable bg = (!focusOnShop && i == playerSelection) ? rowSelected : rowNormal;
-            Table row = new Table();
-            row.setBackground(bg);
-            row.add(lbl).expandX().left().pad(4, 8, 4, 8);
+            com.badlogic.gdx.scenes.scene2d.utils.Drawable bg = selected ? rowSelected : rowNormal;
+            Table row = priceRow(it.getDisplayName(), price, selected, HudSkin.COL_GOLD_ANTIQUE, bg);
             playerListTable.add(row).growX().padBottom(2).row();
         }
         if (playerItems.isEmpty()) {
-            playerListTable.add(new Label("Nothing to sell.", new Label.LabelStyle(font, Color.GRAY))).row();
+            BitmapFont emptyFont = (hudSkin != null) ? hudSkin.getFontSmall() : font;
+            playerListTable.add(new Label("Nothing to sell.", new Label.LabelStyle(emptyFont, HudSkin.COL_GOLD_MUTED))).row();
         }
     }
 
-    private void close() {
+    public void close() {
         this.setVisible(false);
         if (shopkeeper != null) {
             shopkeeper.setState(ShopkeeperNpc.ShopkeeperState.WANDERING);
@@ -426,18 +516,20 @@ public class ShopkeeperWindow extends Table {
 
     private ScrollPane.ScrollPaneStyle makePaneStyle() {
         ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
-        // Transparent backing — the row drawables provide their own background
+        if (hudSkin != null) {
+            style.background = hudSkin.getSlotRecessed();
+        }
         return style;
     }
 
     private TextButton.TextButtonStyle makeButtonStyle() {
         TextButton.TextButtonStyle s = new TextButton.TextButtonStyle();
-        s.font = font;
+        s.font = (hudSkin != null) ? hudSkin.getFontSmall() : font;
         s.fontColor = Color.WHITE;
-        s.overFontColor = Color.GOLD;
-        s.up = makeRowDrawable(new Color(0.15f, 0.12f, 0.05f, 0.95f));
-        s.over = makeRowDrawable(new Color(0.30f, 0.25f, 0.05f, 0.95f));
-        s.down = makeRowDrawable(new Color(0.10f, 0.08f, 0.02f, 0.95f));
+        s.overFontColor = HudSkin.COL_GOLD_BRIGHT;
+        s.up = (hudSkin != null) ? hudSkin.getSlotRecessed() : makeRowDrawable(new Color(0.15f, 0.12f, 0.05f, 0.95f));
+        s.over = (hudSkin != null) ? hudSkin.getSlotActive() : makeRowDrawable(new Color(0.30f, 0.25f, 0.05f, 0.95f));
+        s.down = (hudSkin != null) ? hudSkin.getSlotActive() : makeRowDrawable(new Color(0.10f, 0.08f, 0.02f, 0.95f));
         return s;
     }
 

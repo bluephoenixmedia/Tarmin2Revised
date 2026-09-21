@@ -208,6 +208,22 @@ public class Inventory {
         return MAX_BACKPACK_SIZE;
     }
 
+    /** Whether the item is carried anywhere: either hand, a quick slot, or the backpack. */
+    public boolean contains(Item item) {
+        if (item == null) {
+            return false;
+        }
+        if (rightHand == item || leftHand == item || mainInventory.contains(item)) {
+            return true;
+        }
+        for (Item quick : quickSlots) {
+            if (quick == item) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean removeItem(Item item) {
         if (rightHand == item) {
             rightHand = null;

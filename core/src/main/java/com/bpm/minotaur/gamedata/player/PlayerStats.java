@@ -10,6 +10,12 @@ public class PlayerStats {
     private int currentMP;
     // private int food; // REPLACED BY SATIETY
     private int arrows;
+    /**
+     * Powder and ball for firearms. Deliberately separate from {@link #arrows}: sharing
+     * one pool would let a musket ball fire from a longbow, and would refill the scarce
+     * resource that gates a 2d8 shot from every arrow drop in the dungeon.
+     */
+    private int shot;
     private int dexterity;
     private int strength;
     private int constitution;
@@ -22,6 +28,11 @@ public class PlayerStats {
     private int level;
     private int experience;
     private int experienceToNextLevel;
+
+    // --- Progression Reboot: Attribute & Skill Point Distribution ---
+    private int unallocatedAttributePoints = 0;
+    private int unallocatedSkillPoints = 0;
+    private final java.util.Set<com.bpm.minotaur.gamedata.progression.SkillId> unlockedSkills = new java.util.HashSet<>();
 
     // --- NEW: Bone & Die System ---
     private java.util.List<com.bpm.minotaur.gamedata.dice.Die> dicePool = new java.util.ArrayList<>();
@@ -171,16 +182,22 @@ public class PlayerStats {
 
     /**
      * Adds experience. Does NOT automatically level up.
+     * Adds experience and automatically triggers level up(s) if threshold reached.
      * 
      * @param amount The amount of experience to add.
-     * @return true if the player now has enough XP to level up.
+     * @return true if the player leveled up at least once.
      */
     public boolean addExperience(int amount) {
         if (amount <= 0)
             return false;
         this.experience += amount;
 
-        return canLevelUp();
+        boolean leveled = false;
+        while (canLevelUp()) {
+            performLevelUp();
+            leveled = true;
+        }
+        return leveled;
     }
 
     public boolean canLevelUp() {
@@ -206,6 +223,10 @@ public class PlayerStats {
         // Full heals trivialized early floors by enabling HP-farming on weak mobs.
         this.currentHP = Math.min(this.maxHP, this.currentHP + this.maxHP / 4);
         this.currentMP = Math.min(this.maxMP, this.currentMP + this.maxMP / 4);
+
+        // Progression Reboot: award 2 Attribute Points and 1 Skill Point per level
+        this.unallocatedAttributePoints += 2;
+        this.unallocatedSkillPoints += 1;
     }
 
     /**
@@ -258,6 +279,19 @@ public class PlayerStats {
         }
     }
 
+    public void addShot(int amount) {
+        this.shot += amount;
+        if (this.shot > 99) {
+            this.shot = 99; // Same ceiling as arrows
+        }
+    }
+
+    public void decrementShot() {
+        if (this.shot > 0) {
+            this.shot--;
+        }
+    }
+
     public void addHydration(int amount) {
         modifyHydration(amount);
     }
@@ -286,7 +320,19 @@ public class PlayerStats {
         this.temporaryHP = Math.max(this.temporaryHP, amount);
     }
 
+    /**
+     * How many times War Strength has been lowered, counting hits temporary HP
+     * absorbed. Lets a channelled action notice a wound even when regeneration
+     * made the loss back within the same turn.
+     */
+    public int getWoundsTaken() {
+        return woundsTaken;
+    }
+
     public void setCurrentHP(int currentHP) {
+        if (currentHP < this.currentHP) {
+            woundsTaken++;
+        }
         if (currentHP < this.currentHP && temporaryHP > 0) {
             int diff = this.currentHP - currentHP;
             if (temporaryHP >= diff) {
@@ -301,6 +347,8 @@ public class PlayerStats {
         }
         this.currentHP = Math.max(0, currentHP);
     }
+
+    private int woundsTaken;
 
     public int getCurrentMP() {
         return currentMP;
@@ -341,6 +389,29 @@ public class PlayerStats {
 
     public void setArrows(int arrows) {
         this.arrows = arrows;
+    }
+
+    /**
+     * How damp the carried powder is, 0..1. Lives on the player rather than being read
+     * from the weather, because weather wetness is outdoor-only and nearly all play is
+     * underground -- a live read would mean firearms never misfire in practice.
+     */
+    private float powderDampness = 0f;
+
+    public float getPowderDampness() {
+        return powderDampness;
+    }
+
+    public void setPowderDampness(float powderDampness) {
+        this.powderDampness = Math.max(0f, Math.min(1f, powderDampness));
+    }
+
+    public int getShot() {
+        return shot;
+    }
+
+    public void setShot(int shot) {
+        this.shot = Math.max(0, shot);
     }
 
     public int getLevel() {
@@ -608,4 +679,126 @@ public class PlayerStats {
 
     public int getCookingSkill() { return cookingSkill; }
     public void incrementCookingSkill() { this.cookingSkill++; }
+
+    // --- Progression Reboot: Attribute & Skill Allocation Methods ---
+
+    public int getUnallocatedAttributePoints() {
+        return unallocatedAttributePoints;
+    }
+
+    public void setUnallocatedAttributePoints(int points) {
+        this.unallocatedAttributePoints = Math.max(0, points);
+    }
+
+    public void addUnallocatedAttributePoints(int points) {
+        this.unallocatedAttributePoints += Math.max(0, points);
+    }
+
+    public int getUnallocatedSkillPoints() {
+        return unallocatedSkillPoints;
+    }
+
+    public void setUnallocatedSkillPoints(int points) {
+        this.unallocatedSkillPoints = Math.max(0, points);
+    }
+
+    public void addUnallocatedSkillPoints(int points) {
+        this.unallocatedSkillPoints += Math.max(0, points);
+    }
+
+    public boolean hasSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        return skill != null && unlockedSkills.contains(skill);
+    }
+
+    public void unlockSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        if (skill != null) {
+            unlockedSkills.add(skill);
+        }
+    }
+
+    public void removeSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        if (skill != null) {
+            unlockedSkills.remove(skill);
+        }
+    }
+
+    public java.util.Set<com.bpm.minotaur.gamedata.progression.SkillId> getUnlockedSkills() {
+        return java.util.Collections.unmodifiableSet(unlockedSkills);
+    }
+
+    public boolean canDualWield() {
+        return hasSkill(com.bpm.minotaur.gamedata.progression.SkillId.DUAL_WIELDER);
+    }
+
+    public boolean allocateAttribute(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        if (unallocatedAttributePoints <= 0 || stat == null) return false;
+        final int MAX_ATTRIBUTE_CAP = 20;
+
+        switch (stat) {
+            case STRENGTH:
+                if (strength >= MAX_ATTRIBUTE_CAP) return false;
+                strength++;
+                break;
+            case DEXTERITY:
+                if (dexterity >= MAX_ATTRIBUTE_CAP) return false;
+                dexterity++;
+                break;
+            case CONSTITUTION:
+                if (constitution >= MAX_ATTRIBUTE_CAP) return false;
+                constitution++;
+                maxHP += 2;
+                currentHP = Math.min(maxHP, currentHP + 2);
+                break;
+            case INTELLIGENCE:
+                if (intelligence >= MAX_ATTRIBUTE_CAP) return false;
+                intelligence++;
+                maxMP += 2;
+                currentMP = Math.min(maxMP, currentMP + 2);
+                break;
+            case WISDOM:
+                if (wisdom >= MAX_ATTRIBUTE_CAP) return false;
+                wisdom++;
+                break;
+            case AGILITY:
+                if (agility >= MAX_ATTRIBUTE_CAP) return false;
+                agility++;
+                break;
+            default:
+                return false;
+        }
+        unallocatedAttributePoints--;
+        return true;
+    }
+
+    public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
+        if (unallocatedSkillPoints <= 0 || skill == null) return false;
+        if (hasSkill(skill)) return false;
+        if (!com.bpm.minotaur.gamedata.progression.SkillRegistry.getInstance().canLearn(this, skill)) {
+            return false;
+        }
+        unlockedSkills.add(skill);
+        unallocatedSkillPoints--;
+
+        // Immediate passive bonus application if applicable
+        if (skill == com.bpm.minotaur.gamedata.progression.SkillId.BATTLE_CASTER) {
+            int bonusMP = Math.max(5, (int)(maxMP * 0.15f));
+            maxMP += bonusMP;
+            currentMP = Math.min(maxMP, currentMP + bonusMP);
+        }
+        return true;
+    }
+
+    public int getEffectiveStat(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        if (stat == null) return 10;
+        switch (stat) {
+            case STRENGTH: return getStrength();
+            case DEXTERITY: return getDexterity();
+            case CONSTITUTION: return getConstitution();
+            case INTELLIGENCE: return getIntelligence();
+            case WISDOM: return getWisdom();
+            case AGILITY: return getAgility();
+            default: return 10;
+        }
+    }
 }
+

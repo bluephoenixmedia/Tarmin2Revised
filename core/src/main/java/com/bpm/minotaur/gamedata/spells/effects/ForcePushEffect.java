@@ -44,7 +44,7 @@ public class ForcePushEffect implements SpellEffect {
         Monster target = combatManager.getMonster();
         if (target == null) {
             CombatManager.HitResult hit = combatManager.raycastProjectile(
-                    player.getPosition(), player.getFacing(), 8, true);
+                    player.getPosition(), player.getFacing(), 8, true, true);
             if (hit.type == CombatManager.HitResult.HitType.MONSTER && hit.hitMonster != null) {
                 target = hit.hitMonster;
             } else {

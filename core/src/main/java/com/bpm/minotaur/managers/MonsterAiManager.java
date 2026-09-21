@@ -9,6 +9,7 @@ import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.gamedata.Door; // NEW
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.monster.MonsterTactics;
 import com.bpm.minotaur.gamedata.monster.FactionMatrix;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
@@ -283,17 +284,34 @@ public class MonsterAiManager {
         // Ranged Attack Logic (Only if Hunting player and generally active)
         if (monster.hasRangedAttack() && combatManager != null) {
             int dist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
-            if (dist <= monster.getAttackRange() && dist > 1) {
-                // Check LoS for shooting
-                if (checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
-                    boolean alignedX = (monsterGridPos.x == playerGridPos.x);
-                    boolean alignedY = (monsterGridPos.y == playerGridPos.y);
-                    if (alignedX || alignedY) {
-                        if (combatManager.performMonsterRangedAttack(monster)) {
-                            return; // Attacked, skip move
-                        }
+
+            boolean lined = (monsterGridPos.x == playerGridPos.x) || (monsterGridPos.y == playerGridPos.y);
+            boolean canShoot = dist <= monster.getAttackRange() && dist > 1 && lined
+                    && checkLineOfSight(maze, monsterGridPos, playerGridPos);
+
+            switch (MonsterTactics.decide(monster, dist, canShoot)) {
+                case RETREAT:
+                    GridPoint2 retreatCell = findRetreatStep(monsterGridPos, playerGridPos, maze, player);
+                    if (retreatCell != null) {
+                        moveMonsterTo(monster, maze, retreatCell.x, retreatCell.y);
+                        return;
                     }
-                }
+                    // Cornered: shoot from where it stands rather than freezing.
+                    if (canShoot && combatManager.performMonsterRangedAttack(monster)) {
+                        return;
+                    }
+                    break;
+                case SHOOT:
+                    if (combatManager.performMonsterRangedAttack(monster)) {
+                        // The shot is this turn's action; the next one is spent closing in.
+                        monster.setRangedShotCooldown(1);
+                        return;
+                    }
+                    break;
+                default:
+                    // Walking in is what pays off the shot it just took.
+                    monster.tickRangedShotCooldown();
+                    break;
             }
         }
 
@@ -520,6 +538,40 @@ public class MonsterAiManager {
             return false;
 
         return true;
+    }
+
+    private GridPoint2 findRetreatStep(GridPoint2 monsterPos, GridPoint2 playerPos, Maze maze, Player player) {
+        int dx = monsterPos.x - playerPos.x; // Positive = monster is East of player
+        int dy = monsterPos.y - playerPos.y; // Positive = monster is North of player
+
+        com.bpm.minotaur.gamedata.Direction primaryDir;
+        com.bpm.minotaur.gamedata.Direction secondaryDir;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            primaryDir = (dx >= 0) ? com.bpm.minotaur.gamedata.Direction.EAST : com.bpm.minotaur.gamedata.Direction.WEST;
+            secondaryDir = (dy >= 0) ? com.bpm.minotaur.gamedata.Direction.NORTH : com.bpm.minotaur.gamedata.Direction.SOUTH;
+        } else {
+            primaryDir = (dy >= 0) ? com.bpm.minotaur.gamedata.Direction.NORTH : com.bpm.minotaur.gamedata.Direction.SOUTH;
+            secondaryDir = (dx >= 0) ? com.bpm.minotaur.gamedata.Direction.EAST : com.bpm.minotaur.gamedata.Direction.WEST;
+        }
+
+        GridPoint2 candidate = getRetreatCandidate(monsterPos, primaryDir, maze, player);
+        if (candidate != null) return candidate;
+
+        return getRetreatCandidate(monsterPos, secondaryDir, maze, player);
+    }
+
+    private GridPoint2 getRetreatCandidate(GridPoint2 fromPos, com.bpm.minotaur.gamedata.Direction dir, Maze maze, Player player) {
+        if (dir == null) return null;
+        if (maze.isWallBlocking(fromPos.x, fromPos.y, dir)) return null;
+
+        int nx = fromPos.x + (int) dir.getVector().x;
+        int ny = fromPos.y + (int) dir.getVector().y;
+
+        if (nx < 0 || nx >= maze.getWidth() || ny < 0 || ny >= maze.getHeight()) return null;
+        if (!isTileAvailableForAI(maze, player, nx, ny)) return null;
+
+        return new GridPoint2(nx, ny);
     }
 
 }

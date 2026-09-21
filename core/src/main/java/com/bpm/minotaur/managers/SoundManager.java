@@ -86,11 +86,20 @@ public class SoundManager {
 
         float windDampen = (currentDampenFactor < 0.35f) ? currentDampenFactor * 0.60f : currentDampenFactor;
 
+        float sfxScale = getEffectiveSfxVolume();
         if (currentRainId != -1 && modernSounds.containsKey("rain_loop")) {
-            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * currentDampenFactor);
+            modernSounds.get("rain_loop").setVolume(currentRainId, currentBaseVol * currentDampenFactor * sfxScale);
         }
         if (currentWindId != -1 && modernSounds.containsKey("wind_loop")) {
-            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windDampen);
+            modernSounds.get("wind_loop").setVolume(currentWindId, windBase * windDampen * sfxScale);
+        }
+    }
+
+    public float getEffectiveSfxVolume() {
+        try {
+            return SettingsManager.getInstance().getSfxVolume();
+        } catch (Exception ignored) {
+            return 0.80f;
         }
     }
 
@@ -401,10 +410,67 @@ public class SoundManager {
         }
     }
 
+    /**
+     * The report of a firearm.
+     *
+     * <p>PLACEHOLDER AUDIO: no gunshot sample exists in assets/sounds. A thunderclap
+     * pitched well down is a genuinely close relative of a black-powder crack, and
+     * standing in lets the animation and VFX be judged in play. Replace by adding a
+     * real sample as "firearm_shot" in loadModernSounds() -- this method will pick it
+     * up with no other change.
+     */
+    public void playFirearmShot() {
+        String key = modernSounds.containsKey("firearm_shot") ? "firearm_shot" : null;
+        if (key == null) {
+            key = modernSounds.containsKey("thunder_1") ? "thunder_1" : "metal_hit_heavy";
+        }
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.95f);
+            // Pitched down hard: a thunderclap at source pitch reads as weather, not a gun.
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.55f, 0.68f));
+        }
+    }
+
+    /** A shot that fizzles instead of firing. Same source, thinner and quieter. */
+    public void playFirearmMisfire() {
+        String key = modernSounds.containsKey("firearm_misfire") ? "firearm_misfire" : "weapon_swing_2";
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.55f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(1.25f, 1.45f));
+        }
+    }
+
+    /**
+     * Loosing a bow or crossbow.
+     *
+     * <p>The bow sample was loaded and reachable only through a dead selector -- every
+     * player attack, melee or ranged, played the generic swing whoosh instead.
+     */
+    public void playBowShot() {
+        String key = modernSounds.containsKey("player_bow_attack") ? "player_bow_attack" : "weapon_swing";
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.85f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
     public void playChestOpen() {
         if (modernSounds.containsKey("chest_open")) {
             long id = modernSounds.get("chest_open").play(0.8f);
             modernSounds.get("chest_open").setPitch(id, MathUtils.random(0.95f, 1.05f));
+        }
+    }
+
+    /**
+     * The chest that doesn't creak. Pitched well below the ordinary roar so the player
+     * hears "that was not a lid" before the sprite has finished changing -- the cheapest
+     * tell in the mimic encounter, and the reason world chests now creak at all.
+     */
+    public void playMimicRevealSound() {
+        String key = modernSounds.containsKey("monster_roar_heavy") ? "monster_roar_heavy" : "monster_roar";
+        if (modernSounds.containsKey(key)) {
+            long id = modernSounds.get(key).play(0.9f);
+            modernSounds.get(key).setPitch(id, MathUtils.random(0.6f, 0.72f));
         }
     }
 
@@ -459,8 +525,12 @@ public class SoundManager {
     }
 
     public void playSound(String name) {
+        playSound(name, 1.0f);
+    }
+
+    public void playSound(String name, float baseVol) {
         if (modernSounds.containsKey(name)) {
-            modernSounds.get(name).play();
+            modernSounds.get(name).play(baseVol * getEffectiveSfxVolume());
         }
     }
 

@@ -25,6 +25,7 @@ import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.managers.BiomeManager;
 import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.managers.WorldManager;
+import com.bpm.minotaur.rendering.HudSkin;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -89,7 +90,7 @@ public class CastleMapScreen extends BaseScreen {
     private final AssetManager assetManager;
     private final ItemDataManager itemDataManager;
 
-    private final BitmapFont font;
+    private final HudSkin hudSkin;
     private final ShapeRenderer shapeRenderer;
     private final Texture ladderUpTexture;
     private final Texture ladderDownTexture;
@@ -117,7 +118,7 @@ public class CastleMapScreen extends BaseScreen {
         this.worldManager = (gameScreen != null) ? gameScreen.getWorldManager() : null;
         this.assetManager = game.getAssetManager();
         this.itemDataManager = game.getItemDataManager();
-        this.font = new BitmapFont();
+        this.hudSkin = new HudSkin();
         this.shapeRenderer = new ShapeRenderer();
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
@@ -366,45 +367,43 @@ public class CastleMapScreen extends BaseScreen {
         game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
         game.getBatch().begin();
 
-        font.getData().setScale(1.2f);
-        font.setColor(Color.GOLD);
-        font.draw(game.getBatch(), "TARMIN EXPEDITION CARTOGRAPHY", 40, worldH - 30);
+        BitmapFont fontHeader = hudSkin.getFontHeader();
+        fontHeader.setColor(HudSkin.COL_GOLD_BRIGHT);
+        fontHeader.draw(game.getBatch(), "TARMIN EXPEDITION CARTOGRAPHY", 40, worldH - 30);
 
-        font.getData().setScale(0.9f);
-        font.setColor(Color.LIGHT_GRAY);
+        BitmapFont fontSmall = hudSkin.getFontSmall();
+        fontSmall.setColor(Color.LIGHT_GRAY);
         String subTitle = (viewFloor == 1)
                 ? "OVERLAND WILDERNESS & CASTLE APPROACH (Depth 0)"
                 : "SUBTERRANEAN STRATA " + (viewFloor - 1) + " (Depth " + (viewFloor - 1) + ")";
         if (mode == Mode.ZOOM && zoomedChunkId != null) {
-            subTitle += String.format("  —  Chunk (%d, %d)", zoomedChunkId.x, zoomedChunkId.y);
+            subTitle += String.format(" - Chunk (%d, %d)", zoomedChunkId.x, zoomedChunkId.y);
         }
-        font.draw(game.getBatch(), subTitle, 40, worldH - 50);
+        fontSmall.draw(game.getBatch(), subTitle, 40, worldH - 50);
 
-        font.getData().setScale(0.8f);
         float tabStartX = 40f;
         float tabW = tabWidth(worldW);
         for (int f = 1; f <= maxFloor; f++) {
             float tx = tabStartX + (f - 1) * (tabW + 10);
-            font.setColor(f == viewFloor ? Color.WHITE : Color.GRAY);
+            fontSmall.setColor(f == viewFloor ? Color.WHITE : Color.GRAY);
             String label = (f == 1) ? "SURFACE" : "STRATA " + (f - 1);
-            font.draw(game.getBatch(), label, tx + Math.max(4f, tabW * 0.15f), worldH - 77);
+            fontSmall.draw(game.getBatch(), label, tx + Math.max(4f, tabW * 0.15f), worldH - 77);
         }
 
-        font.getData().setScale(0.85f);
-        font.setColor(Color.WHITE);
+        fontSmall.setColor(Color.WHITE);
         GridPoint2 pChunk = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
         int pLvl = (worldManager != null) ? worldManager.getCurrentLevel() : 1;
         String playerStatus = String.format("Current Location: Chunk (%d, %d) | Tile (%d, %d) | Depth: %s",
                 pChunk.x, pChunk.y,
                 (int) player.getPosition().x, (int) player.getPosition().y,
                 (pLvl == 1 ? "Surface" : "Strata " + (pLvl - 1)));
-        font.draw(game.getBatch(), playerStatus, 35, 36);
+        fontSmall.draw(game.getBatch(), playerStatus, 35, 36);
 
-        font.setColor(Color.GOLD);
+        fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
         String controls = (mode == Mode.OVERVIEW)
-                ? "[Arrows] Move   [Enter] Zoom In   [PgUp/PgDn or 1-9] Switch Floor   [M] Close"
-                : "[Esc] Back to Overview   [M] Close";
-        font.draw(game.getBatch(), controls, worldW - 620, 36);
+                ? "[Arrows] Move   [Enter] Zoom In   [PgUp/PgDn or 1-9] Switch Floor   [ESC/M] Close"
+                : "[ESC] Back to Overview   [M] Close";
+        fontSmall.draw(game.getBatch(), controls, worldW - 680, 36);
 
         game.getBatch().end();
     }
@@ -536,7 +535,8 @@ public class CastleMapScreen extends BaseScreen {
 
         // Labels & strata ladder-connector icons
         game.getBatch().begin();
-        font.getData().setScale(0.7f);
+        BitmapFont fontMicro = hudSkin.getFontMicro();
+        BitmapFont fontSmall = hudSkin.getFontSmall();
         for (int c = 0; c < cols; c++) {
             for (int r = 0; r < rows; r++) {
                 int cx = cursor.x + (c - radius);
@@ -550,28 +550,28 @@ public class CastleMapScreen extends BaseScreen {
                 boolean isShelter = data != null && data.hasShelter();
 
                 if (isShelter) {
-                    font.setColor(Color.GOLD);
-                    font.draw(game.getBatch(), "HOME", x + 6, y + chunkH - 8);
+                    fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+                    fontSmall.draw(game.getBatch(), "HOME", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1 && cx == CASTLE_CHUNK_X && cy == CASTLE_CHUNK_Y) {
-                    font.setColor(Color.CORAL);
-                    font.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);
+                    fontSmall.setColor(Color.CORAL);
+                    fontSmall.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1) {
                     Biome biome = (biomeManager != null) ? biomeManager.getBiome(chId) : Biome.PLAINS;
-                    font.setColor(Color.LIGHT_GRAY);
-                    font.draw(game.getBatch(), styleFor(biome).letter, x + 6, y + chunkH - 8);
+                    fontSmall.setColor(Color.LIGHT_GRAY);
+                    fontSmall.draw(game.getBatch(), styleFor(biome).letter, x + 6, y + chunkH - 8);
                 }
 
-                font.setColor(Color.GRAY);
-                font.draw(game.getBatch(), String.format("(%d,%d)", cx, cy), x + 6, y + 14);
+                fontMicro.setColor(Color.GRAY);
+                fontMicro.draw(game.getBatch(), String.format("(%d,%d)", cx, cy), x + 6, y + 14);
 
                 if (viewFloor != 1 && data != null) {
                     if (data.hasUpLadder()) {
-                        font.setColor(Color.GOLD);
-                        font.draw(game.getBatch(), "↑", x + chunkW - 26, y + chunkH - 8);
+                        fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+                        fontSmall.draw(game.getBatch(), "^", x + chunkW - 24, y + chunkH - 8);
                     }
                     if (data.hasDownLadder()) {
-                        font.setColor(Color.ORANGE);
-                        font.draw(game.getBatch(), "↓", x + chunkW - 14, y + chunkH - 8);
+                        fontSmall.setColor(Color.ORANGE);
+                        fontSmall.draw(game.getBatch(), "v", x + chunkW - 14, y + chunkH - 8);
                     }
                 }
             }
@@ -591,32 +591,32 @@ public class CastleMapScreen extends BaseScreen {
         shapeRenderer.end();
 
         game.getBatch().begin();
-        font.getData().setScale(0.85f);
-        font.setColor(Color.GOLD);
-        font.draw(game.getBatch(), "LEGEND", x + 12, y + h - 14);
+        BitmapFont fontMain = hudSkin.getFontMain();
+        BitmapFont fontSmall = hudSkin.getFontSmall();
+        fontMain.setColor(HudSkin.COL_GOLD_BRIGHT);
+        fontMain.draw(game.getBatch(), "LEGEND", x + 12, y + h - 14);
 
-        font.getData().setScale(0.72f);
         float lineY = y + h - 40;
         float lineH = 22f;
 
         if (viewFloor == 1) {
             for (BiomeStyle style : BIOME_STYLES.values()) {
-                lineY = drawLegendLine(x, lineY, lineH, style.letter, Color.LIGHT_GRAY, style.legendName);
+                lineY = drawLegendLine(x, lineY, lineH, style.letter, Color.LIGHT_GRAY, style.legendName, fontSmall);
             }
         } else {
-            lineY = drawLegendLine(x, lineY, lineH, "↑", Color.GOLD, "Ascent ladder");
-            lineY = drawLegendLine(x, lineY, lineH, "↓", Color.ORANGE, "Descent ladder");
+            lineY = drawLegendLine(x, lineY, lineH, "^", HudSkin.COL_GOLD_BRIGHT, "Ascent ladder", fontSmall);
+            lineY = drawLegendLine(x, lineY, lineH, "v", Color.ORANGE, "Descent ladder", fontSmall);
         }
         lineY -= 6f;
-        lineY = drawLegendLine(x, lineY, lineH, "■", Color.GOLD, "Your shelter");
-        lineY = drawLegendLine(x, lineY, lineH, "●", Color.CYAN, "You are here");
-        lineY = drawLegendLine(x, lineY, lineH, "□", Color.WHITE, "Cursor");
-        lineY = drawLegendLine(x, lineY, lineH, " ", Color.GRAY, "Unvisited (blank)");
+        lineY = drawLegendLine(x, lineY, lineH, "[#]", HudSkin.COL_GOLD_BRIGHT, "Your shelter", fontSmall);
+        lineY = drawLegendLine(x, lineY, lineH, "[o]", Color.CYAN, "You are here", fontSmall);
+        lineY = drawLegendLine(x, lineY, lineH, "[+]", Color.WHITE, "Cursor", fontSmall);
+        lineY = drawLegendLine(x, lineY, lineH, " ", Color.GRAY, "Unvisited (blank)", fontSmall);
 
         game.getBatch().end();
     }
 
-    private float drawLegendLine(float x, float y, float lineH, String glyph, Color glyphColor, String label) {
+    private float drawLegendLine(float x, float y, float lineH, String glyph, Color glyphColor, String label, BitmapFont font) {
         font.setColor(glyphColor);
         font.draw(game.getBatch(), glyph, x + 12, y);
         font.setColor(Color.LIGHT_GRAY);
@@ -721,17 +721,17 @@ public class CastleMapScreen extends BaseScreen {
         }
 
         game.getBatch().begin();
-        font.getData().setScale(0.75f);
-        font.setColor(Color.GOLD);
-        font.draw(game.getBatch(), "↑ Ascent", canvasX + 20, canvasY + canvasH - 15);
-        font.setColor(Color.ORANGE);
-        font.draw(game.getBatch(), "↓ Descent", canvasX + 150, canvasY + canvasH - 15);
-        font.setColor(Color.CYAN);
-        font.draw(game.getBatch(), "● Player", canvasX + 290, canvasY + canvasH - 15);
-        font.setColor(new Color(0.85f, 0.68f, 0.25f, 1f));
-        font.draw(game.getBatch(), "■ Shelter", canvasX + 410, canvasY + canvasH - 15);
-        font.setColor(Color.LIME);
-        font.draw(game.getBatch(), "● Point of Interest", canvasX + 530, canvasY + canvasH - 15);
+        BitmapFont fontSmall = hudSkin.getFontSmall();
+        fontSmall.setColor(HudSkin.COL_GOLD_BRIGHT);
+        fontSmall.draw(game.getBatch(), "^ Ascent", canvasX + 20, canvasY + canvasH - 15);
+        fontSmall.setColor(Color.ORANGE);
+        fontSmall.draw(game.getBatch(), "v Descent", canvasX + 150, canvasY + canvasH - 15);
+        fontSmall.setColor(Color.CYAN);
+        fontSmall.draw(game.getBatch(), "(@) Player", canvasX + 290, canvasY + canvasH - 15);
+        fontSmall.setColor(new Color(0.85f, 0.68f, 0.25f, 1f));
+        fontSmall.draw(game.getBatch(), "[#] Shelter", canvasX + 410, canvasY + canvasH - 15);
+        fontSmall.setColor(Color.LIME);
+        fontSmall.draw(game.getBatch(), "(*) Point of Interest", canvasX + 530, canvasY + canvasH - 15);
         game.getBatch().end();
     }
 
@@ -810,7 +810,7 @@ public class CastleMapScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        if (hudSkin != null) hudSkin.dispose();
         shapeRenderer.dispose();
         ladderUpTexture.dispose();
         ladderDownTexture.dispose();

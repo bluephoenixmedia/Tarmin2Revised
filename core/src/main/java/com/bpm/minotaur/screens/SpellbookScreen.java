@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -19,6 +20,8 @@ import com.bpm.minotaur.gamedata.monster.HostileSight;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 import com.bpm.minotaur.gamedata.spells.SpellTemplate;
+import com.bpm.minotaur.gamedata.spells.Tome;
+import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.rendering.HudSkin;
 
@@ -31,13 +34,14 @@ import java.util.TreeSet;
  * The Spellbook: every Known Spell with its full details, and the five Spell Slots
  * they are cast from. Assign a spell by clicking it and then a slot, or by dragging
  * it onto a slot; right-click a slot to clear it. Slots cannot be changed while a
- * hostile is in view.
+ * hostile is in view. When a studied Tome is waiting on its Tome Choice, the
+ * details side shows the offered spells instead, and the book cannot be closed
+ * until one is learned.
  */
 public class SpellbookScreen extends BaseScreen {
 
-    private static final String[] SLOT_KEYS = { "Z", "X", "V", "B", "N" };
-    private static final String[] SLOT_UNLOCKED_BY = {
-            null, "Tome of the Initiate", "Tome of Elements", "Tome of the Arcane", "Tome of Tarmin" };
+    /** Quick-cast keys of the five Spell Slots, in slot order. */
+    public static final String[] SLOT_KEYS = { "Z", "X", "V", "B", "N" };
 
     private final GameScreen parentScreen;
     private final Player player;
@@ -95,7 +99,6 @@ public class SpellbookScreen extends BaseScreen {
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(16, 24, 16, 24);
         Label title = new Label("SPELLBOOK", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-        title.setFontScale(1.3f);
         header.add(title).center().row();
         mpLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_MP_BLUE));
         header.add(mpLabel).center().padTop(4).row();
@@ -188,7 +191,7 @@ public class SpellbookScreen extends BaseScreen {
         Color nameColor;
         if (!unlocked) {
             name = "LOCKED";
-            sub = "Study the " + SLOT_UNLOCKED_BY[slot];
+            sub = "Study the " + Tome.unlockingSlot(slot + 1).getDisplayName();
             nameColor = Color.DARK_GRAY;
         } else if (spell != null) {
             name = spell.getName();
@@ -382,6 +385,10 @@ public class SpellbookScreen extends BaseScreen {
 
     private void buildDetails() {
         detailPanel.clear();
+        if (player.getPendingTomeChoice() != null) {
+            buildTomeChoice(player.getPendingTomeChoice());
+            return;
+        }
         SpellTemplate spell = SpellDataManager.getSpell(selectedSpellId);
         if (spell == null) {
             detailPanel.add(new Label("Select a spell to read it.",
@@ -391,8 +398,78 @@ public class SpellbookScreen extends BaseScreen {
         fillSpellDetails(detailPanel, spell, hudSkin, 820f);
     }
 
-    /** Writes a spell's full details into {@code panel}; shared with the Tome Choice cards. */
-    static void fillSpellDetails(Table panel, SpellTemplate spell, HudSkin hudSkin, float width) {
+    // =========================================================================
+    // TOME CHOICE
+    // =========================================================================
+
+    private void buildTomeChoice(TomeChoice choice) {
+        detailPanel.add(new Label("THE " + choice.getTome().getDisplayName().toUpperCase(Locale.ROOT)
+                        + " -- CHOOSE ONE SPELL TO LEARN",
+                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT))).left().row();
+
+        Table cards = new Table();
+        cards.top().left();
+        for (String id : choice.getOptions()) {
+            SpellTemplate spell = SpellDataManager.getSpell(id);
+            if (spell == null) {
+                continue;
+            }
+            Table card = new Table();
+            card.setBackground(hudSkin.getSlotRecessed());
+            card.pad(14);
+            card.top().left();
+            fillSpellDetails(card, spell, hudSkin, 760f);
+            TextButton learn = createActionButton("LEARN " + spell.getName().toUpperCase(Locale.ROOT));
+            learn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    chooseTomeSpell(id);
+                }
+            });
+            card.add(learn).colspan(2).left().width(420).height(44).padTop(10).row();
+            cards.add(card).width(820).left().padBottom(12).row();
+        }
+        ScrollPane scroll = new ScrollPane(cards);
+        scroll.setFadeScrollBars(false);
+        scroll.setScrollingDisabled(true, false);
+        detailPanel.add(scroll).expand().fill().padTop(12).row();
+
+        if (player.canRerollTomeChoice()) {
+            TextButton reroll = createActionButton("REROLL (" + choice.getRerollsLeft() + " LEFT)");
+            reroll.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    player.rerollTomeChoice();
+                    setStatus("The pages shift, revealing other spells.", true);
+                    refresh();
+                }
+            });
+            detailPanel.add(reroll).left().width(300).height(44).padTop(8).row();
+        }
+    }
+
+    private void chooseTomeSpell(String spellId) {
+        if (player.chooseTomeSpell(spellId, parentScreen.getEventManager())) {
+            SpellTemplate spell = SpellDataManager.getSpell(spellId);
+            selectedSpellId = spellId;
+            setStatus("Learned " + (spell != null ? spell.getName() : spellId) + ".", true);
+        }
+        refresh();
+    }
+
+    private TextButton createActionButton(String text) {
+        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
+        style.font = hudSkin.getFontMain();
+        style.up = hudSkin.getPrimaryButtonUp();
+        style.down = hudSkin.getPrimaryButtonDown();
+        style.over = hudSkin.getPrimaryButtonDown();
+        style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        TextButton button = new TextButton(text, style);
+        return button;
+    }
+
+    /** Writes a spell's full details into {@code panel}: the details side and each Tome Choice card. */
+    private static void fillSpellDetails(Table panel, SpellTemplate spell, HudSkin hudSkin, float width) {
         Label name = new Label(spell.getName(), new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         panel.add(name).left().colspan(2).row();
         String levelText = spell.getLevel() == 0 ? "Cantrip" : "Level " + spell.getLevel();
@@ -423,7 +500,7 @@ public class SpellbookScreen extends BaseScreen {
         panel.add(new Label(value, new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE))).left().expandX().row();
     }
 
-    static String costText(SpellTemplate spell) {
+    private static String costText(SpellTemplate spell) {
         return spell.getMpCost() == 0 ? "Cantrip" : spell.getMpCost() + " MP";
     }
 
@@ -460,7 +537,11 @@ public class SpellbookScreen extends BaseScreen {
     @Override
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.ESCAPE || keycode == SettingsManager.getInstance().getKey("SPELLBOOK")) {
-            close();
+            if (player.getPendingTomeChoice() != null) {
+                setStatus("Choose a spell to learn first.", false);
+            } else {
+                close();
+            }
             return true;
         }
         return false;

@@ -38,6 +38,7 @@ public class ItemTemplate {
 
     public String unlockId;
     public boolean locked; // Matches JSON "locked": true
+    public boolean unlockGated = false; // Progression meta-unlock gate (score >= 310)
 
     public String[] spriteData;
     public int baseValue;

@@ -33,6 +33,7 @@ public class InventorySlot extends Table {
     private final InventorySkin      skin;
     private final ItemDataManager    idm;
     private InventoryEventBus        bus;
+    private Label                    nameLabel;
 
     private final Drawable normalBg;
     private final Drawable validBg;
@@ -59,10 +60,10 @@ public class InventorySlot extends Table {
 
         if (slotName != null) {
             Label.LabelStyle ls = new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED);
-            Label lbl = new Label(slotName, ls);
-            lbl.setTouchable(Touchable.disabled);
-            lbl.setAlignment(Align.center);
-            add(lbl).top().center().expandX().padTop(2).row();
+            nameLabel = new Label(slotName, ls);
+            nameLabel.setTouchable(Touchable.disabled);
+            nameLabel.setAlignment(Align.center);
+            add(nameLabel).top().center().expandX().padTop(2).row();
         }
 
         addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
@@ -91,6 +92,9 @@ public class InventorySlot extends Table {
 
     public void setItem(Item item) {
         this.item = item;
+        if (nameLabel != null) {
+            nameLabel.setVisible(item == null);
+        }
     }
 
     public Item getItem() {

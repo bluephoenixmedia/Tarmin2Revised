@@ -97,6 +97,35 @@ Every frame, `GameScreen.render(delta)` calls renderers in this exact order:
 - Gates (`Gate`) — color-tinted wall slice
 - Windows (`Window`) — transparent slice with background bleed-through
 - Skybox — rendered behind walls as background panorama
+
+---
+
+## Skybox3DRenderer — Volcanic Sky
+
+Outdoor surface levels (`currentLevel == 1`) draw a procedural sky dome
+(`assets/shaders/storm_skydome.frag`) instead of a flat clear colour.
+
+- **Palette** comes from `DayNightManager`, which is volcanic at every hour. Use
+  `getSkyTint()` for the sky itself and `getWorldTint()` — damped by
+  `WORLD_TINT_STRENGTH` — for anything that lights world geometry.
+- **Smoke is geology, not weather.** `u_smokeFloor` keeps a permanent cloud
+  ceiling regardless of `WeatherType`; `CLEAR` means no precipitation, not an
+  empty sky. Weather adds to the floor and can never clear it.
+- **Fire concentrates due north**, on Castle Tarmin's bearing, so the burning
+  horizon doubles as a compass. Eruption plumes are procedural.
+- **Doom is the primary driver.** It raises the smoke floor, ignites the zenith,
+  widens the plumes, speeds the wind and adds heat-lightning.
+- **No sun or moon discs and no starfield.** Nothing resolves through a permanent
+  smoke ceiling, so the shader draws a diffuse celestial smear instead.
+- **Horizon landmarks are silhouettes.** `blackenToSilhouette()` strips baked
+  colour and specular, preserving only authored emissive above a threshold so
+  lava slits still glow.
+- The final colour is **deliberately banded** so the sky sits with the game's
+  flat, limited-palette surfaces.
+
+Regenerate the review contact sheet with `gradlew runSkyCapture`, and the
+raycaster's static directional banners with `gradlew runRetroSkyBanners` — the
+banners are rendered from this same dome so the two engines cannot drift apart.
 - Floor and ceiling — rendered as distance-based gradient or texture
 
 ---
