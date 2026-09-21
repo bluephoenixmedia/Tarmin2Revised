@@ -32,22 +32,33 @@ public class DayNightManager {
     // Minimum brightness during full night
     private static final float MIN_BRIGHTNESS = 0.18f;
 
+    /**
+     * How far world lighting is allowed to follow the sky palette (0 = neutral, 1 = full volcanic).
+     * The sky burns at full strength; the world only leans toward it, so hedge greens, item icons
+     * and monster sprites stay readable under an apocalyptic horizon.
+     */
+    public static final float WORLD_TINT_STRENGTH = 0.45f;
+
     private float timeOfDay; // 0 – 1
     private final Color skyTint = new Color(Color.WHITE);
+    private final Color zenithTint = new Color(Color.WHITE);
 
-    // Reusable colours (avoid allocation per frame)
-    private static final Color COL_NIGHT = new Color(0.10f, 0.12f, 0.35f, 1f);
-    private static final Color COL_DAWN  = new Color(1.00f, 0.55f, 0.15f, 1f);
-    private static final Color COL_DAY   = new Color(1.00f, 1.00f, 1.00f, 1f);
-    private static final Color COL_DUSK  = new Color(1.00f, 0.35f, 0.10f, 1f);
+    // Volcanic palette. The world is lit by a burning mountain, not by a sun: even "day" is a
+    // smouldering red, and night is a smothered ember rather than moonlit blue.
+    private static final Color COL_NIGHT = new Color(0.16f, 0.07f, 0.13f, 1f);
+    private static final Color COL_DAWN  = new Color(0.95f, 0.33f, 0.12f, 1f);
+    private static final Color COL_DAY   = new Color(0.85f, 0.30f, 0.22f, 1f);
+    private static final Color COL_DUSK  = new Color(0.92f, 0.20f, 0.12f, 1f);
 
     public DayNightManager() {
         // Start at early morning so the first thing the player sees is a sunrise
         this.timeOfDay = DAWN_START + 0.01f;
+        recomputeSkyTint();
     }
 
     public DayNightManager(float startTimeOfDay) {
         this.timeOfDay = MathUtils.clamp(startTimeOfDay, 0f, 1f);
+        recomputeSkyTint();
     }
 
     public void update(float delta) {
@@ -103,6 +114,28 @@ public class DayNightManager {
      */
     public Color getSkyTint() {
         return skyTint;
+    }
+
+    /**
+     * Colour of the top of the sky vault: the sky tint crushed toward a smothered purple-black.
+     * Keeping the zenith dark is what makes the sky read as a glowing slot above the walls rather
+     * than a flood of colour across the whole view.
+     */
+    public Color getZenithTint() {
+        return zenithTint;
+    }
+
+    /**
+     * Sky tint damped by {@link #WORLD_TINT_STRENGTH}, for anything that lights world geometry.
+     * Use this for ambient and key light; use {@link #getSkyTint()} only for the sky itself.
+     */
+    public Color getWorldTint(Color out) {
+        out.set(
+                MathUtils.lerp(1f, skyTint.r, WORLD_TINT_STRENGTH),
+                MathUtils.lerp(1f, skyTint.g, WORLD_TINT_STRENGTH),
+                MathUtils.lerp(1f, skyTint.b, WORLD_TINT_STRENGTH),
+                1f);
+        return out;
     }
 
     public Phase getPhase() {
@@ -188,12 +221,12 @@ public class DayNightManager {
     public Color getDirectionalLightColor(Color out) {
         float sunElevation = MathUtils.sin((timeOfDay - 0.25f) * 2.0f * MathUtils.PI);
         if (sunElevation > 0.05f) {
-            // Sun is main illuminator
-            out.set(skyTint).mul(1.2f, 1.15f, 1.1f, 1f);
+            // Sun is main illuminator, damped so the volcanic palette does not eat world materials
+            getWorldTint(out).mul(1.2f, 1.15f, 1.1f, 1f);
             out.a = 1f;
         } else {
-            // Moon / Night ambient
-            out.set(0.20f, 0.24f, 0.40f, 1f);
+            // Moon / night ambient: still the coolest light in the game, but warmed by the glow
+            out.set(0.24f, 0.24f, 0.38f, 1f);
         }
         return out;
     }
@@ -211,6 +244,16 @@ public class DayNightManager {
     // --- Private helpers ---
 
     private void recomputeSkyTint() {
+        recomputeSkyTintInternal();
+        // Zenith trails the sky tint: much darker, pushed toward purple, never toward white.
+        zenithTint.set(
+                skyTint.r * 0.26f + 0.04f,
+                skyTint.g * 0.16f + 0.02f,
+                skyTint.b * 0.34f + 0.07f,
+                1f);
+    }
+
+    private void recomputeSkyTintInternal() {
         if (timeOfDay < DAWN_START) {
             skyTint.set(COL_NIGHT);
         } else if (timeOfDay < DAY_START) {

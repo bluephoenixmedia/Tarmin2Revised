@@ -15,6 +15,10 @@ uniform float u_stormIntensity;
 uniform float u_flashIntensity;
 uniform float u_windSpeed;
 uniform float u_cloudCover;
+// Always-on volcanic smoke ceiling, independent of weather. Weather adds to it, never clears it.
+uniform float u_smokeFloor;
+// Colour of the top of the vault: kept dark so the fire stays a horizon band, not a flood.
+uniform vec3 u_zenithColor;
 
 // High-speed analytical hash & 2D smooth noise
 float hash21(vec2 p) {
@@ -57,26 +61,31 @@ void main() {
     vec2 windUpper = vec2(0.015, 0.008) * u_time * speed;
     vec2 windLower = vec2(0.042, 0.022) * u_time * speed;
 
+    // Smoke is geology, not weather: CLEAR now means "no precipitation", not "empty sky".
+    float cover = clamp(max(u_cloudCover, u_smokeFloor), 0.0, 1.0);
+
     // --- 1. BASE ATMOSPHERIC SKY GRADIENT ---
-    vec3 zenithSky = u_skyTint * 0.65;
-    vec3 horizonSky = mix(u_horizonColor, u_skyTint * 0.75, 0.5);
-    vec3 skyBase = mix(horizonSky, zenithSky, pow(up, 0.6));
+    // Hot at the horizon, choked purple-black at the zenith. The steeper falloff keeps the fire
+    // a tight band above the walls rather than washing the whole view orange.
+    vec3 zenithSky = u_zenithColor;
+    vec3 horizonSky = mix(u_horizonColor, u_skyTint, 0.72) * 1.15;
+    vec3 skyBase = mix(horizonSky, zenithSky, pow(up, 0.42));
 
     // --- 2. LAYER 1: UPPER TURBULENT OVERCAST CANOPY ---
     vec2 p1 = skyUV * 0.85 + windUpper;
     float n1 = fbm(p1);
     // Density threshold dynamically scaled by cloud cover
-    float minCutoff1 = mix(0.72, 0.22, u_cloudCover);
+    float minCutoff1 = mix(0.72, 0.22, cover);
     float cloud1 = smoothstep(minCutoff1, minCutoff1 + 0.45, n1);
 
     // --- 3. LAYER 2: LOW GALE-FORCE SCUD WISPS ---
     vec2 p2 = skyUV * 1.75 + windLower;
     float n2 = fbm(p2);
-    float minCutoff2 = mix(0.80, 0.35, u_cloudCover);
+    float minCutoff2 = mix(0.80, 0.35, cover);
     float cloud2 = smoothstep(minCutoff2, minCutoff2 + 0.35, n2) * 0.75;
 
     // Combined multi-layer cloud coverage: drops cleanly to 0 in clear weather
-    float cloudCoverage = clamp((cloud1 + cloud2 * (1.0 - cloud1 * 0.6)) * u_cloudCover, 0.0, 1.0);
+    float cloudCoverage = clamp((cloud1 + cloud2 * (1.0 - cloud1 * 0.6)) * cover, 0.0, 1.0);
 
     // --- 3B. PROCEDURAL NIGHT STARFIELD (Clear / Partly Cloudy Nights) ---
     float nightFactor = clamp(-u_sunDir.y * 3.5, 0.0, 1.0);
@@ -115,28 +124,28 @@ void main() {
     float sunDot = max(dot(v_dir, u_sunDir), 0.0);
     float moonDot = max(dot(v_dir, u_moonDir), 0.0);
 
-    if (u_sunDir.y > -0.10 && u_cloudCover > 0.05) {
+    if (u_sunDir.y > -0.10 && cover > 0.05) {
         // Atmospheric solar corona: broad soft glow + brighter core
         float sunCorona = pow(sunDot, 3.5) * 0.55 + pow(sunDot, 22.0) * 0.75;
         // Warm gold/rose at dawn/dusk, radiant warm-white at midday
         vec3 sunColor = mix(vec3(1.0, 0.60, 0.25), vec3(1.0, 0.96, 0.90), clamp(u_sunDir.y * 3.0, 0.0, 1.0));
-        vec3 sunGlow = sunColor * sunCorona * mix(0.95, 0.55, u_stormIntensity) * u_cloudCover;
+        vec3 sunGlow = sunColor * sunCorona * mix(0.95, 0.55, u_stormIntensity) * cover;
         cloudColor += sunGlow;
     }
 
-    if (u_moonDir.y > -0.10 && u_cloudCover > 0.05) {
+    if (u_moonDir.y > -0.10 && cover > 0.05) {
         // Cool lunar silver halo
         float moonCorona = pow(moonDot, 4.5) * 0.30 + pow(moonDot, 28.0) * 0.45;
         vec3 moonColor = vec3(0.65, 0.75, 0.95);
-        vec3 moonGlow = moonColor * moonCorona * mix(0.85, 0.40, u_stormIntensity) * u_cloudCover;
+        vec3 moonGlow = moonColor * moonCorona * mix(0.85, 0.40, u_stormIntensity) * cover;
         cloudColor += moonGlow;
     }
 
     // Sun / Moon rim light scattering (silver lining)
-    if (u_cloudCover > 0.10) {
+    if (cover > 0.10) {
         float celestialScatter = pow(sunDot, 6.0) * 0.4 + pow(moonDot, 4.0) * 0.25;
         vec3 rimLightColor = vec3(0.75, 0.70, 0.65) * celestialScatter * (1.0 - u_stormIntensity * 0.7);
-        cloudColor += rimLightColor * smoothstep(0.3, 0.8, n1) * u_cloudCover;
+        cloudColor += rimLightColor * smoothstep(0.3, 0.8, n1) * cover;
     }
 
     // --- 5. LIGHTNING ILLUMINATION BURST ---

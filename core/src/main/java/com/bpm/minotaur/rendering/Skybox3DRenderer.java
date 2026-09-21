@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.DayNightManager;
 import com.bpm.minotaur.managers.DebugManager;
+import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.weather.WeatherType;
@@ -38,6 +39,15 @@ public class Skybox3DRenderer {
     // Horizon Distances
     private static final float LANDMARK_DISTANCE = 140f;
     private static final float PARALLAX_SCALE = 0.05f;
+
+    // Volcanic smoke ceiling (issue #104). The floor is always present regardless of weather;
+    // doom thickens it until the sky closes over entirely.
+    private static final float SMOKE_FLOOR_BASE = 0.70f;
+    private static final float SMOKE_FLOOR_DOOM = 0.92f;
+
+    private final Color zenithTint = new Color(Color.BLACK);
+    private float smokeFloor = SMOKE_FLOOR_BASE;
+    private float doom01 = 0f;
 
     private final PerspectiveCamera camera;
     private final ModelBatch modelBatch;
@@ -209,11 +219,19 @@ public class Skybox3DRenderer {
         currentFlash = (weather != null) ? weather.getFlashIntensity() : 0f;
         currentCloudCover = (weather != null) ? weather.getCloudCover() : 0.0f;
 
+        // 2B. Doom drives the sky harder than weather does. At zero doom the sky already matches
+        // the reference art; at full doom the smoke closes over completely.
+        doom01 = MathUtils.clamp(DoomManager.getInstance().getBridgeIntegrity() / 100f, 0f, 1f);
+        smokeFloor = MathUtils.lerp(SMOKE_FLOOR_BASE, SMOKE_FLOOR_DOOM, doom01);
+
         // 3. Day/Night Lighting & Celestial Disk Positions
         if (dayNight != null) {
             Color currentSky = dayNight.getSkyTint();
             skyTint.set(currentSky);
-            horizonFogColor.set(currentSky.r * 0.45f, currentSky.g * 0.45f, currentSky.b * 0.55f, 1f);
+            zenithTint.set(dayNight.getZenithTint());
+            // The horizon is the hottest part of the sky, so it keeps far more of the tint than
+            // the old cool-shifted fog did.
+            horizonFogColor.set(currentSky.r * 0.95f, currentSky.g * 0.55f, currentSky.b * 0.45f, 1f);
 
             if (currentWeather == WeatherType.TORNADO) {
                 // Distinct sickly greenish-dark supercell atmosphere
@@ -304,7 +322,9 @@ public class Skybox3DRenderer {
 
     private void renderPass(Viewport viewport, Color skyColor) {
         // Clear color to sky tint & clear depth for 3D horizon pass
-        Gdx.gl.glClearColor(skyColor.r * 0.25f, skyColor.g * 0.25f, skyColor.b * 0.35f, 1f);
+        // Clear to the zenith colour: anything the dome fails to cover should read as choked sky,
+        // never as a pale wash.
+        Gdx.gl.glClearColor(zenithTint.r, zenithTint.g, zenithTint.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         viewport.apply();
@@ -331,8 +351,11 @@ public class Skybox3DRenderer {
             stormShader.setUniformf("u_horizonColor", horizonFogColor.r, horizonFogColor.g, horizonFogColor.b);
             stormShader.setUniformf("u_stormIntensity", isStormy ? 1.0f : 0.2f);
             stormShader.setUniformf("u_cloudCover", currentCloudCover);
+            stormShader.setUniformf("u_smokeFloor", smokeFloor);
+            stormShader.setUniformf("u_zenithColor", zenithTint.r, zenithTint.g, zenithTint.b);
             stormShader.setUniformf("u_flashIntensity", currentFlash);
-            stormShader.setUniformf("u_windSpeed", isStormy ? 2.5f : 0.8f);
+            // Doom drives the whole sky faster, not just darker.
+            stormShader.setUniformf("u_windSpeed", (isStormy ? 2.5f : 0.8f) * (1f + doom01));
 
             for (int i = 0; i < domeModel.meshes.size; i++) {
                 domeModel.meshes.get(i).render(stormShader, GL20.GL_TRIANGLES);
