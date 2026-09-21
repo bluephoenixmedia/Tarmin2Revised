@@ -22,6 +22,8 @@ com.bpm.minotaur/
 │   └── spawntables/                ← SpawnTableData, SpawnTableEntry, WeightedRandomList
 ├── managers/                       ← 21 singleton + context managers
 ├── rendering/                      ← All renderers, overlays, HUD, animation
+│                                     (death cinematic: DeathSequence, DiscoveryCard,
+│                                      DiscoveryName; see RENDERING.md)
 │                                     (incl. SkyCaptureHarness, a dev capture tool
 │                                      launched via gradlew runSkyCapture)
 ├── generation/                     ← Procedural maze/biome generators, factories, spawners

@@ -74,7 +74,8 @@ public class GameOverScreen extends BaseScreen {
         this.soundManager = new SoundManager(debugManager);
         this.soundManager.stopAllSounds();
 
-        this.soundManager.playPlayerDeathSound();
+        // The death sequence has already played the reveal by the time this screen appears;
+        // playing it again here stacked a second laugh on top of the first.
 
         try {
             this.backgroundTexture = new Texture(Gdx.files.internal("images/skybox/retro_skybox_castle_storm.png"));

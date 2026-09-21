@@ -1253,15 +1253,10 @@ public class GameScreen extends BaseScreen {
             java.util.List<com.bpm.minotaur.gamedata.item.Item.ItemType> newUnlockTypes =
                     com.bpm.minotaur.managers.UnlockManager.getInstance()
                             .rollRunUnlockTypes(telemetry, depthReached);
-            java.util.List<String> newUnlocks = new ArrayList<>();
-            for (com.bpm.minotaur.gamedata.item.Item.ItemType t : newUnlockTypes) {
-                newUnlocks.add(com.bpm.minotaur.managers.UnlockManager.getInstance().displayNameFor(t));
-            }
-
             // 5. Play visceral death audio and transition to PlayerDeathScreen
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
-                    divinitiesEarnedThisRun, newUnlocks, newUnlockTypes);
+                    divinitiesEarnedThisRun, null, newUnlockTypes);
             beginDeathSequence(deathScreen);
             return;
         }
@@ -1319,6 +1314,10 @@ public class GameScreen extends BaseScreen {
             com.badlogic.gdx.Screen target = pendingDeathScreen;
             pendingDeathScreen = null;
             soundManager.playDeathReveal();
+            if (target instanceof PlayerDeathScreen) {
+                // Hand the blood over so it recedes onto the new screen instead of cutting.
+                ((PlayerDeathScreen) target).beginBloodReveal();
+            }
             world3DRenderer.setDeathSequence(null);
             deathSequence.reset();
             game.setScreen(target);
@@ -1441,17 +1440,19 @@ public class GameScreen extends BaseScreen {
     private String buildEpitaph(com.bpm.minotaur.telemetry.TelemetryManager telemetry) {
         StringBuilder sb = new StringBuilder();
         String killer = telemetry.getKillerMonster();
-        if (killer != null && !killer.trim().isEmpty()) {
+        // Checked before the killer, not after: the killer name is never cleared once set, so any
+        // earlier fight masked every genuine bleed-out and this epitaph was effectively dead text.
+        boolean bledOut = telemetry.getBleedDamageTaken() > 0
+                && player != null
+                && !player.wasLastDamageViolent()
+                && player.getInjuryManager() != null
+                && player.getInjuryManager().hasUntreatedInjuries();
+        if (bledOut) {
+            sb.append("Bled out from untended wounds");
+        } else if (killer != null && !killer.trim().isEmpty()) {
             String niceName = formatMonsterName(killer);
             String article = niceName.matches("^[AEIOU].*") ? "an" : "a";
             sb.append("Fell to ").append(article).append(" ").append(niceName);
-        } else if (telemetry.getBleedDamageTaken() > 0
-                && player != null
-                && player.getInjuryManager() != null
-                && player.getInjuryManager().hasUntreatedInjuries()) {
-            // No killer on record but open wounds draining HP: name the real cause
-            // rather than burying a bleed-out under "Perished in the depths".
-            sb.append("Bled out from untended wounds");
         } else {
             sb.append("Perished in the depths");
         }
@@ -1757,6 +1758,11 @@ public class GameScreen extends BaseScreen {
 
         @Override
         public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        // The death cinematic owns the screen: a click must not drive gameplay mid-collapse.
+        if (isDying()) {
+            deathSequence.skip();
+            return true;
+        }
             return breakTomeStudy();
         }
     };
@@ -2891,6 +2897,9 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean scrolled(float amountX, float amountY) {
+        if (isDying()) {
+            return true;
+        }
         return false;
     }
 

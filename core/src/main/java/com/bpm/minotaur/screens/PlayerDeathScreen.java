@@ -29,7 +29,6 @@ public class PlayerDeathScreen extends BaseScreen {
     private final float bridgeIntegrity;
     private final int lostItems;
     private final int retainedItems;
-    private final String defeatLore;
     private final String epitaphCause;
     private final int depthReached;
     private final int monstersSlain;
@@ -79,8 +78,6 @@ public class PlayerDeathScreen extends BaseScreen {
         this.bridgeIntegrity = bridgeIntegrity;
         this.lostItems = lostItems;
         this.retainedItems = retainedItems;
-        this.defeatLore = (defeatLore != null && !defeatLore.trim().isEmpty())
-                ? defeatLore : "Your physical vessel collapsed in the labyrinth...";
         this.epitaphCause = (epitaphCause != null && !epitaphCause.trim().isEmpty())
                 ? epitaphCause : "Slain in the Labyrinth";
         this.depthReached = Math.max(1, depthReached);
@@ -109,14 +106,17 @@ public class PlayerDeathScreen extends BaseScreen {
         backdrop.setBackground(hudSkin.getScreenBackdrop());
         stage.addActor(backdrop);
 
+        // Full-bleed shape per docs/UX/ux-standard.md section 2: header bar, body panels, footer
+        // hint bar, filling the frame rather than floating as a centred block.
         Table root = new Table();
         root.setFillParent(true);
-        root.center().pad(28, 50, 28, 50);
+        root.top().pad(28, 50, 28, 50);
 
         root.add(buildHeader()).growX().row();
-        root.add(buildTrophyRow()).padTop(26f).row();
+        root.add(buildTrophyRow()).growX().padTop(26f).row();
         root.add(buildStatRow()).growX().padTop(26f).row();
-        root.add(buildFooter()).padTop(26f).row();
+        root.add().expandY().row();
+        root.add(buildFooter()).growX().padTop(26f).row();
 
         stage.addActor(root);
     }
@@ -293,6 +293,9 @@ public class PlayerDeathScreen extends BaseScreen {
 
     private Table buildFooter() {
         Table footer = new Table();
+        footer.setBackground(hudSkin.getPanelBg());
+        footer.pad(12f, 24f, 12f, 24f);
+
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = hudSkin.getFontHeader();
         btnStyle.up = hudSkin.getPrimaryButtonUp();
@@ -308,7 +311,11 @@ public class PlayerDeathScreen extends BaseScreen {
                 awakenInShelter();
             }
         });
-        footer.add(awaken).minWidth(760f).height(64f);
+        footer.add(awaken).minWidth(760f).height(64f).expandX();
+
+        Label hint = new Label("[ESC] RETURN",
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
+        footer.add(hint).right();
         return footer;
     }
 
@@ -327,6 +334,20 @@ public class PlayerDeathScreen extends BaseScreen {
         return false;
     }
 
+    /** How long the blood takes to clear off the screen once it appears. */
+    private static final float REVEAL_DURATION = 0.30f;
+
+    /**
+     * Starts finished. The blood belongs to the handover, not to the screen -- a death screen
+     * built directly (capture harness, tests) has no blood to clear and must not paint itself red.
+     */
+    private float revealElapsed = REVEAL_DURATION;
+
+    /** Called by the handover when this screen is inheriting a fully opaque blood wipe. */
+    public void beginBloodReveal() {
+        revealElapsed = 0f;
+    }
+
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(14f / 255f, 4f / 255f, 4f / 255f, 1f);
@@ -334,6 +355,23 @@ public class PlayerDeathScreen extends BaseScreen {
 
         stage.act(delta);
         stage.draw();
+
+        // The handover happens under fully opaque blood, so this screen inherits it and has to
+        // clear it. Without this the world cuts to a finished screen at full opacity and the
+        // transition ends a beat early.
+        revealElapsed += delta;
+        if (revealElapsed < REVEAL_DURATION) {
+            float alpha = 1f - (revealElapsed / REVEAL_DURATION);
+            com.badlogic.gdx.graphics.g2d.Batch batch = stage.getBatch();
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            batch.setProjectionMatrix(stage.getCamera().combined);
+            batch.begin();
+            batch.setColor(HudSkin.COL_BLOOD.r, HudSkin.COL_BLOOD.g, HudSkin.COL_BLOOD.b, alpha);
+            batch.draw(hudSkin.getWhitePixel(), 0f, 0f,
+                    stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+            batch.setColor(Color.WHITE);
+            batch.end();
+        }
     }
 
     @Override

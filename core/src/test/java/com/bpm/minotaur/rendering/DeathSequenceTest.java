@@ -119,6 +119,21 @@ public class DeathSequenceTest {
     }
 
     @Test
+    public void testSkippingAfterImpactNeverRewindsTheWipe() {
+        seq.begin(true, 40f);
+        advance(1.45f); // past impact: the screen is already part-covered
+        float before = seq.getBloodAlpha();
+        assertTrue("Precondition: blood is already partly covering the world", before > 0.1f);
+
+        seq.skip();
+
+        // Snapping back to a clear world mid-wipe is worse than not skipping at all.
+        assertTrue("Skip must not rewind the wipe", seq.getBloodAlpha() >= before - 0.001f);
+        advance(1f / 120f);
+        assertTrue("...and must keep advancing from there", seq.getBloodAlpha() >= before);
+    }
+
+    @Test
     public void testSkipBeforeLockoutExpiresIsIgnored() {
         seq.begin(true, 40f);
         advance(0.10f);

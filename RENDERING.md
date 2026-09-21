@@ -130,6 +130,37 @@ banners are rendered from this same dome so the two engines cannot drift apart.
 
 ---
 
+## Death Sequence
+
+Death no longer cuts to a screen on the frame it happens. `DeathSequence`
+(`rendering/`) holds a 2.2s timeline as pure state and curves, with no rendering
+of its own, so the beats are testable:
+
+| t | beat |
+|---|---|
+| 0.00 | killing blow; grunt, input locks, HUD begins fading |
+| 0.55 | knees: eye height 0.50 -> 0.28, pitch ~18 deg down |
+| 1.10 | impact: groan, camera jolt, blood wipe starts |
+| 1.90 | handover: blood opaque, `setScreen` happens unseen |
+| 2.20 | reveal: `tarmin_laugh`, blood recedes onto the death screen |
+
+Impact doubles as the blood trigger, so the tumble and the wipe overlap and the
+roll never has to look convincing at rest.
+
+- **Camera**: `World3DRenderer.updateCamera` reads the sequence for eye height,
+  forward pitch, roll and the impact jolt. This is the only place in the game
+  where camera pitch is non-zero; billboard basis vectors are recomputed after
+  the rotation so sprites follow the fall. 3D engine only -- the raycaster has no
+  camera to tilt, so RETRO gets the audio and the blood with no collapse.
+- **Blood**: drawn in `GameScreen` *after* the HUD, so it covers everything and
+  applies to both engines. That places it outside the CRT pass, which runs before
+  the HUD is drawn -- a deliberate trade for being able to cover the HUD.
+- **Skip**: 0.40s lockout, because players die with their hands on the attack
+  keys. Skipping carries the wipe forward from wherever it is rather than
+  restarting it.
+
+---
+
 ## EntityRenderer — Depth-Buffered Sprite Rendering
 
 All objects in `Maze.gameObjects` and `Maze.monsters` that implement `Renderable` are passed to `EntityRenderer`.

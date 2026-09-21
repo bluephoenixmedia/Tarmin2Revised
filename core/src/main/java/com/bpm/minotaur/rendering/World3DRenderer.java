@@ -497,7 +497,7 @@ public class World3DRenderer implements Disposable {
         float py = player.getPosition().y;
 
         boolean dying = deathSequence != null && deathSequence.isActive();
-        float pz = dying ? deathSequence.getEyeHeight() : 0.5f; // Eye height
+        float pz = dying ? deathSequence.getEyeHeight() + deathSequence.getImpactJolt() : 0.5f;
 
         camera.position.set(px, pz, -py);
 

@@ -1412,7 +1412,7 @@ public class Player {
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
             String msg, GameEventManager eventManager) {
         // 1. Damage (The Ordeal)
-        lastDamageWasViolent = true;
+        recordHpLoss(true);
         stats.setCurrentHP(stats.getCurrentHP() - damage);
 
         // 2. Apply Stats
@@ -2132,8 +2132,18 @@ public class Player {
         return lastDamageWasViolent;
     }
 
+    /**
+     * Records how the player last lost HP.
+     *
+     * <p>Called only where HP actually changes. Setting it on entry to {@code takeDamage} was
+     * wrong: a dodged swing deals nothing, yet it armed the violent-death grunt, so a later
+     * starvation death would cry out.
+     */
+    private void recordHpLoss(boolean violent) {
+        lastDamageWasViolent = violent;
+    }
+
     public int takeDamage(int amount, DamageType type) {
-        lastDamageWasViolent = true;
         // Dodge check: AGI-based chance to avoid a connected hit entirely.
         float dodgeChance = getDodgeChance();
         if (dodgeChance > 0f && new java.util.Random().nextFloat() < dodgeChance) {
@@ -2201,6 +2211,9 @@ public class Player {
             com.badlogic.gdx.Gdx.app.log("Player", "Taken Damage: " + finalDamage + " (Adj. Amount: " + amount + ")");
         }
 
+        if (finalDamage > 0) {
+            recordHpLoss(true);
+        }
         return finalDamage;
     }
 
@@ -2825,7 +2838,7 @@ public class Player {
         if (amount <= 0)
             return;
         // Bleed, starvation and thirst all arrive here: attrition, not a blow.
-        lastDamageWasViolent = false;
+        recordHpLoss(false);
         stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 

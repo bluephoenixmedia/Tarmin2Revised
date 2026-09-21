@@ -49,6 +49,10 @@ public class HudSkin implements Disposable {
     public static final Color COL_WATER_CYAN       = Color.valueOf("4A7AC2");
     public static final Color COL_TEMP_ORANGE      = Color.valueOf("E8A63A");
     public static final Color COL_TOX              = Color.valueOf("7A2A20");
+    /** Death-sequence blood and the ember glow on discovery cards. */
+    public static final Color COL_BLOOD            = Color.valueOf("6B0508");
+    public static final Color COL_BLOOD_BEAD       = Color.valueOf("9B0A0C");
+    public static final Color COL_EMBER_GLOW       = Color.valueOf("FF731F");
 
     // --- Menu text on dark panels -------------------------------------------
     // The status colours above are tuned to read as bars over a lit dungeon. As small

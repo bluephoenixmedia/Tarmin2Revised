@@ -103,8 +103,11 @@ public final class DeathSequence {
     public void skip() {
         if (!canSkip() || skipped) return;
         skipped = true;
-        bloodStartTime = elapsed;
+        // Carry the wipe forward from wherever it already is. Restarting it would snap a
+        // part-covered screen back to a clear world, which is worse than not skipping at all.
+        float already = getBloodAlpha();
         bloodDuration = BLOOD_WIPE_SKIPPED;
+        bloodStartTime = elapsed - already * bloodDuration;
     }
 
     public boolean wasSkipped() {
@@ -147,6 +150,17 @@ public final class DeathSequence {
             return MathUtils.lerp(PITCH_KNEELING, PITCH_FLOOR, t);
         }
         return PITCH_FLOOR;
+    }
+
+    /**
+     * A short vertical jolt as the body lands, in world units. Decays to nothing over ~0.18s.
+     */
+    public float getImpactJolt() {
+        if (!active || elapsed < T_IMPACT) return 0f;
+        float since = elapsed - T_IMPACT;
+        if (since > 0.18f) return 0f;
+        float decay = 1f - (since / 0.18f);
+        return MathUtils.sin(since * 90f) * 0.035f * decay * decay;
     }
 
     /** Roll in degrees, building from the fall and decelerating after the body lands. */

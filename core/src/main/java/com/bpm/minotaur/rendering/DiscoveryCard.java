@@ -34,7 +34,6 @@ public class DiscoveryCard extends Table {
     private static final float DRIP_DURATION = 1.2f;
     private static final float DRIP_MAX_LENGTH = 46f;
 
-    private static final Color BLOOD = new Color(0.42f, 0.02f, 0.03f, 1f);
 
     private final HudSkin skin;
     private final float[] dripX = new float[DRIP_COUNT];
@@ -103,7 +102,8 @@ public class DiscoveryCard extends Table {
 
         // Ember glow: a slow pulse along the border, so the card reads as lit rather than printed.
         float pulse = 0.55f + 0.45f * MathUtils.sin(age * 2.2f);
-        batch.setColor(1f, 0.45f, 0.12f, a * 0.32f * pulse);
+        batch.setColor(HudSkin.COL_EMBER_GLOW.r, HudSkin.COL_EMBER_GLOW.g,
+                HudSkin.COL_EMBER_GLOW.b, a * 0.32f * pulse);
         float g = 2f;
         batch.draw(pixel, getX(), getY(), getWidth(), g);
         batch.draw(pixel, getX(), getY() + getHeight() - g, getWidth(), g);
@@ -116,14 +116,15 @@ public class DiscoveryCard extends Table {
             if (t <= 0f) continue;
             float eased = 1f - (1f - Math.min(t, 1f)) * (1f - Math.min(t, 1f));
             float len = dripLength[i] * eased;
-            batch.setColor(BLOOD.r, BLOOD.g, BLOOD.b, a * 0.9f);
+            batch.setColor(HudSkin.COL_BLOOD.r, HudSkin.COL_BLOOD.g, HudSkin.COL_BLOOD.b, a * 0.9f);
             batch.draw(pixel,
                     getX() + dripX[i],
                     getY() + getHeight() - len,
                     dripWidth[i],
                     len);
             // The bead at the leading edge.
-            batch.setColor(BLOOD.r * 1.4f, BLOOD.g, BLOOD.b, a);
+            batch.setColor(HudSkin.COL_BLOOD_BEAD.r, HudSkin.COL_BLOOD_BEAD.g,
+                    HudSkin.COL_BLOOD_BEAD.b, a);
             batch.draw(pixel,
                     getX() + dripX[i] - 1f,
                     getY() + getHeight() - len,
