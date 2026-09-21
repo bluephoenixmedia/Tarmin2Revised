@@ -26,32 +26,19 @@ public final class DiscoveryName {
             return new DiscoveryName("UNKNOWN", "");
         }
 
-        String[] rawParts = friendlyName.split(",");
-        java.util.List<String> parts = new java.util.ArrayList<>();
-        for (String raw : rawParts) {
-            String part = raw.trim();
-            if (!part.isEmpty()) {
-                parts.add(part);
-            }
-        }
+        // The split itself lives in ItemName, so the card and every other surface that shows an
+        // item name agree on how a stored name is taken apart.
+        com.bpm.minotaur.gamedata.item.ItemName parsed =
+                com.bpm.minotaur.gamedata.item.ItemName.parse(friendlyName);
 
-        if (parts.isEmpty()) {
+        if (parsed.category.isEmpty()) {
             return new DiscoveryName("UNKNOWN", "");
         }
-        if (parts.size() == 1) {
-            return new DiscoveryName(parts.get(0).toUpperCase(), "");
+        if (parsed.qualifier.isEmpty()) {
+            return new DiscoveryName(parsed.category.toUpperCase(), "");
         }
-
-        String headline = (parts.get(1) + " " + parts.get(0)).toUpperCase();
-
-        StringBuilder subtitle = new StringBuilder();
-        for (int i = 2; i < parts.size(); i++) {
-            if (subtitle.length() > 0) {
-                subtitle.append(", ");
-            }
-            subtitle.append(parts.get(i));
-        }
-
-        return new DiscoveryName(headline, subtitle.toString());
+        return new DiscoveryName(
+                (parsed.qualifier + " " + parsed.category).toUpperCase(),
+                parsed.extra);
     }
 }

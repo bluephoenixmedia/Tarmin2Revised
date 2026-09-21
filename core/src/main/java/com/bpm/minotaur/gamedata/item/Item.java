@@ -680,7 +680,9 @@ public class Item implements Renderable {
             return sourceName + " " + partName;
         }
 
-        String baseName = this.friendlyName != null ? this.friendlyName
+        // Stored names are category-first so they alphabetise ("Axe, Battle"). Players should
+        // never see that form -- see ItemName.
+        String baseName = this.friendlyName != null ? ItemName.natural(this.friendlyName)
                 : (this.type != null ? toTitleCase(this.type.name()) : "Unknown Item");
 
         if (!isModified())
