@@ -109,7 +109,10 @@ public class SoundManager {
         loadSound("player_spiritual_attack", "sounds/player_spiritual_attack.wav");
         loadSound("pickup_item", "sounds/pickup_item.wav");
         loadSound("door_open", "sounds/door_open.wav");
-        loadSound("player_death", "sounds/music/tarmin_enter_fx.ogg");
+        // Death cues. "player_death" used to point at a music stinger, which is why death
+        // never landed as an event; these three are staged across the death sequence.
+        loadSound("player_grunt", "sounds/hurt.mp3");
+        loadSound("player_body_fall", "sounds/mountain_hurt.mp3");
         loadSound("monster_attack", "sounds/monster_attack.wav");
         loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
         loadSound("monster_roar", "sounds/monster_roar.wav");
@@ -181,11 +184,37 @@ public class SoundManager {
         lastWeatherIntensity = null;
     }
 
+    /**
+     * The cry at the killing blow. Silent for attrition deaths -- starving to death without a
+     * sound is more unsettling than a stock grunt, and costs nothing.
+     */
+    public void playDeathGrunt(boolean violent) {
+        if (violent) {
+            playSound("player_grunt", 1.0f);
+        }
+    }
+
+    /** The groan as the body hits the floor. */
+    public void playDeathImpact() {
+        playSound("player_body_fall", 0.9f);
+    }
+
+    /**
+     * Tarmin's laugh as the blood takes the screen.
+     *
+     * <p>Deliberately does not call {@link #stopAllSounds()}: the impact groan is still ringing
+     * when this fires, and cutting it dead mid-breath wrecks the handover.
+     */
+    public void playDeathReveal() {
+        MusicManager.getInstance().stop();
+        stopWeatherEffects();
+        playSound("tarmin_laugh");
+    }
+
+    /** One-shot death audio, for callers with no sequence to stage across. */
     public void playPlayerDeathSound() {
         stopAllSounds();
-        MusicManager.getInstance().stop();
-        playSound("player_death");
-        playSound("tarmin_laugh");
+        playDeathReveal();
     }
 
     // --- Volume Dampening for Interiors (Smooth Crossfade) ---

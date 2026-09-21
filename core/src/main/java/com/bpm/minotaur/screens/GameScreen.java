@@ -119,6 +119,8 @@ public class GameScreen extends BaseScreen {
     // --- Death Idempotency & Run Tracking (NetHack Progression Reboot) ---
     private String activeExpeditionRunId = java.util.UUID.randomUUID().toString();
     private boolean isDeathTransitionTriggered = false;
+    private final com.bpm.minotaur.managers.DeathWatch deathWatch =
+            new com.bpm.minotaur.managers.DeathWatch();
 
     private final TurnManager turnManager; // NEW
 
@@ -1116,6 +1118,14 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        // Central death check. Damage sources each used to be responsible for noticing they had
+        // killed the player, and InjuryManager never did, so bleeding out did not kill you. This
+        // runs regardless of cause; duplicate events are already harmless.
+        if (player != null && player.getStats() != null
+                && deathWatch.observe(player.getStats().getCurrentHP())) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.PLAYER_DIED, null));
+        }
+
         while ((event = eventManager.findAndConsume(GameEvent.EventType.PLAYER_DIED)) != null) {
             Gdx.app.log("GameScreen", "PLAYER_DIED event received.");
 
@@ -1333,6 +1343,7 @@ public class GameScreen extends BaseScreen {
         // a new telemetry run so the next demise is tracked independently.
         this.activeExpeditionRunId = java.util.UUID.randomUUID().toString();
         this.isDeathTransitionTriggered = false;
+        this.deathWatch.reset();
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded

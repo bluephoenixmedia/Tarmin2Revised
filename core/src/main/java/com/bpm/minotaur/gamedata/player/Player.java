@@ -1412,6 +1412,7 @@ public class Player {
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
             String msg, GameEventManager eventManager) {
         // 1. Damage (The Ordeal)
+        lastDamageWasViolent = true;
         stats.setCurrentHP(stats.getCurrentHP() - damage);
 
         // 2. Apply Stats
@@ -2119,7 +2120,20 @@ public class Player {
         updateVectors();
     }
 
+    /**
+     * Whether the most recent loss of HP came from a blow rather than from attrition.
+     *
+     * <p>Drives whether the death sequence opens with a cry. Being run through by a harpy earns a
+     * grunt; quietly starving to death does not, and the silence is the point.
+     */
+    private boolean lastDamageWasViolent;
+
+    public boolean wasLastDamageViolent() {
+        return lastDamageWasViolent;
+    }
+
     public int takeDamage(int amount, DamageType type) {
+        lastDamageWasViolent = true;
         // Dodge check: AGI-based chance to avoid a connected hit entirely.
         float dodgeChance = getDodgeChance();
         if (dodgeChance > 0f && new java.util.Random().nextFloat() < dodgeChance) {
@@ -2810,6 +2824,8 @@ public class Player {
     public void takeTrueDamage(int amount) {
         if (amount <= 0)
             return;
+        // Bleed, starvation and thirst all arrive here: attrition, not a blow.
+        lastDamageWasViolent = false;
         stats.setCurrentHP(Math.max(0, stats.getCurrentHP() - amount));
     }
 
