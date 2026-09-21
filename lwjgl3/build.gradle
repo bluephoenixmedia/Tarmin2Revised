@@ -267,6 +267,16 @@ task runSpawnTest(type: JavaExec) {
     ignoreExitValue = true
 }
 
+task runSkyCapture(type: JavaExec) {
+    group = "debug"
+    description = "Captures the volcanic sky across time-of-day, weather and heading states"
+    mainClass = 'com.bpm.minotaur.lwjgl3.SkyCaptureLauncher'
+    classpath = sourceSets.main.runtimeClasspath
+    standardOutput = System.out
+    workingDir = rootProject.file('assets')
+    ignoreExitValue = true
+}
+
 task runSpritePreviewer(type: JavaExec) {
     group = "debug"
     description = "Runs the Sprite Previewer Tool"
