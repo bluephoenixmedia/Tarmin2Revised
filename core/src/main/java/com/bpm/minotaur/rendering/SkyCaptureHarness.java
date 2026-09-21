@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.managers.DayNightManager;
@@ -139,7 +140,25 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         if (!skybox.isInitialized()) {
             Gdx.app.error("SkyCaptureHarness", "Skybox failed to initialise; no captures written.");
             Gdx.app.exit();
+            return;
         }
+
+        // The sky work touches two shaders but only exercises one here. world3d.frag gained the
+        // sky-bounce uniforms and is otherwise only compiled once a world is loaded, which is far
+        // too late to discover a syntax error.
+        verifyCompiles("shaders/world3d.vert", "shaders/world3d.frag");
+    }
+
+    private void verifyCompiles(String vertexPath, String fragmentPath) {
+        ShaderProgram program = new ShaderProgram(
+                Gdx.files.internal(vertexPath), Gdx.files.internal(fragmentPath));
+        if (!program.isCompiled()) {
+            Gdx.app.error("SkyCaptureHarness",
+                    "SHADER COMPILE FAILED " + fragmentPath + ": " + program.getLog());
+        } else {
+            Gdx.app.log("SkyCaptureHarness", "Shader OK: " + fragmentPath);
+        }
+        program.dispose();
     }
 
     @Override
