@@ -154,6 +154,47 @@ public class Weather3DTest {
     }
 
     @Test
+    public void testSplashDropletsCulledWhenTheyDriftUnderARoof() {
+        // Splashes are checked against the roof only when they spawn, but they keep travelling
+        // outward for their whole life -- far enough to cross a shelter threshold and spray
+        // inside. That is what made the neighbouring test fail roughly one run in four.
+        //
+        // The droplet is placed and aimed explicitly rather than waiting for rainfall to produce
+        // the case by chance, so this test is deterministic and actually fails without the fix.
+        weatherManager.setCurrentWeather(WeatherType.RAIN);
+        weatherManager.setCurrentIntensity(WeatherIntensity.MEDIUM);
+
+        com.bpm.minotaur.gamedata.Maze maze = new com.bpm.minotaur.gamedata.Maze(1, new int[24][24]);
+        maze.setHomeTiles(java.util.Arrays.asList(
+                new com.badlogic.gdx.math.GridPoint2(10, 10),
+                new com.badlogic.gdx.math.GridPoint2(10, 11),
+                new com.badlogic.gdx.math.GridPoint2(11, 10),
+                new com.badlogic.gdx.math.GridPoint2(11, 11)
+        ));
+
+        com.bpm.minotaur.gamedata.player.Player player =
+                new com.bpm.minotaur.gamedata.player.Player(10.5f, 10.5f);
+        WeatherRenderer renderer = new WeatherRenderer(weatherManager);
+
+        // Just outside the shelter's western edge, travelling east across the threshold.
+        WeatherRenderer.SplashDroplet crossing =
+                new WeatherRenderer.SplashDroplet(9.96f, 10.5f, 2.0f, 0f, 1.5f, 5.0f);
+        renderer.getSplashDroplets().add(crossing);
+        assertFalse("Droplet must start outdoors", maze.isIndoors(9, 10));
+        assertTrue("Target tile must be a shelter tile", maze.isIndoors(10, 10));
+
+        // One step of 0.05s moves it 0.10 world units, from x=9.96 to x=10.06 -- under the roof.
+        renderer.update(0.05f, player, maze);
+
+        for (WeatherRenderer.SplashDroplet s : renderer.getSplashDroplets()) {
+            int tx = (int) Math.floor(s.x);
+            int ty = (int) Math.floor(s.y);
+            assertFalse("Splash drifted under the shelter roof at (" + tx + ", " + ty + ")",
+                    maze.isIndoors(tx, ty));
+        }
+    }
+
+    @Test
     public void testPrecipitationAnimatesWhileInsideShelterAndNeverSpawnsIndoors() {
         weatherManager.setCurrentWeather(WeatherType.RAIN);
         weatherManager.setCurrentIntensity(WeatherIntensity.MEDIUM);

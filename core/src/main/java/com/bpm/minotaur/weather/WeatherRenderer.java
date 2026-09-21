@@ -180,7 +180,12 @@ public class WeatherRenderer {
         for (int i = splashDroplets.size - 1; i >= 0; i--) {
             SplashDroplet s = splashDroplets.get(i);
             s.update(delta);
-            if (s.isDead) {
+            // Splashes are checked against the roof when they spawn, but they keep travelling
+            // outward for their whole life -- far enough to cross a threshold and spray inside a
+            // shelter. Re-check every frame, exactly as falling particles already do.
+            boolean driftedIndoors = maze != null
+                    && maze.isIndoors(MathUtils.floor(s.x), MathUtils.floor(s.y));
+            if (s.isDead || driftedIndoors) {
                 splashDroplets.removeIndex(i);
             }
         }
