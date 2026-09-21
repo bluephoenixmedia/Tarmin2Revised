@@ -79,7 +79,14 @@ public class MonsterTextureLoadingTest {
         assertEquals("images/monsters/beholder.png", beholder.texturePath);
         assertTrue("Beholder texture must exist on disk: " + beholder.texturePath, Gdx.files.internal(beholder.texturePath).exists());
 
-        // 4. Verify all monster textures in monsterTemplates exist on disk
+        // 4. Verify Spider uses PNG texture and exists on disk
+        MonsterTemplate spider = manager.getTemplate(Monster.MonsterType.SPIDER);
+        assertNotNull("Spider template should exist", spider);
+        assertEquals("images/monsters/spider.png", spider.texturePath);
+        assertTrue("Spider texture must exist on disk: " + spider.texturePath, Gdx.files.internal(spider.texturePath).exists());
+        assertEquals(MonsterFamily.BEAST, spider.family);
+
+        // 5. Verify all monster textures in monsterTemplates exist on disk
         List<String> missingFiles = new ArrayList<>();
         int verifiedCount = 0;
 
