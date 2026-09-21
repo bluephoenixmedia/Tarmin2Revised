@@ -202,6 +202,18 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /**
+     * The death cinematic, when one is playing. Null the rest of the time.
+     *
+     * <p>Held rather than passed per frame because {@code updateCamera} is deep in the render
+     * path and already takes four arguments.
+     */
+    private DeathSequence deathSequence;
+
+    public void setDeathSequence(DeathSequence sequence) {
+        this.deathSequence = sequence;
+    }
+
     public PerspectiveCamera getCamera() {
         return camera;
     }
@@ -483,16 +495,32 @@ public class World3DRenderer implements Disposable {
     private void updateCamera(Player player, Viewport viewport, WeatherManager wm, boolean isIndoors) {
         float px = player.getPosition().x;
         float py = player.getPosition().y;
-        float pz = 0.5f; // Eye height
+
+        boolean dying = deathSequence != null && deathSequence.isActive();
+        float pz = dying ? deathSequence.getEyeHeight() : 0.5f; // Eye height
 
         camera.position.set(px, pz, -py);
 
         // Direction: maze +X -> world +X (East), maze +Y -> world -Z (North)
         Vector2 dir = player.getDirectionVector();
         camDir.set(dir.x, 0f, -dir.y).nor();
+
+        if (dying) {
+            // Pitch the view forward into the floor. Pitch has been structurally zero everywhere
+            // else in the game, so this is the one place the horizon is allowed to leave level.
+            float pitch = deathSequence.getPitchDegrees();
+            camRight.set(camDir).crs(0f, 1f, 0f).nor();
+            camDir.rotate(camRight, -pitch).nor();
+        }
+
         camera.direction.set(camDir);
 
         camera.up.set(0f, 1f, 0f);
+
+        if (dying) {
+            // Roll supplies the variety between deaths; the blood covers it before it settles.
+            camera.up.rotate(camera.direction, deathSequence.getRollDegrees());
+        }
 
         // Confused / Dizzy Effect Camera Roll
         if (player.getStatusManager().hasEffect(StatusEffectType.CONFUSED)) {

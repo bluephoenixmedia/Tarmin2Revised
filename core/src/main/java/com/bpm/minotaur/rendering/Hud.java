@@ -1173,13 +1173,31 @@ public class Hud implements Disposable {
         return Color.valueOf("D0D8E0"); // Slate/Light Gray
     }
 
+    /**
+     * Fades the whole HUD, used by the death cinematic to hand the frame over to the fall.
+     *
+     * <p>The Scene2D root carries the bulk of the HUD and fades smoothly. The automap and the
+     * loose 2D inventory icons are drawn outside the stage, so they are simply withheld once the
+     * fade begins rather than being individually tinted.
+     */
+    public void setGlobalAlpha(float alpha) {
+        this.globalAlpha = com.badlogic.gdx.math.MathUtils.clamp(alpha, 0f, 1f);
+        stage.getRoot().getColor().a = this.globalAlpha;
+    }
+
+    public float getGlobalAlpha() {
+        return globalAlpha;
+    }
+
+    private float globalAlpha = 1f;
+
     public void render() {
         viewport.apply(); // Apply the viewport settings
 
         // Removed background drawing
 
         // --- FIX: Only draw standard automap if debug overlay is NOT visible ---
-        if (!debugManager.isDebugOverlayVisible()) {
+        if (!debugManager.isDebugOverlayVisible() && globalAlpha >= 0.999f) {
             drawAutomap();
             drawBridgeIntegrityBar(); // NEW: Tarmin's Hunger UI
         }

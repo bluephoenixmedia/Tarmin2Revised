@@ -121,6 +121,22 @@ public class GameScreen extends BaseScreen {
     private boolean isDeathTransitionTriggered = false;
     private final com.bpm.minotaur.managers.DeathWatch deathWatch =
             new com.bpm.minotaur.managers.DeathWatch();
+    private final com.bpm.minotaur.rendering.DeathSequence deathSequence =
+            new com.bpm.minotaur.rendering.DeathSequence();
+    /**
+     * The screen to hand over to once the blood is opaque. Built at the moment of death so any
+     * loading cost is paid while the world is still visible, not during the swap.
+     */
+    private com.badlogic.gdx.Screen pendingDeathScreen;
+    private boolean deathImpactCuePlayed;
+
+    /** Spatter placement, fixed when the sequence starts so it does not strobe frame to frame. */
+    private static final int DEATH_SPATTER_COUNT = 9;
+    private final float[] deathSpatterX = new float[DEATH_SPATTER_COUNT];
+    private final float[] deathSpatterY = new float[DEATH_SPATTER_COUNT];
+    private final float[] deathSpatterSize = new float[DEATH_SPATTER_COUNT];
+    private final float[] deathSpatterRot = new float[DEATH_SPATTER_COUNT];
+    private final int[] deathSpatterTex = new int[DEATH_SPATTER_COUNT];
 
     private final TurnManager turnManager; // NEW
 
@@ -514,6 +530,8 @@ public class GameScreen extends BaseScreen {
     public void render(float delta) {
         MusicManager.getInstance().update(delta);
 
+        updateDeathSequence(delta);
+
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
             hitPauseTimer -= delta;
@@ -803,12 +821,21 @@ public class GameScreen extends BaseScreen {
                     debugManager.isDimensionalWarp());
         }
 
-        if (hud != null) {
+        // The HUD clears early so the fall has the whole frame. A full HP bar reading 0/16 while
+        // you collapse is clutter, not poignancy.
+        float hudAlpha = deathSequence.isActive() ? deathSequence.getHudAlpha() : 1f;
+        if (hud != null && hudAlpha > 0.01f) {
             // --- NEW: Sync Combat Menu Visibility ---
             if (combatManager != null && hud.combatMenu != null) {
                 hud.combatMenu.setVisible(combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU);
             }
+            hud.setGlobalAlpha(hudAlpha);
             hud.render();
+        }
+
+        // --- DEATH BLOOD WIPE (over everything, including the HUD) ---
+        if (deathSequence.isActive()) {
+            renderDeathBlood(deathSequence.getBloodAlpha());
         }
 
         DivinityOrbManager.getInstance().render(shapeRenderer, game.getViewport());
@@ -1163,7 +1190,11 @@ public class GameScreen extends BaseScreen {
             // 2. Check for Apocalypse Wipe (50 deaths reached)
             if (DoomManager.getInstance().isApocalypse()) {
                 Gdx.app.log("GameScreen", "Apocalypse condition met! Triggering GameOverScreen.");
-                game.setScreen(new GameOverScreen(game));
+                // The 50th death used to return here before the death sound and the unlock roll,
+                // making the most significant death in the game the only silent one. It now gets
+                // the same sequence as any other death -- but still no unlocks, because the
+                // ritual consumes the run and there is no future expedition to unlock for.
+                beginDeathSequence(new GameOverScreen(game));
                 return;
             }
 
@@ -1221,13 +1252,125 @@ public class GameScreen extends BaseScreen {
                     .rollRunUnlocks(telemetry, depthReached);
 
             // 5. Play visceral death audio and transition to PlayerDeathScreen
-            soundManager.playPlayerDeathSound();
             PlayerDeathScreen deathScreen = new PlayerDeathScreen(game, this, deaths, 50, bridge,
                     lostCount, retainedCount, epitaphCause, epitaphCause, depthReached, monstersSlain,
                     divinitiesEarnedThisRun, newUnlocks);
-            game.setScreen(deathScreen);
+            beginDeathSequence(deathScreen);
             return;
         }
+    }
+
+    /**
+     * Starts the death cinematic and defers the screen swap until the blood is opaque.
+     *
+     * <p>The target screen is constructed here, while the world is still on display, so that any
+     * cost of building it is paid before the handover rather than showing as a hitch during it.
+     */
+    private void beginDeathSequence(com.badlogic.gdx.Screen target) {
+        pendingDeathScreen = target;
+        deathImpactCuePlayed = false;
+
+        boolean violent = player != null && player.wasLastDamageViolent();
+        float roll = com.badlogic.gdx.math.MathUtils.random(25f, 60f)
+                * (com.badlogic.gdx.math.MathUtils.randomBoolean() ? 1f : -1f);
+        deathSequence.begin(violent, roll);
+        world3DRenderer.setDeathSequence(deathSequence);
+
+        float vw = game.getViewport().getWorldWidth();
+        float vh = game.getViewport().getWorldHeight();
+        for (int i = 0; i < DEATH_SPATTER_COUNT; i++) {
+            deathSpatterX[i] = com.badlogic.gdx.math.MathUtils.random(-0.1f, 0.9f) * vw;
+            deathSpatterY[i] = com.badlogic.gdx.math.MathUtils.random(-0.1f, 0.9f) * vh;
+            deathSpatterSize[i] = com.badlogic.gdx.math.MathUtils.random(0.30f, 0.85f) * vw;
+            deathSpatterRot[i] = com.badlogic.gdx.math.MathUtils.random(0f, 360f);
+            deathSpatterTex[i] = visorDropletTextures.isEmpty()
+                    ? 0
+                    : com.badlogic.gdx.math.MathUtils.random(visorDropletTextures.size() - 1);
+        }
+
+        soundManager.playDeathGrunt(violent);
+    }
+
+    /**
+     * Advances the death cinematic and performs the handover.
+     *
+     * <p>Called every frame while dying. Actors are already still -- the game is turn-based and
+     * input is refused below -- so nothing needs explicit freezing, but ambience keeps running:
+     * rain stopped in mid-air reads as a crash rather than a death.
+     */
+    private void updateDeathSequence(float delta) {
+        if (!deathSequence.isActive()) return;
+
+        deathSequence.update(delta);
+
+        if (!deathImpactCuePlayed && deathSequence.hasLanded()) {
+            deathImpactCuePlayed = true;
+            soundManager.playDeathImpact();
+        }
+
+        if (deathSequence.shouldHandOver() && pendingDeathScreen != null) {
+            com.badlogic.gdx.Screen target = pendingDeathScreen;
+            pendingDeathScreen = null;
+            soundManager.playDeathReveal();
+            world3DRenderer.setDeathSequence(null);
+            deathSequence.reset();
+            game.setScreen(target);
+        }
+    }
+
+    /**
+     * The blood taking the screen.
+     *
+     * <p>Two layers, because either alone falls short: the deepening wash carries the blacking-out
+     * read and guarantees full opacity on schedule for the handover, while the spatter is what
+     * makes it blood rather than a red filter. Spatter arrives in staggered waves so the screen
+     * fills rather than flashing.
+     */
+    private void renderDeathBlood(float alpha) {
+        if (alpha <= 0f) return;
+
+        float vw = game.getViewport().getWorldWidth();
+        float vh = game.getViewport().getWorldHeight();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+
+        if (!visorDropletTextures.isEmpty()) {
+            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+            game.getBatch().begin();
+            for (int i = 0; i < DEATH_SPATTER_COUNT; i++) {
+                float arrival = (i / (float) DEATH_SPATTER_COUNT) * 0.65f;
+                if (alpha < arrival) continue;
+                float local = Math.min(1f, (alpha - arrival) / 0.20f);
+                game.getBatch().setColor(0.55f, 0.02f, 0.03f, local * 0.95f);
+                com.badlogic.gdx.graphics.g2d.TextureRegion reg =
+                        visorDropletTextures.get(deathSpatterTex[i] % visorDropletTextures.size());
+                float size = deathSpatterSize[i];
+                game.getBatch().draw(reg,
+                        deathSpatterX[i], deathSpatterY[i],
+                        size * 0.5f, size * 0.5f,
+                        size, size,
+                        1f, 1f,
+                        deathSpatterRot[i]);
+            }
+            game.getBatch().setColor(com.badlogic.gdx.graphics.Color.WHITE);
+            game.getBatch().end();
+        }
+
+        // The wash darkens as it thickens, so it lands on the death screen's near-black rather
+        // than on a flat red.
+        float r = com.badlogic.gdx.math.MathUtils.lerp(0.42f, 0.06f, alpha);
+        float gCh = com.badlogic.gdx.math.MathUtils.lerp(0.02f, 0.01f, alpha);
+        float b = com.badlogic.gdx.math.MathUtils.lerp(0.03f, 0.02f, alpha);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(r, gCh, b, alpha);
+        shapeRenderer.rect(0f, 0f, vw, vh);
+        shapeRenderer.end();
+    }
+
+    /** True while the death cinematic owns the screen and gameplay input must be refused. */
+    public boolean isDying() {
+        return deathSequence.isActive();
     }
 
     /**
@@ -1344,6 +1487,9 @@ public class GameScreen extends BaseScreen {
         this.activeExpeditionRunId = java.util.UUID.randomUUID().toString();
         this.isDeathTransitionTriggered = false;
         this.deathWatch.reset();
+        this.deathSequence.reset();
+        this.pendingDeathScreen = null;
+        this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
@@ -1904,6 +2050,12 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public boolean keyDown(int keycode) {
+        // --- Death cinematic owns the screen: no gameplay input, any key skips ---
+        if (deathSequence.isActive()) {
+            deathSequence.skip();
+            return true;
+        }
+
         // --- Forward keyboard input to active EncounterWindow modal ---
         if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
             hud.getEncounterWindow().handleInput(keycode);
