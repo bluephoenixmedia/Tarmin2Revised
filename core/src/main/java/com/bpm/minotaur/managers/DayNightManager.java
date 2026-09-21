@@ -24,10 +24,11 @@ public class DayNightManager {
     public static final float CYCLE_DURATION = 1500f;
 
     // Phase boundaries (as fractions of the cycle)
-    private static final float DAWN_START  = 0.22f;
-    private static final float DAY_START   = 0.30f;
-    private static final float DUSK_START  = 0.68f;
-    private static final float NIGHT_START = 0.78f;
+    public static final float DAWN_START   = 0.22f;
+    public static final float DAWN_SUNRISE = 0.26f;
+    public static final float DAY_START    = 0.30f;
+    public static final float DUSK_START   = 0.68f;
+    public static final float NIGHT_START  = 0.78f;
 
     // Minimum brightness during full night
     private static final float MIN_BRIGHTNESS = 0.18f;
@@ -51,8 +52,8 @@ public class DayNightManager {
     private static final Color COL_DUSK  = new Color(0.92f, 0.20f, 0.12f, 1f);
 
     public DayNightManager() {
-        // Start at early morning so the first thing the player sees is a sunrise
-        this.timeOfDay = DAWN_START + 0.01f;
+        // Start at early morning sunrise so the first thing the player sees is morning dawn
+        this.timeOfDay = DAWN_SUNRISE;
         recomputeSkyTint();
     }
 

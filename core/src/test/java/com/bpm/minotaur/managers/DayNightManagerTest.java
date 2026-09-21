@@ -155,4 +155,31 @@ public class DayNightManagerTest {
         manager.update(10f);
         assertTrue("Cycle should wrap smoothly past midnight", manager.getTimeOfDay() < 0.1f);
     }
+
+    @Test
+    public void testDefaultConstructorStartsAtDawnSunrise() {
+        DayNightManager fresh = new DayNightManager();
+        assertEquals(DayNightManager.DAWN_SUNRISE, fresh.getTimeOfDay(), 0.001f);
+        assertEquals(DayNightManager.Phase.DAWN, fresh.getPhase());
+        assertEquals("DAWN", fresh.getPhaseLabel());
+        assertEquals("DAWN", fresh.getPeriodLabel());
+        assertTrue(fresh.getTimeDisplayString().contains("[DAWN]"));
+    }
+
+    @Test
+    public void testSunriseLightingState() {
+        manager.setTimeOfDay(DayNightManager.DAWN_SUNRISE);
+        // Sun elevation should be positive at sunrise
+        Vector3 sun = new Vector3();
+        manager.getSunDirection(sun);
+        assertTrue("Sun should be rising above the horizon at sunrise", sun.y > 0.0f);
+
+        // Ambient daylight should exceed midnight floor
+        assertTrue("Sunrise ambient light must exceed midnight floor (0.15)", manager.getAmbientLight() > 0.35f);
+
+        // Directional key light must be sun (warm red-dominant, not cool blue moonlight)
+        Color lightColor = new Color();
+        manager.getDirectionalLightColor(lightColor);
+        assertTrue("Key light at sunrise should be warm sun, not cool moonlight", lightColor.r > lightColor.b);
+    }
 }

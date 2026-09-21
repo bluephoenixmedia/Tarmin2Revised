@@ -1338,6 +1338,12 @@ public class GameScreen extends BaseScreen {
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
+        if (worldManager.getDayNightManager() != null) {
+            worldManager.getDayNightManager().setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
+        }
+        if (worldManager.getWeatherManager() != null) {
+            worldManager.getWeatherManager().randomizeStartingWeather();
+        }
 
         // 2. Restore Player
         com.bpm.minotaur.managers.DimensionalManager.getInstance().reset();
@@ -3024,6 +3030,15 @@ public class GameScreen extends BaseScreen {
             player.getStats().setCurrentMP(player.getStats().getMaxMP());
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
+            if (worldManager != null && worldManager.getDayNightManager() != null) {
+                com.bpm.minotaur.managers.DayNightManager dnm = worldManager.getDayNightManager();
+                if (dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.NIGHT
+                        || dnm.getPhase() == com.bpm.minotaur.managers.DayNightManager.Phase.DUSK) {
+                    dnm.setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
+                } else {
+                    dnm.advanceMinutes(180f);
+                }
+            }
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
             SaveManager.getInstance().backupActiveSlot();
             soundManager.playDoorOpenSound();

@@ -252,6 +252,13 @@ public class SaveManager {
             if (worldManager != null) {
                 worldData.currentLevel = worldManager.getCurrentLevel();
                 worldData.masterSeed = worldManager.getWorldSeed();
+                if (worldManager.getDayNightManager() != null) {
+                    worldData.dayNightClock = worldManager.getDayNightManager().getTimeOfDay();
+                }
+                if (worldManager.getWeatherManager() != null) {
+                    worldData.weatherType = worldManager.getWeatherManager().getCurrentWeather().name();
+                    worldData.weatherIntensity = worldManager.getWeatherManager().getCurrentIntensity().name();
+                }
                 if (worldManager.getFactionMatrix() != null) {
                     worldData.factionMatrix = worldManager.getFactionMatrix().serialize();
                 }

@@ -399,6 +399,9 @@ public class SaveSlotSelectScreen extends BaseScreen {
                 gameScreen.getWorldManager().setFactionMatrix(
                         com.bpm.minotaur.gamedata.monster.FactionMatrix.deserialize(worldData.factionMatrix));
             }
+            if (gameScreen.getWorldManager().getDayNightManager() != null && worldData.dayNightClock >= 0f) {
+                gameScreen.getWorldManager().getDayNightManager().setTimeOfDay(worldData.dayNightClock);
+            }
         }
 
         // Apply saved player state

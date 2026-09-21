@@ -14,7 +14,7 @@ public class WorldSaveData {
     public int playerChunkX = 0;
     public int playerChunkY = 0;
     public long turnCount = 0;
-    public float dayNightClock = 0f;
+    public float dayNightClock = com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE;
     public String weatherType = "CLEAR";
     public String weatherIntensity = "LIGHT";
     public String gameMode = "MODERN";
