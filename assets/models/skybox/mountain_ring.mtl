@@ -1,11 +1,11 @@
-# Blender 5.1.1 MTL File: 'None'
-# www.blender.org
+# Horizon mountain ring -- pure silhouette. No specular, no tint: these read as the dark rim of
+# the world against the fire, never as lit geometry. See issue #104.
 
 newmtl MatMountainRing
-Ns 2.500001
+Ns 1.000000
 Ka 1.000000 1.000000 1.000000
-Kd 0.300000 0.250000 0.400000
-Ks 0.500000 0.500000 0.500000
+Kd 0.035000 0.028000 0.045000
+Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000

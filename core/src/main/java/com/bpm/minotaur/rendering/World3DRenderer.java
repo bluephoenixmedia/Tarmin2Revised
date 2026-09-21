@@ -131,6 +131,8 @@ public class World3DRenderer implements Disposable {
     private final Color currentDirLightColor = new Color(0f, 0f, 0f, 1f);
     private final Color targetDirLightColor = new Color(0f, 0f, 0f, 1f);
     private final Color scratchColor = new Color();
+    // Separate from scratchColor: both are live within the same uniform-upload block.
+    private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
     public World3DRenderer() {
@@ -299,6 +301,14 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_retroMode", isRetro ? 1 : 0);
         shader.setUniformf("u_doomFactor", doomFactor);
 
+        // Sky bounce: only outdoors on the surface, under open sky. The shelter has a roof, so
+        // it gets no bounce even though the skybox still draws through its windows.
+        boolean skyOverhead = (currentLevel == 1) && !isIndoors;
+        // Damped like the ambient: the rim tints surfaces, it does not repaint them.
+        Color rimTint = (dnm != null) ? dnm.getWorldTint(rimScratchColor) : Color.WHITE;
+        shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
+        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
             // Shelter Haven: warm hearth/lamp sanctuary ambient
@@ -312,7 +322,9 @@ public class World3DRenderer implements Disposable {
         } else {
             // Level 1 Outdoors: dynamically calibrated from Day/Night cycle and Weather
             float dayAmbient = (dnm != null) ? dnm.getAmbientLight() : 0.60f;
-            Color skyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+            // Damped, not the full sky palette: at full strength the volcanic tint eats world
+            // materials, turning hedge greens to olive-red mud (issue #104, Q22).
+            Color skyTint = (dnm != null) ? dnm.getWorldTint(scratchColor) : Color.WHITE;
             float weatherDim = (wm != null) ? wm.getGlobalLightDimmer() : 1.0f;
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint

@@ -44,6 +44,33 @@ public class SkyboxAssetsTest {
     }
 
     @Test
+    public void testRaycasterSkyboxBannersExist() {
+        // These are generated from the 3D dome by `gradlew runRetroSkyBanners`. The loader in
+        // FirstPersonRenderer references them by exact filename, so a missing or renamed banner
+        // is a hard crash on first render rather than a visual glitch.
+        String[] banners = {
+                "images/skybox/retro_skybox_castle.png",
+                "images/skybox/retro_skybox_east.png",
+                "images/skybox/retro_skybox_south.png",
+                "images/skybox/retro_skybox_west.png",
+                "images/skybox/retro_skybox_castle_storm.png",
+                "images/skybox/skybox_castle.png",
+                "images/skybox/skybox_east.png",
+                "images/skybox/skybox_south.png",
+                "images/skybox/skybox_west.png",
+        };
+
+        for (String banner : banners) {
+            File f = new File("../assets/" + banner);
+            if (!f.exists()) {
+                f = new File("assets/" + banner);
+            }
+            assertTrue("Raycaster skybox banner must exist: " + banner, f.exists());
+            assertTrue("Raycaster skybox banner must not be empty: " + banner, f.length() > 0);
+        }
+    }
+
+    @Test
     public void testShadersExist() {
         String[] shaders = {
                 "shaders/retro_skybox.vert",
