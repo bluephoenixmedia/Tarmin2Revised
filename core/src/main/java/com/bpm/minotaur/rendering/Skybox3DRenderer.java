@@ -243,6 +243,13 @@ public class Skybox3DRenderer {
         /** Progress north in chunks; the castle closes and grows across the first 25. */
         public float chunkYProgress;
         public int chunkX;
+        /**
+         * Pins animation time instead of accumulating it. NaN (the default) means "run normally".
+         * Captures set this so cloud drift, ember flicker and heat-lightning land identically on
+         * every run -- without it the contact sheet differs every time and is useless as a
+         * regression check.
+         */
+        public float timeOverride = Float.NaN;
     }
 
     /**
@@ -279,7 +286,11 @@ public class Skybox3DRenderer {
     public void updateSky(float delta, SkyState state) {
         if (!isInitialized) return;
 
-        totalTime += delta;
+        if (Float.isNaN(state.timeOverride)) {
+            totalTime += delta;
+        } else {
+            totalTime = state.timeOverride;
+        }
 
         float camX = state.camX;
         float camZ = state.camZ;

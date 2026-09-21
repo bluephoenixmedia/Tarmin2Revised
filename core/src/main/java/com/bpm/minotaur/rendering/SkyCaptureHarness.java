@@ -31,6 +31,12 @@ public class SkyCaptureHarness extends ApplicationAdapter {
     /** Frames to render before grabbing, so cloud noise and celestial transforms have settled. */
     private static final int WARMUP_FRAMES = 3;
 
+    /**
+     * Animation time every shot is pinned to. Arbitrary, but fixed: captures must be byte-identical
+     * run to run or they cannot be diffed.
+     */
+    private static final float CAPTURE_TIME = 37.5f;
+
     private static final class Shot {
         final String name;
         final float timeOfDay;
@@ -200,6 +206,7 @@ public class SkyCaptureHarness extends ApplicationAdapter {
         state.doom = shot.doom;
         state.chunkYProgress = shot.northProgress * 25f;
         state.chunkX = 0;
+        state.timeOverride = CAPTURE_TIME;
 
         skybox.renderDirect(viewport, state, 1f / 60f);
 
