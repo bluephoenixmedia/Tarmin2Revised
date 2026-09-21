@@ -498,7 +498,7 @@ public class ShelterAltarScreen extends BaseScreen {
                 row.setBackground(hudSkin.getSlotRecessed());
                 row.pad(10, 16, 10, 16);
 
-                Label nameLbl = new Label(item.getFriendlyName(), new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+                Label nameLbl = new Label(com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName()), new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
                 row.add(nameLbl).width(400).left();
 
                 String rarity = (item.getItemColor() != null) ? item.getItemColor().name() : "COMMON";
@@ -529,7 +529,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private void performSacrifice(Item item, int yield) {
         ShelterAltar altar = ShelterAltar.getInstance();
-        String name = item.getFriendlyName();
+        String name = com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName());
         boolean ok = altar.sacrificeItem(player, item);
         if (ok) {
             statusLabel.setText("The altar consumes " + name + " in holy flame, releasing " + yield + " Divinities!");

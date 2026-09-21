@@ -750,7 +750,7 @@ public class Player {
             if (item.getGrantedDie() != null) {
                 stats.getDicePool().add(item.getGrantedDie());
                 BalanceLogger.getInstance().log("DICE_DEBUG",
-                        "Picked up " + item.getFriendlyName() + " -> Added " + item.getGrantedDie().getName());
+                        "Picked up " + com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName()) + " -> Added " + item.getGrantedDie().getName());
             }
             if (itemPickupListener != null) {
                 itemPickupListener.onItemPickedUp(item);

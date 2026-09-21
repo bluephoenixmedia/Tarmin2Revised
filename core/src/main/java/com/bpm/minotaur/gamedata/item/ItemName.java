@@ -44,7 +44,8 @@ public final class ItemName {
         }
 
         if (parts.isEmpty()) {
-            return new ItemName(storedName == null ? "" : storedName.trim(), "", "");
+            // Nothing but separators. Do not invent a category out of punctuation.
+            return new ItemName("", "", "");
         }
         if (parts.size() == 1) {
             return new ItemName(parts.get(0), "", "");
@@ -76,6 +77,9 @@ public final class ItemName {
         }
 
         ItemName name = parse(storedName);
+        if (name.category.isEmpty()) {
+            return storedName;
+        }
         if (name.qualifier.isEmpty()) {
             return name.category;
         }

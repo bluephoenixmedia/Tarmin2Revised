@@ -224,7 +224,9 @@ public class GraveLootScreen extends BaseScreen {
 
         // Item Name & Details
         Table details = new Table();
-        String name = item.getFriendlyName() != null ? item.getFriendlyName() : item.getTypeName();
+        String name = item.getFriendlyName() != null
+                ? com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName())
+                : item.getTypeName();
         Color nameCol = item.getItemColor() != null ? Color.WHITE : Color.LIGHT_GRAY;
         Label nameLabel = new Label(name, new Label.LabelStyle(font, nameCol));
         details.add(nameLabel).left().row();

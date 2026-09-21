@@ -114,7 +114,7 @@ public class InventoryScreen extends BaseScreen {
         cooked.setTrueEffect(effect);
         cooked.setIdentified(false);
 
-        String msg = "Cooked " + cooked.getFriendlyName();
+        String msg = "Cooked " + com.bpm.minotaur.gamedata.item.ItemName.natural(cooked.getFriendlyName());
         if (player.getInventory().pickupToBackpack(cooked)) {
             msg += " (Added to Pack)";
         } else {
@@ -1663,7 +1663,7 @@ public class InventoryScreen extends BaseScreen {
             return;
         Item result = craftingManager.craft(player.getInventory(), recipe);
         if (result != null) {
-            String msg = "Crafted " + result.getFriendlyName();
+            String msg = "Crafted " + com.bpm.minotaur.gamedata.item.ItemName.natural(result.getFriendlyName());
             if (!player.getInventory().pickup(result)) {
                 // Inventory Full: Drop to ground
                 GridPoint2 pos = new GridPoint2((int) player.getPosition().x, (int) player.getPosition().y);

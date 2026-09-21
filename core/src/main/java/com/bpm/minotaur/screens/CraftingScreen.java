@@ -604,7 +604,7 @@ public class CraftingScreen extends BaseScreen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (craftingManager.honeItem(player, selectedTargetItem)) {
-                        feedbackLabel.setText("Successfully honed " + selectedTargetItem.getFriendlyName() + "!");
+                        feedbackLabel.setText("Successfully honed " + com.bpm.minotaur.gamedata.item.ItemName.natural(selectedTargetItem.getFriendlyName()) + "!");
                         feedbackLabel.setColor(Color.GREEN);
                         refreshAll();
                     } else {
@@ -649,7 +649,7 @@ public class CraftingScreen extends BaseScreen {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         if (craftingManager.infuseTrophy(player, selectedTargetItem, selectedTrophy)) {
-                            feedbackLabel.setText("Successfully infused " + selectedTrophy.getDisplayName() + " into " + selectedTargetItem.getFriendlyName() + "!");
+                            feedbackLabel.setText("Successfully infused " + selectedTrophy.getDisplayName() + " into " + com.bpm.minotaur.gamedata.item.ItemName.natural(selectedTargetItem.getFriendlyName()) + "!");
                             feedbackLabel.setColor(Color.GREEN);
                             selectedTrophy = null;
                             refreshAll();
@@ -691,12 +691,12 @@ public class CraftingScreen extends BaseScreen {
             Label yieldLabel = new Label("Yield Breakdown: " + sb.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
             singleSalvage.add(yieldLabel).left().padTop(6).padBottom(15).row();
 
-            TextButton scrapBtn = createActionButton("Dismantle " + selectedTargetItem.getFriendlyName(), true);
+            TextButton scrapBtn = createActionButton("Dismantle " + com.bpm.minotaur.gamedata.item.ItemName.natural(selectedTargetItem.getFriendlyName()), true);
             scrapBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     List<Item> created = craftingManager.salvageItem(player, selectedTargetItem);
-                    feedbackLabel.setText("Dismantled " + selectedTargetItem.getFriendlyName() + " into " + created.size() + " materials!");
+                    feedbackLabel.setText("Dismantled " + com.bpm.minotaur.gamedata.item.ItemName.natural(selectedTargetItem.getFriendlyName()) + " into " + created.size() + " materials!");
                     feedbackLabel.setColor(Color.GREEN);
                     selectedTargetItem = null;
                     refreshAll();

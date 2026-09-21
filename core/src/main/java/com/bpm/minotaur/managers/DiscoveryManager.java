@@ -375,7 +375,7 @@ public class DiscoveryManager {
             if (item.isIdentified() || isPotionIdentified(effect)) {
                 return "Potion of " + (effect != null ? effect.getBaseName() : "Unknown");
             } else {
-                return item.getFriendlyName(); // "Blue Potion"
+                return com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName()); // "Blue Potion"
             }
         }
         if (item.isScroll() || (item.getType() != null && item.getType().name().startsWith("SCROLL"))) {

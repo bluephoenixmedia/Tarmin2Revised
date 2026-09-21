@@ -1137,7 +1137,7 @@ public class CombatManager {
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
                 showDamageText(actual, hit.collisionPoint);
-                eventManager.addEvent(new GameEvent("Threw " + weapon.getFriendlyName() + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
+                eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
 
                 if (target.getCurrentHP() <= 0) {
                     if (target == this.monster) {
@@ -1148,7 +1148,7 @@ public class CombatManager {
                     }
                 }
             } else {
-                eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " glanced off " + target.getType() + "!", 1.0f));
+                eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " glanced off " + target.getType() + "!", 1.0f));
             }
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
@@ -1157,7 +1157,7 @@ public class CombatManager {
                 maze.addItem(weapon);
             }
         } else {
-            eventManager.addEvent(new GameEvent("Thrown " + weapon.getFriendlyName() + " clatters to the stone.", 1.0f));
+            eventManager.addEvent(new GameEvent("Thrown " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " clatters to the stone.", 1.0f));
             if (hit.collisionPoint != null) {
                 weapon.setPosition(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f);
             } else {

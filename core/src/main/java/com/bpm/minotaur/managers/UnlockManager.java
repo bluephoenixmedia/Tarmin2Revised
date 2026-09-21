@@ -232,7 +232,9 @@ public class UnlockManager {
         if (type == null) return "";
         com.bpm.minotaur.gamedata.item.ItemTemplate t =
                 (itemDataManager != null) ? itemDataManager.getTemplate(type) : null;
-        return (t != null && t.friendlyName != null) ? t.friendlyName : type.name();
+        return (t != null && t.friendlyName != null)
+                ? com.bpm.minotaur.gamedata.item.ItemName.natural(t.friendlyName)
+                : type.name();
     }
 
     /**

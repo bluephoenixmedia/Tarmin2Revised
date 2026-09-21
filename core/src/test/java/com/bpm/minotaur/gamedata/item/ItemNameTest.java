@@ -60,6 +60,15 @@ public class ItemNameTest {
     }
 
     @Test
+    public void testNameThatIsNothingButPunctuationDoesNotBecomeItsOwnCategory() {
+        // "," used to parse to category="," and display as ",". Degenerate input should fall
+        // back to the raw string, never invent a category out of punctuation.
+        assertEquals("", ItemName.parse(",").category);
+        assertEquals(",", ItemName.natural(","));
+        assertEquals("", ItemName.parse(", ,").category);
+    }
+
+    @Test
     public void testPartsAreExposedForCallersThatWantThemSeparately() {
         ItemName n = ItemName.parse("Javelin, Stone, Two-Handed");
         assertEquals("Javelin", n.category);

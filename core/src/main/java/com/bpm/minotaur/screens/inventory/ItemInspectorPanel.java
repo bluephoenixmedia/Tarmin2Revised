@@ -81,7 +81,7 @@ public class ItemInspectorPanel extends Table {
 
         // 1. Item Name Header
         String name = item.getDisplayName();
-        if (name == null || name.isEmpty()) name = item.getFriendlyName();
+        if (name == null || name.isEmpty()) name = com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName());
         Label nameLabel = new Label(name, new Label.LabelStyle(skin.getFontHeader(), COL_INK_DARK));
         contentTable.add(nameLabel).left().padBottom(4).row();
 

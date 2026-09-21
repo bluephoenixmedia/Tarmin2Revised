@@ -1428,7 +1428,7 @@ public class Hud implements Disposable {
                     if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL)
                         continue;
 
-                    String name = item.getFriendlyName();
+                    String name = com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName());
                     if (name == null || name.isEmpty())
                         name = item.getType().name();
 
