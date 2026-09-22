@@ -210,6 +210,65 @@ public class World3DRenderer implements Disposable {
      */
     private DeathSequence deathSequence;
 
+    /**
+     * The animation list holding in-flight projectiles.
+     *
+     * <p>Projectiles were only ever drawn by {@code AnimationManager.render}, which GameScreen
+     * calls exclusively in the raycaster branch -- so in the default 3D engine every arrow, bolt
+     * and thrown weapon was completely invisible. The flight existed in simulation and nowhere on
+     * screen.
+     */
+    private com.bpm.minotaur.rendering.AnimationManager animationManager;
+
+    public void setAnimationManager(com.bpm.minotaur.rendering.AnimationManager manager) {
+        this.animationManager = manager;
+    }
+
+    /**
+     * Draws in-flight projectiles as camera-facing billboards.
+     *
+     * <p>Runs inside the entity pass so projectiles are depth-tested against walls and monsters --
+     * a bolt passing behind a pillar should be hidden by it.
+     */
+    private void renderProjectiles() {
+        if (animationManager == null || blankTexture == null) return;
+
+        boolean any = false;
+        for (com.bpm.minotaur.rendering.Animation a : animationManager.getAnimations()) {
+            com.bpm.minotaur.rendering.Animation.AnimationType t = a.getType();
+            if (t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_PLAYER
+                    && t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_MONSTER
+                    && t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL) {
+                continue;
+            }
+            Vector2 from = a.getStartPosition();
+            Vector2 to = a.getEndPosition();
+            if (from == null || to == null) continue;
+
+            float progress = a.getProgress();
+            float mx = from.x + (to.x - from.x) * progress;
+            float my = from.y + (to.y - from.y) * progress;
+
+            // Maze Y maps to world -Z, matching updateCamera and the entity pass.
+            float wx = mx;
+            float wz = -my;
+            // Chest height, so a shot reads as travelling through the room rather than along
+            // the floor.
+            float wy = 0.45f;
+
+            float size = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL)
+                    ? 0.30f : 0.18f;
+            Color tint = (a.getColor() != null) ? a.getColor() : Color.WHITE;
+
+            dynamicBatcher.addBillboard(wx, wy, wz, size, size,
+                    new TextureRegion(blankTexture), tint, camRight, camUp, camDir);
+            any = true;
+        }
+        if (any) {
+            dynamicBatcher.flush(shader, blankTexture);
+        }
+    }
+
     public void setDeathSequence(DeathSequence sequence) {
         this.deathSequence = sequence;
     }
@@ -460,6 +519,7 @@ public class World3DRenderer implements Disposable {
 
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
+        renderProjectiles();
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
         // Weather particles and splashes spawn strictly on outdoor tiles (never under indoor roofs/shelters).

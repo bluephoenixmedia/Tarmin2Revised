@@ -241,6 +241,9 @@ public class GameScreen extends BaseScreen {
         if (animationManager == null) {
             animationManager = new AnimationManager(entityRenderer);
         }
+        // The 3D engine draws projectiles itself. AnimationManager.render is only reached in the
+        // raycaster branch, so without this every shot is invisible in the default renderer.
+        world3DRenderer.setAnimationManager(animationManager);
         if (eventManager == null) {
             eventManager = new GameEventManager();
         }
