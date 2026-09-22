@@ -136,6 +136,7 @@ public class StatusManager {
         Array<StatusEffectType> toRemove = new Array<>();
 
         for (ActiveStatusEffect effect : activeEffects.values()) {
+            applyTickDamage(effect);
             if (effect.updateTurn()) {
                 toRemove.add(effect.getType());
             }
@@ -143,6 +144,35 @@ public class StatusManager {
 
         for (StatusEffectType type : toRemove) {
             removeEffect(type);
+        }
+    }
+
+    /**
+     * Applies an effect's per-turn damage to whoever owns this manager.
+     *
+     * <p>Poison used to be a timer and nothing else: durations counted down and expired without
+     * ever costing the player a point of HP. It now bites every turn for its potency.
+     *
+     * <p>Routed through true damage on purpose. It is attrition, not a blow, so it bypasses armour
+     * -- and it also means a death by poison is correctly reported as a quiet death rather than
+     * one that earns a cry.
+     */
+    private void applyTickDamage(ActiveStatusEffect effect) {
+        if (effect == null || effect.getType() != StatusEffectType.POISONED) {
+            return;
+        }
+        int damage = Math.max(1, effect.getPotency());
+
+        if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
+            com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
+            p.takeTrueDamage(damage);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "Venom burns through you! -" + damage + " HP", 1.5f));
+            }
+        } else if (owner instanceof com.bpm.minotaur.gamedata.monster.Monster) {
+            com.bpm.minotaur.gamedata.monster.Monster m = (com.bpm.minotaur.gamedata.monster.Monster) owner;
+            m.takeDamage(damage);
         }
     }
 

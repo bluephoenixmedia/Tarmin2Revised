@@ -679,8 +679,13 @@ public class CombatManager {
                 String mType = (attacker.getMonsterType() != null) ? attacker.getMonsterType().toUpperCase() : "";
                 if (mType.contains("SNAKE") || mType.contains("SPIDER")) {
                     if (Math.random() < 0.30f && !player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
-                        player.getStatusManager().addEffect(StatusEffectType.POISONED, 10, 1, false);
-                        eventManager.addEvent(new GameEvent("VENOMOUS BITE! " + attacker.getMonsterType() + " injects deadly venom!", 2.0f));
+                        // Dose scales with the biter: deep-strata venom lingers far longer than
+                        // a surface spider's, instead of every creature delivering the same 10.
+                        int venomTicks = com.bpm.minotaur.gamedata.effects.PoisonDose.ticksFor(attacker.getLevel());
+                        int venomPotency = com.bpm.minotaur.gamedata.effects.PoisonDose.potencyFor(attacker.getLevel());
+                        player.getStatusManager().addEffect(StatusEffectType.POISONED, venomTicks, venomPotency, false);
+                        eventManager.addEvent(new GameEvent("VENOMOUS BITE! " + attacker.getMonsterType()
+                                + " injects deadly venom! (" + venomTicks + " turns)", 2.0f));
                     }
                 }
             }

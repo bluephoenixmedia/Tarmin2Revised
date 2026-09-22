@@ -141,7 +141,7 @@ public class MonsterSpellExecutor {
             }
         } else {
             // Apply status effects if failed save
-            applySpellStatusEffectsToPlayer(spell, player, eventManager);
+            applySpellStatusEffectsToPlayer(spell, player, eventManager, caster);
         }
 
         // Visual screen trauma / post-processing shake
@@ -199,7 +199,7 @@ public class MonsterSpellExecutor {
                 eventManager.addEvent(new GameEvent("You dodged the brunt of the blast! (" + taken + " dmg)", 1.5f));
             }
         } else {
-            applySpellStatusEffectsToPlayer(spell, player, eventManager);
+            applySpellStatusEffectsToPlayer(spell, player, eventManager, caster);
         }
 
         if (gs != null) {
@@ -253,7 +253,8 @@ public class MonsterSpellExecutor {
         }
     }
 
-    private static void applySpellStatusEffectsToPlayer(SpellTemplate spell, Player player, GameEventManager eventManager) {
+    private static void applySpellStatusEffectsToPlayer(SpellTemplate spell, Player player,
+            GameEventManager eventManager, Monster caster) {
         if (spell == null || player == null) return;
 
         String id = spell.getId() != null ? spell.getId().toUpperCase() : "";
@@ -261,9 +262,14 @@ public class MonsterSpellExecutor {
 
         if (id.contains("POISON") || dt.equals("POISON") || dt.equals("ACID")) {
             if (player.getStatusManager() != null) {
-                player.getStatusManager().addEffect(StatusEffectType.POISONED, 8, 1, false);
+                // Same dose curve as a venomous bite, keyed off the caster.
+                int casterLevel = (caster != null) ? caster.getLevel() : 1;
+                int ticks = com.bpm.minotaur.gamedata.effects.PoisonDose.ticksFor(casterLevel);
+                int potency = com.bpm.minotaur.gamedata.effects.PoisonDose.potencyFor(casterLevel);
+                player.getStatusManager().addEffect(StatusEffectType.POISONED, ticks, potency, false);
                 if (eventManager != null) {
-                    eventManager.addEvent(new GameEvent("Toxic magic poisons your veins!", 2.0f));
+                    eventManager.addEvent(new GameEvent(
+                            "Toxic magic poisons your veins! (" + ticks + " turns)", 2.0f));
                 }
             }
         } else if (id.contains("CHILL") || id.contains("FROST") || dt.equals("COLD")) {
