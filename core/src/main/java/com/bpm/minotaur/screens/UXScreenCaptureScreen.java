@@ -267,6 +267,27 @@ public class UXScreenCaptureScreen extends BaseScreen {
             setSubScreen(sharedGameScreen, null);
         }));
 
+        // 09a: a projectile mid-flight. Projectiles were invisible in the 3D engine for as long
+        // as it has been the default, because only the raycaster ever drew them -- so this
+        // captures the one thing that had no coverage at all.
+        tasks.add(new CaptureTask("09a_projectile_in_flight", "Projectile In Flight (3D)", () -> {
+            com.bpm.minotaur.gamedata.player.Player p = sharedGameScreen.getPlayer();
+            com.bpm.minotaur.rendering.AnimationManager am = sharedGameScreen.getAnimationManager();
+            if (p != null && am != null) {
+                com.badlogic.gdx.math.Vector2 dir = p.getDirectionVector();
+                com.badlogic.gdx.math.Vector2 muzzle = p.getPosition().cpy().add(dir.cpy().scl(2.5f));
+                com.badlogic.gdx.math.Vector2 impact = p.getPosition().cpy().add(dir.cpy().scl(6f));
+                // Long-lived on purpose: the capture grabs a single frame, and a 0.25s shot would
+                // usually be over before the shutter opened.
+                am.addAnimation(new com.bpm.minotaur.rendering.Animation(
+                        com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_PLAYER,
+                        muzzle, impact,
+                        com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 30f,
+                        new String[] { "-" }));
+            }
+            setSubScreen(sharedGameScreen, null);
+        }));
+
         // 10: Modern Grimoire Inventory
         tasks.add(new CaptureTask("10_inventory_modern", "Modern Inventory UI", () -> {
             InventoryScreen s = new InventoryScreen(game, sharedGameScreen, sharedPlayer, sharedMaze);

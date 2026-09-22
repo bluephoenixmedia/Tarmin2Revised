@@ -218,6 +218,9 @@ public class World3DRenderer implements Disposable {
      * and thrown weapon was completely invisible. The flight existed in simulation and nowhere on
      * screen.
      */
+    /** Projectiles nearer than this are not drawn; see renderProjectiles. */
+    private static final float PROJECTILE_NEAR_CLIP = 1.1f;
+
     private com.bpm.minotaur.rendering.AnimationManager animationManager;
 
     public void setAnimationManager(com.bpm.minotaur.rendering.AnimationManager manager) {
@@ -256,8 +259,19 @@ public class World3DRenderer implements Disposable {
             // the floor.
             float wy = 0.45f;
 
+            // A shot leaves the muzzle ~0.6 units from the eye. At that range even a small quad
+            // subtends most of the view, so the first frames of every shot would flash a
+            // screen-filling slab. Hold the sprite back until it has cleared the weapon.
+            float dx = wx - camera.position.x;
+            float dy = wy - camera.position.y;
+            float dz = wz - camera.position.z;
+            float distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < PROJECTILE_NEAR_CLIP * PROJECTILE_NEAR_CLIP) {
+                continue;
+            }
+
             float size = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL)
-                    ? 0.30f : 0.18f;
+                    ? 0.22f : 0.12f;
             Color tint = (a.getColor() != null) ? a.getColor() : Color.WHITE;
 
             dynamicBatcher.addBillboard(wx, wy, wz, size, size,

@@ -3454,6 +3454,11 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** The animation list, so the capture harness can stage an in-flight projectile. */
+    public AnimationManager getAnimationManager() {
+        return animationManager;
+    }
+
     public Player getPlayer() {
         return player;
     }
