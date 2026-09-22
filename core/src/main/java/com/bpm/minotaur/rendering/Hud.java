@@ -575,7 +575,7 @@ public class Hud implements Disposable {
                     ? com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i]
                     : String.valueOf(i + 1);
             spellBadgeLabels[i] = new Label("[" + slotKey + "]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
-            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), Color.valueOf("4DEEEA")));
+            spellNameLabels[i] = new Label("---", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_SPELL_READY));
             spellNameLabels[i].setEllipsis(true);
             spellCostLabels[i] = new Label("", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_MP_ON_DARK));
 
@@ -878,26 +878,26 @@ public class Hud implements Disposable {
                     if (canCast) {
                         spellSlots[i].setBackground(hudSkin.getSlotActive());
                         spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
-                        spellNameLabels[i].setColor(Color.valueOf("4DEEEA"));
+                        spellNameLabels[i].setColor(HudSkin.COL_SPELL_READY);
                         spellCostLabels[i].setColor(HudSkin.COL_WATER_CYAN);
                     } else {
                         spellSlots[i].setBackground(hudSkin.getSlotRecessed());
                         spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
-                        spellNameLabels[i].setColor(Color.GRAY);
+                        spellNameLabels[i].setColor(HudSkin.COL_SPELL_UNAFFORDABLE);
                         spellCostLabels[i].setColor(HudSkin.COL_HP_CRITICAL);
                     }
                 } else {
                     spellSlots[i].setBackground(hudSkin.getSlotRecessed());
                     spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                     spellNameLabels[i].setText(toDisplayCase(spellId));
-                    spellNameLabels[i].setColor(Color.WHITE);
+                    spellNameLabels[i].setColor(HudSkin.COL_TEXT_ON_DARK);
                     spellCostLabels[i].setText("");
                 }
             } else {
                 spellSlots[i].setBackground(hudSkin.getSlotRecessed());
                 spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_MUTED);
                 spellNameLabels[i].setText("---");
-                spellNameLabels[i].setColor(Color.DARK_GRAY);
+                spellNameLabels[i].setColor(HudSkin.COL_SPELL_EMPTY);
                 spellCostLabels[i].setText("");
             }
         }
@@ -2399,13 +2399,16 @@ public class Hud implements Disposable {
      * the map. Anything anchored top-right should measure from this box rather than re-deriving
      * a corner of its own.
      */
+    public static final float STAGE_WIDTH = 1920f;
+    public static final float STAGE_HEIGHT = 1080f;
+
     public static final float MINIMAP_MARGIN_RIGHT = 20f;
     public static final float MINIMAP_MARGIN_TOP = 20f;
     public static final float MINIMAP_MAX_SIZE = 300f;
 
     /** Y coordinate where the reserved minimap box ends, for widgets stacking below it. */
     public static float minimapZoneBottom() {
-        return 1080f - MINIMAP_MARGIN_TOP - MINIMAP_MAX_SIZE;
+        return STAGE_HEIGHT - MINIMAP_MARGIN_TOP - MINIMAP_MAX_SIZE;
     }
 
     /**
@@ -2469,8 +2472,8 @@ public class Hud implements Disposable {
         float actualMapHeight = mazeH * cellSize;
 
         // Position: Top Right (Anchored)
-        float startX = 1920 - actualMapWidth - mapRightMargin;
-        float startY = 1080 - actualMapHeight - mapTopMargin;
+        float startX = STAGE_WIDTH - actualMapWidth - mapRightMargin;
+        float startY = STAGE_HEIGHT - actualMapHeight - mapTopMargin;
 
         // --- 1. Draw Background (Fitted) ---
         Gdx.gl.glEnable(GL20.GL_BLEND);

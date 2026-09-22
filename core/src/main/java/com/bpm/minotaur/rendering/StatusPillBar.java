@@ -173,7 +173,7 @@ public class StatusPillBar extends Table {
         // Directly beneath the minimap's reserved box, not on top of it. Both widgets used to
         // anchor themselves to the top-right corner independently, so the bleeding badge was
         // drawn over the map and clipped at the screen edge.
-        setPosition(1920f - Hud.MINIMAP_MARGIN_RIGHT - getWidth(),
+        setPosition(Hud.STAGE_WIDTH - Hud.MINIMAP_MARGIN_RIGHT - getWidth(),
                 Hud.minimapZoneBottom() - 12f - getHeight());
     }
 

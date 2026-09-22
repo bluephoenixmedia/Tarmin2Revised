@@ -53,6 +53,10 @@ public class HudSkin implements Disposable {
     public static final Color COL_BLOOD            = Color.valueOf("6B0508");
     public static final Color COL_BLOOD_BEAD       = Color.valueOf("9B0A0C");
     public static final Color COL_EMBER_GLOW       = Color.valueOf("FF731F");
+    /** Spell hotbar: castable, unaffordable, and empty slot text. */
+    public static final Color COL_SPELL_READY      = Color.valueOf("4DEEEA");
+    public static final Color COL_SPELL_UNAFFORDABLE = Color.valueOf("6E7A7A");
+    public static final Color COL_SPELL_EMPTY      = Color.valueOf("4A4A4A");
 
     // --- Menu text on dark panels -------------------------------------------
     // The status colours above are tuned to read as bars over a lit dungeon. As small
