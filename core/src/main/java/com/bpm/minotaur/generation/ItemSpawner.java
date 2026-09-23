@@ -41,6 +41,14 @@ public class ItemSpawner {
             }
         }
 
+        // Dynamic Spell Book Generation
+        if (selectedCategory == ItemCategory.BOOK) {
+            Map.Entry<String, ItemTemplate> dynamicBook = spawnDynamicSpellBook(ctx != null ? ctx.edl() : 1);
+            if (dynamicBook != null) {
+                return dynamicBook;
+            }
+        }
+
         // Step 2: Specific Item Selection
         return selectSpecificItem(selectedCategory);
     }
@@ -99,6 +107,46 @@ public class ItemSpawner {
         }
 
         return Map.entry("SCROLL", scrollTmpl);
+    }
+
+    /**
+     * Spawns a dynamic spell book from spells.json matching the floor's EDL bracket.
+     */
+    public Map.Entry<String, ItemTemplate> spawnDynamicSpellBook(int edl) {
+        int spellLevel;
+        if (edl <= 3) spellLevel = 1;
+        else if (edl <= 6) spellLevel = 2;
+        else if (edl <= 9) spellLevel = 3;
+        else if (edl <= 12) spellLevel = 4;
+        else spellLevel = 5;
+
+        com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
+        List<com.bpm.minotaur.gamedata.spells.SpellTemplate> spells = filterUnsealed(sdm.getSpellsByLevel(spellLevel));
+        if (spells == null || spells.isEmpty()) {
+            spells = filterUnsealed(sdm.getSpellsByLevel(1));
+        }
+        if (spells == null || spells.isEmpty()) {
+            return null;
+        }
+
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = spells.get(rng.rn2(spells.size()));
+
+        ItemTemplate bookTmpl = new ItemTemplate();
+        bookTmpl.friendlyName = "Spellbook: " + spell.name + " (" + spell.id + ")";
+        bookTmpl.description = spell.description != null ? spell.description : "An arcane tome detailing the principles of " + spell.name + ".";
+        bookTmpl.isUsable = true;
+        bookTmpl.isWeapon = false;
+        bookTmpl.spellId = spell.id;
+        bookTmpl.baseValue = 100 * Math.max(1, spell.level);
+
+        ItemTemplate baseBook = registry.get("BOOK");
+        if (baseBook != null) {
+            bookTmpl.texturePath = baseBook.texturePath;
+            bookTmpl.spriteData = baseBook.spriteData;
+            bookTmpl.scale = baseBook.scale;
+        }
+
+        return Map.entry("BOOK", bookTmpl);
     }
 
     /**
@@ -274,8 +322,8 @@ public class ItemSpawner {
                 return t.isWandAppearance;
             case GEM:
                 return t.isGem;
-            // Book?
-            // "isUsable"?
+            case BOOK:
+                return "BOOK".equals(t.category) || (t.friendlyName != null && t.friendlyName.contains("Book") && !t.isWeapon);
             default:
                 return false;
         }

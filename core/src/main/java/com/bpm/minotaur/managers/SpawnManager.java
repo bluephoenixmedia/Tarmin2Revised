@@ -506,6 +506,17 @@ public class SpawnManager {
                     }
                     item.setName(cleanName);
                     item.setIdentified(false);
+                } else if (t != null && t.friendlyName != null && (t.friendlyName.startsWith("Spellbook: ") || t.friendlyName.startsWith("Book of "))) {
+                    String cleanName = t.friendlyName;
+                    if (t.friendlyName.contains("(") && t.friendlyName.contains(")")) {
+                        String sId = t.friendlyName.substring(t.friendlyName.indexOf('(') + 1, t.friendlyName.indexOf(')'));
+                        item.setSpellId(sId);
+                        cleanName = t.friendlyName.substring(0, t.friendlyName.indexOf('(')).trim();
+                    } else if (t.spellId != null) {
+                        item.setSpellId(t.spellId);
+                    }
+                    item.setName(cleanName);
+                    item.setFriendlyName(cleanName);
                 }
                 attemptToModifyItem(item, variant.color);
                 maze.addItem(item);

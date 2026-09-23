@@ -458,6 +458,9 @@ public class Item implements Renderable {
         item.isLocked = template.locked;
         item.range = template.range;
         item.ringEffect = template.ringEffect;
+        if (template.spellId != null) {
+            item.spellId = template.spellId;
+        }
 
         item.hydrationValue = template.hydrationValue;
         item.nutrition = template.nutrition;
@@ -513,6 +516,9 @@ public class Item implements Renderable {
             this.isImpassable = template.isImpassable; // Assign from template
             this.isLocked = template.locked; // Initialize from template
             this.ringEffect = template.ringEffect; // Initialize from template
+            if (template.spellId != null) {
+                this.spellId = template.spellId;
+            }
             this.maxCharges = template.maxCharges;
             this.currentCharges = template.maxCharges;
             this.scale = (template.scale != null) ? new Vector2(template.scale.x, template.scale.y) : new Vector2(1.0f, 1.0f);
@@ -650,6 +656,17 @@ public class Item implements Renderable {
             return "Scroll";
         }
 
+        if (isSpellbook()) {
+            if (this.friendlyName != null && !this.friendlyName.isEmpty() && !this.friendlyName.equalsIgnoreCase("Book")) {
+                return ItemName.natural(this.friendlyName);
+            }
+            if (spellId != null && !spellId.isEmpty()) {
+                com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+                return "Spellbook: " + (spell != null ? spell.getName() : spellId);
+            }
+            return "Spellbook";
+        }
+
         // NEW: Dynamic Bone Naming
         if (this.type == ItemType.BONE && this.corpseSource != null) {
             String sourceName = toTitleCase(this.corpseSource.name());
@@ -774,6 +791,16 @@ public class Item implements Renderable {
         if (type != null && (type.name().startsWith("SCROLL") || type.name().endsWith("_SCROLL"))) return true;
         if (template != null && template.isScrollAppearance) return true;
         return false;
+    }
+
+    public boolean isSpellbook() {
+        if (type == ItemType.BOOK) return true;
+        if (type == ItemType.WAR_BOOK || type == ItemType.SPIRITUAL_BOOK || type == ItemType.SPECIAL_BOOK) return false;
+        return getCategory() == ItemCategory.BOOK;
+    }
+
+    public void setFriendlyName(String friendlyName) {
+        this.friendlyName = friendlyName;
     }
 
     public boolean isConsumableOrTool() {
@@ -1130,6 +1157,10 @@ public class Item implements Renderable {
         if (type == ItemType.WOODEN_CROSS || type == ItemType.WAND
                 || type == ItemType.WAR_BOOK || type == ItemType.SPIRITUAL_BOOK || type == ItemType.SPECIAL_BOOK) {
             return ItemCategory.SPIRITUAL_WEAPON;
+        }
+
+        if (type == ItemType.BOOK) {
+            return ItemCategory.BOOK;
         }
 
         if (isWeapon) {

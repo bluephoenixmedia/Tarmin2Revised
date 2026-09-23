@@ -53,6 +53,7 @@ public class ItemTemplate {
     public boolean isRanged;
     public boolean isAmmunition;
     public String category;
+    public String spellId;
     public boolean isArmor;
     public boolean isPotion;
     public boolean isPotionAppearance;

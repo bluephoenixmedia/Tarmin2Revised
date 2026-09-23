@@ -21,6 +21,8 @@ public class ItemSaveData {
     public java.util.HashMap<String, com.bpm.minotaur.gamedata.gore.BloodCoat> blood;
     /** Turns already spent studying a Tome. */
     public int studyProgress;
+    public String spellId;
+    public String friendlyName;
 
     public ItemSaveData() {
     }
@@ -39,6 +41,8 @@ public class ItemSaveData {
             }
             this.blood = item.getBloodCoats();
             this.studyProgress = item.getStudyProgress();
+            this.spellId = item.getSpellId();
+            this.friendlyName = item.getFriendlyName();
         }
     }
 
@@ -54,6 +58,13 @@ public class ItemSaveData {
         }
         item.setBloodCoats(blood);
         item.setStudyProgress(studyProgress);
+        if (spellId != null) {
+            item.setSpellId(spellId);
+        }
+        if (friendlyName != null) {
+            item.setFriendlyName(friendlyName);
+            item.setName(friendlyName);
+        }
         return item;
     }
 }

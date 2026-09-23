@@ -113,8 +113,8 @@ public class ItemInspectorPanel extends Table {
         else if (cat == ItemCategory.ARMOR || item.isArmor()) {
             buildArmorInspection(statsTable, item);
         }
-        // Consumable (food/potion/scroll)
-        else if (item.isConsumableOrTool()) {
+        // Consumable (food/potion/scroll/spellbook)
+        else if (item.isConsumableOrTool() || item.isSpellbook()) {
             buildConsumableInspection(statsTable, item);
         }
         // Rings & Accessories
@@ -224,6 +224,7 @@ public class ItemInspectorPanel extends Table {
     public boolean isUsableConsumable(Item item) {
         if (item == null) return false;
         if (item.isFood() || item.isPotion() || item.isScroll()) return true;
+        if (item.isSpellbook()) return true;
         if (item.getType() != null && item.getType().name().startsWith("TOME_")) return true;
         return item.isUsable() && !item.isWeapon() && !item.isArmor();
     }
@@ -231,6 +232,7 @@ public class ItemInspectorPanel extends Table {
     public String getActionVerb(Item item) {
         if (item == null) return "USE ITEM";
         if (item.getType() != null && item.getType().name().startsWith("TOME_")) return "STUDY TOME";
+        if (item.isSpellbook()) return "STUDY SPELLBOOK";
         if (item.isScroll()) return "READ SCROLL";
         if (item.isPotion()) return "DRINK POTION";
         if (item.isFood()) return "EAT FOOD";
@@ -333,6 +335,18 @@ public class ItemInspectorPanel extends Table {
             } else {
                 addStatRow(table, "Effect:", "Unknown Potion (Drink to identify)", COL_INK_MUTED);
             }
+        } else if (item.isSpellbook()) {
+            addStatRow(table, "Type:", "Spellbook (Arcane Knowledge)", COL_MAGIC);
+            String spellId = player.resolveSpellIdFromBook(item);
+            com.bpm.minotaur.gamedata.spells.SpellTemplate spell = spellId != null
+                    ? com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId)
+                    : null;
+            if (spell != null) {
+                addStatRow(table, "Teaches:", spell.getName(), COL_UPGRADE);
+                int reqLvl = Player.getRequiredPlayerLevelForSpell(spell);
+                Color lvlCol = player.getLevel() >= reqLvl ? COL_UPGRADE : COL_DOWNGRADE;
+                addStatRow(table, "Requires Level:", String.valueOf(reqLvl), lvlCol);
+            }
         } else if (item.getType() != null && item.getType().name().contains("SCROLL")) {
             addStatRow(table, "Type:", "Magical Parchment Scroll", COL_MAGIC);
         } else {
@@ -388,6 +402,7 @@ public class ItemInspectorPanel extends Table {
             case ARMOR: return COL_ARMOR;
             case FOOD:
             case USEFUL: return COL_CONSUMABLE;
+            case BOOK:
             case RING: return COL_MAGIC;
             default: return COL_INK_MUTED;
         }

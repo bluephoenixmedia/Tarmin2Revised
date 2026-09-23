@@ -399,6 +399,11 @@ public class ItemDataManager {
         // Standard item creation
         Item item = new Item(type, x, y, color, this, assetManager);
 
+        // Spellbook dynamic spell binding for non-weapon books
+        if (type == ItemType.BOOK && item.getSpellId() == null) {
+            assignDefaultSpellToBook(item);
+        }
+
         // --- NEW: THEMED DICE INTEGRATION ---
         // Basic mapping for now. Ideally this is data-driven in items.json,
         // but for this phase we hardcode the mapping to test the 10 themes.
@@ -562,6 +567,29 @@ public class ItemDataManager {
         applyNamedItemModifiers(type, item);
 
         return item;
+    }
+
+    private void assignDefaultSpellToBook(Item item) {
+        try {
+            com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
+            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> all = sdm.getAllSpells();
+            if (all != null && !all.isEmpty()) {
+                com.bpm.minotaur.gamedata.progression.ShelterAltar altar = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+                List<com.bpm.minotaur.gamedata.spells.SpellTemplate> unsealed = new ArrayList<>();
+                for (com.bpm.minotaur.gamedata.spells.SpellTemplate s : all) {
+                    if (s != null && s.id != null && !altar.isSpellSealed(s.id)) {
+                        unsealed.add(s);
+                    }
+                }
+                List<com.bpm.minotaur.gamedata.spells.SpellTemplate> pool = unsealed.isEmpty() ? all : unsealed;
+                com.bpm.minotaur.gamedata.spells.SpellTemplate chosen = pool.get(random.nextInt(pool.size()));
+                item.setSpellId(chosen.id);
+                String displayName = "Spellbook: " + chosen.getName();
+                item.setName(displayName);
+                item.setFriendlyName(displayName);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void applyNamedItemModifiers(ItemType type, Item item) {

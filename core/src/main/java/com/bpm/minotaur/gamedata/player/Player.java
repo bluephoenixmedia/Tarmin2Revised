@@ -399,6 +399,134 @@ public class Player {
         return -1;
     }
 
+    /**
+     * Required player level to understand and learn a spell.
+     * Cantrips (0) and Level 1 spells require Player Level 1.
+     * Level 2+ spells follow standard 5e circle progression: Level 2 -> 3, Level 3 -> 5, Level 4 -> 7, Level 5 -> 9.
+     */
+    public static int getRequiredPlayerLevelForSpell(com.bpm.minotaur.gamedata.spells.SpellTemplate spell) {
+        if (spell == null || spell.level <= 1) {
+            return 1;
+        }
+        return (spell.level - 1) * 2 + 1;
+    }
+
+    /**
+     * Resolves the spellId associated with a spellbook item.
+     */
+    public String resolveSpellIdFromBook(Item book) {
+        if (book == null) return null;
+        if (book.getSpellId() != null && !book.getSpellId().isEmpty()) {
+            return book.getSpellId().toUpperCase();
+        }
+        String name = book.getFriendlyName();
+        if (name != null && name.contains("(") && name.contains(")")) {
+            return name.substring(name.indexOf('(') + 1, name.indexOf(')')).trim().replace(' ', '_').toUpperCase();
+        }
+        return null;
+    }
+
+    /** Whether this item is a spellbook carrying a resolvable, not-yet-known spell and player meets level req. */
+    public boolean canLearnSpellbook(Item item) {
+        if (item == null || !item.isSpellbook()) return false;
+        String spellId = resolveSpellIdFromBook(item);
+        if (spellId == null || knownSpellIds.contains(spellId)) return false;
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+        return getLevel() >= getRequiredPlayerLevelForSpell(spell);
+    }
+
+    /**
+     * Reads a spellbook to learn the spell contained within.
+     * Level-gated: player must be high enough level, otherwise displays an event and preserves the book.
+     *
+     * @return true if the spell was learned, false otherwise
+     */
+    public boolean readSpellbook(Item book, GameEventManager eventManager) {
+        if (book == null) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You have no book to read.", 1.5f));
+            }
+            return false;
+        }
+
+        String spellId = resolveSpellIdFromBook(book);
+
+        // Fallback: If generic BOOK with no spell assigned yet, assign one dynamically
+        if (spellId == null || spellId.isEmpty()) {
+            com.bpm.minotaur.gamedata.spells.SpellDataManager sdm = com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance();
+            List<com.bpm.minotaur.gamedata.spells.SpellTemplate> available = sdm.getAllSpells();
+            if (available != null && !available.isEmpty()) {
+                com.bpm.minotaur.gamedata.progression.ShelterAltar altar = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+                List<com.bpm.minotaur.gamedata.spells.SpellTemplate> pool = new ArrayList<>();
+                for (com.bpm.minotaur.gamedata.spells.SpellTemplate s : available) {
+                    if (s != null && s.id != null && !altar.isSpellSealed(s.id)) {
+                        pool.add(s);
+                    }
+                }
+                if (pool.isEmpty()) pool = available;
+                com.bpm.minotaur.gamedata.spells.SpellTemplate picked = pool.get(new Random().nextInt(pool.size()));
+                spellId = picked.id;
+                book.setSpellId(spellId);
+                String cleanName = "Spellbook: " + picked.getName();
+                book.setName(cleanName);
+                book.setFriendlyName(cleanName);
+            }
+        }
+
+        if (spellId == null || spellId.isEmpty()) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("The pages of " + book.getDisplayName() + " are blank.", 2.0f));
+            }
+            return false;
+        }
+
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
+        int reqLevel = getRequiredPlayerLevelForSpell(spell);
+
+        // Check if player's level is high enough
+        if (this.getLevel() < reqLevel) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                    "The text in " + book.getDisplayName() + " is too complicated to understand! (Requires Level " + reqLevel + ")",
+                    3.0f
+                ));
+            }
+            // DO NOT consume the book -- player keeps it until leveling up!
+            return false;
+        }
+
+        // Check if player already knows this spell
+        if (knownSpellIds.contains(spellId.toUpperCase())) {
+            if (eventManager != null) {
+                String spellName = spell != null ? spell.getName() : spellId;
+                eventManager.addEvent(new GameEvent(
+                    "You have already mastered " + spellName + " from this book.",
+                    2.5f
+                ));
+            }
+            // Do not consume the book if already mastered
+            return false;
+        }
+
+        // Player level meets or exceeds requirement: Learn the spell!
+        int slot = learnAndPrepareIfSlotFree(spellId);
+        inventory.removeItem(book); // Consume the book upon successful learning
+
+        if (soundManager != null) {
+            soundManager.playPickupItemSound();
+        }
+
+        String spellName = spell != null ? spell.getName() : spellId;
+        String msg = slot >= 0
+                ? "You study " + book.getDisplayName() + " and master " + spellName + "! Prepared in slot " + (slot + 1) + "."
+                : "You study " + book.getDisplayName() + " and master " + spellName + "! Inscribed into your Spellbook.";
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(msg, 3.0f));
+        }
+
+        return true;
+    }
+
     // --- Tome Study & Tome Choice ---
 
     private final Random tomeRng = new Random();
@@ -1242,6 +1370,13 @@ public class Player {
         }
         // ----------------------------------------------------------------
 
+        // --- SPELLBOOK HANDLING ---
+        if (item.isSpellbook()) {
+            readSpellbook(item, eventManager);
+            return;
+        }
+        // --------------------------
+
         if (item.getType() == Item.ItemType.MYSTERIOUS_PORTAL) {
             useMysteriousPortal(maze, eventManager);
             return;
@@ -1512,6 +1647,11 @@ public class Player {
     public void read(Item scroll, DiscoveryManager discoveryManager, GameEventManager eventManager, Maze maze, CombatManager combatManager) {
         if (scroll == null) {
             eventManager.addEvent(new GameEvent("Read what?", 1.0f));
+            return;
+        }
+
+        if (scroll.isSpellbook()) {
+            readSpellbook(scroll, eventManager);
             return;
         }
 
@@ -3075,6 +3215,10 @@ public class Player {
 
     public int getLevel() {
         return stats.getLevel();
+    }
+
+    public void setLevel(int level) {
+        stats.setLevel(level);
     }
 
     public int getExperience() {
