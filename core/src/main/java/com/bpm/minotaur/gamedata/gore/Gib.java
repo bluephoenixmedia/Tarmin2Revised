@@ -174,7 +174,6 @@ public class Gib implements Pool.Poolable {
                 velocity.setZero();
                 rotationalVelocity = 0;
                 onGround = true;
-                rotation = 0;
             }
         }
     }

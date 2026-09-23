@@ -502,9 +502,18 @@ public class DynamicQuadBatcher implements Disposable {
 
         short baseIndex = (short) (vertices.size / 9);
 
+        // Center around centroid so polygon tumbles realistically around center of mass
+        float sumX = 0f, sumY = 0f;
         for (int i = 0; i < numVerts; i++) {
-            float lx = localVerts2D[i * 2];
-            float ly = localVerts2D[i * 2 + 1];
+            sumX += localVerts2D[i * 2];
+            sumY += localVerts2D[i * 2 + 1];
+        }
+        float cenX = sumX / numVerts;
+        float cenY = sumY / numVerts;
+
+        for (int i = 0; i < numVerts; i++) {
+            float lx = localVerts2D[i * 2] - cenX;
+            float ly = localVerts2D[i * 2 + 1] - cenY;
 
             float wx = centerX + lx * rx + ly * ux;
             float wy = centerY + lx * ry + ly * uy;
@@ -523,6 +532,77 @@ public class DynamicQuadBatcher implements Disposable {
             indices.add(baseIndex);
             indices.add((short) (baseIndex + i));
             indices.add((short) (baseIndex + i + 1));
+        }
+    }
+
+    /**
+     * Emits an arbitrary convex polygon transformed to lie flat against the maze floor
+     * in true perspective (e.g. severed monster slices, fallen limbs).
+     */
+    public void addFloorPolygon(
+            float centerX, float floorY, float centerZ,
+            float[] localVerts2D, float[] uvs,
+            Color color,
+            float angleDeg
+    ) {
+        if (localVerts2D == null || uvs == null) return;
+        int numVerts = localVerts2D.length / 2;
+        if (numVerts < 3) return;
+        if (indices.size + (numVerts - 2) * 6 > MAX_INDICES || vertices.size + numVerts * 9 > MAX_VERTICES * 9) return;
+
+        // Centroid of the polygon
+        float sumX = 0f, sumY = 0f;
+        for (int i = 0; i < numVerts; i++) {
+            sumX += localVerts2D[i * 2];
+            sumY += localVerts2D[i * 2 + 1];
+        }
+        float cenX = sumX / numVerts;
+        float cenY = sumY / numVerts;
+
+        float rad = angleDeg * MathUtils.degreesToRadians;
+        float cos = MathUtils.cos(rad);
+        float sin = MathUtils.sin(rad);
+
+        // Ground basis vectors: U is horizontal across the floor, V is along floor depth (-Z)
+        float ux = cos;
+        float uz = sin;
+
+        float vx = sin;
+        float vz = -cos;
+
+        float nx = 0f;
+        float ny = 1f; // Straight up from the floor
+        float nz = 0f;
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        short baseIndex = (short) (vertices.size / 9);
+
+        for (int i = 0; i < numVerts; i++) {
+            float lx = localVerts2D[i * 2] - cenX;
+            float ly = localVerts2D[i * 2 + 1] - cenY;
+
+            float wx = centerX + lx * ux + ly * vx;
+            float wy = floorY;
+            float wz = centerZ + lx * uz + ly * vz;
+
+            float u = (i * 2 < uvs.length) ? uvs[i * 2] : 0f;
+            float v = (i * 2 + 1 < uvs.length) ? uvs[i * 2 + 1] : 0f;
+
+            vertices.add(wx); vertices.add(wy); vertices.add(wz);
+            vertices.add(nx); vertices.add(ny); vertices.add(nz);
+            vertices.add(packedColor);
+            vertices.add(u); vertices.add(v);
+        }
+
+        // Emit fan triangles with both clockwise and counterclockwise windings
+        for (int i = 1; i < numVerts - 1; i++) {
+            indices.add(baseIndex);
+            indices.add((short) (baseIndex + i));
+            indices.add((short) (baseIndex + i + 1));
+
+            indices.add(baseIndex);
+            indices.add((short) (baseIndex + i + 1));
+            indices.add((short) (baseIndex + i));
         }
     }
 

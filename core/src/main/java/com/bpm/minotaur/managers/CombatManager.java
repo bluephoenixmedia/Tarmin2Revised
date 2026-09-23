@@ -3063,8 +3063,15 @@ public class CombatManager {
                             Vector3 cutVel = new Vector3(exitVector.x * 2.0f, MathUtils.random(3.5f, 5.5f), exitVector.z * 2.0f);
                             maze.getGoreManager().spawnSeveredLimbGib(
                                     gibOrigin, cutVel, mTex,
-                                    slice.severedVertices, slice.severedUVs, slice.seamVertices, profile
+                                    slice.severedVertices, slice.severedUVs, null, profile
                             );
+                            if (slice.trunkVertices != null && slice.trunkVertices.length >= 6) {
+                                Vector3 trunkVel = new Vector3(-exitVector.x * 0.6f, MathUtils.random(0.5f, 1.8f), -exitVector.z * 0.6f);
+                                maze.getGoreManager().spawnSeveredLimbGib(
+                                        gibOrigin, trunkVel, mTex,
+                                        slice.trunkVertices, slice.trunkUVs, null, profile
+                                );
+                            }
                             maze.getGoreManager().spawnArterialFountain(gibOrigin, Vector3.Y, 2.0f, profile);
                         } else {
                             maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);

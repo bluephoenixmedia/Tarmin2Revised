@@ -1164,20 +1164,18 @@ public class World3DRenderer implements Disposable {
                 Color col = isRetro ? retroTint : g.color;
 
                 if (g.polygonVertices != null && g.polygonUVs != null) {
-                    // Render custom severed polygon geometry
-                    dynamicBatcher.addPolygonBillboard(
-                            localX, Math.max(0.02f, g.position.y), -localZ,
-                            g.polygonVertices, g.polygonUVs, col,
-                            camRight, camUp, camDir,
-                            g.rotation
-                    );
-                    if (g.seamVertices != null && g.seamVertices.length >= 4) {
-                        dynamicBatcher.flush(shader, currentTex);
-                        currentTex = blankTex;
-                        Color seamCol = (col != null) ? col : Color.RED;
-                        dynamicBatcher.addSeamRibbonBillboard(
+                    if (g.onGround) {
+                        // Render flat against the maze floor in true floor perspective
+                        dynamicBatcher.addFloorPolygon(
+                                localX, 0.004f, -localZ,
+                                g.polygonVertices, g.polygonUVs, col,
+                                g.rotation
+                        );
+                    } else {
+                        // Render airborne tumbling polygon billboard
+                        dynamicBatcher.addPolygonBillboard(
                                 localX, Math.max(0.02f, g.position.y), -localZ,
-                                g.seamVertices, 0.025f, seamCol,
+                                g.polygonVertices, g.polygonUVs, col,
                                 camRight, camUp, camDir,
                                 g.rotation
                         );
