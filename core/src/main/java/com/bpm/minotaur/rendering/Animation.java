@@ -28,6 +28,23 @@ public class Animation {
     private String damageText;
     private GridPoint2 textPosition;
 
+    /**
+     * Which projectile sprite the 3D renderer should draw for this shot.
+     *
+     * <p>Separate from {@link #spriteData}, which is the raycaster's ASCII form and must keep
+     * working. Null means the renderer picks a default from the animation type.
+     */
+    private String projectileSprite;
+
+    public String getProjectileSprite() {
+        return projectileSprite;
+    }
+
+    public Animation withProjectileSprite(String sprite) {
+        this.projectileSprite = sprite;
+        return this;
+    }
+
     // 3D Sprite Explosion fields
     private com.badlogic.gdx.math.Vector3 position3D;
     private com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType explosionType;

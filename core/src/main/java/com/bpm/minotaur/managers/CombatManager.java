@@ -1314,11 +1314,14 @@ public class CombatManager {
             // where a gun's whole advantage is that it is already there.
             soundManager.playBowShot();
             if (animationManager != null) {
+                // A crossbow throws a bolt, a bow throws an arrow. ammoNameFor already knows
+                // which, so the sprite can follow it rather than every shot looking the same.
+                String sprite = "bolts".equals(ammoNameFor(weapon)) ? "bolt" : "arrow";
                 animationManager.addAnimation(new Animation(
                         Animation.AnimationType.PROJECTILE_PLAYER,
                         muzzle, impact,
-                        com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 0.25f,
-                        new String[] { "-" }));
+                        com.badlogic.gdx.graphics.Color.WHITE, 0.25f,
+                        new String[] { "-" }).withProjectileSprite(sprite));
             }
         }
     }

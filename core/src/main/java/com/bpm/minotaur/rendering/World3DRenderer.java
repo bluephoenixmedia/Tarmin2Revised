@@ -221,6 +221,44 @@ public class World3DRenderer implements Disposable {
     /** Projectiles nearer than this are not drawn; see renderProjectiles. */
     private static final float PROJECTILE_NEAR_CLIP = 1.1f;
 
+    /**
+     * Projectile art, resolved from textures ItemDataManager has already loaded.
+     *
+     * <p>Reused rather than loaded again: every one of these is an item template texture, so the
+     * AssetManager is holding them regardless.
+     *
+     * <p>Names in this folder are not to be trusted -- "flightarrow" is a quiver of arrows and
+     * "big_bolt" is a lightning burst, neither of which is a bolt in flight.
+     */
+    private static final String SPRITE_ARROW = "images/weapons/arrow_war.png";
+    private static final String SPRITE_BOLT = "images/weapons/quarrel_light.png";
+    private static final String SPRITE_SPELL = "images/weapons/big_bolt.png";
+
+    private com.badlogic.gdx.assets.AssetManager projectileAssets;
+
+    public void setProjectileAssets(com.badlogic.gdx.assets.AssetManager assets) {
+        this.projectileAssets = assets;
+    }
+
+    /** The sprite for a shot, or null to fall back to a plain quad. */
+    private TextureRegion projectileRegion(com.bpm.minotaur.rendering.Animation a) {
+        if (projectileAssets == null) return null;
+
+        String path;
+        if (a.getType() == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL) {
+            path = SPRITE_SPELL;
+        } else if ("bolt".equals(a.getProjectileSprite())) {
+            path = SPRITE_BOLT;
+        } else {
+            path = SPRITE_ARROW;
+        }
+
+        if (!projectileAssets.isLoaded(path, com.badlogic.gdx.graphics.Texture.class)) {
+            return null;
+        }
+        return new TextureRegion(projectileAssets.get(path, com.badlogic.gdx.graphics.Texture.class));
+    }
+
     private com.bpm.minotaur.rendering.AnimationManager animationManager;
 
     public void setAnimationManager(com.bpm.minotaur.rendering.AnimationManager manager) {
@@ -236,7 +274,6 @@ public class World3DRenderer implements Disposable {
     private void renderProjectiles() {
         if (animationManager == null || blankTexture == null) return;
 
-        boolean any = false;
         for (com.bpm.minotaur.rendering.Animation a : animationManager.getAnimations()) {
             com.bpm.minotaur.rendering.Animation.AnimationType t = a.getType();
             if (t != com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_PLAYER
@@ -270,16 +307,22 @@ public class World3DRenderer implements Disposable {
                 continue;
             }
 
-            float size = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL)
-                    ? 0.22f : 0.12f;
-            Color tint = (a.getColor() != null) ? a.getColor() : Color.WHITE;
+            TextureRegion sprite = projectileRegion(a);
+            boolean spell = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL);
+            // A real sprite can carry more size than a bare dot without reading as a slab.
+            float size = (sprite != null) ? (spell ? 0.55f : 0.40f) : (spell ? 0.22f : 0.12f);
+            Color tint = (sprite != null)
+                    ? Color.WHITE
+                    : ((a.getColor() != null) ? a.getColor() : Color.WHITE);
 
+            TextureRegion region = (sprite != null) ? sprite : new TextureRegion(blankTexture);
+            Texture bound = (sprite != null) ? sprite.getTexture() : blankTexture;
+
+            // Flush per texture: the batcher draws one texture at a time, and arrows, bolts and
+            // spell bursts are three different ones.
             dynamicBatcher.addBillboard(wx, wy, wz, size, size,
-                    new TextureRegion(blankTexture), tint, camRight, camUp, camDir);
-            any = true;
-        }
-        if (any) {
-            dynamicBatcher.flush(shader, blankTexture);
+                    region, tint, camRight, camUp, camDir);
+            dynamicBatcher.flush(shader, bound);
         }
     }
 
