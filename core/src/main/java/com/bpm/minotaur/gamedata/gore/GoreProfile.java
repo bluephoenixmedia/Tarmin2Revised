@@ -16,12 +16,12 @@ public enum GoreProfile {
             true   // createsFloorStains
     ),
     SKELETAL(
-            new Color(0.92f, 0.90f, 0.82f, 0.85f), // Bone dust / ivory
-            new Color(0.90f, 0.88f, 0.80f, 1.0f),  // Ivory cut bone seam
-            new Color(0.35f, 0.32f, 0.28f, 0.90f), // Fracture shadow
-            false, // no blood
-            true,  // bone fragments only
-            false  // no liquid puddles
+            new Color(0.60f, 0.08f, 0.08f, 1.0f), // Dark necrotic blood & marrow
+            new Color(0.50f, 0.06f, 0.06f, 1.0f), // Dark marrow cut seam
+            new Color(0.60f, 0.08f, 0.08f, 0.90f), // Necrotic wound tint
+            true,  // hasBlood (undead monsters have blood)
+            true,  // bone fragments and skull/rib gibs
+            true   // createsFloorStains
     ),
     SLIME(
             new Color(0.22f, 0.88f, 0.28f, 0.95f), // Acidic toxic green goo

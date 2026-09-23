@@ -158,27 +158,23 @@ public class GoreManager {
             Vector3 vel = new Vector3(direction).scl(0.65f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
             Color particleColor = new Color(baseColor);
-            if (profile == GoreProfile.FLESH) {
+            if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
-                if (roll < 0.3f) {
-                    // Dark clot
+                if (roll < 0.25f) {
+                    // Darker coagulated drop
                     particleColor.r *= 0.6f;
                     particleColor.g *= 0.5f;
                     particleColor.b *= 0.5f;
-                } else if (roll < 0.6f) {
-                    // Bright arterial spray
+                } else if (roll < 0.65f) {
+                    // Arterial / vibrant spray
                     particleColor.r = Math.min(1.0f, particleColor.r * 1.25f);
                     particleColor.g *= 0.8f;
                     particleColor.b *= 0.8f;
                 }
-            } else if (profile == GoreProfile.SKELETAL) {
-                // Bone dust variation (subtle grey / ivory shifts)
-                float shift = MathUtils.random(-0.1f, 0.1f);
-                particleColor.add(shift, shift, shift, 0f);
             }
 
             float size = (profile == GoreProfile.SKELETAL)
-                    ? MathUtils.random(0.02f, 0.04f)
+                    ? MathUtils.random(0.03f, 0.06f)
                     : MathUtils.random(0.035f, 0.07f);
             float life = MathUtils.random(0.8f, 2.5f);
 
@@ -201,7 +197,7 @@ public class GoreManager {
     public void spawnWoundBloodBurst(Vector3 woundSite, Vector3 surfaceNormal, int damage, GoreProfile profile) {
         if (woundSite == null) return;
         if (profile == null) profile = GoreProfile.FLESH;
-        if (!profile.hasBlood && profile != GoreProfile.SKELETAL) return;
+        if (!profile.hasBlood) return;
         if (profile == GoreProfile.INCORPOREAL) return;
 
         int count = MathUtils.clamp(4 + damage / 3, 4, 12);
@@ -223,7 +219,7 @@ public class GoreManager {
             Vector3 vel = new Vector3(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
             Color particleColor = new Color(baseColor);
-            if (profile == GoreProfile.FLESH) {
+            if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
                 if (roll < 0.35f) {
                     particleColor.r *= 0.65f;
@@ -234,13 +230,10 @@ public class GoreManager {
                     particleColor.g *= 0.85f;
                     particleColor.b *= 0.85f;
                 }
-            } else if (profile == GoreProfile.SKELETAL) {
-                float shift = MathUtils.random(-0.08f, 0.08f);
-                particleColor.add(shift, shift, shift, 0f);
             }
 
             float size = (profile == GoreProfile.SKELETAL)
-                    ? MathUtils.random(0.02f, 0.045f)
+                    ? MathUtils.random(0.03f, 0.065f)
                     : MathUtils.random(0.04f, 0.08f);
             float life = MathUtils.random(0.6f, 1.8f);
 
@@ -291,6 +284,16 @@ public class GoreManager {
 
             g.init(origin, vel, tex, tint);
             activeGibs.add(g);
+        }
+
+        if (profile.hasBlood && profile.createsFloorStains) {
+            Color stainCol = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+            spawnSurfaceDecal(origin, stainCol, MathUtils.random(0.20f, 0.35f));
+            for (int i = 0; i < Math.min(2, overkillTier); i++) {
+                float ox = MathUtils.random(-0.35f, 0.35f);
+                float oz = MathUtils.random(-0.35f, 0.35f);
+                spawnSurfaceDecal(new Vector3(origin.x + ox, origin.y, origin.z + oz), stainCol, MathUtils.random(0.15f, 0.25f));
+            }
         }
     }
 

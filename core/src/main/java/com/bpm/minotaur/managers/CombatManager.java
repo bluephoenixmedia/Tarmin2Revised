@@ -3174,8 +3174,8 @@ public class CombatManager {
 
         GoreProfile profile = GoreProfile.fromMonster(monster);
         com.badlogic.gdx.graphics.Color woundCol;
-        if (profile == GoreProfile.FLESH || profile == null) {
-            // Natural full-color gore from spritesheet
+        if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL || profile == null) {
+            // Natural full-color gore from spritesheet (including undead)
             woundCol = com.badlogic.gdx.graphics.Color.WHITE;
         } else if (profile.woundColor != null) {
             // SKELETAL, SLIME, etc. get their physiology tint

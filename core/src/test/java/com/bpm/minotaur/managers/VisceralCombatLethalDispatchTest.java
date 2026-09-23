@@ -49,7 +49,7 @@ public class VisceralCombatLethalDispatchTest {
 
         assertNotNull(GoreProfile.SKELETAL.seamColor);
         assertNotNull(GoreProfile.SKELETAL.woundColor);
-        assertFalse(GoreProfile.SKELETAL.hasBlood);
+        assertTrue(GoreProfile.SKELETAL.hasBlood);
         assertTrue(GoreProfile.SKELETAL.hasGibs);
 
         assertNotNull(GoreProfile.SLIME.seamColor);

@@ -31,8 +31,9 @@ public class GoreManagerTest {
         assertEquals(GoreProfile.FLESH, GoreProfile.fromMonsterType(Monster.MonsterType.GHOUL));
         assertEquals(GoreProfile.FLESH, GoreProfile.fromMonsterType(Monster.MonsterType.MINOTAUR));
 
-        assertFalse(GoreProfile.SKELETAL.hasBlood);
+        assertTrue(GoreProfile.SKELETAL.hasBlood);
         assertTrue(GoreProfile.SKELETAL.hasGibs);
+        assertTrue(GoreProfile.SKELETAL.createsFloorStains);
 
         assertTrue(GoreProfile.SLIME.hasBlood);
         assertFalse(GoreProfile.SLIME.hasGibs);
@@ -93,6 +94,16 @@ public class GoreManagerTest {
 
         goreManager.spawnGibExplosion(new Vector3(5, 0.5f, 5), Vector3.Y, 2, GoreProfile.INCORPOREAL);
         assertEquals("Incorporeal should not emit physical gibs", 0, goreManager.getActiveGibs().size);
+    }
+
+    @Test
+    public void testSkeletalEmitsBloodAndGibs() {
+        goreManager.spawnBloodSpray(new Vector3(5, 0.5f, 5), Vector3.X, 10, GoreProfile.SKELETAL);
+        assertTrue("Skeletal should emit physical blood", goreManager.getActiveParticles().size > 0);
+
+        goreManager.spawnGibExplosion(new Vector3(5, 0.5f, 5), Vector3.Y, 2, GoreProfile.SKELETAL);
+        assertTrue("Skeletal should emit bone gibs", goreManager.getActiveGibs().size > 0);
+        assertTrue("Skeletal should create floor blood stains", goreManager.getActiveDecals().size > 0);
     }
 
     @Test
