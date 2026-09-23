@@ -275,7 +275,7 @@ public class UXScreenCaptureScreen extends BaseScreen {
             com.bpm.minotaur.rendering.AnimationManager am = sharedGameScreen.getAnimationManager();
             if (p != null && am != null) {
                 com.badlogic.gdx.math.Vector2 dir = p.getDirectionVector();
-                com.badlogic.gdx.math.Vector2 muzzle = p.getPosition().cpy().add(dir.cpy().scl(2.5f));
+                com.badlogic.gdx.math.Vector2 muzzle = p.getPosition().cpy().add(dir.cpy().scl(1.4f));
                 com.badlogic.gdx.math.Vector2 impact = p.getPosition().cpy().add(dir.cpy().scl(6f));
                 // Long-lived on purpose: the capture grabs a single frame, and a 0.25s shot would
                 // usually be over before the shutter opened.

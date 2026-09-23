@@ -218,8 +218,18 @@ public class World3DRenderer implements Disposable {
      * and thrown weapon was completely invisible. The flight existed in simulation and nowhere on
      * screen.
      */
-    /** Projectiles nearer than this are not drawn; see renderProjectiles. */
-    private static final float PROJECTILE_NEAR_CLIP = 1.1f;
+    /**
+     * Only skipped when effectively inside the camera. An earlier 1.1 clip was far too greedy:
+     * most shots in a grid dungeon hit something one or two tiles away, so the whole flight sat
+     * inside the clip and nothing was ever drawn.
+     */
+    private static final float PROJECTILE_NEAR_CLIP = 0.30f;
+
+    /**
+     * Caps how much of the view a projectile may span, in world units per unit of distance.
+     * Keeps a shot readable far away without letting it become a slab as it leaves the muzzle.
+     */
+    private static final float PROJECTILE_ANGULAR_CAP = 0.34f;
 
     /**
      * Projectile art, resolved from textures ItemDataManager has already loaded.
@@ -309,8 +319,13 @@ public class World3DRenderer implements Disposable {
 
             TextureRegion sprite = projectileRegion(a);
             boolean spell = (t == com.bpm.minotaur.rendering.Animation.AnimationType.PROJECTILE_SPELL);
-            // A real sprite can carry more size than a bare dot without reading as a slab.
-            float size = (sprite != null) ? (spell ? 0.55f : 0.40f) : (spell ? 0.22f : 0.12f);
+
+            // The arrow occupies a thin diagonal of a mostly transparent square, so the quad has
+            // to be generous or the arrow itself is a few pixels at range.
+            float baseSize = (sprite != null) ? (spell ? 1.10f : 0.90f) : (spell ? 0.22f : 0.12f);
+            // Shrink rather than hide when close, so a point-blank shot is still drawn.
+            float dist = (float) Math.sqrt(distSq);
+            float size = Math.min(baseSize, dist * PROJECTILE_ANGULAR_CAP);
             Color tint = (sprite != null)
                     ? Color.WHITE
                     : ((a.getColor() != null) ? a.getColor() : Color.WHITE);

@@ -1317,10 +1317,14 @@ public class CombatManager {
                 // A crossbow throws a bolt, a bow throws an arrow. ammoNameFor already knows
                 // which, so the sprite can follow it rather than every shot looking the same.
                 String sprite = "bolts".equals(ammoNameFor(weapon)) ? "bolt" : "arrow";
+                // Speed-based, like monster projectiles, instead of a flat 0.25s for every shot.
+                // A flat duration made a point-blank shot and a long one take the same time, and
+                // at typical combat range it was over in about fifteen frames.
+                float flightDuration = Math.max(0.18f, muzzle.dst(impact) / PROJECTILE_SPEED);
                 animationManager.addAnimation(new Animation(
                         Animation.AnimationType.PROJECTILE_PLAYER,
                         muzzle, impact,
-                        com.badlogic.gdx.graphics.Color.WHITE, 0.25f,
+                        com.badlogic.gdx.graphics.Color.WHITE, flightDuration,
                         new String[] { "-" }).withProjectileSprite(sprite));
             }
         }
