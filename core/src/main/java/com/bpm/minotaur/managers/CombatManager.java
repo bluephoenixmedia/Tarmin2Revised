@@ -36,6 +36,7 @@ import com.bpm.minotaur.gamedata.firearm.ReloadChannel;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
 import com.bpm.minotaur.gamedata.gore.WoundDecal;
+import com.bpm.minotaur.gamedata.gore.WoundDecalRegistry;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
 import com.bpm.minotaur.rendering.animation.AnimationArchetype;
 import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
@@ -3119,6 +3120,10 @@ public class CombatManager {
                 woundType = WoundDecal.WoundType.CRUSH;
                 break;
             case THRUSTING_PIERCE:
+                woundType = (weapon != null && weapon.isFinesse())
+                        ? WoundDecal.WoundType.SLICE
+                        : WoundDecal.WoundType.STAB;
+                break;
             case RANGED_BOW:
             case RANGED_FIREARM:
                 woundType = WoundDecal.WoundType.PUNCTURE;
@@ -3128,7 +3133,11 @@ public class CombatManager {
             case AXE_CHOPPING:
             case POLEARM_SWEEP:
             default:
-                woundType = WoundDecal.WoundType.SLASH;
+                if (weapon != null && weapon.isFinesse()) {
+                    woundType = WoundDecal.WoundType.SLICE;
+                } else {
+                    woundType = WoundDecal.WoundType.SLASH;
+                }
                 break;
         }
 
@@ -3145,18 +3154,68 @@ public class CombatManager {
             }
         }
 
+        // Fetch categorized decal region from registry
+        WoundDecalRegistry registry = WoundDecalRegistry.getInstance();
+        TextureRegion decalRegion = registry.getRandomRegion(woundType);
+
         float u = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
         float v = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
-        float length = MathUtils.clamp(0.18f + actualDamage * 0.008f, 0.14f, 0.40f);
-        float width = MathUtils.clamp(0.04f + actualDamage * 0.002f, 0.03f, 0.10f);
+
+        float aspect = WoundDecalRegistry.getAspectRatio(decalRegion, woundType);
+        float length = MathUtils.clamp(0.20f + actualDamage * 0.008f, 0.16f, 0.45f);
+        float width = length / Math.max(0.2f, aspect);
 
         GoreProfile profile = GoreProfile.fromMonster(monster);
-        com.badlogic.gdx.graphics.Color woundCol = (profile != null && profile.woundColor != null)
-                ? profile.woundColor
-                : com.badlogic.gdx.graphics.Color.RED;
+        com.badlogic.gdx.graphics.Color woundCol;
+        if (profile == GoreProfile.FLESH || profile == null) {
+            // Natural full-color gore from spritesheet
+            woundCol = com.badlogic.gdx.graphics.Color.WHITE;
+        } else if (profile.woundColor != null) {
+            // SKELETAL, SLIME, etc. get their physiology tint
+            woundCol = profile.woundColor;
+        } else {
+            woundCol = com.badlogic.gdx.graphics.Color.WHITE;
+        }
 
         WoundDecal decal = new WoundDecal(woundType, u, v, angle, length, width, woundCol);
+        decal.customRegion = decalRegion;
         MonsterDecalCompositor.getInstance().addWound(monster, decal);
+
+        // Calculate 3D position of the wound site on the monster billboard
+        GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+        float wx = cid.x * 36.0f + monster.getPosition().x;
+        float wz = cid.y * 36.0f + monster.getPosition().y;
+
+        float mw = monster.getScale() != null ? monster.getScale().x : 0.8f;
+        float mh = monster.getScale() != null ? monster.getScale().y : 0.8f;
+        float maxMonsterW = 0.82f;
+        if (mw > maxMonsterW) {
+            float s = maxMonsterW / mw;
+            mw = maxMonsterW;
+            mh *= s;
+        }
+
+        // Normal towards player
+        float dx = (player != null) ? player.getPosition().x - monster.getPosition().x : 0f;
+        float dy = (player != null) ? player.getPosition().y - monster.getPosition().y : 1f;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        float nx = (dist > 0.0001f) ? dx / dist : 0f;
+        float nz = (dist > 0.0001f) ? dy / dist : 1f;
+
+        // Tangent across monster's billboard
+        float tx = -nz;
+        float tz = nx;
+
+        float posX = wx + tx * (u - 0.5f) * mw;
+        float posZ = wz + tz * (u - 0.5f) * mw;
+        float posY = MathUtils.clamp(v * mh, 0.1f, mh);
+
+        Vector3 woundSitePos = new Vector3(posX, posY, posZ);
+        Vector3 splashDir = new Vector3(nx, 0.25f, nz).nor();
+
+        if (maze != null && maze.getGoreManager() != null) {
+            maze.getGoreManager().spawnWoundBloodBurst(woundSitePos, splashDir, actualDamage, profile);
+        }
     }
 
     /**

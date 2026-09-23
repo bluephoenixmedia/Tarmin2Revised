@@ -1,5 +1,6 @@
 package com.bpm.minotaur.gamedata.gore;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -35,7 +36,15 @@ public class ProceduralDecalGenerator implements Disposable {
     }
 
     public ProceduralDecalGenerator() {
-        generateTextures();
+        if (Gdx.gl != null) {
+            try {
+                generateTextures();
+            } catch (Throwable t) {
+                if (Gdx.app != null) {
+                    Gdx.app.error("ProceduralDecalGenerator", "Failed to generate procedural wound textures: " + t.getMessage());
+                }
+            }
+        }
     }
 
     private void generateTextures() {

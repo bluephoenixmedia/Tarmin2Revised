@@ -9,9 +9,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class WoundDecal {
 
     public enum WoundType {
-        SLASH,      // Directional laceration along weapon swing arc
-        PUNCTURE,   // Point impact cavity (thrusts, arrows, bullets)
-        CRUSH,      // Radial fracture / blunt contusion (maces, hammers)
+        SLASH,      // Broad directional laceration (swords, 2H blades, axes)
+        SLICE,      // Narrow razor incision (finesse weapons, daggers, claws)
+        STAB,       // Elongated thrust entry wound (spears, daggers, rapiers)
+        PUNCTURE,   // Point / ballistic cavity (arrows, bolts, bullets, darts)
+        CRUSH,      // Radial fracture / blunt contusion (maces, hammers, brawling)
         SCORCH      // Burned charred mark (fire, lightning, acid)
     }
 

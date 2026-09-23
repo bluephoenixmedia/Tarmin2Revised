@@ -189,6 +189,68 @@ public class GoreManager {
         }
     }
 
+    /**
+     * Erupts an immediate burst of blood droplets directly from a localized wound site on a creature,
+     * spraying outward towards the attacker and falling to the floor.
+     *
+     * @param woundSite 3D world coordinates of the wound decal on the creature's surface
+     * @param surfaceNormal Direction outward from the wound surface (typically towards attacker)
+     * @param damage Impact force / severity of the blow
+     * @param profile Creature's gore physiology
+     */
+    public void spawnWoundBloodBurst(Vector3 woundSite, Vector3 surfaceNormal, int damage, GoreProfile profile) {
+        if (woundSite == null) return;
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (!profile.hasBlood && profile != GoreProfile.SKELETAL) return;
+        if (profile == GoreProfile.INCORPOREAL) return;
+
+        int count = MathUtils.clamp(4 + damage / 3, 4, 12);
+        int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
+        count = Math.min(count, availableSlots);
+        if (count <= 0) return;
+
+        Color baseColor = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+        Vector3 outDir = (surfaceNormal != null && !surfaceNormal.isZero()) ? new Vector3(surfaceNormal).nor() : new Vector3(0, 0.3f, 1).nor();
+
+        for (int i = 0; i < count; i++) {
+            BloodParticle p = particlePool.obtain();
+            // Conical splash outward from wound site with upward loft
+            float spreadX = MathUtils.random(-0.5f, 0.5f);
+            float spreadY = MathUtils.random(0.05f, 0.65f);
+            float spreadZ = MathUtils.random(-0.5f, 0.5f);
+            float speed = MathUtils.random(2.5f, 6.5f);
+
+            Vector3 vel = new Vector3(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
+
+            Color particleColor = new Color(baseColor);
+            if (profile == GoreProfile.FLESH) {
+                float roll = MathUtils.random();
+                if (roll < 0.35f) {
+                    particleColor.r *= 0.65f;
+                    particleColor.g *= 0.55f;
+                    particleColor.b *= 0.55f;
+                } else if (roll < 0.70f) {
+                    particleColor.r = Math.min(1.0f, particleColor.r * 1.2f);
+                    particleColor.g *= 0.85f;
+                    particleColor.b *= 0.85f;
+                }
+            } else if (profile == GoreProfile.SKELETAL) {
+                float shift = MathUtils.random(-0.08f, 0.08f);
+                particleColor.add(shift, shift, shift, 0f);
+            }
+
+            float size = (profile == GoreProfile.SKELETAL)
+                    ? MathUtils.random(0.02f, 0.045f)
+                    : MathUtils.random(0.04f, 0.08f);
+            float life = MathUtils.random(0.6f, 1.8f);
+
+            TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
+
+            p.init(woundSite, vel, particleColor, life, size, tex);
+            activeParticles.add(p);
+        }
+    }
+
     public void spawnGibExplosion(Vector3 origin) {
         spawnGibExplosion(origin, Vector3.Y, 1, GoreProfile.FLESH);
     }

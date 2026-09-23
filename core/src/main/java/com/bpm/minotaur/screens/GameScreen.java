@@ -441,6 +441,7 @@ public class GameScreen extends BaseScreen {
             gibRegs.add(goreAtlas.findRegion("gib" + i));
 
         maze.getGoreManager().setTextures(dropRegs, smearRegs, spatterReg, gibRegs);
+        com.bpm.minotaur.gamedata.gore.WoundDecalRegistry.getInstance().loadFromAtlas(goreAtlas);
 
         visorDropletTextures.clear();
         for (com.badlogic.gdx.graphics.g2d.TextureRegion dr : dropRegs) {

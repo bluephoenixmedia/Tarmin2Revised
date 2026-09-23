@@ -108,7 +108,9 @@ public class WorldManager {
                 assetManager.finishLoading();
             }
             if (assetManager.isLoaded(goreAtlasPath)) {
-                this.goreManager.setTextures(assetManager.get(goreAtlasPath, TextureAtlas.class));
+                TextureAtlas goreAtlas = assetManager.get(goreAtlasPath, TextureAtlas.class);
+                this.goreManager.setTextures(goreAtlas);
+                com.bpm.minotaur.gamedata.gore.WoundDecalRegistry.getInstance().loadFromAtlas(goreAtlas);
             }
         }
 

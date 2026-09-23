@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.bpm.minotaur.gamedata.gore.ProceduralDecalGenerator;
 import com.bpm.minotaur.gamedata.gore.WoundDecal;
+import com.bpm.minotaur.gamedata.gore.WoundDecalRegistry;
 import com.bpm.minotaur.gamedata.monster.Monster;
 
 import java.util.ArrayList;
@@ -167,10 +168,13 @@ public class MonsterDecalCompositor implements Disposable {
                 GL20.GL_ZERO, GL20.GL_ONE
         );
 
+        WoundDecalRegistry registry = WoundDecalRegistry.getInstance();
         ProceduralDecalGenerator gen = ProceduralDecalGenerator.getInstance();
 
         for (WoundDecal w : monster.getWoundDecals()) {
-            TextureRegion brush = (w.customRegion != null) ? w.customRegion : gen.getRegionForType(w.type);
+            TextureRegion brush = (w.customRegion != null)
+                    ? w.customRegion
+                    : (registry.isLoaded() ? registry.getRandomRegion(w.type) : gen.getRegionForType(w.type));
             if (brush == null) continue;
 
             float cx = w.u * FBO_SIZE;
@@ -178,7 +182,13 @@ public class MonsterDecalCompositor implements Disposable {
             float dw = w.length * FBO_SIZE;
             float dh = w.width * FBO_SIZE;
 
-            batch.setColor(w.color);
+            // Preserve native aspect ratio of decal sprite
+            if (brush.getRegionHeight() > 0 && brush.getRegionWidth() > 0) {
+                float aspect = (float) brush.getRegionWidth() / (float) brush.getRegionHeight();
+                dh = dw / Math.max(0.2f, aspect);
+            }
+
+            batch.setColor(w.color != null ? w.color : Color.WHITE);
             batch.draw(
                     brush,
                     cx - dw * 0.5f, cy - dh * 0.5f,

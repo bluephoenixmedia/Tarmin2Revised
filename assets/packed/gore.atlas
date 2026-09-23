@@ -130,3 +130,289 @@ gib9
   orig: 642, 646
   offset: 39, 105
   index: -1
+
+gore2.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+decals/wound
+  rotate: false
+  xy: 0, 1802
+  size: 517, 225
+  orig: 523, 231
+  offset: 3, 3
+  index: 39
+decals/wound
+  rotate: false
+  xy: 0, 1530
+  size: 376, 270
+  orig: 382, 276
+  offset: 3, 3
+  index: 37
+decals/wound
+  rotate: false
+  xy: 519, 1921
+  size: 517, 106
+  orig: 523, 112
+  offset: 3, 3
+  index: 19
+decals/wound
+  rotate: false
+  xy: 0, 1259
+  size: 342, 269
+  orig: 348, 275
+  offset: 3, 3
+  index: 17
+decals/wound
+  rotate: false
+  xy: 0, 998
+  size: 352, 259
+  orig: 358, 265
+  offset: 3, 3
+  index: 38
+decals/wound
+  rotate: false
+  xy: 0, 738
+  size: 352, 258
+  orig: 358, 264
+  offset: 3, 3
+  index: 18
+decals/wound
+  rotate: false
+  xy: 0, 442
+  size: 282, 294
+  orig: 288, 300
+  offset: 3, 3
+  index: 11
+decals/wound
+  rotate: false
+  xy: 0, 147
+  size: 282, 293
+  orig: 288, 299
+  offset: 3, 3
+  index: 31
+decals/wound
+  rotate: false
+  xy: 519, 1731
+  size: 423, 188
+  orig: 429, 194
+  offset: 3, 3
+  index: 26
+decals/wound
+  rotate: false
+  xy: 1038, 1921
+  size: 424, 106
+  orig: 430, 112
+  offset: 3, 3
+  index: 6
+decals/wound
+  rotate: false
+  xy: 944, 1730
+  size: 399, 189
+  orig: 405, 195
+  offset: 3, 3
+  index: 32
+decals/wound
+  rotate: false
+  xy: 1464, 1955
+  size: 400, 72
+  orig: 406, 78
+  offset: 3, 3
+  index: 12
+decals/wound
+  rotate: false
+  xy: 1464, 1883
+  size: 375, 70
+  orig: 381, 76
+  offset: 3, 3
+  index: 30
+decals/wound
+  rotate: false
+  xy: 378, 1541
+  size: 119, 259
+  orig: 125, 265
+  offset: 3, 3
+  index: 2
+decals/wound
+  rotate: false
+  xy: 499, 1470
+  size: 282, 259
+  orig: 288, 265
+  offset: 3, 3
+  index: 5
+decals/wound
+  rotate: false
+  xy: 783, 1469
+  size: 153, 260
+  orig: 159, 266
+  offset: 3, 3
+  index: 22
+decals/wound
+  rotate: false
+  xy: 938, 1468
+  size: 282, 260
+  orig: 288, 266
+  offset: 3, 3
+  index: 25
+decals/wound
+  rotate: false
+  xy: 1222, 1469
+  size: 236, 259
+  orig: 242, 265
+  offset: 3, 3
+  index: 40
+decals/wound
+  rotate: false
+  xy: 1460, 1633
+  size: 282, 248
+  orig: 288, 254
+  offset: 3, 3
+  index: 15
+decals/wound
+  rotate: false
+  xy: 1460, 1383
+  size: 282, 248
+  orig: 288, 254
+  offset: 3, 3
+  index: 35
+decals/wound
+  rotate: false
+  xy: 1744, 1623
+  size: 247, 258
+  orig: 253, 264
+  offset: 3, 3
+  index: 29
+decals/wound
+  rotate: false
+  xy: 1744, 1374
+  size: 249, 247
+  orig: 255, 253
+  offset: 3, 3
+  index: 34
+decals/wound
+  rotate: false
+  xy: 0, 86
+  size: 330, 59
+  orig: 336, 65
+  offset: 3, 3
+  index: 10
+decals/wound
+  rotate: false
+  xy: 284, 478
+  size: 259, 258
+  orig: 265, 264
+  offset: 3, 3
+  index: 36
+decals/wound
+  rotate: false
+  xy: 284, 230
+  size: 236, 246
+  orig: 242, 252
+  offset: 3, 3
+  index: 16
+decals/wound
+  rotate: false
+  xy: 344, 1268
+  size: 212, 200
+  orig: 218, 206
+  offset: 3, 3
+  index: 8
+decals/wound
+  rotate: false
+  xy: 354, 1031
+  size: 235, 235
+  orig: 241, 241
+  offset: 3, 3
+  index: 20
+decals/wound
+  rotate: false
+  xy: 354, 805
+  size: 212, 224
+  orig: 218, 230
+  offset: 3, 3
+  index: 24
+decals/wound
+  rotate: false
+  xy: 558, 1268
+  size: 200, 200
+  orig: 206, 206
+  offset: 3, 3
+  index: 14
+decals/wound
+  rotate: false
+  xy: 591, 1054
+  size: 189, 212
+  orig: 195, 218
+  offset: 3, 3
+  index: 27
+decals/wound
+  rotate: false
+  xy: 760, 1303
+  size: 165, 164
+  orig: 171, 170
+  offset: 3, 3
+  index: 4
+decals/wound
+  rotate: false
+  xy: 927, 1254
+  size: 224, 212
+  orig: 230, 218
+  offset: 3, 3
+  index: 28
+decals/wound
+  rotate: false
+  xy: 1153, 1266
+  size: 189, 200
+  orig: 195, 206
+  offset: 3, 3
+  index: 1
+decals/wound
+  rotate: false
+  xy: 782, 1064
+  size: 211, 188
+  orig: 217, 194
+  offset: 3, 3
+  index: 9
+decals/wound
+  rotate: false
+  xy: 995, 1063
+  size: 190, 189
+  orig: 196, 195
+  offset: 3, 3
+  index: 7
+decals/wound
+  rotate: false
+  xy: 1187, 1064
+  size: 187, 200
+  orig: 193, 206
+  offset: 3, 3
+  index: 21
+decals/wound
+  rotate: false
+  xy: 1345, 1801
+  size: 95, 118
+  orig: 101, 124
+  offset: 3, 3
+  index: 33
+decals/wound
+  rotate: false
+  xy: 1344, 1360
+  size: 96, 107
+  orig: 102, 113
+  offset: 3, 3
+  index: 3
+decals/wound
+  rotate: false
+  xy: 1866, 1897
+  size: 118, 130
+  orig: 124, 136
+  offset: 3, 3
+  index: 23
+decals/wound
+  rotate: false
+  xy: 0, 0
+  size: 94, 84
+  orig: 100, 90
+  offset: 3, 3
+  index: 13

@@ -21,6 +21,16 @@ public class WoundDecalTest {
     }
 
     @Test
+    public void testWoundTypeValues() {
+        assertNotNull(WoundDecal.WoundType.valueOf("SLASH"));
+        assertNotNull(WoundDecal.WoundType.valueOf("SLICE"));
+        assertNotNull(WoundDecal.WoundType.valueOf("STAB"));
+        assertNotNull(WoundDecal.WoundType.valueOf("PUNCTURE"));
+        assertNotNull(WoundDecal.WoundType.valueOf("CRUSH"));
+        assertNotNull(WoundDecal.WoundType.valueOf("SCORCH"));
+    }
+
+    @Test
     public void testCustomConstructorAndCopy() {
         Color crimson = new Color(0.8f, 0.1f, 0.1f, 1f);
         WoundDecal decal = new WoundDecal(
