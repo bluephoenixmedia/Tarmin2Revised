@@ -1,0 +1,286 @@
+{
+  "_comment": "Flat prop catalogue. Themes reference these by id; see docs/DEsign/Themed Chunk Contract.md section 5. Assets are billboard PNGs baked from the licensed Synty source by tools/blender/bake_theme_props.py.",
+  "props": [
+    {
+      "id": "gibbet_cage",
+      "asset": "images/props/gibbet_cage.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.8,
+      "passable": false
+    },
+    {
+      "id": "head_spike",
+      "asset": "images/props/head_spike.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.7,
+      "scaleY": 1.4,
+      "passable": false
+    },
+    {
+      "id": "skull_pile",
+      "asset": "images/props/skull_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.5,
+      "passable": true,
+      "pixelOffsetY": -40
+    },
+    {
+      "id": "arena_chain",
+      "asset": "images/props/arena_chain.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.6,
+      "scaleY": 1.6,
+      "passable": true
+    },
+    {
+      "id": "defence_spikes",
+      "asset": "images/props/defence_spikes.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.9,
+      "passable": false
+    },
+    {
+      "id": "war_banner",
+      "asset": "images/props/war_banner.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 1.7,
+      "passable": true
+    },
+
+    {
+      "id": "stalagmite",
+      "asset": "images/props/stalagmite.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.9,
+      "scaleY": 1.3,
+      "passable": false
+    },
+    {
+      "id": "algae_mat",
+      "asset": "images/props/algae_mat.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.4,
+      "passable": true,
+      "pixelOffsetY": -50
+    },
+    {
+      "id": "swamp_reeds",
+      "asset": "images/props/swamp_reeds.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.9,
+      "scaleY": 1.0,
+      "passable": true
+    },
+    {
+      "id": "drowned_cache",
+      "asset": "images/props/drowned_cache.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.8,
+      "passable": true,
+      "emissiveTint": { "r": 0.25, "g": 0.85, "b": 0.95 }
+    },
+
+    {
+      "id": "camp_tent",
+      "asset": "images/props/camp_tent.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.6,
+      "scaleY": 1.4,
+      "passable": false
+    },
+    {
+      "id": "weapon_rack",
+      "asset": "images/props/weapon_rack.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.1,
+      "scaleY": 1.3,
+      "passable": false
+    },
+    {
+      "id": "brazier",
+      "asset": "images/props/brazier.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 1.2,
+      "passable": true,
+      "burnDamage": 4,
+      "emissiveTint": { "r": 1.0, "g": 0.62, "b": 0.22 }
+    },
+    {
+      "id": "campfire",
+      "asset": "images/props/campfire.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.7,
+      "passable": true,
+      "burnDamage": 5,
+      "emissiveTint": { "r": 1.0, "g": 0.55, "b": 0.18 },
+      "pixelOffsetY": -30
+    },
+    {
+      "id": "helmet_pile",
+      "asset": "images/props/helmet_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.9,
+      "scaleY": 0.5,
+      "passable": true,
+      "pixelOffsetY": -45
+    },
+    {
+      "id": "war_drum",
+      "asset": "images/props/war_drum.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 0.8,
+      "passable": false
+    },
+
+    {
+      "id": "gravestone",
+      "asset": "images/props/gravestone.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 1.1,
+      "passable": false
+    },
+    {
+      "id": "grave_mound",
+      "asset": "images/props/grave_mound.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.1,
+      "scaleY": 0.6,
+      "passable": false,
+      "pixelOffsetY": -35
+    },
+    {
+      "id": "bone_pile",
+      "asset": "images/props/bone_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.45,
+      "passable": true,
+      "pixelOffsetY": -48
+    },
+    {
+      "id": "cairn",
+      "asset": "images/props/cairn.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 1.0,
+      "passable": false
+    },
+    {
+      "id": "runestone",
+      "asset": "images/props/runestone.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 1.3,
+      "passable": false,
+      "emissiveTint": { "r": 0.72, "g": 0.78, "b": 0.95 }
+    },
+
+    {
+      "id": "ruined_pillar",
+      "asset": "images/props/ruined_pillar.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.9,
+      "scaleY": 1.9,
+      "passable": false
+    },
+    {
+      "id": "rubble_pile",
+      "asset": "images/props/rubble_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.1,
+      "scaleY": 0.6,
+      "passable": false,
+      "pixelOffsetY": -35
+    },
+    {
+      "id": "throne",
+      "asset": "images/props/throne.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.2,
+      "scaleY": 1.5,
+      "passable": false
+    },
+    {
+      "id": "shield_wall",
+      "asset": "images/props/shield_wall.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.2,
+      "passable": false
+    },
+    {
+      "id": "chandelier",
+      "asset": "images/props/chandelier.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.8,
+      "passable": true,
+      "emissiveTint": { "r": 1.0, "g": 0.78, "b": 0.42 },
+      "pixelOffsetY": 90
+    },
+
+    {
+      "id": "glowing_mushroom",
+      "asset": "images/props/glowing_mushroom.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.8,
+      "scaleY": 0.9,
+      "passable": true,
+      "emissiveTint": { "r": 0.32, "g": 0.95, "b": 0.55 }
+    },
+    {
+      "id": "mushroom_cluster",
+      "asset": "images/props/mushroom_cluster.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.7,
+      "passable": true,
+      "pixelOffsetY": -40
+    },
+    {
+      "id": "bramble",
+      "asset": "images/props/bramble.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.1,
+      "scaleY": 1.1,
+      "passable": false
+    },
+    {
+      "id": "hanging_vine",
+      "asset": "images/props/hanging_vine.png",
+      "renderMode": "SPRITE",
+      "scaleX": 0.9,
+      "scaleY": 1.6,
+      "passable": true,
+      "pixelOffsetY": 60
+    },
+    {
+      "id": "twisted_root",
+      "asset": "images/props/twisted_root.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.5,
+      "passable": true,
+      "pixelOffsetY": -50
+    },
+    {
+      "id": "heart_bloom",
+      "asset": "images/props/heart_bloom.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.4,
+      "scaleY": 1.4,
+      "passable": false,
+      "emissiveTint": { "r": 0.55, "g": 1.0, "b": 0.35 }
+    }
+  ]
+}

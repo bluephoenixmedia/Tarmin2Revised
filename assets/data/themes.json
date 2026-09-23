@@ -1,0 +1,173 @@
+{
+  "_comment": "Per-theme tunable data. Layout carving stays in ChunkThemeDecorator; everything here is retunable without a rebuild. See docs/DEsign/Themed Chunk Contract.md.",
+  "themes": [
+    {
+      "id": "BLOOD_COLOSSEUM",
+      "crestAward": 2,
+      "objective": "LAST_COMBATANT_STANDING",
+      "objectiveCount": 1,
+      "runeTexture": "images/runes/rune_colosseum.png",
+      "fogTint": { "r": 0.42, "g": 0.08, "b": 0.08 },
+      "stinger": "sounds/monster_roar_heavy.wav",
+      "propDensity": 0.035,
+      "hazard": { "kind": "BLOOD_POOLS", "density": 0.35 },
+      "props": [
+        { "propId": "skull_pile", "weight": 30 },
+        { "propId": "gibbet_cage", "weight": 18 },
+        { "propId": "head_spike", "weight": 18 },
+        { "propId": "arena_chain", "weight": 14 },
+        { "propId": "defence_spikes", "weight": 12 },
+        { "propId": "war_banner", "weight": 8 }
+      ],
+      "monsters": [
+        { "type": "ORC", "weight": 24, "hpBonus": 8 },
+        { "type": "OGRE", "weight": 16, "hpBonus": 12 },
+        { "type": "TROLL", "weight": 12, "hpBonus": 14 },
+        { "type": "WEREWOLF", "weight": 14, "hpBonus": 10 },
+        { "type": "SKELETON", "weight": 18, "hpBonus": 4 },
+        { "type": "GHOUL", "weight": 16, "hpBonus": 6 }
+      ]
+    },
+
+    {
+      "id": "RUINED_CASTLE",
+      "crestAward": 2,
+      "objective": "SLAY_CHAMPION",
+      "objectiveCount": 1,
+      "championType": "MINOTAUR",
+      "championHpBonus": 80,
+      "runeTexture": "images/runes/rune_castle.png",
+      "fogTint": { "r": 0.30, "g": 0.16, "b": 0.42 },
+      "stinger": "sounds/tarmin_roar.mp3",
+      "propDensity": 0.040,
+      "hazard": { "kind": "BLOCKING_PROPS", "density": 0.18 },
+      "props": [
+        { "propId": "rubble_pile", "weight": 30 },
+        { "propId": "ruined_pillar", "weight": 20 },
+        { "propId": "shield_wall", "weight": 16 },
+        { "propId": "brazier", "weight": 14 },
+        { "propId": "chandelier", "weight": 8 },
+        { "propId": "throne", "weight": 3 }
+      ],
+      "monsters": [
+        { "type": "GARGOYLE", "weight": 22, "hpBonus": 10 },
+        { "type": "IRON_GOLEM", "weight": 10, "hpBonus": 20 },
+        { "type": "ORC", "weight": 26, "hpBonus": 8 },
+        { "type": "HOBGOBLIN", "weight": 24, "hpBonus": 6 },
+        { "type": "SKELETON", "weight": 18, "hpBonus": 4 }
+      ]
+    },
+
+    {
+      "id": "WANDERING_BATTALION",
+      "crestAward": 1,
+      "objective": "SLAY_CHAMPION",
+      "objectiveCount": 1,
+      "championType": "OGRE",
+      "championHpBonus": 50,
+      "runeTexture": "images/runes/rune_battalion.png",
+      "fogTint": { "r": 0.44, "g": 0.36, "b": 0.16 },
+      "stinger": "sounds/metal_hit_heavy.ogg",
+      "propDensity": 0.045,
+      "hazard": { "kind": "BURNING_TILES", "density": 0.14 },
+      "props": [
+        { "propId": "camp_tent", "weight": 22 },
+        { "propId": "weapon_rack", "weight": 18 },
+        { "propId": "brazier", "weight": 18 },
+        { "propId": "campfire", "weight": 14 },
+        { "propId": "helmet_pile", "weight": 14 },
+        { "propId": "war_banner", "weight": 10 },
+        { "propId": "war_drum", "weight": 8 }
+      ],
+      "monsters": [
+        { "type": "ORC", "weight": 30, "hpBonus": 6 },
+        { "type": "HOBGOBLIN", "weight": 26, "hpBonus": 5 },
+        { "type": "GOBLIN", "weight": 22, "hpBonus": 2 },
+        { "type": "GARGOYLE", "weight": 10, "hpBonus": 8 }
+      ]
+    },
+
+    {
+      "id": "MAKESHIFT_GRAVEYARD",
+      "crestAward": 1,
+      "objective": "RECONSECRATE_GRAVES",
+      "objectiveCount": 4,
+      "runeTexture": "images/runes/rune_graveyard.png",
+      "fogTint": { "r": 0.62, "g": 0.66, "b": 0.72 },
+      "fogDistance": 6.0,
+      "stinger": "sounds/amb_void_groan.wav",
+      "propDensity": 0.050,
+      "hazard": { "kind": "BLOCKING_PROPS", "density": 0.20 },
+      "props": [
+        { "propId": "gravestone", "weight": 32 },
+        { "propId": "bone_pile", "weight": 24 },
+        { "propId": "cairn", "weight": 16 },
+        { "propId": "runestone", "weight": 12 },
+        { "propId": "skull_pile", "weight": 16 }
+      ],
+      "monsters": [
+        { "type": "SKELETON", "weight": 28, "hpBonus": 3 },
+        { "type": "CLOAKED_SKELETON", "weight": 18, "hpBonus": 5 },
+        { "type": "ZOMBIE", "weight": 22, "hpBonus": 6 },
+        { "type": "GHOUL", "weight": 18, "hpBonus": 6 },
+        { "type": "GHAST", "weight": 10, "hpBonus": 10 },
+        { "type": "WRAITH", "weight": 8, "hpBonus": 12 },
+        { "type": "MUMMY", "weight": 10, "hpBonus": 10 }
+      ]
+    },
+
+    {
+      "id": "FLOODED_CAVERNS",
+      "crestAward": 1,
+      "objective": "OPEN_DROWNED_CACHE",
+      "objectiveCount": 1,
+      "runeTexture": "images/runes/rune_flooded.png",
+      "fogTint": { "r": 0.12, "g": 0.38, "b": 0.44 },
+      "fogDistance": 8.0,
+      "stinger": "sounds/amb_doom_subbass.wav",
+      "propDensity": 0.045,
+      "hazard": { "kind": "LIQUID_FLOOD", "density": 0.16 },
+      "props": [
+        { "propId": "stalagmite", "weight": 28 },
+        { "propId": "algae_mat", "weight": 26 },
+        { "propId": "swamp_reeds", "weight": 22 },
+        { "propId": "bone_pile", "weight": 12 },
+        { "propId": "twisted_root", "weight": 12 }
+      ],
+      "monsters": [
+        { "type": "ALLIGATOR", "weight": 24, "hpBonus": 8 },
+        { "type": "GIANT_SNAKE", "weight": 24, "hpBonus": 6 },
+        { "type": "RUST_MONSTER", "weight": 18, "hpBonus": 6 },
+        { "type": "GELATINOUS_CUBE", "weight": 14, "hpBonus": 12 },
+        { "type": "PURPLE_WORM", "weight": 10, "hpBonus": 16 },
+        { "type": "TROGLODYTE", "weight": 16, "hpBonus": 4 }
+      ]
+    },
+
+    {
+      "id": "OVERGROWN_THICKET",
+      "crestAward": 1,
+      "objective": "DESTROY_HEART_BLOOM",
+      "objectiveCount": 1,
+      "runeTexture": "images/runes/rune_thicket.png",
+      "fogTint": { "r": 0.14, "g": 0.40, "b": 0.20 },
+      "stinger": "sounds/wind.ogg",
+      "propDensity": 0.055,
+      "hazard": { "kind": "BRAMBLE_REGROWTH", "density": 0.22 },
+      "props": [
+        { "propId": "mushroom_cluster", "weight": 26 },
+        { "propId": "glowing_mushroom", "weight": 22 },
+        { "propId": "bramble", "weight": 20 },
+        { "propId": "hanging_vine", "weight": 18 },
+        { "propId": "twisted_root", "weight": 16 }
+      ],
+      "monsters": [
+        { "type": "SPIDER", "weight": 28, "hpBonus": 5 },
+        { "type": "GIANT_ANT", "weight": 24, "hpBonus": 4 },
+        { "type": "OWLBEAR", "weight": 14, "hpBonus": 12 },
+        { "type": "TROGLODYTE", "weight": 18, "hpBonus": 4 },
+        { "type": "PURPLE_WORM", "weight": 8, "hpBonus": 16 }
+      ]
+    }
+  ]
+}

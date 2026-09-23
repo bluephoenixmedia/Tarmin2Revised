@@ -16,13 +16,28 @@ public class Scenery implements Renderable {
         CACTUS,
         SANDSTONE_ROCK,
         STATUE,
-        DECOMPOSING_CORPSE
+        DECOMPOSING_CORPSE,
+        /**
+         * A data-driven themed prop. Behaviour comes from a {@code propId}
+         * resolved against {@code assets/data/props.json} rather than from a
+         * switch arm here. Adding one enum value keeps every existing save
+         * loading untouched, which replacing the enum would not.
+         */
+        PROP
     }
 
     private final SceneryType type;
     private final Vector2 position;
     private double distanceToPlayer;
-    private final boolean impassable;
+    private boolean impassable;
+
+    /** Non-null only for {@link SceneryType#PROP}. */
+    private String propId;
+    /** Marks this prop as an objective target (a grave, the heart-bloom, a cache). */
+    private boolean objectiveMarker = false;
+    /** True once an objective marker has been used, so it cannot be farmed twice. */
+    private boolean objectiveConsumed = false;
+    private Color emissiveTint;
     public Vector2 scale; // <-- ADDED THIS (like Monster.java)
     private float pixelOffsetY = 0f;
     private Texture texture; // Optional texture for Modern rendering
@@ -78,8 +93,67 @@ public class Scenery implements Renderable {
         }
     }
 
+    /**
+     * Builds a themed prop from its catalogue definition.
+     *
+     * <p>Returns null when the id is unknown, so a bad reference in a theme
+     * table degrades to "no prop placed" rather than crashing chunk generation.
+     * {@code ThemeContractTest} catches bad ids loudly instead.
+     */
+    public static Scenery fromProp(String propId, int x, int y) {
+        com.bpm.minotaur.gamedata.prop.PropDefinition def =
+                com.bpm.minotaur.gamedata.prop.PropCatalog.getInstance().get(propId);
+        if (def == null) return null;
+
+        Scenery s = new Scenery(SceneryType.PROP, x, y, def.getAsset());
+        s.propId = propId;
+        s.impassable = !def.isPassable();
+        s.scale.set(def.getScaleX(), def.getScaleY());
+        s.pixelOffsetY = def.getPixelOffsetY();
+        s.emissiveTint = def.getEmissiveTint();
+        return s;
+    }
+
     public SceneryType getType() {
         return type;
+    }
+
+    /** Null unless this is a {@link SceneryType#PROP}. */
+    public String getPropId() {
+        return propId;
+    }
+
+    public void setPropId(String propId) {
+        this.propId = propId;
+    }
+
+    public boolean isObjectiveMarker() {
+        return objectiveMarker && !objectiveConsumed;
+    }
+
+    public void setObjectiveMarker(boolean objectiveMarker) {
+        this.objectiveMarker = objectiveMarker;
+    }
+
+    public boolean isObjectiveConsumed() {
+        return objectiveConsumed;
+    }
+
+    public void consumeObjective() {
+        this.objectiveConsumed = true;
+    }
+
+    public void setObjectiveConsumed(boolean consumed) {
+        this.objectiveConsumed = consumed;
+    }
+
+    /** Null when the prop does not glow. */
+    public Color getEmissiveTint() {
+        return emissiveTint;
+    }
+
+    public void setImpassable(boolean impassable) {
+        this.impassable = impassable;
     }
 
     public boolean isImpassable() {
@@ -164,6 +238,10 @@ public class Scenery implements Renderable {
                 return statueColor;
             case DECOMPOSING_CORPSE:
                 return corpseColor;
+            case PROP:
+                // Themed props carry their own tint when they glow; otherwise
+                // they fall back to stone so retro mode still draws something.
+                return emissiveTint != null ? emissiveTint : rockColor;
             default:
                 return rockColor;
         }

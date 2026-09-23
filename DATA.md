@@ -325,3 +325,50 @@ one layer file and one calibration instead of byte-identical copies that can dri
 
 Items with no visual layer — ammunition, projectiles — are simply absent, which is a normal
 state. They are listed in `docs/paperdoll_triage.md`.
+
+---
+
+## `props.json` — Themed Prop Catalogue
+
+```json
+{"props": [{"id": "brazier", "asset": "images/props/brazier.png", "renderMode": "SPRITE",
+            "scaleX": 0.8, "scaleY": 1.2, "passable": true, "burnDamage": 4,
+            "emissiveTint": {"r": 1.0, "g": 0.62, "b": 0.22}, "pixelOffsetY": 0}]}
+```
+
+Read by `PropCatalog`. A flat catalogue: props are defined once and referenced by id from
+many themes, so a brazier shared by Wandering Battalion and Ruined Castle has one scale and
+one passability rather than two that can drift apart.
+
+`passable: false` blocks movement for player and monsters alike. `burnDamage` above zero
+makes a prop walkable *and* harmful — braziers are enterable precisely so they can hurt.
+`renderMode` is `SPRITE` (a billboard PNG) or `OBJ`; the art is baked from licensed Synty
+source by `tools/blender/bake_theme_props.py`.
+
+`ThemeContractTest` fails the build if any `asset` path is missing from disk.
+
+---
+
+## `themes.json` — Themed Chunk Definitions
+
+```json
+{"themes": [{"id": "MAKESHIFT_GRAVEYARD", "crestAward": 1,
+             "objective": "RECONSECRATE_GRAVES", "objectiveCount": 4,
+             "runeTexture": "images/runes/rune_graveyard.png",
+             "fogTint": {"r": 0.62, "g": 0.66, "b": 0.72}, "fogDistance": 6.0,
+             "stinger": "sounds/amb_void_groan.wav", "propDensity": 0.05,
+             "hazard": {"kind": "BLOCKING_PROPS", "density": 0.20},
+             "props": [{"propId": "gravestone", "weight": 32}],
+             "monsters": [{"type": "SKELETON", "weight": 28, "hpBonus": 3}]}]}
+```
+
+Read by `ThemeDataManager`. Holds everything about a theme that is tunable without a
+rebuild; layout carving stays in `ChunkThemeDecorator` because carving an arena is an
+algorithm, not data.
+
+Each entry must fill all seven contract slots — see `docs/DEsign/Themed Chunk Contract.md`.
+`ThemeContractTest` fails the build if a theme omits one, references a `propId` that is not
+in `props.json`, or points at a rune or stinger that is not on disk.
+
+`championType` is required only for `SLAY_CHAMPION` objectives. `fogDistance` of 0 keeps
+the biome's sight range.

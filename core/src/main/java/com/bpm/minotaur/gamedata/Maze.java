@@ -78,6 +78,19 @@ public class Maze {
 
     private com.bpm.minotaur.generation.theme.ChunkTheme chunkTheme;
 
+    private com.bpm.minotaur.generation.theme.ThemeObjectiveState themeObjective;
+
+    /**
+     * Progress toward this chunk's themed objective. Null for unthemed chunks.
+     */
+    public com.bpm.minotaur.generation.theme.ThemeObjectiveState getThemeObjective() {
+        return themeObjective;
+    }
+
+    public void setThemeObjective(com.bpm.minotaur.generation.theme.ThemeObjectiveState state) {
+        this.themeObjective = state;
+    }
+
     public com.bpm.minotaur.generation.theme.ChunkTheme getChunkTheme() {
         return chunkTheme;
     }
@@ -424,6 +437,14 @@ public class Maze {
         // Check for impassable items (props)
         Item item = items.get(new GridPoint2(x, y));
         if (item != null && item.isImpassable()) {
+            return false;
+        }
+
+        // Themed scenery props block movement for player and monsters alike.
+        // Without this, props placed by ChunkThemeDecorator would be ghosts the
+        // player walks straight through.
+        Scenery prop = scenery.get(new GridPoint2(x, y));
+        if (prop != null && prop.isImpassable()) {
             return false;
         }
 

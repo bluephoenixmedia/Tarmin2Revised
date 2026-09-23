@@ -255,6 +255,26 @@ is rebuilt against `PaperDoll2DWidget`:
 | `NetHackRNG` | Custom deterministic RNG |
 | `FastNoiseLite` | Noise function for terrain |
 
+### Themed Chunks (`generation.theme`)
+| Class | Purpose |
+|---|---|
+| `ChunkTheme` | Enum: the six themes, with rune glyph, colour and minLevel |
+| `ThemeDefinition` | Parsed per-theme data from `themes.json` (prop/spawn tables, hazard, signature) |
+| `ThemeDataManager` | Loads and serves `ThemeDefinition`s |
+| `ThemeObjectiveKind` | Enum: the completion predicate a theme uses |
+| `ThemeHazardKind` | Enum: the environmental mechanic a theme uses |
+| `ThemeObjectiveState` | Per-chunk objective progress, viability and surrender channel |
+| `ThemeObjectiveManager` | Runtime driver: kills, interactions, turn ticks, resolution |
+| `ChunkThemeDecorator` | Applies a theme to a generated chunk (carve, props, spawns, objective) |
+
+See `docs/DEsign/Themed Chunk Contract.md` for the seven-slot contract.
+
+### Props (`gamedata.prop`)
+| Class | Purpose |
+|---|---|
+| `PropDefinition` | One catalogue entry: asset, scale, passability, burn damage, emissive tint |
+| `PropCatalog` | Loads and serves the flat prop catalogue from `props.json` |
+
 ### Spells
 | Class | Purpose |
 |---|---|

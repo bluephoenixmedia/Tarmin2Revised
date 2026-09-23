@@ -2938,6 +2938,11 @@ public class CombatManager {
 
         UnlockManager.getInstance().recordKill(monster.getMonsterType());
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordKill(monster.getMonsterType());
+
+        // A themed chunk's objective may hang on this kill (the champion, or the
+        // last combatant in the arena).
+        com.bpm.minotaur.generation.theme.ThemeObjectiveManager
+                .onMonsterKilled(maze, monster, eventManager);
         int baseExp = monster.getBaseExperience();
         float colorMultiplier = monster.getMonsterColor().getXpMultiplier();
         float levelMultiplier = 1.0f + (maze.getLevel() * 0.1f);

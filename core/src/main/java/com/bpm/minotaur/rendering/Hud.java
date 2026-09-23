@@ -1000,6 +1000,26 @@ public class Hud implements Disposable {
         return wrapMessageText(message, logFont, chronicleGlyphLayout, maxWidth);
     }
 
+    /**
+     * What the player must do to unseal this themed chunk.
+     *
+     * <p>Every theme seals its gates, so the hint has to come from the chunk's
+     * own objective rather than naming the Colosseum for all six.
+     */
+    private String sealedGateHint(Maze maze) {
+        com.bpm.minotaur.generation.theme.ThemeObjectiveState state =
+                (maze != null) ? maze.getThemeObjective() : null;
+        if (state == null || state.getKind() == null) {
+            return "Channel the Rune of Surrender to forfeit and escape";
+        }
+
+        String goal = state.getKind().getDescription();
+        if (state.getRequired() > 1) {
+            goal += " (" + state.getProgress() + "/" + state.getRequired() + ")";
+        }
+        return goal + ", or channel the Rune of Surrender to forfeit";
+    }
+
     public static List<String> wrapMessageText(String message, BitmapFont font, GlyphLayout layout, float maxWidth) {
         if (message == null || message.isEmpty()) {
             return Collections.emptyList();
@@ -1943,7 +1963,7 @@ public class Hud implements Disposable {
                 desc = gate.getTheme().getDescription();
             }
             if (gate.isLocked()) {
-                desc += " [SEALED: Slay all colosseum combatants to unseal]";
+                desc += " [SEALED: " + sealedGateHint(maze) + "]";
             }
             worldInteractionCard.show(
                     gate.getTheme() != null ? "[RUNIC PORTAL]" : (isChunk ? "[EXPEDITION GATEWAY]" : "[DUNGEON PORTCULLIS]"),
@@ -1951,7 +1971,7 @@ public class Hud implements Disposable {
                     title,
                     desc,
                     "[ O ]",
-                    gate.isLocked() ? "Sealed Shut" : "Pass Through Gate",
+                    gate.isLocked() ? "Channel Rune of Surrender" : "Pass Through Gate",
                     () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
             );
             return;

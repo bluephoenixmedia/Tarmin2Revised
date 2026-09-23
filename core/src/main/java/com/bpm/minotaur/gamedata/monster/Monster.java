@@ -184,6 +184,8 @@ public class Monster implements Renderable {
     private com.badlogic.gdx.math.GridPoint2 lastKnownTargetPos = null;
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
+    private boolean themeChampion = false; // Designated champion of a themed chunk
+    private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
 
     // Public constructor for unit testing combat mechanics without LibGDX asset loaders
     public Monster(MonsterType type, int hp, int ac) {
@@ -479,6 +481,13 @@ public class Monster implements Renderable {
     }
 
     public int takeDamage(int amount, boolean isCrit) {
+        // Objective-critical NPCs shrug off everything. A themed chunk seals its
+        // gates, so letting a stray arrow kill the Gravedigger would strand the
+        // player behind an objective that can no longer be completed.
+        if (invulnerable) {
+            lastHitTimeMillis = System.currentTimeMillis();
+            return 0;
+        }
         // AC >= 14 provides partial damage soak (every 2 AC above 14 = -1 damage).
         // Creatures with AC 10-13 rely on evasion (to-hit d20 gate) with 0 flat soak.
         // Critical strikes bypass armor soak completely.
@@ -913,6 +922,34 @@ public class Monster implements Renderable {
 
     public void setTagged(boolean tagged) {
         this.isTagged = tagged;
+    }
+
+    /**
+     * True for the designated champion of a themed chunk (the Castle Warden, the
+     * Legion Commander). Killing it resolves a SLAY_CHAMPION objective.
+     */
+    public boolean isThemeChampion() {
+        return themeChampion;
+    }
+
+    public void setThemeChampion(boolean themeChampion) {
+        this.themeChampion = themeChampion;
+    }
+
+    /**
+     * True for objective-critical NPCs such as the Graveyard's Gravedigger.
+     *
+     * <p>Themed chunks seal their gates, so an objective anchored on an NPC that
+     * a stray arrow or a faction brawl can kill would strand the player. Damage
+     * to an invulnerable monster is discarded. See
+     * {@code docs/DEsign/Themed Chunk Contract.md} section 3.
+     */
+    public boolean isInvulnerable() {
+        return invulnerable;
+    }
+
+    public void setInvulnerable(boolean invulnerable) {
+        this.invulnerable = invulnerable;
     }
 
     public Faction getFaction() {

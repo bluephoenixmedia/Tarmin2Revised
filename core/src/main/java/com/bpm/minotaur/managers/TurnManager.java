@@ -103,6 +103,10 @@ public class TurnManager {
         }
         // -----------------------------------
 
+        // 1b. Blood frenzy: a gore-soaked player is scented by beasts across the
+        // chunk, which is the mechanic LiquidType.BLOOD advertises.
+        applyBloodFrenzy(maze, player);
+
         // 2. Distribute Energy to Monsters
         List<Monster> monsters = new ArrayList<>(maze.getMonsters().values());
         for (Monster monster : monsters) {
@@ -151,9 +155,38 @@ public class TurnManager {
             shopkeeperAiManager.update(maze.getShopkeeper(), maze, player, eventManager, itemDataManager, assetManager);
         }
 
-        // 5. Arena / Colosseum Clear Check
+        // 5. Themed chunk objective tick: bramble regrowth and the Rune of
+        // Surrender channel, then the completion check for every theme.
+        com.bpm.minotaur.generation.theme.ThemeObjectiveManager.onTurn(maze, eventManager);
         if (worldManager != null) {
-            worldManager.checkColosseumClear(maze, eventManager);
+            worldManager.checkThemeObjective(maze, eventManager);
+        }
+    }
+
+    /**
+     * Wakes nearby beasts while the player is gore-soaked.
+     *
+     * <p>Standing in a blood pool long enough leaves a scent trail. Beasts and
+     * vermin within 10 tiles drop what they are doing and hunt, which is the
+     * cost of fighting in the Colosseum's pools rather than backing onto dry
+     * stone.
+     */
+    private void applyBloodFrenzy(Maze maze, Player player) {
+        if (maze == null || player == null) return;
+        if (maze.getLiquidManager() == null || !maze.getLiquidManager().isBloodFrenzyActive()) return;
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+
+        for (Monster m : maze.getMonsters().values()) {
+            if (m == null || !m.isAlive()) continue;
+            if (m.getFaction() != com.bpm.minotaur.gamedata.monster.Faction.BEASTS_AND_VERMIN) continue;
+
+            int dx = Math.abs((int) m.getPosition().x - px);
+            int dy = Math.abs((int) m.getPosition().y - py);
+            if (dx + dy > 10) continue;
+
+            m.setState(Monster.MonsterState.HUNTING);
         }
     }
 

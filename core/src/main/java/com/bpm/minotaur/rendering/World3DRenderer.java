@@ -82,6 +82,16 @@ public class World3DRenderer implements Disposable {
     private final Texture floorTexture;
     private final Texture ceilingTexture;
     private final Texture blankTexture;
+
+    /**
+     * Authored sigils for the rune above a themed gate, keyed by theme.
+     *
+     * <p>Before this the rune billboard drew {@code blankTexture} tinted by the
+     * theme colour: a glowing square, never the glyph. The sigils are authored
+     * white-on-transparent so the existing colour pulse still tints them.
+     */
+    private final java.util.EnumMap<com.bpm.minotaur.generation.theme.ChunkTheme, Texture> runeTextures =
+            new java.util.EnumMap<>(com.bpm.minotaur.generation.theme.ChunkTheme.class);
     private final Texture ladderDownTexture;
     private final Texture ladderUpTexture;
 
@@ -171,6 +181,8 @@ public class World3DRenderer implements Disposable {
 
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
+
+        loadRuneTextures();
 
         this.meshCache = new WorldMeshCache();
         this.dynamicBatcher = new DynamicQuadBatcher();
@@ -587,6 +599,7 @@ public class World3DRenderer implements Disposable {
         }
 
         // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
+        renderLiquids(maze, player, isRetro);
         renderGore(maze, worldManager, isRetro, theme);
 
         // B. Entities: Monsters, Items, Ladders, Scenery
@@ -779,6 +792,30 @@ public class World3DRenderer implements Disposable {
         shader.setUniformi("u_numLights", count);
     }
 
+    private void loadRuneTextures() {
+        for (com.bpm.minotaur.generation.theme.ChunkTheme t
+                : com.bpm.minotaur.generation.theme.ChunkTheme.values()) {
+            com.bpm.minotaur.generation.theme.ThemeDefinition def =
+                    com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(t);
+            String path = def != null ? def.getRuneTexture() : null;
+            if (path == null) continue;
+            try {
+                if (Gdx.files.internal(path).exists()) {
+                    runeTextures.put(t, new Texture(Gdx.files.internal(path)));
+                }
+            } catch (Exception e) {
+                Gdx.app.log("World3DRenderer", "Failed to load rune texture " + path + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /** The authored sigil for a theme, or the blank quad when art is missing. */
+    private Texture runeTextureFor(com.bpm.minotaur.generation.theme.ChunkTheme theme) {
+        Texture tex = theme != null ? runeTextures.get(theme) : null;
+        if (tex != null) return tex;
+        return (blankTexture != null) ? blankTexture : gateTexture;
+    }
+
     private void renderDynamicDoors(Maze maze, Player player, boolean isRetro, RetroTheme.Theme theme) {
         int px = (int) player.getPosition().x;
         int py = (int) player.getPosition().y;
@@ -840,11 +877,11 @@ public class World3DRenderer implements Disposable {
                     if (gate.getTheme() != null) {
                         float runeBob = (float) Math.sin(totalTime * 3.0f + gx * 1.5f) * 0.04f;
                         float runeY = 1.05f + runeBob;
-                        float runeSize = 0.40f;
+                        float runeSize = 0.55f; // An authored sigil needs more room than a glowing dot
                         Color runeCol = gate.getTheme().getRuneColor();
                         float pulse = (float) Math.sin(totalTime * 4.0f + gx) * 0.15f + 0.85f;
                         Color emissiveColor = new Color(runeCol.r * pulse, runeCol.g * pulse, runeCol.b * pulse, 0.95f);
-                        Texture runeTex = (blankTexture != null) ? blankTexture : gateTexture;
+                        Texture runeTex = runeTextureFor(gate.getTheme());
                         dynamicBatcher.addBillboard(
                                 tileX + 0.5f, runeY, -(tileY + 0.5f),
                                 runeSize, runeSize,
@@ -944,12 +981,12 @@ public class World3DRenderer implements Disposable {
 
                     float runeBob = (float) Math.sin(totalTime * 3.0f + gateX * 1.5f) * 0.04f;
                     float runeY = 1.05f + runeBob;
-                    float runeSize = 0.40f;
+                    float runeSize = 0.55f; // An authored sigil needs more room than a glowing dot
                     Color runeCol = gate.getTheme().getRuneColor();
                     float pulse = (float) Math.sin(totalTime * 4.0f + gateX) * 0.15f + 0.85f;
                     Color emissiveColor = new Color(runeCol.r * pulse, runeCol.g * pulse, runeCol.b * pulse, 0.95f);
 
-                    Texture runeTex = (blankTexture != null) ? blankTexture : gateTexture;
+                    Texture runeTex = runeTextureFor(gate.getTheme());
                     dynamicBatcher.addBillboard(
                             gateX, runeY, gateZ,
                             runeSize, runeSize,
@@ -964,6 +1001,54 @@ public class World3DRenderer implements Disposable {
             // Restore identity world transform for subsequent render passes
             shader.setUniformMatrix("u_worldTrans", identityMatrix);
             shader.setUniformf("u_retroBorder", 0.0f);
+        }
+    }
+
+    /**
+     * Draws the liquid surface as translucent quads just above the floor.
+     *
+     * <p>Flooded Caverns set liquid data that nothing ever drew, so the theme
+     * was invisible at runtime. Wading costs the player a turn, so the water
+     * has to be visible before they step in: an unseen hazard is a trap, not a
+     * decision.
+     */
+    private void renderLiquids(Maze maze, Player player, boolean isRetro) {
+        if (maze == null || maze.getLiquidManager() == null || blankTexture == null) return;
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        int radius = 14;
+
+        int minX = Math.max(0, px - radius);
+        int maxX = Math.min(maze.getWidth() - 1, px + radius);
+        int minY = Math.max(0, py - radius);
+        int maxY = Math.min(maze.getHeight() - 1, py + radius);
+
+        // A gentle swell so the surface reads as liquid rather than a stain.
+        float swell = (float) Math.sin(totalTime * 1.6f) * 0.004f;
+        TextureRegion region = new TextureRegion(blankTexture);
+        boolean any = false;
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                com.bpm.minotaur.gamedata.liquid.LiquidType liquid = maze.getLiquidAt(x, y);
+                if (liquid == com.bpm.minotaur.gamedata.liquid.LiquidType.NONE) continue;
+                if (maze.isWall(x, y)) continue;
+
+                Color base = liquid.getColor();
+                float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.06f + 0.94f;
+                Color tint = new Color(base.r * ripple, base.g * ripple, base.b * ripple, base.a);
+
+                dynamicBatcher.addFloorQuad(
+                        x + 0.5f, 0.021f + swell, -(y + 0.5f),
+                        0.5f, 0.5f,
+                        region, tint);
+                any = true;
+            }
+        }
+
+        if (any) {
+            dynamicBatcher.flush(shader, blankTexture);
         }
     }
 

@@ -55,6 +55,28 @@ public class LiquidManager {
     }
 
     /**
+     * True once the player is gore-soaked enough for beasts to scent them.
+     * Drives the frenzy LiquidType.BLOOD advertises.
+     */
+    public boolean isBloodFrenzyActive() {
+        return currentExposureType == LiquidType.BLOOD && exposureSteps >= 10;
+    }
+
+    /**
+     * True when stepping onto this tile should cost an extra turn tick.
+     *
+     * <p>All three liquids slow a wader; anything that makes the player immune
+     * to the liquid's effects (levitation, wading boots) also lets them cross
+     * at normal speed.
+     */
+    public boolean slowsMovement(int x, int y, Player player) {
+        LiquidType type = getLiquidAt(x, y);
+        if (type == LiquidType.NONE) return false;
+        if (player != null && isImmuneToLiquid(player, type)) return false;
+        return true;
+    }
+
+    /**
      * Called whenever player steps onto a tile in the chunk.
      */
     public void onPlayerStep(int x, int y, Player player, GameEventManager eventManager) {
@@ -86,6 +108,11 @@ public class LiquidManager {
                     if (exposureSteps == 10 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Waterlogged! Your boots squelch and cold seeps into your bones.", 2f));
                     }
+                    // LiquidType promises stagnant water "corrodes unprotected
+                    // metal"; make that real rather than flavour text.
+                    if (exposureSteps >= 12 && exposureSteps % 6 == 0) {
+                        rustEquippedMetal(player, eventManager);
+                    }
                 } else if (type == LiquidType.BLOOD) {
                     if (exposureSteps == 10 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Gore-soaked! Beasts can scent your blood trail across corridors.", 2.5f));
@@ -104,6 +131,46 @@ public class LiquidManager {
                 }
             }
         }
+    }
+
+    /** Metal armour corrodes a level in standing water, costing AC. */
+    private void rustEquippedMetal(Player player, GameEventManager eventManager) {
+        if (player == null || player.getEquipment() == null) return;
+
+        Item[] candidates = {
+                player.getEquipment().getWornChest(),
+                player.getEquipment().getWornHauberk(),
+                player.getEquipment().getWornBreastplate(),
+                player.getEquipment().getWornHelmet(),
+                player.getEquipment().getWornBoots(),
+                player.getEquipment().getWornGauntlets()
+        };
+
+        for (Item piece : candidates) {
+            if (piece == null) continue;
+            if (!isMetal(piece)) continue;
+            if (piece.getErosion() >= 3) continue; // Already corroded through.
+
+            piece.incrementErosion();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "Rust blooms across your " + piece.getDisplayName() + ". (-1 AC)", 2f));
+            }
+            return; // One piece per corrosion tick.
+        }
+    }
+
+    private boolean isMetal(Item item) {
+        String name = item.getFriendlyName() != null
+                ? item.getFriendlyName().toLowerCase()
+                : (item.getType() != null ? item.getType().name().toLowerCase() : "");
+        if (name.contains("leather") || name.contains("cloth") || name.contains("padded")
+                || name.contains("robe") || name.contains("hide") || name.contains("fur")) {
+            return false;
+        }
+        return name.contains("mail") || name.contains("plate") || name.contains("iron")
+                || name.contains("steel") || name.contains("helm") || name.contains("gauntlet")
+                || name.contains("breastplate") || name.contains("hauberk");
     }
 
     private boolean isImmuneToLiquid(Player player, LiquidType type) {

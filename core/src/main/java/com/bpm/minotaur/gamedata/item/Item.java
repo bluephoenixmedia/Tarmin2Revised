@@ -933,6 +933,12 @@ public class Item implements Renderable {
             if (mod.type == ModifierType.BONUS_AC)
                 totalBonus += mod.value;
         }
+        // Corrosion eats protection: each erosion level costs 1 AC. Without
+        // this, rusting gear from stagnant water would set a field nothing
+        // reads, which is a hazard that does not actually hazard anything.
+        if (erosion > 0 && totalBonus > 0) {
+            totalBonus = Math.max(0, totalBonus - erosion);
+        }
         return totalBonus;
     }
 

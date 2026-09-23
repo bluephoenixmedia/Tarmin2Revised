@@ -2271,6 +2271,18 @@ public class Player {
         return equipment.getEquippedModifierSum(modTypeToFind);
     }
 
+    /**
+     * Extra turn ticks owed because the player waded into a liquid tile.
+     * Consumed by the screen's turn advance, which runs one more monster turn.
+     */
+    private int pendingWadeTurns = 0;
+
+    public int consumePendingWadeTurns() {
+        int owed = pendingWadeTurns;
+        pendingWadeTurns = 0;
+        return owed;
+    }
+
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
         moveForward(maze, eventManager, gameMode, null);
     }
@@ -2373,8 +2385,38 @@ public class Player {
         position.set(nextX + 0.5f, nextY + 0.5f);
         UnlockManager.getInstance().incrementStat("steps", 1);
 
+        // Moving breaks a Rune of Surrender channel.
+        com.bpm.minotaur.generation.theme.ThemeObjectiveManager.interruptSurrender(maze, eventManager);
+
+        // Braziers and campfires are walkable so they can hurt: stepping into
+        // one is a shortcut you pay for. An impassable fire would just be a wall
+        // wearing a flame, and the Battalion's BURNING_TILES hazard would burn
+        // nothing at all.
+        Scenery stepped = maze.getScenery().get(nextTile);
+        if (stepped != null && stepped.getPropId() != null) {
+            com.bpm.minotaur.gamedata.prop.PropDefinition propDef =
+                    com.bpm.minotaur.gamedata.prop.PropCatalog.getInstance().get(stepped.getPropId());
+            if (propDef != null && propDef.burns()) {
+                takeDamage(propDef.getBurnDamage(), DamageType.FIRE);
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(
+                            "You step into the fire! (" + propDef.getBurnDamage() + " burn damage)", 2f));
+                }
+            }
+        }
+
         if (maze.getLiquidManager() != null) {
             maze.getLiquidManager().onPlayerStep(nextX, nextY, this, eventManager);
+
+            // Wading costs a second turn tick, so monsters get a free action
+            // while the player is in the water. Deterministic and visible: you
+            // can see the liquid, so you can choose to fight on dry stone.
+            if (maze.getLiquidManager().slowsMovement(nextX, nextY, this)) {
+                pendingWadeTurns = 1;
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("You wade forward, slowed by the water.", 1.2f));
+                }
+            }
         }
 
         // --- Auto-pickup Ammunition (Quiver / Arrows / Bolts / Shot) on step ---
@@ -2414,9 +2456,24 @@ public class Player {
         int targetY = (int) (position.y + facing.getVector().y);
         GridPoint2 targetTile = new GridPoint2(targetX, targetY);
 
+        // 0. Themed objective markers take priority: a grave, the drowned
+        // cache or the heart-bloom in front of the player is what they meant.
+        if (com.bpm.minotaur.generation.theme.ThemeObjectiveManager
+                .tryInteract(maze, this, targetX, targetY, eventManager)) {
+            return;
+        }
+
         // 1. Handle Gates (Keep existing logic)
         Gate gateObj = maze.getGates().get(targetTile);
         if (gateObj != null) {
+            // A sealed themed gate carries a Rune of Surrender: channel it to
+            // forfeit the Crest and escape a chunk you cannot finish.
+            if (gateObj.isLocked()) {
+                if (com.bpm.minotaur.generation.theme.ThemeObjectiveManager
+                        .tryBeginSurrender(maze, eventManager)) {
+                    return;
+                }
+            }
             if (gameMode == GameMode.ADVANCED && gateObj.isChunkTransitionGate()) {
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
                     gateObj.startOpening(worldManager);

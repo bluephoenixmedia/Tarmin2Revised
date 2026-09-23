@@ -47,6 +47,13 @@ public class ChunkData {
     public String chunkTheme;
     public String liquidData;
 
+    /**
+     * Progress toward the themed objective. Null on saves written before themed
+     * objectives existed; {@link #buildMaze} rebuilds a fresh state in that case
+     * so a reloaded themed chunk is never left sealed with no way to resolve it.
+     */
+    public ThemeObjectiveData themeObjective;
+
     public ChunkData() {
     }
 
@@ -120,6 +127,9 @@ public class ChunkData {
         if (maze.getLiquidManager() != null) {
             this.liquidData = maze.getLiquidManager().serialize();
         }
+        if (maze.getThemeObjective() != null) {
+            this.themeObjective = new ThemeObjectiveData(maze.getThemeObjective());
+        }
     }
 
     public Maze buildMaze(MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager) {
@@ -144,6 +154,8 @@ public class ChunkData {
         if (this.liquidData != null && !this.liquidData.trim().isEmpty()) {
             maze.setLiquidManager(com.bpm.minotaur.gamedata.liquid.LiquidManager.deserialize(this.liquidData));
         }
+
+        restoreThemeObjective(maze);
 
         for (ItemData data : items) {
             Item item = new Item(data.type, data.x, data.y, data.color,
@@ -243,7 +255,19 @@ public class ChunkData {
         }
 
         for (SceneryData data : scenery) {
-            Scenery s = new Scenery(data.type, data.x, data.y, data.texturePath);
+            // Themed props rebuild from the catalogue so a retuned scale or
+            // passability in props.json applies to already-saved chunks.
+            Scenery s = null;
+            if (data.propId != null) {
+                s = Scenery.fromProp(data.propId, data.x, data.y);
+                if (s != null) {
+                    s.setObjectiveMarker(data.objectiveMarker);
+                    s.setObjectiveConsumed(data.objectiveConsumed);
+                }
+            }
+            if (s == null) {
+                s = new Scenery(data.type, data.x, data.y, data.texturePath);
+            }
             if (data.texturePath != null && assetManager != null) {
                 if (Gdx.files != null && Gdx.files.internal(data.texturePath).exists()) {
                     if (!assetManager.isLoaded(data.texturePath)) {
@@ -281,11 +305,84 @@ public class ChunkData {
         }
     }
 
+    /**
+     * Rebuilds the themed objective on load.
+     *
+     * <p>Themed chunks seal their gates and the lock state persists, so a chunk
+     * that reloads without an objective is sealed with nothing able to open it:
+     * the completion check bails on a null state, and so does the Rune of
+     * Surrender. That is an unrecoverable save. A themed chunk therefore always
+     * ends up with a state, freshly seeded from its theme definition when the
+     * save predates objectives.
+     */
+    private void restoreThemeObjective(Maze maze) {
+        if (maze.getChunkTheme() == null) return;
+
+        com.bpm.minotaur.generation.theme.ThemeObjectiveState state =
+                new com.bpm.minotaur.generation.theme.ThemeObjectiveState();
+
+        if (this.themeObjective != null) {
+            com.bpm.minotaur.generation.theme.ThemeObjectiveKind kind = null;
+            if (this.themeObjective.kind != null) {
+                try {
+                    kind = com.bpm.minotaur.generation.theme.ThemeObjectiveKind
+                            .valueOf(this.themeObjective.kind);
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            state.restore(kind,
+                    this.themeObjective.progress,
+                    this.themeObjective.required,
+                    this.themeObjective.completed,
+                    this.themeObjective.surrendered,
+                    this.themeObjective.rewardGranted);
+        } else {
+            // Pre-objective save: seed from the theme so the chunk is clearable.
+            com.bpm.minotaur.generation.theme.ThemeDefinition def =
+                    com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance()
+                            .get(maze.getChunkTheme());
+            if (def != null) {
+                state.setKind(def.getObjective());
+                state.setRequired(def.getObjectiveCount());
+            }
+        }
+
+        maze.setThemeObjective(state);
+    }
+
+    /** Serialised form of {@code ThemeObjectiveState}. */
+    public static class ThemeObjectiveData {
+        public String kind;
+        public int progress;
+        public int required = 1;
+        public boolean completed;
+        public boolean surrendered;
+        public boolean rewardGranted;
+
+        public ThemeObjectiveData() {
+        }
+
+        public ThemeObjectiveData(com.bpm.minotaur.generation.theme.ThemeObjectiveState state) {
+            this.kind = state.getKind() != null ? state.getKind().name() : null;
+            this.progress = state.getProgress();
+            this.required = state.getRequired();
+            this.completed = state.isCompleted();
+            this.surrendered = state.isSurrendered();
+            this.rewardGranted = state.isRewardGranted();
+        }
+    }
+
     public static class SceneryData {
         public Scenery.SceneryType type;
         public int x;
         public int y;
         public String texturePath;
+
+        // Additive fields: saves written before themed props deserialise with
+        // propId null and the flags false, which is exactly the old behaviour.
+        public String propId;
+        public boolean objectiveMarker;
+        public boolean objectiveConsumed;
 
         public SceneryData() {
         }
@@ -295,6 +392,9 @@ public class ChunkData {
             this.x = (int) s.getPosition().x;
             this.y = (int) s.getPosition().y;
             this.texturePath = s.getTexturePath();
+            this.propId = s.getPropId();
+            this.objectiveMarker = s.isObjectiveMarker() || s.isObjectiveConsumed();
+            this.objectiveConsumed = s.isObjectiveConsumed();
         }
     }
 

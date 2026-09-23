@@ -831,6 +831,29 @@ public class WorldManager {
         player.setPosition(newPlayerPos);
         setPlayerReference(player);
         syncLightsForChunk(newMaze);
+        playThemeStinger(newMaze);
+    }
+
+    /**
+     * Sounds the theme's entry stinger as the player crosses the threshold.
+     *
+     * <p>Contract slot (g): a themed chunk should announce itself at the moment
+     * of maximum impact, so the player knows where they are without reading a
+     * word.
+     */
+    private void playThemeStinger(Maze maze) {
+        if (maze == null || maze.getChunkTheme() == null || soundManager == null) return;
+
+        com.bpm.minotaur.generation.theme.ThemeDefinition def =
+                com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(maze.getChunkTheme());
+        if (def == null || def.getStinger() == null) return;
+
+        // SoundManager keys registered sounds by bare filename.
+        String path = def.getStinger();
+        int slash = path.lastIndexOf('/');
+        int dot = path.lastIndexOf('.');
+        String key = path.substring(slash + 1, dot > slash ? dot : path.length());
+        soundManager.playSound(key);
     }
 
     public GridPoint2 getAdjacentChunkId(Direction direction) {
@@ -931,8 +954,61 @@ public class WorldManager {
         }
     }
 
+    /**
+     * Debug-only forced themes, keyed by chunk. Consulted before the normal
+     * cluster roll so {@link #debugWarpToTheme} can drop the player into a
+     * chosen theme without hunting the world for one.
+     */
+    private final java.util.Map<GridPoint2, com.bpm.minotaur.generation.theme.ChunkTheme> themeOverrides =
+            new java.util.HashMap<>();
+
+    private int debugThemeCursor = 0;
+
+    /**
+     * Warps the player into a freshly generated chunk of the next theme.
+     *
+     * <p>Six themes are too many to verify by reading a diff, and the wade cost
+     * and the seal are judgement calls no test settles. Cycles on each call.
+     */
+    public com.bpm.minotaur.generation.theme.ChunkTheme debugWarpToTheme(Player player) {
+        com.bpm.minotaur.generation.theme.ChunkTheme[] themes =
+                com.bpm.minotaur.generation.theme.ChunkTheme.values();
+        com.bpm.minotaur.generation.theme.ChunkTheme theme = themes[debugThemeCursor % themes.length];
+        debugThemeCursor++;
+
+        // Park debug chunks far from anywhere the player would organically walk.
+        GridPoint2 target = new GridPoint2(500 + debugThemeCursor, 500);
+        themeOverrides.put(new GridPoint2(target), theme);
+
+        // Drop any cached copy so the chunk regenerates under the override.
+        loadedChunks.remove(target);
+
+        Maze warped = loadChunk(target);
+        if (warped == null) return null;
+
+        GridPoint2 spawn = new GridPoint2(warped.getWidth() / 2, warped.getHeight() / 2);
+        if (warped.isWall(spawn.x, spawn.y)) {
+            outer:
+            for (int y = 1; y < warped.getHeight() - 1; y++) {
+                for (int x = 1; x < warped.getWidth() - 1; x++) {
+                    if (!warped.isWall(x, y)) {
+                        spawn.set(x, y);
+                        break outer;
+                    }
+                }
+            }
+        }
+
+        transitionPlayerToChunk(player, target, spawn);
+        return theme;
+    }
+
     public com.bpm.minotaur.generation.theme.ChunkTheme getChunkTheme(GridPoint2 chunkId, int level) {
         if (chunkId == null) return null;
+
+        com.bpm.minotaur.generation.theme.ChunkTheme forced = themeOverrides.get(chunkId);
+        if (forced != null) return forced;
+
         if (chunkId.x == 0 && chunkId.y == 0 && level == 1) {
             return null; // Shelter chunk is never themed
         }
@@ -975,39 +1051,39 @@ public class WorldManager {
         return available.get(clusterRng.nextInt(available.size()));
     }
 
-    public void checkColosseumClear(Maze maze, GameEventManager eventManager) {
-        if (maze == null || maze.getChunkTheme() != com.bpm.minotaur.generation.theme.ChunkTheme.BLOOD_COLOSSEUM) return;
+    /**
+     * Drives the themed chunk objective to completion each turn.
+     *
+     * <p>Replaces the old colosseum-only clear check: every theme now has an
+     * objective and a Crest reward, so the completion predicate lives with the
+     * objective rather than being hardcoded here.
+     */
+    public void checkThemeObjective(Maze maze, GameEventManager eventManager) {
+        if (maze == null || maze.getChunkTheme() == null) return;
 
-        boolean hasLockedGate = false;
-        for (Gate gate : maze.getGates().values()) {
-            if (gate.isLocked()) {
-                hasLockedGate = true;
-                break;
-            }
-        }
-        if (!hasLockedGate) {
-            return; // Already unlocked / cleared
-        }
+        com.bpm.minotaur.generation.theme.ThemeObjectiveState state = maze.getThemeObjective();
+        if (state == null || state.isResolved() || !state.isViable()) return;
 
-        boolean anyAlive = false;
-        for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
-            if (m != null && m.isAlive()) {
-                anyAlive = true;
-                break;
-            }
+        // Kill-everything objectives can only be evaluated by sweeping the chunk.
+        if (state.getKind() == com.bpm.minotaur.generation.theme.ThemeObjectiveKind.LAST_COMBATANT_STANDING) {
+            com.bpm.minotaur.generation.theme.ThemeObjectiveManager.onMonsterKilled(maze, null, eventManager);
+            return;
         }
 
-        if (!anyAlive) {
-            for (Gate gate : maze.getGates().values()) {
-                gate.setLocked(false);
+        // Champion objectives resolve when the champion is gone. Checking here as
+        // well as on the kill hook covers deaths the hook never sees, such as a
+        // champion killed by faction infighting or an environmental hazard.
+        if (state.getKind() == com.bpm.minotaur.generation.theme.ThemeObjectiveKind.SLAY_CHAMPION) {
+            boolean championAlive = false;
+            for (com.bpm.minotaur.gamedata.monster.Monster m : maze.getMonsters().values()) {
+                if (m != null && m.isAlive() && m.isThemeChampion()) {
+                    championAlive = true;
+                    break;
+                }
             }
-            com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().addCrestsOfValor(1);
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("VICTORY! The Colosseum gates unlock! You claim a Crest of Valor! (+1 Crest)", 4.0f));
-            }
-            if (Gdx.app != null) {
-                Gdx.app.log("WorldManager", "Colosseum cleared! Awarded 1 Crest of Valor. Total: "
-                        + com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getCrestsOfValor());
+            if (!championAlive) {
+                state.complete();
+                com.bpm.minotaur.generation.theme.ThemeObjectiveManager.resolveIfComplete(maze, eventManager);
             }
         }
     }

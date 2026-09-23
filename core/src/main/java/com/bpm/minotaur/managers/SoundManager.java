@@ -151,6 +151,10 @@ public class SoundManager {
         loadSound("void_laser_alt", "sounds/void_laser_alt.wav");
         loadSound("amb_void_groan", "sounds/amb_void_groan.wav");
         loadSound("amb_doom_subbass", "sounds/amb_doom_subbass.wav");
+
+        // --- Themed chunk entry stingers (contract slot g) ---
+        loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
+        loadSound("wind", "sounds/wind.ogg");
     }
 
     private void loadSound(String key, String path) {

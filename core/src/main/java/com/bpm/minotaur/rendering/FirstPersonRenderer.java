@@ -297,6 +297,28 @@ public class FirstPersonRenderer {
             fogColor.set(biome.getFogColor());
         }
 
+        // --- Themed chunk signature (contract slot g) ---
+        // A theme should be identifiable before you read a word of text, so the
+        // fog takes its colour: bone-grey in the graveyard, green under the
+        // thicket, drowned blue-green in the caverns.
+        if (maze != null && maze.getChunkTheme() != null) {
+            com.bpm.minotaur.generation.theme.ThemeDefinition themeDef =
+                    com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(maze.getChunkTheme());
+            if (themeDef != null && themeDef.getFogTint() != null) {
+                fogEnabled = true;
+                if (fogDistance <= 0f) {
+                    fogDistance = biome.getFogDistance();
+                }
+                // A theme may also close the world in around the player. The
+                // Graveyard's fog is supposed to shorten sight, not just
+                // recolour it.
+                if (themeDef.getFogDistance() > 0f) {
+                    fogDistance = Math.min(fogDistance, themeDef.getFogDistance());
+                }
+                fogColor.lerp(themeDef.getFogTint(), 0.65f);
+            }
+        }
+
         // --- NEW: Tarmin's Hunger Atmosphere ---
         // As the bridge forms (deaths increase), the world darkens.
         float bridgeIntegrity = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity(); // 0 to 100

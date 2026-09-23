@@ -1650,6 +1650,15 @@ public class GameScreen extends BaseScreen {
         }
         if (monsterAiManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
             turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager, game.getItemDataManager(), game.getAssetManager());
+
+            // Wading costs a second tick: the monsters act again while the
+            // player is still hauling themselves through the water.
+            int wadeTurns = player.consumePendingWadeTurns();
+            for (int i = 0; i < wadeTurns
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE; i++) {
+                turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager, eventManager,
+                        game.getItemDataManager(), game.getAssetManager());
+            }
         }
         combatManager.checkForAdjacentMonsters();
 
@@ -2762,6 +2771,20 @@ public class GameScreen extends BaseScreen {
                     game.setScreen(new InventoryScreen(game, this, player, maze));
                 }
                 return true;
+            case Input.Keys.F4: {
+                // Cycle through the themed chunks so each one can actually be
+                // walked. The seal and the wade cost are feel calls, not test
+                // assertions.
+                com.bpm.minotaur.generation.theme.ChunkTheme warped =
+                        worldManager.debugWarpToTheme(player);
+                maze = worldManager.getCurrentMaze();
+                eventManager.addEvent(new GameEvent(
+                        warped != null
+                                ? "Debug warp: " + warped.getDisplayName()
+                                : "Debug warp failed.",
+                        2.5f));
+                return true;
+            }
             case Input.Keys.F6:
                 useCrtFilter = !useCrtFilter;
                 eventManager.addEvent(new GameEvent("CRT Filter: " + (useCrtFilter ? "ON" : "OFF"), 2f));
