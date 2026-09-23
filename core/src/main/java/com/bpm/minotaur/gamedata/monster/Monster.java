@@ -138,6 +138,40 @@ public class Monster implements Renderable {
     private Color rangedTelegraphColor = null;
     private float rangedTelegraphDurationSec = 0.35f;
 
+    private final java.util.List<com.bpm.minotaur.gamedata.gore.WoundDecal> woundDecals = new java.util.ArrayList<>();
+    private Texture bakedWoundTexture = null;
+
+    public java.util.List<com.bpm.minotaur.gamedata.gore.WoundDecal> getWoundDecals() {
+        return woundDecals;
+    }
+
+    public void addWoundDecal(com.bpm.minotaur.gamedata.gore.WoundDecal decal) {
+        if (decal != null) {
+            if (woundDecals.size() >= 12) {
+                woundDecals.remove(0);
+            }
+            woundDecals.add(decal);
+        }
+    }
+
+    public Texture getBakedWoundTexture() {
+        return bakedWoundTexture;
+    }
+
+    public void setBakedWoundTexture(Texture tex) {
+        if (this.bakedWoundTexture != null && this.bakedWoundTexture != tex) {
+            this.bakedWoundTexture.dispose();
+        }
+        this.bakedWoundTexture = tex;
+    }
+
+    public void disposeBakedTexture() {
+        if (bakedWoundTexture != null) {
+            bakedWoundTexture.dispose();
+            bakedWoundTexture = null;
+        }
+    }
+
     // --- AI Fields ---
     private MonsterTemplate.AiType aiType;
     private float healThreshold;

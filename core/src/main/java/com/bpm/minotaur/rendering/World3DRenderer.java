@@ -51,6 +51,7 @@ import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
+import com.bpm.minotaur.rendering.MonsterDecalCompositor;
 import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.weather.WeatherRenderer;
 import com.bpm.minotaur.weather.WeatherType;
@@ -1147,7 +1148,9 @@ public class World3DRenderer implements Disposable {
             for (int i = 0; i < gibs.size; i++) {
                 Gib g = gibs.get(i);
                 TextureRegion region = isRetro ? null : g.textureRegion;
-                Texture tex = (region != null) ? region.getTexture() : blankTex;
+                Texture tex = (g.customTexture != null)
+                        ? g.customTexture
+                        : ((region != null) ? region.getTexture() : blankTex);
                 if (tex == null) continue;
 
                 if (currentTex != null && currentTex != tex) {
@@ -1160,7 +1163,26 @@ public class World3DRenderer implements Disposable {
                 float gibSize = 0.22f;
                 Color col = isRetro ? retroTint : g.color;
 
-                if (g.onGround) {
+                if (g.polygonVertices != null && g.polygonUVs != null) {
+                    // Render custom severed polygon geometry
+                    dynamicBatcher.addPolygonBillboard(
+                            localX, Math.max(0.02f, g.position.y), -localZ,
+                            g.polygonVertices, g.polygonUVs, col,
+                            camRight, camUp, camDir,
+                            g.rotation
+                    );
+                    if (g.seamVertices != null && g.seamVertices.length >= 4) {
+                        dynamicBatcher.flush(shader, currentTex);
+                        currentTex = blankTex;
+                        Color seamCol = (col != null) ? col : Color.RED;
+                        dynamicBatcher.addSeamRibbonBillboard(
+                                localX, Math.max(0.02f, g.position.y), -localZ,
+                                g.seamVertices, 0.025f, seamCol,
+                                camRight, camUp, camDir,
+                                g.rotation
+                        );
+                    }
+                } else if (g.onGround) {
                     dynamicBatcher.addFloorQuad(
                             localX, 0.003f, -localZ,
                             gibSize * 0.5f, gibSize * 0.5f,
@@ -1220,7 +1242,13 @@ public class World3DRenderer implements Disposable {
 
             if (r instanceof Monster) {
                 Monster m = (Monster) r;
-                TextureRegion region = m.getTextureRegion();
+                TextureRegion region = null;
+                if (!isRetro) {
+                    region = MonsterDecalCompositor.getInstance().getCompositeRegion(m);
+                }
+                if (region == null) {
+                    region = m.getTextureRegion();
+                }
                 Texture tex = (region != null) ? region.getTexture() : m.getTexture();
 
                 if (tex != null) {

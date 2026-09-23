@@ -467,6 +467,99 @@ public class DynamicQuadBatcher implements Disposable {
         );
     }
 
+    /**
+     * Emits an arbitrary convex polygon in camera-facing billboard space.
+     * Used for bisected trunks, severed limbs, and gore polygons.
+     */
+    public void addPolygonBillboard(
+            float centerX, float centerY, float centerZ,
+            float[] localVerts2D, float[] uvs,
+            Color color,
+            Vector3 camRight, Vector3 camUp, Vector3 camDir,
+            float angleDeg
+    ) {
+        if (localVerts2D == null || uvs == null) return;
+        int numVerts = localVerts2D.length / 2;
+        if (numVerts < 3) return;
+        if (indices.size + (numVerts - 2) * 3 > MAX_INDICES || vertices.size + numVerts * 9 > MAX_VERTICES * 9) return;
+
+        float rad = angleDeg * MathUtils.degreesToRadians;
+        float cos = MathUtils.cos(rad);
+        float sin = MathUtils.sin(rad);
+
+        float rx = camRight.x * cos + camUp.x * sin;
+        float ry = camRight.y * cos + camUp.y * sin;
+        float rz = camRight.z * cos + camUp.z * sin;
+
+        float ux = -camRight.x * sin + camUp.x * cos;
+        float uy = -camRight.y * sin + camUp.y * cos;
+        float uz = -camRight.z * sin + camUp.z * cos;
+
+        float nx = -camDir.x;
+        float ny = -camDir.y;
+        float nz = -camDir.z;
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        short baseIndex = (short) (vertices.size / 9);
+
+        for (int i = 0; i < numVerts; i++) {
+            float lx = localVerts2D[i * 2];
+            float ly = localVerts2D[i * 2 + 1];
+
+            float wx = centerX + lx * rx + ly * ux;
+            float wy = centerY + lx * ry + ly * uy;
+            float wz = centerZ + lx * rz + ly * uz;
+
+            float u = (i * 2 < uvs.length) ? uvs[i * 2] : 0f;
+            float v = (i * 2 + 1 < uvs.length) ? uvs[i * 2 + 1] : 0f;
+
+            vertices.add(wx); vertices.add(wy); vertices.add(wz);
+            vertices.add(nx); vertices.add(ny); vertices.add(nz);
+            vertices.add(packedColor);
+            vertices.add(u); vertices.add(v);
+        }
+
+        for (int i = 1; i < numVerts - 1; i++) {
+            indices.add(baseIndex);
+            indices.add((short) (baseIndex + i));
+            indices.add((short) (baseIndex + i + 1));
+        }
+    }
+
+    /**
+     * Emits a cut seam gore ribbon along the 2D bisected segment.
+     */
+    public void addSeamRibbonBillboard(
+            float centerX, float centerY, float centerZ,
+            float[] seamVerts2D, float thickness,
+            Color color,
+            Vector3 camRight, Vector3 camUp, Vector3 camDir,
+            float angleDeg
+    ) {
+        if (seamVerts2D == null || seamVerts2D.length < 4) return;
+        float sx1 = seamVerts2D[0];
+        float sy1 = seamVerts2D[1];
+        float sx2 = seamVerts2D[2];
+        float sy2 = seamVerts2D[3];
+        float sdx = sx2 - sx1;
+        float sdy = sy2 - sy1;
+        float slen = (float) Math.sqrt(sdx * sdx + sdy * sdy);
+        if (slen < 1e-4f) return;
+
+        float halfThick = Math.max(0.012f, thickness * 0.5f);
+        float px = (-sdy / slen) * halfThick;
+        float py = (sdx / slen) * halfThick;
+
+        float[] quadVerts = new float[] {
+                sx1 - px, sy1 - py,
+                sx1 + px, sy1 + py,
+                sx2 + px, sy2 + py,
+                sx2 - px, sy2 - py
+        };
+        float[] dummyUvs = new float[] { 0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f };
+        addPolygonBillboard(centerX, centerY, centerZ, quadVerts, dummyUvs, color, camRight, camUp, camDir, angleDeg);
+    }
+
     private boolean ensureCapacity(int numQuads) {
         return ((indices.size / 6) + numQuads <= MAX_QUADS);
     }

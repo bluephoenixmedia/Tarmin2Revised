@@ -1,6 +1,7 @@
 package com.bpm.minotaur.gamedata.gore;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.PolygonRegion;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.bpm.minotaur.utils.ShatterUtils;
@@ -14,6 +15,10 @@ public class Gib implements Pool.Poolable {
     public String[] spriteData;
     public TextureRegion textureRegion; // For Modern 3D Mode
     public PolygonRegion polygonRegion;
+    public Texture customTexture;
+    public float[] polygonVertices; // Local 2D coordinates [x0, y0, x1, y1, ...]
+    public float[] polygonUVs;      // UV coordinates [u0, v0, u1, v1, ...]
+    public float[] seamVertices;    // Local 2D cut seam line [x0, y0, x1, y1]
     public float centroidX, centroidY;
     public Color color = new Color();
     private final Color baseColor = new Color(Color.WHITE);
@@ -98,12 +103,34 @@ public class Gib implements Pool.Poolable {
         this.lifeTimer = MAX_GIB_LIFE;
     }
 
+    public void initSeveredLimb(Vector3 pos, Vector3 vel, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, Color tint) {
+        this.position.set(pos);
+        this.velocity.set(vel);
+        this.spriteData = null;
+        this.textureRegion = null;
+        this.polygonRegion = null;
+        this.customTexture = tex;
+        this.polygonVertices = polyVertices;
+        this.polygonUVs = polyUVs;
+        this.seamVertices = seamVertices;
+        this.baseColor.set(tint != null ? tint : Color.WHITE);
+        this.color.set(baseColor);
+        this.rotation = MathUtils.random(-30, 30);
+        this.rotationalVelocity = MathUtils.random(-240, 240);
+        this.onGround = false;
+        this.lifeTimer = MAX_GIB_LIFE;
+    }
+
     @Override
     public void reset() {
         position.setZero();
         velocity.setZero();
         textureRegion = null;
         polygonRegion = null;
+        customTexture = null;
+        polygonVertices = null;
+        polygonUVs = null;
+        seamVertices = null;
         spriteData = null;
         onGround = false;
         lifeTimer = 0;

@@ -35,7 +35,15 @@ import com.bpm.minotaur.gamedata.firearm.PowderDampness;
 import com.bpm.minotaur.gamedata.firearm.ReloadChannel;
 import com.bpm.minotaur.gamedata.dice.DieResult;
 import com.bpm.minotaur.gamedata.dice.DieFaceType;
+import com.bpm.minotaur.gamedata.gore.WoundDecal;
+import com.bpm.minotaur.rendering.MonsterDecalCompositor;
+import com.bpm.minotaur.rendering.animation.AnimationArchetype;
+import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
+import com.bpm.minotaur.rendering.mesh.BillboardSlicer;
 import com.bpm.minotaur.utils.DiceRoller;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import java.util.List;
 import java.util.Random;
 
@@ -823,6 +831,9 @@ public class CombatManager {
 
     public void endCombat() {
         currentState = CombatState.INACTIVE;
+        if (monster != null) {
+            MonsterDecalCompositor.getInstance().releaseMonster(monster, true);
+        }
         monster = null;
         monsterAttackDelay = 0f;
         MusicManager.getInstance().exitCombat();
@@ -1677,6 +1688,8 @@ public class CombatManager {
                     sprite));
 
             if (actualDamage > 0) {
+                Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+                applyCombatHitWound(monster, actualDamage, weapon);
                 maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
                 GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 float wx = cid.x * 36.0f + monster.getPosition().x;
@@ -2057,6 +2070,8 @@ public class CombatManager {
 
                 // 3. Blood (Scaling)
                 GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+                applyCombatHitWound(monster, totalDamage, weapon);
                 float wx = cid.x * 36.0f + monster.getPosition().x;
                 float wz = cid.y * 36.0f + monster.getPosition().y;
                 Vector3 hitPos = new Vector3(wx, 0.5f, wz);
@@ -2976,6 +2991,8 @@ public class CombatManager {
         float overkillRatio = (float) overkill / (float) maxHp;
         boolean isHeavyKill = (lastDamageDealt >= maxHp * 0.40f);
 
+        MonsterDecalCompositor.getInstance().releaseMonster(monster, false);
+
         int overkillTier = 0;
         if (overkillRatio >= 0.50f || (isHeavyKill && overkillRatio >= 0.25f)) {
             overkillTier = 2; // Complete Obliteration
@@ -2983,11 +3000,18 @@ public class CombatManager {
             overkillTier = 1; // Significant Dismemberment
         }
 
+        Item killWeapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+        AnimationArchetype killArch = AnimationArchetype.fromItem(killWeapon);
+
         if (overkillTier > 0) {
-            // Trigger Visor Blood Droplet splash & camera trauma
+            // Trigger Visor Blood Droplet splash & camera trauma & hit-pause
             if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
                 com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-                gs.triggerVisorSplatter();
+                float dist = player.getPosition().dst(monster.getPosition());
+                if (dist <= 1.5f) {
+                    gs.triggerVisorSplatter();
+                }
+                gs.triggerHitPause(0.12f);
                 gs.addTrauma(overkillTier == 2 ? 0.6f : 0.35f);
             }
         }
@@ -3004,9 +3028,69 @@ public class CombatManager {
             }
         } else {
             if (overkillTier > 0) {
-                maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
                 killBloodIntensity = (overkillTier == 2) ? 8 : 5;
-                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
+
+                switch (killArch) {
+                    case SLASHING_1H:
+                    case SLASHING_2H:
+                    case AXE_CHOPPING:
+                    case POLEARM_SWEEP: {
+                        // Freeform bisection
+                        float swingStartX = 0.8f, swingStartY = 0.2f, swingEndX = 0.2f, swingEndY = 0.8f;
+                        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+                            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+                            if (gs.getWeaponOverlay() != null) {
+                                CombatMotionProfile cmp = gs.getWeaponOverlay().getCurrentProfile();
+                                if (cmp != null) {
+                                    swingStartX = cmp.startXRel;
+                                    swingStartY = cmp.startYRel;
+                                    swingEndX = cmp.endXRel;
+                                    swingEndY = cmp.endYRel;
+                                }
+                            }
+                        }
+
+                        float mw = monster.getScale().x;
+                        float mh = monster.getScale().y;
+                        TextureRegion mReg = monster.getTextureRegion();
+                        Texture mTex = (mReg != null) ? mReg.getTexture() : monster.getTexture();
+                        BillboardSlicer.SlicedResult slice = BillboardSlicer.sliceFromSwing(
+                                mw, mh, mReg, swingStartX, swingStartY, swingEndX, swingEndY
+                        );
+
+                        if (slice.isSliced && mTex != null && profile.hasGibs) {
+                            Vector3 cutVel = new Vector3(exitVector.x * 2.0f, MathUtils.random(3.5f, 5.5f), exitVector.z * 2.0f);
+                            maze.getGoreManager().spawnSeveredLimbGib(
+                                    gibOrigin, cutVel, mTex,
+                                    slice.severedVertices, slice.severedUVs, slice.seamVertices, profile
+                            );
+                            maze.getGoreManager().spawnArterialFountain(gibOrigin, Vector3.Y, 2.0f, profile);
+                        } else {
+                            maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
+                            maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
+                        }
+                        break;
+                    }
+                    case BLUNT_CRUSHING:
+                    case FLAIL_WHIP:
+                    case BRAWLING:
+                    case SHIELD: {
+                        maze.getGoreManager().spawnCrushShatter(gibOrigin, profile);
+                        break;
+                    }
+                    case THRUSTING_PIERCE:
+                    case RANGED_BOW:
+                    case RANGED_FIREARM: {
+                        maze.getGoreManager().spawnArterialFountain(gibOrigin, exitVector, 2.0f, profile);
+                        maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
+                        break;
+                    }
+                    default: {
+                        maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
+                        maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
+                        break;
+                    }
+                }
             } else {
                 killBloodIntensity = 2;
                 maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
@@ -3020,6 +3104,59 @@ public class CombatManager {
 
         spawnCorpseEffects(monster, overkillTier);
         DivinityOrbManager.getInstance().spawnOrb();
+    }
+
+    private void applyCombatHitWound(Monster monster, int actualDamage, Item weapon) {
+        if (monster == null || actualDamage <= 0) return;
+
+        AnimationArchetype arch = AnimationArchetype.fromItem(weapon);
+        WoundDecal.WoundType woundType;
+        switch (arch) {
+            case BLUNT_CRUSHING:
+            case FLAIL_WHIP:
+            case BRAWLING:
+            case SHIELD:
+                woundType = WoundDecal.WoundType.CRUSH;
+                break;
+            case THRUSTING_PIERCE:
+            case RANGED_BOW:
+            case RANGED_FIREARM:
+                woundType = WoundDecal.WoundType.PUNCTURE;
+                break;
+            case SLASHING_1H:
+            case SLASHING_2H:
+            case AXE_CHOPPING:
+            case POLEARM_SWEEP:
+            default:
+                woundType = WoundDecal.WoundType.SLASH;
+                break;
+        }
+
+        float angle = MathUtils.random(-0.75f, 0.75f);
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            if (gs.getWeaponOverlay() != null) {
+                CombatMotionProfile cmp = gs.getWeaponOverlay().getCurrentProfile();
+                if (cmp != null) {
+                    float dx = cmp.endXRel - cmp.startXRel;
+                    float dy = cmp.endYRel - cmp.startYRel;
+                    angle = (float) Math.atan2(dy, dx);
+                }
+            }
+        }
+
+        float u = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
+        float v = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
+        float length = MathUtils.clamp(0.18f + actualDamage * 0.008f, 0.14f, 0.40f);
+        float width = MathUtils.clamp(0.04f + actualDamage * 0.002f, 0.03f, 0.10f);
+
+        GoreProfile profile = GoreProfile.fromMonster(monster);
+        com.badlogic.gdx.graphics.Color woundCol = (profile != null && profile.woundColor != null)
+                ? profile.woundColor
+                : com.badlogic.gdx.graphics.Color.RED;
+
+        WoundDecal decal = new WoundDecal(woundType, u, v, angle, length, width, woundCol);
+        MonsterDecalCompositor.getInstance().addWound(monster, decal);
     }
 
     /**

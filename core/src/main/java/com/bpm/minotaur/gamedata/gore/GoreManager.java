@@ -2,6 +2,7 @@ package com.bpm.minotaur.gamedata.gore;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.GridPoint2;
@@ -229,6 +230,57 @@ public class GoreManager {
             g.init(origin, vel, tex, tint);
             activeGibs.add(g);
         }
+    }
+
+    public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
+        if (activeGibs.size >= MAX_ACTIVE_GIBS) {
+            Gib oldest = activeGibs.removeIndex(0);
+            gibPool.free(oldest);
+        }
+
+        Gib g = gibPool.obtain();
+        Color tint = (profile != null && profile.primaryColor != null) ? profile.primaryColor : Color.WHITE;
+        g.initSeveredLimb(origin, velocity, tex, polyVertices, polyUVs, seamVertices, tint);
+        activeGibs.add(g);
+        return g;
+    }
+
+    public void spawnArterialFountain(Vector3 origin, Vector3 dir, float duration, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (!profile.hasBlood) {
+            spawnBloodSpray(origin, dir, 8, profile);
+            return;
+        }
+
+        int count = Math.min(30, MAX_ACTIVE_PARTICLES - activeParticles.size);
+        if (count <= 0) return;
+
+        Color fountainColor = new Color(profile.primaryColor);
+        fountainColor.r = Math.min(1.0f, fountainColor.r * 1.3f);
+
+        Vector3 fountainDir = (dir != null && dir.len2() > 0.01f) ? new Vector3(dir).nor() : new Vector3(0, 1, 0);
+
+        for (int i = 0; i < count; i++) {
+            BloodParticle p = particlePool.obtain();
+            float spreadX = MathUtils.random(-0.25f, 0.25f);
+            float spreadY = MathUtils.random(0.4f, 1.2f);
+            float spreadZ = MathUtils.random(-0.25f, 0.25f);
+            float speed = MathUtils.random(5.0f, 11.0f);
+
+            Vector3 vel = new Vector3(fountainDir.x * 0.4f + spreadX, spreadY, fountainDir.z * 0.4f + spreadZ).nor().scl(speed);
+            float size = MathUtils.random(0.04f, 0.08f);
+            float life = MathUtils.random(1.0f, 2.5f);
+            TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
+
+            p.init(origin, vel, fountainColor, life, size, tex);
+            activeParticles.add(p);
+        }
+    }
+
+    public void spawnCrushShatter(Vector3 origin, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        spawnBloodSpray(origin, Vector3.Y, 10, profile);
+        spawnGibExplosion(origin, Vector3.Y, 2, profile);
     }
 
     public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {

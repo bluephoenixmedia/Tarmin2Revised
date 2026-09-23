@@ -69,15 +69,36 @@ public class MonsterRenderer {
             float drawStartY = (camera.viewportHeight / 2) - totalHeight / 2;
 
 
+            java.util.List<com.bpm.minotaur.gamedata.gore.WoundDecal> wounds = monster.getWoundDecals();
+
             for (int px = 0; px < spritePixelWidth; px++) {
                 float currentX = drawStartX + px * pixelWidth;
                 int screenStripe = (int) currentX;
 
                 if (screenStripe >= 0 && screenStripe < viewport.getScreenWidth() && transformY < depthBuffer[screenStripe]) {
+                    float normU = (float) px / (float) spritePixelWidth;
                     for (int py = 0; py < spritePixelHeight; py++) {
                         if (spriteData[py].charAt(px) == '#') {
                             float currentY = drawStartY + (spritePixelHeight - 1 - py) * pixelHeight;
-                            shapeRenderer.setColor(monster.getColor());
+                            float normV = 1.0f - (float) py / (float) spritePixelHeight;
+
+                            com.badlogic.gdx.graphics.Color pixelColor = monster.getColor();
+                            if (wounds != null && !wounds.isEmpty()) {
+                                for (com.bpm.minotaur.gamedata.gore.WoundDecal w : wounds) {
+                                    float du = normU - w.u;
+                                    float dv = normV - w.v;
+                                    float cos = com.badlogic.gdx.math.MathUtils.cos(-w.angle);
+                                    float sin = com.badlogic.gdx.math.MathUtils.sin(-w.angle);
+                                    float lx = du * cos - dv * sin;
+                                    float ly = du * sin + dv * cos;
+                                    if (Math.abs(lx) <= w.length * 0.6f && Math.abs(ly) <= w.width * 0.8f) {
+                                        pixelColor = w.color;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            shapeRenderer.setColor(pixelColor);
                             shapeRenderer.rect(currentX, currentY, pixelWidth, pixelHeight);
                         }
                     }
