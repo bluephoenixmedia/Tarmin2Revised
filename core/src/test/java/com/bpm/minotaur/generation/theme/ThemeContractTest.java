@@ -233,6 +233,41 @@ public class ThemeContractTest {
     }
 
     @Test
+    public void everyGateApproachStaysWalkableAndConnected() {
+        // Gates sit on the chunk border and the player arrives one tile inside
+        // it, into a chunk that has just sealed its gates behind them. A prop
+        // in that strip can box the player in on arrival with no way out.
+        for (ChunkTheme theme : ChunkTheme.values()) {
+            for (long seed = 0; seed < 10; seed++) {
+                Maze maze = decorate(theme, seed);
+
+                for (GridPoint2 gatePos : maze.getGates().keySet()) {
+                    GridPoint2 arrival = arrivalTileFor(maze, gatePos);
+                    if (arrival == null) continue;
+
+                    assertTrue(theme + " seed " + seed + ": arrival tile " + arrival
+                                    + " is not walkable",
+                            isOpen(maze, arrival.x, arrival.y));
+
+                    Set<GridPoint2> reachable = floodFill(maze, arrival);
+                    assertTrue(theme + " seed " + seed + ": player arriving at " + arrival
+                                    + " is boxed in (" + reachable.size() + " tiles reachable)",
+                            reachable.size() >= 20);
+                }
+            }
+        }
+    }
+
+    /** The tile just inside the border from a gate, where the player lands. */
+    private GridPoint2 arrivalTileFor(Maze maze, GridPoint2 gatePos) {
+        if (gatePos.y == 0) return new GridPoint2(gatePos.x, 1);
+        if (gatePos.y == maze.getHeight() - 1) return new GridPoint2(gatePos.x, maze.getHeight() - 2);
+        if (gatePos.x == 0) return new GridPoint2(1, gatePos.y);
+        if (gatePos.x == maze.getWidth() - 1) return new GridPoint2(maze.getWidth() - 2, gatePos.y);
+        return null;
+    }
+
+    @Test
     public void impassablePropsNeverSealTheChunkOff() {
         // A prop that blocks the only corridor would wall the player away from
         // the objective, in a chunk whose gates are sealed behind them.
@@ -280,8 +315,13 @@ public class ThemeContractTest {
         // the guard rail it exists to prove.
         maze.addLadder(new com.bpm.minotaur.gamedata.Ladder(
                 10, 10, com.bpm.minotaur.gamedata.Ladder.LadderType.DOWN));
+        // Gates sit on the chunk border, exactly where MazeChunkGenerator puts
+        // them. Placing the fixture's gate one tile inside would make the
+        // arrival-tile assertions silently vacuous.
         maze.addGate(new com.bpm.minotaur.gamedata.Gate(
-                CHUNK / 2, CHUNK - 2, new GridPoint2(1, 0), new GridPoint2(2, 2)));
+                CHUNK / 2, CHUNK - 1, new GridPoint2(1, 0), new GridPoint2(CHUNK / 2, 1)));
+        maze.addGate(new com.bpm.minotaur.gamedata.Gate(
+                CHUNK / 2, 0, new GridPoint2(-1, 0), new GridPoint2(CHUNK / 2, CHUNK - 2)));
         return maze;
     }
 

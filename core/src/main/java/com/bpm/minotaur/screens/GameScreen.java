@@ -184,6 +184,15 @@ public class GameScreen extends BaseScreen {
                 game.getSpawnTableData(),
                 this.soundManager);
 
+        // A themed chunk seals its gates on entry; the player has to be told,
+        // or a locked gate reads as a broken gate.
+        this.worldManager.setSealAnnouncer((headline, goal) -> {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(headline, 4.0f));
+                eventManager.addEvent(new GameEvent(goal, 5.0f));
+            }
+        });
+
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
 
@@ -2525,7 +2534,15 @@ public class GameScreen extends BaseScreen {
                             float prevX = player.getPosition().x;
                             float prevY = player.getPosition().y;
                             player.moveForward(maze, eventManager, gameMode, soundManager);
-                            if (player.getPosition().x != prevX || player.getPosition().y != prevY) {
+                            // A chunk gate moves the player a frame later, when
+                            // the queued transition event is handled, so the
+                            // position is still unchanged here. Without this the
+                            // game clanks and reports a solid wall every single
+                            // time the player walks through a gate.
+                            boolean gateTransition = player.consumeQueuedChunkTransition();
+                            if (gateTransition
+                                    || player.getPosition().x != prevX
+                                    || player.getPosition().y != prevY) {
                                 weaponOverlay.setWalking(true);
                             } else {
                                 soundManager.playWeaponImpact(false);
@@ -2556,7 +2573,10 @@ public class GameScreen extends BaseScreen {
                         float prevX = player.getPosition().x;
                         float prevY = player.getPosition().y;
                         player.moveBackward(maze, eventManager, gameMode, soundManager);
-                        if (player.getPosition().x != prevX || player.getPosition().y != prevY) {
+                        boolean gateTransition = player.consumeQueuedChunkTransition();
+                        if (gateTransition
+                                || player.getPosition().x != prevX
+                                || player.getPosition().y != prevY) {
                             weaponOverlay.setWalking(true);
                         } else {
                             soundManager.playWeaponImpact(false);

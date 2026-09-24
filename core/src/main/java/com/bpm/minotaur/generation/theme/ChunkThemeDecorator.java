@@ -113,11 +113,19 @@ public class ChunkThemeDecorator {
         if (maze.getGates() != null) {
             for (GridPoint2 gatePos : maze.getGates().keySet()) {
                 out.add(gatePos);
-                // Keep the approach to each gate walkable.
-                out.add(new GridPoint2(gatePos.x + 1, gatePos.y));
-                out.add(new GridPoint2(gatePos.x - 1, gatePos.y));
-                out.add(new GridPoint2(gatePos.x, gatePos.y + 1));
-                out.add(new GridPoint2(gatePos.x, gatePos.y - 1));
+                // Keep the approach to each gate walkable, three tiles deep.
+                //
+                // Gates sit on the chunk border and the player arrives one tile
+                // inside it, so this strip is also every arrival tile. A single
+                // tile of clearance is not enough: a prop two tiles in can still
+                // box the player in on arrival, in a chunk that has just sealed
+                // its gates behind them.
+                for (int d = 1; d <= 3; d++) {
+                    out.add(new GridPoint2(gatePos.x + d, gatePos.y));
+                    out.add(new GridPoint2(gatePos.x - d, gatePos.y));
+                    out.add(new GridPoint2(gatePos.x, gatePos.y + d));
+                    out.add(new GridPoint2(gatePos.x, gatePos.y - d));
+                }
             }
         }
         return out;
@@ -376,16 +384,26 @@ public class ChunkThemeDecorator {
     }
 
     /**
-     * True when a tile has two or fewer open neighbours, i.e. it is a corridor
-     * or a doorway. Blocking one of these can sever the chunk.
+     * True when a tile has two or fewer walkable neighbours, i.e. it is a
+     * corridor or a doorway. Blocking one of these can sever the chunk.
+     *
+     * <p>Props already placed count as walls here. Judging only on terrain lets
+     * two props that are each individually harmless combine into a barrier,
+     * which is how a themed chunk ends up cut in half.
      */
     private static boolean isChokePoint(Maze maze, int x, int y) {
         int open = 0;
-        if (!maze.isWall(x + 1, y)) open++;
-        if (!maze.isWall(x - 1, y)) open++;
-        if (!maze.isWall(x, y + 1)) open++;
-        if (!maze.isWall(x, y - 1)) open++;
+        if (isWalkable(maze, x + 1, y)) open++;
+        if (isWalkable(maze, x - 1, y)) open++;
+        if (isWalkable(maze, x, y + 1)) open++;
+        if (isWalkable(maze, x, y - 1)) open++;
         return open <= 2;
+    }
+
+    private static boolean isWalkable(Maze maze, int x, int y) {
+        if (maze.isWall(x, y)) return false;
+        Scenery prop = maze.getScenery().get(new GridPoint2(x, y));
+        return prop == null || !prop.isImpassable();
     }
 
     // ------------------------------------------------------------------

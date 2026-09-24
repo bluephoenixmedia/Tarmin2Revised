@@ -844,18 +844,63 @@ public class WorldManager {
      * word.
      */
     private void playThemeStinger(Maze maze) {
-        if (maze == null || maze.getChunkTheme() == null || soundManager == null) return;
+        if (maze == null || maze.getChunkTheme() == null) return;
 
         com.bpm.minotaur.generation.theme.ThemeDefinition def =
                 com.bpm.minotaur.generation.theme.ThemeDataManager.getInstance().get(maze.getChunkTheme());
-        if (def == null || def.getStinger() == null) return;
+        if (def == null) return;
 
-        // SoundManager keys registered sounds by bare filename.
-        String path = def.getStinger();
-        int slash = path.lastIndexOf('/');
-        int dot = path.lastIndexOf('.');
-        String key = path.substring(slash + 1, dot > slash ? dot : path.length());
-        soundManager.playSound(key);
+        if (soundManager != null && def.getStinger() != null) {
+            // SoundManager keys registered sounds by bare filename.
+            String path = def.getStinger();
+            int slash = path.lastIndexOf('/');
+            int dot = path.lastIndexOf('.');
+            String key = path.substring(slash + 1, dot > slash ? dot : path.length());
+            soundManager.playSound(key);
+        }
+
+        announceSeal(maze, def);
+    }
+
+    /**
+     * Tells the player the chunk has sealed behind them and what opens it.
+     *
+     * <p>Without this the seal is silent: the player walks in, finds every gate
+     * refusing to open, and has no way to know it is a rule rather than a bug.
+     */
+    private void announceSeal(Maze maze, com.bpm.minotaur.generation.theme.ThemeDefinition def) {
+        com.bpm.minotaur.generation.theme.ThemeObjectiveState state = maze.getThemeObjective();
+        if (state == null || !state.isViable() || state.isResolved()) return;
+
+        boolean sealed = false;
+        for (Gate gate : maze.getGates().values()) {
+            if (gate.isLocked()) {
+                sealed = true;
+                break;
+            }
+        }
+        if (!sealed || pendingSealAnnouncement == null) return;
+
+        String goal = state.getKind() != null
+                ? state.getKind().getDescription()
+                : "Find a way out";
+        if (state.getRequired() > 1) {
+            goal += " (0/" + state.getRequired() + ")";
+        }
+
+        pendingSealAnnouncement.accept(
+                maze.getChunkTheme().getDisplayName() + ": the gates grind shut behind you.",
+                goal + ", or channel the Rune of Surrender on any gate to forfeit and escape.");
+    }
+
+    /**
+     * Sink for seal announcements. WorldManager has no GameEventManager of its
+     * own, so the screen supplies one rather than this reaching for a singleton.
+     */
+    private BiConsumer<String, String> pendingSealAnnouncement;
+
+    public void setSealAnnouncer(BiConsumer<String, String> announcer) {
+        this.pendingSealAnnouncement = announcer;
     }
 
     public GridPoint2 getAdjacentChunkId(Direction direction) {

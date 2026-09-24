@@ -2423,6 +2423,19 @@ public class Player {
         return owed;
     }
 
+    /**
+     * True when the last move stepped into a chunk gate. The position has not
+     * changed yet - the transition resolves when the queued event is handled -
+     * so callers must not mistake it for a blocked move.
+     */
+    private boolean queuedChunkTransition = false;
+
+    public boolean consumeQueuedChunkTransition() {
+        boolean queued = queuedChunkTransition;
+        queuedChunkTransition = false;
+        return queued;
+    }
+
     public void moveForward(Maze maze, GameEventManager eventManager, GameMode gameMode) {
         moveForward(maze, eventManager, gameMode, null);
     }
@@ -2456,6 +2469,12 @@ public class Player {
 
         if (nextObject instanceof Gate gate && gameMode == GameMode.ADVANCED) {
             if (gate.isChunkTransitionGate() && gate.getState() == Gate.GateState.OPEN) {
+                // The move is real, but it resolves a frame later when the
+                // CHUNK_TRANSITION event is handled, so the position is
+                // unchanged when this returns. Flag it, or the caller compares
+                // before/after, sees no movement, and reports a solid wall on a
+                // gate the player just successfully walked through.
+                queuedChunkTransition = true;
                 eventManager.addEvent(new GameEvent(GameEvent.EventType.CHUNK_TRANSITION, gate));
                 return;
             }
@@ -2617,9 +2636,18 @@ public class Player {
             if (gameMode == GameMode.ADVANCED && gateObj.isChunkTransitionGate()) {
                 if (gateObj.getState() == Gate.GateState.CLOSED) {
                     gateObj.startOpening(worldManager);
-                    eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
-                    if (soundManager != null)
-                        soundManager.playDoorOpenSound();
+                    // startOpening refuses a locked gate. Announcing that it
+                    // opened regardless is how a sealed gate came to look like a
+                    // broken one: the player is told it opened, then walks into
+                    // it forever.
+                    if (gateObj.getState() != Gate.GateState.CLOSED) {
+                        eventManager.addEvent(new GameEvent("The gate rumbles and opens...", 2f));
+                        if (soundManager != null)
+                            soundManager.playDoorOpenSound();
+                    } else {
+                        eventManager.addEvent(new GameEvent(
+                                "The gate will not budge. The rune above it burns cold.", 2.5f));
+                    }
                 }
             } else {
                 useGate(maze, eventManager, gateObj);
