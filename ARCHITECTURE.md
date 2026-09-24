@@ -269,6 +269,15 @@ is rebuilt against `PaperDoll2DWidget`:
 
 See `docs/DEsign/Themed Chunk Contract.md` for the seven-slot contract.
 
+### Shelter Portals (`gamedata.progression`)
+| Class | Purpose |
+|---|---|
+| `BiomePortal` | Enum: one row per portal -- station, destination biome, item, tint. Owns materialisation and the debug override |
+| `WorldManager.PortalWarp` | Where a portal is sending the player: a chunk and a tile |
+
+See `docs/DEsign/Requirements_ Reviving the Desert and Lakelands Biomes.md` for
+the deferred destinations.
+
 ### Props (`gamedata.prop`)
 | Class | Purpose |
 |---|---|

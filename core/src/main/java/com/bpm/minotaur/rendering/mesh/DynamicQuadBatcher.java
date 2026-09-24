@@ -199,6 +199,54 @@ public class DynamicQuadBatcher implements Disposable {
     }
 
     /**
+     * A floor quad spun about the vertical axis.
+     *
+     * <p>{@link #addFloorQuad} cannot rotate, and the billboard variants always
+     * face the camera, so a decal that lies flat on the ground and turns -- a
+     * portal's rune circle -- had no primitive until now.
+     */
+    public void addRotatedFloorQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            TextureRegion region,
+            Color color,
+            float angleDeg
+    ) {
+        if (region == null) return;
+        if (!ensureCapacity(1)) return;
+
+        float u1 = region.getU();
+        float v1 = region.getV2();
+        float u2 = region.getU2();
+        float v2 = region.getV();
+
+        float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
+
+        float rad = angleDeg * com.badlogic.gdx.math.MathUtils.degreesToRadians;
+        float cos = com.badlogic.gdx.math.MathUtils.cos(rad);
+        float sin = com.badlogic.gdx.math.MathUtils.sin(rad);
+
+        // Corners in the XZ plane, rotated about the quad's centre.
+        float[] cx = {-halfW, halfW, halfW, -halfW};
+        float[] cz = {halfH, halfH, -halfH, -halfH};
+        float[] wx = new float[4];
+        float[] wz = new float[4];
+        for (int i = 0; i < 4; i++) {
+            wx[i] = centerX + cx[i] * cos - cz[i] * sin;
+            wz[i] = centerZ + cx[i] * sin + cz[i] * cos;
+        }
+
+        ChunkMeshBuilder.addQuad(
+                vertices, indices,
+                wx[0], y, wz[0], u1, v1,
+                wx[1], y, wz[1], u2, v1,
+                wx[2], y, wz[2], u2, v2,
+                wx[3], y, wz[3], u1, v2,
+                0f, 1f, 0f, packedColor
+        );
+    }
+
+    /**
      * Emits a coplanar wall decal quad offset by eps along the wall normal to eliminate Z-fighting.
      */
     public void addWallDecal(WallDecal decal, Color color) {

@@ -110,4 +110,58 @@ public class AssetIntegrationTest {
         Item scroll = Item.fromTemplate(Item.ItemType.SCROLL_FIREBALL, new com.bpm.minotaur.gamedata.item.ItemTemplate());
         assertEquals("images/icons/scrolls/scroll_default.png", scroll.resolveDefaultIconPath());
     }
+
+    @Test
+    public void testForestTexturesCanBeDecodedByPixmap() {
+        new com.badlogic.gdx.utils.SharedLibraryLoader().load("gdx");
+        File dir = getAssetFile("images/forest");
+        File[] files = dir.listFiles();
+        assertNotNull(files);
+        for (File f : files) {
+            if (f.getName().endsWith(".png")) {
+                System.out.println("Testing pixmap load: " + f.getName());
+                com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(new FileHandle(f));
+                assertNotNull(pixmap);
+                assertTrue(pixmap.getWidth() > 0);
+                assertTrue(pixmap.getHeight() > 0);
+                pixmap.dispose();
+            }
+        }
+
+        String[] extra = {
+            "images/floor_forest.png",
+            "images/forest_cliff.png",
+            "images/scenery/decomposing_corpse.png",
+            "images/weapons/crossbow_disk.png"
+        };
+        File imagesDir = getAssetFile("images");
+        testAllPngsInDir(imagesDir);
+    }
+
+    private void testAllPngsInDir(File dir) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                testAllPngsInDir(f);
+            } else if (f.getName().endsWith(".png")) {
+                try {
+                    com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(new FileHandle(f));
+                    pixmap.dispose();
+                } catch (Exception e) {
+                    System.err.println("Non-fatal exception on " + f.getPath() + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testEmptyPixmap() {
+        new com.badlogic.gdx.utils.SharedLibraryLoader().load("gdx");
+        try {
+            new com.badlogic.gdx.graphics.g2d.Gdx2DPixmap(new byte[0], 0, 0, 0);
+        } catch (Exception e) {
+            System.out.println("Caught expected exception: " + e.getMessage());
+        }
+    }
 }

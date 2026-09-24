@@ -229,6 +229,11 @@ public class ShelterAltarScreen extends BaseScreen {
         grid.top().left();
 
         for (ShelterAltar.Station station : ShelterAltar.Station.values()) {
+            // A station the player has not yet reached the depth for stays out
+            // of the list entirely, so what the Altar shows is always something
+            // they could actually buy rather than a row of locked teases.
+            if (!station.isRevealed()) continue;
+
             Table card = new Table();
             card.setBackground(hudSkin.getDoubleBorderPanel());
             card.top().left().pad(16);

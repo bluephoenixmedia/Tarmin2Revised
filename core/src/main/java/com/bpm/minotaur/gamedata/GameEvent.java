@@ -11,6 +11,8 @@ public class GameEvent {
         EFFECT_CURED, // For when an effect is removed (by potion, spell, or expiry)
         // --- END NEW ---
         PORTAL_ACTIVATED,
+        /** A shelter biome portal or a return portal was used. Payload: WorldManager.PortalWarp. */
+        BIOME_PORTAL_WARP,
         ENCOUNTER_TRIGGERED,
         PLAYER_DIED,
         SHOPKEEPER_INTERACTION,

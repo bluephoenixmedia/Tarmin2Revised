@@ -89,6 +89,17 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
     // --- Home Tile with 3D Props ---
     // Added 'W' for Window
+    /**
+     * The shelter interior, plus the portal gallery behind it.
+     *
+     * <p>'P' tiles are biome portal niches. They are ordinary floor, so an
+     * unowned niche shows a bare archway and an owned one holds the portal
+     * item; the player stands on the walkway row above and interacts.
+     *
+     * <p>Five niches for two portals is deliberate. Desert, Lakelands and
+     * Mountains are deferred work, and reserving their slots now means adding
+     * one is a data row rather than another layout change.
+     */
     String[] homeTile = new String[] {
             "............",
             "............",
@@ -97,10 +108,10 @@ public class MazeChunkGenerator implements IChunkGenerator {
             "...#L.ACR#..",
             "...WT...N#..",
             "...#F..BL#..",
+            "...##...##..",
+            "...#.....#..",
+            "...#PPPPP#..",
             "...#######..",
-            "............",
-            "............",
-            "............",
             "............",
     };
     private static final int HOME_TILE_ID = -1;
@@ -688,6 +699,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
                         maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
                                 assetManager));
                     }
+                } else if (c == 'P') {
+                    placePortalNiche(maze, layout, layoutY, x, y, itemDataManager, assetManager);
                 } else if (c == 'A') {
                     maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
                             assetManager));
@@ -776,6 +789,62 @@ public class MazeChunkGenerator implements IChunkGenerator {
         Gdx.app.log("MazeChunkGenerator [DEBUG]", "createMazeFromText FINISHED.");
         maze.setHomeTiles(currentChunkHomeTiles); // FIX: Actually set the home tiles on the maze!
         return maze;
+    }
+
+
+    /**
+     * Fills one 'P' niche in the shelter's portal gallery.
+     *
+     * <p>Niches map to {@link com.bpm.minotaur.gamedata.progression.BiomePortal}
+     * values left to right. A niche with no portal behind it -- either because
+     * there is no such biome yet, or because the player has not bought it --
+     * shows a bare stone archway, which advertises that the slot exists and is
+     * worth saving Crests for.
+     */
+    private void placePortalNiche(Maze maze, String[] layout, int layoutY, int x, int y,
+                                  ItemDataManager itemDataManager, AssetManager assetManager) {
+        // Index of this niche within its row, so the mapping survives a layout edit.
+        int nicheIndex = 0;
+        String row = layout[layoutY];
+        for (int i = 0; i < x && i < row.length(); i++) {
+            if (row.charAt(i) == 'P') nicheIndex++;
+        }
+
+        com.bpm.minotaur.gamedata.progression.BiomePortal[] portals =
+                com.bpm.minotaur.gamedata.progression.BiomePortal.values();
+
+        if (nicheIndex >= portals.length) {
+            placePortalArchway(maze, x, y, assetManager);
+            return;
+        }
+
+        com.bpm.minotaur.gamedata.progression.BiomePortal portal = portals[nicheIndex];
+        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
+                .registerStationLocation(portal.getStation(), x, y);
+
+        // The arch is the frame in both states; an owned niche is the same arch
+        // with a rift burning inside it.
+        placePortalArchway(maze, x, y, assetManager);
+
+        if (portal.isAvailable()) {
+            // One shared path for generation, purchase and the debug override,
+            // so the item and its biome-coloured light cannot drift apart.
+            portal.materialise(maze, new GridPoint2(x, y), itemDataManager, assetManager);
+        }
+    }
+
+    private void placePortalArchway(Maze maze, int x, int y, AssetManager assetManager) {
+        Scenery archway = Scenery.fromProp("portal_archway", x, y);
+        if (archway == null) return;
+        if (archway.getTexturePath() != null && assetManager != null
+                && Gdx.files != null && Gdx.files.internal(archway.getTexturePath()).exists()) {
+            if (!assetManager.isLoaded(archway.getTexturePath())) {
+                assetManager.load(archway.getTexturePath(), com.badlogic.gdx.graphics.Texture.class);
+                assetManager.finishLoadingAsset(archway.getTexturePath());
+            }
+            archway.setTexture(assetManager.get(archway.getTexturePath(), com.badlogic.gdx.graphics.Texture.class));
+        }
+        maze.addScenery(archway);
     }
 
     private boolean isStructure(char c) {
@@ -946,7 +1015,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     if (Gdx.files != null && Gdx.files.internal(img).exists()) {
                         if (!assetManager.isLoaded(img)) {
                             assetManager.load(img, Texture.class);
-                            assetManager.finishLoading();
+                            assetManager.finishLoadingAsset(img);
                         }
                         statue.setTexture(assetManager.get(img, Texture.class));
                     }

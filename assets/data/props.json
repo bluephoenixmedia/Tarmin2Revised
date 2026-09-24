@@ -305,6 +305,14 @@
       "scaleX": 1.1,
       "scaleY": 0.8,
       "passable": false
+    },
+    {
+      "id": "portal_archway",
+      "asset": "images/gate.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 1.6,
+      "passable": false
     }
   ]
 }

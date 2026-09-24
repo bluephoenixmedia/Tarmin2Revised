@@ -504,16 +504,31 @@ public class ForestChunkGenerator implements IChunkGenerator {
         }
     }
 
+    private final Map<String, Texture> textureCache = new HashMap<>();
+
     private void loadTextureSafely(Scenery s, String path, AssetManager assetManager) {
         if (path == null) return;
         s.setTexturePath(path);
+        Texture tex = textureCache.get(path);
+        if (tex != null) {
+            s.setTexture(tex);
+            return;
+        }
         try {
-            if (assetManager != null && Gdx.files != null && Gdx.files.internal(path) != null && Gdx.files.internal(path).exists()) {
-                if (!assetManager.isLoaded(path)) {
+            if (assetManager != null) {
+                if (assetManager.isLoaded(path)) {
+                    tex = assetManager.get(path, Texture.class);
+                    textureCache.put(path, tex);
+                    s.setTexture(tex);
+                } else if (Gdx.files != null && Gdx.files.internal(path) != null && Gdx.files.internal(path).exists()) {
                     assetManager.load(path, Texture.class);
-                    assetManager.finishLoading();
+                    assetManager.finishLoadingAsset(path);
+                    if (assetManager.isLoaded(path)) {
+                        tex = assetManager.get(path, Texture.class);
+                        textureCache.put(path, tex);
+                        s.setTexture(tex);
+                    }
                 }
-                s.setTexture(assetManager.get(path, Texture.class));
             }
         } catch (Exception ignored) {
             // Safe fallback during tests without LibGDX graphics context

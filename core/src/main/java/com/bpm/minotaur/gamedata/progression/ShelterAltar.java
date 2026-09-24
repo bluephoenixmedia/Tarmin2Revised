@@ -53,7 +53,9 @@ public class ShelterAltar {
         CRAFTING_BENCH("Crafting Bench", "A permanent workstation for dismantling, forging, and upgrading gear. Also teaches you to pack a Field Crafting Toolkit, letting you work materials on expedition.", 30, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_CRAFTING_BENCH, com.bpm.minotaur.gamedata.item.Item.ItemType.CRAFTING_TOOLKIT),
         LANTERN("Shelter Lantern", "A bright mounted brass lantern casting steady illumination across the shelter entrance.", 10, com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, null),
         TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null),
-        ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null);
+        ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null),
+        PORTAL_FOREST("Verdant Gate", "A rune-carved arch that tears open onto the forest eaves, eleven chunks beyond the maze. Saves the long walk out.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_FOREST, null, 3),
+        PORTAL_PLAINS("Amber Gate", "A rune-carved arch opening onto the open plains past the forest belt. Saves a longer walk still.", 35, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_PLAINS, null, 5);
 
         private final String displayName;
         private final String description;
@@ -66,14 +68,31 @@ public class ShelterAltar {
          */
         private final com.bpm.minotaur.gamedata.item.Item.ItemType portableKit;
 
+        /**
+         * Deepest dungeon level the player must have reached before this station
+         * is even offered for sale. 0 means available from the start.
+         *
+         * <p>Portals exist to skip a long overland walk, so buying one early
+         * would delete the exploration it is meant to reward you for surviving.
+         */
+        private final int requiredDepth;
+
         Station(String displayName, String description, int cost,
                 com.bpm.minotaur.gamedata.item.Item.ItemType itemType,
                 com.bpm.minotaur.gamedata.item.Item.ItemType portableKit) {
+            this(displayName, description, cost, itemType, portableKit, 0);
+        }
+
+        Station(String displayName, String description, int cost,
+                com.bpm.minotaur.gamedata.item.Item.ItemType itemType,
+                com.bpm.minotaur.gamedata.item.Item.ItemType portableKit,
+                int requiredDepth) {
             this.portableKit = portableKit;
             this.displayName = displayName;
             this.description = description;
             this.cost = cost;
             this.itemType = itemType;
+            this.requiredDepth = requiredDepth;
         }
 
         public String getDisplayName() { return displayName; }
@@ -83,6 +102,22 @@ public class ShelterAltar {
 
         /** The portable counterpart this station teaches, or null if it has none. */
         public com.bpm.minotaur.gamedata.item.Item.ItemType getPortableKit() { return portableKit; }
+
+        public int getRequiredDepth() { return requiredDepth; }
+
+        /**
+         * True when this station should appear in the Altar at all.
+         *
+         * <p>A station the player cannot yet reach the depth for stays hidden
+         * rather than showing as an unaffordable row, so the shelter list
+         * always reads as things you could actually buy.
+         */
+        public boolean isRevealed() {
+            if (requiredDepth <= 0) return true;
+            if (com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL) return true;
+            return com.bpm.minotaur.managers.UnlockManager.getInstance()
+                    .getData().deepestLevelReached >= requiredDepth;
+        }
     }
 
     public static final int MAX_TIER = 3;
@@ -190,6 +225,16 @@ public class ShelterAltar {
         if (currentMaze != null && idm != null && am != null) {
             java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
             if (points != null) {
+                BiomePortal portal = BiomePortal.forStation(station);
+                if (portal != null) {
+                    // Portals clear their placeholder archway and bring their own
+                    // light, so they cannot use the generic station placement.
+                    for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                        portal.materialise(currentMaze, pt, idm, am);
+                    }
+                    return true;
+                }
+
                 for (com.badlogic.gdx.math.GridPoint2 pt : points) {
                     com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
                             ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD

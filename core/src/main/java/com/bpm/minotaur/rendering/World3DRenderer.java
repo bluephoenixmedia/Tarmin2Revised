@@ -95,6 +95,20 @@ public class World3DRenderer implements Disposable {
      */
     private final java.util.EnumMap<com.bpm.minotaur.generation.theme.ChunkTheme, Texture> runeTextures =
             new java.util.EnumMap<>(com.bpm.minotaur.generation.theme.ChunkTheme.class);
+
+    /** Frames of the biome portal vortex loop, sliced from an 8x8 sheet. */
+    private TextureRegion[] portalVortexFrames;
+    /** Neutral-white arcane circle laid flat under a portal, tinted per biome. */
+    private Texture portalRuneCircle;
+    private TextureRegion portalRuneRegion;
+    /** Reused every portal every frame; the render loop must not allocate. */
+    private final Color portalScratchColor = new Color();
+
+    private static final int PORTAL_VORTEX_COLS = 8;
+    private static final int PORTAL_VORTEX_ROWS = 8;
+    /** The sheet's last three cells are blank, so only 61 of 64 are played. */
+    private static final int PORTAL_VORTEX_FRAMES = 61;
+    private static final float PORTAL_VORTEX_FPS = 18f;
     private final Texture ladderDownTexture;
     private final Texture ladderUpTexture;
 
@@ -200,6 +214,7 @@ public class World3DRenderer implements Disposable {
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
 
         loadRuneTextures();
+        loadPortalTextures();
 
         this.meshCache = new WorldMeshCache();
         this.dynamicBatcher = new DynamicQuadBatcher();
@@ -619,6 +634,7 @@ public class World3DRenderer implements Disposable {
 
         // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
         renderLiquids(maze, player, isRetro);
+        renderBiomePortals(maze, player);
         renderGore(maze, worldManager, isRetro, theme);
 
         // B. Entities: Monsters, Items, Ladders, Scenery
@@ -828,6 +844,31 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    private void loadPortalTextures() {
+        try {
+            String vortexPath = "images/portals/portal_vortex.png";
+            if (Gdx.files.internal(vortexPath).exists()) {
+                Texture sheet = new Texture(Gdx.files.internal(vortexPath));
+                int fw = sheet.getWidth() / PORTAL_VORTEX_COLS;
+                int fh = sheet.getHeight() / PORTAL_VORTEX_ROWS;
+
+                portalVortexFrames = new TextureRegion[PORTAL_VORTEX_FRAMES];
+                for (int i = 0; i < PORTAL_VORTEX_FRAMES; i++) {
+                    int cx = i % PORTAL_VORTEX_COLS;
+                    int cy = i / PORTAL_VORTEX_COLS;
+                    portalVortexFrames[i] = new TextureRegion(sheet, cx * fw, cy * fh, fw, fh);
+                }
+            }
+
+            String circlePath = "images/portals/portal_rune_circle.png";
+            if (Gdx.files.internal(circlePath).exists()) {
+                portalRuneCircle = new Texture(Gdx.files.internal(circlePath));
+            }
+        } catch (Exception e) {
+            Gdx.app.log("World3DRenderer", "Failed to load portal textures: " + e.getMessage());
+        }
+    }
+
     /** The authored sigil for a theme, or the blank quad when art is missing. */
     private Texture runeTextureFor(com.bpm.minotaur.generation.theme.ChunkTheme theme) {
         Texture tex = theme != null ? runeTextures.get(theme) : null;
@@ -1031,6 +1072,62 @@ public class World3DRenderer implements Disposable {
      * has to be visible before they step in: an unseen hazard is a trap, not a
      * decision.
      */
+    /**
+     * Draws the shelter's biome portals: a rotating rune circle underfoot and a
+     * looping vortex standing in the niche, both tinted to the destination.
+     *
+     * <p>The portal item's own billboard is a still frame; this is what makes it
+     * read as a live rift. Colour comes from tinting neutral art rather than one
+     * recoloured sheet per biome, so adding a destination stays a data row.
+     */
+    private void renderBiomePortals(Maze maze, Player player) {
+        if (maze == null || maze.getItems().isEmpty()) return;
+        if (portalVortexFrames == null || portalRuneCircle == null) return;
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+
+        for (java.util.Map.Entry<GridPoint2, com.bpm.minotaur.gamedata.item.Item> entry
+                : maze.getItems().entrySet()) {
+            com.bpm.minotaur.gamedata.item.Item item = entry.getValue();
+            if (item == null) continue;
+
+            com.bpm.minotaur.gamedata.progression.BiomePortal portal =
+                    com.bpm.minotaur.gamedata.progression.BiomePortal.forItem(item.getType());
+            boolean isReturn = item.getType()
+                    == com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_RETURN_PORTAL;
+            if (portal == null && !isReturn) continue;
+
+            GridPoint2 pos = entry.getKey();
+            if (Math.abs(pos.x - px) > 16 || Math.abs(pos.y - py) > 16) continue;
+
+            Color tint = portal != null
+                    ? portal.getTint()
+                    : com.bpm.minotaur.gamedata.progression.BiomePortal.RETURN_PORTAL_TINT;
+
+            // Rune circle: flat on the floor, counter-rotating, tinted.
+            float spin = (totalTime * 18f) % 360f;
+            portalScratchColor.set(tint.r, tint.g, tint.b, 0.85f);
+            dynamicBatcher.addRotatedFloorQuad(
+                    pos.x + 0.5f, 0.03f, -(pos.y + 0.5f),
+                    0.5f, 0.5f,
+                    portalRuneRegion, portalScratchColor, spin);
+            dynamicBatcher.flush(shader, portalRuneCircle);
+
+            // Vortex: upright in the niche, looping, tinted, gently pulsing.
+            int frame = ((int) (totalTime * PORTAL_VORTEX_FPS)) % portalVortexFrames.length;
+            float pulse = (float) Math.sin(totalTime * 2.4f + pos.x) * 0.12f + 0.88f;
+            portalScratchColor.set(tint.r * pulse, tint.g * pulse, tint.b * pulse, 0.95f);
+
+            dynamicBatcher.addBillboard(
+                    pos.x + 0.5f, 0.55f, -(pos.y + 0.5f),
+                    0.9f, 0.9f,
+                    portalVortexFrames[frame], portalScratchColor,
+                    camRight, camUp, camDir);
+            dynamicBatcher.flush(shader, portalVortexFrames[frame].getTexture());
+        }
+    }
+
     private void renderLiquids(Maze maze, Player player, boolean isRetro) {
         if (maze == null || maze.getLiquidManager() == null || blankTexture == null) return;
 
@@ -1646,6 +1743,19 @@ public class World3DRenderer implements Disposable {
         blankTexture.dispose();
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();
+
+        for (Texture runeTexture : runeTextures.values()) {
+            if (runeTexture != null) runeTexture.dispose();
+        }
+        runeTextures.clear();
+
+        // Every frame shares one backing sheet, so disposing the first region's
+        // texture releases the whole animation.
+        if (portalVortexFrames != null && portalVortexFrames.length > 0
+                && portalVortexFrames[0] != null) {
+            portalVortexFrames[0].getTexture().dispose();
+        }
+        if (portalRuneCircle != null) portalRuneCircle.dispose();
 
         if (gateFrameModel != null) gateFrameModel.dispose();
         if (gateLeftDoorModel != null) gateLeftDoorModel.dispose();

@@ -171,6 +171,38 @@ public class Tarmin2 extends Game {
             assetManager.load("models/skybox/celestial_dome.obj", com.badlogic.gdx.graphics.g3d.Model.class);
         }
 
+        // Queue forest biome assets
+        String[] forestAssets = {
+                "images/forest/bush_01.png",
+                "images/forest/bush_02.png",
+                "images/forest/log_fallen_01.png",
+                "images/forest/log_pile_01.png",
+                "images/forest/rock_boulder_01.png",
+                "images/forest/rock_boulder_02.png",
+                "images/forest/rock_boulder_03.png",
+                "images/forest/stump_pine_01.png",
+                "images/forest/tree_birch_01.png",
+                "images/forest/tree_birch_02.png",
+                "images/forest/tree_dead_01.png",
+                "images/forest/tree_pine_01.png",
+                "images/forest/tree_pine_02.png",
+                "images/forest/tree_pine_03.png",
+                "images/floor_forest.png",
+                "images/forest_cliff.png"
+        };
+        for (String assetPath : forestAssets) {
+            if (Gdx.files.internal(assetPath).exists()) {
+                assetManager.load(assetPath, com.badlogic.gdx.graphics.Texture.class);
+            }
+        }
+
+        // Queue themed prop catalogue textures
+        for (com.bpm.minotaur.gamedata.prop.PropDefinition propDef : com.bpm.minotaur.gamedata.prop.PropCatalog.getInstance().all().values()) {
+            if (propDef.getAsset() != null && Gdx.files.internal(propDef.getAsset()).exists()) {
+                assetManager.load(propDef.getAsset(), com.badlogic.gdx.graphics.Texture.class);
+            }
+        }
+
         // --- 4. Load Settings (Synchronous) ---
         SettingsManager.getInstance().load();
 

@@ -1091,6 +1091,30 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.BIOME_PORTAL_WARP)) != null) {
+            if (event.payload instanceof WorldManager.PortalWarp) {
+                WorldManager.PortalWarp warp = (WorldManager.PortalWarp) event.payload;
+                Gdx.app.log("GameScreen", "Biome portal warp to chunk " + warp.chunkId);
+
+                if (maze != null) {
+                    worldManager.saveCurrentChunk(maze);
+                }
+                Maze destination = worldManager.loadChunk(warp.chunkId);
+                if (destination == null) {
+                    hud.addMessage("The rift collapses before you can step through.");
+                } else {
+                    player.getPosition().set(warp.playerPos.x + 0.5f, warp.playerPos.y + 0.5f);
+                    worldManager.setCurrentChunk(warp.chunkId);
+                    swapToChunk(destination);
+                    // Reuses the Void portal's warp presentation: the player has
+                    // already learned what a dimensional shear looks like.
+                    debugManager.triggerDimensionalWarp(true);
+                    soundManager.playDimensionalWarpSound();
+                    onChunkEntered();
+                }
+            }
+        }
+
         while ((event = eventManager.findAndConsume(GameEvent.EventType.ENCOUNTER_TRIGGERED)) != null) {
             String eventId = (String) event.payload;
             if (game.getEncounterManager() != null) {
@@ -2804,6 +2828,27 @@ public class GameScreen extends BaseScreen {
                                 ? "Debug warp: " + warped.getDisplayName()
                                 : "Debug warp failed.",
                         2.5f));
+                return true;
+            }
+            case Input.Keys.F5: {
+                // Session-only: unlocks every biome portal and waives the Crest
+                // cost so biomes can be reached without farming. Never written
+                // to the save -- see BiomePortal.DEBUG_UNLOCK_ALL.
+                com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL =
+                        !com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
+                boolean portalsOn = com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
+
+                // The shelter chunk is served from cache or from its save file
+                // and is never regenerated, so the portals have to be stood up
+                // in the maze the player is currently standing in. Telling them
+                // to "re-enter the shelter" would simply not work.
+                if (portalsOn) {
+                    com.bpm.minotaur.gamedata.progression.BiomePortal.materialiseDebugPortals(
+                            maze, game.getItemDataManager(), game.getAssetManager());
+                }
+                eventManager.addEvent(new GameEvent(
+                        "Debug portals: " + (portalsOn ? "ALL UNLOCKED" : "OFF (existing portals remain this session)"),
+                        3f));
                 return true;
             }
             case Input.Keys.F6:

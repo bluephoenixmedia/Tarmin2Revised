@@ -462,7 +462,7 @@ public class WorldManager {
                     if (assetManager != null && Gdx.files != null && Gdx.files.internal(corpseTex).exists()) {
                         if (!assetManager.isLoaded(corpseTex)) {
                             assetManager.load(corpseTex, com.badlogic.gdx.graphics.Texture.class);
-                            assetManager.finishLoading();
+                            assetManager.finishLoadingAsset(corpseTex);
                         }
                         corpse.setTexture(assetManager.get(corpseTex, com.badlogic.gdx.graphics.Texture.class));
                     }
@@ -1048,6 +1048,220 @@ public class WorldManager {
 
         transitionPlayerToChunk(player, target, spawn);
         return theme;
+    }
+
+    /**
+     * Resolves an interaction with whatever stands on a tile, if it is a portal.
+     *
+     * <p>Lives here rather than on Player because Player is a state holder:
+     * AGENT.md forbids business logic there unless it is a pure accessor.
+     *
+     * @return true when a portal consumed the interaction.
+     */
+    public boolean tryUsePortalAt(Maze maze, GridPoint2 tile, GameEventManager eventManager) {
+        if (maze == null || tile == null) return false;
+
+        Item target = maze.getItems().get(tile);
+        if (target == null) return false;
+
+        com.bpm.minotaur.gamedata.progression.BiomePortal portal =
+                com.bpm.minotaur.gamedata.progression.BiomePortal.forItem(target.getType());
+
+        PortalWarp warp;
+        String message;
+        if (portal != null) {
+            warp = prepareBiomeWarp(portal);
+            message = "You step through the " + portal.getDisplayName() + "...";
+        } else if (target.getType() == Item.ItemType.BIOME_RETURN_PORTAL) {
+            warp = prepareReturnWarp();
+            message = "The rift folds shut behind you. You are back at the shelter.";
+        } else {
+            return false;
+        }
+
+        if (warp == null || warp.chunkId == null || warp.playerPos == null) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("The rift gutters and fails to open.", 2.5f));
+            }
+            return true;
+        }
+
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(message, 2.5f));
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.BIOME_PORTAL_WARP, warp));
+        }
+        return true;
+    }
+
+    /** Where a portal is sending the player: a chunk and a tile inside it. */
+    public static class PortalWarp {
+        public final GridPoint2 chunkId;
+        public final GridPoint2 playerPos;
+
+        public PortalWarp(GridPoint2 chunkId, GridPoint2 playerPos) {
+            this.chunkId = chunkId;
+            this.playerPos = playerPos;
+        }
+    }
+
+    /**
+     * Resolves a shelter portal into a destination, leaving a permanent return
+     * portal beside where the player lands.
+     *
+     * <p>The return portal is what keeps this a travel convenience rather than a
+     * one-way trip: a portal you can only use outbound just relocates the long
+     * walk to the other end.
+     *
+     * @return the warp, or null if the biome could not be found or entered.
+     */
+    public PortalWarp prepareBiomeWarp(com.bpm.minotaur.gamedata.progression.BiomePortal portal) {
+        if (portal == null) return null;
+
+        GridPoint2 target = findNearestChunkOfBiome(portal.getDestination());
+        if (target == null) {
+            log("No chunk of biome " + portal.getDestination() + " found within scan range.");
+            return null;
+        }
+
+        Maze destination = loadChunk(target);
+        if (destination == null) return null;
+
+        GridPoint2 arrival = findSafeArrivalTile(destination,
+                destination.getWidth() / 2, destination.getHeight() / 2);
+        if (arrival == null) return null;
+
+        placeReturnPortalNear(destination, arrival);
+        return new PortalWarp(target, arrival);
+    }
+
+    /** Sends the player from a return portal back to the shelter. */
+    public PortalWarp prepareReturnWarp() {
+        GridPoint2 shelter = new GridPoint2(0, 0);
+        Maze shelterMaze = loadChunk(shelter);
+        if (shelterMaze == null) return null;
+
+        GridPoint2 spawn = getInitialPlayerStartPos();
+        GridPoint2 safe = findSafeArrivalTile(shelterMaze,
+                spawn != null ? spawn.x : shelterMaze.getWidth() / 2,
+                spawn != null ? spawn.y : shelterMaze.getHeight() / 2);
+        return new PortalWarp(shelter, safe != null ? safe : spawn);
+    }
+
+    /**
+     * Stands a return portal on a tile next to the arrival point, so the player
+     * steps out of the rift rather than on top of it.
+     */
+    private void placeReturnPortalNear(Maze destination, GridPoint2 arrival) {
+        if (itemDataManager == null) return;
+
+        // One rift home per chunk. Without this, every trip drops another
+        // portal beside the last, and the arrival clearing fills with them.
+        for (Item existing : destination.getItems().values()) {
+            if (existing != null && existing.getType() == Item.ItemType.BIOME_RETURN_PORTAL) {
+                return;
+            }
+        }
+
+        int[][] offsets = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] off : offsets) {
+            int px = arrival.x + off[0];
+            int py = arrival.y + off[1];
+            GridPoint2 pt = new GridPoint2(px, py);
+
+            if (px < 1 || py < 1 || px >= destination.getWidth() - 1 || py >= destination.getHeight() - 1) continue;
+            if (destination.isWall(px, py)) continue;
+            if (destination.getItems().containsKey(pt)) continue;
+            if (destination.getMonsters().containsKey(pt)) continue;
+
+            Item portalItem = itemDataManager.createItem(
+                    Item.ItemType.BIOME_RETURN_PORTAL, px, py, com.bpm.minotaur.gamedata.item.ItemColor.BLUE,
+                    assetManager);
+            if (portalItem != null) {
+                destination.addItem(portalItem);
+                destination.addLight(new LightSource("return_portal_" + px + "_" + py, px + 0.5f, py + 0.5f,
+                        com.bpm.minotaur.gamedata.progression.BiomePortal.RETURN_PORTAL_TINT, 3.5f, 1.0f,
+                        LightSource.FlickerProfile.LANTERN_BREATH));
+            }
+            return;
+        }
+    }
+
+    private static void log(String message) {
+        if (Gdx.app != null) {
+            Gdx.app.log("WorldManager", message);
+        }
+    }
+
+    /**
+     * The closest chunk of a given biome to the shelter.
+     *
+     * <p>Biome bands are square rings around the origin, so "closest" is scanned
+     * by Chebyshev radius and tie-broken by Euclidean distance then by lowest
+     * coordinate. That makes the destination deterministic for a given world --
+     * the same portal always lands in the same place, so the arrival becomes a
+     * landmark the player learns -- while still differing between worlds.
+     *
+     * @return the chunk id, or null if no such biome exists within the scan.
+     */
+    public GridPoint2 findNearestChunkOfBiome(Biome biome) {
+        if (biome == null || biomeManager == null) return null;
+
+        final int maxRadius = 60;
+        for (int r = 1; r <= maxRadius; r++) {
+            GridPoint2 best = null;
+            double bestDist = Double.MAX_VALUE;
+
+            for (int x = -r; x <= r; x++) {
+                for (int y = -r; y <= r; y++) {
+                    // Only the ring itself; the interior was covered by smaller r.
+                    if (Math.max(Math.abs(x), Math.abs(y)) != r) continue;
+
+                    GridPoint2 candidate = new GridPoint2(x, y);
+                    if (biomeManager.getBiome(candidate) != biome) continue;
+
+                    double dist = Math.sqrt((double) x * x + (double) y * y);
+                    if (dist < bestDist
+                            || (dist == bestDist && best != null
+                                && (x < best.x || (x == best.x && y < best.y)))) {
+                        bestDist = dist;
+                        best = candidate;
+                    }
+                }
+            }
+            if (best != null) return best;
+        }
+        return null;
+    }
+
+    /**
+     * An open, unoccupied tile in a chunk, spiralling out from a preferred spot.
+     *
+     * <p>Arriving inside a wall or on top of a monster would be a worse failure
+     * than a slightly off-centre landing.
+     */
+    public static GridPoint2 findSafeArrivalTile(Maze maze, int preferX, int preferY) {
+        if (maze == null) return null;
+
+        int maxSpan = Math.max(maze.getWidth(), maze.getHeight());
+        for (int radius = 0; radius < maxSpan; radius++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dx = -radius; dx <= radius; dx++) {
+                    if (radius > 0 && Math.abs(dx) != radius && Math.abs(dy) != radius) continue;
+
+                    int x = preferX + dx;
+                    int y = preferY + dy;
+                    if (x < 1 || y < 1 || x >= maze.getWidth() - 1 || y >= maze.getHeight() - 1) continue;
+                    if (!maze.isPassable(x, y)) continue;
+
+                    GridPoint2 pt = new GridPoint2(x, y);
+                    if (maze.getItems().containsKey(pt)) continue;
+                    if (maze.getMonsters().containsKey(pt)) continue;
+                    if (maze.getGates().containsKey(pt)) continue;
+                    return pt;
+                }
+            }
+        }
+        return null;
     }
 
     public com.bpm.minotaur.generation.theme.ChunkTheme getChunkTheme(GridPoint2 chunkId, int level) {

@@ -2622,6 +2622,13 @@ public class Player {
             return;
         }
 
+        // 0b. Biome portals. Deliberately on interact and never on step: a
+        // portal that fired when walked over would eventually catch someone
+        // crossing the shelter hall.
+        if (worldManager != null && worldManager.tryUsePortalAt(maze, targetTile, eventManager)) {
+            return;
+        }
+
         // 1. Handle Gates (Keep existing logic)
         Gate gateObj = maze.getGates().get(targetTile);
         if (gateObj != null) {

@@ -272,7 +272,7 @@ public class ChunkData {
                 if (Gdx.files != null && Gdx.files.internal(data.texturePath).exists()) {
                     if (!assetManager.isLoaded(data.texturePath)) {
                         assetManager.load(data.texturePath, Texture.class);
-                        assetManager.finishLoading();
+                        assetManager.finishLoadingAsset(data.texturePath);
                     }
                     s.setTexture(assetManager.get(data.texturePath, Texture.class));
                 }

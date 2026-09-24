@@ -297,7 +297,7 @@ public class DesertChunkGenerator implements IChunkGenerator {
             if (!assetManager.isLoaded(path)) {
                 Gdx.app.log("DesertChunkGenerator", "Loading texture on demand: " + path);
                 assetManager.load(path, Texture.class);
-                assetManager.finishLoading();
+                assetManager.finishLoadingAsset(path);
             }
             s.setTexture(assetManager.get(path, Texture.class));
         } else {

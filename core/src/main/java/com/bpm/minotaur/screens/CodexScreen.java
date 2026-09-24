@@ -618,6 +618,11 @@ public class CodexScreen extends BaseScreen {
         stationGrid.top().left();
         int sCol = 0;
         for (ShelterAltar.Station station : ShelterAltar.Station.values()) {
+            // A station gated behind a dungeon depth the player has not reached
+            // stays out of the Codex too. Listing it here with its name, cost
+            // and description would leak exactly what the Altar is hiding.
+            if (!station.isRevealed()) continue;
+
             boolean built = altar.hasStation(station);
             Table sCard = new Table();
             sCard.setBackground(built ? hudSkin.getDoubleBorderPanel() : hudSkin.getSlotRecessed());

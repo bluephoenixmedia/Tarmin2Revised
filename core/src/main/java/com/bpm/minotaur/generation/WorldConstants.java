@@ -14,9 +14,15 @@ public class WorldConstants {
 
     /**
      * Defines the radius of the central Maze area, in chunks.
-     * A value of 10 means the maze will be 20x20 (from -10 to +10).
+     * The boundary is square: a value of 10 means chunks -10..+10 on both axes,
+     * i.e. 21x21 = 441 maze chunks.
+     *
+     * <p>This was temporarily 1 to shorten walks while testing, which left the
+     * maze at nine chunks and made themed chunks (MAZE-biome only) effectively
+     * unreachable. The shelter's biome portals are the intended answer to the
+     * long overland walk, so the radius is back at its designed value.
      */
-    public static final int CENTRAL_MAZE_RADIUS = 1;
+    public static final int CENTRAL_MAZE_RADIUS = 10;
 
     /**
      * Defines the thickness of the Forest biome that
