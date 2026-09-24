@@ -1060,6 +1060,14 @@ public class WorldManager {
             return null; // Shelter chunk is never themed
         }
 
+        // Themed chunks are a dungeon construct: they carve arenas, keeps and
+        // crypts out of a tile maze, and their props are stonework and bone.
+        // Stamping one onto open wilderness reads as a bug, and its impassable
+        // props land on forest trails that are only one tile wide.
+        if (biomeManager != null && biomeManager.getBiome(chunkId) != Biome.MAZE) {
+            return null;
+        }
+
         // 3x3 Cluster Coordinates
         int clusterX = Math.floorDiv(chunkId.x, 3);
         int clusterY = Math.floorDiv(chunkId.y, 3);

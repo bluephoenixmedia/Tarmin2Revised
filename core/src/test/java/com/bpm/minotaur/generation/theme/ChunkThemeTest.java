@@ -35,38 +35,45 @@ public class ChunkThemeTest {
     }
 
     @Test
-    public void testExactlyOneThemedChunkPerThreeByThreeCluster() {
-        int clusterX = 0;
-        int clusterY = 0;
-        int themedCount = 0;
+    public void atMostOneThemedChunkPerThreeByThreeCluster() {
+        // The cluster roll designates one chunk, but a designated chunk outside
+        // the MAZE biome is dropped, so a cluster may legitimately have none.
+        for (int clusterX = -2; clusterX <= 2; clusterX++) {
+            for (int clusterY = -2; clusterY <= 2; clusterY++) {
+                int themedCount = 0;
+                for (int dx = 0; dx < 3; dx++) {
+                    for (int dy = 0; dy < 3; dy++) {
+                        GridPoint2 chunkId = new GridPoint2(clusterX * 3 + dx, clusterY * 3 + dy);
+                        if (worldManager.getChunkTheme(chunkId, 2) != null) {
+                            themedCount++;
+                        }
+                    }
+                }
+                assertTrue("Cluster (" + clusterX + ", " + clusterY
+                                + ") must never contain more than one themed chunk, saw " + themedCount,
+                        themedCount <= 1);
+            }
+        }
+    }
 
-        for (int dx = 0; dx < 3; dx++) {
-            for (int dy = 0; dy < 3; dy++) {
-                GridPoint2 chunkId = new GridPoint2(clusterX * 3 + dx, clusterY * 3 + dy);
-                ChunkTheme theme = worldManager.getChunkTheme(chunkId, 1);
-                if (theme != null) {
-                    themedCount++;
+    @Test
+    public void themedChunksOnlyAppearInTheMazeBiome() {
+        // A stone arena or a flooded crypt stamped into open wilderness reads as
+        // a bug, and its impassable props land on forest trails one tile wide.
+        com.bpm.minotaur.managers.BiomeManager biomes = worldManager.getBiomeManager();
+
+        for (int x = -12; x <= 12; x++) {
+            for (int y = -12; y <= 12; y++) {
+                GridPoint2 chunkId = new GridPoint2(x, y);
+                for (int level = 1; level <= 4; level++) {
+                    ChunkTheme theme = worldManager.getChunkTheme(chunkId, level);
+                    if (theme == null) continue;
+                    assertEquals("Themed chunk " + theme + " at " + chunkId
+                                    + " (level " + level + ") is outside the MAZE biome",
+                            com.bpm.minotaur.generation.Biome.MAZE, biomes.getBiome(chunkId));
                 }
             }
         }
-
-        assertEquals("Cluster (0, 0) must contain exactly 1 themed chunk", 1, themedCount);
-
-        // Test another cluster (-1, 2)
-        int cluster2X = -1;
-        int cluster2Y = 2;
-        int themedCount2 = 0;
-        for (int dx = 0; dx < 3; dx++) {
-            for (int dy = 0; dy < 3; dy++) {
-                int cx = cluster2X * 3 + dx;
-                int cy = cluster2Y * 3 + dy;
-                ChunkTheme theme = worldManager.getChunkTheme(new GridPoint2(cx, cy), 1);
-                if (theme != null) {
-                    themedCount2++;
-                }
-            }
-        }
-        assertEquals("Cluster (-1, 2) must contain exactly 1 themed chunk", 1, themedCount2);
     }
 
     @Test

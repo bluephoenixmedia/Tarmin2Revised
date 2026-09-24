@@ -233,6 +233,25 @@ public class ForestChunkGenerator implements IChunkGenerator {
         carveMeanderingTrail(grid, midX + 2, midY - 3, 27, 9);       // Central to SE Grove
         carveMeanderingTrail(grid, 27, 9, width - 5, midY);          // SE Grove to East Loop
 
+        // 5b. Perimeter ring linking all four gate approaches.
+        //
+        // Without this every gate reaches the rest of the chunk through one
+        // meandering trail, and a single fallen log or boulder on a one-tile
+        // pinch point severs it. The ring gives every gate a second way round,
+        // so no lone tile is load-bearing.
+        int ringLow = 6;
+        int ringHighX = width - 7;
+        int ringHighY = height - 7;
+
+        carveMeanderingTrail(grid, midX, 3, ringLow, ringLow);            // South gate to SW corner
+        carveMeanderingTrail(grid, ringLow, ringLow, ringLow, midY);      // SW corner to West gate
+        carveMeanderingTrail(grid, ringLow, midY, ringLow, ringHighY);    // West gate to NW corner
+        carveMeanderingTrail(grid, ringLow, ringHighY, midX, height - 4); // NW corner to North gate
+        carveMeanderingTrail(grid, midX, height - 4, ringHighX, ringHighY); // North gate to NE corner
+        carveMeanderingTrail(grid, ringHighX, ringHighY, ringHighX, midY);  // NE corner to East gate
+        carveMeanderingTrail(grid, ringHighX, midY, ringHighX, ringLow);    // East gate to SE corner
+        carveMeanderingTrail(grid, ringHighX, ringLow, midX, 3);            // SE corner to South gate
+
         // 6. Natural Undergrowth Edge Softening (sprinkle bushes 'B' along trail borders)
         for (int y = 2; y < height - 2; y++) {
             for (int x = 2; x < width - 2; x++) {
@@ -246,12 +265,101 @@ public class ForestChunkGenerator implements IChunkGenerator {
             }
         }
 
+        // 7. Guarantee every gate reaches the central glade.
+        //
+        // Trails meander, so a run of unlucky steps can leave a gate approach
+        // stranded behind dense wilderness. A chunk the player cannot cross is
+        // worse than an ugly one, so any stranded gate gets a direct corridor.
+        ensureGatesReachGlade(grid, midX, midY);
+
         // Convert grid (y: 0..35 South to North) to finalLayout (index 0 is North, index 35 is South)
         this.finalLayout = new String[height];
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             this.finalLayout[layoutY] = new String(grid[y]);
         }
+    }
+
+    /**
+     * Carves a direct corridor for any gate approach the trails failed to link
+     * to the central glade.
+     *
+     * <p>The meandering carve is random, so connectivity is a likelihood rather
+     * than a guarantee. This turns it into a guarantee.
+     */
+    private void ensureGatesReachGlade(char[][] grid, int midX, int midY) {
+        int height = grid.length;
+        int width = grid[0].length;
+
+        java.util.Set<Integer> reachable = floodFillOpen(grid, midX, midY);
+
+        int[][] approaches = {
+                {midX, 3},           // South
+                {midX, height - 4},  // North
+                {3, midY},           // West
+                {width - 4, midY}    // East
+        };
+
+        for (int[] approach : approaches) {
+            if (reachable.contains(approach[1] * width + approach[0])) continue;
+
+            carveStraightCorridor(grid, approach[0], approach[1], midX, midY);
+            reachable = floodFillOpen(grid, midX, midY);
+        }
+    }
+
+    /** Open tiles reachable from a start point, keyed as y * width + x. */
+    private java.util.Set<Integer> floodFillOpen(char[][] grid, int startX, int startY) {
+        int height = grid.length;
+        int width = grid[0].length;
+
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        java.util.ArrayDeque<int[]> queue = new java.util.ArrayDeque<>();
+
+        if (grid[startY][startX] != '.') return seen;
+        queue.add(new int[]{startX, startY});
+        seen.add(startY * width + startX);
+
+        int[] dx = {1, -1, 0, 0};
+        int[] dy = {0, 0, 1, -1};
+
+        while (!queue.isEmpty()) {
+            int[] cur = queue.poll();
+            for (int i = 0; i < 4; i++) {
+                int nx = cur[0] + dx[i];
+                int ny = cur[1] + dy[i];
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                if (grid[ny][nx] != '.') continue;
+                int key = ny * width + nx;
+                if (!seen.add(key)) continue;
+                queue.add(new int[]{nx, ny});
+            }
+        }
+        return seen;
+    }
+
+    /** An L-shaped two-tile-wide corridor, used only as a connectivity rescue. */
+    private void carveStraightCorridor(char[][] grid, int x0, int y0, int x1, int y1) {
+        int height = grid.length;
+        int width = grid[0].length;
+
+        int x = x0;
+        int y = y0;
+        while (x != x1) {
+            x += Integer.signum(x1 - x);
+            open(grid, x, y, width, height);
+            open(grid, x, y + 1, width, height);
+        }
+        while (y != y1) {
+            y += Integer.signum(y1 - y);
+            open(grid, x, y, width, height);
+            open(grid, x + 1, y, width, height);
+        }
+    }
+
+    private void open(char[][] grid, int x, int y, int width, int height) {
+        if (x < 2 || x >= width - 2 || y < 2 || y >= height - 2) return;
+        grid[y][x] = '.';
     }
 
     private void carveSecondaryGlade(char[][] grid, int cx, int cy, float radius) {
@@ -306,12 +414,24 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
             grid[curY][curX] = '.';
 
-            // Occasionally broaden path to 2 tiles at curves
-            if (random.nextFloat() < 0.35f) {
-                if (moveX && curY + 1 < grid.length - 2) {
-                    grid[curY + 1][curX] = '.';
-                } else if (!moveX && curX + 1 < grid[0].length - 2) {
-                    grid[curY][curX + 1] = '.';
+            // Broaden the trail perpendicular to travel.
+            //
+            // This was a 35% chance, which left most of the trail a single tile
+            // wide. One impassable prop on a one-tile trail severs a gate from
+            // the rest of the chunk, and the player has no way round.
+            if (random.nextFloat() < 0.80f) {
+                if (moveX) {
+                    int side = random.nextBoolean() ? 1 : -1;
+                    int ny = curY + side;
+                    if (ny >= 2 && ny < grid.length - 2) {
+                        grid[ny][curX] = '.';
+                    }
+                } else {
+                    int side = random.nextBoolean() ? 1 : -1;
+                    int nx = curX + side;
+                    if (nx >= 2 && nx < grid[0].length - 2) {
+                        grid[curY][nx] = '.';
+                    }
                 }
             }
         }
