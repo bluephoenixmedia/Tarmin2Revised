@@ -78,9 +78,11 @@ public class World3DRenderer implements Disposable {
 
     // Textures
     private final Texture wallTexture;
+    private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
     private final Texture floorTexture;
+    private final Texture forestFloorTexture;
     private final Texture ceilingTexture;
     private final Texture blankTexture;
 
@@ -165,11 +167,25 @@ public class World3DRenderer implements Disposable {
         this.wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
         this.wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
+        if (Gdx.files.internal("images/forest_cliff.png").exists()) {
+            this.forestWallTexture = new Texture(Gdx.files.internal("images/forest_cliff.png"));
+            this.forestWallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        } else {
+            this.forestWallTexture = this.wallTexture;
+        }
+
         this.doorTexture = new Texture(Gdx.files.internal("images/door.png"));
         this.gateTexture = new Texture(Gdx.files.internal("images/gate.png"));
 
         this.floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+
+        if (Gdx.files.internal("images/floor_forest.png").exists()) {
+            this.forestFloorTexture = new Texture(Gdx.files.internal("images/floor_forest.png"));
+            this.forestFloorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        } else {
+            this.forestFloorTexture = this.floorTexture;
+        }
 
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
@@ -566,6 +582,8 @@ public class World3DRenderer implements Disposable {
                 isIndoors,
                 wallTexture,
                 floorTexture,
+                forestWallTexture,
+                forestFloorTexture,
                 ceilingTexture,
                 worldManager
         );
@@ -573,9 +591,9 @@ public class World3DRenderer implements Disposable {
         for (ChunkSubMesh subMesh : subMeshes) {
             if (isRetro) {
                 shader.setUniformf("u_retroBorder", 1.0f);
-                if (subMesh.getTexture() == wallTexture) {
+                if (subMesh.getTexture() == wallTexture || subMesh.getTexture() == forestWallTexture) {
                     shader.setUniformf("u_retroColor", theme.wall);
-                } else if (subMesh.getTexture() == floorTexture) {
+                } else if (subMesh.getTexture() == floorTexture || subMesh.getTexture() == forestFloorTexture) {
                     shader.setUniformf("u_retroColor", theme.floor);
                 } else {
                     shader.setUniformf("u_retroColor", theme.ceiling);
@@ -1490,6 +1508,9 @@ public class World3DRenderer implements Disposable {
                 Texture tex = sc.getTexture();
                 if (tex != null) {
                     TextureRegion reg = new TextureRegion(tex);
+                    if (sc.isFlippedX()) {
+                        reg.flip(true, false);
+                    }
                     Vector2 sceneryScale = sc.getScale();
                     float sw = (sceneryScale != null && sceneryScale.x > 0) ? sceneryScale.x : 1.0f;
                     float sh = (sceneryScale != null && sceneryScale.y > 0) ? sceneryScale.y : 1.0f;
@@ -1616,9 +1637,11 @@ public class World3DRenderer implements Disposable {
         dynamicBatcher.dispose();
 
         wallTexture.dispose();
+        if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
         doorTexture.dispose();
         gateTexture.dispose();
         floorTexture.dispose();
+        if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
         ceilingTexture.dispose();
         blankTexture.dispose();
         ladderDownTexture.dispose();

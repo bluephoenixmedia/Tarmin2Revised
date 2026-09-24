@@ -281,6 +281,30 @@
       "scaleY": 1.4,
       "passable": false,
       "emissiveTint": { "r": 0.55, "g": 1.0, "b": 0.35 }
+    },
+    {
+      "id": "stump_pine",
+      "asset": "images/props/stump_pine.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.0,
+      "scaleY": 0.8,
+      "passable": false
+    },
+    {
+      "id": "log_fallen",
+      "asset": "images/props/log_fallen.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.2,
+      "scaleY": 0.6,
+      "passable": false
+    },
+    {
+      "id": "log_pile",
+      "asset": "images/props/log_pile.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.1,
+      "scaleY": 0.8,
+      "passable": false
     }
   ]
 }

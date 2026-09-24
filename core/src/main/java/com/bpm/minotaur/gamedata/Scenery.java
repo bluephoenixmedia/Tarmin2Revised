@@ -271,4 +271,14 @@ public class Scenery implements Renderable {
     public void setTexturePath(String texturePath) {
         this.texturePath = texturePath;
     }
+
+    private boolean flippedX = false;
+
+    public boolean isFlippedX() {
+        return flippedX;
+    }
+
+    public void setFlippedX(boolean flippedX) {
+        this.flippedX = flippedX;
+    }
 }

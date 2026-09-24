@@ -384,6 +384,16 @@ public class Maze {
         return (this.secondaryTheme != null) ? this.secondaryTheme : getTheme();
     }
 
+    private com.bpm.minotaur.generation.Biome biome = com.bpm.minotaur.generation.Biome.MAZE;
+
+    public void setBiome(com.bpm.minotaur.generation.Biome biome) {
+        this.biome = biome;
+    }
+
+    public com.bpm.minotaur.generation.Biome getBiome() {
+        return (this.biome != null) ? this.biome : com.bpm.minotaur.generation.Biome.MAZE;
+    }
+
     public boolean isWallBlocking(int x, int y, Direction direction) {
         int nextX = x + (int) direction.getVector().x;
         int nextY = y + (int) direction.getVector().y;
