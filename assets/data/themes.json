@@ -168,6 +168,59 @@
         { "type": "TROGLODYTE", "weight": 18, "hpBonus": 4 },
         { "type": "PURPLE_WORM", "weight": 8, "hpBonus": 16 }
       ]
+    },
+
+    {
+      "id": "BURIED_NECROPOLIS",
+      "crestAward": 2,
+      "objective": "BREACH_SEALED_TOMB",
+      "objectiveCount": 1,
+      "championType": "MUMMY",
+      "championHpBonus": 70,
+      "runeTexture": "images/runes/rune_necropolis.png",
+      "fogTint": { "r": 0.85, "g": 0.70, "b": 0.38 },
+      "fogDistance": 7.0,
+      "stinger": "sounds/wind.ogg",
+      "propDensity": 0.050,
+      "hazard": { "kind": "QUICKSAND_HAZARD", "density": 0.20 },
+      "props": [
+        { "propId": "skull_pile", "weight": 28 },
+        { "propId": "bone_pile", "weight": 24 },
+        { "propId": "cairn", "weight": 18 },
+        { "propId": "gravestone", "weight": 16 },
+        { "propId": "rubble_pile", "weight": 14 }
+      ],
+      "monsters": [
+        { "type": "MUMMY", "weight": 28, "hpBonus": 10 },
+        { "type": "BASILISK", "weight": 22, "hpBonus": 8 },
+        { "type": "GIANT_SCORPION", "weight": 24, "hpBonus": 6 },
+        { "type": "CLOAKED_SKELETON", "weight": 26, "hpBonus": 6 }
+      ]
+    },
+
+    {
+      "id": "DROWNED_CAUSEWAY",
+      "crestAward": 1,
+      "objective": "ACTIVATE_SUNKEN_SHRINE",
+      "objectiveCount": 1,
+      "runeTexture": "images/runes/rune_causeway.png",
+      "fogTint": { "r": 0.15, "g": 0.45, "b": 0.50 },
+      "fogDistance": 7.0,
+      "stinger": "sounds/amb_doom_subbass.wav",
+      "propDensity": 0.050,
+      "hazard": { "kind": "RISING_TIDE", "density": 0.25 },
+      "props": [
+        { "propId": "swamp_reeds", "weight": 28 },
+        { "propId": "algae_mat", "weight": 26 },
+        { "propId": "stalagmite", "weight": 22 },
+        { "propId": "twisted_root", "weight": 24 }
+      ],
+      "monsters": [
+        { "type": "ALLIGATOR", "weight": 28, "hpBonus": 8 },
+        { "type": "GIANT_SNAKE", "weight": 26, "hpBonus": 6 },
+        { "type": "GELATINOUS_CUBE", "weight": 22, "hpBonus": 10 },
+        { "type": "HARPY", "weight": 24, "hpBonus": 8 }
+      ]
     }
   ]
 }

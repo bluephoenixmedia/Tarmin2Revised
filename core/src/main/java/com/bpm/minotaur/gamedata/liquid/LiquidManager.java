@@ -12,7 +12,7 @@ import com.bpm.minotaur.gamedata.player.Player;
  */
 public class LiquidManager {
 
-    public static final int CHUNK_SIZE = 32;
+    public static final int CHUNK_SIZE = 64;
     public static final int MAX_EXPOSURE = 20;
 
     private final byte[][] grid = new byte[CHUNK_SIZE][CHUNK_SIZE];
@@ -116,6 +116,13 @@ public class LiquidManager {
                 } else if (type == LiquidType.BLOOD) {
                     if (exposureSteps == 10 && eventManager != null) {
                         eventManager.addEvent(new GameEvent("Gore-soaked! Beasts can scent your blood trail across corridors.", 2.5f));
+                    }
+                } else if (type == LiquidType.QUICKSAND) {
+                    if (exposureSteps == 1 && eventManager != null) {
+                        eventManager.addEvent(new GameEvent("The dune gives way into sinking quicksand!", 2.0f));
+                    }
+                    if (exposureSteps >= 4 && exposureSteps % 4 == 0 && eventManager != null) {
+                        eventManager.addEvent(new GameEvent("Quicksand drags at your legs, draining your endurance!", 1.5f));
                     }
                 }
             }

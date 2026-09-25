@@ -118,6 +118,26 @@ def rune_thicket(draw):
     dot(draw, 0.70, 0.56, 0.038)
 
 
+def rune_necropolis(draw):
+    """Algiz / Sunken Tomb: A central stave with upturned arms over a crypt basin."""
+    line(draw, 0.50, 0.18, 0.50, 0.88)
+    line(draw, 0.50, 0.42, 0.22, 0.20)
+    line(draw, 0.50, 0.42, 0.78, 0.20)
+    # Tomb basin base lines
+    line(draw, 0.20, 0.70, 0.80, 0.70, STROKE - 2 * SS)
+    line(draw, 0.28, 0.82, 0.72, 0.82, STROKE - 2 * SS)
+    dot(draw, 0.50, 0.12, 0.04)
+
+
+def rune_causeway(draw):
+    """Ehwaz / Sunken Causeway: Dual staves bridged by crossing causeway staves."""
+    line(draw, 0.32, 0.16, 0.32, 0.86)
+    line(draw, 0.68, 0.16, 0.68, 0.86)
+    line(draw, 0.32, 0.38, 0.68, 0.62)
+    line(draw, 0.32, 0.62, 0.68, 0.38)
+    dot(draw, 0.50, 0.50, 0.045)
+
+
 RUNES = {
     "rune_colosseum": rune_colosseum,
     "rune_flooded": rune_flooded,
@@ -125,6 +145,8 @@ RUNES = {
     "rune_graveyard": rune_graveyard,
     "rune_castle": rune_castle,
     "rune_thicket": rune_thicket,
+    "rune_necropolis": rune_necropolis,
+    "rune_causeway": rune_causeway,
 }
 
 

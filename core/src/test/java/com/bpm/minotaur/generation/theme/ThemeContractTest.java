@@ -93,7 +93,7 @@ public class ThemeContractTest {
     public void objectiveMarkerPropsExist() {
         // Objectives place these by id; a typo would silently produce a chunk
         // whose objective cannot be completed, and every themed chunk is sealed.
-        for (String id : new String[]{"grave_mound", "heart_bloom", "drowned_cache", "bramble"}) {
+        for (String id : new String[]{"grave_mound", "heart_bloom", "drowned_cache", "bramble", "sealed_tomb"}) {
             assertTrue("Objective-critical prop '" + id + "' is missing from props.json",
                     PropCatalog.getInstance().contains(id));
         }

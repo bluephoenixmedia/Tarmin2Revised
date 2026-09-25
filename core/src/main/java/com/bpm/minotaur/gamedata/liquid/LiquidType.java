@@ -9,7 +9,8 @@ public enum LiquidType {
     NONE((byte) 0, "Dry Ground", "Solid dry stone or earthen ground.", Color.CLEAR),
     WATER((byte) 1, "Murky Shallows", "Stagnant, frigid water that slows movement and corrodes unprotected metal.", new Color(0.2f, 0.5f, 0.8f, 0.6f)),
     BLOOD((byte) 2, "Sanguine Deluge", "Thick coppery blood pooling from ancient battles, driving beasts into a frenzy.", new Color(0.75f, 0.05f, 0.05f, 0.7f)),
-    BLACK_MUCK((byte) 3, "Necrotic Sludge", "Bubbling tar-like viscous muck radiating toxic rot.", new Color(0.12f, 0.05f, 0.18f, 0.85f));
+    BLACK_MUCK((byte) 3, "Necrotic Sludge", "Bubbling tar-like viscous muck radiating toxic rot.", new Color(0.12f, 0.05f, 0.18f, 0.85f)),
+    QUICKSAND((byte) 4, "Sinking Sand", "Collapsing desert dunes that slow movement and drag down heavy armor.", new Color(0.82f, 0.71f, 0.45f, 0.85f));
 
     private final byte id;
     private final String displayName;

@@ -193,11 +193,67 @@ public class ChunkThemeDecorator {
                 return carveClearing(maze, protectedTiles, 0.25f);
             case FLOODED_CAVERNS:
                 return carveBasin(maze, protectedTiles);
+            case BURIED_NECROPOLIS:
+                return carveDuneBowl(maze, protectedTiles);
+            case DROWNED_CAUSEWAY:
+                return carveCauseway(maze, protectedTiles);
             case OVERGROWN_THICKET:
             default:
                 // The thicket keeps the generator's corridors; brambles do the work.
                 return centralRect(maze, 0.10f);
         }
+    }
+
+    /** Sunken tomb cut into a dune bowl; the entrance is the only break in the rim. */
+    private static Rect carveDuneBowl(Maze maze, Set<GridPoint2> protectedTiles) {
+        Rect outer = centralRect(maze, 0.22f);
+        for (int y = outer.minY; y <= outer.maxY; y++) {
+            for (int x = outer.minX; x <= outer.maxX; x++) {
+                safeSetTile(maze, protectedTiles, x, y, 0);
+            }
+        }
+
+        int tombInset = Math.max(2, (outer.maxX - outer.minX) / 4);
+        int tMinX = outer.minX + tombInset;
+        int tMaxX = outer.maxX - tombInset;
+        int tMinY = outer.minY + tombInset;
+        int tMaxY = outer.maxY - tombInset;
+
+        if (tMaxX - tMinX < 3 || tMaxY - tMinY < 3) {
+            return outer;
+        }
+
+        for (int x = tMinX; x <= tMaxX; x++) {
+            safeSetTile(maze, protectedTiles, x, tMinY, 1);
+            safeSetTile(maze, protectedTiles, x, tMaxY, 1);
+        }
+        for (int y = tMinY; y <= tMaxY; y++) {
+            safeSetTile(maze, protectedTiles, tMinX, y, 1);
+            safeSetTile(maze, protectedTiles, tMaxX, y, 1);
+        }
+        for (int y = tMinY + 1; y < tMaxY; y++) {
+            for (int x = tMinX + 1; x < tMaxX; x++) {
+                safeSetTile(maze, protectedTiles, x, y, 0);
+            }
+        }
+        int doorX = (tMinX + tMaxX) / 2;
+        safeSetTile(maze, protectedTiles, doorX, tMinY, 0);
+
+        return new Rect(tMinX + 1, tMinY + 1, tMaxX - 1, tMaxY - 1);
+    }
+
+    /** Single causeway between wetland banks. */
+    private static Rect carveCauseway(Maze maze, Set<GridPoint2> protectedTiles) {
+        Rect r = centralRect(maze, 0.18f);
+        int midY = (r.minY + r.maxY) / 2;
+        for (int y = r.minY; y <= r.maxY; y++) {
+            for (int x = r.minX; x <= r.maxX; x++) {
+                if (Math.abs(y - midY) <= 1) {
+                    safeSetTile(maze, protectedTiles, x, y, 0);
+                }
+            }
+        }
+        return r;
     }
 
     /** Open vault with four pillars to break sightlines. */
@@ -300,6 +356,21 @@ public class ChunkThemeDecorator {
                 break;
 
             case LIQUID_FLOOD:
+                floodChunk(maze, rng, density);
+                break;
+
+            case QUICKSAND_HAZARD:
+                for (int y = room.minY; y <= room.maxY; y++) {
+                    for (int x = room.minX; x <= room.maxX; x++) {
+                        if (maze.isWall(x, y)) continue;
+                        if (rng.nextFloat() < density) {
+                            maze.getLiquidManager().setLiquidAt(x, y, LiquidType.QUICKSAND);
+                        }
+                    }
+                }
+                break;
+
+            case RISING_TIDE:
                 floodChunk(maze, rng, density);
                 break;
 
@@ -500,6 +571,19 @@ public class ChunkThemeDecorator {
                 state.setRequired(1);
                 state.setViable(blooms > 0);
                 guaranteeFireSource(maze, rng, itemDataManager, assetManager);
+                break;
+
+            case BREACH_SEALED_TOMB:
+                int tombs = placeObjectiveProps(maze, rng, room, "sealed_tomb", 1);
+                boolean champPlaced = placeChampion(maze, def, room, monsterDataManager, assetManager);
+                state.setRequired(1);
+                state.setViable(tombs > 0 && champPlaced);
+                break;
+
+            case ACTIVATE_SUNKEN_SHRINE:
+                int shrines = placeObjectiveProps(maze, rng, room, "drowned_cache", 1);
+                state.setRequired(1);
+                state.setViable(shrines > 0);
                 break;
         }
 

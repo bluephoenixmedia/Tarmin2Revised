@@ -537,7 +537,17 @@ public class WeatherManager {
                 baseTemp = 15.0f; // 59°F - crisp alpine elevation
                 break;
             case DESERT:
-                baseTemp = 28.0f; // 82.4°F - warm arid climate
+                float timeOfDay = 0.5f; // Default midday if DayNightManager unavailable
+                if (worldManager != null && worldManager.getDayNightManager() != null) {
+                    timeOfDay = worldManager.getDayNightManager().getTimeOfDay();
+                }
+                // Solar elevation: sin curve with 0 at dawn (0.25), 1 at noon (0.50), 0 at dusk (0.75), -1 at midnight (0.0/1.0)
+                float sunElevation = (float) Math.sin((timeOfDay - 0.25f) * 2.0f * Math.PI);
+                if (sunElevation > 0f) {
+                    baseTemp = 24.0f + 18.0f * sunElevation; // 24°C at dawn/dusk up to 42°C at solar noon
+                } else {
+                    baseTemp = 24.0f + 10.0f * sunElevation; // 24°C at dawn/dusk down to 14°C at midnight
+                }
                 break;
             case OCEAN:
                 baseTemp = 19.0f; // 66.2°F - maritime breeze
@@ -551,7 +561,7 @@ public class WeatherManager {
         switch (currentWeather) {
             case CLEAR:
                 if (biome == Biome.DESERT) {
-                    baseTemp += (currentIntensity == WeatherIntensity.EXTREME) ? 10.0f : 4.0f;
+                    baseTemp += (currentIntensity == WeatherIntensity.EXTREME) ? 6.0f : 2.0f;
                 } else {
                     baseTemp += 2.0f; // Pleasant sunny warmth
                 }

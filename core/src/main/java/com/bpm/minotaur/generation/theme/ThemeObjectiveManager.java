@@ -55,6 +55,14 @@ public class ThemeObjectiveManager {
             routRemainingLegion(maze);
         }
 
+        if (state.getKind() == ThemeObjectiveKind.BREACH_SEALED_TOMB
+                && victim != null && victim.isThemeChampion()) {
+            state.advance();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("The Crypt Warden turns to ash! You claim the Crypt Key.", 3.0f));
+            }
+        }
+
         if (state.getKind() == ThemeObjectiveKind.LAST_COMBATANT_STANDING) {
             if (!anyHostileAlive(maze)) {
                 state.complete();
@@ -125,6 +133,25 @@ public class ThemeObjectiveManager {
 
             case DESTROY_HEART_BLOOM:
                 return burnHeartBloom(player, marker, state, eventManager, maze);
+
+            case BREACH_SEALED_TOMB:
+                if (state.getProgress() >= 1) {
+                    marker.consumeObjective();
+                    state.complete();
+                    announce(eventManager, "You turn the Crypt Key. The ancient seal breaks open!");
+                    resolveIfComplete(maze, eventManager);
+                    return true;
+                } else {
+                    announce(eventManager, "The crypt door is sealed with heavy iron. The Crypt Warden carries the key.");
+                    return true;
+                }
+
+            case ACTIVATE_SUNKEN_SHRINE:
+                marker.consumeObjective();
+                state.complete();
+                announce(eventManager, "You activate the sunken shrine. The rising tide calms!");
+                resolveIfComplete(maze, eventManager);
+                return true;
 
             default:
                 return false;

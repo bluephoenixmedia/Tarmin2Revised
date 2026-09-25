@@ -1287,13 +1287,7 @@ public class WorldManager {
             return null; // Shelter chunk is never themed
         }
 
-        // Themed chunks are a dungeon construct: they carve arenas, keeps and
-        // crypts out of a tile maze, and their props are stonework and bone.
-        // Stamping one onto open wilderness reads as a bug, and its impassable
-        // props land on forest trails that are only one tile wide.
-        if (biomeManager != null && biomeManager.getBiome(chunkId) != Biome.MAZE) {
-            return null;
-        }
+        Biome chunkBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
 
         // 3x3 Cluster Coordinates
         int clusterX = Math.floorDiv(chunkId.x, 3);
@@ -1320,15 +1314,15 @@ public class WorldManager {
             return null;
         }
 
-        // Filter available themes by minLevel <= level
+        // Filter available themes by minLevel <= level AND allowedBiomes
         java.util.List<com.bpm.minotaur.generation.theme.ChunkTheme> available = new java.util.ArrayList<>();
         for (com.bpm.minotaur.generation.theme.ChunkTheme t : com.bpm.minotaur.generation.theme.ChunkTheme.values()) {
-            if (t.getMinLevel() <= level) {
+            if (t.getMinLevel() <= level && t.isAllowedIn(chunkBiome)) {
                 available.add(t);
             }
         }
         if (available.isEmpty()) {
-            return com.bpm.minotaur.generation.theme.ChunkTheme.OVERGROWN_THICKET;
+            return null;
         }
         return available.get(clusterRng.nextInt(available.size()));
     }

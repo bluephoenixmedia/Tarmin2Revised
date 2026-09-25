@@ -21,5 +21,11 @@ public enum ThemeHazardKind {
     BURNING_TILES,
 
     /** Brambles regrow each turn, re-blocking paths behind the player. */
-    BRAMBLE_REGROWTH
+    BRAMBLE_REGROWTH,
+
+    /** Quicksand dunes that slow movement and drag down armor. */
+    QUICKSAND_HAZARD,
+
+    /** Rising tide that progressively submerges causeway paths. */
+    RISING_TIDE
 }

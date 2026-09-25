@@ -52,7 +52,25 @@ public enum ChunkTheme {
             "Verdant Sprout (Foliage)",
             "ᛒ",
             new Color(0.2f, 0.9f, 0.3f, 1f),
-            1);
+            1),
+
+    BURIED_NECROPOLIS(
+            "Buried Necropolis",
+            "A sunken tomb swallowed by treacherous quicksand, guarded by ancient crypt wardens.",
+            "Sunken Glyph (Tomb)",
+            "ᛉ",
+            new Color(0.95f, 0.75f, 0.35f, 1f),
+            5,
+            java.util.Set.of(com.bpm.minotaur.generation.Biome.DESERT)),
+
+    DROWNED_CAUSEWAY(
+            "Drowned Causeway",
+            "A submerged causeway between wetland islets leading to a sunken shrine.",
+            "Aquatic Marker (Shrine)",
+            "ᛖ",
+            new Color(0.25f, 0.85f, 0.80f, 1f),
+            5,
+            java.util.Set.of(com.bpm.minotaur.generation.Biome.LAKELANDS));
 
     private final String displayName;
     private final String description;
@@ -60,14 +78,21 @@ public enum ChunkTheme {
     private final String runeGlyph;
     private final Color runeColor;
     private final int minLevel;
+    private final java.util.Set<com.bpm.minotaur.generation.Biome> allowedBiomes;
 
     ChunkTheme(String displayName, String description, String crypticOmen, String runeGlyph, Color runeColor, int minLevel) {
+        this(displayName, description, crypticOmen, runeGlyph, runeColor, minLevel, java.util.Set.of(com.bpm.minotaur.generation.Biome.MAZE));
+    }
+
+    ChunkTheme(String displayName, String description, String crypticOmen, String runeGlyph, Color runeColor, int minLevel,
+               java.util.Set<com.bpm.minotaur.generation.Biome> allowedBiomes) {
         this.displayName = displayName;
         this.description = description;
         this.crypticOmen = crypticOmen;
         this.runeGlyph = runeGlyph;
         this.runeColor = runeColor;
         this.minLevel = minLevel;
+        this.allowedBiomes = (allowedBiomes != null) ? allowedBiomes : java.util.Set.of(com.bpm.minotaur.generation.Biome.MAZE);
     }
 
     public String getDisplayName() {
@@ -92,5 +117,13 @@ public enum ChunkTheme {
 
     public int getMinLevel() {
         return minLevel;
+    }
+
+    public boolean isAllowedIn(com.bpm.minotaur.generation.Biome biome) {
+        return allowedBiomes.contains(biome);
+    }
+
+    public java.util.Set<com.bpm.minotaur.generation.Biome> getAllowedBiomes() {
+        return allowedBiomes;
     }
 }

@@ -313,6 +313,15 @@
       "scaleX": 1.0,
       "scaleY": 1.6,
       "passable": false
+    },
+    {
+      "id": "sealed_tomb",
+      "asset": "images/gate.png",
+      "renderMode": "SPRITE",
+      "scaleX": 1.3,
+      "scaleY": 1.6,
+      "passable": false,
+      "emissiveTint": { "r": 0.95, "g": 0.75, "b": 0.35 }
     }
   ]
 }

@@ -13,6 +13,7 @@ import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.utils.DiceRoller;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
+import com.bpm.minotaur.gamedata.Scenery;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -308,6 +309,39 @@ public class TurnManager {
         return currentTemp;
     }
 
+    private boolean isPlayerInDesertShade(Player player, Maze maze) {
+        if (maze == null || player == null) return false;
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+
+        int cellData = maze.getWallDataAt(px, py);
+        if ((cellData & 0b01010101) != 0) {
+            return true;
+        }
+
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                int nx = px + dx;
+                int ny = py + dy;
+                if (nx < 0 || nx >= maze.getWidth() || ny < 0 || ny >= maze.getHeight()) {
+                    return true;
+                }
+                if (maze.isWall(nx, ny)) {
+                    return true;
+                }
+                GridPoint2 pt = new GridPoint2(nx, ny);
+                if (maze.getScenery() != null && maze.getScenery().containsKey(pt)) {
+                    Scenery s = maze.getScenery().get(pt);
+                    if (s != null && s.getType() != Scenery.SceneryType.BUSH) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private void updateMetabolism(Player player, Maze maze, WorldManager worldManager, GameEventManager eventManager, float time) {
         PlayerStats stats = player.getStats();
 
@@ -320,6 +354,9 @@ public class TurnManager {
         if (worldManager != null && worldManager.getWeatherManager() != null) {
             Biome biome = worldManager.getBiomeManager().getBiome(worldManager.getCurrentPlayerChunkId());
             float ambientTemp = worldManager.getWeatherManager().getAmbientTemperature(biome);
+            if (biome == Biome.DESERT && isPlayerInDesertShade(player, maze)) {
+                ambientTemp -= 12.0f;
+            }
             float currentTemp = stats.getBodyTemperature();
 
             // Simple insulation: basic clothes reduce rate of change towards ambient

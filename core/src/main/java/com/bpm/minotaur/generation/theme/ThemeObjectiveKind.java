@@ -23,7 +23,13 @@ public enum ThemeObjectiveKind {
     OPEN_DROWNED_CACHE("Open the drowned cache"),
 
     /** Overgrown Thicket: destroy the heart-bloom before the brambles close in. */
-    DESTROY_HEART_BLOOM("Burn out the heart-bloom");
+    DESTROY_HEART_BLOOM("Burn out the heart-bloom"),
+
+    /** Buried Necropolis: breach the sealed crypt door using the Warden's key. */
+    BREACH_SEALED_TOMB("Breach the sealed crypt"),
+
+    /** Drowned Causeway: reach and activate the sunken shrine before the rising tide closes it. */
+    ACTIVATE_SUNKEN_SHRINE("Activate the sunken shrine");
 
     private final String description;
 
