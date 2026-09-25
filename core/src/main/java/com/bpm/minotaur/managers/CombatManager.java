@@ -124,6 +124,11 @@ public class CombatManager {
         return null;
     }
 
+    public DiscoveryManager getDiscoveryManager() {
+        GameScreen gs = getGameScreen();
+        return (gs != null) ? gs.getDiscoveryManager() : null;
+    }
+
     private float monsterAttackDelay = 0f;
     private static final float MONSTER_ATTACK_DELAY_TIME = 0.3f;
 
@@ -1042,6 +1047,10 @@ public class CombatManager {
         // reverse of what a ranged weapon is for. Melee still needs an engagement.
         if (currentState == CombatState.INACTIVE) {
             Item readied = player.getInventory().getRightHand();
+            if (readied != null && readied.isWand()) {
+                player.zap(readied, player.getFacing(), getDiscoveryManager(), eventManager, maze, this);
+                return;
+            }
             if (readied == null || !readied.isRanged()) {
                 return;
             }
@@ -1053,6 +1062,11 @@ public class CombatManager {
 
         // 1. Check if we have a monster target
         if (monster == null) {
+            if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isWand()) {
+                player.zap(player.getInventory().getRightHand(), player.getFacing(), getDiscoveryManager(), eventManager, maze, this);
+                closeMenuOrPassTurn();
+                return;
+            }
             // 2. No target? Check Ranged
             if (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().isRanged()) {
                 // Previously this called performRangedAttack(), which called straight
@@ -1071,6 +1085,11 @@ public class CombatManager {
         // actually matters would skip the misfire roll, the noise, the muzzle flash
         // and the range check.
         Item readiedInCombat = player.getInventory().getRightHand();
+        if (readiedInCombat != null && readiedInCombat.isWand()) {
+            player.zap(readiedInCombat, player.getFacing(), getDiscoveryManager(), eventManager, maze, this);
+            closeMenuOrPassTurn();
+            return;
+        }
         if (readiedInCombat != null && readiedInCombat.isRanged()) {
             resolveRangedAttackAgainst(monster);
             return;
@@ -2646,6 +2665,10 @@ public class CombatManager {
      */
     public boolean performRangedAttack() {
         Item weapon = player.getInventory().getRightHand();
+        if (weapon != null && weapon.isWand()) {
+            player.zap(weapon, player.getFacing(), getDiscoveryManager(), eventManager, maze, this);
+            return true;
+        }
         if (weapon == null || !weapon.isRanged())
             return false;
 

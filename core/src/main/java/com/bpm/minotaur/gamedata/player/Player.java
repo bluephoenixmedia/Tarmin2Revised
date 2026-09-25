@@ -1392,11 +1392,9 @@ public class Player {
             return;
         }
 
-        if (item.getType().name().startsWith("WAND_")) {
-            // Wands usually require direction, handled by Z key.
-            // If Used directly, maybe default direction?
-            // For now, allow Use to trigger Zap in facing direction.
-            zap(item, facing, discoveryManager, eventManager, maze);
+        if (item.isWand()) {
+            // Wands require direction, default to facing direction when used directly
+            zap(item, facing, discoveryManager, eventManager, maze, combatManager);
             return;
         }
 
@@ -1857,59 +1855,13 @@ public class Player {
 
     public void zap(Item wand, Direction dir, DiscoveryManager discoveryManager, GameEventManager eventManager,
             Maze maze) {
-        if (wand == null) {
-            eventManager.addEvent(new GameEvent("Zap what?", 1.0f));
-            return;
-        }
+        zap(wand, dir, discoveryManager, eventManager, maze, null);
+    }
 
-        if (wand.getCharges() <= 0) {
-            eventManager.addEvent(new GameEvent("Nothing happens.", 1.5f));
-            return;
-        }
-
-        // Decrement charge
-        wand.decrementCharges();
-
-        WandEffectType effect = wand.getWandEffect();
-        if (effect == null)
-            return; // Should not happen for wands
-
-        String msg = effect.getZapMessage();
-        if (msg != null)
-            eventManager.addEvent(new GameEvent(msg, 2.0f));
-
-        // Logic
-        int tx = (int) position.x + (int) dir.getVector().x;
-        int ty = (int) position.y + (int) dir.getVector().y;
-
-        switch (effect) {
-            case DIGGING:
-                // Check if wall
-                if (maze.getWallDataAt(tx, ty) == 1) { // 1 is wall
-                    maze.setTile(tx, ty, 0); // 0 is floor
-                    eventManager.addEvent(new GameEvent("The rock crumbles!", 2.0f));
-                    // Check identification: If player sees wall gone
-                    discoveryManager.identifyWand(this, effect);
-                } else {
-                    eventManager.addEvent(new GameEvent("The beam dissipates.", 1.0f));
-                }
-                break;
-            case FIRE:
-            case COLD:
-            case MAGIC_MISSILE:
-            case LIGHT:
-            case TELEPORTATION:
-                // Affect monster at tx, ty
-                // We don't have direct access to list of monsters here easily without
-                // iteration?
-                // Maze might have getMonsterAt(x,y)?
-                // Checking code... Maze has 'monsters' list?
-                // Need to verify Maze methods.
-                // For now stub.
-                eventManager.addEvent(new GameEvent("The beam strikes at (" + tx + "," + ty + ")!", 1.0f));
-                discoveryManager.identifyWand(this, effect);
-                break;
-        }
+    public void zap(Item wand, Direction dir, DiscoveryManager discoveryManager, GameEventManager eventManager,
+            Maze maze, CombatManager combatManager) {
+        com.bpm.minotaur.gamedata.spells.WandExecutionEngine.zapWand(
+                wand, this, dir, maze, discoveryManager, eventManager, combatManager);
     }
 
     public void apply(Item tool, GameEventManager eventManager) {

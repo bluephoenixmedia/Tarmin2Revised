@@ -527,21 +527,32 @@ public class ItemDataManager {
 
         // --- NEW WAND LOGIC ---
         if (template.isWandAppearance) {
-            if (discoveryManager != null) {
+            WandEffectType effect = null;
+            if (type == Item.ItemType.WAND_OF_MAGIC_MISSILES) {
+                effect = WandEffectType.MAGIC_MISSILE;
+                item.setCharges(7);
+                item.setIdentified(true);
+            } else if (discoveryManager != null) {
+                effect = discoveryManager.getWandEffect(type);
+                if (effect == null && type == Item.ItemType.WAND) {
+                    effect = WandEffectType.values()[random.nextInt(WandEffectType.values().length)];
+                }
+            } else {
+                effect = WandEffectType.values()[random.nextInt(WandEffectType.values().length)];
+            }
 
-                WandEffectType effect = discoveryManager.getWandEffect(type);
-                if (effect != null) {
-                    item.setWandEffect(effect);
-                    // Wands start with random charges?
+            if (effect != null) {
+                item.setWandEffect(effect);
+                if (item.getCharges() <= 0) {
                     item.setCharges(random.nextInt(6) + 3); // 3 to 8 charges
+                }
 
-                    boolean isIdentified = discoveryManager.isWandIdentified(effect);
-                    item.setIdentified(isIdentified);
-                    if (isIdentified) {
-                        item.setName("Wand of " + effect.getBaseName());
-                    } else {
-                        item.setName("Wand");
-                    }
+                boolean isIdentified = (discoveryManager != null && discoveryManager.isWandIdentified(effect)) || item.isIdentified();
+                item.setIdentified(isIdentified);
+                if (isIdentified) {
+                    item.setName("Wand of " + effect.getBaseName());
+                } else {
+                    item.setName("Wand");
                 }
             }
         }

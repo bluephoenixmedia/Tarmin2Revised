@@ -2503,10 +2503,14 @@ public class GameScreen extends BaseScreen {
             }
 
             if (keycode == Input.Keys.A) {
-                // Ranged Attack or Thrown Weapon
+                // Ranged Attack, Wand Zap, or Thrown Weapon
                 Item weapon = player.getInventory().getRightHand();
                 if (weapon != null) {
-                    if (weapon.isRanged()) {
+                    if (weapon.isWand()) {
+                        player.zap(weapon, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
+                        playerTurnTakesAction();
+                        return true;
+                    } else if (weapon.isRanged()) {
                         boolean wasExploring =
                                 combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE;
                         combatManager.playerAttackInstant();
@@ -2631,7 +2635,7 @@ public class GameScreen extends BaseScreen {
                     pickupWorldItem();
                     return true;
                 case Input.Keys.U:
-                    player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze);
+                    player.useItem(player.getInventory().getRightHand(), eventManager, this.discoveryManager, maze, combatManager);
                     // A Tome study spends its own turns as it is channelled.
                     if (player.getActiveTomeStudy() == null) {
                         playerTurnTakesAction();
@@ -3010,16 +3014,16 @@ public class GameScreen extends BaseScreen {
                 }
                 break;
             case READ:
-                if (item.getType().name().startsWith("SCROLL")) {
-                    player.read(item, discoveryManager, eventManager, maze);
+                if (item.getType().name().startsWith("SCROLL") || item.isScroll()) {
+                    player.read(item, discoveryManager, eventManager, maze, combatManager);
                     playerTurnTakesAction();
                 } else {
                     eventManager.addEvent(new GameEvent("You cannot read that!", 1.5f));
                 }
                 break;
             case ZAP:
-                if (item.getType().name().startsWith("WAND")) {
-                    player.zap(item, player.getFacing(), discoveryManager, eventManager, maze);
+                if (item.getType().name().startsWith("WAND") || item.isWand()) {
+                    player.zap(item, player.getFacing(), discoveryManager, eventManager, maze, combatManager);
                     playerTurnTakesAction();
                 } else {
                     eventManager.addEvent(new GameEvent("You cannot zap that!", 1.5f));
@@ -3043,7 +3047,7 @@ public class GameScreen extends BaseScreen {
                 playerTurnTakesAction();
                 break;
             case NORMAL:
-                player.useItem(item, eventManager, discoveryManager, maze);
+                player.useItem(item, eventManager, discoveryManager, maze, combatManager);
                 if (player.getActiveTomeStudy() == null) {
                     playerTurnTakesAction();
                 }
@@ -3582,6 +3586,12 @@ public class GameScreen extends BaseScreen {
 
     public CombatDiceOverlay getCombatDiceOverlay() {
         return combatDiceOverlay;
+    }
+
+    public void invalidateMeshCache() {
+        if (world3DRenderer != null) {
+            world3DRenderer.invalidateMeshCache();
+        }
     }
 
     /**

@@ -795,6 +795,13 @@ public class Item implements Renderable {
         return false;
     }
 
+    public boolean isWand() {
+        if (wandEffect != null) return true;
+        if (type != null && (type.name().startsWith("WAND") || type.name().endsWith("_WAND"))) return true;
+        if (template != null && template.isWandAppearance) return true;
+        return false;
+    }
+
     public boolean isSpellbook() {
         if (type == ItemType.BOOK) return true;
         if (type == ItemType.WAR_BOOK || type == ItemType.SPIRITUAL_BOOK || type == ItemType.SPECIAL_BOOK) return false;
