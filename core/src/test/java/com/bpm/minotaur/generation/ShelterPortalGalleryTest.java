@@ -134,4 +134,47 @@ public class ShelterPortalGalleryTest {
             assertEquals(portal + ": destination must be stable within a world", first, second);
         }
     }
+
+    @Test
+    public void testGalleryNichesAndWalkwayAreIndoorsWithCeiling() {
+        if (com.badlogic.gdx.Gdx.app == null) {
+            com.badlogic.gdx.Gdx.app = (com.badlogic.gdx.Application) java.lang.reflect.Proxy.newProxyInstance(
+                    com.badlogic.gdx.Application.class.getClassLoader(),
+                    new Class<?>[]{com.badlogic.gdx.Application.class},
+                    (proxy, method, args) -> null);
+        }
+        MazeChunkGenerator gen = new MazeChunkGenerator();
+        com.bpm.minotaur.gamedata.Maze maze = gen.generateChunk(new GridPoint2(0, 0), 1, 1,
+                com.bpm.minotaur.gamedata.Difficulty.EASY,
+                com.bpm.minotaur.gamedata.GameMode.ADVANCED,
+                null, null, null, null, null, null, null, 12345L, 0);
+
+        for (BiomePortal portal : BiomePortal.values()) {
+            for (GridPoint2 pt : com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().getStationLocations(portal.getStation())) {
+                assertTrue("Portal station tile " + pt + " must be a home tile", maze.isHomeTile(pt.x, pt.y));
+                assertTrue("Portal station tile " + pt + " must be indoors (have ceiling)", maze.isIndoors(pt.x, pt.y));
+                // Walkway tile in front (y + 1 in game coordinates)
+                assertTrue("Walkway in front of portal at (" + pt.x + "," + (pt.y + 1) + ") must be home tile",
+                        maze.isHomeTile(pt.x, pt.y + 1));
+                assertTrue("Walkway in front of portal at (" + pt.x + "," + (pt.y + 1) + ") must have ceiling",
+                        maze.isIndoors(pt.x, pt.y + 1));
+            }
+        }
+    }
+
+    @Test
+    public void testRandomMazeTilesDoNotContainPortalArchwaysOrP() throws Exception {
+        MazeChunkGenerator gen = new MazeChunkGenerator();
+        Field[] fields = MazeChunkGenerator.class.getDeclaredFields();
+        for (Field f : fields) {
+            if (f.getName().startsWith("tile") && f.getType() == String[].class) {
+                f.setAccessible(true);
+                String[] tile = (String[]) f.get(gen);
+                for (int r = 0; r < tile.length; r++) {
+                    assertFalse("Random tile " + f.getName() + " row " + r + " must NOT contain 'P': " + tile[r],
+                            tile[r].contains("P"));
+                }
+            }
+        }
+    }
 }

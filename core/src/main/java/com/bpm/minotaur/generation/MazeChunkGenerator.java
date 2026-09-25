@@ -38,7 +38,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
     private List<GridPoint2> currentChunkHomeTiles = new ArrayList<>();
 
     // ... (Keep tiles 1-16 unchanged) ...
-    String[] tile1 = new String[] { "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D...P..D.#", "###..###.###",
+    String[] tile1 = new String[] { "#####.#.####", "#...#.#D##.#", "#.#D#....#.#", "#.D......D.#", "###..###.###",
             ".....#.D....", "###..#.#####", "#.#..#.#####", "#D#..#.D....", "#.#..###....", "#.....##....",
             "#####.######" };
     String[] tile2 = new String[] { "#####.######", "#...D.D....#", "#####.######", "#...D.D....#", "#####.######",
@@ -321,6 +321,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
             MonsterDataManager dataManager, ItemDataManager itemDataManager, AssetManager assetManager,
             SpawnTableData spawnTableData, long chunkSeed, int playerLuck, Set<GridPoint2> reachable) {
 
+        if (spawnTableData == null) return;
+
         long spawnSeed = chunkSeed ^ 0xDEADBEEF12345678L;
 
         SpawnManager spawnManager = new SpawnManager(dataManager, itemDataManager, assetManager, maze, difficulty,
@@ -557,9 +559,9 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     if (info.id == HOME_TILE_ID) {
                         for (int tx = 0; tx < 12; tx++) {
                             // --- FIX: Home Zone Logic ---
-                            // Include ALL home tiles (including walls, door, window, and props) in the list so
-                            // the game knows this entire footprint is the "Home Zone" (Sheltered from weather).
-                            boolean isHomeZone = (tileY >= 3 && tileY <= 7 && tx >= 3 && tx <= 9);
+                            // Include ALL home tiles (including walls, door, window, props, and portal gallery) in the list so
+                            // the game knows this entire footprint is the "Home Zone" (Sheltered from weather and has a ceiling).
+                            boolean isHomeZone = (tileY >= 3 && tileY <= 10 && tx >= 3 && tx <= 9);
 
                             if (isHomeZone) {
                                 int gameX = mapX * 12 + tx;
@@ -648,6 +650,7 @@ public class MazeChunkGenerator implements IChunkGenerator {
         int width = layout[0].length();
         int[][] bitmaskedData = new int[height][width];
         Maze maze = new Maze(level, bitmaskedData);
+        maze.setHomeTiles(currentChunkHomeTiles);
         for (int y = 0; y < height; y++) {
             int layoutY = height - 1 - y;
             for (int x = 0; x < width; x++) {
@@ -684,71 +687,93 @@ public class MazeChunkGenerator implements IChunkGenerator {
                     }
                     // ---------------------------------------
                 } else if (c == 'C') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.STASH_CHEST)) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.HOME_CHEST, x, y, ItemColor.TAN, assetManager));
+                        }
                     }
                 } else if (c == 'N') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH)) {
-                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
-                                assetManager));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CRAFTING_BENCH)) {
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_CRAFTING_BENCH, x, y, ItemColor.TAN,
+                                    assetManager));
+                        }
                     }
                 } else if (c == 'P') {
-                    placePortalNiche(maze, layout, layoutY, x, y, itemDataManager, assetManager);
+                    if (maze.isHomeTile(x, y)) {
+                        placePortalNiche(maze, layout, layoutY, x, y, itemDataManager, assetManager);
+                    }
                 } else if (c == 'A') {
-                    maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
-                            assetManager));
-                } else if (c == 'B') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED)) {
-                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
+                    if (maze.isHomeTile(x, y) && itemDataManager != null) {
+                        maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_ALTAR, x, y, ItemColor.GOLD,
                                 assetManager));
                     }
+                } else if (c == 'B') {
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.BED)) {
+                            maze.addItem(itemDataManager.createItem(Item.ItemType.HOME_SLEEPING_BAG, x, y, ItemColor.TAN,
+                                    assetManager));
+                        }
+                    }
                 } else if (c == 'F') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
-                        maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
-                                LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
-                                LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE, x, y);
+                        if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.CAMPFIRE)) {
+                            if (itemDataManager != null) {
+                                maze.addItem(
+                                        itemDataManager.createItem(Item.ItemType.HOME_FIRE_POT, x, y, ItemColor.TAN, assetManager));
+                            }
+                            maze.addLight(new LightSource("shelter_cook_pot", x + 0.5f, y + 0.5f,
+                                    LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                                    LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                        }
                     }
                 } else if (c == 'L') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
-                        maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
-                                LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
-                                LightSource.FlickerProfile.LANTERN_BREATH));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN, x, y);
+                        if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
+                            if (itemDataManager != null) {
+                                maze.addItem(
+                                        itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, x, y, ItemColor.GOLD, assetManager));
+                            }
+                            maze.addLight(new LightSource("shelter_lantern_" + x + "_" + y, x + 0.5f, y + 0.5f,
+                                    LightingManager.COLOR_LANTERN, 5.0f, LightingManager.MOUNTED_LANTERN_INTENSITY,
+                                    LightSource.FlickerProfile.LANTERN_BREATH));
+                        }
                     }
                 } else if (c == 'T') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.HOME_TRAINING_DUMMY, x, y, ItemColor.TAN, assetManager));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.TRAINING_DUMMY)) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.HOME_TRAINING_DUMMY, x, y, ItemColor.TAN, assetManager));
+                        }
                     }
                 } else if (c == 'R') {
-                    com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, x, y);
-                    if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
-                            com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN)) {
-                        maze.addItem(
-                                itemDataManager.createItem(Item.ItemType.HOME_ARCHIVE_LECTERN, x, y, ItemColor.GOLD, assetManager));
+                    if (maze.isHomeTile(x, y)) {
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().registerStationLocation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN, x, y);
+                        if (itemDataManager != null && com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().hasStation(
+                                com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.ARCHIVE_LECTERN)) {
+                            maze.addItem(
+                                    itemDataManager.createItem(Item.ItemType.HOME_ARCHIVE_LECTERN, x, y, ItemColor.GOLD, assetManager));
+                        }
                     }
                 }
             }
