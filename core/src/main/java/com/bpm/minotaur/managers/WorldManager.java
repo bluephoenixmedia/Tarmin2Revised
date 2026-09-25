@@ -392,6 +392,9 @@ public class WorldManager {
             } else if (generator instanceof ForestChunkGenerator) {
                 ((ForestChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof DesertChunkGenerator) {
+                ((DesertChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
             } else if (generator instanceof LakelandsChunkGenerator) {
                 ((LakelandsChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
