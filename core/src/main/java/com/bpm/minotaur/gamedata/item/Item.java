@@ -868,7 +868,13 @@ public class Item implements Renderable {
     }
 
     public boolean isShield() {
-        return this.isShield;
+        return this.isShield || (this.type != null && (this.type == ItemType.SMALL_SHIELD
+                || this.type == ItemType.LARGE_SHIELD || this.type == ItemType.SHIELD
+                || this.type == ItemType.SHIELD_SMALL || this.type == ItemType.SHIELD_LARGE
+                || this.type == ItemType.SHIELD_MEDIUM || this.type == ItemType.SHIELD_BODY
+                || this.type == ItemType.SHIELD_BODY_2
+                || this.type == ItemType.GALLIC_SHIELD || this.type == ItemType.HOPLITE_SHIELD
+                || this.type == ItemType.BUCKLER));
     }
 
     public String resolveDefaultIconPath() {
@@ -1180,7 +1186,7 @@ public class Item implements Renderable {
         }
         if (isRing)
             return ItemCategory.RING;
-        if (isArmor)
+        if (isArmor || isShield())
             return ItemCategory.ARMOR;
         if (isGem)
             return ItemCategory.GEM;

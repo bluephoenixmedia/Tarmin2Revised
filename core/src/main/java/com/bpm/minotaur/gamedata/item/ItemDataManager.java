@@ -287,9 +287,35 @@ public class ItemDataManager {
             loadedCount++;
         }
 
+        // Ensure shield aliases resolve bidirectionally between classic Tarmin and Open5e
+        crossAlias(ItemType.SMALL_SHIELD, ItemType.SHIELD_SMALL);
+        crossAlias(ItemType.LARGE_SHIELD, ItemType.SHIELD_LARGE);
+        if (!itemTemplates.containsKey(ItemType.SHIELD)) {
+            if (itemTemplates.containsKey(ItemType.SMALL_SHIELD)) {
+                itemTemplates.put(ItemType.SHIELD, itemTemplates.get(ItemType.SMALL_SHIELD));
+            } else if (itemTemplates.containsKey(ItemType.SHIELD_SMALL)) {
+                itemTemplates.put(ItemType.SHIELD, itemTemplates.get(ItemType.SHIELD_SMALL));
+            }
+        }
+        if (!itemTemplates.containsKey(ItemType.SHIELD_MEDIUM)) {
+            if (itemTemplates.containsKey(ItemType.SHIELD_BODY)) {
+                itemTemplates.put(ItemType.SHIELD_MEDIUM, itemTemplates.get(ItemType.SHIELD_BODY));
+            } else if (itemTemplates.containsKey(ItemType.SMALL_SHIELD)) {
+                itemTemplates.put(ItemType.SHIELD_MEDIUM, itemTemplates.get(ItemType.SMALL_SHIELD));
+            }
+        }
+
         applyUnlockGating();
 
         Gdx.app.log("ItemDataManager", "Loaded " + loadedCount + " new armor items.");
+    }
+
+    private void crossAlias(ItemType a, ItemType b) {
+        if (itemTemplates.containsKey(a) && !itemTemplates.containsKey(b)) {
+            itemTemplates.put(b, itemTemplates.get(a));
+        } else if (itemTemplates.containsKey(b) && !itemTemplates.containsKey(a)) {
+            itemTemplates.put(a, itemTemplates.get(b));
+        }
     }
 
     /** Every type with a loaded template, in ItemType declaration order. */
@@ -318,6 +344,27 @@ public class ItemDataManager {
 
     public ItemTemplate getTemplate(ItemType type) {
         ItemTemplate template = itemTemplates.get(type);
+        if (template == null && type != null) {
+            if (type == ItemType.SMALL_SHIELD && itemTemplates.containsKey(ItemType.SHIELD_SMALL)) {
+                template = itemTemplates.get(ItemType.SHIELD_SMALL);
+            } else if (type == ItemType.SHIELD_SMALL && itemTemplates.containsKey(ItemType.SMALL_SHIELD)) {
+                template = itemTemplates.get(ItemType.SMALL_SHIELD);
+            } else if (type == ItemType.LARGE_SHIELD && itemTemplates.containsKey(ItemType.SHIELD_LARGE)) {
+                template = itemTemplates.get(ItemType.SHIELD_LARGE);
+            } else if (type == ItemType.SHIELD_LARGE && itemTemplates.containsKey(ItemType.LARGE_SHIELD)) {
+                template = itemTemplates.get(ItemType.LARGE_SHIELD);
+            } else if (type == ItemType.SHIELD) {
+                template = itemTemplates.get(ItemType.SMALL_SHIELD);
+                if (template == null) template = itemTemplates.get(ItemType.SHIELD_SMALL);
+            } else if (type == ItemType.SHIELD_MEDIUM) {
+                template = itemTemplates.get(ItemType.SHIELD_BODY);
+                if (template == null) template = itemTemplates.get(ItemType.SMALL_SHIELD);
+            }
+            if (template != null) {
+                itemTemplates.put(type, template);
+                return template;
+            }
+        }
         if (template == null) {
             Gdx.app.error("ItemDataManager", "Missing template for item type: " + type + ". Generating fallback template.");
             template = new ItemTemplate();
@@ -423,7 +470,10 @@ public class ItemDataManager {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Warrior's Red Die");
         }
         // 3. Guardian's Steel Die
-        else if (type == ItemType.SMALL_SHIELD || type == ItemType.LARGE_SHIELD) {
+        else if (type == ItemType.SMALL_SHIELD || type == ItemType.LARGE_SHIELD
+                || type == ItemType.SHIELD_SMALL || type == ItemType.SHIELD_LARGE
+                || type == ItemType.SHIELD || type == ItemType.SHIELD_MEDIUM
+                || type == ItemType.SHIELD_BODY || type == ItemType.BUCKLER) {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Guardian's Steel Die");
         }
         // 4. Archer's Precision Die

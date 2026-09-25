@@ -1069,6 +1069,18 @@
       "layer": "small_shield",
       "slot": "shield"
     },
+    "SMALL_SHIELD": {
+      "layer": "small_shield",
+      "slot": "shield"
+    },
+    "SHIELD_LARGE": {
+      "layer": "large_shield",
+      "slot": "shield"
+    },
+    "SHIELD": {
+      "layer": "small_shield",
+      "slot": "shield"
+    },
     "SHIELD_SPIKE": {
       "layer": "shield_spike",
       "slot": "weapon"
