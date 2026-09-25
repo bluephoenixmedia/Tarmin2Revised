@@ -61,7 +61,6 @@ public class CastleMapScreen extends BaseScreen {
     static {
         BIOME_STYLES.put(Biome.MAZE, new BiomeStyle(new Color(0.18f, 0.17f, 0.22f, 0.9f), "M", "Maze / Castle Approach"));
         BIOME_STYLES.put(Biome.FOREST, new BiomeStyle(new Color(0.12f, 0.22f, 0.12f, 0.9f), "F", "Forest"));
-        BIOME_STYLES.put(Biome.PLAINS, new BiomeStyle(new Color(0.18f, 0.22f, 0.14f, 0.9f), "P", "Plains"));
         BIOME_STYLES.put(Biome.DESERT, new BiomeStyle(new Color(0.30f, 0.26f, 0.14f, 0.9f), "D", "Desert"));
         BIOME_STYLES.put(Biome.LAKELANDS, new BiomeStyle(new Color(0.10f, 0.20f, 0.28f, 0.9f), "L", "Lakelands"));
         BIOME_STYLES.put(Biome.MOUNTAINS, new BiomeStyle(new Color(0.15f, 0.15f, 0.17f, 0.9f), "A", "Mountains (impassable)"));
@@ -469,7 +468,7 @@ public class CastleMapScreen extends BaseScreen {
                 }
 
                 if (viewFloor == 1) {
-                    Biome biome = (biomeManager != null) ? biomeManager.getBiome(chId) : Biome.PLAINS;
+                    Biome biome = (biomeManager != null) ? biomeManager.getBiome(chId) : Biome.FOREST;
                     shapeRenderer.setColor(styleFor(biome).color);
                 } else {
                     shapeRenderer.setColor(0.16f, 0.18f, 0.22f, 0.9f); // Uniform "visited" strata color
@@ -556,7 +555,7 @@ public class CastleMapScreen extends BaseScreen {
                     fontSmall.setColor(Color.CORAL);
                     fontSmall.draw(game.getBatch(), "CASTLE", x + 6, y + chunkH - 8);
                 } else if (viewFloor == 1) {
-                    Biome biome = (biomeManager != null) ? biomeManager.getBiome(chId) : Biome.PLAINS;
+                    Biome biome = (biomeManager != null) ? biomeManager.getBiome(chId) : Biome.FOREST;
                     fontSmall.setColor(Color.LIGHT_GRAY);
                     fontSmall.draw(game.getBatch(), styleFor(biome).letter, x + 6, y + chunkH - 8);
                 }

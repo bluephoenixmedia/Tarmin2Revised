@@ -12,6 +12,7 @@ import com.bpm.minotaur.generation.WorldConstants;
 public class BiomeManager {
 
     private final FastNoiseLite noise;
+    private final FastNoiseLite humidityNoise;
     private final int mazeRadius;
     private final int forestRadius;
 
@@ -19,6 +20,10 @@ public class BiomeManager {
         this.noise = new FastNoiseLite(WorldConstants.WORLD_SEED);
         this.noise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
         this.noise.SetFrequency(WorldConstants.BIOME_NOISE_FREQUENCY);
+
+        this.humidityNoise = new FastNoiseLite(WorldConstants.WORLD_SEED + 1013);
+        this.humidityNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+        this.humidityNoise.SetFrequency(WorldConstants.HUMIDITY_NOISE_FREQUENCY);
 
         // Pre-calculate the total radius for the static zones
         this.mazeRadius = WorldConstants.CENTRAL_MAZE_RADIUS;
@@ -44,28 +49,23 @@ public class BiomeManager {
         }
 
         // Rule 3: We are in the "Wilderness." Use noise to decide.
-        // Get a noise value between -1.0 and 1.0
+        // Get a noise value between -1.0 and 1.0 (elevation)
         float noiseValue = noise.GetNoise(chunkId.x, chunkId.y);
 
-        // --- You can add more rules here for other noise maps (e.g., temperature, humidity) ---
-
-        // Simple biome selection based on one noise map (elevation)
         if (noiseValue < WorldConstants.OCEAN_THRESHOLD) {
             return Biome.OCEAN;
         } else if (noiseValue > WorldConstants.MOUNTAIN_THRESHOLD) {
             return Biome.MOUNTAINS;
         } else {
-            // Default to Plains/Forest for now
-            // We can use another noise layer later to distinguish them
-            return Biome.PLAINS;
+            // Wilderness land biomes: determine via humidity noise
+            float humidity = humidityNoise.GetNoise(chunkId.x, chunkId.y);
+            if (humidity < WorldConstants.DESERT_HUMIDITY_THRESHOLD) {
+                return Biome.DESERT;
+            } else if (humidity > WorldConstants.LAKELANDS_HUMIDITY_THRESHOLD) {
+                return Biome.LAKELANDS;
+            } else {
+                return Biome.FOREST;
+            }
         }
-
-        // Example for more complex generation (e.g., Desert vs. Lakelands):
-        // float humidity = anotherNoise.GetNoise(chunkId.x, chunkId.y);
-        // if (noiseValue > 0 && humidity < -0.5) {
-        //     return Biome.DESERT;
-        // } else if (noiseValue > 0 && humidity > 0.5) {
-        //     return Biome.LAKELANDS;
-        // }
     }
 }

@@ -177,7 +177,7 @@ public class Item implements Renderable {
         // Home Props
         HOME_CHEST, HOME_CRAFTING_BENCH, HOME_SLEEPING_BAG, HOME_FIRE_POT, BRASS_LANTERN, HOME_ALTAR, HOME_TRAINING_DUMMY, HOME_ARCHIVE_LECTERN,
         // Shelter biome portals, and the return portal they leave behind.
-        BIOME_PORTAL_FOREST, BIOME_PORTAL_PLAINS, BIOME_RETURN_PORTAL,
+        BIOME_PORTAL_FOREST, BIOME_PORTAL_DESERT, BIOME_PORTAL_LAKELANDS, BIOME_RETURN_PORTAL,
 
         // Portable Field Kits
         CRAFTING_TOOLKIT, COOKING_KIT,

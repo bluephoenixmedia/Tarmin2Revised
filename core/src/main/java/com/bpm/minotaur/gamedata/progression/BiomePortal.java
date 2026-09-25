@@ -24,12 +24,19 @@ public enum BiomePortal {
             new Color(0.25f, 0.85f, 0.35f, 1f),
             "Verdant Gate"),
 
-    PLAINS(
-            ShelterAltar.Station.PORTAL_PLAINS,
-            Biome.PLAINS,
-            Item.ItemType.BIOME_PORTAL_PLAINS,
-            new Color(0.90f, 0.78f, 0.30f, 1f),
-            "Amber Gate");
+    DESERT(
+            ShelterAltar.Station.PORTAL_DESERT,
+            Biome.DESERT,
+            Item.ItemType.BIOME_PORTAL_DESERT,
+            new Color(0.95f, 0.75f, 0.40f, 1f),
+            "Dune Gate"),
+
+    LAKELANDS(
+            ShelterAltar.Station.PORTAL_LAKELANDS,
+            Biome.LAKELANDS,
+            Item.ItemType.BIOME_PORTAL_LAKELANDS,
+            new Color(0.30f, 0.80f, 0.95f, 1f),
+            "Mist Gate");
 
     /**
      * Tint for the return portal left at an arrival point. It has no biome of

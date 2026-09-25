@@ -51,6 +51,21 @@ public class WorldConstants {
      */
     public static final float MOUNTAIN_THRESHOLD = 0.6f;
 
+    /**
+     * Noise frequency for the humidity noise layer determining wilderness biomes.
+     */
+    public static final float HUMIDITY_NOISE_FREQUENCY = 0.08f;
+
+    /**
+     * Humidity threshold for arid biomes. Values below this produce DESERT.
+     */
+    public static final float DESERT_HUMIDITY_THRESHOLD = -0.30f;
+
+    /**
+     * Humidity threshold for wet biomes. Values above this produce LAKELANDS.
+     */
+    public static final float LAKELANDS_HUMIDITY_THRESHOLD = 0.30f;
+
     // Authentic Dynamic Dungeon Lighting Constants
     public static final float TORCH_FULL_BRIGHTNESS_RADIUS = 1.8f; // Distance where lighting is at 100%
     public static final float TORCH_FADE_START = 3.5f;             // Distance where torch begins fading

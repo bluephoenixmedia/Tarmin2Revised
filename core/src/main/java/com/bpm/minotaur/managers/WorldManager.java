@@ -15,8 +15,10 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.generation.Biome;
+import com.bpm.minotaur.generation.DesertChunkGenerator;
 import com.bpm.minotaur.generation.ForestChunkGenerator;
 import com.bpm.minotaur.generation.IChunkGenerator;
+import com.bpm.minotaur.generation.LakelandsChunkGenerator;
 import com.bpm.minotaur.generation.MazeChunkGenerator;
 import com.bpm.minotaur.lighting.LightSource;
 import com.bpm.minotaur.lighting.LightingManager;
@@ -142,10 +144,13 @@ public class WorldManager {
 
         MazeChunkGenerator mazeGen = new MazeChunkGenerator();
         ForestChunkGenerator forestGen = new ForestChunkGenerator();
+        DesertChunkGenerator desertGen = new DesertChunkGenerator();
+        LakelandsChunkGenerator lakelandsGen = new LakelandsChunkGenerator();
 
         this.generators.put(Biome.MAZE, mazeGen);
         this.generators.put(Biome.FOREST, forestGen);
-        this.generators.put(Biome.PLAINS, forestGen);
+        this.generators.put(Biome.DESERT, desertGen);
+        this.generators.put(Biome.LAKELANDS, lakelandsGen);
         this.currentLevelTheme = getThemeForLevel(initialLevel);
     }
 
@@ -387,6 +392,9 @@ public class WorldManager {
             } else if (generator instanceof ForestChunkGenerator) {
                 ((ForestChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
                 pendingUpLadderPos = null; // Consume the request
+            } else if (generator instanceof LakelandsChunkGenerator) {
+                ((LakelandsChunkGenerator) generator).setForcedUpLadderPos(pendingUpLadderPos);
+                pendingUpLadderPos = null; // Consume the request
             }
         }
         // ---------------------------------------------------
@@ -397,8 +405,13 @@ public class WorldManager {
                 themeToGenerate = this.currentLevelTheme;
                 break;
             case FOREST:
-            case PLAINS:
                 themeToGenerate = RetroTheme.FOREST_THEME;
+                break;
+            case DESERT:
+                themeToGenerate = RetroTheme.DESERT_THEME;
+                break;
+            case LAKELANDS:
+                themeToGenerate = RetroTheme.LAKELANDS_THEME;
                 break;
             default:
                 themeToGenerate = this.currentLevelTheme;

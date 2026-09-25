@@ -20,7 +20,6 @@ public enum Biome {
     FOREST(true, true, 8, new Color(0x0a / 255f, 0x18 / 255f, 0x0f / 255f, 1.0f), "images/skybox/skybox_forest.png",
             "images/floor_forest.png", "images/forest_cliff.png"),
     DESERT(true, true, 20, new Color(0.7f, 0.6f, 0.4f, 1.0f)),
-    PLAINS(true, true, 25, new Color(0.3f, 0.5f, 0.2f, 1.0f)),
     MOUNTAINS(false, false, 100, null), // Not seamless, impassable
     LAKELANDS(true, true, 15, new Color(0.4f, 0.4f, 0.7f, 1.0f)),
     OCEAN(false, false, 100, null); // Not seamless, impassable

@@ -6301,8 +6301,13 @@
         "texturePath": "images/portals/portal_vortex_still.png",
         "isImpassable": true
     },
-    "BIOME_PORTAL_PLAINS": {
-        "friendlyName": "Amber Gate",
+    "BIOME_PORTAL_DESERT": {
+        "friendlyName": "Dune Gate",
+        "texturePath": "images/portals/portal_vortex_still.png",
+        "isImpassable": true
+    },
+    "BIOME_PORTAL_LAKELANDS": {
+        "friendlyName": "Mist Gate",
         "texturePath": "images/portals/portal_vortex_still.png",
         "isImpassable": true
     },

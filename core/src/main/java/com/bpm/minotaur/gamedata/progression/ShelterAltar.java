@@ -55,7 +55,8 @@ public class ShelterAltar {
         TRAINING_DUMMY("Training Grounds", "A training post and martial weapons rack that unlocks the Player Skill Tree to spend banked skill points.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_TRAINING_DUMMY, null),
         ARCHIVE_LECTERN("Archive Lectern", "An illuminated stone lectern holding the Chronicle of Tarmin. Review all unlocked armory, unsealed arcana, and camp renovations.", 15, com.bpm.minotaur.gamedata.item.Item.ItemType.HOME_ARCHIVE_LECTERN, null),
         PORTAL_FOREST("Verdant Gate", "A rune-carved arch that tears open onto the forest eaves, eleven chunks beyond the maze. Saves the long walk out.", 25, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_FOREST, null, 3),
-        PORTAL_PLAINS("Amber Gate", "A rune-carved arch opening onto the open plains past the forest belt. Saves a longer walk still.", 35, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_PLAINS, null, 5);
+        PORTAL_DESERT("Dune Gate", "A rune-carved arch shimmering with heat distortion that opens onto the sun-scorched desert dunes. Saves a grueling trek.", 35, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_DESERT, null, 5),
+        PORTAL_LAKELANDS("Mist Gate", "A rune-carved arch dripping with cold dew that opens onto the murky shallows of the Lakelands. Saves wading the long miles.", 45, com.bpm.minotaur.gamedata.item.Item.ItemType.BIOME_PORTAL_LAKELANDS, null, 7);
 
         private final String displayName;
         private final String description;

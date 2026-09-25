@@ -1612,8 +1612,6 @@ public class Hud implements Disposable {
                 return "M";
             case FOREST:
                 return "F";
-            case PLAINS:
-                return "P";
             case DESERT:
                 return "D";
             case MOUNTAINS:

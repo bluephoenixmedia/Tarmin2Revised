@@ -237,7 +237,6 @@ public class WeatherManager {
         switch (biome) {
             case MAZE:
             case FOREST:
-            case PLAINS:
                 if (roll < 0.35f)
                     return WeatherType.CLEAR;
                 if (roll < 0.55f)
@@ -247,6 +246,14 @@ public class WeatherManager {
                 if (roll < 0.98f)
                     return WeatherType.STORM;
                 return WeatherType.TORNADO;
+            case LAKELANDS:
+                if (roll < 0.20f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.55f)
+                    return WeatherType.FOG;
+                if (roll < 0.85f)
+                    return WeatherType.RAIN;
+                return WeatherType.STORM;
             case MOUNTAINS:
                 if (roll < 0.35f)
                     return WeatherType.CLEAR;
@@ -520,8 +527,8 @@ public class WeatherManager {
         float baseTemp = 20.0f; // Default temperate baseline
 
         switch (biome) {
-            case PLAINS:
-                baseTemp = 22.0f; // 71.6°F
+            case LAKELANDS:
+                baseTemp = 18.0f; // 64.4°F - damp, chilly wetland
                 break;
             case FOREST:
                 baseTemp = 20.0f; // 68°F

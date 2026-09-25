@@ -215,6 +215,26 @@ public class RetroTheme {
         new Color(0.1f, 0.15f, 0.6f, 1)     // Door Dark (Dark Blue)
     );
 
+    public static final Theme DESERT_THEME = new Theme(
+        "Desert",
+        INTV_YELLOW_DARK,                  // Floor (Sand)
+        new Color(0.6f, 0.5f, 0.3f, 1),    // Ceiling (Hazy amber)
+        INTV_ORANGE_LIGHT,                 // Wall (Bright Sandstone)
+        INTV_ORANGE_DARK,                  // Wall Dark (Sandstone Shadow)
+        INTV_TAN,                          // Door
+        INTV_BROWN_DARK                    // Door Dark
+    );
+
+    public static final Theme LAKELANDS_THEME = new Theme(
+        "Lakelands",
+        INTV_BLUE_DARK,                    // Floor (Murky Shallows)
+        new Color(0.2f, 0.35f, 0.4f, 1),   // Ceiling (Misty Cyan)
+        INTV_DARK_GREEN,                   // Wall (Mangrove boles)
+        INTV_OLIVE,                        // Wall Dark (Muddy roots)
+        INTV_GREY_LIGHT,                   // Door
+        INTV_GREY_DARK                     // Door Dark
+    );
+
     private static final Theme[] ADVANCED_THEMES = new Theme[] {
         ADVANCED_COLOR_THEME_RED,
         ADVANCED_COLOR_THEME_BLUE,
