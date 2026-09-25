@@ -144,6 +144,30 @@ public class DebugManager {
         }
     }
 
+    /**
+     * The warp fade, without changing which dimension the player is in.
+     *
+     * <p>{@link #triggerDimensionalWarp} is not a travel effect: RETRO and the
+     * raycaster *are* the Void's identity, so calling it for ordinary travel
+     * drops the player into ASCII rendering in the mortal realm. Biome portals
+     * want the shear and none of that.
+     */
+    public void triggerTravelWarp() {
+        if (transitionState != TransitionState.NONE) return;
+
+        targetRenderMode = renderMode;
+        targetRenderEngine = renderEngine;
+        isModernToRetro = false;
+        isDimensionalWarp = true;
+        transitionState = TransitionState.FADING_OUT;
+        transitionProgress = 0f;
+
+        if (Gdx.app != null) {
+            Gdx.app.log("DebugManager [WARP]", "Travel warp triggered; render mode unchanged ("
+                    + renderMode + "/" + renderEngine + ")");
+        }
+    }
+
     public boolean isDimensionalWarp() {
         return isDimensionalWarp;
     }

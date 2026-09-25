@@ -229,6 +229,10 @@ public class Monster implements Renderable {
     public Monster(MonsterType type, int hp, int ac, float startX, float startY) {
         this.type = type;
         this.position = new Vector2(startX + 0.5f, startY + 0.5f);
+        // The data-driven constructor takes scale from the template; this one has
+        // no template, and a null scale is a null dereference the moment anything
+        // renders the monster in retro mode.
+        this.scale = new Vector2(1f, 1f);
         this.monsterColor = MonsterColor.WHITE;
         this.dataManager = null;
         this.maxHP = hp;

@@ -1111,9 +1111,11 @@ public class GameScreen extends BaseScreen {
                     player.getPosition().set(warp.playerPos.x + 0.5f, warp.playerPos.y + 0.5f);
                     worldManager.setCurrentChunk(warp.chunkId);
                     swapToChunk(destination);
-                    // Reuses the Void portal's warp presentation: the player has
-                    // already learned what a dimensional shear looks like.
-                    debugManager.triggerDimensionalWarp(true);
+                    // The shear, but not the dimension swap: triggerDimensionalWarp
+                    // forces RETRO and the raycaster, which is the Void's identity,
+                    // not a travel effect. Walking into a forest must not drop the
+                    // player into ASCII rendering.
+                    debugManager.triggerTravelWarp();
                     soundManager.playDimensionalWarpSound();
                     onChunkEntered();
                 }
