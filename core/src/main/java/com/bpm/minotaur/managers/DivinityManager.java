@@ -137,21 +137,23 @@ public class DivinityManager {
 
     public void save() {
         try {
-            FileHandle dir = Gdx.files.local("saves/");
+            FileHandle dir = SaveManager.getInstance().getFileHandle("saves/");
             if (!dir.exists()) dir.mkdirs();
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             SaveData data = new SaveData();
             data.currentDivinities = currentDivinities;
             data.lootRetentionUpgradeLevel = lootRetentionUpgradeLevel;
             SaveManager.getInstance().atomicWriteJson(file, data);
         } catch (Exception e) {
-            Gdx.app.error("DivinityManager", "Failed to save: " + e.getMessage());
+            if (Gdx.app != null) {
+                Gdx.app.error("DivinityManager", "Failed to save: " + e.getMessage());
+            }
         }
     }
 
     private void load() {
         try {
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (file.exists()) {
                 Json json = new Json();
                 json.setUsePrototypes(false);
@@ -162,7 +164,9 @@ public class DivinityManager {
                 }
             }
         } catch (Exception e) {
-            Gdx.app.error("DivinityManager", "Failed to load: " + e.getMessage());
+            if (Gdx.app != null) {
+                Gdx.app.error("DivinityManager", "Failed to load: " + e.getMessage());
+            }
         }
     }
 

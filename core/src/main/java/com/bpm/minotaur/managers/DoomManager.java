@@ -233,15 +233,11 @@ public class DoomManager {
     // --- Persistence ---
 
     public void save() {
-        if (Gdx.files == null) {
-            return;
-        }
         try {
             Json json = new Json();
             json.setOutputType(OutputType.json);
 
-            // Simple wrapper object or just the int? Let's verify directory first.
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (!file.parent().exists()) {
                 file.parent().mkdirs();
             }
@@ -262,19 +258,25 @@ public class DoomManager {
 
     public void load() {
         try {
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (file.exists()) {
                 Json json = new Json();
                 DoomState state = json.fromJson(DoomState.class, file);
                 if (state != null) {
                     this.deathCount = state.deathCount;
-                    Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount);
+                    if (Gdx.app != null) {
+                        Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount);
+                    }
                 }
             } else {
-                Gdx.app.log("DoomManager", "No Doom State found. Starting fresh.");
+                if (Gdx.app != null) {
+                    Gdx.app.log("DoomManager", "No Doom State found. Starting fresh.");
+                }
             }
         } catch (Exception e) {
-            Gdx.app.error("DoomManager", "Failed to load Doom State", e);
+            if (Gdx.app != null) {
+                Gdx.app.error("DoomManager", "Failed to load Doom State", e);
+            }
         }
     }
 

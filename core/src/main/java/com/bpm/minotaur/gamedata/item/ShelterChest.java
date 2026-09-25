@@ -104,7 +104,7 @@ public class ShelterChest {
      */
     public void save() {
         try {
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             file.parent().mkdirs();
             List<ItemSaveData> saveData = new ArrayList<>();
             for (Item item : items) {
@@ -113,9 +113,13 @@ public class ShelterChest {
                 }
             }
             SaveManager.getInstance().atomicWriteJson(file, saveData);
-            Gdx.app.log("ShelterChest", "Saved " + saveData.size() + " items to " + getSaveFilePath());
+            if (Gdx.app != null) {
+                Gdx.app.log("ShelterChest", "Saved " + saveData.size() + " items to " + getSaveFilePath());
+            }
         } catch (Exception e) {
-            Gdx.app.error("ShelterChest", "Failed to save shelter chest", e);
+            if (Gdx.app != null) {
+                Gdx.app.error("ShelterChest", "Failed to save shelter chest", e);
+            }
         }
     }
 
@@ -124,7 +128,7 @@ public class ShelterChest {
      */
     public void load(ItemDataManager dataManager, AssetManager assetManager) {
         try {
-            FileHandle file = Gdx.files.local(getSaveFilePath());
+            FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (file.exists()) {
                 items.clear();
                 try {

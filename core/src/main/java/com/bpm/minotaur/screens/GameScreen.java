@@ -159,6 +159,10 @@ public class GameScreen extends BaseScreen {
     private float hitPauseTimer = 0f;
     private float sleepTimer = 0f;
 
+    // --- Periodic Auto-Save (Every 60 seconds) ---
+    public static final float AUTOSAVE_INTERVAL_SECONDS = 60f;
+    private float autoSaveTimer = 0f;
+
     // --- Debug UI ---
     private DebugSpawnOverlay debugSpawnOverlay;
     private com.bpm.minotaur.debug.MonsterDebugOverlay monsterDebugOverlay;
@@ -545,6 +549,7 @@ public class GameScreen extends BaseScreen {
         MusicManager.getInstance().update(delta);
 
         updateDeathSequence(delta);
+        updateAutoSave(delta);
 
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
@@ -1359,6 +1364,42 @@ public class GameScreen extends BaseScreen {
             world3DRenderer.setDeathSequence(null);
             deathSequence.reset();
             game.setScreen(target);
+        }
+    }
+
+    /**
+     * Periodic auto-save every 60 seconds during active gameplay.
+     * Guarantees players never lose progress on unexpected crashes or hangs.
+     */
+    public void updateAutoSave(float delta) {
+        if (player == null || worldManager == null) return;
+        if (deathSequence != null && deathSequence.isActive()) return;
+        if (player.getStats() != null && player.getStats().getCurrentHP() <= 0) return;
+
+        autoSaveTimer += delta;
+        if (autoSaveTimer >= AUTOSAVE_INTERVAL_SECONDS) {
+            autoSaveTimer = 0f;
+            try {
+                SaveManager.getInstance().saveActiveSlot(player, worldManager);
+                Gdx.app.log("GameScreen", "Periodic autosave completed.");
+            } catch (Exception e) {
+                Gdx.app.error("GameScreen", "Periodic autosave failed", e);
+            }
+        }
+    }
+
+    public float getAutoSaveTimer() {
+        return autoSaveTimer;
+    }
+
+    public void setAutoSaveTimer(float autoSaveTimer) {
+        this.autoSaveTimer = autoSaveTimer;
+    }
+
+    public void triggerAutoSave() {
+        if (player != null && worldManager != null) {
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
+            autoSaveTimer = 0f;
         }
     }
 
@@ -3326,6 +3367,7 @@ public class GameScreen extends BaseScreen {
             }
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
             SaveManager.getInstance().backupActiveSlot();
+            autoSaveTimer = 0f;
             soundManager.playDoorOpenSound();
             eventManager.addEvent(new GameEvent("You rest in the shelter bed. Health and mana restored. Game saved.", 3f));
             hud.addMessage("Rested in bed. HP/MP restored. Game saved.");
@@ -3612,6 +3654,7 @@ public class GameScreen extends BaseScreen {
         if (player != null && worldManager != null) {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
         }
+        autoSaveTimer = 0f;
     }
 
     private void checkBonesPresenceNotification() {

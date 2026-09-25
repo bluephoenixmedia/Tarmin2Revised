@@ -379,7 +379,7 @@ public class SaveManager {
 
     // --- Helpers ---
 
-    private FileHandle getFileHandle(String path) {
+    public FileHandle getFileHandle(String path) {
         if (Gdx.files != null) {
             return Gdx.files.local(path);
         }
