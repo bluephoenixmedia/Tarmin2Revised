@@ -16,6 +16,31 @@ Single-context layout with root `CONTEXT.md` and `docs/`. See `docs/agents/domai
 
 ---
 
+## Branching and releases
+
+`master` holds releases only. `develop` is the integration branch and is where
+work goes.
+
+- **Branch from `develop`, never from `master`.** Merge back into `develop`.
+- `master` is currently **v0.0.1** (tag `v0.0.1`). `develop` is working toward
+  **0.0.2**, and carries `projectVersion=0.0.2-SNAPSHOT` in `gradle.properties`.
+- When 0.0.2 is MVP-complete: everything lands on `develop`, `develop` is tested
+  as a whole, and only then does `develop` merge to `master`, which is tagged as
+  the new release.
+- Nothing is committed directly to `master` except a release merge and its tag.
+- On release, set `projectVersion` to the release number on `master` and bump
+  `develop` to the next `-SNAPSHOT`.
+
+Before merging to `master`, the full suite must pass (`./gradlew :core:test`)
+and the game must boot. Note that `./gradlew :core:test` occasionally fails with
+a test-JVM exit and no failing test; rerun before treating it as real.
+
+A clean textual merge is not proof of a working merge. The 0.0.1 release merge
+applied without conflict and did not compile, because one side deleted a field
+the other side had started reading. Compile and test every merge.
+
+---
+
 ## Repository Guidelines
 
 - **Architecture**: Always consult `docs/Implementation Plan_ The Expedition Loop & Progression Reboot.md` before making architectural modifications.
