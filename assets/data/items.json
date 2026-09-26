@@ -4024,7 +4024,7 @@
             "........................"
         ],
         "baseValue": 5,
-        "damageDice": "1d4",
+        "damageDice": "1d3",
         "armorClassBonus": 0,
         "isWeapon": true,
         "isRanged": false,

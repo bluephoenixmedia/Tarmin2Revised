@@ -109,8 +109,8 @@ public class SkillTreeScreen extends BaseScreen {
 
         boolean trainingActive = isTrainingGroundsUnlocked();
         Label trainingStatusLabel = new Label(
-                trainingActive ? "[ TRAINING GROUNDS ACTIVE ]" : "[ TRAINING GROUNDS LOCKED: Build at Shelter Altar ]",
-                new Label.LabelStyle(hudSkin.getFontSmall(), trainingActive ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_TEMP_ORANGE));
+                trainingActive ? "[ TRAINING GROUNDS: Active ]" : "[ TRAINING GROUNDS: Build at Shelter Altar ]",
+                new Label.LabelStyle(hudSkin.getFontSmall(), trainingActive ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_GOLD_MUTED));
         statsRow.add(trainingStatusLabel);
 
         header.add(statsRow).center().row();
@@ -342,9 +342,7 @@ public class SkillTreeScreen extends BaseScreen {
             learnBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    if (!trainingActive) {
-                        setStatus("Construct the Training Grounds at the Shelter Altar to train skills!", false);
-                    } else if (skillPoints <= 0) {
+                    if (skillPoints <= 0) {
                         setStatus("Level up to earn skill points!", false);
                     } else if (!canLearn) {
                         setStatus("You do not meet the stat or feat prerequisites for this skill!", false);
@@ -394,8 +392,8 @@ public class SkillTreeScreen extends BaseScreen {
         panel.add(prereqLabel).left().padBottom(4).row();
 
         if (!trainingActive && !learned) {
-            Label trainingNotice = new Label("Notice: Skill point training is locked until the Training Grounds station is constructed in the Shelter.",
-                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEMP_ORANGE));
+            Label trainingNotice = new Label("Shelter Training Grounds provides martial guidance and combat drills.",
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             panel.add(trainingNotice).left();
         }
 

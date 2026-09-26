@@ -6091,25 +6091,6 @@
     "runeSchool": "CONJURATION",
     "bespokeEffect": null
   },
-  "WORD_OF_RECALL": {
-    "id": "WORD_OF_RECALL",
-    "name": "Word of Recall",
-    "level": 6,
-    "school": "conjuration",
-    "mpCost": 22,
-    "range": 1,
-    "targetType": "PROJECTILE",
-    "damageDice": "12d6",
-    "damageType": "FORCE",
-    "domain": "SPIRITUAL",
-    "duration": "Instantaneous",
-    "statusEffect": null,
-    "visualArchetype": "SPATIAL_WARP",
-    "description": "You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below). If you cast this spell witho...",
-    "secondaryArchetype": "PROJECTILE",
-    "runeSchool": "CONJURATION",
-    "bespokeEffect": null
-  },
   "ZONE_OF_TRUTH": {
     "id": "ZONE_OF_TRUTH",
     "name": "Zone of Truth",

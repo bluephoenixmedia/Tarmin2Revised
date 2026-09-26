@@ -1012,7 +1012,7 @@ public class CombatManager {
 
     public void handleRemoteKill(Monster m) {
         maze.getMonsters().remove(new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
-        player.getStats().addExperience(m.getBaseExperience());
+        player.addExperience(m.getBaseExperience(), eventManager);
         eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
         if (remoteTemplate != null) {
@@ -1970,7 +1970,7 @@ public class CombatManager {
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
                                     maze.getMonsters().remove(adjPos);
-                                    player.getStats().addExperience(adjMonster.getBaseExperience());
+                                    player.addExperience(adjMonster.getBaseExperience(), eventManager);
                                 }
                                 break;
                             }

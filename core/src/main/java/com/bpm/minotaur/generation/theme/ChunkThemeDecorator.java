@@ -197,6 +197,8 @@ public class ChunkThemeDecorator {
                 return carveDuneBowl(maze, protectedTiles);
             case DROWNED_CAUSEWAY:
                 return carveCauseway(maze, protectedTiles);
+            case BRIDGE_OF_SOULS:
+                return carveArena(maze, protectedTiles);
             case OVERGROWN_THICKET:
             default:
                 // The thicket keeps the generator's corridors; brambles do the work.
@@ -535,6 +537,7 @@ public class ChunkThemeDecorator {
             case RUINED_CASTLE:
                 return Faction.TARMIN_LEGION;
             case MAKESHIFT_GRAVEYARD:
+            case BRIDGE_OF_SOULS:
                 return Faction.UNDEAD;
             case FLOODED_CAVERNS:
             case OVERGROWN_THICKET:

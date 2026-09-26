@@ -1641,15 +1641,14 @@ public class GameScreen extends BaseScreen {
             player.getInjuryManager().cureAll();
         }
 
-        // Only re-arm a starter weapon if the player somehow has nothing in hand. The
-        // off-hand is deliberately left empty: a new game starts with an empty left hand,
-        // so re-arming it here handed out a free WOODEN_CROSS on essentially every death.
-        // That is not cosmetic -- the cross is a Spiritual weapon, and Bad monsters are
-        // immune to War damage, so it quietly gifted the counter to a whole category.
-        if (player.getInventory().getRightHand() == null) {
-            Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
-            player.getInventory().setRightHand(starterWeapon);
+        // Strip any equipped weapons and armor upon death -- Item 39: player loses equipped
+        // armor and weapons upon death and always restarts with the rusty sword (1d3).
+        if (player.getEquipment() != null) {
+            player.getEquipment().stripAllEquipped();
         }
+        player.getInventory().setLeftHand(null);
+        Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
+        player.getInventory().setRightHand(starterWeapon);
 
         // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
         player.washBlood();

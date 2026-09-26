@@ -168,6 +168,16 @@ public class SkillRegistry {
         ));
 
         register(new SkillDefinition(
+                SkillId.ASTRAL_RECALL,
+                "Astral Recall",
+                "Sanctuary / Planar Attunement (Open5e)",
+                "Deep attunement with the shelter sanctuary. Permanently unlocks the Word of Recall spell, allowing you to instantly teleport yourself and all carried gear back to safety.",
+                Set.of(SkillId.SPELL_WEAVER),
+                ShelterAltar.StatType.WISDOM,
+                12
+        ));
+
+        register(new SkillDefinition(
                 SkillId.ARCHMAGES_SURGE,
                 "Archmage's Surge",
                 "Power Caster (Open5e Master)",

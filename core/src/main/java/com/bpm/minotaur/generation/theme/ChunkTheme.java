@@ -70,7 +70,15 @@ public enum ChunkTheme {
             "ᛖ",
             new Color(0.25f, 0.85f, 0.80f, 1f),
             5,
-            java.util.Set.of(com.bpm.minotaur.generation.Biome.LAKELANDS));
+            java.util.Set.of(com.bpm.minotaur.generation.Biome.LAKELANDS)),
+
+    BRIDGE_OF_SOULS(
+            "Bridge of Souls",
+            "The apocalyptic bridge where the Bringer of Death awaits all fallen souls. Slaying him restores bridge integrity.",
+            "Demonic Scythe Mark (Doom Boss)",
+            "ᛞ",
+            new Color(0.85f, 0.05f, 0.05f, 1f),
+            1);
 
     private final String displayName;
     private final String description;

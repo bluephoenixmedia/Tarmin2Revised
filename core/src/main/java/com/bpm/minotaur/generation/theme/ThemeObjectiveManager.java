@@ -369,8 +369,13 @@ public class ThemeObjectiveManager {
         int crests = def != null ? def.getCrestAward() : 1;
 
         ShelterAltar.getInstance().addCrestsOfValor(crests);
-        announce(eventManager, "The seal breaks! You claim " + crests
-                + (crests == 1 ? " Crest of Valor." : " Crests of Valor."));
+        if (maze.getChunkTheme() == ChunkTheme.BRIDGE_OF_SOULS) {
+            com.bpm.minotaur.managers.DoomManager.getInstance().onBridgeBossDefeated();
+            announce(eventManager, "The Bringer of Death is slain! The Bridge of Souls shatters! Bridge Integrity restored by 30%!");
+        } else {
+            announce(eventManager, "The seal breaks! You claim " + crests
+                    + (crests == 1 ? " Crest of Valor." : " Crests of Valor."));
+        }
 
         if (Gdx.app != null) {
             Gdx.app.log("ThemeObjectiveManager", "Theme " + maze.getChunkTheme()
