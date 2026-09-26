@@ -173,6 +173,7 @@ public class Hud implements Disposable {
     private final EncounterWindow encounterWindow;
     private final ShopkeeperWindow shopkeeperWindow;
     private final BonesAwakenModal bonesAwakenModal;
+    private final LevelUpModal levelUpModal;
     private final StatusPillBar statusPillBar;
     private String statusToastMessage = null;
     private Color statusToastColor = Color.WHITE;
@@ -670,7 +671,11 @@ public class Hud implements Disposable {
         bonesAwakenModal = new BonesAwakenModal(hudSkin);
         stage.addActor(bonesAwakenModal);
 
-        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal ---
+        // Level-up attribute allocation modal
+        levelUpModal = new LevelUpModal(hudSkin);
+        stage.addActor(levelUpModal);
+
+        // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
         stage.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
             @Override
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
@@ -683,9 +688,23 @@ public class Hud implements Disposable {
                 if (bonesAwakenModal.isVisible()) {
                     return bonesAwakenModal.handleInput(keycode);
                 }
+                if (levelUpModal.isVisible()) {
+                    return levelUpModal.handleInput(keycode);
+                }
                 return false;
             }
         });
+    }
+
+    public LevelUpModal getLevelUpModal() {
+        return levelUpModal;
+    }
+
+    public void showLevelUpModal() {
+        if (levelUpModal != null && player != null) {
+            com.bpm.minotaur.managers.SoundManager sm = (combatManager != null) ? combatManager.getSoundManager() : null;
+            levelUpModal.show(player, eventManager, sm);
+        }
     }
 
     public BonesAwakenModal getBonesAwakenModal() {

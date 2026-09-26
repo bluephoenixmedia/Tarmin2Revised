@@ -17,6 +17,7 @@ import com.bpm.minotaur.managers.*;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import com.bpm.minotaur.gamedata.monster.Monster; // NEW
@@ -203,11 +204,22 @@ public class Player {
     private final Inventory inventory = new Inventory();
 
     // --- Spells ---
+    private final List<String> permanentSpellIds = new ArrayList<>();
+    private final List<String> runSpellIds = new ArrayList<>();
     private final List<String> knownSpellIds = new ArrayList<>();
     private final String[] preparedSpells = new String[5];
     // Slot 1 (cantrips) is available from the start; Tomes of the Initiate/Elements/
     // Arcane/Tarmin progressively unlock slots 2-5 (see Player#useItem).
     private int unlockedSpellSlots = 1;
+    private boolean pendingLevelUpModal = false;
+
+    public boolean hasPendingLevelUpModal() {
+        return pendingLevelUpModal;
+    }
+
+    public void setPendingLevelUpModal(boolean pending) {
+        this.pendingLevelUpModal = pending;
+    }
 
     public int getUnlockedSpellSlots() {
         return unlockedSpellSlots;
@@ -218,25 +230,83 @@ public class Player {
     }
 
     public List<String> getKnownSpellIds() {
-        return knownSpellIds;
+        return Collections.unmodifiableList(knownSpellIds);
     }
 
-    public void learnSpellId(String spellId) {
-        if (spellId != null && !knownSpellIds.contains(spellId.toUpperCase())) {
-            knownSpellIds.add(spellId.toUpperCase());
+    public List<String> getPermanentSpellIds() {
+        return Collections.unmodifiableList(permanentSpellIds);
+    }
+
+    public List<String> getRunSpellIds() {
+        return Collections.unmodifiableList(runSpellIds);
+    }
+
+    public void learnPermanentSpellId(String spellId) {
+        if (spellId != null) {
+            String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+            if (!permanentSpellIds.contains(upper)) {
+                permanentSpellIds.add(upper);
+            }
+            if (!knownSpellIds.contains(upper)) {
+                knownSpellIds.add(upper);
+            }
         }
     }
 
+    public void learnRunSpellId(String spellId) {
+        if (spellId != null) {
+            String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+            if (!permanentSpellIds.contains(upper) && !runSpellIds.contains(upper)) {
+                runSpellIds.add(upper);
+            }
+            if (!knownSpellIds.contains(upper)) {
+                knownSpellIds.add(upper);
+            }
+        }
+    }
+
+    public void learnSpellId(String spellId) {
+        learnPermanentSpellId(spellId);
+    }
+
     /**
-     * Replaces the whole spellbook with saved state: Known Spells, the prepared
-     * slots, and how many Spell Slots are unlocked. Prepared entries beyond the
-     * unlocked slots are dropped.
+     * Clears temporary run spells learned from field spellbooks/scrolls on death,
+     * removing them from known spells and unpreparing any slots using them.
+     */
+    public void clearRunSpellsOnDeath() {
+        for (String runSpell : runSpellIds) {
+            knownSpellIds.remove(runSpell);
+            for (int i = 0; i < preparedSpells.length; i++) {
+                if (runSpell.equals(preparedSpells[i])) {
+                    preparedSpells[i] = null;
+                }
+            }
+        }
+        runSpellIds.clear();
+    }
+
+    /**
+     * Replaces the whole spellbook with saved state (legacy or single list).
      */
     public void restoreSpellbook(List<String> knownIds, List<String> prepared, int unlockedSlots) {
+        restoreSpellbook(knownIds, null, prepared, unlockedSlots);
+    }
+
+    /**
+     * Restores permanent and run spells from persistence.
+     */
+    public void restoreSpellbook(List<String> permanentIds, List<String> runIds, List<String> prepared, int unlockedSlots) {
+        permanentSpellIds.clear();
+        runSpellIds.clear();
         knownSpellIds.clear();
-        if (knownIds != null) {
-            for (String id : knownIds) {
-                learnSpellId(id);
+        if (permanentIds != null) {
+            for (String id : permanentIds) {
+                learnPermanentSpellId(id);
+            }
+        }
+        if (runIds != null) {
+            for (String id : runIds) {
+                learnRunSpellId(id);
             }
         }
         setUnlockedSpellSlots(unlockedSlots);
@@ -370,7 +440,7 @@ public class Player {
         }
 
         deductMana(mpCost);
-        int slot = learnAndPrepareIfSlotFree(spellId);
+        int slot = learnAndPrepareIfSlotFree(spellId, false);
         inventory.removeItem(scrollItem);
         if (discoveryManager != null) {
             discoveryManager.identifyDedicatedScroll(scrollItem.getType(), spellId);
@@ -385,11 +455,25 @@ public class Player {
 
     /**
      * Adds a spell to Known Spells and puts it in the first empty unlocked Spell Slot.
+     * Defaults to permanent spell learning.
      *
      * @return the slot index it was prepared in, or -1 if every unlocked slot is full
      */
     public int learnAndPrepareIfSlotFree(String spellId) {
-        learnSpellId(spellId);
+        return learnAndPrepareIfSlotFree(spellId, true);
+    }
+
+    /**
+     * Adds a spell to Known Spells (permanent or run) and puts it in the first empty unlocked Spell Slot.
+     *
+     * @return the slot index it was prepared in, or -1 if every unlocked slot is full
+     */
+    public int learnAndPrepareIfSlotFree(String spellId, boolean permanent) {
+        if (permanent) {
+            learnPermanentSpellId(spellId);
+        } else {
+            learnRunSpellId(spellId);
+        }
         for (int i = 0; i < unlockedSpellSlots && i < preparedSpells.length; i++) {
             if (preparedSpells[i] == null) {
                 prepareSpell(i, spellId);
@@ -509,7 +593,7 @@ public class Player {
         }
 
         // Player level meets or exceeds requirement: Learn the spell!
-        int slot = learnAndPrepareIfSlotFree(spellId);
+        int slot = learnAndPrepareIfSlotFree(spellId, false);
         inventory.removeItem(book); // Consume the book upon successful learning
 
         if (soundManager != null) {
@@ -740,8 +824,10 @@ public class Player {
     }
 
     private void initStartingSpells() {
+        permanentSpellIds.clear();
+        runSpellIds.clear();
         knownSpellIds.clear();
-        learnSpellId("MOTE_OF_LIGHT");
+        learnPermanentSpellId("MOTE_OF_LIGHT");
         for (int i = 0; i < preparedSpells.length; i++) {
             preparedSpells[i] = null;
         }
@@ -2948,12 +3034,15 @@ public class Player {
             eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
 
             if (leveled) {
+                pendingLevelUpModal = true;
                 if (soundManager != null) {
                     soundManager.playPlayerLevelUpSound();
                 }
                 eventManager.addEvent(new GameEvent("LEVEL UP! Reached Level " + stats.getLevel() + "!", 3.5f));
                 eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
             }
+        } else if (leveled) {
+            pendingLevelUpModal = true;
         }
     }
 

@@ -828,6 +828,10 @@ public class CombatManager {
         soundManager.playDimensionalWarpSound();
     }
 
+    public boolean isInCombat() {
+        return currentState != CombatState.INACTIVE;
+    }
+
     public void openMenu() {
         if (currentState == CombatState.INACTIVE) {
             currentState = CombatState.PLAYER_MENU;

@@ -95,14 +95,7 @@ public class TurnManager {
             // Placeholder for Searching
         }
 
-        // WIS passive MP regeneration: each WIS modifier point = 10% chance per turn to restore 1 MP
-        int wisModifier = Math.max(0, (player.getEffectiveWisdom() - 10) / 2);
-        if (wisModifier > 0 && player.getCurrentMP() < player.getEffectiveMaxMP()) {
-            if (Math.random() < wisModifier * 0.10) {
-                player.getStats().restoreMP(1);
-            }
-        }
-        // -----------------------------------
+        // (WIS passive MP regen is integrated into deterministic natural recovery paced by Wisdom below)
 
         // 1b. Blood frenzy: a gore-soaked player is scented by beasts across the
         // chunk, which is the mechanic LiquidType.BLOOD advertises.
@@ -436,8 +429,11 @@ public class TurnManager {
                 stats.heal(1);
             }
         }
-        // MP natural recovery: 1 MP every 6 turns when hydrated
-        if (stats.getHydrationFloat() > 0 && (turnCounter % 6 == 0)) {
+        // MP natural recovery: Paced by Wisdom when hydrated.
+        // Base interval is 24 turns (at WIS 10, mod 0), shortening by 3 turns per WIS mod down to a min of 8 turns (at WIS 20+).
+        int wisMod = Math.max(0, (player.getEffectiveWisdom() - 10) / 2);
+        int mpInterval = Math.max(8, 24 - (wisMod * 3));
+        if (stats.getHydrationFloat() > 0 && (turnCounter % mpInterval == 0)) {
             if (player.getCurrentMP() < stats.getMaxMP()) {
                 player.restoreMP(1);
             }

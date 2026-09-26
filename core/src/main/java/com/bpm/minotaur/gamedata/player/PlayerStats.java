@@ -39,10 +39,10 @@ public class PlayerStats {
     private java.util.List<com.bpm.minotaur.gamedata.dice.Artifact> artifacts = new java.util.ArrayList<>();
     private int stamina = 3; // Initial stamina for dice selection
 
-    // XP curve: BASE * LOG_BASE^(level-1). LOG_BASE 1.7 raises L2 wall to ~425,
-    // L3 to ~722, slowing the early snowball versus the previous 1.6 base.
-    private static final int BASE_XP_REQUIRED = 300;
-    private static final double LOG_BASE = 1.7;
+    // XP curve: BASE * LOG_BASE^(level-1). BASE 120 and LOG_BASE 1.6 smooth early leveling:
+    // L2 requires 192 XP, L3 requires 307 XP, making early delves rewarding.
+    private static final int BASE_XP_REQUIRED = 120;
+    private static final double LOG_BASE = 1.6;
 
     private int treasureScore = 0;
 

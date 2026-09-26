@@ -83,6 +83,8 @@ public class PlayerSaveData {
     // Spells. knownSpellIds is null in saves written before the spellbook was persisted;
     // those carried only the legacy knownSpells name list.
     public List<String> knownSpellIds;
+    public List<String> permanentSpellIds;
+    public List<String> runSpellIds;
     public List<String> preparedSpells = new ArrayList<>();
     public int unlockedSpellSlots = 1;
     public List<String> knownSpells = new ArrayList<>();
@@ -193,6 +195,8 @@ public class PlayerSaveData {
 
         // Spells
         this.knownSpellIds = new ArrayList<>(player.getKnownSpellIds());
+        this.permanentSpellIds = new ArrayList<>(player.getPermanentSpellIds());
+        this.runSpellIds = new ArrayList<>(player.getRunSpellIds());
         java.util.Collections.addAll(this.preparedSpells, player.getPreparedSpells());
         this.unlockedSpellSlots = player.getUnlockedSpellSlots();
         com.bpm.minotaur.gamedata.spells.TomeChoice pending = player.getPendingTomeChoice();
@@ -311,7 +315,10 @@ public class PlayerSaveData {
         }
 
         // Spells
-        if (knownSpellIds != null) {
+        if (permanentSpellIds != null || runSpellIds != null) {
+            player.restoreSpellbook(permanentSpellIds, runSpellIds, preparedSpells, unlockedSpellSlots);
+            player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);
+        } else if (knownSpellIds != null) {
             player.restoreSpellbook(knownSpellIds, preparedSpells, unlockedSpellSlots);
             player.restorePendingTomeChoice(pendingTomeType, pendingTomeOptions, pendingTomeRerolls);
         } else if (knownSpells != null) {

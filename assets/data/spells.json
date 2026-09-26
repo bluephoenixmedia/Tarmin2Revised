@@ -7078,5 +7078,25 @@
     "secondaryArchetype": "BURST",
     "runeSchool": "NECROMANCY",
     "bespokeEffect": null
+  },
+  "WORD_OF_RECALL": {
+    "id": "WORD_OF_RECALL",
+    "name": "Word of Recall",
+    "level": 3,
+    "school": "conjuration",
+    "mpCost": 15,
+    "range": 0,
+    "targetType": "SELF",
+    "damageDice": "0",
+    "damageType": "FORCE",
+    "domain": "SPIRITUAL",
+    "duration": "Instantaneous",
+    "statusEffect": null,
+    "visualArchetype": "SPATIAL_WARP",
+    "description": "You utter an ancient word of sanctuary that immediately teleports you and your carried gear back to the Starting Shelter.",
+    "secondaryArchetype": "BURST",
+    "runeSchool": "CONJURATION",
+    "bespokeEffect": "WORD_OF_RECALL",
+    "tomePools": ["ARCANE", "TARMIN"]
   }
 }

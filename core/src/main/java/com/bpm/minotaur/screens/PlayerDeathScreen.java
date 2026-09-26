@@ -229,10 +229,10 @@ public class PlayerDeathScreen extends BaseScreen {
 
     private Table buildCasualtiesPanel() {
         Table panel = newPanel("EXPEDITION CASUALTIES");
-        addStat(panel, "LOST", String.valueOf(lostItems));
-        addStat(panel, "SECURED", String.valueOf(retainedItems));
-        addStat(panel, "KITS", "PRESERVED");
-        addStat(panel, "GEAR", "PRESERVED");
+        addStat(panel, "STRIPPED GEAR", String.valueOf(lostItems));
+        addStat(panel, "PACK SECURED", String.valueOf(retainedItems));
+        addStat(panel, "BACKPACK", "PRESERVED");
+        addStat(panel, "QUICKSLOTS", "PRESERVED");
         return panel;
     }
 

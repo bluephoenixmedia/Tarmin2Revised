@@ -567,6 +567,14 @@ public class GameScreen extends BaseScreen {
         updateDeathSequence(delta);
         updateAutoSave(delta);
 
+        // Trigger Level-Up Attribute Allocation modal when safe (outside active combat)
+        if (player != null && player.hasPendingLevelUpModal() && (combatManager == null || !combatManager.isInCombat())) {
+            player.setPendingLevelUpModal(false);
+            if (hud != null && hud.getLevelUpModal() != null && !hud.getLevelUpModal().isVisible()) {
+                hud.showLevelUpModal();
+            }
+        }
+
         // --- VISCERAL HIT PAUSE ---
         if (hitPauseTimer > 0) {
             hitPauseTimer -= delta;
@@ -1281,39 +1289,26 @@ public class GameScreen extends BaseScreen {
                 combatManager.endCombat();
             }
 
-            // 3. Lose unequipped items (capped by the Loot Retention upgrade); equipped
-            //    weapon/offhand and worn equipment are protected and simply carry over.
-            //    Travel crafting kits (CRAFTING_TOOLKIT and COOKING_KIT) are permanently retained on death.
-            int retentionCap = DivinityManager.getInstance().getLootRetentionCap();
-            List<Item> allUnequipped = new ArrayList<>(player.getInventory().getMainInventory());
-            Item[] quickSlots = player.getInventory().getQuickSlots();
-            for (int i = 0; i < quickSlots.length; i++) {
-                if (quickSlots[i] != null) {
-                    allUnequipped.add(quickSlots[i]);
-                    quickSlots[i] = null;
-                }
+            // 3. Lose equipped gear (weapons, offhand, armor, jewelry); backpack items
+            //    and quickslots are secured and carry over into the shelter.
+            int lostCount = 0;
+            if (player.getInventory().getRightHand() != null) {
+                lostCount++;
+                player.getInventory().setRightHand(null);
             }
-            player.getInventory().getMainInventory().clear();
-
-            List<Item> permanentKits = new ArrayList<>();
-            List<Item> atRiskItems = new ArrayList<>();
-            for (Item itm : allUnequipped) {
-                if (itm != null && (itm.getType() == Item.ItemType.CRAFTING_TOOLKIT || itm.getType() == Item.ItemType.COOKING_KIT)) {
-                    permanentKits.add(itm);
-                } else {
-                    atRiskItems.add(itm);
-                }
+            if (player.getInventory().getLeftHand() != null) {
+                lostCount++;
+                player.getInventory().setLeftHand(null);
+            }
+            if (player.getEquipment() != null) {
+                lostCount += player.getEquipment().getAllEquipped().size();
+                player.getEquipment().stripAllEquipped();
             }
 
-            for (Item kit : permanentKits) {
-                player.getInventory().pickupToBackpack(kit);
+            int retainedCount = player.getInventory().getMainInventory().size();
+            for (Item qs : player.getInventory().getQuickSlots()) {
+                if (qs != null) retainedCount++;
             }
-
-            int retainedCount = Math.min(retentionCap, atRiskItems.size());
-            for (int i = 0; i < retainedCount; i++) {
-                player.getInventory().pickupToBackpack(atRiskItems.get(i));
-            }
-            int lostCount = atRiskItems.size() - retainedCount;
 
             // 4. Finalize run telemetry & build the run epitaph
             com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
@@ -1637,6 +1632,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setToxicity(0);
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
+        player.clearRunSpellsOnDeath();
         // The Player instance survives death, so anatomical trauma must be wiped
         // explicitly -- otherwise open wounds, bleeding, and fever follow the
         // character into the next expedition and can bleed them out before their
@@ -1664,6 +1660,30 @@ public class GameScreen extends BaseScreen {
             weaponOverlay.reset();
             weaponOverlay.clearBloodDecals();
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
+        }
+
+        // Ensure player carries at least 1 starter ration and 1 starter waterskin
+        boolean hasFood = false;
+        boolean hasWaterskin = false;
+        for (Item itm : player.getInventory().getMainInventory()) {
+            if (itm != null) {
+                if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
+                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+            }
+        }
+        for (Item itm : player.getInventory().getQuickSlots()) {
+            if (itm != null) {
+                if (itm.getType() == Item.ItemType.FOOD) hasFood = true;
+                if (itm.getType() == Item.ItemType.POTION_BLUE) hasWaterskin = true;
+            }
+        }
+        if (!hasFood) {
+            Item starterFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
+            player.getInventory().pickupToBackpack(starterFood);
+        }
+        if (!hasWaterskin) {
+            Item starterWater = game.getItemDataManager().createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, game.getAssetManager());
+            player.getInventory().pickupToBackpack(starterWater);
         }
 
         // Travel kits: replace any the player has paid for at the Altar but no longer
@@ -1718,8 +1738,7 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             hud.addMessage("You awaken back in the Shelter Bed.");
             if (lostCount > 0) {
-                hud.addMessage("Lost " + lostCount + " unequipped item" + (lostCount == 1 ? "" : "s") + " to the fall."
-                        + (retainedCount > 0 ? " Kept " + retainedCount + " (Loot Retention)." : ""));
+                hud.addMessage("Stripped of " + lostCount + " equipped item" + (lostCount == 1 ? "" : "s") + " upon falling. Backpack secured.");
             }
             hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
             hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
@@ -1730,6 +1749,52 @@ public class GameScreen extends BaseScreen {
         soundManager.playDoorOpenSound();
 
         game.setScreen(this);
+    }
+
+    /**
+     * Instantly returns the player to the Starting Shelter bed (Level 1, Chunk 0, 0),
+     * ending active combat and saving world state. Used by Word of Recall and safe return mechanisms.
+     */
+    public void returnToShelter() {
+        if (combatManager != null) {
+            combatManager.endCombat();
+        }
+        if (worldManager != null && maze != null) {
+            worldManager.saveCurrentChunk(maze);
+        }
+        worldManager.setCurrentLevel(1);
+        worldManager.setCurrentChunk(new GridPoint2(0, 0));
+        Maze shelterMaze = worldManager.loadChunk(new GridPoint2(0, 0));
+        swapToChunk(shelterMaze);
+
+        GridPoint2 bedPos = null;
+        for (Item item : shelterMaze.getItems().values()) {
+            if (item.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
+                int bx = (int) item.getPosition().x;
+                int by = (int) item.getPosition().y;
+                if (shelterMaze.isPassable(bx - 1, by)) {
+                    bedPos = new GridPoint2(bx - 1, by);
+                } else if (shelterMaze.isPassable(bx, by + 1)) {
+                    bedPos = new GridPoint2(bx, by + 1);
+                } else {
+                    bedPos = new GridPoint2(bx, by);
+                }
+                break;
+            }
+        }
+        if (bedPos == null) {
+            bedPos = worldManager.getInitialPlayerStartPos();
+        }
+        player.setPosition(bedPos);
+        worldManager.saveCurrentChunk(shelterMaze);
+        triggerAutoSave();
+
+        if (hud != null) {
+            hud.addMessage("You recite the Word of Recall and return safely to the Shelter.");
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("Returned safely to the Shelter.", 3f));
+        }
     }
 
     private void swapToChunk(Maze newMaze) {
@@ -2233,6 +2298,12 @@ public class GameScreen extends BaseScreen {
         // --- Forward keyboard input to active BonesAwakenModal ---
         if (hud != null && hud.getBonesAwakenModal() != null && hud.getBonesAwakenModal().isVisible()) {
             hud.getBonesAwakenModal().handleInput(keycode);
+            return true;
+        }
+
+        // --- Forward keyboard input to active LevelUpModal ---
+        if (hud != null && hud.getLevelUpModal() != null && hud.getLevelUpModal().isVisible()) {
+            hud.getLevelUpModal().handleInput(keycode);
             return true;
         }
 

@@ -373,4 +373,23 @@ public class PlayerEquipment {
         if (wornRing != null) wornRing.fullyRecharge();
         if (wornRing2 != null) wornRing2.fullyRecharge();
     }
+
+    /**
+     * Strips all worn armor, jewelry, and shield from the character.
+     * Used on death as part of the expedition death penalty.
+     */
+    public void stripAllEquipped() {
+        wornHelmet = null;
+        wornEyes = null;
+        wornNeck = null;
+        wornBack = null;
+        wornChest = null;
+        wornArms = null;
+        wornGauntlets = null;
+        wornLegs = null;
+        wornBoots = null;
+        wornRing = null;
+        wornRing2 = null;
+        wornShield = null;
+    }
 }

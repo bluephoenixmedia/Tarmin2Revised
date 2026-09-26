@@ -112,6 +112,9 @@ public class SpellExecutionEngine {
         } else if ("SHIELD".equalsIgnoreCase(bespoke)) {
             resolveShieldBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
+        } else if ("WORD_OF_RECALL".equalsIgnoreCase(bespoke)) {
+            resolveWordOfRecallBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
         }
 
         // 5. Standard Dispatch by Target Type
@@ -336,6 +339,28 @@ public class SpellExecutionEngine {
         // 3. Apply Hardened AC Buff
         player.getStatusManager().addEffect(StatusEffectType.HARDENED, 18, 1, false);
         eventManager.addEvent(new GameEvent("A crystalline force barrier envelops you! (+AC)", 2.0f));
+    }
+
+    private static void resolveWordOfRecallBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                                   GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        if (gs == null) {
+            return;
+        }
+        if (gs.getWorldManager() != null
+                && gs.getWorldManager().getCurrentLevel() == 1
+                && gs.getWorldManager().getCurrentChunk() != null
+                && gs.getWorldManager().getCurrentChunk().equals(new GridPoint2(0, 0))) {
+            eventManager.addEvent(new GameEvent("You are already within the safety of the Shelter.", 2.0f));
+            return;
+        }
+        if (gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerArchetypeFX(VisualArchetype.SPATIAL_WARP, 0.7f, 0.8f);
+        }
+        if (combatManager != null && combatManager.getSoundManager() != null) {
+            combatManager.getSoundManager().playSpellSound(VisualArchetype.SPATIAL_WARP);
+        }
+        eventManager.addEvent(new GameEvent("A blinding glyph surrounds you! You are pulled back to the Shelter.", 3.0f));
+        gs.returnToShelter();
     }
 
     // =========================================================================

@@ -853,6 +853,10 @@ public class WorldManager {
         return currentPlayerChunkId;
     }
 
+    public GridPoint2 getCurrentChunk() {
+        return currentPlayerChunkId;
+    }
+
     public Set<GridPoint2> getLoadedChunkIds() {
         return loadedChunks.keySet();
     }
