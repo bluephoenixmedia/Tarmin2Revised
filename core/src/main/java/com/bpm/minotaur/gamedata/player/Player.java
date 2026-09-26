@@ -3058,7 +3058,12 @@ public class Player {
     }
 
     public boolean learnSkill(com.bpm.minotaur.gamedata.progression.SkillId skill) {
-        return stats != null && stats.learnSkill(skill);
+        if (stats == null) return false;
+        boolean learned = stats.learnSkill(skill);
+        if (learned && skill == com.bpm.minotaur.gamedata.progression.SkillId.ASTRAL_RECALL) {
+            learnPermanentSpellId("WORD_OF_RECALL");
+        }
+        return learned;
     }
 
     private void performLevelUp(GameEventManager eventManager) {

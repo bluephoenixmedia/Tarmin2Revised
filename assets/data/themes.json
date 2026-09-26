@@ -221,6 +221,35 @@
         { "type": "GELATINOUS_CUBE", "weight": 22, "hpBonus": 10 },
         { "type": "HARPY", "weight": 24, "hpBonus": 8 }
       ]
+    },
+
+    {
+      "id": "BRIDGE_OF_SOULS",
+      "crestAward": 3,
+      "objective": "SLAY_CHAMPION",
+      "objectiveCount": 1,
+      "championType": "BRINGER_OF_DEATH",
+      "championHpBonus": 120,
+      "runeTexture": "images/runes/rune_colosseum.png",
+      "fogTint": { "r": 0.45, "g": 0.05, "b": 0.05 },
+      "fogDistance": 6.5,
+      "stinger": "sounds/amb_doom_subbass.wav",
+      "propDensity": 0.040,
+      "hazard": { "kind": "BURNING_TILES", "density": 0.20 },
+      "props": [
+        { "propId": "skull_pile", "weight": 35 },
+        { "propId": "rubble_pile", "weight": 25 },
+        { "propId": "head_spike", "weight": 20 },
+        { "propId": "brazier", "weight": 15 },
+        { "propId": "arena_chain", "weight": 10 }
+      ],
+      "monsters": [
+        { "type": "SKELETON", "weight": 30, "hpBonus": 10 },
+        { "type": "WIGHT", "weight": 25, "hpBonus": 15 },
+        { "type": "WRAITH", "weight": 20, "hpBonus": 15 },
+        { "type": "GHOUL", "weight": 15, "hpBonus": 10 },
+        { "type": "ZOMBIE", "weight": 10, "hpBonus": 8 }
+      ]
     }
   ]
 }

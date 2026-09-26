@@ -1332,6 +1332,11 @@ public class WorldManager {
             return null; // Shelter chunk is never themed
         }
 
+        // Bridge of Souls Boss Chunk: spawns on adjacent chunk (0, 1) when Bridge Boss is active
+        if (level == 1 && chunkId.x == 0 && chunkId.y == 1 && DoomManager.getInstance().isBridgeBossActive()) {
+            return com.bpm.minotaur.generation.theme.ChunkTheme.BRIDGE_OF_SOULS;
+        }
+
         Biome chunkBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
 
         // 3x3 Cluster Coordinates

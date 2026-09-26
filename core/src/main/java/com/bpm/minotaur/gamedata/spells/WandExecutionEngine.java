@@ -536,7 +536,7 @@ public class WandExecutionEngine {
             combatManager.handleRemoteKill(target);
         } else {
             maze.getMonsters().remove(targetPos);
-            player.getStats().addExperience(target.getBaseExperience());
+            player.addExperience(target.getBaseExperience(), eventManager);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Killed " + target.getMonsterType() + "!", 2f));
             }

@@ -135,9 +135,9 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     private int arcaneTier = 0;
 
     private static final int[] ARCANE_COSTS = { 15, 25, 40 };
-    private static final String[][] ARCANE_UNLOCKED_SPELLS = {
+    public static final String[][] ARCANE_UNLOCKED_SPELLS = {
             { "MAGIC_MISSILE", "SHIELD", "BURNING_HANDS" },
-            { "MISTY_STEP", "ACID_ARROW", "SCORCHING_RAY" },
+            { "MISTY_STEP", "ACID_ARROW", "SCORCHING_RAY", "WORD_OF_RECALL" },
             { "FIREBALL", "LIGHTNING_BOLT" }
     };
 

@@ -674,6 +674,11 @@ public class Hud implements Disposable {
 
         // Level-up attribute allocation modal
         levelUpModal = new LevelUpModal(hudSkin);
+        levelUpModal.setOnOpenSkillTree(() -> {
+            if (gameScreen != null) {
+                gameScreen.openSkillTree();
+            }
+        });
         stage.addActor(levelUpModal);
 
         // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
@@ -804,13 +809,21 @@ public class Hud implements Disposable {
         DoomManager doom = DoomManager.getInstance();
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
-        doomLabel.setText(String.format("DOOM: %d (%.0f%%)", deaths, bridge));
-        if (bridge >= 75f) {
+        if (doom.isBridgeBossActive()) {
+            doomLabel.setText(String.format("DOOM: %d (%.0f%%) [BOSS ACTIVE]", deaths, bridge));
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
-        } else if (bridge >= 40f) {
-            doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+        } else if (bridge >= 90f) {
+            doomLabel.setText(String.format("DOOM: %d (%.0f%%) [IMM-BOSS]", deaths, bridge));
+            doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else {
-            doomLabel.setColor(Color.LIGHT_GRAY);
+            doomLabel.setText(String.format("DOOM: %d (%.0f%%)", deaths, bridge));
+            if (bridge >= 75f) {
+                doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
+            } else if (bridge >= 40f) {
+                doomLabel.setColor(HudSkin.COL_TEMP_ORANGE);
+            } else {
+                doomLabel.setColor(Color.LIGHT_GRAY);
+            }
         }
 
         arrowsValueLabel.setText(String.format("%d", player.getArrows()));
@@ -3011,12 +3024,29 @@ public class Hud implements Disposable {
             return;
 
         float integrity = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity();
-        float maxW = 400;
-        float h = 20;
-        float x = (viewport.getWorldWidth() - maxW) / 2;
-        float y = viewport.getWorldHeight() - 40;
+        boolean bossActive = com.bpm.minotaur.managers.DoomManager.getInstance().isBridgeBossActive();
 
-        // 1. Draw Bar (carved iron track, gold-gradient fill)
+        // Determine text and colors first to size bar cleanly
+        String text;
+        Color textColor;
+        if (integrity >= 100f && bossActive) {
+            text = "BRIDGE APOCALYPSE: SLAY THE BRINGER OF DEATH (100%)";
+            textColor = Color.RED;
+        } else if (integrity >= 90f) {
+            text = String.format("WARNING: BRIDGE AT %.0f%% - APOCALYPSE IMMINENT", integrity);
+            textColor = Color.valueOf("FFA500");
+        } else {
+            text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
+            textColor = HudSkin.COL_GOLD_BRIGHT;
+        }
+        glyphLayout.setText(font, text);
+
+        float maxW = Math.max(440f, glyphLayout.width + 40f);
+        float h = 20f;
+        float x = (viewport.getWorldWidth() - maxW) / 2f;
+        float y = viewport.getWorldHeight() - 40f;
+
+        // 1. Draw Bar
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -3024,13 +3054,28 @@ public class Hud implements Disposable {
         shapeRenderer.setColor(HudSkin.COL_SHADOW_DEEP);
         shapeRenderer.rect(x, y, maxW, h);
 
-        // Foreground (gold gradient, approximated as top/bottom halves)
+        // Foreground fill
         float fillW = maxW * (integrity / 100f);
         if (fillW > 0) {
-            shapeRenderer.setColor(Color.valueOf("D9A23A"));
-            shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
-            shapeRenderer.setColor(Color.valueOf("A06A1E"));
-            shapeRenderer.rect(x, y, fillW, h / 2f);
+            if (integrity >= 100f && bossActive) {
+                float pulse = 0.65f + 0.35f * MathUtils.sin((System.currentTimeMillis() % 10000L) / 1000f * 6f);
+                Color topCrimson = new Color(0.95f * pulse, 0.15f * pulse, 0.15f * pulse, 1.0f);
+                Color botCrimson = new Color(0.60f * pulse, 0.05f * pulse, 0.05f * pulse, 1.0f);
+                shapeRenderer.setColor(topCrimson);
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(botCrimson);
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            } else if (integrity >= 90f) {
+                shapeRenderer.setColor(Color.valueOf("E05020"));
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(Color.valueOf("A02810"));
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            } else {
+                shapeRenderer.setColor(Color.valueOf("D9A23A"));
+                shapeRenderer.rect(x, y + h / 2f, fillW, h / 2f);
+                shapeRenderer.setColor(Color.valueOf("A06A1E"));
+                shapeRenderer.rect(x, y, fillW, h / 2f);
+            }
         }
 
         shapeRenderer.end();
@@ -3038,7 +3083,13 @@ public class Hud implements Disposable {
         // Border
         Gdx.gl.glLineWidth(2);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(HudSkin.COL_STONE_MID);
+        if (integrity >= 100f && bossActive) {
+            shapeRenderer.setColor(Color.RED);
+        } else if (integrity >= 90f) {
+            shapeRenderer.setColor(Color.ORANGE);
+        } else {
+            shapeRenderer.setColor(HudSkin.COL_STONE_MID);
+        }
         shapeRenderer.rect(x, y, maxW, h);
         shapeRenderer.end();
         Gdx.gl.glLineWidth(1);
@@ -3046,14 +3097,12 @@ public class Hud implements Disposable {
         // 2. Draw Text
         spriteBatch.setProjectionMatrix(stage.getCamera().combined);
         spriteBatch.begin();
-        String text = String.format("BRIDGE INTEGRITY: %.0f%%", integrity);
-        glyphLayout.setText(font, text);
 
         // Center text on bar
         float textX = x + (maxW - glyphLayout.width) / 2;
         float textY = y + (h + glyphLayout.height) / 2 - 2; // -2 for visual alignment
 
-        font.setColor(HudSkin.COL_GOLD_BRIGHT);
+        font.setColor(textColor);
         font.draw(spriteBatch, text, textX, textY);
         spriteBatch.end();
         // --- Draw Attack Indicators ---

@@ -19,8 +19,10 @@ import com.badlogic.gdx.utils.JsonWriter.OutputType;
 public class DoomManager implements SlotScopedState {
     private static DoomManager instance;
 
-    // --- Core Variable ---
+    // --- Core Variables ---
     private int deathCount = 0;
+    private boolean bridgeBossActive = false;
+    private boolean apocalypseTriggered = false;
 
     // --- Constants ---
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
@@ -58,7 +60,6 @@ public class DoomManager implements SlotScopedState {
 
     public void incrementDeaths() {
         this.deathCount++;
-        save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "Death Count increased to: " + deathCount);
         }
@@ -67,12 +68,26 @@ public class DoomManager implements SlotScopedState {
                     "Deaths: " + deathCount + " | Bridge: " + getBridgeIntegrity() + "%");
         }
         if (this.deathCount >= MAX_DEATHS_ALLOWED) {
-            SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+            if (!this.bridgeBossActive) {
+                // First time reaching 100% integrity (50 deaths):
+                // Instead of wiping the save, the Bringer of Death spawns!
+                this.bridgeBossActive = true;
+                if (Gdx.app != null) {
+                    Gdx.app.log("DoomManager", "Bridge integrity reached 100%! Summoning Bridge Boss!");
+                }
+            } else {
+                // Next death while the boss is active wipes the slot!
+                this.apocalypseTriggered = true;
+                SaveManager.getInstance().wipeActiveSlotOnApocalypse();
+            }
         }
+        save();
     }
 
     public void resetDeaths() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
         save();
     }
 
@@ -214,10 +229,32 @@ public class DoomManager implements SlotScopedState {
     }
 
     /**
-     * @return True if the bridge is complete (Game Over / Wipe).
+     * @return True if the bridge is complete and apocalypse triggered (Game Over / Wipe).
      */
     public boolean isApocalypse() {
-        return deathCount >= MAX_DEATHS_ALLOWED;
+        return apocalypseTriggered;
+    }
+
+    public boolean isBridgeBossActive() {
+        return bridgeBossActive;
+    }
+
+    public void setBridgeBossActive(boolean active) {
+        this.bridgeBossActive = active;
+        save();
+    }
+
+    /**
+     * Slaying the Bridge Boss restores 30% bridge integrity (15 deaths) and deactivates the boss.
+     */
+    public void onBridgeBossDefeated() {
+        this.bridgeBossActive = false;
+        this.deathCount = Math.max(0, this.deathCount - 15);
+        this.apocalypseTriggered = false;
+        save();
+        if (Gdx.app != null) {
+            Gdx.app.log("DoomManager", "Bridge Boss defeated! Integrity cut by 30%. New deaths: " + deathCount);
+        }
     }
 
     /**
@@ -225,6 +262,8 @@ public class DoomManager implements SlotScopedState {
      */
     public void reset() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
         save();
         if (Gdx.app != null) {
             Gdx.app.log("DoomManager", "DOOM RESET. The cycle begins anew.");
@@ -245,6 +284,8 @@ public class DoomManager implements SlotScopedState {
 
             DoomState state = new DoomState();
             state.deathCount = this.deathCount;
+            state.bridgeBossActive = this.bridgeBossActive;
+            state.apocalypseTriggered = this.apocalypseTriggered;
 
             file.writeString(json.prettyPrint(state), false);
             if (Gdx.app != null) {
@@ -265,8 +306,10 @@ public class DoomManager implements SlotScopedState {
                 DoomState state = json.fromJson(DoomState.class, file);
                 if (state != null) {
                     this.deathCount = state.deathCount;
+                    this.bridgeBossActive = state.bridgeBossActive;
+                    this.apocalypseTriggered = state.apocalypseTriggered;
                     if (Gdx.app != null) {
-                        Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount);
+                        Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount + " | BridgeBoss: " + bridgeBossActive);
                     }
                 }
             } else {
@@ -284,11 +327,15 @@ public class DoomManager implements SlotScopedState {
     // --- Data Class for JSON ---
     public static class DoomState {
         public int deathCount = 0;
+        public boolean bridgeBossActive = false;
+        public boolean apocalypseTriggered = false;
     }
 
     @Override
     public void reloadForActiveSlot() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
         resetExpeditionTurns();
         load();
     }
@@ -296,6 +343,8 @@ public class DoomManager implements SlotScopedState {
     @Override
     public void resetForNewGame() {
         this.deathCount = 0;
+        this.bridgeBossActive = false;
+        this.apocalypseTriggered = false;
         resetExpeditionTurns();
         save();
     }

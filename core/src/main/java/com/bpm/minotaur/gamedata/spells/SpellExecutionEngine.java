@@ -570,7 +570,7 @@ public class SpellExecutionEngine {
             }
         } else {
             maze.getMonsters().remove(pos);
-            player.getStats().addExperience(target.getBaseExperience());
+            player.addExperience(target.getBaseExperience(), eventManager);
         }
         eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));
     }

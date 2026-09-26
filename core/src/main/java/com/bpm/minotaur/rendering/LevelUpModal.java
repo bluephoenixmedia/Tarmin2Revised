@@ -32,6 +32,7 @@ public class LevelUpModal extends Table {
     private final Label pointsLabel;
     private final Table attributesTable;
     private final TextButton doneBtn;
+    private final TextButton openSkillTreeBtn;
 
     private final Map<ShelterAltar.StatType, Label> statValueLabels = new HashMap<>();
     private final Map<ShelterAltar.StatType, TextButton> statAddButtons = new HashMap<>();
@@ -39,6 +40,7 @@ public class LevelUpModal extends Table {
     private Player activePlayer;
     private GameEventManager activeEventManager;
     private SoundManager activeSoundManager;
+    private Runnable onOpenSkillTree;
 
     private final Texture whitePixel;
 
@@ -65,6 +67,19 @@ public class LevelUpModal extends Table {
         attributesTable = new Table();
         this.add(attributesTable).width(580).padBottom(20).row();
 
+        TextButton.TextButtonStyle skillStyle = new TextButton.TextButtonStyle();
+        skillStyle.font = hudSkin.getFontMain();
+        skillStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
+        skillStyle.up = hudSkin.getPrimaryButtonUp();
+        skillStyle.over = hudSkin.getPrimaryButtonDown();
+        openSkillTreeBtn = new TextButton("SKILL TREE [K]", skillStyle);
+        openSkillTreeBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                openSkillTree();
+            }
+        });
+
         TextButton.TextButtonStyle doneStyle = new TextButton.TextButtonStyle();
         doneStyle.font = hudSkin.getFontMain();
         doneStyle.fontColor = Color.WHITE;
@@ -77,10 +92,25 @@ public class LevelUpModal extends Table {
                 close();
             }
         });
-        this.add(doneBtn).width(240).height(44).center().row();
+
+        Table btnRow = new Table();
+        btnRow.add(openSkillTreeBtn).width(230).height(44).padRight(16);
+        btnRow.add(doneBtn).width(230).height(44);
+        this.add(btnRow).center().row();
 
         this.setSize(640, 680);
         this.setVisible(false);
+    }
+
+    public void setOnOpenSkillTree(Runnable onOpenSkillTree) {
+        this.onOpenSkillTree = onOpenSkillTree;
+    }
+
+    public void openSkillTree() {
+        close();
+        if (onOpenSkillTree != null) {
+            onOpenSkillTree.run();
+        }
     }
 
     public void show(Player player, GameEventManager eventManager, SoundManager soundManager) {
@@ -168,8 +198,9 @@ public class LevelUpModal extends Table {
 
         titleLabel.setText("LEVEL UP! REACHED LEVEL " + activePlayer.getLevel() + "!");
         int unallocated = activePlayer.getStats().getUnallocatedAttributePoints();
-        pointsLabel.setText("Available Attribute Points: " + unallocated);
-        if (unallocated > 0) {
+        int unallocatedSkills = activePlayer.getStats().getUnallocatedSkillPoints();
+        pointsLabel.setText("Attribute Points: " + unallocated + "   |   Skill Points: " + unallocatedSkills);
+        if (unallocated > 0 || unallocatedSkills > 0) {
             pointsLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
         } else {
             pointsLabel.setColor(Color.LIGHT_GRAY);
@@ -238,6 +269,9 @@ public class LevelUpModal extends Table {
             case Input.Keys.NUM_6:
             case Input.Keys.NUMPAD_6:
                 allocate(ShelterAltar.StatType.AGILITY);
+                return true;
+            case Input.Keys.K:
+                openSkillTree();
                 return true;
             case Input.Keys.ESCAPE:
             case Input.Keys.ENTER:
