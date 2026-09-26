@@ -35,9 +35,10 @@ public class WorldMeshCache implements Disposable {
             Texture wallTexture,
             Texture floorTexture,
             Texture ceilingTexture,
-            WorldManager worldManager
+            WorldManager worldManager,
+            WallTextureProvider wallProvider
     ) {
-        return getVisibleSubMeshes(maze, playerX, playerY, level, isIndoors, wallTexture, floorTexture, null, null, ceilingTexture, worldManager);
+        return getVisibleSubMeshes(maze, playerX, playerY, level, isIndoors, wallTexture, floorTexture, null, null, ceilingTexture, worldManager, wallProvider);
     }
 
     public List<ChunkSubMesh> getVisibleSubMeshes(
@@ -51,7 +52,8 @@ public class WorldMeshCache implements Disposable {
             Texture forestWallTexture,
             Texture forestFloorTexture,
             Texture ceilingTexture,
-            WorldManager worldManager
+            WorldManager worldManager,
+            WallTextureProvider wallProvider
     ) {
         List<ChunkSubMesh> result = new ArrayList<>();
 
@@ -79,7 +81,8 @@ public class WorldMeshCache implements Disposable {
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         currentWall, currentFloor, ceilingTexture,
-                        true, 0f, 0f
+                        true, 0f, 0f,
+                        wallProvider, seedFor(worldManager, level, currentChunkId)
                 );
                 cachedChunks.put(dungeonKey, dungeonMeshes);
             }
@@ -93,7 +96,8 @@ public class WorldMeshCache implements Disposable {
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
                         currentWall, currentFloor, ceilingTexture,
-                        false, 0f, 0f
+                        false, 0f, 0f,
+                        wallProvider, seedFor(worldManager, level, currentChunkId)
                 );
                 cachedChunks.put(currentChunkKey, currentMeshes);
             }
@@ -121,7 +125,8 @@ public class WorldMeshCache implements Disposable {
                                             neighborMaze,
                                             0, 0, neighborMaze.getWidth(), neighborMaze.getHeight(),
                                             neighborWall, neighborFloor, ceilingTexture,
-                                            false, offsetX, offsetZ
+                                            false, offsetX, offsetZ,
+                                            wallProvider, seedFor(worldManager, level, targetId)
                                     );
                                     cachedChunks.put(neighborKey, neighborMeshes);
                                 }
@@ -141,6 +146,16 @@ public class WorldMeshCache implements Disposable {
     /**
      * Clears and disposes all cached GPU meshes.
      */
+    /**
+     * The chunk's own deterministic seed. A neighbour chunk must be seeded from
+     * its own id, or every streamed chunk would wear the palette of the one the
+     * player is standing in.
+     */
+    private static long seedFor(WorldManager worldManager, int level, GridPoint2 chunkId) {
+        if (worldManager == null || chunkId == null) return 0L;
+        return worldManager.getChunkSeed(level, chunkId.x, chunkId.y);
+    }
+
     public void invalidate() {
         for (List<ChunkSubMesh> subMeshes : cachedChunks.values()) {
             for (ChunkSubMesh subMesh : subMeshes) {

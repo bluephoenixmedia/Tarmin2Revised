@@ -155,6 +155,36 @@ public class WorldManager {
     }
 
     /**
+     * The RETRO theme a chunk should wear, by biome. Shared by generation and by
+     * the save-reload path so the two cannot disagree.
+     */
+    private RetroTheme.Theme themeForBiome(Biome biome, GridPoint2 chunkId, int effectiveLevel) {
+        if (biome == null) return this.currentLevelTheme;
+        switch (biome) {
+            case FOREST:
+                return RetroTheme.FOREST_THEME;
+            case DESERT:
+                return RetroTheme.DESERT_THEME;
+            case LAKELANDS:
+                return RetroTheme.LAKELANDS_THEME;
+            case MAZE:
+            default:
+                return retroThemeForMazePalette(getChunkSeed(effectiveLevel, chunkId.x, chunkId.y));
+        }
+    }
+
+    /**
+     * The RETRO colour theme matching a maze chunk's wall palette, so a chunk the
+     * player knows as grey does not turn green when they switch renderer.
+     */
+    private static RetroTheme.Theme retroThemeForMazePalette(long chunkSeed) {
+        return com.bpm.minotaur.rendering.mesh.WallVariants.paletteFor(chunkSeed)
+                == com.bpm.minotaur.rendering.mesh.WallVariants.Palette.GREY
+                ? RetroTheme.ADVANCED_COLOR_THEME_GREY
+                : RetroTheme.ADVANCED_COLOR_THEME_GREEN;
+    }
+
+    /**
      * Calculates a deterministic seed for a specific chunk/level combination.
      */
     public long getChunkSeed(int level, int x, int y) {
@@ -361,6 +391,18 @@ public class WorldManager {
                 } else {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
+                    // ChunkData persists none of identity, biome or theme, and the
+                    // generation path sets all three. Without this a reloaded chunk
+                    // came back as an anonymous MAZE chunk at (0,0): forest chunks
+                    // silently lost their cliff walls, and anything deriving from
+                    // the chunk id read the shelter's.
+                    maze.setChunkId(chunkId);
+                    Biome reloadedBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
+                    if (reloadedBiome != null) {
+                        maze.setBiome(reloadedBiome);
+                        maze.setTheme(themeForBiome(reloadedBiome, chunkId,
+                                calculateEffectiveDifficulty(chunkId, this.currentLevel)));
+                    }
                     if (this.goreManager != null) {
                         this.goreManager.importChunkGore(chunkId, data);
                     }
@@ -405,7 +447,10 @@ public class WorldManager {
         RetroTheme.Theme themeToGenerate;
         switch (biome) {
             case MAZE:
-                themeToGenerate = this.currentLevelTheme;
+                // The maze chunk's wall palette must survive a switch to RETRO,
+                // where walls are flat tinted quads and the texture never shows.
+                themeToGenerate = retroThemeForMazePalette(
+                        getChunkSeed(effectiveLevel, chunkId.x, chunkId.y));
                 break;
             case FOREST:
                 themeToGenerate = RetroTheme.FOREST_THEME;

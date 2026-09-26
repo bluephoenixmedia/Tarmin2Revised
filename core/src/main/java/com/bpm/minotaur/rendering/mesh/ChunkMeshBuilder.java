@@ -85,10 +85,54 @@ public class ChunkMeshBuilder {
             float worldOffsetX,
             float worldOffsetZ
     ) {
+        return buildChunk(maze, minX, minY, maxX, maxY, wallTexture, floorTexture, ceilingTexture,
+                isIndoors, worldOffsetX, worldOffsetZ, null, 0L);
+    }
+
+    /**
+     * Builds a chunk, optionally varying the wall texture per face.
+     *
+     * <p>When {@code wallProvider} is supplied and the maze is MAZE-biome, wall
+     * quads are bucketed by variant and emitted as one sub-mesh per variant in
+     * use. That costs at most six draw calls per chunk instead of one, and buys
+     * walls that are not the same image to the horizon. Every other biome, and a
+     * null provider, take the original single-texture path unchanged.
+     *
+     * @param wallProvider supplies variant textures, or null for uniform walls
+     * @param chunkSeed    the chunk's deterministic seed, so the choice survives
+     *                     leaving and re-entering the chunk
+     */
+    public static List<ChunkSubMesh> buildChunk(
+            Maze maze,
+            int minX, int minY, int maxX, int maxY,
+            Texture wallTexture,
+            Texture floorTexture,
+            Texture ceilingTexture,
+            boolean isIndoors,
+            float worldOffsetX,
+            float worldOffsetZ,
+            WallTextureProvider wallProvider,
+            long chunkSeed
+    ) {
         List<ChunkSubMesh> subMeshes = new ArrayList<>();
 
-        FloatArray wallVerts = new FloatArray();
-        ShortArray wallIndices = new ShortArray();
+        // Only the maze wears variants; forest, desert and lakelands have their
+        // own biome wall art and must not be overwritten with masonry.
+        boolean varied = wallProvider != null
+                && maze != null
+                && maze.getBiome() == com.bpm.minotaur.generation.Biome.MAZE;
+        WallVariants.Palette palette = varied ? WallVariants.paletteFor(chunkSeed) : null;
+        int buckets = varied ? WallVariants.VARIANT_COUNT : 1;
+
+        FloatArray[] wallVertsByVariant = new FloatArray[buckets];
+        ShortArray[] wallIndicesByVariant = new ShortArray[buckets];
+        for (int i = 0; i < buckets; i++) {
+            wallVertsByVariant[i] = new FloatArray();
+            wallIndicesByVariant[i] = new ShortArray();
+        }
+        // Windows and any non-varied build write here; bucket 0 is the base texture.
+        FloatArray wallVerts = wallVertsByVariant[0];
+        ShortArray wallIndices = wallIndicesByVariant[0];
 
         FloatArray floorVerts = new FloatArray();
         ShortArray floorIndices = new ShortArray();
@@ -200,7 +244,8 @@ public class ChunkMeshBuilder {
                     // --- 3. WALL FACES ---
                     // A. North boundary (Z = -(y + 1), facing South towards camera inside cell)
                     if (hasNorthWall) {
-                        addQuad(wallVerts, wallIndices,
+                        int b = varied ? WallVariants.variantFor(chunkSeed, x, y, WallVariants.FACE_NORTH) : 0;
+                        addQuad(wallVertsByVariant[b], wallIndicesByVariant[b],
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
                                 x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
@@ -211,7 +256,8 @@ public class ChunkMeshBuilder {
 
                     // B. South boundary (Z = -y, facing North towards camera inside cell)
                     if (hasSouthWall) {
-                        addQuad(wallVerts, wallIndices,
+                        int b = varied ? WallVariants.variantFor(chunkSeed, x, y, WallVariants.FACE_SOUTH) : 0;
+                        addQuad(wallVertsByVariant[b], wallIndicesByVariant[b],
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
                                 x + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
@@ -222,7 +268,8 @@ public class ChunkMeshBuilder {
 
                     // C. West boundary (X = x, facing East towards camera inside cell)
                     if (hasWestWall) {
-                        addQuad(wallVerts, wallIndices,
+                        int b = varied ? WallVariants.variantFor(chunkSeed, x, y, WallVariants.FACE_WEST) : 0;
+                        addQuad(wallVertsByVariant[b], wallIndicesByVariant[b],
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
                                 x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
@@ -233,7 +280,8 @@ public class ChunkMeshBuilder {
 
                     // D. East boundary (X = x + 1, facing West towards camera inside cell)
                     if (hasEastWall) {
-                        addQuad(wallVerts, wallIndices,
+                        int b = varied ? WallVariants.variantFor(chunkSeed, x, y, WallVariants.FACE_EAST) : 0;
+                        addQuad(wallVertsByVariant[b], wallIndicesByVariant[b],
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
                                 x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
@@ -248,17 +296,23 @@ public class ChunkMeshBuilder {
         // Build GPU Meshes if geometry was created
         if (floorIndices.size > 0 && floorTexture != null) {
             Mesh floorMesh = createMesh(floorVerts, floorIndices);
-            subMeshes.add(new ChunkSubMesh(floorTexture, floorMesh, floorIndices.size));
+            subMeshes.add(new ChunkSubMesh(floorTexture, floorMesh, floorIndices.size,
+                    ChunkSubMesh.Surface.FLOOR));
         }
 
-        if (wallIndices.size > 0 && wallTexture != null) {
-            Mesh wallMesh = createMesh(wallVerts, wallIndices);
-            subMeshes.add(new ChunkSubMesh(wallTexture, wallMesh, wallIndices.size));
+        for (int i = 0; i < buckets; i++) {
+            if (wallIndicesByVariant[i].size == 0) continue;
+            Texture tex = varied ? wallProvider.get(palette, i) : wallTexture;
+            if (tex == null) continue;
+            Mesh wallMesh = createMesh(wallVertsByVariant[i], wallIndicesByVariant[i]);
+            subMeshes.add(new ChunkSubMesh(tex, wallMesh, wallIndicesByVariant[i].size,
+                    ChunkSubMesh.Surface.WALL));
         }
 
         if (ceilIndices.size > 0 && ceilingTexture != null) {
             Mesh ceilMesh = createMesh(ceilVerts, ceilIndices);
-            subMeshes.add(new ChunkSubMesh(ceilingTexture, ceilMesh, ceilIndices.size));
+            subMeshes.add(new ChunkSubMesh(ceilingTexture, ceilMesh, ceilIndices.size,
+                    ChunkSubMesh.Surface.CEILING));
         }
 
         return subMeshes;

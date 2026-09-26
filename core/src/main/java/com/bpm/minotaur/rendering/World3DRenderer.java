@@ -50,6 +50,7 @@ import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
+import com.bpm.minotaur.rendering.mesh.WallTextureProvider;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
 import com.bpm.minotaur.weather.WeatherManager;
@@ -78,6 +79,7 @@ public class World3DRenderer implements Disposable {
 
     // Textures
     private final Texture wallTexture;
+    private final WallTextureProvider wallVariantProvider;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
@@ -179,6 +181,7 @@ public class World3DRenderer implements Disposable {
 
         // Initialize Textures with hardware repeat
         this.wallTexture = new Texture(Gdx.files.internal("images/wall.png"));
+        this.wallVariantProvider = new WallTextureProvider(this.wallTexture);
         this.wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
         if (Gdx.files.internal("images/forest_cliff.png").exists()) {
@@ -600,18 +603,23 @@ public class World3DRenderer implements Disposable {
                 forestWallTexture,
                 forestFloorTexture,
                 ceilingTexture,
-                worldManager
+                worldManager,
+                wallVariantProvider
         );
 
         for (ChunkSubMesh subMesh : subMeshes) {
             if (isRetro) {
                 shader.setUniformf("u_retroBorder", 1.0f);
-                if (subMesh.getTexture() == wallTexture || subMesh.getTexture() == forestWallTexture) {
-                    shader.setUniformf("u_retroColor", theme.wall);
-                } else if (subMesh.getTexture() == floorTexture || subMesh.getTexture() == forestFloorTexture) {
-                    shader.setUniformf("u_retroColor", theme.floor);
-                } else {
-                    shader.setUniformf("u_retroColor", theme.ceiling);
+                switch (subMesh.getSurface()) {
+                    case WALL:
+                        shader.setUniformf("u_retroColor", theme.wall);
+                        break;
+                    case FLOOR:
+                        shader.setUniformf("u_retroColor", theme.floor);
+                        break;
+                    default:
+                        shader.setUniformf("u_retroColor", theme.ceiling);
+                        break;
                 }
             } else {
                 shader.setUniformf("u_retroBorder", 0.0f);
@@ -1735,6 +1743,7 @@ public class World3DRenderer implements Disposable {
         meshCache.dispose();
         dynamicBatcher.dispose();
 
+        if (wallVariantProvider != null) wallVariantProvider.dispose();
         wallTexture.dispose();
         if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
         doorTexture.dispose();
