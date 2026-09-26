@@ -14,8 +14,10 @@ public class HudTooltip extends Table {
     private final HudSkin skin;
     private final Label titleLabel;
     private final Label categoryLabel;
+    private final Label comparisonLabel;
     private final Label statsLabel;
     private final Label promptLabel;
+    private com.bpm.minotaur.gamedata.player.Player player;
 
     public HudTooltip(HudSkin skin) {
         this.skin = skin;
@@ -25,20 +27,29 @@ public class HudTooltip extends Table {
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(skin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT);
         Label.LabelStyle catStyle = new Label.LabelStyle(skin.getFontSmall(), HudSkin.COL_EXP_AMBER);
+        Label.LabelStyle compStyle = new Label.LabelStyle(skin.getFontSmall(), Color.WHITE);
         Label.LabelStyle statsStyle = new Label.LabelStyle(skin.getFontSmall(), Color.WHITE);
         Label.LabelStyle promptStyle = new Label.LabelStyle(skin.getFontSmall(), HudSkin.COL_GOLD_MUTED);
 
         titleLabel = new Label("", titleStyle);
         categoryLabel = new Label("", catStyle);
+        comparisonLabel = new Label("", compStyle);
         statsLabel = new Label("", statsStyle);
         promptLabel = new Label("", promptStyle);
 
         add(titleLabel).left().row();
-        add(categoryLabel).left().padTop(2f).row();
+        Table catTable = new Table();
+        catTable.add(categoryLabel).left();
+        catTable.add(comparisonLabel).left().padLeft(8f);
+        add(catTable).left().padTop(2f).row();
         add(statsLabel).left().padTop(4f).row();
         add(promptLabel).left().padTop(6f).row();
 
         setVisible(false);
+    }
+
+    public void setPlayer(com.bpm.minotaur.gamedata.player.Player player) {
+        this.player = player;
     }
 
     public void show(Item item, float anchorX, float anchorY, String hotkeyHint) {
@@ -54,6 +65,17 @@ public class HudTooltip extends Table {
             catText += " [Enchanted]";
         }
         categoryLabel.setText(catText);
+
+        com.bpm.minotaur.gamedata.item.GearComparison.ComparisonResult comp =
+                com.bpm.minotaur.gamedata.item.GearComparison.compare(item, player);
+        if (comp != null) {
+            comparisonLabel.setText(comp.badge);
+            comparisonLabel.setColor(comp.color);
+            comparisonLabel.setVisible(true);
+        } else {
+            comparisonLabel.setText("");
+            comparisonLabel.setVisible(false);
+        }
 
         StringBuilder sb = new StringBuilder();
         if (item.getDamageDice() != null && !item.getDamageDice().isEmpty()) {

@@ -1168,6 +1168,13 @@ public class ItemDataManager {
             itemTemplates.put(ItemType.CORPSE, t);
         }
 
+        // Tiered Keys (Item 48)
+        ItemTemplate baseKey = itemTemplates.get(ItemType.KEY);
+        createKeyTemplate(ItemType.IRON_KEY, "Iron Key", "A sturdy iron key. Unlocks basic security chests and boxes.", 15, baseKey);
+        createKeyTemplate(ItemType.SILVER_KEY, "Silver Key", "An ornate silver key. Unlocks standard treasure chests.", 45, baseKey);
+        createKeyTemplate(ItemType.GOLD_KEY, "Gold Key", "A gleaming gilded key. Unlocks high-tier chests and gilded vaults.", 120, baseKey);
+        createKeyTemplate(ItemType.SKELETON_KEY, "Skeleton Key", "A master key crafted from spectral alloy. Unlocks any standard container.", 350, baseKey);
+
         // Resources
         createResourceTemplate(ItemType.MEAT, "Meat", "Raw meat.", ItemType.FOOD);
         createResourceTemplate(ItemType.COOKED_MEAT, "Cooked Meat", "Savory cooked meat.", ItemType.FOOD);
@@ -1396,6 +1403,26 @@ public class ItemDataManager {
                 };
             }
             itemTemplates.put(type, tome);
+        }
+    }
+
+    private void createKeyTemplate(ItemType type, String name, String desc, int value, ItemTemplate baseKey) {
+        if (!itemTemplates.containsKey(type)) {
+            ItemTemplate t = new ItemTemplate();
+            t.friendlyName = name;
+            t.description = desc;
+            t.baseValue = value;
+            t.isKey = true;
+            t.isUsable = false;
+            t.scale = createDefaultScale();
+            if (baseKey != null) {
+                t.texturePath = baseKey.texturePath;
+                t.spriteData = baseKey.spriteData;
+                t.scale = baseKey.scale;
+            } else {
+                t.texturePath = "images/items/key.png";
+            }
+            itemTemplates.put(type, t);
         }
     }
 

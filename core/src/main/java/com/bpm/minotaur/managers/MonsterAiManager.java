@@ -56,6 +56,26 @@ public class MonsterAiManager {
             return;
         }
 
+        // Bleed status effect tick
+        if (monster.getBleedTurns() > 0) {
+            int bleedDmg = monster.applyBleedTick();
+            maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
+            if (monster.getCurrentHP() <= 0) {
+                if (combatManager != null) {
+                    combatManager.handleRemoteKill(monster);
+                } else {
+                    maze.getMonsters().remove(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+                }
+                return;
+            }
+        }
+
+        // Stun status effect (skips action)
+        if (monster.isStunned()) {
+            monster.decrementStun();
+            return;
+        }
+
         playerGridPos.set((int) player.getPosition().x, (int) player.getPosition().y);
         monsterGridPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
 

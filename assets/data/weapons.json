@@ -17639,7 +17639,7 @@
 			"........................"
 		],
 		"baseValue": 25,
-		"damageDice": "1d10",
+		"damageDice": "1d8",
 		"armorClassBonus": 0,
 		"accuracyModifier": 0,
 		"range": 1,
@@ -17691,8 +17691,8 @@
 		"isFinesse": false,
 		"isThrown": false,
 		"isReach": false,
-		"isVersatile": false,
-		"versatileDamageDice": null,
+		"isVersatile": true,
+		"versatileDamageDice": "1d10",
 		"isTwoHanded": false
 	},
 	"TWO_HANDED_SWORD": {

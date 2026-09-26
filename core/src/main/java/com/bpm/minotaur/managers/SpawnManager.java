@@ -636,11 +636,36 @@ public class SpawnManager {
         GridPoint2 spawnPoint = getEmptySpawnPoint();
         if (spawnPoint == null)
             return;
-        Item key = itemDataManager.createItem(ItemType.KEY, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
+
+        ItemType keyType = ItemType.IRON_KEY;
+        int dungeonLevel = (maze != null) ? maze.getLevel() : 1;
+        if (dungeonLevel >= 6) {
+            float r = random.nextFloat();
+            if (r < 0.10f) {
+                keyType = ItemType.SKELETON_KEY;
+            } else if (r < 0.65f) {
+                keyType = ItemType.GOLD_KEY;
+            } else {
+                keyType = ItemType.SILVER_KEY;
+            }
+        } else if (dungeonLevel >= 3) {
+            float r = random.nextFloat();
+            if (r < 0.03f) {
+                keyType = ItemType.SKELETON_KEY;
+            } else if (r < 0.60f) {
+                keyType = ItemType.SILVER_KEY;
+            } else {
+                keyType = ItemType.IRON_KEY;
+            }
+        } else {
+            keyType = (random.nextFloat() < 0.25f) ? ItemType.SILVER_KEY : ItemType.IRON_KEY;
+        }
+
+        Item key = itemDataManager.createItem(keyType, spawnPoint.x, spawnPoint.y, containerColor, assetManager);
         attemptToModifyItem(key, containerColor);
         maze.addItem(key);
 
-        SpawnLogger.getInstance().logItemSpawn(key, "Container Key");
+        SpawnLogger.getInstance().logItemSpawn(key, "Container Key (" + key.getDisplayName() + ")");
     }
 
     private void attemptToModifyItem(Item item, ItemColor color) {

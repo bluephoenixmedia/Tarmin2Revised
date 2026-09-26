@@ -65,6 +65,10 @@ public class ShopInventory {
     public void stock(ShopkeeperNpc shopkeeper, ItemDataManager itemDataManager,
             AssetManager assetManager, int dungeonLevel) {
 
+        if (com.bpm.minotaur.managers.UnlockManager.getInstance().getItemDataManager() == null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().setItemDataManager(itemDataManager);
+        }
+
         Inventory inv = shopkeeper.getInventory();
         int level = Math.max(1, dungeonLevel);
 
@@ -82,19 +86,20 @@ public class ShopInventory {
 
     private void addRandomItems(Inventory inv, ItemType[] pool, int count,
             ItemDataManager idm, AssetManager am, int level) {
+        if (com.bpm.minotaur.managers.UnlockManager.getInstance().getItemDataManager() == null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().setItemDataManager(idm);
+        }
         List<ItemType> available = new ArrayList<>();
         for (ItemType t : pool) {
             try {
-                idm.getTemplate(t); // will throw if not present
-                if (com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(t.name())) {
+                ItemTemplate tmpl = idm.getTemplate(t);
+                if (tmpl != null && com.bpm.minotaur.managers.UnlockManager.getInstance().isUnlocked(t.name())) {
                     available.add(t);
                 }
             } catch (Exception ignored) {
             }
         }
-        if (available.isEmpty() && pool.length > 0) {
-            available.add(pool[0]);
-        }
+        // Strictly pull only from available unlocked items (Item 36) - no fallback to locked pool[0]
         if (available.isEmpty())
             return;
 

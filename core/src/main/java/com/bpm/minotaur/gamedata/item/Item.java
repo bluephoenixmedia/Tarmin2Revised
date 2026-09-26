@@ -28,7 +28,7 @@ public class Item implements Renderable {
         BOOTS, LEGS, ARMS, EYES, CLOAK, AMULET, RING,
         SMALL_RING, LARGE_RING, RING_BLUE, RING_PINK, RING_GREEN, RING_PURPLE,
         POTION_BLUE, POTION_PINK, POTION_GREEN, POTION_GOLD, POTION_SWIRLY, POTION_BUBBLY,
-        KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
+        KEY, IRON_KEY, SILVER_KEY, GOLD_KEY, SKELETON_KEY, QUIVER, WAR_BOOK, SPIRITUAL_BOOK, SPECIAL_BOOK, FLOUR_SACK,
         MONEY_BELT, SMALL_BAG, BOX, MEDIUM_PACK, LARGE_PACK, LARGE_BAG,
         FOOD, COINS, CHALICE, INGOT, NECKLACE, CROWN, TARMIN_TREASURE,
         RUBY, SAPPHIRE, EMERALD,
@@ -278,6 +278,7 @@ public class Item implements Renderable {
     private com.bpm.minotaur.gamedata.monster.Monster.MonsterType corpseSource;
 
     private boolean isLocked;
+    private ItemType requiredKeyType;
 
     // --- Mimic Disguise ---
     // A mimic in the strata is a chest until the player reaches for it. The disguise
@@ -788,7 +789,12 @@ public class Item implements Renderable {
     }
 
     public boolean isKey() {
-        return this.isKey;
+        if (this.isKey) return true;
+        if (type == ItemType.KEY || type == ItemType.IRON_KEY || type == ItemType.SILVER_KEY
+                || type == ItemType.GOLD_KEY || type == ItemType.SKELETON_KEY) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isUsable() {
@@ -1297,8 +1303,44 @@ public class Item implements Renderable {
         this.isLocked = false;
     }
 
+    public ItemType getRequiredKeyType() {
+        if (requiredKeyType != null) return requiredKeyType;
+        if (this.type == ItemType.BOX) {
+            return ItemType.IRON_KEY;
+        } else if (this.type == ItemType.REGULAR_CHEST) {
+            if (this.itemColor == ItemColor.GOLD || this.itemColor == ItemColor.YELLOW) {
+                return ItemType.GOLD_KEY;
+            } else if (this.itemColor == ItemColor.BLUE || this.itemColor == ItemColor.WHITE) {
+                return ItemType.SILVER_KEY;
+            }
+            return ItemType.IRON_KEY;
+        }
+        return ItemType.IRON_KEY;
+    }
+
+    public void setRequiredKeyType(ItemType type) {
+        this.requiredKeyType = type;
+    }
+
+    public String getRequiredKeyDisplayName() {
+        ItemType req = getRequiredKeyType();
+        if (req == ItemType.SILVER_KEY) return "Silver Key";
+        if (req == ItemType.GOLD_KEY) return "Gold Key";
+        if (req == ItemType.SKELETON_KEY) return "Skeleton Key";
+        return "Iron Key";
+    }
+
     public boolean unlocks(Item key) {
-        return key != null && key.isKey();
+        if (key == null || !key.isKey()) return false;
+        if (key.getType() == ItemType.SKELETON_KEY) return true;
+
+        ItemType required = getRequiredKeyType();
+        if (key.getType() == required) return true;
+        if ((key.getType() == ItemType.KEY && required == ItemType.IRON_KEY)
+                || (key.getType() == ItemType.IRON_KEY && required == ItemType.KEY)) {
+            return true;
+        }
+        return false;
     }
 
     public List<Item> getContents() {

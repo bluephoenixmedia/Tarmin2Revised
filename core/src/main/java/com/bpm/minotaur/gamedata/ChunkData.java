@@ -268,6 +268,12 @@ public class ChunkData {
             if (s == null) {
                 s = new Scenery(data.type, data.x, data.y, data.texturePath);
             }
+            if (data.corpseMonsterName != null) {
+                s.setCorpseMonsterName(data.corpseMonsterName);
+            }
+            if (data.impassable != null) {
+                s.setImpassable(data.impassable);
+            }
             if (data.texturePath != null && assetManager != null) {
                 if (Gdx.files != null && Gdx.files.internal(data.texturePath).exists()) {
                     if (!assetManager.isLoaded(data.texturePath)) {
@@ -383,6 +389,8 @@ public class ChunkData {
         public String propId;
         public boolean objectiveMarker;
         public boolean objectiveConsumed;
+        public String corpseMonsterName;
+        public Boolean impassable;
 
         public SceneryData() {
         }
@@ -395,6 +403,8 @@ public class ChunkData {
             this.propId = s.getPropId();
             this.objectiveMarker = s.isObjectiveMarker() || s.isObjectiveConsumed();
             this.objectiveConsumed = s.isObjectiveConsumed();
+            this.corpseMonsterName = s.getCorpseMonsterName();
+            this.impassable = s.isImpassable();
         }
     }
 

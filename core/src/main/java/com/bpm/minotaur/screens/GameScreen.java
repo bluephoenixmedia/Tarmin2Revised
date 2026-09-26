@@ -3811,7 +3811,34 @@ public class GameScreen extends BaseScreen {
     private void handleCorpseInteraction(Scenery corpse) {
         BonesData bData = corpse.getBonesData();
         if (bData == null) {
-            if (hud != null) hud.addMessage("The weathered remains crumble silently to dust.");
+            String mName = corpse.getCorpseMonsterName() != null ? corpse.getCorpseMonsterName() : "Creature";
+            if (player.hasButcheringTool()) {
+                if (hud != null) hud.addMessage("You butcher the corpse of " + mName + ".");
+                int cx = (int) corpse.getPosition().x;
+                int cy = (int) corpse.getPosition().y;
+                try {
+                    Item meat = game.getItemDataManager().createItem(Item.ItemType.MEAT, cx, cy, ItemColor.RED, game.getAssetManager());
+                    if (meat != null) {
+                        meat.setFriendlyName("Raw " + mName + " Meat");
+                        if (!player.getInventory().pickupToBackpack(meat)) {
+                            maze.addItem(meat);
+                        }
+                    }
+                    Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, cx, cy, ItemColor.WHITE, game.getAssetManager());
+                    if (bone != null) {
+                        if (!player.getInventory().pickupToBackpack(bone)) {
+                            maze.addItem(bone);
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                if (soundManager != null) {
+                    soundManager.playSound("meat_slice");
+                }
+                maze.removeScenery(cx, cy);
+            } else {
+                if (hud != null) hud.addMessage("You examine the corpse of " + mName + ". Without a bladed tool, you cannot harvest it.");
+            }
             return;
         }
 

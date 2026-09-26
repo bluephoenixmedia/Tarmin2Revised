@@ -487,6 +487,10 @@ public class Maze {
         scenery.put(pos, s);
     }
 
+    public void removeScenery(int x, int y) {
+        scenery.remove(new GridPoint2(x, y));
+    }
+
     public void update(float delta) {
         for (Object object : gameObjects.values()) {
             if (object instanceof Door)

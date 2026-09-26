@@ -1,6 +1,7 @@
 package com.bpm.minotaur.managers;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -40,6 +41,7 @@ import com.bpm.minotaur.gamedata.gore.WoundDecalRegistry;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
 import com.bpm.minotaur.rendering.animation.AnimationArchetype;
 import com.bpm.minotaur.rendering.animation.CombatMotionProfile;
+import com.bpm.minotaur.rendering.animation.SpecialMoveRegistry;
 import com.bpm.minotaur.rendering.mesh.BillboardSlicer;
 import com.bpm.minotaur.utils.DiceRoller;
 import com.badlogic.gdx.graphics.Texture;
@@ -1714,6 +1716,7 @@ public class CombatManager {
             if (actualDamage > 0) {
                 Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
                 applyCombatHitWound(monster, actualDamage, weapon);
+                applyWeaponAspectEffects(monster, actualDamage, weapon, false, false);
                 maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.03f);
                 GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 float wx = cid.x * 36.0f + monster.getPosition().x;
@@ -1946,8 +1949,11 @@ public class CombatManager {
                     eventManager.addEvent(new GameEvent("CRITICAL HIT!", 1f));
                 }
 
+                AnimationArchetype attackArch = AnimationArchetype.fromItem(attackWeapon);
+                boolean isPiercing = (attackArch == AnimationArchetype.THRUSTING_PIERCE || attackArch == AnimationArchetype.RANGED_BOW || attackArch == AnimationArchetype.RANGED_FIREARM)
+                        || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
                 int monsterHpBefore = monster.getCurrentHP();
-                int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit);
+                int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
 
                 // Brutal Cleave: Overkill damage cleaves into adjacent monster
                 if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {
@@ -1976,6 +1982,7 @@ public class CombatManager {
                 String dmgPrefix = "";
                 com.badlogic.gdx.graphics.Color textColor = com.badlogic.gdx.graphics.Color.WHITE;
 
+                String specialMoveName = SpecialMoveRegistry.resolveMoveName(currentMotionProfile, attackWeapon, isCrit);
                 String comboTag = "";
                 if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
                     if (currentMotionProfile.isDualStrike) {
@@ -1990,31 +1997,38 @@ public class CombatManager {
                 }
 
                 if (isCrit) {
-                    dmgPrefix = comboTag + "CRIT! ";
+                    dmgPrefix = comboTag + "[" + specialMoveName + "] CRIT! ";
                     textColor = com.badlogic.gdx.graphics.Color.RED;
+                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] CRITICAL HIT on " + monster.getType() + " for " + actualDamage + " dmg!", 1.5f));
                 } else if (isGlancing) {
                     dmgPrefix = "GLANCE! ";
                     textColor = com.badlogic.gdx.graphics.Color.CYAN;
                     eventManager.addEvent(new GameEvent("Glancing blow on " + monster.getType() + " for " + actualDamage + " dmg!", 1.2f));
                 } else if (currentMotionProfile != null && currentMotionProfile.isDualStrike) {
-                    dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
+                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.MAGENTA;
+                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
                 } else if (currentMotionProfile != null && currentMotionProfile.isFinisher) {
-                    dmgPrefix = comboTag + "[" + currentMotionProfile.comboName + "] ";
+                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.GOLD;
+                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.5f));
                 } else if (currentMotionProfile != null && currentMotionProfile.comboStep > 0) {
-                    dmgPrefix = comboTag;
+                    dmgPrefix = comboTag + "[" + specialMoveName + "] ";
                     textColor = com.badlogic.gdx.graphics.Color.YELLOW;
+                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
                 } else if (affinity == Monster.Affinity.RESISTANT) {
-                    dmgPrefix = "RESISTED! ";
+                    dmgPrefix = "[" + specialMoveName + "] RESISTED! ";
                     textColor = com.badlogic.gdx.graphics.Color.CYAN;
                     String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
                     eventManager.addEvent(new GameEvent(monster.getType() + " resists " + attackCategory + " attacks!", 1.5f));
                 } else if (affinity == Monster.Affinity.WEAK) {
-                    dmgPrefix = "WEAKNESS! ";
+                    dmgPrefix = "[" + specialMoveName + "] WEAKNESS! ";
                     textColor = com.badlogic.gdx.graphics.Color.GOLD;
                     String attackCategory = (dmgType == DamageType.PHYSICAL) ? "War" : "Spiritual";
                     eventManager.addEvent(new GameEvent(monster.getType() + " is weak to " + attackCategory + " attacks!", 1.5f));
+                } else {
+                    dmgPrefix = "[" + specialMoveName + "] ";
+                    eventManager.addEvent(new GameEvent("[" + specialMoveName + "] " + actualDamage + " dmg to " + monster.getType() + "!", 1.2f));
                 }
 
                 showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
@@ -2096,6 +2110,7 @@ public class CombatManager {
                 GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
                 Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
                 applyCombatHitWound(monster, totalDamage, weapon);
+                applyWeaponAspectEffects(monster, actualDamage, weapon, isCrit, (currentMotionProfile != null && currentMotionProfile.isFinisher));
                 float wx = cid.x * 36.0f + monster.getPosition().x;
                 float wz = cid.y * 36.0f + monster.getPosition().y;
                 Vector3 hitPos = new Vector3(wx, 0.5f, wz);
@@ -2164,7 +2179,7 @@ public class CombatManager {
             // Synchronous Retaliation with Poise Stagger:
             // In real-time bump combat, surviving monsters trade blows on the same tick
             // unless staggered by a Critical Hit, Shield Bash, or Combo Finisher.
-            boolean isStaggered = isCrit || (currentMotionProfile != null && (currentMotionProfile.isFinisher || currentMotionProfile.isShieldBash));
+            boolean isStaggered = isCrit || (currentMotionProfile != null && (currentMotionProfile.isFinisher || currentMotionProfile.isShieldBash)) || monster.isStunned();
             if (!isStaggered) {
                 monsterMeleeStrike(monster);
             } else {
@@ -2457,6 +2472,25 @@ public class CombatManager {
 
         GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
+        // Monsters ALWAYS leave a corpse when killed that persists (Item 51)
+        if (maze.getScenery() != null) {
+            String corpseTex = "images/scenery/decomposing_corpse.png";
+            Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, pos.x, pos.y, corpseTex);
+            corpse.setImpassable(false); // Passable so movement is never trapped in corridors
+            corpse.setCorpseMonsterName(monster.getMonsterType());
+            if (game != null && game.getAssetManager() != null) {
+                AssetManager am = game.getAssetManager();
+                if (Gdx.files != null && Gdx.files.internal(corpseTex).exists()) {
+                    if (!am.isLoaded(corpseTex)) {
+                        am.load(corpseTex, Texture.class);
+                        am.finishLoadingAsset(corpseTex);
+                    }
+                    corpse.setTexture(am.get(corpseTex, Texture.class));
+                }
+            }
+            maze.addScenery(corpse);
+        }
+
         // 1. Determine Gib Count based on Damage and Overkill Tier (Stochastic Pacing)
         int dropChance = 20; // 20% base chance for normal kill
         if (overkillTier >= 2) {
@@ -2709,6 +2743,13 @@ public class CombatManager {
         if (currentState == CombatState.VICTORY)
             return; // Died from poison/status
 
+        if (monster.isStunned()) {
+            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " is STUNNED and cannot attack!", 1.5f));
+            monster.decrementStun();
+            currentState = CombatState.PLAYER_MENU;
+            return;
+        }
+
         // --- NEW: AI Decision Tree ---
         boolean actionTaken = false;
         MonsterTemplate.AiType ai = monster.getAiType();
@@ -2867,6 +2908,19 @@ public class CombatManager {
 
             if (monster.getWarStrength() <= 0) {
                 // Trigger death logic reuse
+                handleMonsterDeath();
+                return;
+            }
+        }
+
+        // Handle Bleed
+        if (monster.getBleedTurns() > 0) {
+            int dmg = monster.applyBleedTick();
+            maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.05f);
+            eventManager.addEvent(new GameEvent(monster.getMonsterType() + " takes " + dmg + " bleed dmg!", 1.5f));
+            BalanceLogger.getInstance().log("COMBAT_EFFECT", "Monster bled for " + dmg + " damage.");
+
+            if (monster.getWarStrength() <= 0) {
                 handleMonsterDeath();
                 return;
             }
@@ -3249,6 +3303,64 @@ public class CombatManager {
 
         if (maze != null && maze.getGoreManager() != null) {
             maze.getGoreManager().spawnWoundBloodBurst(woundSitePos, splashDir, actualDamage, profile);
+        }
+    }
+
+    private void applyWeaponAspectEffects(Monster monster, int actualDamage, Item weapon, boolean isCrit, boolean isFinisher) {
+        if (monster == null || actualDamage <= 0 || !monster.isAlive()) return;
+
+        AnimationArchetype arch = AnimationArchetype.fromItem(weapon);
+        boolean isSlashing = (arch == AnimationArchetype.SLASHING_1H || arch == AnimationArchetype.SLASHING_2H
+                || arch == AnimationArchetype.AXE_CHOPPING || arch == AnimationArchetype.POLEARM_SWEEP);
+        boolean isBludgeoning = (arch == AnimationArchetype.BLUNT_CRUSHING || arch == AnimationArchetype.FLAIL_WHIP
+                || arch == AnimationArchetype.BRAWLING || arch == AnimationArchetype.SHIELD);
+        boolean isPiercing = (arch == AnimationArchetype.THRUSTING_PIERCE || arch == AnimationArchetype.RANGED_BOW
+                || arch == AnimationArchetype.RANGED_FIREARM);
+
+        if (weapon != null && weapon.getDamageType() != null) {
+            String dt = weapon.getDamageType().toUpperCase();
+            if (dt.contains("SLASH")) isSlashing = true;
+            if (dt.contains("BLUDGEON")) isBludgeoning = true;
+            if (dt.contains("PIERCE")) isPiercing = true;
+        }
+
+        // Slashing: Bleed & Sever
+        if (isSlashing) {
+            float bleedChance = isCrit ? 1.0f : (isFinisher ? 0.85f : 0.40f);
+            if (MathUtils.randomBoolean(bleedChance)) {
+                int bleedDmg = Math.max(1, actualDamage / 3);
+                monster.applyBleed(3, bleedDmg);
+                eventManager.addEvent(new GameEvent("LACERATION! " + monster.getMonsterType() + " is bleeding (" + bleedDmg + " dmg/turn)!", 1.5f));
+            }
+            if (monster.getCurrentHP() <= 0 && (isCrit || isFinisher || actualDamage > 12)) {
+                eventManager.addEvent(new GameEvent("SEVERING BLOW! Cleaved through " + monster.getMonsterType() + "!", 2.0f));
+                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
+                float wx = cid.x * 36.0f + monster.getPosition().x;
+                float wz = cid.y * 36.0f + monster.getPosition().y;
+                Vector3 hitPos = new Vector3(wx, 0.5f, wz);
+                Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
+                GoreProfile profile = GoreProfile.fromMonster(monster);
+                if (maze != null && maze.getGoreManager() != null) {
+                    maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 2, profile);
+                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.2f);
+                }
+            }
+        }
+
+        // Bludgeoning: Concussion & Stun
+        if (isBludgeoning) {
+            float stunChance = isCrit ? 0.80f : (isFinisher ? 0.55f : 0.25f);
+            if (MathUtils.randomBoolean(stunChance)) {
+                monster.applyStun(1);
+                eventManager.addEvent(new GameEvent("CONCUSSION! " + monster.getMonsterType() + " is dazed and stunned!", 1.5f));
+            }
+        }
+
+        // Piercing: Armor Puncture
+        if (isPiercing) {
+            if (isCrit || isFinisher) {
+                eventManager.addEvent(new GameEvent("DEEP PUNCTURE! Pierced directly into vitals!", 1.5f));
+            }
         }
     }
 

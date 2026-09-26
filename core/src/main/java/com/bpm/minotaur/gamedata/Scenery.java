@@ -43,6 +43,7 @@ public class Scenery implements Renderable {
     private Texture texture; // Optional texture for Modern rendering
     private String texturePath;
     private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
+    private String corpseMonsterName;
 
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
@@ -162,6 +163,18 @@ public class Scenery implements Renderable {
 
     public boolean isDecomposingCorpse() {
         return type == SceneryType.DECOMPOSING_CORPSE;
+    }
+
+    public boolean isCorpse() {
+        return isDecomposingCorpse();
+    }
+
+    public String getCorpseMonsterName() {
+        return corpseMonsterName;
+    }
+
+    public void setCorpseMonsterName(String corpseMonsterName) {
+        this.corpseMonsterName = corpseMonsterName;
     }
 
     public com.bpm.minotaur.gamedata.bones.BonesData getBonesData() {

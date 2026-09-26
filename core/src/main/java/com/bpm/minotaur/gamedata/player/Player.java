@@ -2779,13 +2779,13 @@ public class Player {
             }
 
             if (itemInFront.isLocked()) {
-                Item key = findKey();
+                Item key = findKeyFor(itemInFront);
                 if (key != null && itemInFront.unlocks(key)) {
                     itemInFront.unlock();
                     consumeKey(key);
-                    eventManager.addEvent(new GameEvent("You unlocked the " + containerName + "!", 2f));
+                    eventManager.addEvent(new GameEvent("You unlocked the " + containerName + " with the " + key.getDisplayName() + "!", 2f));
                 } else {
-                    eventManager.addEvent(new GameEvent("The " + containerName + " is locked.", 2f));
+                    eventManager.addEvent(new GameEvent("The " + containerName + " is locked. (Requires: " + itemInFront.getRequiredKeyDisplayName() + ")", 2.5f));
                     return;
                 }
             }
@@ -2905,22 +2905,21 @@ public class Player {
         eventManager.addEvent(new GameEvent("Nothing to interact with here.", 2f));
     }
 
-    private Item findKey() {
+    private Item findKeyFor(Item container) {
+        if (container == null) return null;
         Inventory inv = getInventory();
-        if (inv.getRightHand() != null && inv.getRightHand().getType() == Item.ItemType.KEY) {
-            return inv.getRightHand();
-        }
-        if (inv.getLeftHand() != null && inv.getLeftHand().getType() == Item.ItemType.KEY) {
-            return inv.getLeftHand();
-        }
+        List<Item> candidates = new ArrayList<>();
+        if (inv.getRightHand() != null && inv.getRightHand().isKey()) candidates.add(inv.getRightHand());
+        if (inv.getLeftHand() != null && inv.getLeftHand().isKey()) candidates.add(inv.getLeftHand());
         for (Item item : inv.getBackpack()) {
-            if (item != null && item.getType() == Item.ItemType.KEY) {
-                return item;
-            }
+            if (item != null && item.isKey()) candidates.add(item);
         }
         for (Item item : inv.getMainInventory()) {
-            if (item.getType() == Item.ItemType.KEY) {
-                return item;
+            if (item != null && item.isKey()) candidates.add(item);
+        }
+        for (Item k : candidates) {
+            if (container.unlocks(k)) {
+                return k;
             }
         }
         return null;
@@ -3476,7 +3475,7 @@ public class Player {
         return false;
     }
 
-    private boolean hasButcheringTool() {
+    public boolean hasButcheringTool() {
         if (checkTool(inventory.getRightHand()))
             return true;
         if (checkTool(inventory.getLeftHand()))

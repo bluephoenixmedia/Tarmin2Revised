@@ -256,6 +256,7 @@ public class Hud implements Disposable {
 
         // Floating Tooltip Card
         hudTooltip = new HudTooltip(hudSkin);
+        hudTooltip.setPlayer(player);
         worldInteractionCard = new WorldInteractionCard(hudSkin);
         controlsLegend = new ControlsLegendOverlay(hudSkin);
         statusPillBar = new StatusPillBar(hudSkin, hudTooltip);
@@ -1817,39 +1818,57 @@ public class Hud implements Disposable {
 
         Item frontItem = maze.getItems().get(frontTile);
 
-        // 0. Check Decomposing Corpse (NetHack-style Bones)
+        // 0. Check Decomposing Corpse (NetHack-style Bones & Monster Remains)
         com.bpm.minotaur.gamedata.Scenery frontScenery = (maze.getScenery() != null) ? maze.getScenery().get(frontTile) : null;
+        if (frontScenery == null && maze.getScenery() != null) {
+            frontScenery = maze.getScenery().get(feetTile);
+        }
         if (frontScenery != null && frontScenery.isDecomposingCorpse()) {
             com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
-            String heroName = (bd != null && bd.playerName != null) ? bd.playerName : "Fallen Hero";
-            if (bd != null && bd.defeated) {
-                worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[DEFEATED SPIRIT]",
-                        "Remains of " + heroName,
-                        "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
-                        "[ E ]",
-                        "Loot Remains",
-                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
-                );
-            } else if (bd != null && bd.awakened) {
-                worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[ACTIVE GHOST]",
-                        "Remains of " + heroName,
-                        "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
-                        "[ E ]",
-                        "Examine Remains",
-                        () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
-                );
+            if (bd != null) {
+                String heroName = (bd.playerName != null) ? bd.playerName : "Fallen Hero";
+                if (bd.defeated) {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[DEFEATED SPIRIT]",
+                            "Remains of " + heroName,
+                            "The restless spirit has been laid to rest. All equipment, relics, and items are now yours to reclaim.",
+                            "[ E ]",
+                            "Loot Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                } else if (bd.awakened) {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[ACTIVE GHOST]",
+                            "Remains of " + heroName,
+                            "A wrathful ghost guards these remains! Vanquish the spirit before looting.",
+                            "[ E ]",
+                            "Examine Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                } else {
+                    worldInteractionCard.show(
+                            "[MORTAL REMAINS]",
+                            "[DORMANT BONES]",
+                            "Remains of " + heroName,
+                            "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
+                            "[ E ]",
+                            "Disturb Remains",
+                            () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
+                    );
+                }
             } else {
+                String creatureName = frontScenery.getCorpseMonsterName() != null ? frontScenery.getCorpseMonsterName() : "Creature";
+                boolean hasKnife = (player != null && player.hasButcheringTool());
                 worldInteractionCard.show(
-                        "[MORTAL REMAINS]",
-                        "[DORMANT BONES]",
-                        "Remains of " + heroName,
-                        "Weathered bones from a previous expedition. A faint spectral chill lingers in the air.",
+                        "[SLAIN CREATURE]",
+                        "[CORPSE]",
+                        "Corpse of " + creatureName,
+                        hasKnife ? "The lifeless remains of a slain " + creatureName + ". Ready to be harvested for meat and bones."
+                                : "The lifeless remains of a slain " + creatureName + ". Requires a bladed tool to butcher.",
                         "[ E ]",
-                        "Disturb Remains",
+                        hasKnife ? "Butcher / Harvest [E]" : "Examine Remains [E]",
                         () -> { if (gameScreen != null) gameScreen.interactWithWorldObject(); }
                 );
             }
@@ -2130,6 +2149,10 @@ public class Hud implements Disposable {
             } else if (groundItem.isConsumableOrTool()) {
                 actionText += "  |  Consume [E/U]";
             }
+            com.bpm.minotaur.gamedata.item.GearComparison.ComparisonResult comp =
+                    com.bpm.minotaur.gamedata.item.GearComparison.compare(groundItem, player);
+            String compBadge = (comp != null) ? comp.badge : null;
+            Color compColor = (comp != null) ? comp.color : null;
             worldInteractionCard.show(
                     loc,
                     cat,
@@ -2137,7 +2160,9 @@ public class Hud implements Disposable {
                     statDesc,
                     "[ P / E ]",
                     actionText,
-                    () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); }
+                    () -> { if (gameScreen != null) gameScreen.pickupWorldItem(); },
+                    compBadge,
+                    compColor
             );
             return;
         }

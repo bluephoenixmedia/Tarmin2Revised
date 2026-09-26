@@ -98,6 +98,9 @@ public class Monster implements Renderable {
     private int maxMP;
     private String damageDice;
     private int armorClass;
+    private int bleedTurns = 0;
+    private int bleedDamagePerTurn = 0;
+    private int stunTurns = 0;
     private int magicResistance; // 0-100%
     private int moveSpeed;
     private int baseExperience;
@@ -514,11 +517,36 @@ public class Monster implements Renderable {
         return takeDamage(modifiedAmount, isCrit);
     }
 
+    public int takeDamage(int amount, DamageType damageType, boolean isCrit, boolean isPiercing) {
+        if (isImmuneToType(damageType)) {
+            return 0;
+        }
+        Affinity affinity = getAffinity(damageType);
+        int modifiedAmount = amount;
+        if (isCrit) {
+            // Critical strikes pierce category resistance completely
+            if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        } else {
+            if (affinity == Affinity.RESISTANT) {
+                modifiedAmount = Math.max(1, amount / 2);
+            } else if (affinity == Affinity.WEAK) {
+                modifiedAmount = (int) (amount * 1.5f);
+            }
+        }
+        return takeDamage(modifiedAmount, isCrit, isPiercing);
+    }
+
     public int takeDamage(int amount, DamageType damageType) {
         return takeDamage(amount, damageType, false);
     }
 
     public int takeDamage(int amount, boolean isCrit) {
+        return takeDamage(amount, isCrit, false);
+    }
+
+    public int takeDamage(int amount, boolean isCrit, boolean isPiercing) {
         // Objective-critical NPCs shrug off everything. A themed chunk seals its
         // gates, so letting a stray arrow kill the Gravedigger would strand the
         // player behind an objective that can no longer be completed.
@@ -528,8 +556,8 @@ public class Monster implements Renderable {
         }
         // AC >= 14 provides partial damage soak (every 2 AC above 14 = -1 damage).
         // Creatures with AC 10-13 rely on evasion (to-hit d20 gate) with 0 flat soak.
-        // Critical strikes bypass armor soak completely.
-        int reduction = isCrit ? 0 : Math.max(0, (armorClass - 14) / 2);
+        // Critical strikes and piercing strikes bypass armor soak completely.
+        int reduction = (isCrit || isPiercing) ? 0 : Math.max(0, (armorClass - 14) / 2);
         int taken = Math.max(1, amount - reduction);
         this.currentHP -= taken;
         if (this.currentHP < 0) {
@@ -1122,5 +1150,64 @@ public class Monster implements Renderable {
 
     public void setSearchTurnsRemaining(int searchTurnsRemaining) {
         this.searchTurnsRemaining = searchTurnsRemaining;
+    }
+
+    public void applyBleed(int turns, int damagePerTurn) {
+        if (turns > this.bleedTurns) {
+            this.bleedTurns = turns;
+        }
+        if (damagePerTurn > this.bleedDamagePerTurn) {
+            this.bleedDamagePerTurn = damagePerTurn;
+        }
+        if (statusManager != null) {
+            statusManager.addEffect(StatusEffectType.BLEEDING, turns, damagePerTurn, false);
+        }
+    }
+
+    public int getBleedTurns() {
+        return bleedTurns;
+    }
+
+    public int getBleedDamagePerTurn() {
+        return bleedDamagePerTurn;
+    }
+
+    public int applyBleedTick() {
+        if (bleedTurns <= 0 || bleedDamagePerTurn <= 0) return 0;
+        int dmg = takeDamage(bleedDamagePerTurn, DamageType.PHYSICAL, false);
+        bleedTurns--;
+        if (bleedTurns <= 0) {
+            bleedDamagePerTurn = 0;
+            if (statusManager != null && statusManager.hasEffect(StatusEffectType.BLEEDING)) {
+                statusManager.removeEffect(StatusEffectType.BLEEDING);
+            }
+        }
+        return dmg;
+    }
+
+    public void applyStun(int turns) {
+        if (turns > this.stunTurns) {
+            this.stunTurns = turns;
+        }
+        if (statusManager != null) {
+            statusManager.addEffect(StatusEffectType.PARALYZED, turns, 0, false);
+        }
+    }
+
+    public boolean isStunned() {
+        return stunTurns > 0;
+    }
+
+    public int getStunTurns() {
+        return stunTurns;
+    }
+
+    public void decrementStun() {
+        if (stunTurns > 0) {
+            stunTurns--;
+            if (stunTurns <= 0 && statusManager != null && statusManager.hasEffect(StatusEffectType.PARALYZED)) {
+                statusManager.removeEffect(StatusEffectType.PARALYZED);
+            }
+        }
     }
 }
