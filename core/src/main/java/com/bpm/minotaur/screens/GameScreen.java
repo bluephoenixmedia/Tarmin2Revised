@@ -88,7 +88,17 @@ public class GameScreen extends BaseScreen {
     // --- Game State ---
     private Player player;
     private Maze maze;
-    private int currentLevel;
+    /**
+     * The dungeon depth, read from WorldManager rather than cached.
+     *
+     * <p>This used to be a field kept in sync by hand at three call sites, and
+     * respawnInShelter was not one of them: dying below the surface left it deep
+     * forever, which made canRender3DSky false and stopped the skybox being
+     * drawn at all -- the frame cleared to near-black and looked like a dark sky.
+     */
+    private int currentLevel() {
+        return worldManager != null ? worldManager.getCurrentLevel() : 1;
+    }
     private CombatManager combatManager;
     private CombatDiceOverlay combatDiceOverlay; // NEW
     private MonsterAiManager monsterAiManager;
@@ -170,9 +180,13 @@ public class GameScreen extends BaseScreen {
 
     public GameScreen(Tarmin2 game, int level, Difficulty difficulty, GameMode gameMode) {
         super(game);
+        // Merchant claims are per-run session state. Clearing them here covers
+        // every way a run can begin -- new game, load, and the capture screen --
+        // where clearing only on respawn would leave a fresh game inheriting the
+        // previous run's claims and never spawning a merchant at all.
+        com.bpm.minotaur.generation.ShopkeeperTracker.reset();
         this.difficulty = difficulty;
         this.gameMode = gameMode;
-        this.currentLevel = level;
         this.stochasticManager = new StochasticManager();
 
         this.fboViewport = new FitViewport(VIRTUAL_WIDTH, GAME_HEIGHT); // Use GAME_HEIGHT
@@ -284,7 +298,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (!hasLoadedLevel) {
-            generateLevel(currentLevel);
+            generateLevel(currentLevel());
             hasLoadedLevel = true;
         }
 
@@ -361,8 +375,8 @@ public class GameScreen extends BaseScreen {
         if (isShelter) {
             MusicManager.getInstance().playShelterMusic("sounds/music/tarmin_ambient.ogg");
         } else {
-            int strataDepth = Math.max(1, (currentLevel - 1) / 3 + 1);
-            if (strataDepth >= 3 || currentLevel >= 4) {
+            int strataDepth = Math.max(1, (currentLevel() - 1) / 3 + 1);
+            if (strataDepth >= 3 || currentLevel() >= 4) {
                 MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_catacombs_drone.wav");
             } else {
                 MusicManager.getInstance().playExplorationMusic("sounds/music/tarmin_maze.mp3");
@@ -714,14 +728,14 @@ public class GameScreen extends BaseScreen {
             game.getBatch().end();
         } else if (player != null && maze != null) {
             if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
-                world3DRenderer.render(player, maze, currentViewport, worldManager, currentLevel, gameMode, combatManager);
+                world3DRenderer.render(player, maze, currentViewport, worldManager, currentLevel(), gameMode, combatManager);
                 // The merchant's Void chain laser only renders in the modern planar-3D
                 // engine, whose camera-space convention (x, height, -y) LaserBeamRenderer
                 // is built against; the retro raycaster does not get beam VFX.
                 laserBeamRenderer.update(Gdx.graphics.getDeltaTime());
                 laserBeamRenderer.render(world3DRenderer.getCamera());
             } else {
-                firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel,
+                firstPersonRenderer.render(shapeRenderer, player, maze, currentViewport, worldManager, currentLevel(),
                         gameMode);
 
                 if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE
@@ -1173,7 +1187,7 @@ public class GameScreen extends BaseScreen {
 
             if (toVoid) {
                 com.bpm.minotaur.managers.DimensionalManager.getInstance().enterVoid(
-                        false, player.getPosition(), currentLevel, worldManager.getCurrentPlayerChunkId());
+                        false, player.getPosition(), currentLevel(), worldManager.getCurrentPlayerChunkId());
                 debugManager.triggerDimensionalWarp(true);
                 soundManager.playDimensionalWarpSound();
                 hud.addMessage("Reality shears! Entering the Ancient Raycast Void of Tarmin-Zul.");
@@ -1504,7 +1518,7 @@ public class GameScreen extends BaseScreen {
         }
         eventManager.addEvent(new GameEvent("Your dreams pull you through the veil...", 2.5f));
         com.bpm.minotaur.managers.DimensionalManager.getInstance().enterVoid(
-                false, player.getPosition(), currentLevel, worldManager.getCurrentPlayerChunkId());
+                false, player.getPosition(), currentLevel(), worldManager.getCurrentPlayerChunkId());
         debugManager.triggerDimensionalWarp(true);
         soundManager.playDimensionalWarpSound();
         hud.addMessage("Reality shears! You slip into the Ancient Void of Tarmin-Zul.");
@@ -1644,6 +1658,10 @@ public class GameScreen extends BaseScreen {
             Item bonusFood = game.getItemDataManager().createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, game.getAssetManager());
             player.getInventory().pickupToBackpack(bonusFood);
         }
+
+        // A new expedition gets a fresh merchant on each level; without this the
+        // claims from the dead run would keep merchants out of the new one.
+        com.bpm.minotaur.generation.ShopkeeperTracker.reset();
 
         // 3. Respawn in Starting Shelter (Level 1, Chunk 0, 0)
         worldManager.setCurrentLevel(1);
@@ -1835,7 +1853,7 @@ public class GameScreen extends BaseScreen {
 
         Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, tile);
         if (chest != null && chest.isMimicSeen() && combatManager != null) {
-            return combatManager.revealMimicPreEmptively(tile, currentLevel);
+            return combatManager.revealMimicPreEmptively(tile, currentLevel());
         }
         return null;
     }
@@ -2032,7 +2050,7 @@ public class GameScreen extends BaseScreen {
             GridPoint2 originChunk = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : null;
             GridPoint2 targetChunk = transitionGate.getTargetChunkId();
             GridPoint2 arrivalTile = transitionGate.getTargetPlayerPos();
-            MonsterPursuitManager.getInstance().registerGatePursuit(pursuers, originChunk, targetChunk, arrivalTile, this.currentLevel);
+            MonsterPursuitManager.getInstance().registerGatePursuit(pursuers, originChunk, targetChunk, arrivalTile, currentLevel());
         }
 
         player.getPosition().set(transitionGate.getTargetPlayerPos().x + 0.5f,
@@ -2140,7 +2158,7 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.monster.Monster monster = new com.bpm.minotaur.gamedata.monster.Monster(type,
                         tx, ty, com.bpm.minotaur.gamedata.monster.MonsterColor.WHITE, game.getMonsterDataManager(),
                         game.getAssetManager());
-                monster.scaleStats(currentLevel); // Scale to current level just in case
+                monster.scaleStats(currentLevel()); // Scale to current level just in case
                 maze.addMonster(monster);
                 hud.addMessage("Spawned: " + type.name());
             } catch (Exception e) {
@@ -2937,7 +2955,7 @@ public class GameScreen extends BaseScreen {
                 StringBuilder found = new StringBuilder();
 
                 for (int i = 1; i <= 10; i++) {
-                    int targetLevel = currentLevel + i;
+                    int targetLevel = currentLevel() + i;
                     long seed = worldManager.getChunkSeed(targetLevel, chunkId.x, chunkId.y);
                     WeightedRandomList<SpawnTableEntry> pool = SpawnManager.buildDebrisPool(data, targetLevel);
 
@@ -3521,7 +3539,7 @@ public class GameScreen extends BaseScreen {
             ladder = maze.getLadders().get(inFront);
 
         if (ladder != null) {
-            MusicManager.getInstance().playStinger("sounds/music/tarmin_enter_fx.ogg");
+            soundManager.playLadderTransition();
             GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
             List<Monster> pursuers = new ArrayList<>();
             if (this.maze != null) {
@@ -3542,27 +3560,25 @@ public class GameScreen extends BaseScreen {
                 }
             }
 
-            int originLevel = this.currentLevel;
+            int originLevel = currentLevel();
 
             if (ladder.getType() == Ladder.LadderType.DOWN) {
                 GridPoint2 ladderPos = new GridPoint2((int) ladder.getPosition().x,
                         (int) ladder.getPosition().y);
                 worldManager.descendLevel(ladderPos);
-                this.currentLevel = worldManager.getCurrentLevel();
                 worldManager.clearLoadedChunks();
-                generateLevel(this.currentLevel);
+                generateLevel(currentLevel());
                 player.getPosition().set(ladderPos.x + 0.5f, ladderPos.y + 0.5f);
-                hud.addMessage("Descended into Strata (Depth " + (currentLevel - 1) + ")");
+                hud.addMessage("Descended into Strata (Depth " + (currentLevel() - 1) + ")");
 
                 if (!pursuers.isEmpty()) {
-                    MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, this.currentLevel, ladderPos, true);
+                    MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, currentLevel(), ladderPos, true);
                 }
             } else {
                 boolean success = worldManager.ascendLevel();
                 if (success) {
-                    this.currentLevel = worldManager.getCurrentLevel();
                     worldManager.clearLoadedChunks();
-                    generateLevel(this.currentLevel);
+                    generateLevel(currentLevel());
                     Vector2 foundDownLadderPos = null;
                     for (Ladder l : maze.getLadders().values()) {
                         if (l.getType() == Ladder.LadderType.DOWN) {
@@ -3574,14 +3590,14 @@ public class GameScreen extends BaseScreen {
                             ? new GridPoint2((int) foundDownLadderPos.x, (int) foundDownLadderPos.y)
                             : originLadderPos;
                     player.getPosition().set(arrivalPos.x + 0.5f, arrivalPos.y + 0.5f);
-                    if (currentLevel == 1) {
+                    if (currentLevel() == 1) {
                         hud.addMessage("Ascended to the Overland Surface.");
                     } else {
-                        hud.addMessage("Ascended to Strata (Depth " + (currentLevel - 1) + ")");
+                        hud.addMessage("Ascended to Strata (Depth " + (currentLevel() - 1) + ")");
                     }
 
                     if (!pursuers.isEmpty()) {
-                        MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, this.currentLevel, arrivalPos, false);
+                        MonsterPursuitManager.getInstance().registerLadderPursuit(pursuers, originLevel, currentLevel(), arrivalPos, false);
                     }
                 } else {
                     hud.addMessage("You cannot ascend any higher.");

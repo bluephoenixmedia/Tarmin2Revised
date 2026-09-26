@@ -28,8 +28,16 @@ public class SurfaceDecal implements Pool.Poolable {
     public SurfaceDecal() {
     }
 
+    /** Height a surface decal sits at: on the floor, just clear of z-fighting. */
+    public static final float FLOOR_Y = 0.002f;
+
     public void init(Vector3 pos, Color startColor, float targetRadius, TextureRegion texture) {
         this.position.set(pos);
+        // A *surface* decal is on the floor by definition. Kill stains are spawned
+        // from the victim's chest at y=0.5, and while World3DRenderer overrode the
+        // height when drawing, the raycaster derives screen Y from this value --
+        // so the same stain hung at eye level in retro mode.
+        this.position.y = FLOOR_Y;
         this.freshColor.set(startColor);
 
         // Dried color: darkened oxidized maroon, keeping hue

@@ -531,6 +531,10 @@ public class FirstAidModal extends BaseScreen {
     private void applyCrudePressure() {
         InjuryManager im = player.getInjuryManager();
         TreatmentResult result = im.applyTreatment(selectedPart, null, true, player, parentScreen.getEventManager());
+        // True only when pressure was actually attempted on a bleeding wound --
+        // "bare hands cannot mend fractures" is a refusal, not a fumble, and
+        // must not cost the player blood or time.
+        boolean bareHandsAttempt = !result.success && result.turnsRequired > 0;
 
         if (result.success) {
             soundManager.playBandageTearSound();
@@ -542,6 +546,21 @@ public class FirstAidModal extends BaseScreen {
         } else {
             feedbackLabel.setText(result.message);
             feedbackLabel.setColor(HudSkin.COL_HP_CRITICAL);
+
+            // A fumbled attempt costs time as well as blood, otherwise the modal
+            // is a free retry loop: monsters never act while it is open, so the
+            // player could roll until the attempt happened to succeed.
+            //
+            // The modal closes first, exactly as the success path does. Leaving
+            // it open would resolve the monsters' turns -- and any death -- behind
+            // a dialog the player is still looking at. And the cost is its own
+            // small constant, not result.turnsRequired, which is the 25 turns a
+            // successful binding takes.
+            if (bareHandsAttempt) {
+                closeModal();
+                parentScreen.simulateFirstAidTurnAdvance(
+                        com.bpm.minotaur.gamedata.injury.InjuryManager.FAILED_PRESSURE_TURN_COST);
+            }
         }
     }
 

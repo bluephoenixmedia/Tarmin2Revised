@@ -25,20 +25,25 @@ public class CodexDataAndFilteringTest {
 
     @Test
     public void testStrataTierRequirementCalculation() {
-        // Items scoring at the 310 threshold require Strata 1
-        int scoreAtThreshold = 310;
-        int strata1 = Math.max(1, (scoreAtThreshold - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
-        assertEquals(1, strata1);
+        // Anchored on real item scores, not on the threshold constant. An
+        // earlier rewrite expressed everything relative to the threshold, which
+        // made every assertion reduce to (base - base) / 250 + 1 and touch no
+        // production value at all.
+        assertEquals("An item at the threshold requires Strata 1",
+                1, strataFor(UnlockManager.UNLOCK_SCORE_THRESHOLD));
+        assertEquals("An item just under one band up is still Strata 1",
+                1, strataFor(UnlockManager.UNLOCK_SCORE_THRESHOLD + 249));
+        assertEquals("One full band above the threshold is Strata 2",
+                2, strataFor(UnlockManager.UNLOCK_SCORE_THRESHOLD + 250));
+        assertEquals("Two bands above is Strata 3",
+                3, strataFor(UnlockManager.UNLOCK_SCORE_THRESHOLD + 500));
+        assertEquals("An item below the threshold never exceeds Strata 1",
+                1, strataFor(0));
+    }
 
-        // Items scoring 560 require Strata 2
-        int scoreStrata2 = 560;
-        int strata2 = Math.max(1, (scoreStrata2 - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
-        assertEquals(2, strata2);
-
-        // Items scoring 810 require Strata 3
-        int scoreStrata3 = 810;
-        int strata3 = Math.max(1, (scoreStrata3 - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
-        assertEquals(3, strata3);
+    /** Mirrors the Codex's tier rule: one strata per 250 points above the gate. */
+    private int strataFor(int itemScore) {
+        return Math.max(1, (itemScore - UnlockManager.UNLOCK_SCORE_THRESHOLD) / 250 + 1);
     }
 
     @Test

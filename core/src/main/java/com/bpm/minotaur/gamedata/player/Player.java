@@ -774,11 +774,9 @@ public class Player {
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
 
-        // Starter protective layer: Padded Armor (+1 AC) provides baseline defense against early vermin
-        Item paddedArmor = itemDataManager.createItem(Item.ItemType.PADDED_ARMOR, 0, 0, ItemColor.TAN, assetManager);
-        if (paddedArmor != null) {
-            equipment.setWornChest(paddedArmor);
-        }
+        // No starting armour. The player sets out in their own clothes, so the
+        // first scrap of protection found in the dungeon is a real upgrade
+        // rather than a sidegrade on a free +1 AC.
 
         Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
         inventory.pickupToBackpack(ration);
@@ -2561,6 +2559,13 @@ public class Player {
         updateVectors();
     }
 
+    /**
+     * The sound a container makes when opened.
+     *
+     * <p>This used to branch on {@code ItemCategory.CONTAINER}, so a cloth bag
+     * made the same lid-and-latch noise as an iron chest. The category says
+     * "holds things"; only the type knows what it is made of.
+     */
     public void interact(Maze maze, GameEventManager eventManager, SoundManager soundManager, GameMode gameMode,
             WorldManager worldManager) {
         int targetX = (int) (position.x + facing.getVector().x);
@@ -2684,7 +2689,7 @@ public class Player {
             // It has to fire before the lock check, or the most common case (a locked
             // chest, and they all spawn locked) stays silent and the tell never forms.
             if (soundManager != null) {
-                soundManager.playChestOpen();
+                soundManager.playContainerOpen(itemInFront.getType());
             }
 
             if (itemInFront.isLocked()) {

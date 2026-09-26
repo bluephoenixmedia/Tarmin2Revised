@@ -112,10 +112,13 @@ public class ProgressionUnlockOverhaulTest {
         ItemTemplate lowWeapon = new ItemTemplate();
         lowWeapon.baseValue = 10;
         lowWeapon.isWeapon = true;
-        lowWeapon.damageDice = "1d4"; // 10 + 4*50 = 210 < 310
+        lowWeapon.damageDice = "1d4"; // 10 + 4*50 = 210
         int scoreLow = UnlockManager.calculateItemScore(lowWeapon);
         assertEquals(210, scoreLow);
-        assertTrue("Low weapon should be below threshold", scoreLow < UnlockManager.UNLOCK_SCORE_THRESHOLD);
+        // The threshold dropped from 310 to 50, so even a 1d4 weapon is now
+        // earned rather than issued: a new save sees ~134 templates, not 379.
+        assertTrue("A scored weapon must now sit above the threshold",
+                scoreLow >= UnlockManager.UNLOCK_SCORE_THRESHOLD);
 
         ItemTemplate highWeapon = new ItemTemplate();
         highWeapon.baseValue = 25;
@@ -216,15 +219,19 @@ public class ProgressionUnlockOverhaulTest {
         // Run 2: Demise with 4 milestones: strata 2, 30 kills, 60 divinities, 350 turns
         telemetry.startNewRun();
         telemetry.setStrataReached(2);
-        for (int i = 0; i < 30; i++) {
+        // Must clear the raised bars (100 kills / 150 divinities / 1000 turns),
+        // or this exercises min(2, 1+1) and never tests the cap at all.
+        for (int i = 0; i < 120; i++) {
             telemetry.recordKill("GOBLIN");
         }
-        telemetry.recordDivinitiesEarned(60);
-        telemetry.setTurnsLived(350);
+        telemetry.recordDivinitiesEarned(200);
+        telemetry.setTurnsLived(1200);
 
         List<String> unlocks2 = UnlockManager.getInstance().rollRunUnlocks(telemetry, 4);
-        // Milestones: strata > 1 (+1), kills >= 25 (+1), divinities >= 50 (+1), turns >= 300 (+1) => 1 + 4 = 5, capped at 3
-        assertEquals("Unlocks per run must be capped at 3", 3, unlocks2.size());
+        // Every milestone met => 1 + 4 = 5, capped at 2. The cap came down from 3
+        // and the bars went up (100 kills / 150 divinities / 1000 turns) so an
+        // ordinary run grants one and a genuinely good run grants two.
+        assertEquals("Unlocks per run must be capped at 2", 2, unlocks2.size());
     }
 
     @Test

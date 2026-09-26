@@ -349,11 +349,14 @@ public class DynamicQuadBatcher implements Disposable {
             float gridX, float gridY,
             boolean isEastWest,
             float openProgress,
-            Color color
+            Color color,
+            float ceilingY
     ) {
         if (!ensureCapacity(2)) return;
         float yBottom = 0.0f;
-        float yTop = 1.0f;
+        // A door panel must reach its own tile's ceiling. Assuming 1.0 left a
+        // hole to the sky wherever the ceiling is higher, such as the shelter.
+        float yTop = ceilingY;
         float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
 
         // Subtle mechanical rumble vibration during opening/closing

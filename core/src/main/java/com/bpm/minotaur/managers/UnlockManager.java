@@ -14,7 +14,15 @@ public class UnlockManager {
     private static final UnlockManager INSTANCE = new UnlockManager();
     public static final String DEFAULT_SAVE_FILE = "saves/unlocks.json";
     public static final String LEGACY_PROFILE_FILE = "saves/profile.json";
-    public static final int UNLOCK_SCORE_THRESHOLD = 310;
+    /**
+     * Items scoring at or above this are locked behind meta-progression.
+     *
+     * <p>At 310 -- above the median item score of 210 -- a brand-new save could
+     * already see 379 of 544 templates, so the unlock system gated almost
+     * nothing and a first run looked much like a tenth. At 50 that drops to
+     * roughly 134.
+     */
+    public static final int UNLOCK_SCORE_THRESHOLD = 50;
 
     private String saveFile = DEFAULT_SAVE_FILE;
     private UnlockData data;
@@ -260,17 +268,21 @@ public class UnlockManager {
             if (maxFloorReached > 1 && (strataReached > 1 || maxFloorReached > data.deepestLevelReached)) {
                 milestoneCount++;
             }
-            if (telemetry.getTotalMonstersKilled() >= 25) {
+            if (telemetry.getTotalMonstersKilled() >= 100) {
                 milestoneCount++;
             }
-            if (telemetry.getDivinitiesEarned() >= 50) {
+            if (telemetry.getDivinitiesEarned() >= 150) {
                 milestoneCount++;
             }
-            if (telemetry.getTurnsLived() >= 300) {
+            if (telemetry.getTurnsLived() >= 1000) {
                 milestoneCount++;
             }
         }
-        int unlocksToGrant = Math.min(3, 1 + milestoneCount);
+        // Capped at 2, down from 3, and the milestones above were raised from
+        // 25 / 50 / 300. Those bars were reachable in an ordinary run, so almost
+        // every run hit the cap; lowering the cap alone would have left a strong
+        // run indistinguishable from an average one.
+        int unlocksToGrant = Math.min(2, 1 + milestoneCount);
 
         int maxEligibleScore = UNLOCK_SCORE_THRESHOLD + (strataReached * 250);
         List<com.bpm.minotaur.gamedata.item.Item.ItemType> boundedPool = new ArrayList<>();

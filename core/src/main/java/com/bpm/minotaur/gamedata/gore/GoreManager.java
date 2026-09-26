@@ -418,7 +418,43 @@ public class GoreManager {
 
     // --- Decal Spawning ---
 
+    /**
+     * The maze the gore simulation is currently running against.
+     *
+     * <p>Held here rather than passed to each spawn call because decals are
+     * created from ten different places -- kill stains, bleed trails, droplets
+     * landing -- and guarding only the ones that happened to have a maze in
+     * scope left the commonest source of doorway blood unguarded.
+     */
+    private Maze decalMaze;
+
+    /**
+     * False only for tiles that cannot hold a floor decal: doorways and gate
+     * thresholds, which have no floor quad and no framing walls.
+     *
+     * <p>Deliberately fails open. Decal positions are z-up maze coordinates, but
+     * callers differ over whether they are chunk-local or chunk-absolute, so an
+     * out-of-range tile means "I cannot tell" rather than "reject". Guessing the
+     * other way would silently delete blood from every chunk but the origin.
+     */
+    public static boolean canHoldSurfaceDecal(com.bpm.minotaur.gamedata.Maze maze, Vector3 pos) {
+        if (maze == null || pos == null) return true;
+
+        int tileX = com.badlogic.gdx.math.MathUtils.floor(pos.x);
+        int tileY = com.badlogic.gdx.math.MathUtils.floor(pos.z);
+        if (tileX < 0 || tileY < 0 || tileX >= maze.getWidth() || tileY >= maze.getHeight()) {
+            return true;
+        }
+
+        if (maze.getGateAt(tileX, tileY) != null) return false;
+        return !(maze.getGameObjectAt(tileX, tileY) instanceof com.bpm.minotaur.gamedata.Door);
+    }
+
     public void spawnSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
+        // A doorway has no floor quad and no framing walls, so blood there reads
+        // as hanging in the opening rather than lying on the ground.
+        if (!canHoldSurfaceDecal(decalMaze, pos)) return;
+
         if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) {
             SurfaceDecal old = activeSurfaceDecals.removeIndex(0);
             surfaceDecalPool.free(old);
@@ -485,6 +521,7 @@ public class GoreManager {
     }
 
     public void update(float delta, Maze currentMaze, WorldManager worldManager) {
+        this.decalMaze = currentMaze;
         // 1. Update Blood Particles & Surface Collisions
         for (int i = activeParticles.size - 1; i >= 0; i--) {
             BloodParticle p = activeParticles.get(i);

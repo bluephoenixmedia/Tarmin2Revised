@@ -230,6 +230,17 @@ public class MazeChunkGenerator implements IChunkGenerator {
         if (maze.getLevel() < 1 || maze.getLevel() > 2)
             return;
 
+        // One merchant per level, not per chunk. This used to spawn on every
+        // eligible chunk with no roll at all, which on a 21x21 maze meant
+        // bumping into a merchant almost everywhere. Meeting one should be an
+        // event you remember.
+        //
+        // The claim is taken below, only once a tile is actually found: claiming
+        // here would let a chunk with nowhere to stand burn the level's only
+        // slot and leave that level merchant-less for the whole run.
+        if (ShopkeeperTracker.hasClaimed(maze.getLevel()))
+            return;
+
         List<GridPoint2> candidates = new ArrayList<>();
         int height = maze.getHeight();
         for (GridPoint2 tile : reachable) {
@@ -252,6 +263,8 @@ public class MazeChunkGenerator implements IChunkGenerator {
 
         Collections.shuffle(candidates, random);
         GridPoint2 pos = candidates.get(0);
+        if (!ShopkeeperTracker.claimLevel(maze.getLevel()))
+            return;
         ShopkeeperNpc shopkeeper = new ShopkeeperNpc(pos.x, pos.y, assetManager);
         new ShopInventory().stock(shopkeeper, itemDataManager, assetManager, maze.getLevel());
         maze.setShopkeeper(shopkeeper);

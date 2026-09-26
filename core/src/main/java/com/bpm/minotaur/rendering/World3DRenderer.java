@@ -899,7 +899,8 @@ public class World3DRenderer implements Disposable {
                         shader.setUniformf("u_retroColor", theme.door);
                         shader.setUniformf("u_retroBorder", 1.0f);
                     }
-                    dynamicBatcher.addSlidingDoor(x, y, ewFacing, door.getAnimationProgress(), col);
+                    dynamicBatcher.addSlidingDoor(x, y, ewFacing, door.getAnimationProgress(), col,
+                            ChunkMeshBuilder.ceilingHeightFor(maze, x, y));
                     dynamicBatcher.flush(shader, doorTexture);
                 }
             }
@@ -932,7 +933,8 @@ public class World3DRenderer implements Disposable {
                         shader.setUniformf("u_retroColor", theme.doorDark);
                         shader.setUniformf("u_retroBorder", 1.0f);
                     }
-                    dynamicBatcher.addSlidingDoor(tileX, tileY, ewFacing, gate.getAnimationProgress(), col);
+                    dynamicBatcher.addSlidingDoor(tileX, tileY, ewFacing, gate.getAnimationProgress(), col,
+                            ChunkMeshBuilder.ceilingHeightFor(maze, tileX, tileY));
                     dynamicBatcher.flush(shader, gateTexture);
                     if (gate.getTheme() != null) {
                         float runeBob = (float) Math.sin(totalTime * 3.0f + gx * 1.5f) * 0.04f;

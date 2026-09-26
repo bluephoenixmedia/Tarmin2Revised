@@ -230,6 +230,17 @@ public class InjuryManager {
     // FIRST AID & TREATMENT
     // =========================================================================
 
+    /** HP lost when a bare-handed pressure attempt fails to stem the bleeding. */
+    public static final int FAILED_PRESSURE_HP_COST = 2;
+
+    /**
+     * Turns burned by a fumbled pressure attempt.
+     *
+     * <p>Far smaller than the 25 a successful binding takes: the point is that
+     * the attempt is not free, not that failing costs as much as succeeding.
+     */
+    public static final int FAILED_PRESSURE_TURN_COST = 5;
+
     public TreatmentResult applyTreatment(BodyPart part, Item item, boolean bareHands, Player player, GameEventManager eventManager) {
         InjuryRecord record = injuries.get(part);
         if (record == null && !illnessStage.isIll()) {
@@ -244,7 +255,18 @@ public class InjuryManager {
                     record.setTreated(true);
                     return new TreatmentResult(true, "Applied firm direct pressure with bare hands. Bleeding arrested temporarily.", 25, 0, false);
                 } else {
-                    return new TreatmentResult(false, "Direct pressure failed to stem the blood flow.", 25, 0, false);
+                    // A failed attempt has to cost something, or the player just
+                    // retries until the 60% roll lands and the wound is free to
+                    // clear. The blood lost is the price of the fumble; the
+                    // turn it takes is what makes it a decision under pressure.
+                    if (player != null) {
+                        player.takeDamage(FAILED_PRESSURE_HP_COST,
+                                com.bpm.minotaur.gamedata.DamageType.PHYSICAL);
+                    }
+                    return new TreatmentResult(false,
+                            "Direct pressure failed to stem the blood flow. You lose "
+                                    + FAILED_PRESSURE_HP_COST + " HP in the struggle.",
+                            25, 0, false);
                 }
             } else {
                 return new TreatmentResult(false, "Bare hands cannot mend fractures, burns, or fevers. Supplies required!", 0, 0, false);
@@ -426,7 +448,8 @@ public class InjuryManager {
             // Spawn blood trail on floor
             if (maze != null && maze.getGoreManager() != null) {
                 Vector3 feet3d = new Vector3(player.getPosition().x, 0.02f, player.getPosition().y);
-                maze.getGoreManager().spawnSurfaceDecal(feet3d, new Color(0.65f, 0.05f, 0.05f, 0.85f), 0.35f);
+                maze.getGoreManager().spawnSurfaceDecal(
+                        feet3d, new Color(0.65f, 0.05f, 0.05f, 0.85f), 0.35f);
             }
 
             if (eventManager != null) {

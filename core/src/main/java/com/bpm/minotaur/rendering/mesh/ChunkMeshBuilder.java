@@ -23,6 +23,12 @@ import java.util.List;
  */
 public class ChunkMeshBuilder {
 
+    /** Ceiling height for ordinary dungeon and wilderness tiles. */
+    public static final float STANDARD_CEILING_Y = 1.0f;
+    /** The shelter stands half again as tall, so the hub reads as a room. */
+    public static final float SHELTER_CEILING_Y = 1.5f;
+
+
     // Wall & Door bitmasks matching Maze and FirstPersonRenderer
     public static final int WALL_WEST  = 0b00000001; // 1
     public static final int WALL_EAST  = 0b00000100; // 4
@@ -101,9 +107,19 @@ public class ChunkMeshBuilder {
             for (int x = clampedMinX; x < clampedMaxX; x++) {
                 // If this cell contains a Window, emit the complete 3D window embrasure
                 if (maze.getGameObjectAt(x, y) instanceof Window) {
-                    addWindowWallMesh(wallVerts, wallIndices, ceilVerts, ceilIndices, x, y, whitePacked, worldOffsetX, worldOffsetZ);
+                    addWindowWallMesh(wallVerts, wallIndices, ceilVerts, ceilIndices, x, y, whitePacked,
+                            worldOffsetX, worldOffsetZ, ceilingHeightFor(maze, x, y));
                     continue;
                 }
+
+                // Shelter rooms stand 50% taller than the dungeon. The walls rise
+                // with the ceiling and the texture tiles into the extra height
+                // rather than stretching, which would smear the masonry in the
+                // one room the player sees every single run.
+                float ceilY = ceilingHeightFor(maze, x, y);
+                // Wall V runs 1 at the floor to 0 at the top; pushing the top
+                // below 0 repeats the texture instead of scaling it.
+                float wallTopV = 1f - ceilY;
 
                 int currentData = maze.getWallDataAt(x, y);
 
@@ -168,15 +184,15 @@ public class ChunkMeshBuilder {
                             0f, 1f, 0f, whitePacked
                     );
 
-                    // --- 2. CEILING QUAD (Y = 1.0, Normal = Down) ---
+                    // --- 2. CEILING QUAD (Y = ceilY, Normal = Down) ---
                     // Ceilings are emitted only when inside the player's shelter OR underground in the maze (level > 1)
                     boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
                     if (tileHasCeiling) {
                         addQuad(ceilVerts, ceilIndices,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
+                                x + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, 0f,
+                                x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, 1f,
+                                x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, 1f,
+                                x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, 0f,
                                 0f, -1f, 0f, whitePacked
                         );
                     }
@@ -187,8 +203,8 @@ public class ChunkMeshBuilder {
                         addQuad(wallVerts, wallIndices,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
+                                x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
+                                x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, wallTopV,
                                 0f, 0f, 1f, whitePacked
                         );
                     }
@@ -198,8 +214,8 @@ public class ChunkMeshBuilder {
                         addQuad(wallVerts, wallIndices,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                x + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
+                                x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, wallTopV,
                                 0f, 0f, -1f, whitePacked
                         );
                     }
@@ -209,8 +225,8 @@ public class ChunkMeshBuilder {
                         addQuad(wallVerts, wallIndices,
                                 x + worldOffsetX, 0.0f, -y + worldOffsetZ, 0f, 1f,
                                 x + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 1f, 1f,
-                                x + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 1f, 0f,
-                                x + worldOffsetX, 1.0f, -y + worldOffsetZ, 0f, 0f,
+                                x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 1f, wallTopV,
+                                x + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, wallTopV,
                                 1f, 0f, 0f, whitePacked
                         );
                     }
@@ -220,8 +236,8 @@ public class ChunkMeshBuilder {
                         addQuad(wallVerts, wallIndices,
                                 x + 1 + worldOffsetX, 0.0f, -(y + 1) + worldOffsetZ, 0f, 1f,
                                 x + 1 + worldOffsetX, 0.0f, -y + worldOffsetZ, 1f, 1f,
-                                x + 1 + worldOffsetX, 1.0f, -y + worldOffsetZ, 1f, 0f,
-                                x + 1 + worldOffsetX, 1.0f, -(y + 1) + worldOffsetZ, 0f, 0f,
+                                x + 1 + worldOffsetX, ceilY, -y + worldOffsetZ, 1f, wallTopV,
+                                x + 1 + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, wallTopV,
                                 -1f, 0f, 0f, whitePacked
                         );
                     }
@@ -306,14 +322,24 @@ public class ChunkMeshBuilder {
      * between West facade (X = x) and East facade (X = x + 1), with stone sill, lintel,
      * jambs, connecting reveal surfaces, wall ceiling, and 3 double-sided vertical iron bars.
      */
+    /** Shelter tiles stand half again as tall as the rest of the world. */
+    public static float ceilingHeightFor(Maze maze, int x, int y) {
+        return maze.isHomeTile(x, y) ? SHELTER_CEILING_Y : STANDARD_CEILING_Y;
+    }
+
     private static void addWindowWallMesh(
             FloatArray wallVerts, ShortArray wallIndices,
             FloatArray ceilVerts, ShortArray ceilIndices,
             int x, int y,
             float whitePacked,
             float worldOffsetX,
-            float worldOffsetZ
+            float worldOffsetZ,
+            float ceilY
     ) {
+        // The sill and lintel stay put -- the opening is a fixed size -- but the
+        // masonry above the lintel and the ceiling rise with the room. Without
+        // this a shelter window would sit in a 1.0-high cell while the walls
+        // beside it reached 1.5, leaving an open band above the frame.
         float ySill = 0.30f;
         float yLintel = 0.70f;
         float zFar = -(y + 1) + worldOffsetZ;
@@ -339,8 +365,8 @@ public class ChunkMeshBuilder {
         addQuad(wallVerts, wallIndices,
                 xWest, yLintel, zFar, 0f, 0.30f,
                 xWest, yLintel, zNear, 1f, 0.30f,
-                xWest, 1.0f, zNear, 1f, 0f,
-                xWest, 1.0f, zFar, 0f, 0f,
+                xWest, ceilY, zNear, 1f, 0f,
+                xWest, ceilY, zFar, 0f, 0f,
                 -1f, 0f, 0f, whitePacked
         );
 
@@ -378,8 +404,8 @@ public class ChunkMeshBuilder {
         addQuad(wallVerts, wallIndices,
                 xEast, yLintel, zNear, 0f, 0.30f,
                 xEast, yLintel, zFar, 1f, 0.30f,
-                xEast, 1.0f, zFar, 1f, 0f,
-                xEast, 1.0f, zNear, 0f, 0f,
+                xEast, ceilY, zFar, 1f, 0f,
+                xEast, ceilY, zNear, 0f, 0f,
                 1f, 0f, 0f, whitePacked
         );
 
@@ -441,13 +467,13 @@ public class ChunkMeshBuilder {
         );
 
         // =========================================================================
-        // 4. CEILING OVER WALL CELL (Y = 1.0, facing DOWN: Normal (0, -1, 0))
+        // 4. CEILING OVER WALL CELL (Y = ceilY, facing DOWN: Normal (0, -1, 0))
         // =========================================================================
         addQuad(ceilVerts, ceilIndices,
-                xWest, 1.0f, zNear, 0f, 0f,
-                xWest, 1.0f, zFar, 0f, 1f,
-                xEast, 1.0f, zFar, 1f, 1f,
-                xEast, 1.0f, zNear, 1f, 0f,
+                xWest, ceilY, zNear, 0f, 0f,
+                xWest, ceilY, zFar, 0f, 1f,
+                xEast, ceilY, zFar, 1f, 1f,
+                xEast, ceilY, zNear, 1f, 0f,
                 0f, -1f, 0f, whitePacked
         );
 

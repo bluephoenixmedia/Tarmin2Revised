@@ -152,6 +152,16 @@ public class SoundManager {
         loadSound("amb_void_groan", "sounds/amb_void_groan.wav");
         loadSound("amb_doom_subbass", "sounds/amb_doom_subbass.wav");
 
+        // --- Container and traversal cues ---
+        // Bags used to share the chest's lid-and-latch sound because the open
+        // handler branched on ItemCategory rather than type.
+        loadSound("bag_open", "sounds/bag_open.wav");
+        // Descending used to play sounds/music/tarmin_enter_fx.ogg, which is the
+        // retired player-death asset: commit 442c15d rewired the death *key* to
+        // three staged cues but left call sites referencing the old file by raw
+        // path, where nothing could flag them.
+        loadSound("ladder_transition", "sounds/ladder_transition.wav");
+
         // --- Themed chunk entry stingers (contract slot g) ---
         loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
         loadSound("wind", "sounds/wind.ogg");
@@ -485,6 +495,39 @@ public class SoundManager {
             long id = modernSounds.get(key).play(0.85f);
             modernSounds.get(key).setPitch(id, MathUtils.random(0.95f, 1.05f));
         }
+    }
+
+    /** Soft containers: bags, packs, the bag of holding. */
+    /**
+     * A soft rustle for cloth containers, a hinge creak for everything else.
+     */
+    public void playContainerOpen(Item.ItemType type) {
+        if (type == null) {
+            playChestOpen();
+            return;
+        }
+        switch (type) {
+            case SMALL_BAG:
+            case LARGE_BAG:
+            case MEDIUM_PACK:
+            case LARGE_PACK:
+            case BAG_OF_HOLDING:
+            case MONEY_BELT:
+                playBagOpen();
+                break;
+            default:
+                playChestOpen();
+                break;
+        }
+    }
+
+    public void playBagOpen() {
+        playSound("bag_open");
+    }
+
+    /** Level change via a ladder. Deliberately not a death cue. */
+    public void playLadderTransition() {
+        playSound("ladder_transition", 0.7f);
     }
 
     public void playChestOpen() {
