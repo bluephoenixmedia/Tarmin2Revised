@@ -168,10 +168,19 @@ public class SoundManager {
     }
 
     private void loadSound(String key, String path) {
-        if (Gdx.files.internal(path).exists()) {
-            modernSounds.put(key, Gdx.audio.newSound(Gdx.files.internal(path)));
-        } else {
+        if (!Gdx.files.internal(path).exists()) {
             Gdx.app.error("SoundManager", "Sound file not found: " + path);
+            return;
+        }
+        try {
+            modernSounds.put(key, Gdx.audio.newSound(Gdx.files.internal(path)));
+        } catch (Exception e) {
+            // A file the backend cannot decode used to kill the game outright,
+            // which is inconsistent with a missing file being merely logged. A
+            // 24-bit PCM bag_open.wav ended every new expedition this way.
+            // AudioFormatDecodabilityTest is what stops such a file landing;
+            // this only keeps one bad asset from costing a player their run.
+            Gdx.app.error("SoundManager", "Cannot decode sound, skipping: " + path, e);
         }
     }
 
