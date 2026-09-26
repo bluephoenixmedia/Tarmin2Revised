@@ -126,43 +126,75 @@ public class ShelterChest {
     /**
      * Deserializes chest items from disk and re-hydrates textures and templates.
      */
+    /**
+     * Replaces the chest contents, but only when parsing actually produced a
+     * result. A null {@code parsed} means the file could not be read in any
+     * format, and the right answer then is to keep what is already in memory:
+     * an unreadable file is not evidence that the player owns nothing.
+     *
+     * @return true when the contents were replaced
+     */
+    static boolean adopt(java.util.List<Item> target, java.util.List<Item> parsed) {
+        if (target == null || parsed == null) return false;
+        target.clear();
+        target.addAll(parsed);
+        return true;
+    }
+
     public void load(ItemDataManager dataManager, AssetManager assetManager) {
         try {
             FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             if (file.exists()) {
-                items.clear();
+                // Parse into a scratch list and only adopt it once a parse has
+                // actually succeeded. This used to clear() first, so a single
+                // unreadable entry -- an ItemType name no longer in the enum is
+                // enough -- emptied the stash in memory, and the next save wrote
+                // that empty list over the player's persistent storage.
+                ArrayList<Item> parsed = null;
+
                 try {
                     @SuppressWarnings("unchecked")
                     ArrayList<ItemSaveData> loaded = json.fromJson(ArrayList.class, ItemSaveData.class, file);
                     if (loaded != null) {
+                        parsed = new ArrayList<>();
                         for (ItemSaveData isd : loaded) {
                             if (isd != null) {
                                 Item item = isd.toItem(dataManager, assetManager);
                                 if (item != null) {
-                                    items.add(item);
+                                    parsed.add(item);
                                 }
                             }
                         }
-                        Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
-                        return;
                     }
                 } catch (Exception parseException) {
                     Gdx.app.log("ShelterChest", "Attempting fallback load for legacy chest data: " + parseException.getMessage());
                 }
 
-                // Legacy format fallback
-                @SuppressWarnings("unchecked")
-                ArrayList<Item> legacy = json.fromJson(ArrayList.class, Item.class, file);
-                if (legacy != null) {
-                    for (Item it : legacy) {
-                        if (it != null && it.getType() != null) {
-                            Item rehydrated = dataManager != null
-                                    ? dataManager.createItem(it.getType(), 0, 0, it.getItemColor(), assetManager)
-                                    : it;
-                            items.add(rehydrated);
+                if (parsed == null) {
+                    // Legacy format fallback
+                    try {
+                        @SuppressWarnings("unchecked")
+                        ArrayList<Item> legacy = json.fromJson(ArrayList.class, Item.class, file);
+                        if (legacy != null) {
+                            parsed = new ArrayList<>();
+                            for (Item it : legacy) {
+                                if (it != null && it.getType() != null) {
+                                    Item rehydrated = dataManager != null
+                                            ? dataManager.createItem(it.getType(), 0, 0, it.getItemColor(), assetManager)
+                                            : it;
+                                    parsed.add(rehydrated);
+                                }
+                            }
                         }
+                    } catch (Exception legacyException) {
+                        Gdx.app.error("ShelterChest",
+                                "Chest file is unreadable in both formats; keeping the contents already in memory rather than discarding them",
+                                legacyException);
                     }
-                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " legacy items from " + getSaveFilePath());
+                }
+
+                if (adopt(items, parsed)) {
+                    Gdx.app.log("ShelterChest", "Loaded " + items.size() + " items from " + getSaveFilePath());
                 }
             }
         } catch (Exception e) {

@@ -138,6 +138,12 @@ public class Item implements Renderable {
         LEATHER_HELM, OPEN_FACED, HIDE_ARMOR, HOPLITE_ARMOR, IMPROVED_MAIL, LAMELLAR_SHIRT, LEATHER_ARMOR,
         LIGHT_SCALE, LORICA_HAMATA, LORICA_SEGMENTA, MAIL_AND_PLATE, METAL_LAMELLAR, PADDED_ARMOR, PLATE_MAIL,
         RING_MAIL, SCALE_ARMOR, SHIELD_BODY, BUCKLER, SHIELD_SMALL, SHIELD_MEDIUM, SHIELD_LARGE, SPLINT_MAIL,
+        // SHIELD_SMALL/SHIELD_MEDIUM/SHIELD_LARGE are retained as save-compatible
+        // aliases only. Their duplicate data was removed; ItemDataManager maps
+        // them onto SMALL_SHIELD / SHIELD_BODY / LARGE_SHIELD. Do not delete
+        // them: saves store ItemType by name, and an unknown name loses the whole
+        // player file, regenerates a chunk, or empties the shelter chest.
+        SHIELD_ROUND_WOODEN,
         STUDDED_LEATHER, THREE_QUARTER_PLATE, WOOD_BONE_ARMOR,
         // Missing Boot/Armor Types
         LEATHER_BOOTS, WOOD_BONE_BOOTS, STUDDED_LEATHER_BOOTS, CHAINMAIL_BOOTS, FULL_PLATE_BOOTS,
@@ -867,14 +873,22 @@ public class Item implements Renderable {
         return this.isAmulet;
     }
 
+    /**
+     * True for anything worn in the off hand as a shield.
+     *
+     * <p>Data-driven items already carry {@code isShield} from their template;
+     * the name check is the fallback for items built without one, such as in
+     * tests and synthesized templates. It replaces an explicit list of eleven
+     * enum constants that had to be extended by hand every time a shield was
+     * added -- and silently excluded any that was not. The same name test is
+     * already used for damage reduction, animation archetype and paperdoll
+     * socket selection, so this now agrees with them.
+     */
     public boolean isShield() {
-        return this.isShield || (this.type != null && (this.type == ItemType.SMALL_SHIELD
-                || this.type == ItemType.LARGE_SHIELD || this.type == ItemType.SHIELD
-                || this.type == ItemType.SHIELD_SMALL || this.type == ItemType.SHIELD_LARGE
-                || this.type == ItemType.SHIELD_MEDIUM || this.type == ItemType.SHIELD_BODY
-                || this.type == ItemType.SHIELD_BODY_2
-                || this.type == ItemType.GALLIC_SHIELD || this.type == ItemType.HOPLITE_SHIELD
-                || this.type == ItemType.BUCKLER));
+        if (this.isShield) return true;
+        if (this.type == null) return false;
+        String name = this.type.name();
+        return name.contains("SHIELD") || name.contains("BUCKLER");
     }
 
     public String resolveDefaultIconPath() {
