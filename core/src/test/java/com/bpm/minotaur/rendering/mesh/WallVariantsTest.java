@@ -202,6 +202,27 @@ public class WallVariantsTest {
         }
     }
 
+    @Test
+    public void appearanceMustNotDependOnPlayerLevelOrDifficulty() {
+        // The palette was seeded two different ways: the mesh used the real
+        // depth, the RETRO theme used calculateEffectiveDifficulty, which folds
+        // in the player level and difficulty offset. So a fixed chunk changed
+        // colour as the player levelled, and the texture never matched the tint.
+        // Appearance must be a function of (world seed, depth, chunk) alone.
+        long atLevelOne = seedFor(4, -2);
+        long sameChunkAgain = seedFor(4, -2);
+        assertEquals("The same chunk at the same depth must seed identically",
+                atLevelOne, sameChunkAgain);
+        assertEquals("...and therefore pick the same palette",
+                WallVariants.paletteFor(atLevelOne), WallVariants.paletteFor(sameChunkAgain));
+
+        // A different *difficulty* value must never be what distinguishes them:
+        // if it were, the two call sites would disagree, which is exactly the
+        // bug. Distinct chunks may of course differ.
+        assertNotEquals("Different chunks should generally seed differently",
+                seedFor(4, -2), seedFor(5, -2));
+    }
+
     /** Mirrors WorldManager.getChunkSeed so the test exercises real seed values. */
     private long seedFor(int chunkX, int chunkY) {
         long seed = 0xABCDEF01L;

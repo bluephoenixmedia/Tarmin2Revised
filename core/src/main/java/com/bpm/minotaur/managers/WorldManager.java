@@ -158,7 +158,7 @@ public class WorldManager {
      * The RETRO theme a chunk should wear, by biome. Shared by generation and by
      * the save-reload path so the two cannot disagree.
      */
-    private RetroTheme.Theme themeForBiome(Biome biome, GridPoint2 chunkId, int effectiveLevel) {
+    private RetroTheme.Theme themeForBiome(Biome biome, GridPoint2 chunkId, int unusedEffectiveLevel) {
         if (biome == null) return this.currentLevelTheme;
         switch (biome) {
             case FOREST:
@@ -169,7 +169,7 @@ public class WorldManager {
                 return RetroTheme.LAKELANDS_THEME;
             case MAZE:
             default:
-                return retroThemeForMazePalette(getChunkSeed(effectiveLevel, chunkId.x, chunkId.y));
+                return retroThemeForMazePalette(getAppearanceSeed(this.currentLevel, chunkId.x, chunkId.y));
         }
     }
 
@@ -182,6 +182,19 @@ public class WorldManager {
                 == com.bpm.minotaur.rendering.mesh.WallVariants.Palette.GREY
                 ? RetroTheme.ADVANCED_COLOR_THEME_GREY
                 : RetroTheme.ADVANCED_COLOR_THEME_GREEN;
+    }
+
+    /**
+     * Seed for a chunk's <em>appearance</em>: wall palette and RETRO theme.
+     *
+     * <p>Deliberately keyed on the real depth, never on effective difficulty.
+     * {@link #calculateEffectiveDifficulty} folds in the player's level and the
+     * difficulty offset, so seeding appearance from it made a fixed chunk change
+     * colour as the player levelled up, and gave the texture palette and the
+     * RETRO tint two different answers for the same chunk.
+     */
+    public long getAppearanceSeed(int level, int chunkX, int chunkY) {
+        return getChunkSeed(level, chunkX, chunkY);
     }
 
     /**
@@ -444,27 +457,7 @@ public class WorldManager {
         }
         // ---------------------------------------------------
 
-        RetroTheme.Theme themeToGenerate;
-        switch (biome) {
-            case MAZE:
-                // The maze chunk's wall palette must survive a switch to RETRO,
-                // where walls are flat tinted quads and the texture never shows.
-                themeToGenerate = retroThemeForMazePalette(
-                        getChunkSeed(effectiveLevel, chunkId.x, chunkId.y));
-                break;
-            case FOREST:
-                themeToGenerate = RetroTheme.FOREST_THEME;
-                break;
-            case DESERT:
-                themeToGenerate = RetroTheme.DESERT_THEME;
-                break;
-            case LAKELANDS:
-                themeToGenerate = RetroTheme.LAKELANDS_THEME;
-                break;
-            default:
-                themeToGenerate = this.currentLevelTheme;
-                break;
-        }
+        RetroTheme.Theme themeToGenerate = themeForBiome(biome, chunkId, effectiveLevel);
 
         // Pass currentLevel as layoutLevel (for visuals) and effectiveLevel for
         // difficulty (spawns)

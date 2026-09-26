@@ -95,16 +95,33 @@ public class SaveManager {
     }
 
     public boolean isClassicModeUnlocked() {
-        // Honour the legacy global flag so an existing player does not lose
-        // access to a mode they already earned.
-        return getSlotMetadata(activeSlotIndex).classicModeUnlocked
-                || getProfile().classicModeUnlocked;
+        // Slot only. Reading the global profile as a fallback was a kindness to
+        // existing players, but it meant a brand-new character inherited another
+        // character's victory -- precisely the global progression this change
+        // exists to remove.
+        return getSlotMetadata(activeSlotIndex).classicModeUnlocked;
     }
 
     // --- Slot Path Helpers ---
 
     public int getActiveSlotIndex() {
         return activeSlotIndex;
+    }
+
+    /**
+     * Registers state with the SaveManager if there is one.
+     *
+     * <p>Every progression singleton needs this in its constructor, and tests
+     * construct several of them without a SaveManager. Five identical
+     * try/catch blocks meant a sixth manager would be a sixth place to forget.
+     */
+    public static void register(SlotScopedState state) {
+        try {
+            getInstance().registerSlotScoped(state);
+        } catch (Exception ignored) {
+            // No SaveManager, e.g. in tests. The singleton still works against
+            // its fallback path.
+        }
     }
 
     /**

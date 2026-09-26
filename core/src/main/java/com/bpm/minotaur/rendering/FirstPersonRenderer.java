@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering;
 
+import com.bpm.minotaur.rendering.mesh.WallVariants;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -175,6 +176,48 @@ public class FirstPersonRenderer {
         this.currentWallDarkColor = theme.wallDark;
         this.currentDoorColor = theme.door;
         this.currentDoorDarkColor = theme.doorDark;
+    }
+
+    /**
+     * The wall texture for one raycast hit, matching what PLANAR_3D bakes.
+     *
+     * <p>The 3D path buckets wall quads by variant at bake time; the raycaster
+     * has no mesh, so it resolves the same choice per column. Both read the same
+     * appearance seed and the same face index, so a chunk looks the same in
+     * either engine -- otherwise switching renderer would repaint the world.
+     */
+    private Texture wallTextureFor(Maze maze, WorldManager worldManager, RaycastResult result) {
+        if (maze == null || worldManager == null || result == null) return wallTexture;
+        if (maze.getBiome() != com.bpm.minotaur.generation.Biome.MAZE) return wallTexture;
+        // The shelter tiles its masonry into a taller ceiling, which would
+        // repeat a bordered variant panel across the wall. See ChunkMeshBuilder.
+        if (maze.isHomeTile(result.mapX, result.mapY)) return wallTexture;
+
+        com.badlogic.gdx.math.GridPoint2 chunkId = maze.getChunkId();
+        if (chunkId == null) return wallTexture;
+
+        long seed = worldManager.getAppearanceSeed(maze.getLevel(), chunkId.x, chunkId.y);
+        int face = faceOf(result);
+        String path = WallVariants.texturePath(
+                WallVariants.paletteFor(seed),
+                WallVariants.variantFor(seed, result.mapX, result.mapY, face));
+        Texture variant = getTexture(path);
+        return variant != null ? variant : wallTexture;
+    }
+
+    /**
+     * Which of the tile's four faces the ray struck.
+     *
+     * <p>{@code side} alone only distinguishes vertical from horizontal walls,
+     * which would give two faces where the mesh builder gives four. The hit
+     * point resolves it: north is the higher-Y edge, matching the mesh builder's
+     * Z = -(y + 1) convention.
+     */
+    private int faceOf(RaycastResult result) {
+        if (result.side == 0) {
+            return (result.hitX >= result.mapX + 0.5f) ? WallVariants.FACE_EAST : WallVariants.FACE_WEST;
+        }
+        return (result.hitY >= result.mapY + 0.5f) ? WallVariants.FACE_NORTH : WallVariants.FACE_SOUTH;
     }
 
     private Texture getTexture(String path) {
@@ -933,7 +976,7 @@ public class FirstPersonRenderer {
                     lightIntensity, fogEnabled, fogDistance, fogColor);
         } else {
             // STANDARD WALL
-            Texture texture = wallTexture; // Always wall for non-doors
+            Texture texture = wallTextureFor(maze, worldManager, result);
             applyDynamicLighting(Color.WHITE, sampleX, sampleY, maze, worldManager, fogLerpColor, sliceIndoors);
             if (fogEnabled) {
                 float fogAmount = Math.max(0, Math.min(1f,

@@ -46,13 +46,8 @@ public class TormentManager implements SlotScopedState {
     private final Set<TormentModifier> activeModifiers = new HashSet<>();
 
     private TormentManager() {
-        // Follow the active slot. Without this the singleton keeps whichever
-        // slot's data it first loaded and writes it over the next slot's file.
-        try {
-            com.bpm.minotaur.managers.SaveManager.getInstance().registerSlotScoped(this);
-        } catch (Exception ignored) {
-            // Tests may run without a SaveManager.
-        }
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
     }
 
     public static synchronized TormentManager getInstance() {

@@ -885,9 +885,21 @@ public class Item implements Renderable {
      * socket selection, so this now agrees with them.
      */
     public boolean isShield() {
-        if (this.isShield) return true;
-        if (this.type == null) return false;
-        String name = this.type.name();
+        return this.isShield || isShieldType(this.type);
+    }
+
+    /**
+     * Whether a type is worn as a shield, by name.
+     *
+     * <p>The single definition. Damage reduction, animation archetype, paperdoll
+     * socket selection and themed-die assignment each had their own copy of this
+     * rule, and they had already drifted: the die cascade omitted SHIELD_BODY_2,
+     * GALLIC_SHIELD and HOPLITE_SHIELD, so those shields silently got no
+     * Guardian's Steel Die.
+     */
+    public static boolean isShieldType(ItemType type) {
+        if (type == null) return false;
+        String name = type.name();
         return name.contains("SHIELD") || name.contains("BUCKLER");
     }
 

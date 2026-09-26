@@ -25,7 +25,6 @@ public class UnlockManager implements SlotScopedState {
 
     /** Per-slot file name; resolved against the active slot at load time. */
     public static final String SLOT_SAVE_FILE = "unlocks.json";
-    public static final String LEGACY_PROFILE_FILE = "saves/profile.json";
     /**
      * Items scoring at or above this are locked behind meta-progression.
      *
@@ -50,12 +49,8 @@ public class UnlockManager implements SlotScopedState {
         json.setIgnoreUnknownFields(true);
         this.saveFile = resolveSlotPath();
         load();
-        try {
-            SaveManager.getInstance().registerSlotScoped(this);
-        } catch (Exception ignored) {
-            // Tests may construct this without a SaveManager; the fallback path
-            // keeps them working.
-        }
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
     }
 
     /**
@@ -120,27 +115,6 @@ public class UnlockManager implements SlotScopedState {
         }
     }
 
-    private void checkAndMigrateLegacyProfile() {
-        try {
-            FileHandle legacyFile = getFileHandle(LEGACY_PROFILE_FILE);
-            if (legacyFile.exists()) {
-                String content = legacyFile.readString("UTF-8");
-                if (content.contains("unlockedContent")) {
-                    UnlockData legacyData = json.fromJson(UnlockData.class, legacyFile);
-                    if (legacyData != null && legacyData.unlockedContent != null && !legacyData.unlockedContent.isEmpty()) {
-                        data.unlockedContent.addAll(legacyData.unlockedContent);
-                        if (Gdx.app != null) {
-                            Gdx.app.log("UnlockManager", "Migrated " + legacyData.unlockedContent.size() + " unlocks from legacy profile.json");
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            if (Gdx.app != null) {
-                Gdx.app.error("UnlockManager", "Legacy migration check failed", e);
-            }
-        }
-    }
 
     public void save() {
         if (data == null) {

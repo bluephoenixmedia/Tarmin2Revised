@@ -38,10 +38,6 @@ public class ChunkSubMesh implements Disposable {
         return surface;
     }
 
-    public boolean isWall() {
-        return surface == Surface.WALL;
-    }
-
     public Texture getTexture() {
         return texture;
     }

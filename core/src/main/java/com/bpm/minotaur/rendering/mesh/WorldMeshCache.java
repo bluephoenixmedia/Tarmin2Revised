@@ -153,7 +153,7 @@ public class WorldMeshCache implements Disposable {
      */
     private static long seedFor(WorldManager worldManager, int level, GridPoint2 chunkId) {
         if (worldManager == null || chunkId == null) return 0L;
-        return worldManager.getChunkSeed(level, chunkId.x, chunkId.y);
+        return worldManager.getAppearanceSeed(level, chunkId.x, chunkId.y);
     }
 
     public void invalidate() {
