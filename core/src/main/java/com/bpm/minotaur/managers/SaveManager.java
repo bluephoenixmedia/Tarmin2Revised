@@ -31,6 +31,7 @@ public class SaveManager {
     private static final String PROFILE_FILE = ROOT_SAVES_DIR + "profile.json";
 
     private int activeSlotIndex = 1; // 1, 2, or 3
+    private final java.util.List<SlotScopedState> slotScoped = new java.util.ArrayList<>();
     private ProfileData profile;
     private final Json json;
 
@@ -80,14 +81,24 @@ public class SaveManager {
         atomicWriteJson(getFileHandle(PROFILE_FILE), profile);
     }
 
+    /**
+     * Records that this character slew the Minotaur.
+     *
+     * <p>Written to the active slot, not the global profile: one character's
+     * victory should not change what a brand-new character is offered.
+     */
     public void unlockClassicMode() {
-        getProfile().classicModeUnlocked = true;
-        saveProfile();
-        log("Classic Mode permanently unlocked in profile.json!");
+        SlotMetadata meta = getSlotMetadata(activeSlotIndex);
+        meta.classicModeUnlocked = true;
+        atomicWriteJson(getFileHandle(getSlotFilePath(activeSlotIndex, "meta.json")), meta);
+        log("Classic Mode unlocked in slot " + activeSlotIndex + "!");
     }
 
     public boolean isClassicModeUnlocked() {
-        return getProfile().classicModeUnlocked;
+        // Honour the legacy global flag so an existing player does not lose
+        // access to a mode they already earned.
+        return getSlotMetadata(activeSlotIndex).classicModeUnlocked
+                || getProfile().classicModeUnlocked;
     }
 
     // --- Slot Path Helpers ---
@@ -96,10 +107,48 @@ public class SaveManager {
         return activeSlotIndex;
     }
 
+    /**
+     * Registers progression state that must follow the active slot.
+     *
+     * <p>Idempotent, so a singleton may register from its constructor without
+     * worrying about being registered twice.
+     */
+    public void registerSlotScoped(SlotScopedState state) {
+        if (state != null && !slotScoped.contains(state)) {
+            slotScoped.add(state);
+        }
+    }
+
     public void setActiveSlotIndex(int slotIndex) {
-        this.activeSlotIndex = Math.max(1, Math.min(MAX_SLOTS, slotIndex));
+        int resolved = Math.max(1, Math.min(MAX_SLOTS, slotIndex));
+        boolean changed = resolved != this.activeSlotIndex;
+        this.activeSlotIndex = resolved;
         getProfile().lastPlayedSlot = this.activeSlotIndex;
         saveProfile();
+
+        // Every slot change passes through here, and it used to notify nobody.
+        // Singletons that had already loaded kept the previous slot's data and
+        // then wrote it over this slot's file on the next save.
+        if (changed) {
+            for (SlotScopedState state : slotScoped) {
+                try {
+                    state.reloadForActiveSlot();
+                } catch (Exception e) {
+                    logError("Failed to reload slot-scoped state " + state.getClass().getSimpleName(), e);
+                }
+            }
+        }
+    }
+
+    /** Wipes every registered progression singleton to its new-character state. */
+    private void resetSlotScopedForNewGame() {
+        for (SlotScopedState state : slotScoped) {
+            try {
+                state.resetForNewGame();
+            } catch (Exception e) {
+                logError("Failed to reset slot-scoped state " + state.getClass().getSimpleName(), e);
+            }
+        }
     }
 
     public String getSlotDirectoryPath(int slotIndex) {
@@ -205,9 +254,11 @@ public class SaveManager {
 
         atomicWriteJson(getFileHandle(getSlotFilePath(slotIndex, "meta.json")), meta);
 
-        // Clear in-memory singletons to start clean
+        // Clear in-memory singletons to start clean. This listed exactly two by
+        // hand and silently omitted the altar, banked divinities and torment
+        // pacts, so a new character inherited the previous one's progression.
         ShelterChest.getInstance().clear();
-        DoomManager.getInstance().resetDeaths();
+        resetSlotScopedForNewGame();
 
         log("Started New Game in slot " + slotIndex + " [" + meta.gameMode + "] as " + meta.characterName);
     }

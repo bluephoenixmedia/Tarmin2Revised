@@ -14,7 +14,7 @@ import java.util.Set;
  * only a full Apocalypse wipe (see {@link SaveManager#wipeActiveSlotOnApocalypse()})
  * ever resets them.
  */
-public class DivinityManager {
+public class DivinityManager implements SlotScopedState {
 
     public static final String DIVINITY_NAME = "Divinities";
 
@@ -39,6 +39,13 @@ public class DivinityManager {
 
     private DivinityManager() {
         load();
+        // Follow the active slot. Without this the singleton keeps whichever
+        // slot's data it first loaded and writes it over the next slot's file.
+        try {
+            com.bpm.minotaur.managers.SaveManager.getInstance().registerSlotScoped(this);
+        } catch (Exception ignored) {
+            // Tests may run without a SaveManager.
+        }
     }
 
     public static DivinityManager getInstance() {
@@ -173,5 +180,27 @@ public class DivinityManager {
     public static class SaveData {
         public int currentDivinities = 0;
         public int lootRetentionUpgradeLevel = 0;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        clearBankedProgress();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        clearBankedProgress();
+        save();
+    }
+
+    /**
+     * Banked divinities and the loot-retention upgrade are earned by one
+     * character. There was no reset for either, so they followed the player
+     * into every other slot and every new game.
+     */
+    private void clearBankedProgress() {
+        this.currentDivinities = 0;
+        this.lootRetentionUpgradeLevel = 0;
     }
 }

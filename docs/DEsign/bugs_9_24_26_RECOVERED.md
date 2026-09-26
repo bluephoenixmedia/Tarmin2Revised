@@ -53,3 +53,4 @@ untouched and still outstanding. Verbatim, in original order, with no edits.
 - I drank a potion of heroism and the listed effect did not actually happen, what other effects attached to consumables are not implemented??
 - A was able to engage in combat with a Zombie through a wall.
 - The HUD UX will sometimes get out of alignment (see badUX.png) in screenshots. We need to polish the HUD UX to be stable, responsive and READABLE
+- I have included new ceiling texture files in assets/images. These should be used whn the player is underground and randomized along with the standard wall texture which we'll now use for the ceiling (instead of just re-using the floor texture for the ceiling like we do today.)

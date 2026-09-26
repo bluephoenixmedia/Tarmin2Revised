@@ -18,6 +18,13 @@ public class SlotMetadata {
     public String locationName = "Shelter (Floor 1)";
     public String gameMode = "MODERN"; // "MODERN" or "CLASSIC"
     public int tormentLevel = 0;
+    /**
+     * Earned by slaying the Minotaur with THIS character.
+     *
+     * <p>It lived in the global profile, so one slot's victory changed the New
+     * Game flow for every slot, including brand-new ones.
+     */
+    public boolean classicModeUnlocked = false;
     public int deathCount = 0;
     public int maxDeaths = 50;
     public long playTimeSeconds = 0;

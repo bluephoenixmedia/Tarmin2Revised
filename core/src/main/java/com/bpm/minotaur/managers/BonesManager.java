@@ -22,7 +22,23 @@ import java.util.*;
  */
 public class BonesManager {
 
-    private static final String BONES_DIR = "saves/bones/";
+    /** Legacy shared location; retained only so old files can be cleaned up. */
+    private static final String LEGACY_BONES_DIR = "saves/bones/";
+
+    /**
+     * Bones belong to the character who died, not to the installation.
+     *
+     * <p>They lived in one shared directory keyed only by strata depth, and
+     * neither deleteSlot nor startNewGame ever pruned them, so the ghosts of
+     * one slot's dead heroes kept spawning in every other slot's expeditions.
+     */
+    private static String bonesDir() {
+        try {
+            return SaveManager.getInstance().getActiveSlotFilePath("bones/");
+        } catch (Exception e) {
+            return LEGACY_BONES_DIR;
+        }
+    }
     private static final int MAX_BONES_PER_STRATA = 5;
     private static final float DEFAULT_SPAWN_CHANCE = 0.30f; // 30% NetHack-style roll per floor
 
@@ -52,12 +68,12 @@ public class BonesManager {
 
     private void ensureDirectory() {
         try {
-            FileHandle dir = getFileHandle(BONES_DIR);
+            FileHandle dir = getFileHandle(bonesDir());
             if (!dir.exists()) {
                 dir.mkdirs();
             }
         } catch (Exception e) {
-            logError("Failed to initialize bones directory: " + BONES_DIR, e);
+            logError("Failed to initialize bones directory: " + bonesDir(), e);
         }
     }
 
@@ -99,7 +115,7 @@ public class BonesManager {
         BonesData bones = new BonesData(id, charName, epitaph, clampedFloor, strataDepth, playerData);
 
         String fileName = "bones_strata_" + strataDepth + "_" + timestamp + ".json";
-        String filePath = BONES_DIR + fileName;
+        String filePath = bonesDir() + fileName;
         bones.filePath = filePath;
 
         try {
@@ -123,7 +139,7 @@ public class BonesManager {
         ensureDirectory();
 
         try {
-            FileHandle dir = getFileHandle(BONES_DIR);
+            FileHandle dir = getFileHandle(bonesDir());
             if (!dir.exists() || !dir.isDirectory()) {
                 return eligible;
             }

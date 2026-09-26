@@ -8,7 +8,7 @@ import java.util.Set;
  * Manages post-victory difficulty modifiers (Hades-style Heat system).
  * Allows players to choose pact modifiers to scale challenge and rewards.
  */
-public class TormentManager {
+public class TormentManager implements SlotScopedState {
 
     private static TormentManager instance;
 
@@ -46,6 +46,13 @@ public class TormentManager {
     private final Set<TormentModifier> activeModifiers = new HashSet<>();
 
     private TormentManager() {
+        // Follow the active slot. Without this the singleton keeps whichever
+        // slot's data it first loaded and writes it over the next slot's file.
+        try {
+            com.bpm.minotaur.managers.SaveManager.getInstance().registerSlotScoped(this);
+        } catch (Exception ignored) {
+            // Tests may run without a SaveManager.
+        }
     }
 
     public static synchronized TormentManager getInstance() {
@@ -111,5 +118,17 @@ public class TormentManager {
 
     public int getMaxAllowedDeaths() {
         return hasModifier(TormentModifier.CRITICAL_BRIDGE) ? 30 : 50;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        // Torment pacts are never persisted, so there is nothing to re-read --
+        // but they must not follow the player from the slot they were chosen in.
+        clearModifiers();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        clearModifiers();
     }
 }

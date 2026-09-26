@@ -10,9 +10,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class UnlockManager {
+public class UnlockManager implements SlotScopedState {
     private static final UnlockManager INSTANCE = new UnlockManager();
+    /**
+     * Only a fallback for when no slot is resolvable, e.g. in tests.
+     *
+     * <p>This used to be the real path: one global file shared by all three
+     * slots, holding unlocked content, deepest level reached and lifetime kill
+     * counts, with no production code path that ever reset it. Slot 1's depth
+     * also gates Altar station visibility, so it revealed stations in a
+     * brand-new slot 3.
+     */
     public static final String DEFAULT_SAVE_FILE = "saves/unlocks.json";
+
+    /** Per-slot file name; resolved against the active slot at load time. */
+    public static final String SLOT_SAVE_FILE = "unlocks.json";
     public static final String LEGACY_PROFILE_FILE = "saves/profile.json";
     /**
      * Items scoring at or above this are locked behind meta-progression.
@@ -36,7 +48,41 @@ public class UnlockManager {
         json = new Json();
         json.setUsePrototypes(false);
         json.setIgnoreUnknownFields(true);
+        this.saveFile = resolveSlotPath();
         load();
+        try {
+            SaveManager.getInstance().registerSlotScoped(this);
+        } catch (Exception ignored) {
+            // Tests may construct this without a SaveManager; the fallback path
+            // keeps them working.
+        }
+    }
+
+    /**
+     * The active slot's unlocks file, or the legacy global path when no slot can
+     * be resolved (tests, or very early startup).
+     */
+    private String resolveSlotPath() {
+        try {
+            return SaveManager.getInstance().getActiveSlotFilePath(SLOT_SAVE_FILE);
+        } catch (Exception e) {
+            return DEFAULT_SAVE_FILE;
+        }
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        this.saveFile = resolveSlotPath();
+        sessionUnlocks.clear();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        this.saveFile = resolveSlotPath();
+        data = new UnlockData();
+        sessionUnlocks.clear();
+        save();
     }
 
     public static UnlockManager getInstance() {
@@ -66,8 +112,10 @@ public class UnlockManager {
                 data = new UnlockData();
             }
         } else {
+            // Deliberately does NOT migrate the old global saves/unlocks.json.
+            // Unlocks are per-character now, so inheriting a shared pool would
+            // reintroduce exactly the leak this change removes.
             data = new UnlockData();
-            checkAndMigrateLegacyProfile();
             save();
         }
     }
