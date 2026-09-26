@@ -470,10 +470,7 @@ public class ItemDataManager {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Warrior's Red Die");
         }
         // 3. Guardian's Steel Die
-        else if (type == ItemType.SMALL_SHIELD || type == ItemType.LARGE_SHIELD
-                || type == ItemType.SHIELD_SMALL || type == ItemType.SHIELD_LARGE
-                || type == ItemType.SHIELD || type == ItemType.SHIELD_MEDIUM
-                || type == ItemType.SHIELD_BODY || type == ItemType.BUCKLER) {
+        else if (Item.isShieldType(type)) {
             themedDie = com.bpm.minotaur.gamedata.dice.DiceFactory.create("Guardian's Steel Die");
         }
         // 4. Archer's Precision Die

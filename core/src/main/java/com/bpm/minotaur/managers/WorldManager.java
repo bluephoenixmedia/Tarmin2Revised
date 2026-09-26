@@ -155,6 +155,49 @@ public class WorldManager {
     }
 
     /**
+     * The RETRO theme a chunk should wear, by biome. Shared by generation and by
+     * the save-reload path so the two cannot disagree.
+     */
+    private RetroTheme.Theme themeForBiome(Biome biome, GridPoint2 chunkId, int unusedEffectiveLevel) {
+        if (biome == null) return this.currentLevelTheme;
+        switch (biome) {
+            case FOREST:
+                return RetroTheme.FOREST_THEME;
+            case DESERT:
+                return RetroTheme.DESERT_THEME;
+            case LAKELANDS:
+                return RetroTheme.LAKELANDS_THEME;
+            case MAZE:
+            default:
+                return retroThemeForMazePalette(getAppearanceSeed(this.currentLevel, chunkId.x, chunkId.y));
+        }
+    }
+
+    /**
+     * The RETRO colour theme matching a maze chunk's wall palette, so a chunk the
+     * player knows as grey does not turn green when they switch renderer.
+     */
+    private static RetroTheme.Theme retroThemeForMazePalette(long chunkSeed) {
+        return com.bpm.minotaur.rendering.mesh.WallVariants.paletteFor(chunkSeed)
+                == com.bpm.minotaur.rendering.mesh.WallVariants.Palette.GREY
+                ? RetroTheme.ADVANCED_COLOR_THEME_GREY
+                : RetroTheme.ADVANCED_COLOR_THEME_GREEN;
+    }
+
+    /**
+     * Seed for a chunk's <em>appearance</em>: wall palette and RETRO theme.
+     *
+     * <p>Deliberately keyed on the real depth, never on effective difficulty.
+     * {@link #calculateEffectiveDifficulty} folds in the player's level and the
+     * difficulty offset, so seeding appearance from it made a fixed chunk change
+     * colour as the player levelled up, and gave the texture palette and the
+     * RETRO tint two different answers for the same chunk.
+     */
+    public long getAppearanceSeed(int level, int chunkX, int chunkY) {
+        return getChunkSeed(level, chunkX, chunkY);
+    }
+
+    /**
      * Calculates a deterministic seed for a specific chunk/level combination.
      */
     public long getChunkSeed(int level, int x, int y) {
@@ -361,6 +404,18 @@ public class WorldManager {
                 } else {
                     Maze maze = data.buildMaze(this.dataManager, this.itemDataManager, this.assetManager);
                     maze.setGoreManager(this.goreManager);
+                    // ChunkData persists none of identity, biome or theme, and the
+                    // generation path sets all three. Without this a reloaded chunk
+                    // came back as an anonymous MAZE chunk at (0,0): forest chunks
+                    // silently lost their cliff walls, and anything deriving from
+                    // the chunk id read the shelter's.
+                    maze.setChunkId(chunkId);
+                    Biome reloadedBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
+                    if (reloadedBiome != null) {
+                        maze.setBiome(reloadedBiome);
+                        maze.setTheme(themeForBiome(reloadedBiome, chunkId,
+                                calculateEffectiveDifficulty(chunkId, this.currentLevel)));
+                    }
                     if (this.goreManager != null) {
                         this.goreManager.importChunkGore(chunkId, data);
                     }
@@ -402,24 +457,7 @@ public class WorldManager {
         }
         // ---------------------------------------------------
 
-        RetroTheme.Theme themeToGenerate;
-        switch (biome) {
-            case MAZE:
-                themeToGenerate = this.currentLevelTheme;
-                break;
-            case FOREST:
-                themeToGenerate = RetroTheme.FOREST_THEME;
-                break;
-            case DESERT:
-                themeToGenerate = RetroTheme.DESERT_THEME;
-                break;
-            case LAKELANDS:
-                themeToGenerate = RetroTheme.LAKELANDS_THEME;
-                break;
-            default:
-                themeToGenerate = this.currentLevelTheme;
-                break;
-        }
+        RetroTheme.Theme themeToGenerate = themeForBiome(biome, chunkId, effectiveLevel);
 
         // Pass currentLevel as layoutLevel (for visuals) and effectiveLevel for
         // difficulty (spawns)

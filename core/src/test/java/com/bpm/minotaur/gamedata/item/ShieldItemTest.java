@@ -25,7 +25,7 @@ public class ShieldItemTest {
     }
 
     @Test
-    public void testArmorJsonContainsSmallShieldAndShieldSmall() throws Exception {
+    public void testSmallShieldIsSingleSourcedWithShieldSmallAliased() throws Exception {
         File file = resolveFile("assets/data/armor.json");
         assertTrue("armor.json must exist", file.exists());
 
@@ -38,15 +38,16 @@ public class ShieldItemTest {
         assertTrue(smallShield.getInt("baseValue") > 0);
         assertEquals("images/armor/small_shield.png", smallShield.getString("texturePath"));
 
-        JsonValue shieldSmall = root.get("SHIELD_SMALL");
-        assertNotNull("SHIELD_SMALL must exist in armor.json", shieldSmall);
-        assertEquals("Small Shield", shieldSmall.getString("friendlyName"));
-        assertTrue(shieldSmall.getBoolean("isShield"));
-        assertTrue(shieldSmall.getBoolean("isArmor"));
+        // SHIELD_SMALL was byte-identical to SMALL_SHIELD and both sat in the
+        // drop table, so the same shield rolled under two names. The data is
+        // single-sourced now; the name survives in the enum and is aliased at
+        // load, because saves store ItemType by name.
+        assertNull("SHIELD_SMALL must no longer carry duplicate data; it aliases"
+                + " to SMALL_SHIELD", root.get("SHIELD_SMALL"));
     }
 
     @Test
-    public void testArmorJsonContainsLargeShieldAndShieldLarge() throws Exception {
+    public void testLargeShieldIsSingleSourcedWithShieldLargeAliased() throws Exception {
         File file = resolveFile("assets/data/armor.json");
         assertTrue("armor.json must exist", file.exists());
 
@@ -55,9 +56,12 @@ public class ShieldItemTest {
         assertNotNull("LARGE_SHIELD must exist in armor.json", largeShield);
         assertTrue(largeShield.getBoolean("isShield"));
 
-        JsonValue shieldLarge = root.get("SHIELD_LARGE");
-        assertNotNull("SHIELD_LARGE must exist in armor.json", shieldLarge);
-        assertTrue(shieldLarge.getBoolean("isShield"));
+        // SHIELD_LARGE is deliberately absent now. It duplicated LARGE_SHIELD
+        // with a *different* colour ladder, and that drift is what produced an
+        // armour colour with no enum value and a crash at startup. The name is
+        // kept in the enum and aliased at load so old saves still resolve.
+        assertNull("SHIELD_LARGE must no longer carry duplicate data; it aliases"
+                + " to LARGE_SHIELD", root.get("SHIELD_LARGE"));
     }
 
     @Test

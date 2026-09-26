@@ -16,7 +16,7 @@ import com.badlogic.gdx.utils.JsonWriter.OutputType;
  * Persists data separately from world saves to allow "Resurrection" mechanics
  * where the world resets but the meta-difficulty increases.
  */
-public class DoomManager {
+public class DoomManager implements SlotScopedState {
     private static DoomManager instance;
 
     // --- Core Variable ---
@@ -31,7 +31,8 @@ public class DoomManager {
     }
 
     private DoomManager() {
-        // Private constructor for singleton
+        // Follow the active slot; see SlotScopedState.
+        SaveManager.register(this);
     }
 
     public static DoomManager getInstance() {
@@ -283,5 +284,19 @@ public class DoomManager {
     // --- Data Class for JSON ---
     public static class DoomState {
         public int deathCount = 0;
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        this.deathCount = 0;
+        resetExpeditionTurns();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        this.deathCount = 0;
+        resetExpeditionTurns();
+        save();
     }
 }

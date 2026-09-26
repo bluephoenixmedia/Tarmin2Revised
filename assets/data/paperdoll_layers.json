@@ -1057,6 +1057,10 @@
       "layer": "body_shield_1",
       "slot": "shield"
     },
+    "SHIELD_MEDIUM": {
+      "layer": "body_shield_1",
+      "slot": "shield"
+    },
     "SHIELD_BODY_2": {
       "layer": "body_shield_2",
       "slot": "shield"

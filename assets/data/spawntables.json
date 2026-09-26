@@ -570,6 +570,12 @@
             "weight": 7
         },
         {
+            "type": "SHIELD_ROUND_WOODEN",
+            "minLevel": 1,
+            "maxLevel": 8,
+            "weight": 3
+        },
+        {
             "type": "HELMET",
             "minLevel": 1,
             "maxLevel": 15,
@@ -2210,24 +2216,6 @@
         {
             "type": "BUCKLER",
             "minLevel": 1,
-            "maxLevel": 99,
-            "weight": 5
-        },
-        {
-            "type": "SHIELD_SMALL",
-            "minLevel": 5,
-            "maxLevel": 99,
-            "weight": 5
-        },
-        {
-            "type": "SHIELD_MEDIUM",
-            "minLevel": 9,
-            "maxLevel": 99,
-            "weight": 5
-        },
-        {
-            "type": "SHIELD_LARGE",
-            "minLevel": 13,
             "maxLevel": 99,
             "weight": 5
         },

@@ -11,7 +11,7 @@ import com.bpm.minotaur.managers.SaveManager;
  * banked Divinities. Like Divinities themselves, altar tiers survive death and
  * world resets, and are only cleared by a full Apocalypse wipe.
  */
-public class ShelterAltar {
+public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
 
     public enum Tree { PROVISIONS, REPERTOIRE, MONUMENT, ARCANE_ATTUNEMENT, ASCENSION }
 
@@ -147,6 +147,8 @@ public class ShelterAltar {
 
     private ShelterAltar() {
         load();
+        // Follow the active slot; see SlotScopedState.
+        com.bpm.minotaur.managers.SaveManager.register(this);
     }
 
     public static ShelterAltar getInstance() {
@@ -559,5 +561,17 @@ public class ShelterAltar {
         public boolean canCommune = true;
         public int crestsOfValor = 0;
         public java.util.Map<String, Integer> ascensionTiers = new java.util.HashMap<>();
+    }
+
+    @Override
+    public void reloadForActiveSlot() {
+        reset();
+        load();
+    }
+
+    @Override
+    public void resetForNewGame() {
+        reset();
+        save();
     }
 }
