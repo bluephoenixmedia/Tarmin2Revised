@@ -25,6 +25,8 @@ public class ModernStatBar extends Actor {
     private boolean isTemperature = false;
     private boolean showPercent = false;
     private String customText = null;
+    private float secondaryValue = 0f;
+    private final Color secondaryColor = new Color(0.95f, 0.75f, 0.20f, 0.9f);
 
     public ModernStatBar(String labelName, Color barColor, HudSkin skin) {
         this.labelName = labelName;
@@ -37,6 +39,14 @@ public class ModernStatBar extends Actor {
     public void setValue(float current, float max) {
         this.currentValue = current;
         this.maxValue = Math.max(1f, max);
+    }
+
+    public void setSecondaryValue(float val) {
+        this.secondaryValue = Math.max(0f, val);
+    }
+
+    public float getSecondaryValue() {
+        return secondaryValue;
     }
 
     public void setBarColor(Color color) {
@@ -97,6 +107,18 @@ public class ModernStatBar extends Actor {
             batch.draw(skin.getWhitePixel(), x + pad, y + pad + innerH * 0.55f, innerW, innerH * 0.45f);
         }
 
+        // 2b. Secondary Fill (e.g. Temporary HP / Wards)
+        float maxAvailableW = w - pad * 2;
+        if (secondaryValue > 0 && maxAvailableW > 0 && skin.getWhitePixel() != null) {
+            float secW = Math.min(maxAvailableW - innerW, (secondaryValue / maxValue) * maxAvailableW);
+            if (secW > 0) {
+                batch.setColor(secondaryColor.r, secondaryColor.g, secondaryColor.b, secondaryColor.a * parentAlpha);
+                batch.draw(skin.getWhitePixel(), x + pad + innerW, y + pad, secW, innerH);
+                batch.setColor(1f, 1f, 1f, 0.20f * parentAlpha);
+                batch.draw(skin.getWhitePixel(), x + pad + innerW, y + pad + innerH * 0.55f, secW, innerH * 0.45f);
+            }
+        }
+
         // 3. Format Centered Text
         String text;
         if (customText != null) {
@@ -107,6 +129,8 @@ public class ModernStatBar extends Actor {
         } else if (showPercent) {
             int pct = Math.round(fillRatio * 100f);
             text = String.format("%s: %.0f/%.0f (%d%%)", labelName, currentValue, maxValue, pct);
+        } else if (secondaryValue > 0) {
+            text = String.format("%s: %.0f (+%.0f) / %.0f", labelName, currentValue, secondaryValue, maxValue);
         } else {
             text = String.format("%s: %.0f / %.0f", labelName, currentValue, maxValue);
         }

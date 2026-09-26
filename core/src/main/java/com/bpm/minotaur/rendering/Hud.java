@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -376,7 +377,9 @@ public class Hud implements Disposable {
         // ZONE 2: Equipment Hands & 2x3 Belt (~420px)
         // ══════════════════════════════════════════════════════════════════
         equippedWeaponLabel = new Label("Hands Empty", weaponHeaderStyle);
-        beltZone.add(equippedWeaponLabel).colspan(3).center().padBottom(4).row();
+        equippedWeaponLabel.setEllipsis(true);
+        equippedWeaponLabel.setAlignment(Align.center);
+        beltZone.add(equippedWeaponLabel).colspan(3).center().width(390f).minWidth(0f).padBottom(4).row();
 
         float slotSize = 50f;
         Table backpackTable = new Table();
@@ -739,6 +742,7 @@ public class Hud implements Disposable {
 
         // --- 1. Update Vitals Gauges ---
         hpBar.setValue(player.getCurrentHP(), player.getMaxHP());
+        hpBar.setSecondaryValue(player.getStats() != null ? player.getStats().getTemporaryHP() : 0);
         if (player.getCurrentHP() <= player.getMaxHP() * 0.25f) {
             hpBar.setBarColor(HudSkin.COL_HP_CRITICAL);
         } else {

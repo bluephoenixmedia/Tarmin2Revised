@@ -179,12 +179,17 @@ public class DynamicQuadBatcher implements Disposable {
             Color color
     ) {
         if (region == null) return;
-        if (!ensureCapacity(1)) return;
+        addFloorQuad(centerX, y, centerZ, halfW, halfH,
+                region.getU(), region.getV2(), region.getU2(), region.getV(), color);
+    }
 
-        float u1 = region.getU();
-        float v1 = region.getV2();
-        float u2 = region.getU2();
-        float v2 = region.getV();
+    public void addFloorQuad(
+            float centerX, float y, float centerZ,
+            float halfW, float halfH,
+            float u1, float v1, float u2, float v2,
+            Color color
+    ) {
+        if (!ensureCapacity(1)) return;
 
         float packedColor = (color != null) ? color.toFloatBits() : Color.WHITE.toFloatBits();
 

@@ -163,9 +163,14 @@ public class StatusPillBar extends Table {
                 addPill("LIGHT", Color.valueOf("FFF099"),
                         "Mote of Light", "[ENCHANTMENT]", "Radiating pure ambient light through the darkness.", "Illuminates corridors.");
             }
-            if (player.getStatusManager().hasEffect(StatusEffectType.HEROISM)) {
-                addPill("HEROIC", HudSkin.COL_GOLD_BRIGHT,
-                        "Heroism", "[BOON]", "Immunity to fear and grants temporary vitality.", "Courageous aura.");
+            int tempHp = player.getStats() != null ? player.getStats().getTemporaryHP() : 0;
+            if (player.getStatusManager().hasEffect(StatusEffectType.HEROISM) || tempHp > 0) {
+                String pillText = tempHp > 0 ? "HEROIC [+" + tempHp + "]" : "HEROIC";
+                String desc = tempHp > 0
+                        ? "Grants +" + tempHp + " temporary vitality and immunity to fear."
+                        : "Immunity to fear and heroic courage.";
+                addPill(pillText, HudSkin.COL_GOLD_BRIGHT,
+                        "Heroism", "[BOON]", desc, "Courageous aura.");
             }
         }
 

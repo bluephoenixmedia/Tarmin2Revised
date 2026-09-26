@@ -65,7 +65,7 @@ public class ChunkThemeDecorator {
         applyHazard(maze, def, rng, room, protectedTiles);
 
         // (b) Prop dressing.
-        scatterProps(maze, def, rng, room, protectedTiles);
+        scatterProps(maze, def, rng, room, protectedTiles, assetManager);
 
         // (d) Encounter table.
         spawnEncounters(maze, def, rng, room, monsterDataManager, assetManager);
@@ -423,7 +423,8 @@ public class ChunkThemeDecorator {
     // ------------------------------------------------------------------
 
     private static void scatterProps(Maze maze, ThemeDefinition def, Random rng,
-                                     Rect room, Set<GridPoint2> protectedTiles) {
+                                     Rect room, Set<GridPoint2> protectedTiles,
+                                     AssetManager assetManager) {
         if (def.getProps().isEmpty()) return;
 
         // Props scatter across the whole chunk, not just the carved room, so a
@@ -449,8 +450,27 @@ public class ChunkThemeDecorator {
             // the player and the rest of the chunk.
             if (prop.isImpassable() && isChokePoint(maze, pt.x, pt.y)) continue;
 
+            bindSceneryTexture(prop, assetManager);
             maze.addScenery(prop);
             placed++;
+        }
+    }
+
+    private static void bindSceneryTexture(Scenery s, AssetManager assetManager) {
+        if (s == null || s.getTexturePath() == null || assetManager == null) return;
+        String path = s.getTexturePath();
+        try {
+            if (assetManager.isLoaded(path, com.badlogic.gdx.graphics.Texture.class)) {
+                s.setTexture(assetManager.get(path, com.badlogic.gdx.graphics.Texture.class));
+            } else if (com.badlogic.gdx.Gdx.files != null && com.badlogic.gdx.Gdx.files.internal(path) != null && com.badlogic.gdx.Gdx.files.internal(path).exists()) {
+                assetManager.load(path, com.badlogic.gdx.graphics.Texture.class);
+                assetManager.finishLoadingAsset(path);
+                if (assetManager.isLoaded(path, com.badlogic.gdx.graphics.Texture.class)) {
+                    s.setTexture(assetManager.get(path, com.badlogic.gdx.graphics.Texture.class));
+                }
+            }
+        } catch (Exception ignored) {
+            // Headless / mock test safety
         }
     }
 
@@ -554,7 +574,7 @@ public class ChunkThemeDecorator {
 
             case RECONSECRATE_GRAVES:
                 int graves = placeObjectiveProps(maze, rng, room, "grave_mound",
-                        def.getObjectiveCount());
+                        def.getObjectiveCount(), assetManager);
                 // If the chunk could not fit every grave, require only what exists.
                 state.setRequired(Math.max(1, graves));
                 state.setViable(graves > 0);
@@ -567,21 +587,21 @@ public class ChunkThemeDecorator {
                 break;
 
             case DESTROY_HEART_BLOOM:
-                int blooms = placeObjectiveProps(maze, rng, room, "heart_bloom", 1);
+                int blooms = placeObjectiveProps(maze, rng, room, "heart_bloom", 1, assetManager);
                 state.setRequired(1);
                 state.setViable(blooms > 0);
                 guaranteeFireSource(maze, rng, itemDataManager, assetManager);
                 break;
 
             case BREACH_SEALED_TOMB:
-                int tombs = placeObjectiveProps(maze, rng, room, "sealed_tomb", 1);
+                int tombs = placeObjectiveProps(maze, rng, room, "sealed_tomb", 1, assetManager);
                 boolean champPlaced = placeChampion(maze, def, room, monsterDataManager, assetManager);
                 state.setRequired(1);
                 state.setViable(tombs > 0 && champPlaced);
                 break;
 
             case ACTIVATE_SUNKEN_SHRINE:
-                int shrines = placeObjectiveProps(maze, rng, room, "drowned_cache", 1);
+                int shrines = placeObjectiveProps(maze, rng, room, "drowned_cache", 1, assetManager);
                 state.setRequired(1);
                 state.setViable(shrines > 0);
                 break;
@@ -633,6 +653,7 @@ public class ChunkThemeDecorator {
         Scenery cache = Scenery.fromProp("drowned_cache", pt.x, pt.y);
         if (cache == null) return false;
         cache.setObjectiveMarker(true);
+        bindSceneryTexture(cache, assetManager);
         maze.addScenery(cache);
 
         // The cache is the reward as well as the objective.
@@ -650,7 +671,7 @@ public class ChunkThemeDecorator {
      * Scatters objective-marker props across the room, returning how many were
      * actually placed so the objective can require only what exists.
      */
-    private static int placeObjectiveProps(Maze maze, Random rng, Rect room, String propId, int count) {
+    private static int placeObjectiveProps(Maze maze, Random rng, Rect room, String propId, int count, AssetManager assetManager) {
         List<GridPoint2> spots = openTiles(maze, room);
         if (spots.isEmpty()) return 0;
         Collections.shuffle(spots, rng);
@@ -663,6 +684,7 @@ public class ChunkThemeDecorator {
             Scenery marker = Scenery.fromProp(propId, pt.x, pt.y);
             if (marker == null) return placed;
             marker.setObjectiveMarker(true);
+            bindSceneryTexture(marker, assetManager);
             maze.addScenery(marker);
             placed++;
         }

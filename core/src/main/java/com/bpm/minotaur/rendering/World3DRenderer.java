@@ -1,6 +1,7 @@
 package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -58,7 +59,9 @@ import com.bpm.minotaur.weather.WeatherRenderer;
 import com.bpm.minotaur.weather.WeatherType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Full 3D Planar World Rendering Pipeline.
@@ -86,6 +89,9 @@ public class World3DRenderer implements Disposable {
     private final Texture floorTexture;
     private final Texture forestFloorTexture;
     private final Texture ceilingTexture;
+    private final List<Texture> ceilingTextures = new ArrayList<>();
+    private final Texture fluidTexture;
+    private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
 
     /**
@@ -206,6 +212,23 @@ public class World3DRenderer implements Disposable {
 
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+
+        for (int i = 1; i <= 8; i++) {
+            FileHandle fh = Gdx.files.internal("images/ceiling_" + i + ".jpg");
+            if (fh.exists()) {
+                Texture t = new Texture(fh);
+                t.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+                this.ceilingTextures.add(t);
+            }
+        }
+
+        FileHandle fluidFh = Gdx.files.internal("images/fluid_ripple.png");
+        if (fluidFh.exists()) {
+            this.fluidTexture = new Texture(fluidFh);
+            this.fluidTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        } else {
+            this.fluidTexture = null;
+        }
 
         Pixmap pix = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pix.setColor(Color.WHITE);
@@ -603,6 +626,7 @@ public class World3DRenderer implements Disposable {
                 forestWallTexture,
                 forestFloorTexture,
                 ceilingTexture,
+                ceilingTextures,
                 worldManager,
                 wallVariantProvider
         );
@@ -1152,7 +1176,9 @@ public class World3DRenderer implements Disposable {
 
         // A gentle swell so the surface reads as liquid rather than a stain.
         float swell = (float) Math.sin(totalTime * 1.6f) * 0.004f;
-        TextureRegion region = new TextureRegion(blankTexture);
+        float uFlow = totalTime * 0.035f;
+        float vFlow = totalTime * 0.025f;
+        Texture useTex = (fluidTexture != null) ? fluidTexture : blankTexture;
         boolean any = false;
 
         for (int y = minY; y <= maxY; y++) {
@@ -1163,18 +1189,23 @@ public class World3DRenderer implements Disposable {
 
                 Color base = liquid.getColor();
                 float ripple = (float) Math.sin(totalTime * 2.2f + x * 0.7f + y * 0.5f) * 0.06f + 0.94f;
-                Color tint = new Color(base.r * ripple, base.g * ripple, base.b * ripple, base.a);
+                Color tint = new Color(base.r * ripple, base.g * ripple, base.b * ripple, base.a * 0.85f);
+
+                float u1 = x * 0.5f + uFlow;
+                float v1 = y * 0.5f + vFlow;
+                float u2 = u1 + 0.5f;
+                float v2 = v1 + 0.5f;
 
                 dynamicBatcher.addFloorQuad(
                         x + 0.5f, 0.021f + swell, -(y + 0.5f),
                         0.5f, 0.5f,
-                        region, tint);
+                        u1, v1, u2, v2, tint);
                 any = true;
             }
         }
 
         if (any) {
-            dynamicBatcher.flush(shader, blankTexture);
+            dynamicBatcher.flush(shader, useTex);
         }
     }
 
@@ -1613,6 +1644,12 @@ public class World3DRenderer implements Disposable {
             } else if (r instanceof Scenery) {
                 Scenery sc = (Scenery) r;
                 Texture tex = sc.getTexture();
+                if (tex == null && sc.getTexturePath() != null && !sc.getTexturePath().isEmpty()) {
+                    tex = getSceneryTexture(sc.getTexturePath());
+                    if (tex != null) {
+                        sc.setTexture(tex);
+                    }
+                }
                 if (tex != null) {
                     TextureRegion reg = new TextureRegion(tex);
                     if (sc.isFlippedX()) {
@@ -1733,6 +1770,23 @@ public class World3DRenderer implements Disposable {
         return new Color(1.0f, 0.15f, 0.15f, 1.0f); // Ruby Red
     }
 
+    private Texture getSceneryTexture(String path) {
+        if (path == null || path.isEmpty()) return null;
+        Texture tex = sceneryTextureCache.get(path);
+        if (tex == null) {
+            try {
+                FileHandle fh = Gdx.files.internal(path);
+                if (fh.exists()) {
+                    tex = new Texture(fh);
+                    sceneryTextureCache.put(path, tex);
+                }
+            } catch (Exception e) {
+                Gdx.app.error(TAG, "Failed to load scenery texture: " + path, e);
+            }
+        }
+        return tex;
+    }
+
     public void invalidateMeshCache() {
         meshCache.invalidate();
     }
@@ -1751,6 +1805,19 @@ public class World3DRenderer implements Disposable {
         floorTexture.dispose();
         if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
         ceilingTexture.dispose();
+        for (Texture ct : ceilingTextures) {
+            if (ct != null) ct.dispose();
+        }
+        ceilingTextures.clear();
+
+        if (fluidTexture != null && fluidTexture != blankTexture) {
+            fluidTexture.dispose();
+        }
+
+        for (Texture st : sceneryTextureCache.values()) {
+            if (st != null) st.dispose();
+        }
+        sceneryTextureCache.clear();
         blankTexture.dispose();
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();
