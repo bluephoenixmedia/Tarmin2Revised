@@ -1,5 +1,7 @@
 # Tomes grant spell slots and a spell choice; the Altar shapes the choice
 
+> **Superseded by [ADR 0002](0002-leveling-grants-spell-slots-tomes-grant-spells.md)**: Spell slots are unlocked by character leveling; Tomes grant permanent spells.
+
 The Progression Reboot plan said Tarmin Tomes raise War/Spiritual power thresholds, while the code had Tomes *and* the Shelter Altar's Arcane Attunement both unlocking the same five spell slots (eight unlocks for five slots). We decided a Tome unlocks its spell slot (Initiate 2, Elements 3, Arcane 4, Tarmin 5) and offers a **Tome Choice** — pick one unknown spell from a curated, level-banded pool — while Arcane Attunement stops granting slots and instead improves the Tome Choice (more options, a reroll, a higher Tarmin band) on top of unsealing spell circles for scroll loot. Slots stay a delve reward found in the strata; the Altar is where the player shapes which spells those rewards offer.
 
 ## Consequences

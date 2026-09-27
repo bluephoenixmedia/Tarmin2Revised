@@ -152,6 +152,16 @@ refill channel is the +25% of max MP granted on every level-up
 | Q6 | Arcane Attunement | Becomes a Tome-choice *quality* axis only; supersede ADR 0001 |
 | Q7 | Effect axis | **Archetype (12), not school (8)** |
 | Q8 | Slot schedule | 1 at start, +1 at levels **2, 5, 8, 11** |
+| Q9 | In-combat slot assignment | Allow filling **empty** slots only; swapping filled slots prohibited |
+| Q10 | In-combat turn economy | Assigning to an empty slot in combat consumes the player's combat turn; browsing without assigning is free |
+| Q11 | Mid-combat slot clearing | Filled slots are strictly locked against right-click clearing while in combat |
+| Q12 | Modal routing of `Q` | Targeted routing in `PLAYER_MENU` and `LevelUpModal`; modal focus for encounters and shop trading preserved |
+| Q13 | Level-up modal UX | Permanent `[Q] SPELLBOOK` button + gold milestone banner; auto-reopen on return if points unallocated |
+| Q14 | Curated Tome exhaustion | Mixed hand: curated exclusive first, then general unlearned spells of that tier; +5 Max MP if tier fully known |
+| Q15 | Tome study channel abort | Keystrokes ignored during channel; `ESCAPE` explicitly aborts; damage/hostile interrupts |
+| Q16 | Tome of Tarmin reach | Base max level = 8 (makes 4 curated spells reachable); Arcane Attunement Tier 3 unlocks Level 9 |
+| Q17 | HUD hotbar affordance | Clickable `SPELLS [Q]` header strip directly above slot cells opening the spellbook |
+| Q18 | Pause screen safety | Add confirmation dialog to Save & Quit (or rebind) so muscle memory on `Q` does not accidentally quit |
 
 ---
 
@@ -174,8 +184,10 @@ Requirements:
 
 - `unlockedSpellSlots` must be `max(slotsForLevel(level), slotsFromTomes)` so a
   loaded save never *loses* a slot it already had.
-- The level-up modal (`LevelUpModal.java:28-115`) must announce a newly unlocked
-  slot and offer to open the spellbook.
+- The level-up modal (`LevelUpModal.java`) must announce a newly unlocked
+  slot with a gold banner (`✦ NEW SPELL SLOT UNLOCKED (Slot X / 5) ✦`) and offer a permanent `[Q] SPELLBOOK` button.
+- If a player transitions to `SpellbookScreen` while unspent attribute points remain, returning to `GameScreen` re-opens `LevelUpModal`.
+- On milestone levels (2, 5, 8, 11), play a distinct magical slot-unlock chime, and pulse/glow the newly unlocked hotbar slot upon returning to the dungeon.
 - Cap stays 5. Do not widen `preparedSpells`; the HUD hotbar and the save format
   both assume five.
 
@@ -189,24 +201,23 @@ otherwise.
   matches a separate logged requirement that Tome and level-up spells are
   permanent while field-learned ones are run-only.
 - Keep the Tome Choice UI; it now chooses a spell, never a slot.
-- Curate a Tome-exclusive pool. Only 51 of 370 spells currently carry
-  `tomePools`, and four TARMIN-pool spells are unreachable without Arcane
-  Attunement tier 3. Fix that reachability as part of this.
-- **Relax the study channel.** With slots no longer behind it, the 10–25 turn
-  cancel-on-any-keypress channel is pure friction. Recommend: keep the turn cost,
-  but only cancel on *damage* or a hostile entering view — not on any keypress.
+- Curate a Tome-exclusive pool with fallback:
+  - If fewer curated exclusive spells remain than card slots granted by Altar perks, unlearned general spells of that tier fill the remaining slots (mixed hand).
+  - If all spells of that level tier are known across the game, grant a permanent +5 Max MP bonus.
+- Set `Tome.TARMIN.maxSpellLevel = 8` by default so all 4 curated Tarmin spells are immediately reachable. Arcane Attunement Tier 3 expands Tarmin's reach to Level 9.
+- **Tome study channel:** Keep the 10–25 turn cost (0.25s per turn). Ignore general keystrokes and clicks during study, but let `ESCAPE` explicitly cancel it. Damage or a hostile entering line of sight interrupts it.
 
-### 4.3 Make the spellbook discoverable
+### 4.3 Make the spellbook discoverable & accessible in combat
 
-1. Caption the HUD hotbar `SPELLS [Q]` (`Hud.java:564-641`), using the live
-   binding so a rebind is reflected.
-2. Teach `[Q]` in the level-up modal beside the existing `[K]`, and again the
-   first time a slot unlocks.
-3. **Fix the handler order** — move the `SPELLBOOK` check ahead of the
-   modal-forwarding guards at `GameScreen.java:2300-2322` so it works during
-   combat and is not swallowed by modals. This is a bug, not polish: a key that
-   silently does nothing reads as broken.
-4. Do **not** rebind `Q`. It breaks existing muscle memory and the key is not the
+1. Caption the HUD hotbar with a clickable header strip `SPELLS [Q]` (`Hud.java:564-641`), using the live binding so a rebind is reflected. Clicking it opens the spellbook.
+2. Teach `[Q]` in the level-up modal beside the existing `[K]`, and announce slot unlocks with a gold banner.
+3. **Route `SPELLBOOK` input during combat:**
+   - In `CombatState.PLAYER_MENU`, pressing `Q` opens `SpellbookScreen`.
+   - In `SpellbookScreen`, allow preparing spells into **empty** unlocked slots even when a hostile is in view / in combat.
+   - Prohibit swapping or right-click clearing of already prepared slots during combat.
+   - If a spell was assigned into an empty slot during combat, closing the spellbook consumes the player's combat turn. If the player merely browses and assigns nothing, no turn is spent.
+4. Add a confirmation prompt to "Save & Quit" on `PauseScreen` to prevent accidental exits from muscle memory trained on `Q`.
+5. Do **not** rebind `Q`. It breaks existing muscle memory and the key is not the
    problem.
 
 ### 4.4 Retire the third unlock axis
@@ -216,10 +227,8 @@ named spells out of 370 — too small a fraction for a player to perceive a rule
 
 - Remove the 9-spell sealing.
 - Keep `getTomeChoicePerks` (`ShelterAltar.java:375-386`): Arcane Attunement now
-  governs only Tome-choice richness (options 3→4→5, rerolls, level cap).
+  governs only Tome-choice richness (options 3→4→5, rerolls, and Level 9 reach for Tarmin).
 - **Write a new ADR superseding `docs/adr/0001-tomes-grant-slots-and-a-spell-choice.md`.**
-  That ADR records Tomes as the slot source; leaving it in place would make the
-  documented architecture silently wrong.
 - Update `CONTEXT.md` glossary: slots, Tome grants, and the Altar's new role.
 
 ### 4.5 Tests that will constrain this
