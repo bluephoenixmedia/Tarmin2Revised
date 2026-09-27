@@ -54,3 +54,6 @@ untouched and still outstanding. Verbatim, in original order, with no edits.
 - A was able to engage in combat with a Zombie through a wall.  **[DONE 2026-09-26]**
 - The HUD UX will sometimes get out of alignment (see badUX.png) in screenshots. We need to polish the HUD UX to be stable, responsive and READABLE  **[DONE 2026-09-26]**
 - I have included new ceiling texture files in assets/images. These should be used whn the player is underground and randomized along with the standard wall texture which we'll now use for the ceiling (instead of just re-using the floor texture for the ceiling like we do today.)  **[DONE 2026-09-26]**
+- We need a better solution to represent corpses of monsters. Right now we are showing the player characters bones corpse for every monster.
+- For the random, varied wall textures in the maze, we should use the default wall 75% of the time and intersperse the others 25% of the time. 
+- There are now multiple variations of the floor texture. let's randomly intersperse the new versions about 25% of the time, but default to floor.png for the remaining 75%.
