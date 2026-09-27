@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +99,14 @@ public class HudSkin implements Disposable {
     private Drawable primaryButtonDown;
     private Drawable hazardStripeIcon;
     private Drawable screenBackdrop;
+    private Drawable cardBg;
+    private Drawable insetBg;
+    private Drawable keycap;
+    private Drawable focusRing;
+    private Drawable scrim;
+    private Drawable tabActive;
+    private Drawable tabInactive;
+    private Drawable whitePixelDrawable;
 
     // Textures for direct rendering or bars
     private Texture whitePixel;
@@ -110,6 +119,7 @@ public class HudSkin implements Disposable {
     private BitmapFont fontLog;
     private BitmapFont fontHeader;
     private BitmapFont fontCompass;
+    private BitmapFont fontDisplay;
 
     public HudSkin() {
         buildWhitePixel();
@@ -126,6 +136,7 @@ public class HudSkin implements Disposable {
         buildPrimaryButton();
         buildHazardStripeIcon();
         buildScreenBackdrop();
+        buildMenuTokenDrawables();
         loadFonts();
     }
 
@@ -546,6 +557,88 @@ public class HudSkin implements Disposable {
     }
 
     /**
+     * The menu-side surfaces from the UI spec's token set: card, inset, keycap, focus ring,
+     * scrim and the two tab states.
+     *
+     * <p>These live here rather than in a second skin object because every screen already builds
+     * a {@code HudSkin}, and this class already owns texture lifetime. The colours come from
+     * {@link com.bpm.minotaur.ui.UiTheme}; the in-world HUD palette above is deliberately
+     * untouched, because it was tuned against a lit dungeon rather than a near-black panel.
+     */
+    private void buildMenuTokenDrawables() {
+        cardBg = framedPanel(UiTheme.BG_RAISED, UiTheme.LINE_DIM, 1);
+        insetBg = framedPanel(UiTheme.BG_INSET, UiTheme.LINE_DIM, 1);
+        tabInactive = framedPanel(UiTheme.BG_PANEL, UiTheme.LINE_DIM, 1);
+        tabActive = framedPanel(UiTheme.BG_RAISED, UiTheme.GOLD, 2);
+        scrim = solid(UiTheme.SCRIM);
+        buildKeycap();
+        buildFocusRing();
+    }
+
+    /** A flat fill with a border, as a 9-patch that can stretch to any cell. */
+    private Drawable framedPanel(Color fill, Color border, int borderPx) {
+        int sz = 16;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        p.setColor(border);
+        p.fill();
+        p.setColor(fill);
+        p.fillRectangle(borderPx, borderPx, sz - borderPx * 2, sz - borderPx * 2);
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        int patch = borderPx + 2;
+        return new NinePatchDrawable(new NinePatch(tex, patch, patch, patch, patch));
+    }
+
+    /**
+     * A keycap: raised face, frame, and a two-pixel bottom lip so it reads as a physical key
+     * rather than a bracketed letter.
+     *
+     * <p>The bracket notation the screens used -- {@code [ESC]}, {@code [1]}, {@code [O]Open} --
+     * is what the spec retires. Square brackets are reserved for nothing, so a key is a keycap
+     * and a state is an icon.
+     */
+    private void buildKeycap() {
+        int sz = 16;
+        int lip = 2;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        p.setColor(UiTheme.LINE);
+        p.fill();
+        p.setColor(UiTheme.BG_RAISED);
+        p.fillRectangle(1, 1, sz - 2, sz - 2 - lip);
+        p.setColor(UiTheme.LINE_DIM);
+        p.fillRectangle(1, sz - 1 - lip, sz - 2, lip);
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        NinePatchDrawable d = new NinePatchDrawable(new NinePatch(tex, 3, 3, 3, 3 + lip));
+        d.setLeftWidth(6f);
+        d.setRightWidth(6f);
+        keycap = d;
+    }
+
+    /** A one-pixel ring in FOCUS with a hollow centre, drawn over whatever has keyboard focus. */
+    private void buildFocusRing() {
+        int sz = 16;
+        Pixmap p = new Pixmap(sz, sz, Pixmap.Format.RGBA8888);
+        p.setColor(0, 0, 0, 0);
+        p.fill();
+        p.setColor(UiTheme.FOCUS);
+        p.drawRectangle(0, 0, sz, sz);
+        Texture tex = register(new Texture(p));
+        p.dispose();
+        focusRing = new NinePatchDrawable(new NinePatch(tex, 2, 2, 2, 2));
+    }
+
+    /**
+     * A flat fill of one colour, sharing the single white pixel.
+     *
+     * <p>Cheap enough to call per style; it allocates a drawable, not a texture.
+     */
+    public Drawable solid(Color color) {
+        TextureRegionDrawable d = new TextureRegionDrawable(new TextureRegion(whitePixel));
+        return d.tint(color);
+    }
+
+    /**
      * Extra breathing room between wrapped lines, as a multiple of the font's own metric.
      *
      * <p>intellivision.ttf is a pixel face whose natural line height leaves wrapped text
@@ -597,6 +690,13 @@ public class HudSkin implements Disposable {
         param.color = COL_GOLD_BRIGHT;
         fontCompass = withLineSpacing(gen.generateFont(param));
 
+        // Display role: exactly twice the body size, generated at that size rather than scaled.
+        // The spec allows integer scales only; generating natively avoids the question and keeps
+        // the pixel grid crisp, which a setScale(2f) on a FreeType face does not.
+        param.size = 36;
+        param.color = COL_GOLD_BRIGHT;
+        fontDisplay = withLineSpacing(gen.generateFont(param));
+
         gen.dispose();
     }
 
@@ -616,7 +716,21 @@ public class HudSkin implements Disposable {
     public Drawable getPrimaryButtonDown() { return primaryButtonDown; }
     public Drawable getHazardStripeIcon() { return hazardStripeIcon; }
     public Drawable getScreenBackdrop() { return screenBackdrop; }
+    public Drawable getCardBg() { return cardBg; }
+    public Drawable getInsetBg() { return insetBg; }
+    public Drawable getKeycap() { return keycap; }
+    public Drawable getFocusRing() { return focusRing; }
+    public Drawable getScrim() { return scrim; }
+    public Drawable getTabActive() { return tabActive; }
+    public Drawable getTabInactive() { return tabInactive; }
     public Texture getWhitePixel() { return whitePixel; }
+    /** The white pixel as a drawable, for widgets that fill a rect inside their own draw(). */
+    public Drawable getWhitePixelDrawable() {
+        if (whitePixelDrawable == null) {
+            whitePixelDrawable = new TextureRegionDrawable(new TextureRegion(whitePixel));
+        }
+        return whitePixelDrawable;
+    }
     public Texture getCompassDial() { return compassDial; }
 
     public BitmapFont getFontMain() { return fontMain; }
@@ -625,6 +739,8 @@ public class HudSkin implements Disposable {
     public BitmapFont getFontLog() { return fontLog; }
     public BitmapFont getFontHeader() { return fontHeader; }
     public BitmapFont getFontCompass() { return fontCompass; }
+    /** Screen titles. Twice the body size (SPEC section 3, Display role). */
+    public BitmapFont getFontDisplay() { return fontDisplay; }
 
     @Override
     public void dispose() {
@@ -639,5 +755,6 @@ public class HudSkin implements Disposable {
         if (fontLog != null) fontLog.dispose();
         if (fontHeader != null) fontHeader.dispose();
         if (fontCompass != null) fontCompass.dispose();
+        if (fontDisplay != null) fontDisplay.dispose();
     }
 }
