@@ -2,10 +2,6 @@ package com.bpm.minotaur.rendering.attract;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g3d.*;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.utils.Array;
@@ -64,14 +60,6 @@ public class AttractModeRenderer implements Disposable {
     // Active Chunk Mesh Cache
     private final Map<String, List<ChunkSubMesh>> cachedMeshes = new HashMap<>();
     private final Set<String> activeKeys = new HashSet<>();
-
-    // 3D Landmark Models
-    private Model castleModel;
-    private Model spireModel;
-    private ModelInstance castleInstance;
-    private ModelInstance spireInstance;
-    private ModelBatch modelBatch;
-    private Environment modelEnvironment;
 
     // 3D Skybox
     private Skybox3DRenderer skyboxRenderer;
@@ -137,29 +125,6 @@ public class AttractModeRenderer implements Disposable {
             pix.dispose();
 
             liquidBatcher = new DynamicQuadBatcher();
-
-            // Load 3D Landmark Models (Castle Citadel and High Spire)
-            ObjLoader loader = new ObjLoader();
-            modelBatch = new ModelBatch();
-            modelEnvironment = new Environment();
-            modelEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.45f, 0.42f, 0.50f, 1f));
-            modelEnvironment.add(new DirectionalLight().set(0.75f, 0.70f, 0.65f, -0.4f, -0.8f, -0.4f));
-
-            if (Gdx.files.internal("models/skybox/castle_citadel.obj").exists()) {
-                castleModel = loader.loadModel(Gdx.files.internal("models/skybox/castle_citadel.obj"));
-                castleInstance = new ModelInstance(castleModel);
-                // Position central citadel at (180, 0, -180)
-                castleInstance.transform.setToTranslation(180f, -0.5f, -180f);
-                castleInstance.transform.scale(3.2f, 3.2f, 3.2f);
-            }
-
-            if (Gdx.files.internal("models/skybox/south_spire.obj").exists()) {
-                spireModel = loader.loadModel(Gdx.files.internal("models/skybox/south_spire.obj"));
-                spireInstance = new ModelInstance(spireModel);
-                // Position soaring high spire at center
-                spireInstance.transform.setToTranslation(180f, -0.5f, -180f);
-                spireInstance.transform.scale(2.8f, 4.2f, 2.8f);
-            }
 
             skyboxRenderer = new Skybox3DRenderer();
         } catch (Throwable t) {
@@ -310,17 +275,7 @@ public class AttractModeRenderer implements Disposable {
         // 3. Render Translucent Water & Liquid Quads
         renderLiquids();
 
-        // 4. Render 3D Castle & High Spire Models
-        if (modelBatch != null && (castleInstance != null || spireInstance != null)) {
-            modelBatch.begin(camera);
-            if (castleInstance != null) {
-                modelBatch.render(castleInstance, modelEnvironment);
-            }
-            if (spireInstance != null) {
-                modelBatch.render(spireInstance, modelEnvironment);
-            }
-            modelBatch.end();
-        }
+
     }
 
     private void renderLiquids() {
@@ -419,18 +374,6 @@ public class AttractModeRenderer implements Disposable {
         if (liquidBatcher != null) {
             liquidBatcher.dispose();
             liquidBatcher = null;
-        }
-        if (modelBatch != null) {
-            modelBatch.dispose();
-            modelBatch = null;
-        }
-        if (castleModel != null) {
-            castleModel.dispose();
-            castleModel = null;
-        }
-        if (spireModel != null) {
-            spireModel.dispose();
-            spireModel = null;
         }
         if (soundManager != null) {
             soundManager.dispose();

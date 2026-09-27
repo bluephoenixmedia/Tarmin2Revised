@@ -12,16 +12,16 @@ We implemented a **streaming 3D Flyover Attract Mode** for the Main Menu:
 
 1. **Concentric Kingdom Macro-World (`AttractWorld`)**:
    - Represents a 10×10 chunk grid (100 chunks total) with deterministic procedural features.
-   - Central citadel (chunks 4,4 to 5,5) houses the Castle Tarmin stone fortress walls, moat liquid, and the soaring High Spire.
-   - Surrounding quadrants encompass all biomes: ancient `FOREST` (North), misty `LAKELANDS` (East), canyon `DESERT` (South), craggy `MOUNTAINS` (West), and outer `OCEAN` abyss rim.
+   - Central citadel (chunks 4,4 to 5,5) houses the Grand Castle Tarmin stone labyrinth: a dense network of authentic stone masonry corridors, royal pillared chambers, grand ceremonial avenues, royal courtyards, and perimeter water moat.
+   - Surrounding quadrants encompass all biomes as continuous, interconnected labyrinths: ancient mossy cliff corridors in `FOREST` (North), sunken stone canals in `LAKELANDS` (East), winding sandstone slot canyons in `DESERT` (South), craggy rock gorges in `MOUNTAINS` (West), and outer `OCEAN` perimeter rim.
 
 2. **Looping 3D Flight Spline & Aerodynamic Banking (`AttractSplinePath`)**:
-   - A 90-second closed-loop Catmull-Rom spline with dramatic altitude shifts: low skimming (*y* = 1.4–2.5) over misty Lakelands water, weaving through dark forest canopies (*y* = 1.8–3.2), sweeping across desert dunes (*y* = 2.4–4.5), ascending castle battlements (*y* = 6.0–8.0), and orbiting the High Spire summit (*y* = 18.0–20.0) with a 360° panorama before diving back down to loop seamlessly.
+   - A 90-second closed-loop Catmull-Rom spline hovering right over and through the maze corridors: low corridor skimming (*y* = 1.5–1.8) through stone halls and mossy woodland paths, low-altitude water gliding (*y* = 1.6–1.8) over misty Lakelands canals, sandstone canyon navigation (*y* = 1.8–2.4), and scenic mountain pass vistas (*y* = 3.5–4.2) before banking back into the castle gates.
    - Features aerodynamic banking roll (±4° to 8°) calculated from trajectory curvature.
 
 3. **Active Trajectory Chunk Streaming (`AttractModeRenderer`)**:
    - Pre-caches and renders a 5×5 chunk window (radius 2) around the camera along the flight path, evicting distant chunks to maintain a constant 60 FPS and low memory footprint.
-   - Embeds 3D landmarks (`castle_citadel.obj` and `south_spire.obj`), procedural liquid quads (moat and lake surfaces), and the 3D sky dome (`Skybox3DRenderer.renderDirect`).
+   - Renders authentic game geometry (chunk sub-meshes for walls and floors, dynamic liquid quad batcher for moat and canal water) under the 3D sky dome (`Skybox3DRenderer.renderDirect`), omitting external landmark meshes so the player directly surveys the real generated labyrinth.
 
 4. **Attract Mode State Machine & UI Framing (`AttractController` & `MainMenuScreen`)**:
    - Modern UI is framed on the left with sleek translucent glassmorphic button cards and an overhead "TARMIN II" crest, leaving the center and right screen open for the 3D vista.

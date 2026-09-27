@@ -102,4 +102,19 @@ public class AttractWorldTest {
         }
         assertTrue("Citadel chunk should have moat water", hasMoatWater);
     }
+
+    @Test
+    public void testCitadelHasMazeCorridorsAndWalls() {
+        Maze citadelChunk = world.getChunk(4, 4);
+        assertNotNull(citadelChunk);
+        int wallCount = 0;
+        for (int y = 0; y < 36; y++) {
+            for (int x = 0; x < 36; x++) {
+                if (citadelChunk.getWallDataAt(x, y) != 0) {
+                    wallCount++;
+                }
+            }
+        }
+        assertTrue("Citadel chunk must contain authentic stone maze walls (was " + wallCount + ")", wallCount > 100);
+    }
 }

@@ -60,8 +60,9 @@ public class AttractSplinePathTest {
             if (pos.y > maxAltitude) maxAltitude = pos.y;
         }
 
-        assertTrue("Must have low skimming altitude <= 2.5 (was " + minAltitude + ")", minAltitude <= 2.5f);
-        assertTrue("Must have soaring spire apex altitude >= 16.0 (was " + maxAltitude + ")", maxAltitude >= 16.0f);
+        assertTrue("Must have low corridor skimming altitude <= 2.0 (was " + minAltitude + ")", minAltitude <= 2.0f);
+        assertTrue("Must stay intimately connected to maze geometry <= 5.5 (was " + maxAltitude + ")", maxAltitude <= 5.5f);
+        assertTrue("Must have dynamic elevation changes >= 3.5 (was " + maxAltitude + ")", maxAltitude >= 3.5f);
     }
 
     @Test
@@ -118,6 +119,6 @@ public class AttractSplinePathTest {
         spline.evaluateDive(startPos, 1.0f, currentPos);
         assertEquals("Castle gate X is around 180", 180f, currentPos.x, 5.0f);
         assertTrue("Castle gate altitude is near ground level", currentPos.y <= 3.0f);
-        assertEquals("Castle gate Z is around -165", -165f, currentPos.z, 10.0f);
+        assertEquals("Castle gate Z is around -147", -147f, currentPos.z, 10.0f);
     }
 }

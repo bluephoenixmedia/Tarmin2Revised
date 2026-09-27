@@ -15,8 +15,8 @@ public class AttractSplinePath {
 
     public static final float LOOP_DURATION = 90.0f; // 90-second grand tour
 
-    // World center is around (180, -180). Castle gate entrance is at (180, 1.5, -165).
-    public static final Vector3 CASTLE_ENTRANCE = new Vector3(180f, 1.5f, -165f);
+    // World center is around (180, -180). Castle gate entrance is at (180, 1.5, -147).
+    public static final Vector3 CASTLE_ENTRANCE = new Vector3(180f, 1.5f, -147f);
 
     private final CatmullRomSpline<Vector3> positionSpline;
     private final CatmullRomSpline<Vector3> lookAtSpline;
@@ -29,39 +29,39 @@ public class AttractSplinePath {
     private static final Color CASTLE_FOG = new Color(0.18f, 0.16f, 0.24f, 1.0f);
 
     public AttractSplinePath() {
-        // Control Points defining the authored 90-second flight path across the 100-chunk world
+        // Control Points defining the authored 90-second flight path skimming and weaving through the maze corridors
         Vector3[] posKnots = new Vector3[]{
-                new Vector3(275f, 1.8f, -165f), // 0: Lakelands low water skim
-                new Vector3(255f, 2.2f, -210f), // 1: Lakelands sunken ruins
-                new Vector3(225f, 2.6f, -255f), // 2: Forest margin
-                new Vector3(180f, 1.9f, -280f), // 3: Deep ancient forest canopy
-                new Vector3(125f, 3.5f, -265f), // 4: Forest northwest clearings
-                new Vector3(95f,  7.2f, -220f), // 5: West mountain ridge ascent
-                new Vector3(85f,  8.5f, -160f), // 6: High mountain pass
-                new Vector3(110f, 4.0f, -105f), // 7: Canyon descent into desert
-                new Vector3(155f, 2.8f, -80f),  // 8: Desert sunlit dunes
-                new Vector3(185f, 2.4f, -95f),  // 9: Approaching castle south perimeter
-                new Vector3(175f, 7.8f, -145f), // 10: Castle outer ramparts & courtyard
-                new Vector3(195f, 19.5f, -172f),// 11: High spire orbit (apex altitude)
-                new Vector3(165f, 20.0f, -188f),// 12: Apex panorama horizon view
-                new Vector3(210f, 8.5f, -175f)  // 13: Diving descent towards lakelands
+                new Vector3(275f, 1.6f, -165f), // 0: Lakelands low water canal skim
+                new Vector3(245f, 1.8f, -220f), // 1: Lakelands sunken ruin corridors
+                new Vector3(220f, 2.0f, -260f), // 2: Forest margin mossy cliff corridor
+                new Vector3(175f, 1.7f, -285f), // 3: Deep ancient forest canopy pathway
+                new Vector3(125f, 2.2f, -260f), // 4: Forest northwest clearings & ruins
+                new Vector3(95f,  3.8f, -215f), // 5: West mountain gorge ascent
+                new Vector3(88f,  4.2f, -155f), // 6: High mountain gorge pass
+                new Vector3(115f, 2.4f, -100f), // 7: Canyon descent into desert labyrinth
+                new Vector3(155f, 1.8f, -85f),  // 8: Desert sunlit sandstone canyon corridor
+                new Vector3(180f, 2.2f, -120f), // 9: Southern grand avenue approach to Castle Tarmin
+                new Vector3(180f, 1.6f, -152f), // 10: Skimming over castle moat through fortress gate
+                new Vector3(180f, 1.5f, -178f), // 11: Grand castle royal crossroad & pillared hall
+                new Vector3(200f, 2.6f, -195f), // 12: Castle inner rampart skim over stone labyrinth
+                new Vector3(235f, 2.0f, -175f)  // 13: Banking over eastern moat toward lakelands
         };
 
         Vector3[] lookKnots = new Vector3[]{
-                new Vector3(250f, 1.5f, -185f), // 0: Looking across misty lake
-                new Vector3(230f, 1.8f, -235f), // 1: Looking toward ancient forest line
-                new Vector3(195f, 2.2f, -270f), // 2: Looking between moss-covered trunks
-                new Vector3(145f, 2.5f, -275f), // 3: Looking along canopy corridor
-                new Vector3(105f, 5.0f, -240f), // 4: Looking up toward craggy cliffs
-                new Vector3(88f,  6.5f, -180f), // 5: Looking through mountain gorge
-                new Vector3(98f,  4.5f, -125f), // 6: Looking down into sunlit desert
-                new Vector3(140f, 2.5f, -90f),  // 7: Looking along sandstone canyon
-                new Vector3(175f, 4.0f, -120f), // 8: Looking toward distant castle silhouette
-                new Vector3(180f, 9.0f, -160f), // 9: Looking at castle fortress gate
-                new Vector3(180f, 18.0f, -180f),// 10: Looking up at soaring high spire
-                new Vector3(180f, 22.0f, -180f),// 11: Locked onto glowing spire beacon
-                new Vector3(250f, 12.0f, -165f),// 12: Sweeping panorama over kingdom
-                new Vector3(260f, 2.5f, -168f)  // 13: Gazing down at incoming lake mist
+                new Vector3(255f, 1.5f, -190f), // 0: Looking along mist-shrouded water canal
+                new Vector3(230f, 1.7f, -250f), // 1: Looking toward ancient woodland entrance
+                new Vector3(185f, 1.8f, -280f), // 2: Looking down winding mossy cliff trail
+                new Vector3(135f, 1.9f, -270f), // 3: Looking along canopy corridor toward clearings
+                new Vector3(105f, 2.5f, -225f), // 4: Looking toward mountain gorge entrance
+                new Vector3(88f,  3.5f, -165f), // 5: Looking up along mountain gorge pass
+                new Vector3(105f, 2.8f, -115f), // 6: Looking down into sandstone canyon labyrinth
+                new Vector3(150f, 1.8f, -85f),  // 7: Looking along winding desert slot canyon
+                new Vector3(180f, 2.0f, -110f), // 8: Looking down southern desert avenue
+                new Vector3(180f, 1.6f, -150f), // 9: Looking directly at castle south moat & gatehouse
+                new Vector3(180f, 1.5f, -180f), // 10: Looking into grand castle royal corridor
+                new Vector3(195f, 1.8f, -195f), // 11: Looking down stone corridor past pillared chambers
+                new Vector3(225f, 2.2f, -180f), // 12: Looking east over castle walls toward horizon
+                new Vector3(270f, 1.6f, -165f)  // 13: Gazing down into misty lakelands canals
         };
 
         this.positionSpline = new CatmullRomSpline<>(posKnots, true);
