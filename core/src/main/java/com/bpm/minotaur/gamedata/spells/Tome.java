@@ -11,7 +11,7 @@ public enum Tome {
     INITIATE(Item.ItemType.TOME_OF_THE_INITIATE, "Tome of the Initiate", 2, 10, 1),
     ELEMENTS(Item.ItemType.TOME_OF_ELEMENTS, "Tome of Elements", 3, 15, 3),
     ARCANE(Item.ItemType.TOME_OF_THE_ARCANE, "Tome of the Arcane", 4, 20, 5),
-    TARMIN(Item.ItemType.TOME_OF_TARMIN, "Tome of Tarmin", 5, 25, 7);
+    TARMIN(Item.ItemType.TOME_OF_TARMIN, "Tome of Tarmin", 5, 25, 8);
 
     private final Item.ItemType itemType;
     private final String displayName;

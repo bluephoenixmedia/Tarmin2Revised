@@ -401,20 +401,10 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     }
 
     /**
-     * True if the given spell id belongs to one of the Arcane Attunement circles
-     * but hasn't been unsealed yet by the current tier. Spells outside the
-     * attunement circles entirely are never considered sealed.
+     * Spells are no longer hard-sealed by Arcane Attunement (retired in Phase 1 overhaul).
+     * Always returns false.
      */
     public boolean isSpellSealed(String spellId) {
-        if (spellId == null) return false;
-        String upper = spellId.toUpperCase();
-        for (int tier = 0; tier < ARCANE_UNLOCKED_SPELLS.length; tier++) {
-            for (String id : ARCANE_UNLOCKED_SPELLS[tier]) {
-                if (id.equals(upper)) {
-                    return tier >= arcaneTier;
-                }
-            }
-        }
         return false;
     }
 

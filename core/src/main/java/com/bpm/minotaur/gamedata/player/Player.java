@@ -229,6 +229,37 @@ public class Player {
         this.unlockedSpellSlots = Math.max(1, Math.min(5, slots));
     }
 
+    /**
+     * Slots unlocked by reaching a given character level.
+     * Schedule: 1 at start/level 1, +1 at levels 2, 5, 8, 11 (capped at 5).
+     */
+    public static int slotsForLevel(int level) {
+        if (level < 2) return 1;
+        if (level < 5) return 2;
+        if (level < 8) return 3;
+        if (level < 11) return 4;
+        return 5;
+    }
+
+    /**
+     * Evaluates level-based slot unlocks and updates unlockedSpellSlots if newly earned.
+     * Returns true if a new slot was unlocked.
+     */
+    public boolean checkSpellSlotProgression(GameEventManager eventManager) {
+        int expected = slotsForLevel(getLevel());
+        if (expected > unlockedSpellSlots) {
+            setUnlockedSpellSlots(expected);
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("✦ Spell Slot " + expected + " unlocked! Press [Q] to prepare spells.", 4f));
+            }
+            if (soundManager != null) {
+                soundManager.playDoorOpenSound();
+            }
+            return true;
+        }
+        return false;
+    }
+
     public List<String> getKnownSpellIds() {
         return Collections.unmodifiableList(knownSpellIds);
     }
@@ -309,7 +340,7 @@ public class Player {
                 learnRunSpellId(id);
             }
         }
-        setUnlockedSpellSlots(unlockedSlots);
+        setUnlockedSpellSlots(Math.max(unlockedSlots, slotsForLevel(getLevel())));
         for (int i = 0; i < preparedSpells.length; i++) {
             String id = (prepared != null && i < prepared.size()) ? prepared.get(i) : null;
             preparedSpells[i] = null;
@@ -345,7 +376,13 @@ public class Player {
             return SlotChange.UNKNOWN_SPELL;
         }
         if (com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)) {
-            return SlotChange.HOSTILE_IN_VIEW;
+            // While a hostile is in view:
+            // 1. Cannot clear a slot (id == null)
+            // 2. Cannot swap an already occupied slot (preparedSpells[slot] != null)
+            // 3. Cannot move an already-prepared spell from another slot (which is a swap/clear)
+            if (id == null || preparedSpells[slot] != null || isSpellPrepared(id)) {
+                return SlotChange.HOSTILE_IN_VIEW;
+            }
         }
         if (id != null) {
             for (int i = 0; i < preparedSpells.length; i++) {
@@ -356,6 +393,18 @@ public class Player {
         }
         preparedSpells[slot] = id;
         return SlotChange.OK;
+    }
+
+    /** Whether the given spell is currently assigned to any prepared slot. */
+    public boolean isSpellPrepared(String spellId) {
+        if (spellId == null) return false;
+        String upper = spellId.toUpperCase(java.util.Locale.ROOT);
+        for (String prep : preparedSpells) {
+            if (prep != null && prep.equalsIgnoreCase(upper)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getPreparedSpell(int slot) {
@@ -717,7 +766,6 @@ public class Player {
         Tome kind = Tome.of(tome.getType());
         pendingTomeChoice = TomeChoice.offer(kind, tome, knownSpellIds, tomeChoicePerks(), tomeRng);
         if (pendingTomeChoice == null) {
-            unlockTomeSlot(kind, eventManager);
             eventManager.addEvent(new GameEvent("You've learned all this Tome can teach.", 2.5f));
             return;
         }
@@ -725,8 +773,8 @@ public class Player {
     }
 
     /**
-     * Learns the chosen spell from the pending Tome Choice, unlocks the Tome's
-     * slot if it is new (preparing the spell there), and uses up the Tome.
+     * Learns the chosen spell from the pending Tome Choice (or gains +5 Max MP if fallback boon),
+     * prepares the spell in the first free unlocked slot if available, and uses up the Tome.
      *
      * @return false if the spell was not one of the options
      */
@@ -737,12 +785,16 @@ public class Player {
         }
         TomeChoice choice = pendingTomeChoice;
         pendingTomeChoice = null;
-        if (grantTome(choice.getTomeItem(), choice.getTome(), eventManager)) {
-            learnSpellId(id);
-            prepareSpell(choice.getTome().getSlotNumber() - 1, id);
-        } else {
-            learnAndPrepareIfSlotFree(id);
+        if (choice.getTomeItem() != null && inventory != null) {
+            inventory.removeItem(choice.getTomeItem());
         }
+        if (TomeChoice.FALLBACK_MP_BONUS_ID.equals(id)) {
+            stats.setMaxMP(stats.getMaxMP() + 5);
+            stats.setCurrentMP(stats.getCurrentMP() + 5);
+            eventManager.addEvent(new GameEvent("Studied " + choice.getTome().getDisplayName() + ": Gained +5 Max MP!", 3.0f));
+            return true;
+        }
+        learnAndPrepareIfSlotFree(id, true);
         SpellTemplate spell = SpellDataManager.getSpell(id);
         eventManager.addEvent(new GameEvent("Learned " + (spell != null ? spell.getName() : id) + "!", 3.0f));
         return true;
@@ -773,21 +825,6 @@ public class Player {
                 return;
             }
         }
-    }
-
-    /** Uses up the Tome and unlocks its slot; returns whether the slot was newly unlocked. */
-    private boolean grantTome(Item tome, Tome kind, GameEventManager eventManager) {
-        inventory.removeItem(tome);
-        return unlockTomeSlot(kind, eventManager);
-    }
-
-    private boolean unlockTomeSlot(Tome kind, GameEventManager eventManager) {
-        boolean newSlot = kind.getSlotNumber() > unlockedSpellSlots;
-        setUnlockedSpellSlots(Math.max(unlockedSpellSlots, kind.getSlotNumber()));
-        eventManager.addEvent(new GameEvent(newSlot
-                ? "Studied the " + kind.getDisplayName() + "! Spell Slot " + kind.getSlotNumber() + " unlocked!"
-                : "Studied the " + kind.getDisplayName() + ".", 3.0f));
-        return newSlot;
     }
 
     private static TomeChoice.Perks tomeChoicePerks() {
@@ -3029,19 +3066,18 @@ public class Player {
 
         boolean leveled = stats.addExperience(amount);
 
-        if (eventManager != null) {
-            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
-
-            if (leveled) {
-                pendingLevelUpModal = true;
-                if (soundManager != null) {
-                    soundManager.playPlayerLevelUpSound();
-                }
+        if (leveled) {
+            pendingLevelUpModal = true;
+            checkSpellSlotProgression(eventManager);
+            if (soundManager != null) {
+                soundManager.playPlayerLevelUpSound();
+            }
+            if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("LEVEL UP! Reached Level " + stats.getLevel() + "!", 3.5f));
                 eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
             }
-        } else if (leveled) {
-            pendingLevelUpModal = true;
+        } else if (eventManager != null) {
+            eventManager.addEvent(new GameEvent("You gained " + amount + " experience!", 2f));
         }
     }
 
@@ -3075,6 +3111,7 @@ public class Player {
             eventManager.addEvent(new GameEvent("You reached level " + stats.getLevel() + "!", 3f));
             eventManager.addEvent(new GameEvent("2 Attribute Points & 1 Skill Point gained! Press [K] to view Skill Tree.", 4f));
         }
+        checkSpellSlotProgression(eventManager);
     }
 
     public void takeStatusEffectDamage(int amount, DamageType type) {

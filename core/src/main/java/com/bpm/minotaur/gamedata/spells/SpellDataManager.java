@@ -143,7 +143,22 @@ public class SpellDataManager {
             load();
         }
         if (id == null) return null;
+        if ("TOME_BOON_MAX_MP".equalsIgnoreCase(id)) {
+            return getFallbackMpBoonSpell();
+        }
         return spells.get(id.toUpperCase());
+    }
+
+    public static SpellTemplate getFallbackMpBoonSpell() {
+        SpellTemplate boon = new SpellTemplate();
+        boon.id = "TOME_BOON_MAX_MP";
+        boon.name = "Arcane Transcendence (+5 Max MP)";
+        boon.level = 0;
+        boon.school = "abjuration";
+        boon.mpCost = 0;
+        boon.visualArchetype = "ARCANE_WARD";
+        boon.description = "All spells of this circle are mastered. Study grants a permanent +5 Max MP expansion.";
+        return boon;
     }
 
     public List<SpellTemplate> getAllSpells() {

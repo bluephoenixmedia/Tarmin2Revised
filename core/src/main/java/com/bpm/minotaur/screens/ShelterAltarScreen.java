@@ -436,8 +436,8 @@ public class ShelterAltarScreen extends BaseScreen {
                 com.bpm.minotaur.gamedata.spells.TomeChoice.Perks perks = altar.getTomeChoicePerks();
                 message = "Attunement deepened! Tome Choices now show " + perks.options() + " spells"
                         + (perks.rerolls() > 0 ? " with " + perks.rerolls() + " reroll" : "")
-                        + (perks.tarminMaxLevel() > com.bpm.minotaur.gamedata.spells.Tome.TARMIN.getMaxSpellLevel() ? ", and the Tome of Tarmin reaches level " + perks.tarminMaxLevel() : "")
-                        + ". Unsealed: " + String.join(", ", altar.getUnsealedSpellIds());
+                        + (perks.tarminMaxLevel() > com.bpm.minotaur.gamedata.spells.Tome.TARMIN.getMaxSpellLevel() ? ", and the Tome of Tarmin reaches Level " + perks.tarminMaxLevel() : "")
+                        + "!";
                 break;
             default:
                 message = "Upgrade purchased.";
