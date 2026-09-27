@@ -2466,17 +2466,51 @@ public class CombatManager {
         spawnCorpseEffects(monster, 0);
     }
 
+    /**
+     * The corpse sprite for a cleanly killed monster: its own art.
+     *
+     * <p>No monster has death art -- only 4 of 54 have spritesheets at all, and
+     * those are looping idles -- so the corpse is the living sprite laid down.
+     * The renderer rotates, darkens and squashes it, which is what stops an
+     * upright idle pose reading as a bug rather than a body.
+     */
+    private String monsterCorpseTexture(Monster monster) {
+        if (monster != null) {
+            com.bpm.minotaur.gamedata.monster.MonsterTemplate t = monster.getTemplate();
+            if (t != null && t.texturePath != null && !t.texturePath.isEmpty()
+                    && Gdx.files != null && Gdx.files.internal(t.texturePath).exists()) {
+                return t.texturePath;
+            }
+        }
+        return gorePileTexture();
+    }
+
+    /**
+     * What a dismembered kill leaves: a scaled gib, matching the gibs the same
+     * blow just threw across the floor.
+     */
+    private String gorePileTexture() {
+        String path = "images/gore/gib" + (1 + random.nextInt(10)) + ".png";
+        if (Gdx.files != null && Gdx.files.internal(path).exists()) return path;
+        return "images/scenery/decomposing_corpse.png";
+    }
+
     private void spawnCorpseEffects(Monster monster, int overkillTier) {
         if (maze == null || itemDataManager == null)
             return;
 
         GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
-        // Monsters ALWAYS leave a corpse when killed that persists (Item 51)
+        // Monsters ALWAYS leave a corpse when killed that persists (Item 51).
+        // What they leave depends on how they died: a clean kill leaves a body
+        // you can recognise, a dismembered one leaves a heap. Every monster used
+        // to leave the same dead armoured human regardless.
         if (maze.getScenery() != null) {
-            String corpseTex = "images/scenery/decomposing_corpse.png";
-            Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, pos.x, pos.y, corpseTex);
-            corpse.setImpassable(false); // Passable so movement is never trapped in corridors
+            boolean severed = overkillTier > 0;
+            String corpseTex = severed ? gorePileTexture() : monsterCorpseTexture(monster);
+            Scenery corpse = new Scenery(
+                    severed ? Scenery.SceneryType.GORE_PILE : Scenery.SceneryType.MONSTER_REMAINS,
+                    pos.x, pos.y, corpseTex);
             corpse.setCorpseMonsterName(monster.getMonsterType());
             if (game != null && game.getAssetManager() != null) {
                 AssetManager am = game.getAssetManager();

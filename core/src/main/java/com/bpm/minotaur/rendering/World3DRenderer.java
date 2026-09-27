@@ -51,6 +51,7 @@ import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
+import com.bpm.minotaur.rendering.mesh.SurfaceTextureSet;
 import com.bpm.minotaur.rendering.mesh.WallTextureProvider;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
@@ -83,13 +84,26 @@ public class World3DRenderer implements Disposable {
     // Textures
     private final Texture wallTexture;
     private final WallTextureProvider wallVariantProvider;
+    private final SurfaceTextureSet floorTextureSet;
+    private final SurfaceTextureSet ceilingTextureSet;
+    private Texture bloodPoolTexture;
+    /** Scratch regions, reused every frame rather than allocated per corpse. */
+    private final TextureRegion corpseRegion = new TextureRegion();
+    private final TextureRegion bloodPoolRegion = new TextureRegion();
+
+    /** Darkened and drained of colour, so remains read as dead rather than idle. */
+    private static final Color CORPSE_TINT = new Color(0.42f, 0.36f, 0.34f, 1f);
+    private static final Color BLOOD_POOL_TINT = new Color(0.45f, 0.05f, 0.06f, 0.85f);
+    /** Squashed toward the floor; the sprite is an upright pose lying down. */
+    private static final float CORPSE_FLATTEN = 0.45f;
+    /** Widened as it flattens, so the body spreads rather than shrinking. */
+    private static final float CORPSE_SPREAD = 1.2f;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
     private final Texture floorTexture;
     private final Texture forestFloorTexture;
     private final Texture ceilingTexture;
-    private final List<Texture> ceilingTextures = new ArrayList<>();
     private final Texture fluidTexture;
     private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
@@ -213,12 +227,29 @@ public class World3DRenderer implements Disposable {
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
-        for (int i = 1; i <= 8; i++) {
-            FileHandle fh = Gdx.files.internal("images/ceiling_" + i + ".jpg");
-            if (fh.exists()) {
-                Texture t = new Texture(fh);
-                t.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-                this.ceilingTextures.add(t);
+        // Index 0 is the default the weighting favours, and the set reports
+        // whether that first file actually loaded. floor.png exists, so floors
+        // are weighted 75/25. ceiling.png does not, so ceilings roll evenly
+        // across the eight variants -- weighting an arbitrary survivor to 75%
+        // would be worse than no default -- and switch to weighted the moment a
+        // ceiling.png is added, with no code change.
+        this.floorTextureSet = new SurfaceTextureSet(
+                "images/floor.png",
+                "images/floor_1.png", "images/floor_2.png", "images/floor_3.png",
+                "images/floor_4.png", "images/floor_5.png", "images/floor_6.png",
+                "images/floor_7.png", "images/floor_8.png");
+        this.ceilingTextureSet = new SurfaceTextureSet(
+                "images/ceiling.png",
+                "images/ceiling_1.jpg", "images/ceiling_2.jpg", "images/ceiling_3.jpg",
+                "images/ceiling_4.jpg", "images/ceiling_5.jpg", "images/ceiling_6.jpg",
+                "images/ceiling_7.jpg", "images/ceiling_8.jpg");
+
+        for (String poolPath : new String[]{
+                "images/gore/blood_spatter.png", "images/gore/blood_smear1.png"}) {
+            FileHandle poolFh = Gdx.files.internal(poolPath);
+            if (poolFh.exists()) {
+                this.bloodPoolTexture = new Texture(poolFh);
+                break;
             }
         }
 
@@ -626,9 +657,10 @@ public class World3DRenderer implements Disposable {
                 forestWallTexture,
                 forestFloorTexture,
                 ceilingTexture,
-                ceilingTextures,
                 worldManager,
-                wallVariantProvider
+                wallVariantProvider,
+                floorTextureSet,
+                ceilingTextureSet
         );
 
         for (ChunkSubMesh subMesh : subMeshes) {
@@ -1675,8 +1707,33 @@ public class World3DRenderer implements Disposable {
                     }
 
                     float feetY = 0.0f;
-                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                    if (sc.isCorpse()) {
                         feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
+                    }
+
+                    if (sc.isMonsterRemains()) {
+                        // A monster corpse is the living sprite laid down, so it
+                        // needs work to stop reading as a monster standing in the
+                        // wrong place: rotate it onto its side, darken it, squash
+                        // it flat, and put blood under it.
+                        // Reused scratch regions: allocating two per corpse per
+                        // frame churns the heap in exactly the moment combat is
+                        // busiest.
+                        corpseRegion.setRegion(reg);
+                        // Rotate onto its side. A vertical flip only mirrors the
+                        // sprite head-to-foot, which still reads as upright.
+                        corpseRegion.flip(true, false);
+                        reg = corpseRegion;
+                        tint = CORPSE_TINT;
+                        sw = sw * CORPSE_SPREAD;
+                        sh = sh * CORPSE_FLATTEN;
+
+                        if (bloodPoolTexture != null) {
+                            bloodPoolRegion.setRegion(bloodPoolTexture);
+                            dynamicBatcher.addBillboard(ex, 0.001f, wz, sw * 1.15f, sh * 0.5f,
+                                    bloodPoolRegion, BLOOD_POOL_TINT, camRight, camUp, camDir);
+                            dynamicBatcher.flush(shader, bloodPoolTexture);
+                        }
                     }
 
                     dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
@@ -1798,6 +1855,9 @@ public class World3DRenderer implements Disposable {
         dynamicBatcher.dispose();
 
         if (wallVariantProvider != null) wallVariantProvider.dispose();
+        if (bloodPoolTexture != null) bloodPoolTexture.dispose();
+        if (floorTextureSet != null) floorTextureSet.dispose();
+        if (ceilingTextureSet != null) ceilingTextureSet.dispose();
         wallTexture.dispose();
         if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
         doorTexture.dispose();
@@ -1805,10 +1865,6 @@ public class World3DRenderer implements Disposable {
         floorTexture.dispose();
         if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
         ceilingTexture.dispose();
-        for (Texture ct : ceilingTextures) {
-            if (ct != null) ct.dispose();
-        }
-        ceilingTextures.clear();
 
         if (fluidTexture != null && fluidTexture != blankTexture) {
             fluidTexture.dispose();

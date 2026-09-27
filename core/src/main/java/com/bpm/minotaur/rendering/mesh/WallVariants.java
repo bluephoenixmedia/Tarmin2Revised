@@ -33,11 +33,6 @@ public final class WallVariants {
     /** Keeps this stream independent of layout, spawns and decoration. */
     private static final long WALL_STREAM = 0x5741_4C4C_5641_5231L;
 
-    // Distinct odd multipliers per axis, matching the cluster-seed mixing at
-    // WorldManager. Reusing one multiplier would make (x,y) and (y,x) collide.
-    private static final long X_MIX = 73856093L;
-    private static final long Y_MIX = 19349663L;
-    private static final long FACE_MIX = 83492791L;
 
     private WallVariants() {
     }
@@ -59,19 +54,20 @@ public final class WallVariants {
      * patchwork. Split evenly between the two.
      */
     public static Palette paletteFor(long chunkSeed) {
-        return (mix(chunkSeed ^ WALL_STREAM) & 1L) == 0L ? Palette.GREEN : Palette.GREY;
+        return (WeightedVariant.hash(chunkSeed, WALL_STREAM, 0, 0, 0) & 1L) == 0L
+                ? Palette.GREEN : Palette.GREY;
     }
 
     /**
      * The variant index, 0 to {@link #VARIANT_COUNT}-1, for one face of one tile.
+     *
+     * <p>Weighted toward the palette's default texture rather than flat: an even
+     * roll across six showed the standard masonry only a sixth of the time,
+     * which read as six walls rather than one wall with character.
      */
     public static int variantFor(long chunkSeed, int tileX, int tileY, int face) {
-        long h = chunkSeed ^ WALL_STREAM;
-        h ^= tileX * X_MIX;
-        h ^= tileY * Y_MIX;
-        h ^= face * FACE_MIX;
-        // floorMod, not %, because mix() is signed and % would bias toward 0.
-        return (int) Math.floorMod(mix(h), (long) VARIANT_COUNT);
+        return WeightedVariant.pick(
+                WeightedVariant.hash(chunkSeed, WALL_STREAM, tileX, tileY, face), VARIANT_COUNT);
     }
 
     /**
@@ -85,19 +81,4 @@ public final class WallVariants {
         return "images/" + palette.filePrefix + "wall" + suffix + ".png";
     }
 
-    /**
-     * MurmurHash3's 64-bit finalizer. Both callers consume the low bits, and the
-     * raw XOR-of-products has almost no avalanche there. Per-face variants
-     * survive that well enough, but the palette does not: it comes off a single
-     * bit, and without this the chunk seed's low bit made the map a perfect
-     * green/grey checkerboard.
-     */
-    private static long mix(long z) {
-        z ^= (z >>> 33);
-        z *= 0xff51afd7ed558ccdL;
-        z ^= (z >>> 33);
-        z *= 0xc4ceb9fe1a85ec53L;
-        z ^= (z >>> 33);
-        return z;
-    }
 }

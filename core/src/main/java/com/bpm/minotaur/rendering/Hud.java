@@ -1836,9 +1836,9 @@ public class Hud implements Disposable {
         if (frontScenery == null && maze.getScenery() != null) {
             frontScenery = maze.getScenery().get(feetTile);
         }
-        if (frontScenery != null && frontScenery.isDecomposingCorpse()) {
+        if (frontScenery != null && frontScenery.isCorpse()) {
             com.bpm.minotaur.gamedata.bones.BonesData bd = frontScenery.getBonesData();
-            if (bd != null) {
+            if (frontScenery.isDecomposingCorpse() && bd != null) {
                 String heroName = (bd.playerName != null) ? bd.playerName : "Fallen Hero";
                 if (bd.defeated) {
                     worldInteractionCard.show(

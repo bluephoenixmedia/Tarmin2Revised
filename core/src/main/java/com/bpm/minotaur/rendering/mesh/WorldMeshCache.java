@@ -23,24 +23,6 @@ public class WorldMeshCache implements Disposable {
     private int currentLevel = -1;
     private final GridPoint2 lastCenterChunk = new GridPoint2(Integer.MIN_VALUE, Integer.MIN_VALUE);
 
-    /**
-     * Retrieves or builds all visible chunk sub-meshes for the current player location and maze.
-     */
-    public List<ChunkSubMesh> getVisibleSubMeshes(
-            Maze maze,
-            float playerX,
-            float playerY,
-            int level,
-            boolean isIndoors,
-            Texture wallTexture,
-            Texture floorTexture,
-            Texture ceilingTexture,
-            WorldManager worldManager,
-            WallTextureProvider wallProvider
-    ) {
-        return getVisibleSubMeshes(maze, playerX, playerY, level, isIndoors, wallTexture, floorTexture, null, null, ceilingTexture, worldManager, wallProvider);
-    }
-
     public List<ChunkSubMesh> getVisibleSubMeshes(
             Maze maze,
             float playerX,
@@ -53,26 +35,9 @@ public class WorldMeshCache implements Disposable {
             Texture forestFloorTexture,
             Texture ceilingTexture,
             WorldManager worldManager,
-            WallTextureProvider wallProvider
-    ) {
-        return getVisibleSubMeshes(maze, playerX, playerY, level, isIndoors, wallTexture, floorTexture,
-                forestWallTexture, forestFloorTexture, ceilingTexture, null, worldManager, wallProvider);
-    }
-
-    public List<ChunkSubMesh> getVisibleSubMeshes(
-            Maze maze,
-            float playerX,
-            float playerY,
-            int level,
-            boolean isIndoors,
-            Texture wallTexture,
-            Texture floorTexture,
-            Texture forestWallTexture,
-            Texture forestFloorTexture,
-            Texture ceilingTexture,
-            List<Texture> ceilingVariants,
-            WorldManager worldManager,
-            WallTextureProvider wallProvider
+            WallTextureProvider wallProvider,
+            SurfaceTextureSet floorSet,
+            SurfaceTextureSet ceilingSet
     ) {
         List<ChunkSubMesh> result = new ArrayList<>();
 
@@ -97,13 +62,12 @@ public class WorldMeshCache implements Disposable {
             List<ChunkSubMesh> dungeonMeshes = cachedChunks.get(dungeonKey);
             if (dungeonMeshes == null) {
                 long dungeonSeed = seedFor(worldManager, level, currentChunkId);
-                Texture dungeonCeiling = selectCeiling(ceilingTexture, ceilingVariants, level, dungeonSeed);
                 dungeonMeshes = ChunkMeshBuilder.buildChunk(
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
-                        currentWall, currentFloor, dungeonCeiling,
+                        currentWall, currentFloor, ceilingTexture,
                         true, 0f, 0f,
-                        wallProvider, dungeonSeed
+                        wallProvider, dungeonSeed, floorSet, ceilingSet
                 );
                 cachedChunks.put(dungeonKey, dungeonMeshes);
             }
@@ -114,13 +78,12 @@ public class WorldMeshCache implements Disposable {
             List<ChunkSubMesh> currentMeshes = cachedChunks.get(currentChunkKey);
             if (currentMeshes == null) {
                 long sectorSeed = seedFor(worldManager, level, currentChunkId);
-                Texture sectorCeiling = selectCeiling(ceilingTexture, ceilingVariants, level, sectorSeed);
                 currentMeshes = ChunkMeshBuilder.buildChunk(
                         maze,
                         0, 0, maze.getWidth(), maze.getHeight(),
-                        currentWall, currentFloor, sectorCeiling,
+                        currentWall, currentFloor, ceilingTexture,
                         false, 0f, 0f,
-                        wallProvider, sectorSeed
+                        wallProvider, sectorSeed, floorSet, ceilingSet
                 );
                 cachedChunks.put(currentChunkKey, currentMeshes);
             }
@@ -145,13 +108,12 @@ public class WorldMeshCache implements Disposable {
                                     Texture neighborWall = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestWallTexture != null) ? forestWallTexture : wallTexture;
                                     Texture neighborFloor = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestFloorTexture != null) ? forestFloorTexture : floorTexture;
                                     long neighborSeed = seedFor(worldManager, level, targetId);
-                                    Texture neighborCeiling = selectCeiling(ceilingTexture, ceilingVariants, level, neighborSeed);
                                     neighborMeshes = ChunkMeshBuilder.buildChunk(
                                             neighborMaze,
                                             0, 0, neighborMaze.getWidth(), neighborMaze.getHeight(),
-                                            neighborWall, neighborFloor, neighborCeiling,
+                                            neighborWall, neighborFloor, ceilingTexture,
                                             false, offsetX, offsetZ,
-                                            wallProvider, neighborSeed
+                                            wallProvider, neighborSeed, floorSet, ceilingSet
                                     );
                                     cachedChunks.put(neighborKey, neighborMeshes);
                                 }
@@ -181,16 +143,6 @@ public class WorldMeshCache implements Disposable {
         return worldManager.getAppearanceSeed(level, chunkId.x, chunkId.y);
     }
 
-    private static Texture selectCeiling(Texture defaultCeiling, List<Texture> ceilingVariants, int level, long seed) {
-        if (ceilingVariants == null || ceilingVariants.isEmpty()) {
-            return defaultCeiling;
-        }
-        if (level <= 1) {
-            return defaultCeiling != null ? defaultCeiling : ceilingVariants.get(0);
-        }
-        int idx = (int) (Math.abs(seed) % ceilingVariants.size());
-        return ceilingVariants.get(idx);
-    }
 
     public void invalidate() {
         for (List<ChunkSubMesh> subMeshes : cachedChunks.values()) {

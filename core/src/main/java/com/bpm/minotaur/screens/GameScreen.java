@@ -2501,7 +2501,7 @@ public class GameScreen extends BaseScreen {
                         // Check Decomposing Corpse (Hero Remains / NetHack bones)
                         Scenery scFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(targetTile) : null;
                         Scenery scFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
-                        if ((scFront != null && scFront.isDecomposingCorpse()) || (scFeet != null && scFeet.isDecomposingCorpse())) {
+                        if ((scFront != null && scFront.isCorpse()) || (scFeet != null && scFeet.isCorpse())) {
                             interactWithWorldObject();
                             return true;
                         }
@@ -3450,8 +3450,8 @@ public class GameScreen extends BaseScreen {
         // Check Decomposing Corpse (NetHack-style Bones remains)
         Scenery sceneryInFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(target) : null;
         Scenery sceneryAtFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
-        Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isDecomposingCorpse()) ? sceneryInFront
-                : (sceneryAtFeet != null && sceneryAtFeet.isDecomposingCorpse()) ? sceneryAtFeet : null;
+        Scenery corpseScenery = (sceneryInFront != null && sceneryInFront.isCorpse()) ? sceneryInFront
+                : (sceneryAtFeet != null && sceneryAtFeet.isCorpse()) ? sceneryAtFeet : null;
 
         if (corpseScenery != null) {
             handleCorpseInteraction(corpseScenery);
@@ -3822,36 +3822,106 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Turns spent hacking at a carcass; monsters act while you work. */
+    private static final int BUTCHER_TURNS = 3;
+
+    private final java.util.Random butcherRandom = new java.util.Random();
+
+    /** 0-99. */
+    private int butcherRoll() {
+        return butcherRandom.nextInt(100);
+    }
+
+    /**
+     * Harvests a carcass, slowly and unreliably.
+     *
+     * <p>Butchering used to be instant and guaranteed: one meat and one bone
+     * from every kill. With a cooking and crafting chain downstream, a
+     * free-and-certain yield on every corpse makes food and reagents
+     * effectively unlimited. It now costs turns, during which the level keeps
+     * acting, and usually yields little.
+     */
+    private void butcherRemains(Scenery corpse) {
+        String mName = corpse.getCorpseMonsterName() != null ? corpse.getCorpseMonsterName() : "Creature";
+        boolean mangled = corpse.getType() == Scenery.SceneryType.GORE_PILE;
+
+        if (!player.hasButcheringTool()) {
+            if (hud != null) {
+                hud.addMessage("You examine the remains of " + mName
+                        + ". Without a bladed tool, you cannot harvest them.");
+            }
+            return;
+        }
+
+        int cx = (int) corpse.getPosition().x;
+        int cy = (int) corpse.getPosition().y;
+
+        if (hud != null) {
+            hud.addMessage(mangled
+                    ? "You pick through what is left of " + mName + "..."
+                    : "You butcher the corpse of " + mName + "...");
+        }
+
+        // A torn-apart body has less worth carving, which gives the
+        // dismemberment system a consequence beyond the visual.
+        int meatChance = mangled ? 15 : 35;
+        int boneChance = mangled ? 30 : 50;
+        boolean gotAnything = false;
+
+        try {
+            if (butcherRoll() < meatChance) {
+                Item meat = game.getItemDataManager().createItem(Item.ItemType.MEAT, cx, cy,
+                        ItemColor.RED, game.getAssetManager());
+                if (meat != null) {
+                    meat.setFriendlyName("Raw " + mName + " Meat");
+                    if (!player.getInventory().pickupToBackpack(meat)) maze.addItem(meat);
+                    gotAnything = true;
+                }
+            }
+            if (butcherRoll() < boneChance) {
+                Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, cx, cy,
+                        ItemColor.WHITE, game.getAssetManager());
+                if (bone != null) {
+                    if (!player.getInventory().pickupToBackpack(bone)) maze.addItem(bone);
+                    gotAnything = true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (soundManager != null) {
+            soundManager.playSound("meat_slice");
+        }
+        maze.removeScenery(cx, cy);
+
+        if (hud != null && !gotAnything) {
+            hud.addMessage("...nothing worth keeping.");
+        }
+
+        // Charged last, so the message order reads as cause then consequence.
+        // The level keeps acting while the player works, which is the real cost.
+        for (int i = 0; i < BUTCHER_TURNS; i++) {
+            turnManager.processTurn(maze, player, monsterAiManager, combatManager, worldManager,
+                    eventManager, game.getItemDataManager(), game.getAssetManager());
+        }
+    }
+
     private void handleCorpseInteraction(Scenery corpse) {
+        // Dispatch on what the remains ARE, not on whether a field happens to be
+        // null. The old test treated any corpse without bones data as a monster,
+        // so a hero's bones that failed to round-trip through a save became
+        // butcherable meat.
+        if (corpse.isMonsterRemains()) {
+            butcherRemains(corpse);
+            return;
+        }
+
         BonesData bData = corpse.getBonesData();
         if (bData == null) {
-            String mName = corpse.getCorpseMonsterName() != null ? corpse.getCorpseMonsterName() : "Creature";
-            if (player.hasButcheringTool()) {
-                if (hud != null) hud.addMessage("You butcher the corpse of " + mName + ".");
-                int cx = (int) corpse.getPosition().x;
-                int cy = (int) corpse.getPosition().y;
-                try {
-                    Item meat = game.getItemDataManager().createItem(Item.ItemType.MEAT, cx, cy, ItemColor.RED, game.getAssetManager());
-                    if (meat != null) {
-                        meat.setFriendlyName("Raw " + mName + " Meat");
-                        if (!player.getInventory().pickupToBackpack(meat)) {
-                            maze.addItem(meat);
-                        }
-                    }
-                    Item bone = game.getItemDataManager().createItem(Item.ItemType.BONE, cx, cy, ItemColor.WHITE, game.getAssetManager());
-                    if (bone != null) {
-                        if (!player.getInventory().pickupToBackpack(bone)) {
-                            maze.addItem(bone);
-                        }
-                    }
-                } catch (Exception ignored) {
-                }
-                if (soundManager != null) {
-                    soundManager.playSound("meat_slice");
-                }
-                maze.removeScenery(cx, cy);
-            } else {
-                if (hud != null) hud.addMessage("You examine the corpse of " + mName + ". Without a bladed tool, you cannot harvest it.");
+            // Hero bones with no data: damaged or from an older save. Say so
+            // rather than silently reclassifying them as a carcass.
+            if (hud != null) {
+                hud.addMessage("The remains are too disturbed to read.");
             }
             return;
         }
