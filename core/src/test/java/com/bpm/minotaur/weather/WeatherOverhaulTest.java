@@ -155,4 +155,22 @@ public class WeatherOverhaulTest {
         float desertHeatTemp = weatherManager.getAmbientTemperature(com.bpm.minotaur.generation.Biome.DESERT);
         assertTrue("Extreme clear in desert should reach heatwave (>= 38°C), was: " + desertHeatTemp, desertHeatTemp >= 38.0f);
     }
+
+    @Test
+    public void testSnowCanOccurInAnyBiomeDueToMaelstrom() {
+        // Due to the unstable nature of the Maelstrom in which the maze exists,
+        // every biome must have a non-zero probability of generating snowfall.
+        for (com.bpm.minotaur.generation.Biome biome : com.bpm.minotaur.generation.Biome.values()) {
+            boolean snowObserved = false;
+            for (int i = 0; i < 500; i++) {
+                WeatherType picked = weatherManager.pickWeatherForBiome(biome);
+                if (picked == WeatherType.SNOW || picked == WeatherType.BLIZZARD) {
+                    snowObserved = true;
+                    break;
+                }
+            }
+            assertTrue("Biome " + biome + " must have a chance to manifest snow/blizzard due to Maelstrom instability",
+                    snowObserved);
+        }
+    }
 }

@@ -103,6 +103,11 @@ public class WeatherManager {
         updateAtmosphereTargets();
         this.currentFogDistance = this.targetFogDistance;
         this.currentFogColor.set(this.targetFogColor);
+
+        // Notify SoundManager of initial weather loops (rain/wind/blizzard)
+        if (worldManager != null && worldManager.getSoundManager() != null) {
+            worldManager.getSoundManager().updateWeatherAudio(this.currentWeather, this.currentIntensity);
+        }
     }
 
     private float wetness = 0.0f;
@@ -232,32 +237,47 @@ public class WeatherManager {
         }
     }
 
-    private WeatherType pickWeatherForBiome(Biome biome) {
+    /**
+     * Picks weather for a given biome.
+     * Due to the unstable nature of the Maelstrom in which the maze exists,
+     * snowfall and blizzards can manifest randomly in ANY biome.
+     */
+    WeatherType pickWeatherForBiome(Biome biome) {
         float roll = MathUtils.random();
         switch (biome) {
             case MAZE:
             case FOREST:
-                if (roll < 0.35f)
+                if (roll < 0.30f)
                     return WeatherType.CLEAR;
-                if (roll < 0.55f)
+                if (roll < 0.45f)
                     return WeatherType.FOG;
-                if (roll < 0.80f)
+                if (roll < 0.65f)
                     return WeatherType.RAIN;
-                if (roll < 0.98f)
+                if (roll < 0.80f)
                     return WeatherType.STORM;
+                if (roll < 0.93f)
+                    return WeatherType.SNOW;
+                if (roll < 0.98f)
+                    return WeatherType.BLIZZARD;
                 return WeatherType.TORNADO;
             case LAKELANDS:
                 if (roll < 0.20f)
                     return WeatherType.CLEAR;
-                if (roll < 0.55f)
+                if (roll < 0.45f)
                     return WeatherType.FOG;
-                if (roll < 0.85f)
-                    return WeatherType.RAIN;
-                return WeatherType.STORM;
-            case MOUNTAINS:
-                if (roll < 0.35f)
-                    return WeatherType.CLEAR;
                 if (roll < 0.70f)
+                    return WeatherType.RAIN;
+                if (roll < 0.85f)
+                    return WeatherType.STORM;
+                if (roll < 0.96f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
+            case MOUNTAINS:
+                if (roll < 0.25f)
+                    return WeatherType.CLEAR;
+                if (roll < 0.45f)
+                    return WeatherType.FOG;
+                if (roll < 0.75f)
                     return WeatherType.SNOW;
                 return WeatherType.BLIZZARD;
             case OCEAN:
@@ -265,12 +285,22 @@ public class WeatherManager {
                     return WeatherType.CLEAR;
                 if (roll < 0.30f)
                     return WeatherType.RAIN;
-                return WeatherType.STORM;
+                if (roll < 0.65f)
+                    return WeatherType.STORM;
+                if (roll < 0.90f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
             case DESERT:
-                if (roll < 0.80f)
+                if (roll < 0.70f)
                     return WeatherType.CLEAR;
-                return WeatherType.TORNADO;
+                if (roll < 0.85f)
+                    return WeatherType.TORNADO;
+                if (roll < 0.97f)
+                    return WeatherType.SNOW;
+                return WeatherType.BLIZZARD;
             default:
+                if (roll < 0.20f)
+                    return WeatherType.SNOW;
                 return WeatherType.CLEAR;
         }
     }
