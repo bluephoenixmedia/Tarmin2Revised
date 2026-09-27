@@ -2848,6 +2848,9 @@ public class Player {
             } else {
                 eventManager.addEvent(new GameEvent("You open the " + containerName + ".", 2f));
                 for (Item contentItem : contents) {
+                    if (contentItem != null) {
+                        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(contentItem);
+                    }
                     GridPoint2 dropTile = targetTile;
                     if (maze.getItems().containsKey(dropTile)) {
                         dropTile = new GridPoint2((int) position.x, (int) position.y);

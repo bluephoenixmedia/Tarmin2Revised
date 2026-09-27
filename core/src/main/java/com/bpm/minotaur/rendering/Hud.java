@@ -2202,6 +2202,7 @@ public class Hud implements Disposable {
             }
         }
         if (groundItem != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(groundItem);
             String loc = atFeet ? "[GROUND (FEET)]" : "[GROUND (AHEAD)]";
             String cat = groundItem.getCategory() != null ? "[" + groundItem.getCategory().name().replace('_', ' ') + "]" : "[ITEM]";
             String title = groundItemDisplayName(groundItem);

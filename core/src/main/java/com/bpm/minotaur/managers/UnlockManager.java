@@ -239,6 +239,29 @@ public class UnlockManager implements SlotScopedState {
     }
 
     /**
+     * Records that an item was encountered by the player (seen on the ground, picked up,
+     * looted, or held), permanently unlocking it in meta-progression and the Chronicle of Tarmin.
+     */
+    public void recordItemEncountered(com.bpm.minotaur.gamedata.item.Item item) {
+        if (item == null || item.getType() == null) return;
+        recordItemEncountered(item.getType());
+    }
+
+    /**
+     * Records that an item type was encountered by the player, permanently unlocking it
+     * in meta-progression and the Chronicle of Tarmin.
+     */
+    public void recordItemEncountered(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        if (type == null) return;
+        if (itemDataManager != null) {
+            com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
+            // Skip scenery/markers without valid templates
+            if (t == null) return;
+        }
+        unlockContent(type.name());
+    }
+
+    /**
      * Display names of this run's unlocks.
      *
      * <p>Kept for callers that only render text. Anything that needs an icon should use

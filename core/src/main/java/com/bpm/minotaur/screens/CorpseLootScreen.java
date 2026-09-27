@@ -90,6 +90,14 @@ public class CorpseLootScreen extends BaseScreen {
     private void buildUI() {
         stage.clear();
 
+        if (corpse != null && corpse.getContents() != null) {
+            for (Item item : corpse.getContents()) {
+                if (item != null) {
+                    com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+                }
+            }
+        }
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);

@@ -279,14 +279,29 @@ public class CodexScreen extends BaseScreen {
         ItemDataManager itemData = game.getItemDataManager();
         UnlockManager unlockManager = UnlockManager.getInstance();
 
-        // 1. Collect and classify gated items
+        // Synchronize any items currently carried by the player or stored in the shelter chest
+        if (player != null && player.getInventory() != null) {
+            for (Item item : player.getInventory().getAllItems()) {
+                if (item != null) {
+                    unlockManager.recordItemEncountered(item);
+                }
+            }
+        }
+        for (Item item : com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().getItems()) {
+            if (item != null) {
+                unlockManager.recordItemEncountered(item);
+            }
+        }
+
+        // 1. Collect and classify items (weapons, armor, relics, and progression-gated gear)
         List<Item.ItemType> allGated = new ArrayList<>();
         int unlockedCount = 0;
 
         for (Item.ItemType type : Item.ItemType.values()) {
             try {
                 ItemTemplate t = (itemData != null) ? itemData.getTemplate(type) : null;
-                if (t != null && t.unlockGated) {
+                if (t != null && t.friendlyName != null && !t.friendlyName.isEmpty()
+                        && (t.unlockGated || t.isWeapon || t.isArmor || unlockManager.isUnlocked(type.name()))) {
                     allGated.add(type);
                     if (unlockManager.isUnlocked(type.name())) {
                         unlockedCount++;

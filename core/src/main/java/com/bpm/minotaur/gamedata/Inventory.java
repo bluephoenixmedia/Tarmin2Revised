@@ -25,6 +25,8 @@ public class Inventory {
         if (item == null)
             return false;
 
+        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+
         // 1. Consumables and usable tools automatically route into empty Quick Slots first
         if (item.isConsumableOrTool()) {
             for (int i = 0; i < quickSlots.length; i++) {
@@ -68,6 +70,11 @@ public class Inventory {
      * Use this for bulk loot like butchering results.
      */
     public boolean pickupToBackpack(Item item) {
+        if (item == null)
+            return false;
+
+        com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+
         // 1. Try Main Inventory (Backpack)
         if (mainInventory.size() < MAX_BACKPACK_SIZE) {
             mainInventory.add(item);
@@ -152,6 +159,9 @@ public class Inventory {
 
     public void setRightHand(Item item) {
         this.rightHand = item;
+        if (item != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+        }
         // Two-handed weapon automatically unequips off-hand shield/weapon to backpack
         if (item != null && item.isTwoHanded() && leftHand != null) {
             Item offhand = leftHand;
@@ -172,6 +182,9 @@ public class Inventory {
             pickupToBackpack(twoHander);
         }
         this.leftHand = item;
+        if (item != null) {
+            com.bpm.minotaur.managers.UnlockManager.getInstance().recordItemEncountered(item);
+        }
     }
 
     /**

@@ -72,4 +72,37 @@ public class CodexDataAndFilteringTest {
         // score = baseValue (100) + armorClassBonus * 100 (4 * 100 = 400) = 500
         assertEquals(500, UnlockManager.calculateItemScore(armor));
     }
+
+    @Test
+    public void testEncounteredWeaponUnlocksInUnlockManager() {
+        UnlockManager um = UnlockManager.getInstance();
+        um.resetForTesting();
+
+        assertFalse("Item should start locked", um.getData().unlockedContent.contains("SWORD_BROAD"));
+
+        // Record item encounter (e.g. seen on ground or looted)
+        um.recordItemEncountered(Item.ItemType.SWORD_BROAD);
+
+        assertTrue("Item must be permanently registered in unlockedContent once encountered",
+                um.getData().unlockedContent.contains("SWORD_BROAD"));
+        assertTrue("Item must report as unlocked", um.isUnlocked("SWORD_BROAD"));
+    }
+
+    @Test
+    public void testInventoryPickupRecordsItemAsUnlocked() {
+        UnlockManager um = UnlockManager.getInstance();
+        um.resetForTesting();
+
+        com.bpm.minotaur.gamedata.Inventory inv = new com.bpm.minotaur.gamedata.Inventory();
+        Item dagger = new Item(Item.ItemType.DAGGER_BONE, 0, 0, null, null, null);
+
+        assertFalse("Bone Dagger should not be in unlockedContent initially",
+                um.getData().unlockedContent.contains("DAGGER_BONE"));
+
+        inv.pickup(dagger);
+
+        assertTrue("Picking up an item must automatically record it as unlocked",
+                um.getData().unlockedContent.contains("DAGGER_BONE"));
+        assertTrue("Item must report as unlocked", um.isUnlocked("DAGGER_BONE"));
+    }
 }
