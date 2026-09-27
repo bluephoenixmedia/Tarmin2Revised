@@ -18,6 +18,7 @@ import java.util.List;
 public class SurfaceTextureSet implements Disposable {
 
     private final List<Texture> textures = new ArrayList<>();
+    private boolean authoredDefault;
 
     /**
      * @param paths internal asset paths, the default first. Missing files are
@@ -25,13 +26,15 @@ public class SurfaceTextureSet implements Disposable {
      */
     public SurfaceTextureSet(String... paths) {
         if (paths == null) return;
-        for (String path : paths) {
+        for (int i = 0; i < paths.length; i++) {
+            String path = paths[i];
             if (path == null) continue;
             try {
                 if (!Gdx.files.internal(path).exists()) continue;
                 Texture tex = new Texture(Gdx.files.internal(path));
                 tex.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
                 tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                if (i == 0) authoredDefault = true;
                 textures.add(tex);
             } catch (Exception e) {
                 if (Gdx.app != null) {
@@ -48,6 +51,17 @@ public class SurfaceTextureSet implements Disposable {
 
     public boolean isEmpty() {
         return textures.isEmpty();
+    }
+
+    /**
+     * Whether the first listed path -- the intended default -- actually loaded.
+     *
+     * <p>False means there is no authored default and index 0 is merely the
+     * first surviving variant, so weighting it to 75% would promote an arbitrary
+     * texture. Ceilings are in exactly that state until a ceiling.png exists.
+     */
+    public boolean hasAuthoredDefault() {
+        return authoredDefault;
     }
 
     /** The texture for a variant index, or null when the set is empty. */

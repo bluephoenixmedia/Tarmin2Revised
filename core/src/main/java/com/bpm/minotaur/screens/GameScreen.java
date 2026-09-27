@@ -2501,7 +2501,7 @@ public class GameScreen extends BaseScreen {
                         // Check Decomposing Corpse (Hero Remains / NetHack bones)
                         Scenery scFront = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(targetTile) : null;
                         Scenery scFeet = (maze != null && maze.getScenery() != null) ? maze.getScenery().get(currentTile) : null;
-                        if ((scFront != null && scFront.isDecomposingCorpse()) || (scFeet != null && scFeet.isDecomposingCorpse())) {
+                        if ((scFront != null && scFront.isCorpse()) || (scFeet != null && scFeet.isCorpse())) {
                             interactWithWorldObject();
                             return true;
                         }
@@ -3911,8 +3911,7 @@ public class GameScreen extends BaseScreen {
         // null. The old test treated any corpse without bones data as a monster,
         // so a hero's bones that failed to round-trip through a save became
         // butcherable meat.
-        if (corpse.getType() == Scenery.SceneryType.MONSTER_REMAINS
-                || corpse.getType() == Scenery.SceneryType.GORE_PILE) {
+        if (corpse.isMonsterRemains()) {
             butcherRemains(corpse);
             return;
         }

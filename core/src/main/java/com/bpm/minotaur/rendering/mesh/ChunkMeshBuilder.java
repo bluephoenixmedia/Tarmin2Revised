@@ -120,9 +120,9 @@ public class ChunkMeshBuilder {
 
         // Only the maze wears variants; forest, desert and lakelands have their
         // own biome wall art and must not be overwritten with masonry.
-        boolean varied = wallProvider != null
-                && maze != null
+        boolean mazeBiome = maze != null
                 && maze.getBiome() == com.bpm.minotaur.generation.Biome.MAZE;
+        boolean varied = wallProvider != null && mazeBiome;
         WallVariants.Palette palette = varied ? WallVariants.paletteFor(chunkSeed) : null;
         int buckets = varied ? WallVariants.VARIANT_COUNT : 1;
 
@@ -139,8 +139,20 @@ public class ChunkMeshBuilder {
         // Floors and ceilings were one texture for a whole chunk, so eight
         // authored floor variants could only ever say "this room is different".
         // They bucket per tile now, exactly as walls do.
-        int floorBuckets = (floorSet != null && floorSet.size() > 1) ? floorSet.size() : 1;
-        int ceilBuckets = (ceilingSet != null && ceilingSet.size() > 1) ? ceilingSet.size() : 1;
+        // Variants are maze masonry. floorSet.get() never returns null, so taking
+        // the variant path unconditionally meant the biome floor chosen upstream
+        // could no longer reach a quad -- forest chunks silently lost theirs.
+        int floorBuckets = (mazeBiome && floorSet != null && floorSet.size() > 1)
+                ? floorSet.size() : 1;
+        // "These should be used when the player is underground": the surface and
+        // the shelter keep their own ceiling. A per-chunk selector enforced this
+        // and the rule was lost when it was replaced.
+        boolean underground = maze != null && maze.getLevel() > 1;
+        int ceilBuckets = (mazeBiome && underground && ceilingSet != null && ceilingSet.size() > 1)
+                ? ceilingSet.size() : 1;
+        // With no authored ceiling.png, index 0 is merely the first surviving
+        // variant, so weighting it to 75% would promote an arbitrary texture.
+        boolean ceilWeighted = ceilingSet != null && ceilingSet.hasAuthoredDefault();
 
         FloatArray[] floorVertsByVariant = new FloatArray[floorBuckets];
         ShortArray[] floorIndicesByVariant = new ShortArray[floorBuckets];
@@ -256,8 +268,10 @@ public class ChunkMeshBuilder {
                     // Ceilings are emitted only when inside the player's shelter OR underground in the maze (level > 1)
                     boolean tileHasCeiling = (maze != null) ? maze.isIndoors(x, y) : isIndoors;
                     if (tileHasCeiling) {
-                        int cb = (ceilBuckets > 1)
-                                ? SurfaceVariants.ceilingVariant(chunkSeed, x, y, ceilBuckets) : 0;
+                        int cb = (ceilBuckets <= 1) ? 0
+                                : ceilWeighted
+                                        ? SurfaceVariants.ceilingVariant(chunkSeed, x, y, ceilBuckets)
+                                        : SurfaceVariants.ceilingVariantEven(chunkSeed, x, y, ceilBuckets);
                         addQuad(ceilVertsByVariant[cb], ceilIndicesByVariant[cb],
                                 x + worldOffsetX, ceilY, -y + worldOffsetZ, 0f, 0f,
                                 x + worldOffsetX, ceilY, -(y + 1) + worldOffsetZ, 0f, 1f,
@@ -341,8 +355,11 @@ public class ChunkMeshBuilder {
 
         for (int i = 0; i < ceilBuckets; i++) {
             if (ceilIndicesByVariant[i].size == 0) continue;
-            Texture tex = (ceilBuckets > 1) ? ceilingSet.get(i) : ceilingTexture;
-            if (tex == null) tex = ceilingTexture;
+            // Never fall back to ceilingTexture when a ceiling set exists: that
+            // default is still images/floor.png, and reusing the floor for the
+            // ceiling is exactly what this change set out to remove.
+            Texture tex = (ceilBuckets > 1) ? ceilingSet.get(i)
+                    : (ceilingSet != null && !ceilingSet.isEmpty()) ? ceilingSet.get(0) : ceilingTexture;
             if (tex == null) continue;
             Mesh ceilMesh = createMesh(ceilVertsByVariant[i], ceilIndicesByVariant[i]);
             subMeshes.add(new ChunkSubMesh(tex, ceilMesh, ceilIndicesByVariant[i].size,

@@ -64,6 +64,43 @@ public class WeightedVariantTest {
     }
 
     @Test
+    public void anEvenRollHasNoFavouredIndex() {
+        // Used when a set has no authored default. Ceilings are in that state:
+        // there is no ceiling.png, so index 0 is merely the first surviving
+        // variant, and weighting it would promote an arbitrary texture to three
+        // quarters of every dungeon.
+        int samples = 120_000;
+        int variants = 8;
+        int[] counts = new int[variants];
+        for (int i = 0; i < samples; i++) {
+            counts[WeightedVariant.pickEven(hash(i), variants)]++;
+        }
+        double expected = samples / (double) variants;
+        for (int v = 0; v < variants; v++) {
+            assertTrue("Variant " + v + " appeared " + counts[v] + " times, expected near "
+                            + (int) expected + " -- an even roll must not favour any index",
+                    counts[v] > expected * 0.9 && counts[v] < expected * 1.1);
+        }
+    }
+
+    @Test
+    public void theEvenRollIsActuallyDifferentFromTheWeightedOne() {
+        // Guards against the two collapsing into the same call, which is how
+        // the ceiling set ended up weighting ceiling_1.jpg to 75% while the
+        // comment beside it claimed an even roll.
+        int samples = 60_000;
+        int weightedDefault = 0;
+        int evenDefault = 0;
+        for (int i = 0; i < samples; i++) {
+            if (WeightedVariant.pick(hash(i), 8) == 0) weightedDefault++;
+            if (WeightedVariant.pickEven(hash(i), 8) == 0) evenDefault++;
+        }
+        assertTrue("Weighted should favour index 0 heavily", weightedDefault > samples * 0.7);
+        assertTrue("Even should land on index 0 about an eighth of the time",
+                evenDefault < samples * 0.2);
+    }
+
+    @Test
     public void theChoiceIsStableForTheSameSurface() {
         for (int i = 0; i < 1000; i++) {
             assertEquals(WeightedVariant.pick(hash(i), 6), WeightedVariant.pick(hash(i), 6));
