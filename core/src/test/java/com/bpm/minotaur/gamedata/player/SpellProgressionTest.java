@@ -54,6 +54,15 @@ public class SpellProgressionTest {
     }
 
     @Test
+    public void levelForSlotSchedule() {
+        assertEquals("Slot 1 starts unlocked (Level 1)", 1, Player.levelForSlot(1));
+        assertEquals("Slot 2 requires Level 2", 2, Player.levelForSlot(2));
+        assertEquals("Slot 3 requires Level 5", 5, Player.levelForSlot(3));
+        assertEquals("Slot 4 requires Level 8", 8, Player.levelForSlot(4));
+        assertEquals("Slot 5 requires Level 11", 11, Player.levelForSlot(5));
+    }
+
+    @Test
     public void levelUpUnlocksSlotsAutomatically() {
         assertEquals(1, player.getUnlockedSpellSlots());
 

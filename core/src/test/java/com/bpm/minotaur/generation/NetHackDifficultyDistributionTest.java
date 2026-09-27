@@ -315,29 +315,39 @@ public class NetHackDifficultyDistributionTest {
         com.bpm.minotaur.gamedata.Maze shelter = new com.bpm.minotaur.gamedata.Maze(1, new int[20][120]);
         shelter.addHomeTile(new com.badlogic.gdx.math.GridPoint2(100, 10));
 
-        // Test using tomes
+        // Test using tomes grants permanent spells
         Item tomeInitiate = new Item(Item.ItemType.TOME_OF_THE_INITIATE, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeInitiate);
         player.useItem(tomeInitiate, eventManager, null, shelter);
-        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
-        assertTrue(player.getUnlockedSpellSlots() >= 2);
+        String spell1 = player.getPendingTomeChoice().getOptions().get(0);
+        player.chooseTomeSpell(spell1, eventManager);
+        assertTrue(player.getPermanentSpellIds().contains(spell1));
 
         Item tomeElements = new Item(Item.ItemType.TOME_OF_ELEMENTS, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeElements);
         player.useItem(tomeElements, eventManager, null, shelter);
-        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
-        assertTrue(player.getUnlockedSpellSlots() >= 3);
+        String spell2 = player.getPendingTomeChoice().getOptions().get(0);
+        player.chooseTomeSpell(spell2, eventManager);
+        assertTrue(player.getPermanentSpellIds().contains(spell2));
 
         Item tomeArcane = new Item(Item.ItemType.TOME_OF_THE_ARCANE, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeArcane);
         player.useItem(tomeArcane, eventManager, null, shelter);
-        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
-        assertTrue(player.getUnlockedSpellSlots() >= 4);
+        String spell3 = player.getPendingTomeChoice().getOptions().get(0);
+        player.chooseTomeSpell(spell3, eventManager);
+        assertTrue(player.getPermanentSpellIds().contains(spell3));
 
         Item tomeTarmin = new Item(Item.ItemType.TOME_OF_TARMIN, 0, 0, ItemColor.PURPLE, itemDataManager, null);
         player.getInventory().pickup(tomeTarmin);
         player.useItem(tomeTarmin, eventManager, null, shelter);
-        player.chooseTomeSpell(player.getPendingTomeChoice().getOptions().get(0), eventManager);
-        assertEquals(5, player.getUnlockedSpellSlots());
+        String spell4 = player.getPendingTomeChoice().getOptions().get(0);
+        player.chooseTomeSpell(spell4, eventManager);
+        assertTrue(player.getPermanentSpellIds().contains(spell4));
+        assertEquals(5, player.getPermanentSpellIds().size());
+
+        // Slots unlock via character leveling (level 1 = 1 slot, level 2 = 2 slots)
+        assertEquals(1, player.getUnlockedSpellSlots());
+        player.addExperience(200, eventManager);
+        assertEquals(2, player.getUnlockedSpellSlots());
     }
 }

@@ -127,6 +127,8 @@ public class Hud implements Disposable {
     private final Label[] spellBadgeLabels = new Label[5];
     private final Label[] spellNameLabels = new Label[5];
     private final Label[] spellCostLabels = new Label[5];
+    private int lastSeenUnlockedSlots = 1;
+    private final float[] slotPulseTimers = new float[5];
 
     // --- Action Chronicle Labels (5 lines) ---
     private final Label[] chronicleLabels = new Label[5];
@@ -232,6 +234,7 @@ public class Hud implements Disposable {
         this.spriteBatch = sb;
         this.worldManager = worldManager;
         this.shapeRenderer = new ShapeRenderer();
+        this.lastSeenUnlockedSlots = (player != null) ? player.getUnlockedSpellSlots() : 1;
 
         // --- Viewport and Stage Setup ---
         viewport = new FitViewport(1920, 1080, new OrthographicCamera());
@@ -566,6 +569,20 @@ public class Hud implements Disposable {
         spellHotbarTable.setBackground(hudSkin.getPanelBg());
         spellHotbarTable.pad(4f);
 
+        Table spellHeader = new Table();
+        Label spellsLabel = new Label("SPELLS [Q]", new Label.LabelStyle(hudSkin.getFontMicro(), HudSkin.COL_GOLD_BRIGHT));
+        spellHeader.add(spellsLabel).left().padLeft(4f).padBottom(2f);
+        spellHeader.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (encounterWindow != null && encounterWindow.isVisible()) return;
+                if (gameScreen != null) {
+                    gameScreen.openSpellbook();
+                }
+            }
+        });
+        spellHotbarTable.add(spellHeader).colspan(5).left().growX().padBottom(2f).row();
+
         for (int i = 0; i < 5; i++) {
             final int slotIdx = i;
             spellSlots[i] = new Table();
@@ -679,6 +696,11 @@ public class Hud implements Disposable {
                 gameScreen.openSkillTree();
             }
         });
+        levelUpModal.setOnOpenSpellbook(() -> {
+            if (gameScreen != null) {
+                gameScreen.openSpellbook();
+            }
+        });
         stage.addActor(levelUpModal);
 
         // --- Global Input Listener for EncounterWindow / ShopkeeperWindow / BonesAwakenModal / LevelUpModal ---
@@ -762,6 +784,26 @@ public class Hud implements Disposable {
 
     public void update(float dt) {
         stage.act(dt);
+
+        for (int i = 0; i < 5; i++) {
+            if (slotPulseTimers[i] > 0f) {
+                slotPulseTimers[i] = Math.max(0f, slotPulseTimers[i] - dt);
+            }
+        }
+        if (player != null) {
+            int currentUnlocked = player.getUnlockedSpellSlots();
+            if (currentUnlocked > lastSeenUnlockedSlots) {
+                for (int s = lastSeenUnlockedSlots; s < currentUnlocked && s < 5; s++) {
+                    slotPulseTimers[s] = 4.0f;
+                }
+                if (combatManager != null && combatManager.getSoundManager() != null) {
+                    combatManager.getSoundManager().playPlayerLevelUpSound();
+                }
+                lastSeenUnlockedSlots = currentUnlocked;
+            } else if (currentUnlocked < lastSeenUnlockedSlots) {
+                lastSeenUnlockedSlots = currentUnlocked;
+            }
+        }
 
         updatePortrait();
 
@@ -936,6 +978,14 @@ public class Hud implements Disposable {
                 spellNameLabels[i].setText("---");
                 spellNameLabels[i].setColor(HudSkin.COL_SPELL_EMPTY);
                 spellCostLabels[i].setText("");
+            }
+            if (slotPulseTimers[i] > 0f) {
+                float pulse = (com.badlogic.gdx.math.MathUtils.sin(slotPulseTimers[i] * 12f) + 1f) * 0.5f;
+                if (pulse > 0.5f) {
+                    spellSlots[i].setBackground(hudSkin.getSlotActive());
+                    spellBadgeLabels[i].setColor(HudSkin.COL_GOLD_BRIGHT);
+                    spellNameLabels[i].setColor(Color.WHITE);
+                }
             }
         }
 

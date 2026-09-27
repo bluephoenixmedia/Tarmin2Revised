@@ -50,20 +50,10 @@ public class CodexDataAndFilteringTest {
     public void testArcaneAttunementSpellSealing() {
         ShelterAltar altar = ShelterAltar.getInstance();
 
-        // At Tier 0, all attunement spells are sealed
-        assertTrue("Magic Missile should be sealed at Tier 0", altar.isSpellSealed("MAGIC_MISSILE"));
-        assertTrue("Misty Step should be sealed at Tier 0", altar.isSpellSealed("MISTY_STEP"));
-        assertTrue("Fireball should be sealed at Tier 0", altar.isSpellSealed("FIREBALL"));
-
-        // Purchase Tier 1: Magic Missile unsealed, Misty Step & Fireball still sealed
-        com.bpm.minotaur.managers.DivinityManager.getInstance().addDivinities(100);
-        boolean purchased = altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
-        assertTrue("Purchase should succeed with banked divinities", purchased);
-        assertEquals(1, altar.getTier(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
-        assertFalse("Magic Missile should be unsealed at Tier 1", altar.isSpellSealed("MAGIC_MISSILE"));
-        assertFalse("Shield should be unsealed at Tier 1", altar.isSpellSealed("SHIELD"));
-        assertTrue("Misty Step should remain sealed at Tier 1", altar.isSpellSealed("MISTY_STEP"));
-        assertTrue("Fireball should remain sealed at Tier 1", altar.isSpellSealed("FIREBALL"));
+        // The 9-spell hard gate was retired in the spell system overhaul: isSpellSealed always returns false
+        assertFalse("Magic Missile is unsealed", altar.isSpellSealed("MAGIC_MISSILE"));
+        assertFalse("Misty Step is unsealed", altar.isSpellSealed("MISTY_STEP"));
+        assertFalse("Fireball is unsealed", altar.isSpellSealed("FIREBALL"));
     }
 
     @Test

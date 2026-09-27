@@ -242,6 +242,19 @@ public class Player {
     }
 
     /**
+     * Level required to unlock the given spell slot number (1-indexed).
+     */
+    public static int levelForSlot(int slotNumber) {
+        switch (slotNumber) {
+            case 2: return 2;
+            case 3: return 5;
+            case 4: return 8;
+            case 5: return 11;
+            default: return 1;
+        }
+    }
+
+    /**
      * Evaluates level-based slot unlocks and updates unlockedSpellSlots if newly earned.
      * Returns true if a new slot was unlocked.
      */

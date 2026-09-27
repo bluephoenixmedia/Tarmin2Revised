@@ -58,6 +58,7 @@ public class SpellbookScreen extends BaseScreen {
     private DragAndDrop dragAndDrop;
 
     private boolean disposed;
+    private boolean slotAssignedThisSession;
     private String selectedSpellId;
     private String schoolFilter; // null = every school
 
@@ -146,7 +147,7 @@ public class SpellbookScreen extends BaseScreen {
         stage.addActor(root);
 
         if (hostileInView()) {
-            setStatus("A hostile is in view -- you cannot change spell slots now.", false);
+            setStatus("A hostile is in view -- you may fill empty slots (costs 1 combat turn), but cannot swap or clear.", false);
         }
         refresh();
     }
@@ -191,7 +192,7 @@ public class SpellbookScreen extends BaseScreen {
         Color nameColor;
         if (!unlocked) {
             name = "LOCKED";
-            sub = "Study the " + Tome.unlockingSlot(slot + 1).getDisplayName();
+            sub = "Unlocks at Level " + Player.levelForSlot(slot + 1);
             nameColor = Color.DARK_GRAY;
         } else if (spell != null) {
             name = spell.getName();
@@ -225,6 +226,10 @@ public class SpellbookScreen extends BaseScreen {
         cell.addListener(new ClickListener(Input.Buttons.RIGHT) {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (hostileInView()) {
+                    setStatus("Cannot clear spell slots while a hostile is in view.", false);
+                    return;
+                }
                 assign(slot, null);
             }
         });
@@ -245,15 +250,16 @@ public class SpellbookScreen extends BaseScreen {
     private void assign(int slot, String spellId) {
         switch (player.assignSpellSlot(slot, spellId, maze)) {
             case OK:
+                slotAssignedThisSession = true;
                 SpellTemplate spell = SpellDataManager.getSpell(spellId);
                 setStatus(spellId == null ? "Slot " + (slot + 1) + " cleared."
                         : (spell != null ? spell.getName() : spellId) + " prepared in slot " + (slot + 1) + ".", true);
                 break;
             case HOSTILE_IN_VIEW:
-                setStatus("A hostile is in view -- you cannot change spell slots now.", false);
+                setStatus("Cannot swap or clear slots while a hostile is in view.", false);
                 break;
             case SLOT_LOCKED:
-                setStatus("That slot is locked. Study a Tome to unlock it.", false);
+                setStatus("That slot is locked. It unlocks at Level " + Player.levelForSlot(slot + 1) + ".", false);
                 break;
             case UNKNOWN_SPELL:
                 setStatus("You do not know that spell.", false);
@@ -531,6 +537,10 @@ public class SpellbookScreen extends BaseScreen {
 
     private void close() {
         game.setScreen(parentScreen);
+        if (slotAssignedThisSession && parentScreen != null && parentScreen.getCombatManager() != null) {
+            com.bpm.minotaur.managers.CombatManager cm = parentScreen.getCombatManager();
+            cm.consumePlayerTurn();
+        }
         dispose();
     }
 

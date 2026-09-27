@@ -5,6 +5,7 @@ import com.bpm.minotaur.managers.DivinityManager;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,7 +18,7 @@ import static org.junit.Assert.*;
 /** A Tome Choice offers unknown spells from the Tome's curated pool; the Altar widens it. */
 public class TomeChoiceTest {
 
-    private static final TomeChoice.Perks BASE = new TomeChoice.Perks(3, 0, 7);
+    private static final TomeChoice.Perks BASE = new TomeChoice.Perks(3, 0, 8);
     private final Random rng = new Random(7);
 
     @Before
@@ -55,30 +56,35 @@ public class TomeChoiceTest {
 
     @Test
     public void offersWhatIsLeftWhenThePoolRunsLow() {
-        List<String> known = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
-        String last = known.get(known.size() - 1);
+        List<String> allInTier = new ArrayList<>(TomeChoice.curatedCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
+        allInTier.addAll(TomeChoice.generalCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
+        String last = allInTier.get(allInTier.size() - 1);
 
-        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, known.subList(0, known.size() - 1), BASE, rng);
+        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, allInTier.subList(0, allInTier.size() - 1), BASE, rng);
 
         assertEquals(Collections.singletonList(last), choice.getOptions());
     }
 
     @Test
-    public void anExhaustedPoolOffersNothing() {
-        List<String> known = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
+    public void anExhaustedPoolOffersFallbackMaxMpBoon() {
+        List<String> allInTier = new ArrayList<>(TomeChoice.curatedCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
+        allInTier.addAll(TomeChoice.generalCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
 
-        assertNull(TomeChoice.offer(Tome.ELEMENTS, null, known, BASE, rng));
+        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, allInTier, BASE, rng);
+
+        assertNotNull(choice);
+        assertEquals(Collections.singletonList(TomeChoice.FALLBACK_MP_BONUS_ID), choice.getOptions());
     }
 
     @Test
-    public void tarminOffersLevelEightOnlyWithTheAltarsTopTier() {
-        List<String> base = TomeChoice.candidates(Tome.TARMIN, Collections.emptyList(), BASE);
-        List<String> attuned = TomeChoice.candidates(Tome.TARMIN, Collections.emptyList(), new TomeChoice.Perks(5, 1, 8));
+    public void tarminOffersLevelNineOnlyWithTheAltarsTopTier() {
+        List<String> base = TomeChoice.generalCandidates(Tome.TARMIN, Collections.emptyList(), BASE);
+        List<String> attuned = TomeChoice.generalCandidates(Tome.TARMIN, Collections.emptyList(), new TomeChoice.Perks(5, 1, 9));
 
-        assertFalse(base.contains("SUNBURST"));
-        assertTrue(attuned.contains("SUNBURST"));
+        assertFalse(base.contains("METEOR_SWARM"));
+        assertTrue(attuned.contains("METEOR_SWARM"));
         for (String id : base) {
-            assertTrue(id, SpellDataManager.getSpell(id).getLevel() <= 7);
+            assertTrue(id, SpellDataManager.getSpell(id).getLevel() <= 8);
         }
     }
 
@@ -99,9 +105,10 @@ public class TomeChoiceTest {
 
     @Test
     public void aRerollWithNothingNewToShowIsNotSpent() {
-        List<String> all = TomeChoice.candidates(Tome.ELEMENTS, Collections.emptyList(), BASE);
-        List<String> known = all.subList(0, all.size() - 2);
-        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, known, new TomeChoice.Perks(3, 1, 7), rng);
+        List<String> allInTier = new ArrayList<>(TomeChoice.curatedCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
+        allInTier.addAll(TomeChoice.generalCandidates(Tome.ELEMENTS, Collections.emptyList(), BASE));
+        List<String> known = allInTier.subList(0, allInTier.size() - 2);
+        TomeChoice choice = TomeChoice.offer(Tome.ELEMENTS, null, known, new TomeChoice.Perks(3, 1, 8), rng);
 
         assertFalse(choice.canReroll(known));
         assertFalse(choice.reroll(known, rng));
@@ -114,13 +121,13 @@ public class TomeChoiceTest {
         altar.reset();
         DivinityManager.getInstance().addDivinities(1000);
 
-        assertEquals(new TomeChoice.Perks(3, 0, 7), altar.getTomeChoicePerks());
+        assertEquals(new TomeChoice.Perks(3, 0, 8), altar.getTomeChoicePerks());
         altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
-        assertEquals(new TomeChoice.Perks(4, 0, 7), altar.getTomeChoicePerks());
+        assertEquals(new TomeChoice.Perks(4, 0, 8), altar.getTomeChoicePerks());
         altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
-        assertEquals(new TomeChoice.Perks(4, 1, 7), altar.getTomeChoicePerks());
+        assertEquals(new TomeChoice.Perks(4, 1, 8), altar.getTomeChoicePerks());
         altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
-        assertEquals(new TomeChoice.Perks(5, 1, 8), altar.getTomeChoicePerks());
+        assertEquals(new TomeChoice.Perks(5, 1, 9), altar.getTomeChoicePerks());
 
         altar.reset();
     }

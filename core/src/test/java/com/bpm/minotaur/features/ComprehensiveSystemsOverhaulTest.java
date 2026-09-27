@@ -228,19 +228,19 @@ public class ComprehensiveSystemsOverhaulTest {
     }
 
     @Test
-    public void testArcaneAttunementUnsealsCircleWithoutGrantingASlot() {
+    public void testArcaneAttunementImprovesTomeChoiceWithoutGrantingASlot() {
         Player player = new Player(2, 2);
         DivinityManager.getInstance().addDivinities(100);
         ShelterAltar altar = ShelterAltar.getInstance();
+        altar.reset();
 
         int slotsBefore = player.getUnlockedSpellSlots();
-        assertTrue(altar.isSpellSealed("MAGIC_MISSILE"));
+        assertFalse("Spells are not hard-gate sealed", altar.isSpellSealed("MAGIC_MISSILE"));
 
         assertTrue(altar.purchaseUpgrade(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
-        assertEquals("Only Tomes unlock Spell Slots", slotsBefore, player.getUnlockedSpellSlots());
+        assertEquals("Altar upgrades do not grant slots directly", slotsBefore, player.getUnlockedSpellSlots());
         assertEquals(1, altar.getTier(ShelterAltar.Tree.ARCANE_ATTUNEMENT));
-        assertFalse("Circle 1 spells should unseal at Tier 1", altar.isSpellSealed("MAGIC_MISSILE"));
-        assertTrue("Circle 2 spells remain sealed at Tier 1", altar.isSpellSealed("MISTY_STEP"));
+        assertEquals(4, altar.getTomeChoicePerks().options());
     }
 
     // ── Component 6: Weather Survival Exposure ──────────────────────────────

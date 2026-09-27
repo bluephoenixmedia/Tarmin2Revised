@@ -30,9 +30,11 @@ public class LevelUpModal extends Table {
     private final HudSkin hudSkin;
     private final Label titleLabel;
     private final Label pointsLabel;
+    private final Label milestoneBannerLabel;
     private final Table attributesTable;
     private final TextButton doneBtn;
     private final TextButton openSkillTreeBtn;
+    private final TextButton openSpellbookBtn;
 
     private final Map<ShelterAltar.StatType, Label> statValueLabels = new HashMap<>();
     private final Map<ShelterAltar.StatType, TextButton> statAddButtons = new HashMap<>();
@@ -41,6 +43,7 @@ public class LevelUpModal extends Table {
     private GameEventManager activeEventManager;
     private SoundManager activeSoundManager;
     private Runnable onOpenSkillTree;
+    private Runnable onOpenSpellbook;
 
     private final Texture whitePixel;
 
@@ -58,7 +61,12 @@ public class LevelUpModal extends Table {
 
         titleLabel = new Label("LEVEL UP!", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         titleLabel.setAlignment(Align.center);
-        this.add(titleLabel).growX().padBottom(6).row();
+        this.add(titleLabel).growX().padBottom(4).row();
+
+        milestoneBannerLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+        milestoneBannerLabel.setAlignment(Align.center);
+        milestoneBannerLabel.setVisible(false);
+        this.add(milestoneBannerLabel).growX().padBottom(6).row();
 
         pointsLabel = new Label("Available Attribute Points: 0", new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
         pointsLabel.setAlignment(Align.center);
@@ -80,6 +88,14 @@ public class LevelUpModal extends Table {
             }
         });
 
+        openSpellbookBtn = new TextButton("SPELLBOOK [Q]", skillStyle);
+        openSpellbookBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                openSpellbook();
+            }
+        });
+
         TextButton.TextButtonStyle doneStyle = new TextButton.TextButtonStyle();
         doneStyle.font = hudSkin.getFontMain();
         doneStyle.fontColor = Color.WHITE;
@@ -94,11 +110,12 @@ public class LevelUpModal extends Table {
         });
 
         Table btnRow = new Table();
-        btnRow.add(openSkillTreeBtn).width(230).height(44).padRight(16);
-        btnRow.add(doneBtn).width(230).height(44);
+        btnRow.add(openSkillTreeBtn).width(180).height(44).padRight(12);
+        btnRow.add(openSpellbookBtn).width(180).height(44).padRight(12);
+        btnRow.add(doneBtn).width(180).height(44);
         this.add(btnRow).center().row();
 
-        this.setSize(640, 680);
+        this.setSize(660, 710);
         this.setVisible(false);
     }
 
@@ -106,10 +123,24 @@ public class LevelUpModal extends Table {
         this.onOpenSkillTree = onOpenSkillTree;
     }
 
+    public void setOnOpenSpellbook(Runnable onOpenSpellbook) {
+        this.onOpenSpellbook = onOpenSpellbook;
+    }
+
     public void openSkillTree() {
         close();
         if (onOpenSkillTree != null) {
             onOpenSkillTree.run();
+        }
+    }
+
+    public void openSpellbook() {
+        if (activePlayer != null && activePlayer.getStats().getUnallocatedAttributePoints() > 0) {
+            activePlayer.setPendingLevelUpModal(true);
+        }
+        close();
+        if (onOpenSpellbook != null) {
+            onOpenSpellbook.run();
         }
     }
 
@@ -121,6 +152,21 @@ public class LevelUpModal extends Table {
         if (player == null) {
             close();
             return;
+        }
+
+        int lvl = activePlayer.getLevel();
+        int slotUnlocked = 0;
+        if (lvl == 2) slotUnlocked = 2;
+        else if (lvl == 5) slotUnlocked = 3;
+        else if (lvl == 8) slotUnlocked = 4;
+        else if (lvl == 11) slotUnlocked = 5;
+
+        if (slotUnlocked > 0) {
+            milestoneBannerLabel.setText("★ SPELL SLOT " + slotUnlocked + " UNLOCKED! (Press [Q] to prepare spells)");
+            milestoneBannerLabel.setVisible(true);
+        } else {
+            milestoneBannerLabel.setText("");
+            milestoneBannerLabel.setVisible(false);
         }
 
         rebuildAttributeRows();
@@ -272,6 +318,9 @@ public class LevelUpModal extends Table {
                 return true;
             case Input.Keys.K:
                 openSkillTree();
+                return true;
+            case Input.Keys.Q:
+                openSpellbook();
                 return true;
             case Input.Keys.ESCAPE:
             case Input.Keys.ENTER:

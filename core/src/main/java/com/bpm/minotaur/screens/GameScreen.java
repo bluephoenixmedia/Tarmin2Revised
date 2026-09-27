@@ -1966,17 +1966,28 @@ public class GameScreen extends BaseScreen {
     private final com.badlogic.gdx.InputAdapter tomeStudyBreaker = new com.badlogic.gdx.InputAdapter() {
         @Override
         public boolean keyDown(int keycode) {
-            return breakTomeStudy();
+            if (player == null || player.getActiveTomeStudy() == null) {
+                return false;
+            }
+            if (keycode == Input.Keys.ESCAPE) {
+                return breakTomeStudy();
+            }
+            // General keys are ignored and consumed during channeled study
+            return true;
         }
 
         @Override
         public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        // The death cinematic owns the screen: a click must not drive gameplay mid-collapse.
-        if (isDying()) {
-            deathSequence.skip();
-            return true;
-        }
-            return breakTomeStudy();
+            // The death cinematic owns the screen: a click must not drive gameplay mid-collapse.
+            if (isDying()) {
+                deathSequence.skip();
+                return true;
+            }
+            if (player != null && player.getActiveTomeStudy() != null) {
+                // Mouse clicks are ignored during channeled study
+                return true;
+            }
+            return false;
         }
     };
 
@@ -2353,6 +2364,9 @@ public class GameScreen extends BaseScreen {
                         InventoryScreen invScreen = new InventoryScreen(game, this, player, maze,
                                 InventoryScreen.InventoryMode.NORMAL);
                         game.setScreen(invScreen);
+                        return true;
+                    case Input.Keys.Q:
+                        openSpellbook();
                         return true;
                     case Input.Keys.UP:
                         hud.combatMenu.navigateUp();
@@ -2954,10 +2968,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (keycode == SettingsManager.getInstance().getKey("SPELLBOOK")) {
-            if (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
-                    combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN) {
-                game.setScreen(new SpellbookScreen(game, this, player, maze));
-            }
+            openSpellbook();
             return true;
         }
 
@@ -3633,6 +3644,14 @@ public class GameScreen extends BaseScreen {
             game.setScreen(cookingScreen);
         } catch (Exception e) {
             Gdx.app.error("GameScreen", "Failed to open field cooking", e);
+        }
+    }
+
+    public void openSpellbook() {
+        if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN ||
+                combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU)) {
+            game.setScreen(new SpellbookScreen(game, this, player, maze));
         }
     }
 

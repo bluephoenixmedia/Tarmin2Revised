@@ -2462,6 +2462,17 @@ public class CombatManager {
         }
     }
 
+    public void consumePlayerTurn() {
+        if (currentState == CombatState.PLAYER_MENU || currentState == CombatState.PLAYER_TURN) {
+            tickReload();
+            processPlayerStatusEffects();
+            player.getStatusManager().updateTurn();
+            Gdx.app.log("CombatManager", "Player turn consumed. Monster's turn.");
+            currentState = CombatState.MONSTER_TURN;
+            monsterAttackDelay = MONSTER_ATTACK_DELAY_TIME;
+        }
+    }
+
     private void spawnCorpseEffects(Monster monster) {
         spawnCorpseEffects(monster, 0);
     }
