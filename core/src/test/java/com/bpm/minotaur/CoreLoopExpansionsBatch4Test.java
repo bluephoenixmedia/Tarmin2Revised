@@ -263,25 +263,33 @@ public class CoreLoopExpansionsBatch4Test {
     }
 
     @Test
-    public void testItem31_Chunk01ThemedAsBridgeOfSoulsWhenBossActive() {
+    public void testItem31_GuardianRoamsTheSurfaceAndNeverSealsAChunk() {
         DoomManager doom = DoomManager.getInstance();
         WorldManager wm = new WorldManager(null, null, 1, null, null, null, null, null, null);
 
-        doom.setBridgeBossActive(false);
-        ChunkTheme themeWithoutBoss = wm.getChunkTheme(new GridPoint2(0, 1), 1);
-        assertNotEquals(ChunkTheme.BRIDGE_OF_SOULS, themeWithoutBoss);
-
+        // The guardian is no longer a themed chunk. Themed chunks lock their
+        // gates on entry, and this boss is meant to roam and be fled from, so
+        // it must never bring a seal with it -- nor stand at a fixed address the
+        // player can learn.
         doom.setBridgeBossActive(true);
-        ChunkTheme themeWithBoss = wm.getChunkTheme(new GridPoint2(0, 1), 1);
-        assertEquals("Chunk (0, 1) on Level 1 must be themed as BRIDGE_OF_SOULS when boss is active",
-                ChunkTheme.BRIDGE_OF_SOULS, themeWithBoss);
+        assertNotEquals("An active guardian must not theme -- and therefore seal -- any chunk",
+                ChunkTheme.BRIDGE_OF_SOULS, wm.getChunkTheme(new GridPoint2(0, 1), 1));
+
+        // It stands somewhere on the surface, never in the shelter.
+        GridPoint2 seat = com.bpm.minotaur.gamedata.boss.BridgeBoss.chunkFor(12345L, 1);
+        assertNotEquals("The guardian must never stand in the shelter",
+                new GridPoint2(0, 0), seat);
+        assertTrue("It belongs on the surface only",
+                com.bpm.minotaur.gamedata.boss.BridgeBoss.isBossChunk(12345L, 1, 1, seat));
+        assertFalse("It must not follow the player underground",
+                com.bpm.minotaur.gamedata.boss.BridgeBoss.isBossChunk(12345L, 1, 2, seat));
 
         // Reset state
         doom.setBridgeBossActive(false);
     }
 
     @Test
-    public void testItem31_BridgeBossDefeatCuts30PercentIntegrity() {
+    public void testItem31_BridgeBossDefeatResetsIntegrityAndEscalatesNextSummon() {
         DoomManager doom = DoomManager.getInstance();
         doom.reset();
         for (int i = 0; i < 50; i++) {
@@ -294,9 +302,16 @@ public class CoreLoopExpansionsBatch4Test {
         doom.onBridgeBossDefeated();
 
         assertFalse("Bridge boss must be deactivated upon defeat", doom.isBridgeBossActive());
-        assertEquals("Deaths should be reduced by 15 (30% integrity)", 35, doom.getDeathCount());
-        assertEquals("Integrity should now be 70%", 70f, doom.getBridgeIntegrity(), 0.001f);
+        // Killing the guardian resets integrity outright rather than cutting it.
+        // The counterweight is that each summoning is harder than the last, so
+        // the 50-death cap still arrives over a long enough campaign.
+        assertEquals("Defeating the guardian resets the death count", 0, doom.getDeathCount());
+        assertEquals("Integrity should be back to 0%", 0f, doom.getBridgeIntegrity(), 0.001f);
         assertFalse(doom.isApocalypse());
+        assertTrue("The summoning must be counted, or the next boss is no harder",
+                doom.getBridgeBossSummons() >= 1);
+        assertTrue("The next summoning must be harder than the authored value",
+                doom.getBridgeBossHpBonus(120) >= 120);
     }
 
     @Test

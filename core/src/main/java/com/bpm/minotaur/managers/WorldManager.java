@@ -185,6 +185,73 @@ public class WorldManager {
     }
 
     /**
+     * Stands the bridge guardian in its chunk, if this is that chunk.
+     *
+     * <p>Not a themed champion: themed chunks lock their gates on entry, and
+     * this boss is meant to be fled from and chased. It is an ordinary monster
+     * carrying a flag, so every existing system -- pursuit, combat, saving --
+     * already knows what to do with it.
+     */
+    private void placeBridgeBossIfDue(Maze maze, GridPoint2 chunkId, int level) {
+        if (maze == null || chunkId == null) return;
+
+        DoomManager doom = DoomManager.getInstance();
+        if (!doom.isBridgeBossActive()) return;
+        if (!com.bpm.minotaur.gamedata.boss.BridgeBoss.isBossChunk(
+                worldSeed, doom.getBridgeBossSummons(), level, chunkId)) {
+            return;
+        }
+        for (com.bpm.minotaur.gamedata.monster.Monster existing : maze.getMonsters().values()) {
+            if (existing != null && existing.isBridgeBoss()) return; // already standing
+        }
+
+        GridPoint2 seat = findBossSeat(maze);
+        if (seat == null) {
+            Gdx.app.error("WorldManager", "Bridge boss chunk " + chunkId + " has nowhere to stand");
+            return;
+        }
+
+        com.bpm.minotaur.gamedata.monster.Monster boss = new com.bpm.minotaur.gamedata.monster.Monster(com.bpm.minotaur.gamedata.boss.BridgeBoss.TYPE,
+                seat.x, seat.y, com.bpm.minotaur.gamedata.monster.MonsterColor.RED,
+                this.dataManager, this.assetManager);
+        boss.setBridgeBoss(true);
+        boss.setMaxHP(boss.getMaxHP()
+                + doom.getBridgeBossHpBonus(com.bpm.minotaur.gamedata.boss.BridgeBoss.BASE_HP_BONUS));
+        boss.setCurrentHP(boss.getMaxHP());
+        boss.setMoveSpeed(com.bpm.minotaur.gamedata.boss.BridgeBoss.MOVE_SPEED);
+        if (boss.getScale() != null) {
+            // Exactly the renderer's width clamp, so all the height survives and
+            // the boss can be seen over the walls.
+            boss.getScale().set(com.bpm.minotaur.gamedata.boss.BridgeBoss.SCALE_X,
+                    com.bpm.minotaur.gamedata.boss.BridgeBoss.SCALE_Y);
+        }
+        boss.setState(com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING);
+        maze.addMonster(boss);
+
+        Gdx.app.log("WorldManager", "Bridge guardian stands in chunk " + chunkId + " at " + seat);
+    }
+
+    /** A walkable tile away from the edges, so the boss is not born in a doorway. */
+    private GridPoint2 findBossSeat(Maze maze) {
+        int cx = maze.getWidth() / 2;
+        int cy = maze.getHeight() / 2;
+        for (int radius = 0; radius < Math.max(maze.getWidth(), maze.getHeight()); radius++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dx = -radius; dx <= radius; dx++) {
+                    int x = cx + dx;
+                    int y = cy + dy;
+                    if (x < 1 || y < 1 || x >= maze.getWidth() - 1 || y >= maze.getHeight() - 1) continue;
+                    if (maze.isWall(x, y)) continue;
+                    if (maze.isHomeTile(x, y)) continue;
+                    if (maze.getMonsters().containsKey(new GridPoint2(x, y))) continue;
+                    return new GridPoint2(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Seed for a chunk's <em>appearance</em>: wall palette and RETRO theme.
      *
      * <p>Deliberately keyed on the real depth, never on effective difficulty.
@@ -470,6 +537,7 @@ public class WorldManager {
 
         newMaze.setGoreManager(this.goreManager);
         newMaze.setChunkId(chunkId);
+        placeBridgeBossIfDue(newMaze, chunkId, currentLevel);
 
         // Themed Chunk Decoration
         com.bpm.minotaur.generation.theme.ChunkTheme theme = getChunkTheme(chunkId, currentLevel);
@@ -1332,10 +1400,9 @@ public class WorldManager {
             return null; // Shelter chunk is never themed
         }
 
-        // Bridge of Souls Boss Chunk: spawns on adjacent chunk (0, 1) when Bridge Boss is active
-        if (level == 1 && chunkId.x == 0 && chunkId.y == 1 && DoomManager.getInstance().isBridgeBossActive()) {
-            return com.bpm.minotaur.generation.theme.ChunkTheme.BRIDGE_OF_SOULS;
-        }
+        // The bridge guardian used to be a themed chunk fixed at (0, 1), which
+        // sealed its gates on entry. It is a roaming monster now, placed by
+        // placeBridgeBossIfDue, so it is not themed at all.
 
         Biome chunkBiome = (biomeManager != null) ? biomeManager.getBiome(chunkId) : Biome.MAZE;
 
