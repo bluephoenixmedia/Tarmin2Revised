@@ -51,6 +51,7 @@ import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
+import com.bpm.minotaur.rendering.mesh.SurfaceTextureSet;
 import com.bpm.minotaur.rendering.mesh.WallTextureProvider;
 import com.bpm.minotaur.rendering.mesh.WorldMeshCache;
 import com.bpm.minotaur.rendering.MonsterDecalCompositor;
@@ -83,13 +84,14 @@ public class World3DRenderer implements Disposable {
     // Textures
     private final Texture wallTexture;
     private final WallTextureProvider wallVariantProvider;
+    private final SurfaceTextureSet floorTextureSet;
+    private final SurfaceTextureSet ceilingTextureSet;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
     private final Texture floorTexture;
     private final Texture forestFloorTexture;
     private final Texture ceilingTexture;
-    private final List<Texture> ceilingTextures = new ArrayList<>();
     private final Texture fluidTexture;
     private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
@@ -213,14 +215,20 @@ public class World3DRenderer implements Disposable {
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
-        for (int i = 1; i <= 8; i++) {
-            FileHandle fh = Gdx.files.internal("images/ceiling_" + i + ".jpg");
-            if (fh.exists()) {
-                Texture t = new Texture(fh);
-                t.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-                this.ceilingTextures.add(t);
-            }
-        }
+        // Index 0 is the default the weighting favours. floor.png exists;
+        // ceiling.png does not yet, and SurfaceTextureSet simply skips a missing
+        // file, so ceilings roll evenly across the eight variants until one is
+        // authored -- rather than falling back to the floor texture as before.
+        this.floorTextureSet = new SurfaceTextureSet(
+                "images/floor.png",
+                "images/floor_1.png", "images/floor_2.png", "images/floor_3.png",
+                "images/floor_4.png", "images/floor_5.png", "images/floor_6.png",
+                "images/floor_7.png", "images/floor_8.png");
+        this.ceilingTextureSet = new SurfaceTextureSet(
+                "images/ceiling.png",
+                "images/ceiling_1.jpg", "images/ceiling_2.jpg", "images/ceiling_3.jpg",
+                "images/ceiling_4.jpg", "images/ceiling_5.jpg", "images/ceiling_6.jpg",
+                "images/ceiling_7.jpg", "images/ceiling_8.jpg");
 
         FileHandle fluidFh = Gdx.files.internal("images/fluid_ripple.png");
         if (fluidFh.exists()) {
@@ -626,9 +634,10 @@ public class World3DRenderer implements Disposable {
                 forestWallTexture,
                 forestFloorTexture,
                 ceilingTexture,
-                ceilingTextures,
                 worldManager,
-                wallVariantProvider
+                wallVariantProvider,
+                floorTextureSet,
+                ceilingTextureSet
         );
 
         for (ChunkSubMesh subMesh : subMeshes) {
@@ -1798,6 +1807,8 @@ public class World3DRenderer implements Disposable {
         dynamicBatcher.dispose();
 
         if (wallVariantProvider != null) wallVariantProvider.dispose();
+        if (floorTextureSet != null) floorTextureSet.dispose();
+        if (ceilingTextureSet != null) ceilingTextureSet.dispose();
         wallTexture.dispose();
         if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
         doorTexture.dispose();
@@ -1805,10 +1816,6 @@ public class World3DRenderer implements Disposable {
         floorTexture.dispose();
         if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
         ceilingTexture.dispose();
-        for (Texture ct : ceilingTextures) {
-            if (ct != null) ct.dispose();
-        }
-        ceilingTextures.clear();
 
         if (fluidTexture != null && fluidTexture != blankTexture) {
             fluidTexture.dispose();

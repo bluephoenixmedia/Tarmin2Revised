@@ -64,14 +64,17 @@ public final class WallVariants {
 
     /**
      * The variant index, 0 to {@link #VARIANT_COUNT}-1, for one face of one tile.
+     *
+     * <p>Weighted toward the palette's default texture rather than flat: an even
+     * roll across six showed the standard masonry only a sixth of the time,
+     * which read as six walls rather than one wall with character.
      */
     public static int variantFor(long chunkSeed, int tileX, int tileY, int face) {
         long h = chunkSeed ^ WALL_STREAM;
         h ^= tileX * X_MIX;
         h ^= tileY * Y_MIX;
         h ^= face * FACE_MIX;
-        // floorMod, not %, because mix() is signed and % would bias toward 0.
-        return (int) Math.floorMod(mix(h), (long) VARIANT_COUNT);
+        return WeightedVariant.pick(mix(h), VARIANT_COUNT);
     }
 
     /**

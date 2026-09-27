@@ -70,11 +70,17 @@ public class WallVariantsTest {
                 }
             }
         }
-        int expected = total / WallVariants.VARIANT_COUNT;
-        for (int v = 0; v < counts.length; v++) {
-            // +/-25% of even. Generous, but it catches a hash that clumps.
-            assertTrue("Variant " + v + " appeared " + counts[v] + " times, expected near " + expected,
-                    counts[v] > expected * 0.75 && counts[v] < expected * 1.25);
+        // The default is deliberately dominant: 75%, with the remaining quarter
+        // split across the five alternatives at roughly 5% each.
+        double defaultShare = counts[0] / (double) total;
+        assertTrue("The default wall took " + String.format("%.1f%%", defaultShare * 100)
+                + ", expected ~75%", defaultShare > 0.72 && defaultShare < 0.78);
+
+        double expectedEach = total * 0.05;
+        for (int v = 1; v < counts.length; v++) {
+            assertTrue("Variant " + v + " appeared " + counts[v] + " times, expected near "
+                            + (int) expectedEach,
+                    counts[v] > expectedEach * 0.75 && counts[v] < expectedEach * 1.25);
         }
     }
 
@@ -92,9 +98,16 @@ public class WallVariantsTest {
                 compared++;
             }
         }
-        // With 6 variants, ~83% of neighbours should differ by chance.
+        // With the default weighted to 75%, two neighbours agree about 57% of the
+        // time simply because both are default, so ~43% should differ. The band
+        // still catches the real failure: a striping hash agrees ~100% of the
+        // time, and a hash ignoring position would sit at one extreme or other.
+        double differRate = differing / (double) compared;
         assertTrue("Only " + differing + "/" + compared + " horizontal neighbours differ -- hash is striping",
-                differing > compared * 0.7);
+                differRate > 0.30);
+        assertTrue(differing + "/" + compared + " neighbours differ -- more variety than the"
+                + " 75% default weighting allows, so the weighting is not being applied",
+                differRate < 0.55);
     }
 
     @Test
@@ -109,8 +122,14 @@ public class WallVariantsTest {
                 if (faces.size() > 1) tilesWithVariety++;
             }
         }
+        // All four faces land on the default about 32% of the time (0.75^4), so
+        // roughly two thirds of tiles should show some variety. Far above that
+        // means the weighting is not applied; far below means the faces are not
+        // being rolled independently.
         assertTrue("Faces of a tile are not varying independently (" + tilesWithVariety + "/900)",
-                tilesWithVariety > 800);
+                tilesWithVariety > 550);
+        assertTrue("Too much variety for a 75% default (" + tilesWithVariety + "/900)",
+                tilesWithVariety < 800);
     }
 
     @Test
