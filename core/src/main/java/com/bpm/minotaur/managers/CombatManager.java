@@ -534,9 +534,11 @@ public class CombatManager {
     }
 
     private boolean isBossMonster(Monster monster) {
-        if (monster == null || monster.getType() == null) return false;
+        if (monster == null) return false;
+        if (monster.isBridgeBoss() || monster.isThemeChampion()) return true;
+        if (monster.getType() == null) return false;
         String typeName = monster.getType().name();
-        return typeName.contains("MINOTAUR") || typeName.contains("LICH") || typeName.contains("VAMPIRE");
+        return typeName.contains("MINOTAUR") || typeName.contains("LICH") || typeName.contains("VAMPIRE") || typeName.contains("GOLEM");
     }
 
     public void playerMeleeStrike(Monster target) {
@@ -2807,6 +2809,10 @@ public class CombatManager {
             return;
         }
 
+        // Actionable monster turn: decay concussion resilience and stagger
+        monster.decrementStunImmunity();
+        monster.decrementStagger();
+
         // --- NEW: AI Decision Tree ---
         boolean actionTaken = false;
         MonsterTemplate.AiType ai = monster.getAiType();
@@ -3408,8 +3414,19 @@ public class CombatManager {
         if (isBludgeoning) {
             float stunChance = isCrit ? 0.80f : (isFinisher ? 0.55f : 0.25f);
             if (MathUtils.randomBoolean(stunChance)) {
-                monster.applyStun(1);
-                eventManager.addEvent(new GameEvent("CONCUSSION! " + monster.getMonsterType() + " is dazed and stunned!", 1.5f));
+                if (isBossMonster(monster)) {
+                    monster.applyStagger(1);
+                    eventManager.addEvent(new GameEvent("STAGGERED! " + monster.getMonsterType() + " resists concussion, but staggers (-2 AC)!", 1.5f));
+                } else if (monster.isStunned()) {
+                    eventManager.addEvent(new GameEvent(monster.getMonsterType() + " is already reeling!", 1.0f));
+                } else if (monster.isStunImmune()) {
+                    eventManager.addEvent(new GameEvent("RESIST! " + monster.getMonsterType() + " resists concussion!", 1.2f));
+                } else {
+                    boolean stunned = monster.applyStun(1);
+                    if (stunned) {
+                        eventManager.addEvent(new GameEvent("CONCUSSION! " + monster.getMonsterType() + " is dazed and stunned!", 1.5f));
+                    }
+                }
             }
         }
 

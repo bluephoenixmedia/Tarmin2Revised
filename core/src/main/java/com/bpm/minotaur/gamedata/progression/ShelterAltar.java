@@ -169,11 +169,24 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
         canCommune = true;
     }
 
+    private boolean debugAllUnlocked = false;
+
+    public boolean isDebugAllUnlocked() {
+        return debugAllUnlocked;
+    }
+
+    public void setDebugAllUnlocked(boolean debugAllUnlocked) {
+        this.debugAllUnlocked = debugAllUnlocked;
+        BiomePortal.DEBUG_UNLOCK_ALL = debugAllUnlocked;
+    }
+
     public boolean hasStation(Station station) {
+        if (debugAllUnlocked) return true;
         return unlockedStations.contains(station);
     }
 
     public boolean isSkillTreeUnlocked() {
+        if (debugAllUnlocked) return true;
         return hasStation(Station.TRAINING_DUMMY);
     }
 
@@ -211,6 +224,49 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
 
     public java.util.List<com.badlogic.gdx.math.GridPoint2> getStationLocations(Station station) {
         return stationLocations.getOrDefault(station, java.util.Collections.emptyList());
+    }
+
+    /**
+     * Materializes every shelter station into the current maze chunk.
+     * Used by the debug F5 sandbox toggle to instantiate all amenities in-place.
+     */
+    public void materialiseAllStations(com.bpm.minotaur.gamedata.Maze currentMaze,
+                                       com.bpm.minotaur.gamedata.item.ItemDataManager idm,
+                                       com.badlogic.gdx.assets.AssetManager am) {
+        if (currentMaze == null || idm == null || am == null) return;
+        for (Station station : Station.values()) {
+            java.util.List<com.badlogic.gdx.math.GridPoint2> points = stationLocations.get(station);
+            if (points == null) continue;
+            BiomePortal portal = BiomePortal.forStation(station);
+            if (portal != null) {
+                for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                    portal.materialise(currentMaze, pt, idm, am);
+                }
+                continue;
+            }
+            for (com.badlogic.gdx.math.GridPoint2 pt : points) {
+                if (currentMaze.getItems().containsKey(pt)) continue;
+                com.bpm.minotaur.gamedata.item.ItemColor color = (station == Station.LANTERN || station == Station.ARCHIVE_LECTERN)
+                        ? com.bpm.minotaur.gamedata.item.ItemColor.GOLD
+                        : com.bpm.minotaur.gamedata.item.ItemColor.TAN;
+                com.bpm.minotaur.gamedata.item.Item item = idm.createItem(station.getItemType(), pt.x, pt.y, color, am);
+                if (item != null) {
+                    currentMaze.addItem(item);
+                }
+                if (station == Station.CAMPFIRE) {
+                    currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_cook_pot",
+                            pt.x + 0.5f, pt.y + 0.5f,
+                            com.bpm.minotaur.lighting.LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f,
+                            com.bpm.minotaur.lighting.LightSource.FlickerProfile.CAMPFIRE_FLICKER));
+                } else if (station == Station.LANTERN) {
+                    currentMaze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + pt.x + "_" + pt.y,
+                            pt.x + 0.5f, pt.y + 0.5f,
+                            com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
+                            com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
+                            com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
+                }
+            }
+        }
     }
 
     public boolean unlockStation(Station station, com.bpm.minotaur.gamedata.Maze currentMaze,
@@ -329,6 +385,9 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     }
 
     public int getTier(Tree tree) {
+        if (debugAllUnlocked && tree != Tree.ASCENSION) {
+            return MAX_TIER;
+        }
         switch (tree) {
             case PROVISIONS: return provisionsTier;
             case REPERTOIRE: return repertoireTier;
@@ -435,6 +494,7 @@ public class ShelterAltar implements com.bpm.minotaur.managers.SlotScopedState {
     }
 
     public int getAscensionTier(StatType stat) {
+        if (debugAllUnlocked) return MAX_ASCENSION_TIER;
         return ascensionTiers.getOrDefault(stat, 0);
     }
 
