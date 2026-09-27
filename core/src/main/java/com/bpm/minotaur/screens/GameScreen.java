@@ -2125,9 +2125,24 @@ public class GameScreen extends BaseScreen {
             }
             if (gatePos != null) {
                 List<GridPoint2> toRemove = new ArrayList<>();
+
+                // The bridge guardian follows from anywhere in the chunk, and is
+                // never crowded out. Ordinary pursuit takes at most two monsters
+                // in HashMap order from within 8 tiles of the gate, so without
+                // this a boss chasing from across the chunk would simply be left
+                // behind, and two goblins could win its slot by luck.
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
+                    if (m != null && m.isBridgeBoss()) {
+                        pursuers.add(m);
+                        toRemove.add(entry.getKey());
+                    }
+                }
+
+                for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+                    Monster m = entry.getValue();
+                    if (m != null && !m.isBridgeBoss()
+                            && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
                             pursuers.add(m);

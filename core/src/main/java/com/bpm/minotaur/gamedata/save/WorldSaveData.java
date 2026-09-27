@@ -38,6 +38,16 @@ public class WorldSaveData {
         public int searchTurnsRemaining;
         public boolean isDescending;
         public boolean warned;
+        /**
+         * Preserved so a boss caught mid-chase by a save/quit comes back as the
+         * boss. Rebuilding uses the template constructor, which would otherwise
+         * return an ordinary monster of the same type.
+         */
+        public boolean bridgeBoss = false;
+        public int maxHP = 0;
+        public int moveSpeed = 0;
+        public float scaleX = 0f;
+        public float scaleY = 0f;
 
         public PendingPursuerSaveData() {}
     }

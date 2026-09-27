@@ -222,6 +222,14 @@ public class Monster implements Renderable {
     private int turnsSinceLastSeen = 0;
     private boolean isTagged = false; // Persistent minimap tracking
     private boolean themeChampion = false; // Designated champion of a themed chunk
+    /**
+     * The bridge guardian summoned when integrity reaches 100%.
+     *
+     * <p>Deliberately separate from {@link #themeChampion}: that flag is bound
+     * to the themed-chunk system, which locks the chunk's gates on entry. This
+     * boss roams and can be fled from, so it must not inherit the seal.
+     */
+    private boolean bridgeBoss = false;
     private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
 
     // Public constructor for unit testing combat mechanics without LibGDX asset loaders
@@ -1002,6 +1010,14 @@ public class Monster implements Renderable {
         this.themeChampion = themeChampion;
     }
 
+    public boolean isBridgeBoss() {
+        return bridgeBoss;
+    }
+
+    public void setBridgeBoss(boolean bridgeBoss) {
+        this.bridgeBoss = bridgeBoss;
+    }
+
     /**
      * True for objective-critical NPCs such as the Graveyard's Gravedigger.
      *
@@ -1092,6 +1108,11 @@ public class Monster implements Renderable {
 
     public void setBaseExperience(int exp) {
         this.baseExperience = exp;
+    }
+
+    /** Base speed before status effects; 12 matches the player. */
+    public int getMoveSpeed() {
+        return moveSpeed;
     }
 
     public void setMoveSpeed(int moveSpeed) {

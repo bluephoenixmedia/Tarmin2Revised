@@ -184,6 +184,19 @@ public class ChunkData {
 
         for (MonsterData data : monsters) {
             Monster monster = new Monster(data.type, data.x, data.y, data.color, dataManager, assetManager);
+            // Restore overrides before HP, so a boss keeps a sane HP ratio
+            // rather than carrying its bonus hit points against a template
+            // maximum. Older saves record 0 for these and keep the template's.
+            if (data.maxHP > 0) {
+                monster.setMaxHP(data.maxHP);
+            }
+            if (data.moveSpeed > 0) {
+                monster.setMoveSpeed(data.moveSpeed);
+            }
+            if (data.scaleX > 0f && data.scaleY > 0f && monster.getScale() != null) {
+                monster.getScale().set(data.scaleX, data.scaleY);
+            }
+            monster.setBridgeBoss(data.bridgeBoss);
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
             maze.addMonster(monster);
@@ -465,6 +478,21 @@ public class ChunkData {
         public int y;
         public int warStrength;
         public int spiritualStrength;
+        /**
+         * Identity that must survive a chunk unload.
+         *
+         * <p>Chunks are saved and rebuilt on every gate and every ladder, not
+         * just on quit, and rebuilding constructs a plain template monster. Any
+         * boss flag, scale override or hit-point bonus that lived only in memory
+         * evaporated the first time the player walked through a door, turning
+         * the bridge guardian back into an ordinary golem. Added fields default
+         * benignly on old saves.
+         */
+        public boolean bridgeBoss = false;
+        public float scaleX = 0f;
+        public float scaleY = 0f;
+        public int maxHP = 0;
+        public int moveSpeed = 0;
 
         public MonsterData() {
         }
@@ -476,6 +504,13 @@ public class ChunkData {
             this.y = (int) monster.getPosition().y;
             this.warStrength = monster.getWarStrength();
             this.spiritualStrength = monster.getSpiritualStrength();
+            this.bridgeBoss = monster.isBridgeBoss();
+            if (monster.getScale() != null) {
+                this.scaleX = monster.getScale().x;
+                this.scaleY = monster.getScale().y;
+            }
+            this.maxHP = monster.getMaxHP();
+            this.moveSpeed = monster.getMoveSpeed();
         }
     }
 

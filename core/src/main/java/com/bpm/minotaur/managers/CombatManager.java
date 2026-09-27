@@ -2655,6 +2655,18 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("METABOLIC TRIGGER: Night Hunter grants void ESP!", 2.0f));
         }
 
+        // Bridge guardian slain: integrity returns to zero and the next
+        // summoning will be stronger. This used to hang off the themed-chunk
+        // objective, which only fired for a sealed chunk; the boss roams now,
+        // so it keys off the monster itself.
+        if (monster != null && monster.isBridgeBoss()) {
+            DoomManager.getInstance().onBridgeBossDefeated();
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent(
+                        "THE BRIDGE GUARDIAN FALLS! The bridge holds. Integrity restored.", 5.0f));
+            }
+        }
+
         // Minotaur Defeat Check: Unlocks Classic Mode globally and Pact of Torment
         if (monster != null && monster.getType() == Monster.MonsterType.MINOTAUR) {
             SaveManager.getInstance().unlockClassicMode();

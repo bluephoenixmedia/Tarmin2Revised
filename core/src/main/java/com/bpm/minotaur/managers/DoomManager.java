@@ -23,6 +23,15 @@ public class DoomManager implements SlotScopedState {
     private int deathCount = 0;
     private boolean bridgeBossActive = false;
     private boolean apocalypseTriggered = false;
+    /**
+     * How many times the bridge boss has been summoned in this run.
+     *
+     * <p>Load-bearing, because killing the boss resets the death count to zero.
+     * With a fixed-difficulty boss that would permanently remove the 50-death
+     * cap for any player who can beat it once, and the apocalypse would become
+     * unreachable. Each summon makes the next fight harder instead.
+     */
+    private int bridgeBossSummons = 0;
 
     // --- Constants ---
     private static final int MAX_DEATHS_ALLOWED = 50; // The Hard Cap
@@ -72,6 +81,7 @@ public class DoomManager implements SlotScopedState {
                 // First time reaching 100% integrity (50 deaths):
                 // Instead of wiping the save, the Bringer of Death spawns!
                 this.bridgeBossActive = true;
+                this.bridgeBossSummons++;
                 if (Gdx.app != null) {
                     Gdx.app.log("DoomManager", "Bridge integrity reached 100%! Summoning Bridge Boss!");
                 }
@@ -88,6 +98,7 @@ public class DoomManager implements SlotScopedState {
         this.deathCount = 0;
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
         save();
     }
 
@@ -247,14 +258,40 @@ public class DoomManager implements SlotScopedState {
     /**
      * Slaying the Bridge Boss restores 30% bridge integrity (15 deaths) and deactivates the boss.
      */
+    /**
+     * The boss is dead: bridge integrity returns to zero.
+     *
+     * <p>A full reset, not a partial cut. The counterweight is
+     * {@link #getBridgeBossSummons()}: each victory makes the next summoning
+     * harder, so the cap reasserts itself over a long campaign rather than
+     * being removed by a single competent fight.
+     */
     public void onBridgeBossDefeated() {
         this.bridgeBossActive = false;
-        this.deathCount = Math.max(0, this.deathCount - 15);
+        this.deathCount = 0;
         this.apocalypseTriggered = false;
         save();
         if (Gdx.app != null) {
-            Gdx.app.log("DoomManager", "Bridge Boss defeated! Integrity cut by 30%. New deaths: " + deathCount);
+            Gdx.app.log("DoomManager", "Bridge Boss defeated! Integrity reset to 0. Summons so far: "
+                    + bridgeBossSummons);
         }
+    }
+
+    /** How many times the boss has been summoned; 1 during the first fight. */
+    public int getBridgeBossSummons() {
+        return bridgeBossSummons;
+    }
+
+    /**
+     * Extra champion hit points for this summoning.
+     *
+     * <p>The first fight uses the authored value; each later one adds half
+     * again, so a player who keeps resetting the bridge meets a boss that keeps
+     * outgrowing them.
+     */
+    public int getBridgeBossHpBonus(int baseHpBonus) {
+        int extraSummons = Math.max(0, bridgeBossSummons - 1);
+        return baseHpBonus + Math.round(baseHpBonus * 0.5f * extraSummons);
     }
 
     /**
@@ -286,6 +323,7 @@ public class DoomManager implements SlotScopedState {
             state.deathCount = this.deathCount;
             state.bridgeBossActive = this.bridgeBossActive;
             state.apocalypseTriggered = this.apocalypseTriggered;
+            state.bridgeBossSummons = this.bridgeBossSummons;
 
             file.writeString(json.prettyPrint(state), false);
             if (Gdx.app != null) {
@@ -308,6 +346,7 @@ public class DoomManager implements SlotScopedState {
                     this.deathCount = state.deathCount;
                     this.bridgeBossActive = state.bridgeBossActive;
                     this.apocalypseTriggered = state.apocalypseTriggered;
+                    this.bridgeBossSummons = state.bridgeBossSummons;
                     if (Gdx.app != null) {
                         Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount + " | BridgeBoss: " + bridgeBossActive);
                     }
@@ -329,6 +368,7 @@ public class DoomManager implements SlotScopedState {
         public int deathCount = 0;
         public boolean bridgeBossActive = false;
         public boolean apocalypseTriggered = false;
+        public int bridgeBossSummons = 0;
     }
 
     @Override
@@ -336,6 +376,7 @@ public class DoomManager implements SlotScopedState {
         this.deathCount = 0;
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
         resetExpeditionTurns();
         load();
     }
@@ -345,6 +386,7 @@ public class DoomManager implements SlotScopedState {
         this.deathCount = 0;
         this.bridgeBossActive = false;
         this.apocalypseTriggered = false;
+        this.bridgeBossSummons = 0;
         resetExpeditionTurns();
         save();
     }
