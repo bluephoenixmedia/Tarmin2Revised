@@ -284,6 +284,9 @@ public class ChunkData {
             if (data.corpseMonsterName != null) {
                 s.setCorpseMonsterName(data.corpseMonsterName);
             }
+            if (data.bonesData != null) {
+                s.setBonesData(data.bonesData);
+            }
             if (data.impassable != null) {
                 s.setImpassable(data.impassable);
             }
@@ -404,6 +407,15 @@ public class ChunkData {
         public boolean objectiveConsumed;
         public String corpseMonsterName;
         public Boolean impassable;
+        /**
+         * A dead hero's bones: ghost state, epitaph and grave loot.
+         *
+         * <p>Never persisted before. Chunks rebuild on every gate and ladder, so
+         * the data was lost almost immediately -- and because the interaction
+         * dispatch treated a corpse with no bones data as a monster carcass,
+         * real hero remains silently became butcherable meat.
+         */
+        public com.bpm.minotaur.gamedata.bones.BonesData bonesData;
 
         public SceneryData() {
         }
@@ -418,6 +430,7 @@ public class ChunkData {
             this.objectiveConsumed = s.isObjectiveConsumed();
             this.corpseMonsterName = s.getCorpseMonsterName();
             this.impassable = s.isImpassable();
+            this.bonesData = s.getBonesData();
         }
     }
 

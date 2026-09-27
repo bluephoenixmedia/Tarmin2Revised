@@ -23,7 +23,24 @@ public class Scenery implements Renderable {
          * switch arm here. Adding one enum value keeps every existing save
          * loading untouched, which replacing the enum would not.
          */
-        PROP
+        PROP,
+        /**
+         * What a slain monster leaves behind.
+         *
+         * <p>Separate from {@link #DECOMPOSING_CORPSE}, which is a dead hero's
+         * bones. The two shared one type, and "monster corpse" was defined as
+         * "a bones corpse whose bonesData happens to be null" -- so monsters
+         * inherited the hero corpse art, the ethereal ghost tint meant for
+         * sleeping bones, and, once bonesData failed to survive a save, real
+         * hero remains degraded into butcherable meat.
+         */
+        MONSTER_REMAINS,
+        /**
+         * A wet heap left where a monster was dismembered or obliterated.
+         *
+         * <p>A body torn apart must not leave an intact one lying on the floor.
+         */
+        GORE_PILE
     }
 
     private final SceneryType type;
@@ -79,6 +96,15 @@ public class Scenery implements Renderable {
                 this.impassable = true;
                 this.scale.set(1.0f, 0.55f); // Low lying skeletal remains billboard
                 this.pixelOffsetY = -50f; // Lowered by ~50 pixels to rest flat on the floor
+                break;
+            case MONSTER_REMAINS:
+            case GORE_PILE:
+                // Passable: a corridor kill must never wall the player in. The
+                // hero-bones case sets impassable and every monster spawn had to
+                // undo it immediately.
+                this.impassable = false;
+                this.scale.set(1.0f, 0.55f);
+                this.pixelOffsetY = -50f;
                 break;
             case BUSH:
                 this.impassable = false;
@@ -165,8 +191,14 @@ public class Scenery implements Renderable {
         return type == SceneryType.DECOMPOSING_CORPSE;
     }
 
+    /** Remains left by a slain monster, of either kind. */
+    public boolean isMonsterRemains() {
+        return type == SceneryType.MONSTER_REMAINS || type == SceneryType.GORE_PILE;
+    }
+
+    /** Anything the player can stand over and interact with as remains. */
     public boolean isCorpse() {
-        return isDecomposingCorpse();
+        return isDecomposingCorpse() || isMonsterRemains();
     }
 
     public String getCorpseMonsterName() {

@@ -86,6 +86,15 @@ public class World3DRenderer implements Disposable {
     private final WallTextureProvider wallVariantProvider;
     private final SurfaceTextureSet floorTextureSet;
     private final SurfaceTextureSet ceilingTextureSet;
+    private Texture bloodPoolTexture;
+
+    /** Darkened and drained of colour, so remains read as dead rather than idle. */
+    private static final Color CORPSE_TINT = new Color(0.42f, 0.36f, 0.34f, 1f);
+    private static final Color BLOOD_POOL_TINT = new Color(0.45f, 0.05f, 0.06f, 0.85f);
+    /** Squashed toward the floor; the sprite is an upright pose lying down. */
+    private static final float CORPSE_FLATTEN = 0.45f;
+    /** Widened as it flattens, so the body spreads rather than shrinking. */
+    private static final float CORPSE_SPREAD = 1.2f;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
@@ -229,6 +238,15 @@ public class World3DRenderer implements Disposable {
                 "images/ceiling_1.jpg", "images/ceiling_2.jpg", "images/ceiling_3.jpg",
                 "images/ceiling_4.jpg", "images/ceiling_5.jpg", "images/ceiling_6.jpg",
                 "images/ceiling_7.jpg", "images/ceiling_8.jpg");
+
+        for (String poolPath : new String[]{
+                "images/gore/blood_pool.png", "images/gore/gib1.png", "images/fluid_ripple.png"}) {
+            FileHandle poolFh = Gdx.files.internal(poolPath);
+            if (poolFh.exists()) {
+                this.bloodPoolTexture = new Texture(poolFh);
+                break;
+            }
+        }
 
         FileHandle fluidFh = Gdx.files.internal("images/fluid_ripple.png");
         if (fluidFh.exists()) {
@@ -1684,8 +1702,31 @@ public class World3DRenderer implements Disposable {
                     }
 
                     float feetY = 0.0f;
-                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE) {
+                    if (sc.getType() == Scenery.SceneryType.DECOMPOSING_CORPSE
+                            || sc.getType() == Scenery.SceneryType.MONSTER_REMAINS
+                            || sc.getType() == Scenery.SceneryType.GORE_PILE) {
                         feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
+                    }
+
+                    if (sc.getType() == Scenery.SceneryType.MONSTER_REMAINS
+                            || sc.getType() == Scenery.SceneryType.GORE_PILE) {
+                        // A monster corpse is the living sprite laid down, so it
+                        // needs work to stop reading as a monster standing in the
+                        // wrong place: rotate it onto its side, darken it, squash
+                        // it flat, and put blood under it.
+                        reg = new TextureRegion(reg);
+                        reg.flip(false, true);
+                        tint = CORPSE_TINT;
+                        sw = sw * CORPSE_SPREAD;
+                        sh = sh * CORPSE_FLATTEN;
+
+                        TextureRegion pool = (bloodPoolTexture != null)
+                                ? new TextureRegion(bloodPoolTexture) : null;
+                        if (pool != null) {
+                            dynamicBatcher.addBillboard(ex, 0.001f, wz, sw * 1.15f, sh * 0.5f,
+                                    pool, BLOOD_POOL_TINT, camRight, camUp, camDir);
+                            dynamicBatcher.flush(shader, bloodPoolTexture);
+                        }
                     }
 
                     dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
@@ -1807,6 +1848,7 @@ public class World3DRenderer implements Disposable {
         dynamicBatcher.dispose();
 
         if (wallVariantProvider != null) wallVariantProvider.dispose();
+        if (bloodPoolTexture != null) bloodPoolTexture.dispose();
         if (floorTextureSet != null) floorTextureSet.dispose();
         if (ceilingTextureSet != null) ceilingTextureSet.dispose();
         wallTexture.dispose();
