@@ -112,6 +112,10 @@ public class Hud implements Disposable {
     private final Label levelBadgeLabel;
     private final Label divinitiesLabel;
     private final Label doomLabel;
+    /** LEVELUP-10: "+n" over the portrait while attribute points are unspent. */
+    private Label unspentPointsBadge;
+    private Table unspentPointsChip;
+    private float unspentPulse;
     private final Label dayNightLabel;
     private final Label equippedWeaponLabel;
     private Label heldItemLabel;
@@ -352,6 +356,17 @@ public class Hud implements Disposable {
         levelBadgeTable.add(levelBadgeLabel).pad(2, 8, 2, 8);
         portraitCol.add(levelBadgeTable).padTop(4).row();
 
+        // LEVELUP-3: the badge used to read "LVL 2 [K: +3]", which is far wider than the 96-unit
+        // portrait column it sits under, so the unspent-point count was clipped off the left
+        // edge of the screen. LEVELUP-10: the count is the thing the player has to act on, so
+        // it gets its own chip that pulses until they spend it, and disappears when they have.
+        unspentPointsBadge = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_ON_GOLD));
+        unspentPointsChip = new Table();
+        unspentPointsChip.setBackground(hudSkin.getPrimaryButtonUp());
+        unspentPointsChip.add(unspentPointsBadge).pad(1, 6, 1, 6);
+        unspentPointsChip.setVisible(false);
+        portraitCol.add(unspentPointsChip).padTop(3).row();
+
         // One width for the whole column. The bars were pinned to 235 while the stat row beneath
         // them (compass + silhouette + four labels) was wider, so the block visibly overhung its
         // own bars -- the same fixed-width-versus-content failure the UX standard warns about.
@@ -366,12 +381,21 @@ public class Hud implements Disposable {
         Table vitalsSubRow = new Table();
         vitalsSubRow.add(compassMedallion).size(42, 42).padRight(8);
         vitalsSubRow.add(anatomicalSilhouetteWidget).size(36, 52).padRight(10);
+        // HUD-2 / LEVELUP-3: these four lines each ran wider than the ~200 units left after the
+        // compass and the silhouette, and a Label does not clip -- so "DOOM: 12 (45%) [BOSS
+        // ACTIVE]" and "9:38 AM [MORNING]" spilled sideways across their neighbours and into
+        // the weapon panel, which reads as the lines overprinting each other. Ellipsis plus a
+        // real cell width keeps each one on its own line inside the block.
+        dayNightLabel.setEllipsis(true);
+        divinitiesLabel.setEllipsis(true);
+        doomLabel.setEllipsis(true);
+        ammoLabel.setEllipsis(true);
         Table divDoomCol = new Table();
-        divDoomCol.add(dayNightLabel).left().row();
-        divDoomCol.add(divinitiesLabel).left().padTop(2).row();
-        divDoomCol.add(doomLabel).left().padTop(2).row();
-        divDoomCol.add(ammoLabel).left().padTop(2).row();
-        vitalsSubRow.add(divDoomCol).left().expandX().fillX().minWidth(0f);
+        divDoomCol.add(dayNightLabel).left().growX().row();
+        divDoomCol.add(divinitiesLabel).left().growX().padTop(2).row();
+        divDoomCol.add(doomLabel).left().growX().padTop(2).row();
+        divDoomCol.add(ammoLabel).left().growX().padTop(2).row();
+        vitalsSubRow.add(divDoomCol).left().growX().minWidth(0f);
 
         barsCol.add(vitalsSubRow).width(VITALS_WIDTH).left().row();
 
@@ -542,7 +566,7 @@ public class Hud implements Disposable {
         // ZONE 4: Chronicle Action Log (~650px)
         // ══════════════════════════════════════════════════════════════════
         chronicleZone.top().left();
-        Label chronicleHeader = new Label("[ CHRONICLE ]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        Label chronicleHeader = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         chronicleZone.add(chronicleHeader).left().padBottom(2).row();
 
         for (int i = 0; i < 5; i++) {
@@ -656,6 +680,12 @@ public class Hud implements Disposable {
 
         stage.addActor(mainContainer);
         stage.addActor(spellHotbarTable);
+
+        // HUD-1: the prompt used to sit at a hard-coded 208, which is inside the spell hotbar's
+        // own band, so a centred prompt covered the right-hand spell slots. It now rests one
+        // spacing step above whatever the hotbar's top edge turns out to be.
+        worldInteractionCard.setAnchorY(spellHotbarTable.getY() + spellHotbarTable.getHeight()
+                + com.bpm.minotaur.ui.UiTheme.PAD_MD);
         stage.addActor(dungeonTagTable);
         stage.addActor(statusPillBar);
         stage.addActor(hudTooltip);
@@ -819,12 +849,23 @@ public class Hud implements Disposable {
         mpBar.setValue(player.getCurrentMP(), player.getMaxMP());
         expBar.setValue(player.getExperience(), player.getStats().getExperienceToNextLevel());
         int unallocated = player.getStats().getUnallocatedAttributePoints() + player.getStats().getUnallocatedSkillPoints();
-        if (unallocated > 0) {
-            levelBadgeLabel.setText("LVL " + player.getLevel() + " [K: +" + unallocated + "]");
-            levelBadgeLabel.setColor(HudSkin.COL_GOLD_BRIGHT);
-        } else {
-            levelBadgeLabel.setText("LVL " + player.getLevel());
-            levelBadgeLabel.setColor(HudSkin.COL_GOLD_MUTED);
+        levelBadgeLabel.setText("LVL " + player.getLevel());
+        levelBadgeLabel.setColor(unallocated > 0 ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_GOLD_MUTED);
+
+        // LEVELUP-10: unspent points used to live in a clipped corner of the level badge. The
+        // chip sits under the portrait and pulses until they are spent, then goes away -- the
+        // player should not have to remember they owe themselves a decision.
+        if (unspentPointsChip != null) {
+            unspentPointsChip.setVisible(unallocated > 0);
+            if (unallocated > 0) {
+                unspentPointsBadge.setText("+" + unallocated);
+                unspentPulse += dt;
+                float pulse = 0.72f + 0.28f * (float) Math.sin(unspentPulse * 4f);
+                unspentPointsChip.setColor(1f, 1f, 1f, pulse);
+            } else {
+                unspentPulse = 0f;
+                unspentPointsChip.setColor(1f, 1f, 1f, 1f);
+            }
         }
 
         warStrengthValueLabel.setText(checkScramble(String.format("%d / %d", player.getCurrentHP(), player.getMaxHP())));
@@ -852,13 +893,13 @@ public class Hud implements Disposable {
         int deaths = doom.getDeathCount();
         float bridge = doom.getBridgeIntegrity();
         if (doom.isBridgeBossActive()) {
-            doomLabel.setText(String.format("DOOM: %d (%.0f%%) [BOSS ACTIVE]", deaths, bridge));
+            doomLabel.setText(String.format("DOOM %d - %.0f%% - BOSS", deaths, bridge));
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else if (bridge >= 90f) {
-            doomLabel.setText(String.format("DOOM: %d (%.0f%%) [IMM-BOSS]", deaths, bridge));
+            doomLabel.setText(String.format("DOOM %d - %.0f%% - BOSS SOON", deaths, bridge));
             doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
         } else {
-            doomLabel.setText(String.format("DOOM: %d (%.0f%%)", deaths, bridge));
+            doomLabel.setText(String.format("DOOM %d - %.0f%%", deaths, bridge));
             if (bridge >= 75f) {
                 doomLabel.setColor(HudSkin.COL_HP_CRITICAL);
             } else if (bridge >= 40f) {
@@ -1012,7 +1053,7 @@ public class Hud implements Disposable {
         if (worldManager != null && worldManager.getBiomeManager() != null) {
             GridPoint2 chunkId = worldManager.getCurrentPlayerChunkId();
             Biome b = worldManager.getBiomeManager().getBiome(chunkId);
-            if (b != null) biomeName = b.name();
+            if (b != null) biomeName = com.bpm.minotaur.ui.UiNames.caps(b);
         }
         dungeonLevelLabel.setText(checkScramble("DUNGEON LVL " + maze.getLevel() + " [" + biomeName + "]"));
         dungeonTagTable.pack();
@@ -1865,8 +1906,15 @@ public class Hud implements Disposable {
     private void updateWorldInteractionCard() {
         if (worldInteractionCard == null) return;
 
-        if (debugManager.isDebugOverlayVisible() ||
+        // LEVELUP-1 / HUD-1: this list named four things and the level-up overlay was not one
+        // of them, so a corpse's "[ E ] Loot Remains" card was drawn straight across the
+        // attribute list. Asking the input-context stack instead of naming overlays one by one
+        // means the next overlay added is covered without anyone remembering to come back here.
+        if (com.bpm.minotaur.ui.UiContexts.isAnyOpen() ||
+                debugManager.isDebugOverlayVisible() ||
                 (encounterWindow != null && encounterWindow.isVisible()) ||
+                (shopkeeperWindow != null && shopkeeperWindow.isVisible()) ||
+                (levelUpModal != null && levelUpModal.isVisible()) ||
                 (bonesAwakenModal != null && bonesAwakenModal.isVisible()) ||
                 (combatManager != null && combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE)) {
             worldInteractionCard.hide();

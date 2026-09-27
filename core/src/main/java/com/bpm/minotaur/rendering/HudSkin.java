@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextTooltip;
+import com.badlogic.gdx.scenes.scene2d.ui.TooltipManager;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -107,6 +110,8 @@ public class HudSkin implements Disposable {
     private Drawable tabActive;
     private Drawable tabInactive;
     private Drawable whitePixelDrawable;
+    private TextTooltip.TextTooltipStyle tooltipStyle;
+    private TooltipManager tooltipManager;
 
     // Textures for direct rendering or bars
     private Texture whitePixel;
@@ -723,6 +728,33 @@ public class HudSkin implements Disposable {
     public Drawable getScrim() { return scrim; }
     public Drawable getTabActive() { return tabActive; }
     public Drawable getTabInactive() { return tabInactive; }
+
+    /**
+     * The style for a hover tooltip on a truncated label or an icon-only control.
+     *
+     * <p>Wherever the spec says a name may be ellipsized or a state shown as an icon, the full
+     * text has to stay reachable -- two rings truncating to the same string is the chronicle's
+     * CHRON-2, and the inventory's unlabelled equipment slots are INV-5.
+     */
+    public TextTooltip.TextTooltipStyle getTooltipStyle() {
+        if (tooltipStyle == null) {
+            tooltipStyle = new TextTooltip.TextTooltipStyle(
+                    new Label.LabelStyle(getFontSmall(), UiTheme.TEXT), getTooltipBg());
+            tooltipStyle.wrapWidth = 420f;
+        }
+        return tooltipStyle;
+    }
+
+    /** Tooltip timing shared by every tooltip in the game, so they all behave the same. */
+    public TooltipManager getTooltipManager() {
+        if (tooltipManager == null) {
+            tooltipManager = new TooltipManager();
+            tooltipManager.initialTime = 0.35f;
+            tooltipManager.resetTime = 0.1f;
+            tooltipManager.animations = false;
+        }
+        return tooltipManager;
+    }
     public Texture getWhitePixel() { return whitePixel; }
     /** The white pixel as a drawable, for widgets that fill a rect inside their own draw(). */
     public Drawable getWhitePixelDrawable() {

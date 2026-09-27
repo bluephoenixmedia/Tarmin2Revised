@@ -20,6 +20,13 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
 import com.bpm.minotaur.managers.DivinityManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.HoldButton;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiTabs;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.List;
 
@@ -34,6 +41,12 @@ public class ShelterAltarScreen extends BaseScreen {
 
     public enum Tab { EXPANSION, BLESSINGS, SACRIFICE, ASCENSION }
 
+    /** One column of the three-up station and ascension grids, inside the screen's padding. */
+    private static final float CARD_W = 520f;
+
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "ALTAR";
+
     private final GameScreen parentScreen;
     private final Player player;
     private final HudSkin hudSkin;
@@ -45,10 +58,7 @@ public class ShelterAltarScreen extends BaseScreen {
 
     private Tab activeTab = Tab.EXPANSION;
     private Table bodyContainer;
-    private TextButton tabExpansionBtn;
-    private TextButton tabBlessingsBtn;
-    private TextButton tabSacrificeBtn;
-    private TextButton tabAscensionBtn;
+    private UiTabs tabs;
 
     // Blessings controls
     private Label provisionsTierLabel;
@@ -75,6 +85,7 @@ public class ShelterAltarScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
 
         buildUI();
     }
@@ -101,10 +112,15 @@ public class ShelterAltarScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         header.add(subtitle).center().padTop(4).row();
 
+        // ALTAR-1: the balance and the Commune button shared a row in which the button was
+        // pinned to 360 units. Its label needs more than that, and a TextButton does not clip,
+        // so the label ran out of both ends of the button -- over the balance on its left, and
+        // past its own border on its right. The button now sizes to its label and the two cells
+        // are separated by real padding instead of by luck.
         Table topActions = new Table();
         topActions.padTop(10);
-        divinityLabel = new Label("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
-        topActions.add(divinityLabel).padRight(30);
+        divinityLabel = UiLabels.ellipsized("", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+        topActions.add(divinityLabel).left().padRight(UiTheme.PAD_XXL);
 
         communeBtn = createActionButton("COMMUNE (REST & SAVE)");
         communeBtn.addListener(new ClickListener() {
@@ -113,23 +129,27 @@ public class ShelterAltarScreen extends BaseScreen {
                 performCommune();
             }
         });
-        topActions.add(communeBtn).width(360).height(44);
+        topActions.add(communeBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right();
         header.add(topActions).center().row();
 
         root.add(header).fillX().padBottom(16).row();
 
-        // --- TAB BAR ---
-        Table tabBar = new Table();
-        tabExpansionBtn = createTabButton("1. SHELTER EXPANSION", Tab.EXPANSION);
-        tabBlessingsBtn = createTabButton("2. BLESSINGS", Tab.BLESSINGS);
-        tabSacrificeBtn = createTabButton("3. SACRIFICE", Tab.SACRIFICE);
-        tabAscensionBtn = createTabButton("4. ALTAR OF ASCENSION", Tab.ASCENSION);
-
-        tabBar.add(tabExpansionBtn).width(270).height(48).padRight(10);
-        tabBar.add(tabBlessingsBtn).width(270).height(48).padRight(10);
-        tabBar.add(tabSacrificeBtn).width(270).height(48).padRight(10);
-        tabBar.add(tabAscensionBtn).width(300).height(48);
-        root.add(tabBar).left().padBottom(16).row();
+        // --- TAB BAR (ALTAR-2 / RC5) ---
+        // Four labels, four hard-coded widths, and the widest label was wider than its cell --
+        // so "SHELTER EXPANSION" overflowed into the next tab and rendered as
+        // "SHELTER EXPANSI|2.", eating its own name and picking up the neighbour's number.
+        // UiTabs gives the number its own keycap cell and sizes each tab to its label.
+        tabs = new UiTabs(hudSkin)
+                .addTab(1, "Shelter Expansion")
+                .addTab(2, "Blessings")
+                .addTab(3, "Sacrifice")
+                .addTab(4, "Altar of Ascension");
+        tabs.onSelect(index -> {
+            activeTab = Tab.values()[index];
+            refresh();
+        });
+        tabs.setSelectedSilently(activeTab.ordinal());
+        root.add(tabs).left().padBottom(16).row();
 
         // --- BODY CONTAINER ---
         bodyContainer = new Table();
@@ -139,11 +159,12 @@ public class ShelterAltarScreen extends BaseScreen {
         Table footer = new Table();
         footer.setBackground(hudSkin.getPanelBg());
         footer.pad(12, 20, 12, 20);
-        Label keyHints = new Label("[ESC] LEAVE ALTAR", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        footer.add(keyHints).left().expandX();
-        statusLabel = new Label("Approach and commune with the ancient stone.",
+        statusLabel = UiLabels.ellipsized("Approach and commune with the ancient stone.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-        footer.add(statusLabel).right();
+        footer.add(statusLabel).left().expandX();
+        footer.add(new KeyHintLegend(hudSkin)
+                .hint("1-4", "Tab")
+                .escapeHint("Leave altar")).right();
         root.add(footer).fillX();
 
         stage.addActor(root);
@@ -151,46 +172,14 @@ public class ShelterAltarScreen extends BaseScreen {
         refresh();
     }
 
-    private TextButton createTabButton(String label, Tab tab) {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontMain();
-        TextButton btn = new TextButton(label, style);
-        btn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                activeTab = tab;
-                refresh();
-            }
-        });
-        return btn;
-    }
-
-    private void updateTabStyles() {
-        setTabSelected(tabExpansionBtn, activeTab == Tab.EXPANSION);
-        setTabSelected(tabBlessingsBtn, activeTab == Tab.BLESSINGS);
-        setTabSelected(tabSacrificeBtn, activeTab == Tab.SACRIFICE);
-        setTabSelected(tabAscensionBtn, activeTab == Tab.ASCENSION);
-    }
-
-    private void setTabSelected(TextButton btn, boolean selected) {
-        TextButton.TextButtonStyle style = btn.getStyle();
-        if (selected) {
-            style.up = hudSkin.getPrimaryButtonDown();
-            style.down = hudSkin.getPrimaryButtonDown();
-            style.over = hudSkin.getPrimaryButtonDown();
-            style.fontColor = HudSkin.COL_GOLD_BRIGHT;
-        } else {
-            style.up = hudSkin.getPanelBg();
-            style.down = hudSkin.getPanelBg();
-            style.over = hudSkin.getSlotRecessed();
-            style.fontColor = HudSkin.COL_GOLD_MUTED;
-        }
-    }
-
     private void refresh() {
         ShelterAltar altar = ShelterAltar.getInstance();
         int divinities = DivinityManager.getInstance().getCurrentDivinities();
-        divinityLabel.setText(DivinityManager.DIVINITY_NAME + ": " + divinities);
+        // ALTAR-8: Crests of Valor were buried in a subheading on one tab, and the game said
+        // "Div", "Divinities" and "+1 Divinities" in three places. Both balances belong in the
+        // header, on every tab, and neither is wrong at one.
+        divinityLabel.setText(UiNames.plural(divinities, "Divinity", "Divinities")
+                + "   |   " + UiNames.plural(ShelterAltar.getInstance().getCrestsOfValor(), "Crest of Valor", "Crests of Valor"));
 
         // Commune Button status
         if (altar.canCommune()) {
@@ -201,7 +190,6 @@ public class ShelterAltarScreen extends BaseScreen {
             setButtonEnabled(communeBtn, false);
         }
 
-        updateTabStyles();
 
         bodyContainer.clear();
         switch (activeTab) {
@@ -242,29 +230,39 @@ public class ShelterAltarScreen extends BaseScreen {
                     new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
             card.add(nameLbl).left().padBottom(6).row();
 
-            Label descLbl = new Label(station.getDescription(),
+            Label descLbl = UiLabels.wrapping(station.getDescription(),
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-            descLbl.setWrap(true);
-            card.add(descLbl).width(480).left().padBottom(12).row();
+            card.add(descLbl).width(CARD_W - 32f).left().padBottom(12).row();
 
             boolean unlocked = altar.hasStation(station);
-            TextButton buildBtn;
             if (unlocked) {
-                buildBtn = createActionButton("[ CONSTRUCTED ]");
-                setButtonEnabled(buildBtn, false);
+                // ALTAR-11: "[ CONSTRUCTED ]" was a disabled button, which reads as something
+                // you failed to press. A built station is a state, so it gets a badge.
+                card.add(UiLabels.of("+ Constructed",
+                        new Label.LabelStyle(hudSkin.getFontMain(), UiTheme.SUCCESS))).left().row();
             } else {
-                buildBtn = createActionButton("BUILD (" + station.getCost() + " Div)");
-                setButtonEnabled(buildBtn, divinities >= station.getCost());
+                int cost = station.getCost();
+                boolean afford = divinities >= cost;
+                TextButton buildBtn = createActionButton("BUILD");
+                setButtonEnabled(buildBtn, afford);
                 buildBtn.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
                         purchaseStation(station);
                     }
                 });
+                card.add(buildBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left().row();
+                // ALTAR-5: every Build button used to sit live at zero Divinities, so pressing
+                // one taught the player nothing. The cost line says what it takes and, when
+                // they cannot pay, what they are short.
+                card.add(UiLabels.of(afford
+                                ? UiNames.plural(cost, "Divinity", "Divinities")
+                                : "Need " + cost + " - have " + divinities,
+                        new Label.LabelStyle(hudSkin.getFontSmall(), afford ? UiTheme.TEXT_DIM : UiTheme.DANGER)))
+                        .left().padTop(UiTheme.PAD_XS).row();
             }
-            card.add(buildBtn).width(260).height(44).left().row();
 
-            grid.add(card).width(520).pad(10);
+            grid.add(card).width(CARD_W).top().pad(10);
             if (grid.getChildren().size % 3 == 0) {
                 grid.row();
             }
@@ -329,8 +327,8 @@ public class ShelterAltarScreen extends BaseScreen {
                 purchaseTree(ShelterAltar.Tree.PROVISIONS);
             }
         });
-        provisionsCard.add(provisionsBtn).width(320).height(52).padTop(16).row();
-        body.add(provisionsCard).width(380).expandY().fillY().padRight(20);
+        provisionsCard.add(provisionsBtn).growX().height(UiTheme.BUTTON_H).padTop(16).row();
+        body.add(provisionsCard).grow().padRight(20);
 
         Table repertoireCard = buildTreeCard("REPERTOIRE",
                 "Unseals advanced weaponry -- Composite Bows, Heavy Crossbows, Warhammers, and Morning Stars -- directly into the Stash Chest.");
@@ -343,8 +341,8 @@ public class ShelterAltarScreen extends BaseScreen {
                 purchaseTree(ShelterAltar.Tree.REPERTOIRE);
             }
         });
-        repertoireCard.add(repertoireBtn).width(320).height(52).padTop(16).row();
-        body.add(repertoireCard).width(380).expandY().fillY().padRight(20);
+        repertoireCard.add(repertoireBtn).growX().height(UiTheme.BUTTON_H).padTop(16).row();
+        body.add(repertoireCard).grow().padRight(20);
 
         Table monumentCard = buildTreeCard("MONUMENT",
                 "Raises the frequency of statue encounter events from a 15% baseline up to 35% per chunk.");
@@ -357,8 +355,8 @@ public class ShelterAltarScreen extends BaseScreen {
                 purchaseTree(ShelterAltar.Tree.MONUMENT);
             }
         });
-        monumentCard.add(monumentBtn).width(320).height(52).padTop(16).row();
-        body.add(monumentCard).width(380).expandY().fillY().padRight(20);
+        monumentCard.add(monumentBtn).growX().height(UiTheme.BUTTON_H).padTop(16).row();
+        body.add(monumentCard).grow().padRight(20);
 
         Table arcaneCard = buildTreeCard("ARCANE ATTUNEMENT",
                 "Unseals higher spell circles into scroll loot and widens every Tome Choice: "
@@ -372,8 +370,8 @@ public class ShelterAltarScreen extends BaseScreen {
                 purchaseTree(ShelterAltar.Tree.ARCANE_ATTUNEMENT);
             }
         });
-        arcaneCard.add(arcaneBtn).width(320).height(52).padTop(16).row();
-        body.add(arcaneCard).width(380).expandY().fillY();
+        arcaneCard.add(arcaneBtn).growX().height(UiTheme.BUTTON_H).padTop(16).row();
+        body.add(arcaneCard).grow();
 
         refreshTree(altar, ShelterAltar.Tree.PROVISIONS, provisionsTierLabel, provisionsBtn, divinities);
         refreshTree(altar, ShelterAltar.Tree.REPERTOIRE, repertoireTierLabel, repertoireBtn, divinities);
@@ -392,9 +390,11 @@ public class ShelterAltarScreen extends BaseScreen {
         Label nameLbl = new Label(name, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         card.add(nameLbl).left().padBottom(10).row();
 
-        Label descLbl = new Label(description, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        descLbl.setWrap(true);
-        card.add(descLbl).width(320).left().row();
+        // ALTAR-3: the description was pinned to 320 inside a card the caller sized to 380,
+        // and the upgrade button below it was pinned to 320 while its label needed more. Both
+        // now take the width the card actually has.
+        Label descLbl = UiLabels.wrapping(description, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        card.add(descLbl).growX().left().row();
 
         return card;
     }
@@ -503,25 +503,43 @@ public class ShelterAltarScreen extends BaseScreen {
                 row.setBackground(hudSkin.getSlotRecessed());
                 row.pad(10, 16, 10, 16);
 
-                Label nameLbl = new Label(com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName()), new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
-                row.add(nameLbl).width(400).left();
+                Label nameLbl = UiLabels.ellipsized(
+                        com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName()),
+                        new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT));
+                row.add(nameLbl).width(480).left();
 
-                String rarity = (item.getItemColor() != null) ? item.getItemColor().name() : "COMMON";
-                Label rarityLbl = new Label("[" + rarity + "]", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE));
-                row.add(rarityLbl).width(160).left();
+                // ALTAR-7/ALTAR-9: this column printed the ItemColor constant in brackets --
+                // "[TAN]" -- which is the colour of the sprite, not a rarity, and told the
+                // player nothing about what they were about to burn. ItemColor already carries
+                // the power tier as a word; that is the thing worth showing.
+                ItemColor color = item.getItemColor();
+                String rarity = (color != null) ? color.getPowerLevel() : "Regular";
+                Label rarityLbl = UiLabels.ellipsized(rarity,
+                        new Label.LabelStyle(hudSkin.getFontSmall(),
+                                color != null ? color.getColor() : HudSkin.COL_GOLD_ANTIQUE));
+                row.add(rarityLbl).width(200).left();
 
-                Label valLbl = new Label("+" + yield + " Divinities", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-                row.add(valLbl).width(200).left();
+                Label valLbl = UiLabels.ellipsized("+" + UiNames.plural(yield, "Divinity", "Divinities"),
+                        new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+                row.add(valLbl).width(260).left();
 
-                TextButton sacBtn = createActionButton("SACRIFICE");
-                setButtonEnabled(sacBtn, true);
-                sacBtn.addListener(new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        performSacrifice(item, yield);
-                    }
-                });
-                row.add(sacBtn).width(160).height(40).right();
+                // ALTAR-7: burning real gear used to take one click, alongside ten other gold
+                // buttons that burned junk. Gear is held; junk is clicked.
+                if (isGear(item)) {
+                    HoldButton sacBtn = new HoldButton("HOLD TO SACRIFICE", hudSkin,
+                            () -> performSacrifice(item, yield));
+                    row.add(sacBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right().expandX();
+                } else {
+                    TextButton sacBtn = createActionButton("SACRIFICE");
+                    setButtonEnabled(sacBtn, true);
+                    sacBtn.addListener(new ClickListener() {
+                        @Override
+                        public void clicked(InputEvent event, float x, float y) {
+                            performSacrifice(item, yield);
+                        }
+                    });
+                    row.add(sacBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right().expandX();
+                }
 
                 list.add(row).fillX().padBottom(8).row();
             }
@@ -532,12 +550,35 @@ public class ShelterAltarScreen extends BaseScreen {
         bodyContainer.add(scroll).expand().fill();
     }
 
+    /**
+     * Whether an item is equipment rather than spoil.
+     *
+     * <p>Only the answer to "does destroying this hurt" -- it decides between a click and a
+     * hold, nothing else.
+     */
+    private static boolean isGear(Item item) {
+        if (item == null || item.getCategory() == null) {
+            return false;
+        }
+        switch (item.getCategory()) {
+            case WAR_WEAPON:
+            case SPIRITUAL_WEAPON:
+            case ARMOR:
+            case RING:
+            case AMULET:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private void performSacrifice(Item item, int yield) {
         ShelterAltar altar = ShelterAltar.getInstance();
         String name = com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName());
         boolean ok = altar.sacrificeItem(player, item);
         if (ok) {
-            statusLabel.setText("The altar consumes " + name + " in holy flame, releasing " + yield + " Divinities!");
+            statusLabel.setText("The altar consumes " + name + " in holy flame, releasing "
+                    + UiNames.plural(yield, "Divinity", "Divinities") + "!");
             if (parentScreen.getSoundManager() != null) {
                 parentScreen.getSoundManager().playCoins();
             }
@@ -609,7 +650,7 @@ public class ShelterAltarScreen extends BaseScreen {
             Label descLbl = new Label(stat.getDescription(),
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             descLbl.setWrap(true);
-            card.add(descLbl).width(440).left().padBottom(8).row();
+            card.add(descLbl).width(CARD_W - 28f).left().padBottom(8).row();
 
             int tier = altar.getAscensionTier(stat);
             Label tierLbl = new Label("Tier: " + tier + " / " + ShelterAltar.MAX_ASCENSION_TIER + " (+" + tier + " Permanent " + stat.getDisplayName() + ")",
@@ -619,10 +660,12 @@ public class ShelterAltarScreen extends BaseScreen {
             int cost = altar.getAscensionCost(stat);
             TextButton buyBtn;
             if (tier >= ShelterAltar.MAX_ASCENSION_TIER) {
-                buyBtn = createActionButton("[ FULLY ASCENDED ]");
+                buyBtn = createActionButton("FULLY ASCENDED");
                 setButtonEnabled(buyBtn, false);
             } else {
-                buyBtn = createActionButton("ASCEND (+1) -- " + cost + " Crest" + (cost > 1 ? "s" : ""));
+                // ALTAR-4: this label is long and the cell it sat in was 360, so the text
+                // started outside the button and crossed both of its borders.
+                buyBtn = createActionButton("ASCEND +1  (" + UiNames.plural(cost, "Crest") + ")");
                 setButtonEnabled(buyBtn, altar.canAscend(stat));
                 buyBtn.addListener(new ClickListener() {
                     @Override
@@ -634,9 +677,9 @@ public class ShelterAltarScreen extends BaseScreen {
                     }
                 });
             }
-            card.add(buyBtn).width(360).height(40).left().row();
+            card.add(buyBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left().row();
 
-            grid.add(card).width(480).pad(8);
+            grid.add(card).width(CARD_W).top().pad(8);
             col++;
             if (col % 2 == 0) {
                 grid.row();
@@ -675,7 +718,13 @@ public class ShelterAltarScreen extends BaseScreen {
             closeAltar();
             return true;
         }
-        return false;
+        // The tabs advertise 1-4 on their keycaps, so the keys have to work.
+        return tabs != null && tabs.handleKey(keycode);
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     @Override
