@@ -228,18 +228,20 @@ public class World3DRenderer implements Disposable {
         this.ceilingTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
         // Index 0 is the default the weighting favours, and the set reports
-        // whether that first file actually loaded. floor.png exists, so floors
-        // are weighted 75/25. ceiling.png does not, so ceilings roll evenly
-        // across the eight variants -- weighting an arbitrary survivor to 75%
-        // would be worse than no default -- and switch to weighted the moment a
-        // ceiling.png is added, with no code change.
+        // whether that first file actually loaded. Both defaults exist, so both
+        // surfaces are weighted 75/25.
         this.floorTextureSet = new SurfaceTextureSet(
                 "images/floor.png",
                 "images/floor_1.png", "images/floor_2.png", "images/floor_3.png",
                 "images/floor_4.png", "images/floor_5.png", "images/floor_6.png",
                 "images/floor_7.png", "images/floor_8.png");
+        // The ceiling default is the standard WALL texture, not a ceiling image:
+        // a dungeon ceiling is the same masonry seen from below. The authored
+        // ceiling_N images are the 25% that breaks it up. There is no
+        // ceiling.png, and promoting ceiling_1.jpg to the default put one
+        // arbitrary image on three quarters of every dungeon ceiling.
         this.ceilingTextureSet = new SurfaceTextureSet(
-                "images/ceiling.png",
+                "images/wall.png",
                 "images/ceiling_1.jpg", "images/ceiling_2.jpg", "images/ceiling_3.jpg",
                 "images/ceiling_4.jpg", "images/ceiling_5.jpg", "images/ceiling_6.jpg",
                 "images/ceiling_7.jpg", "images/ceiling_8.jpg");
