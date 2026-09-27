@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -60,6 +61,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private final List<TextButton> menuButtons = new ArrayList<>();
     private int selectedButtonIndex = 0;
     private boolean hasSave = false;
+
+    // 3D Flyover Attract Mode Renderer
+    private com.bpm.minotaur.rendering.attract.AttractModeRenderer attractModeRenderer;
+    private Table rootTable;
 
     // Cooldown timer to prevent accidental immediate screen transitions
     private float inputCooldown = 0.2f;
@@ -109,6 +114,9 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         inputCooldown = 0.25f;
 
         modernBackground = new Texture(Gdx.files.internal("images/tarmin_title.png"));
+
+        // Initialize 3D Flyover Attract Mode Renderer
+        attractModeRenderer = new com.bpm.minotaur.rendering.attract.AttractModeRenderer();
 
         // Generate procedural UI textures for sleek button backgrounds
         createButtonTextures();
@@ -161,9 +169,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         stage.clear();
         menuButtons.clear();
 
-        Table root = new Table();
-        root.setFillParent(true);
-        root.center();
+        boolean isModern = (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN);
+
+        rootTable = new Table();
+        rootTable.setFillParent(true);
 
         Table buttonTable = new Table();
 
@@ -204,38 +213,63 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             continueLabel = "CONTINUE: SLOT " + recentSlot + " (LVL " + meta.level + " " + meta.characterClass + ")";
         }
 
+        float btnWidth = isModern ? 460f : 500f;
+        float btnHeight = isModern ? 50f : 54f;
+        float padB = isModern ? 12f : 14f;
+
         final TextButton continueBtn = new TextButton(continueLabel, hasSave ? continueStyle : defaultStyle);
         continueBtn.setDisabled(!hasSave);
         setupButton(continueBtn, 0);
-        buttonTable.add(continueBtn).minWidth(500).height(54).padBottom(14).row();
+        buttonTable.add(continueBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(continueBtn);
 
         // 2. LOAD GAME BUTTON
         final TextButton loadBtn = new TextButton("LOAD EXPEDITION (L)", defaultStyle);
         setupButton(loadBtn, 1);
-        buttonTable.add(loadBtn).minWidth(500).height(54).padBottom(14).row();
+        buttonTable.add(loadBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(loadBtn);
 
         // 3. NEW GAME BUTTON
         final TextButton newGameBtn = new TextButton("NEW EXPEDITION (N)", defaultStyle);
         setupButton(newGameBtn, 2);
-        buttonTable.add(newGameBtn).minWidth(500).height(54).padBottom(14).row();
+        buttonTable.add(newGameBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(newGameBtn);
 
         // 4. SETTINGS BUTTON
         final TextButton settingsBtn = new TextButton("SETTINGS (S)", defaultStyle);
         setupButton(settingsBtn, 3);
-        buttonTable.add(settingsBtn).minWidth(500).height(54).padBottom(14).row();
+        buttonTable.add(settingsBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(settingsBtn);
 
         // 5. QUIT BUTTON
         final TextButton exitBtn = new TextButton("QUIT TO DESKTOP (ESC)", defaultStyle);
         setupButton(exitBtn, 4);
-        buttonTable.add(exitBtn).minWidth(500).height(54).row();
+        buttonTable.add(exitBtn).minWidth(btnWidth).height(btnHeight).row();
         menuButtons.add(exitBtn);
 
-        root.add(buttonTable).padTop(240).row();
-        stage.addActor(root);
+        if (isModern) {
+            // Modern Mode: Left-aligned column framing the 3D flyover vista
+            rootTable.left().top().padLeft(70).padTop(50);
+
+            Table titleTable = new Table();
+            titleTable.left();
+            Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, INTV_WHITE);
+            Label titleLabel = new Label("TARMIN II", titleStyle);
+            titleTable.add(titleLabel).left().row();
+
+            Label.LabelStyle subtitleStyle = new Label.LabelStyle(buttonFont, INTV_YELLOW);
+            Label subtitleLabel = new Label("CHRONICLES OF CASTLE TARMIN", subtitleStyle);
+            titleTable.add(subtitleLabel).left().padTop(4).padBottom(26).row();
+
+            rootTable.add(titleTable).left().row();
+            rootTable.add(buttonTable).left().row();
+        } else {
+            // Retro Mode: Centered column under authentic 1982 header
+            rootTable.center();
+            rootTable.add(buttonTable).padTop(240).row();
+        }
+
+        stage.addActor(rootTable);
 
         // Default selection: Continue if save exists, else New Game
         selectedButtonIndex = hasSave ? 0 : 2;
@@ -303,8 +337,27 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         }
     }
 
-    private void triggerButton(int index) {
+    private void triggerButton(final int index) {
         if (inputCooldown > 0) return;
+        if (attractModeRenderer != null && attractModeRenderer.getController().isDiving()) return;
+
+        // If launching expedition in Modern mode, trigger dramatic gate dive
+        if ((index == 0 || index == 1 || index == 2)
+                && attractModeRenderer != null
+                && debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
+            attractModeRenderer.startExpeditionDive(new Runnable() {
+                @Override
+                public void run() {
+                    executeButtonAction(index);
+                }
+            });
+            return;
+        }
+
+        executeButtonAction(index);
+    }
+
+    private void executeButtonAction(int index) {
         switch (index) {
             case 0: // CONTINUE
                 final int recentSlot = SaveManager.getInstance().getMostRecentOccupiedSlot();
@@ -341,24 +394,47 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         game.getViewport().apply();
 
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
-            // Modern Visual Mode
-            ScreenUtils.clear(Color.BLACK);
-            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
-            game.getBatch().begin();
-            game.getBatch().draw(modernBackground, 0, 0, targetWidth, targetHeight);
-            game.getBatch().end();
+            // Modern Visual Mode: 3D Flyover Attract Mode
+            if (attractModeRenderer != null) {
+                attractModeRenderer.update(delta);
+                attractModeRenderer.render(game.getViewport());
+            } else {
+                ScreenUtils.clear(Color.BLACK);
+                game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+                game.getBatch().begin();
+                game.getBatch().draw(modernBackground, 0, 0, targetWidth, targetHeight);
+                game.getBatch().end();
+            }
+
+            // Sync Stage opacity with AttractController UI alpha
+            float uiAlpha = (attractModeRenderer != null) ? attractModeRenderer.getController().getUiAlpha() : 1.0f;
+            if (rootTable != null) {
+                rootTable.getColor().a = uiAlpha;
+            }
 
             // Render Stage UI Buttons
             stage.act(delta);
             stage.draw();
 
             // Bottom status / hint bar
-            game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
-            game.getBatch().begin();
-            regularFont.setColor(INTV_WHITE);
-            String modeStr = "F2: RETRO VIEW  |  M: MODE [" + selectedGameMode.name() + "]  |  UP/DOWN/ENTER: NAVIGATE";
-            drawCenteredText(regularFont, modeStr, targetHeight * 0.05f);
-            game.getBatch().end();
+            if (uiAlpha > 0.05f) {
+                game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+                game.getBatch().begin();
+                regularFont.setColor(INTV_WHITE.r, INTV_WHITE.g, INTV_WHITE.b, uiAlpha);
+                String modeStr = "F2: RETRO VIEW  |  M: MODE [" + selectedGameMode.name() + "]  |  UP/DOWN/ENTER: NAVIGATE";
+                drawCenteredText(regularFont, modeStr, targetHeight * 0.05f);
+                game.getBatch().end();
+            }
+
+            // When idle attract mode is active, render soft pulsing watermark prompt
+            if (uiAlpha < 0.25f) {
+                float pulse = (float) Math.sin(animationTimer * 2.8f) * 0.25f + 0.55f;
+                game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+                game.getBatch().begin();
+                regularFont.setColor(INTV_YELLOW.r, INTV_YELLOW.g, INTV_YELLOW.b, pulse * (1.0f - uiAlpha));
+                drawCenteredText(regularFont, "PRESS ANY KEY TO ENTER", targetHeight * 0.08f);
+                game.getBatch().end();
+            }
 
         } else {
             // Classic 1982 Intellivision Visual Mode
@@ -413,10 +489,19 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         font.draw(game.getBatch(), text, x, y);
     }
 
+    private void onUserInput() {
+        if (attractModeRenderer != null) {
+            attractModeRenderer.getController().notifyInputReceived();
+        }
+    }
+
     @Override
     public boolean keyDown(int keycode) {
+        onUserInput();
+
         if (keycode == Input.Keys.F2) {
             debugManager.toggleRenderMode();
+            buildMenuUI();
             return true;
         } else if (keycode == Input.Keys.M) {
             selectedGameMode = (selectedGameMode == GameMode.CLASSIC) ? GameMode.ADVANCED : GameMode.CLASSIC;
@@ -491,6 +576,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
 
     @Override
     public void dispose() {
+        if (attractModeRenderer != null) {
+            attractModeRenderer.dispose();
+            attractModeRenderer = null;
+        }
         if (stage != null) stage.dispose();
         if (titleFont != null) titleFont.dispose();
         if (regularFont != null) regularFont.dispose();
@@ -502,13 +591,28 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         if (buttonBgDisabled != null) buttonBgDisabled.dispose();
     }
 
-    // --- Unused InputProcessor methods ---
-    @Override public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
+    // --- InputProcessor wake-up bindings ---
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        onUserInput();
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        onUserInput();
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        onUserInput();
+        return false;
+    }
+
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }
     @Override public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
     @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
-    @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
-    @Override public boolean scrolled(float amountX, float amountY) { return false; }
 }
