@@ -73,7 +73,7 @@ public class SettingsScreen extends BaseScreen {
 
         // 1. Difficulty
         card.add(new Label("Difficulty", labelStyle)).left().padRight(40).padBottom(16);
-        difficultyButton = new TextButton(settingsManager.getDifficulty().name(), btnStyle);
+        difficultyButton = new TextButton(com.bpm.minotaur.ui.UiNames.of(settingsManager.getDifficulty()), btnStyle);
         difficultyButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -91,7 +91,15 @@ public class SettingsScreen extends BaseScreen {
                 toggleGameMode();
             }
         });
-        card.add(modeButton).minWidth(240).height(48).padBottom(16).row();
+        card.add(modeButton).minWidth(240).height(48).padBottom(2).row();
+        // TITLE-8: the title screen used to advertise "M: MODE [ADVANCED]" with nothing
+        // anywhere saying what a mode is. The toggle belongs here, and here it can explain
+        // itself.
+        Label modeHelp = com.bpm.minotaur.ui.UiLabels.wrapping(
+                "Advanced uses the modern rules and the 3D view. Original plays by the 1982 "
+                        + "cartridge's rules, in its palette.",
+                com.bpm.minotaur.ui.UiStyles.caption(hudSkin));
+        card.add(modeHelp).colspan(2).width(520f).left().padBottom(16).row();
 
         // 3. Music Volume
         card.add(new Label("Music Volume", labelStyle)).left().padRight(40).padBottom(16);
@@ -192,7 +200,7 @@ public class SettingsScreen extends BaseScreen {
         Difficulty nextDifficulty = allDifficulties[nextIndex];
 
         settingsManager.setDifficulty(nextDifficulty);
-        difficultyButton.setText(nextDifficulty.name());
+        difficultyButton.setText(com.bpm.minotaur.ui.UiNames.of(nextDifficulty));
     }
 
     private void toggleGameMode() {

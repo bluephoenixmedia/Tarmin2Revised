@@ -66,6 +66,11 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
     private com.bpm.minotaur.rendering.attract.AttractModeRenderer attractModeRenderer;
     private Table rootTable;
 
+    /** Keycap drawables and the shared tooltip style for the footer legend. */
+    private com.bpm.minotaur.rendering.HudSkin hudSkin;
+    private com.bpm.minotaur.ui.KeyHintLegend footerLegend;
+    private Label versionLabel;
+
     // Cooldown timer to prevent accidental immediate screen transitions
     private float inputCooldown = 0.2f;
 
@@ -207,10 +212,17 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         final int recentSlot = SaveManager.getInstance().getMostRecentOccupiedSlot();
         hasSave = recentSlot >= 1;
 
-        String continueLabel = "CONTINUE (C)";
+        // TITLE-5: every menu label carried its own shortcut in brackets, which makes a
+        // button's width depend on its hotkey and puts punctuation in the middle of the
+        // reading order. The shortcuts still work; they are listed in the legend below.
+        // TITLE-6: "CONTINUE: SLOT 1 (LVL 2 WARRIOR)" is longer than the rail is wide. The
+        // button says CONTINUE and the detail is a caption under it.
+        String continueLabel = "CONTINUE";
+        String continueCaption = null;
         if (hasSave) {
             SlotMetadata meta = SaveManager.getInstance().getSlotMetadata(recentSlot);
-            continueLabel = "CONTINUE: SLOT " + recentSlot + " (LVL " + meta.level + " " + meta.characterClass + ")";
+            continueCaption = meta.characterName + "  -  Lv " + meta.level + " " + meta.characterClass
+                    + "  -  " + meta.locationName;
         }
 
         float btnWidth = isModern ? 460f : 500f;
@@ -220,29 +232,36 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         final TextButton continueBtn = new TextButton(continueLabel, hasSave ? continueStyle : defaultStyle);
         continueBtn.setDisabled(!hasSave);
         setupButton(continueBtn, 0);
-        buttonTable.add(continueBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
+        buttonTable.add(continueBtn).minWidth(btnWidth).height(btnHeight)
+                .padBottom(continueCaption != null ? 2f : padB).row();
         menuButtons.add(continueBtn);
 
+        if (continueCaption != null) {
+            Label caption = com.bpm.minotaur.ui.UiLabels.ellipsized(continueCaption,
+                    new Label.LabelStyle(regularFont, com.bpm.minotaur.ui.UiTheme.TEXT_DIM));
+            buttonTable.add(caption).width(btnWidth).left().padBottom(padB).row();
+        }
+
         // 2. LOAD GAME BUTTON
-        final TextButton loadBtn = new TextButton("LOAD EXPEDITION (L)", defaultStyle);
+        final TextButton loadBtn = new TextButton("LOAD EXPEDITION", defaultStyle);
         setupButton(loadBtn, 1);
         buttonTable.add(loadBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(loadBtn);
 
         // 3. NEW GAME BUTTON
-        final TextButton newGameBtn = new TextButton("NEW EXPEDITION (N)", defaultStyle);
+        final TextButton newGameBtn = new TextButton("NEW EXPEDITION", defaultStyle);
         setupButton(newGameBtn, 2);
         buttonTable.add(newGameBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(newGameBtn);
 
         // 4. SETTINGS BUTTON
-        final TextButton settingsBtn = new TextButton("SETTINGS (S)", defaultStyle);
+        final TextButton settingsBtn = new TextButton("SETTINGS", defaultStyle);
         setupButton(settingsBtn, 3);
         buttonTable.add(settingsBtn).minWidth(btnWidth).height(btnHeight).padBottom(padB).row();
         menuButtons.add(settingsBtn);
 
         // 5. QUIT BUTTON
-        final TextButton exitBtn = new TextButton("QUIT TO DESKTOP (ESC)", defaultStyle);
+        final TextButton exitBtn = new TextButton("QUIT TO DESKTOP", defaultStyle);
         setupButton(exitBtn, 4);
         buttonTable.add(exitBtn).minWidth(btnWidth).height(btnHeight).row();
         menuButtons.add(exitBtn);
@@ -270,6 +289,27 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
         }
 
         stage.addActor(rootTable);
+
+        // The legend and the build tag sit in the safe area, pinned to the stage rather than
+        // drawn at a computed y, so neither can be clipped by a long string or a short window.
+        if (hudSkin == null) {
+            hudSkin = new com.bpm.minotaur.rendering.HudSkin();
+        }
+        Table footerBar = new Table();
+        footerBar.setFillParent(true);
+        footerBar.bottom().pad(com.bpm.minotaur.ui.UiTheme.SAFE);
+
+        versionLabel = new Label(com.bpm.minotaur.BuildInfo.displayVersion(),
+                new Label.LabelStyle(regularFont, com.bpm.minotaur.ui.UiTheme.TEXT_OFF));
+        footerBar.add(versionLabel).left().expandX();
+
+        footerLegend = new com.bpm.minotaur.ui.KeyHintLegend(hudSkin)
+                .hint(com.bpm.minotaur.ui.KeyHintLegend.ARROWS_UD, "Navigate")
+                .hint("ENTER", "Choose")
+                .hint("F2", "Retro view")
+                .escapeHint("Quit");
+        footerBar.add(footerLegend).right();
+        stage.addActor(footerBar);
 
         // Default selection: Continue if save exists, else New Game
         selectedButtonIndex = hasSave ? 0 : 2;
@@ -416,14 +456,18 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             stage.act(delta);
             stage.draw();
 
-            // Bottom status / hint bar
-            if (uiAlpha > 0.05f) {
-                game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
-                game.getBatch().begin();
-                regularFont.setColor(INTV_WHITE.r, INTV_WHITE.g, INTV_WHITE.b, uiAlpha);
-                String modeStr = "F2: RETRO VIEW  |  M: MODE [" + selectedGameMode.name() + "]  |  UP/DOWN/ENTER: NAVIGATE";
-                drawCenteredText(regularFont, modeStr, targetHeight * 0.05f);
-                game.getBatch().end();
+            // TITLE-2: this line was drawn centred with no width budget, so at its full length
+            // it started left of zero and ran past 1920 -- clipped on both edges at once. It is
+            // a Scene2D legend inside the safe area now (built in buildUI), not hand-placed
+            // text, so it cannot outgrow the screen again. TITLE-8: "M: MODE [ADVANCED]" is
+            // gone from this line -- Settings already carries the toggle and now explains what
+            // a mode is, which this line never did. The M shortcut still works.
+            if (footerLegend != null) {
+                footerLegend.getColor().a = uiAlpha;
+                footerLegend.setVisible(uiAlpha > 0.05f);
+            }
+            if (versionLabel != null) {
+                versionLabel.getColor().a = uiAlpha;
             }
 
             // When idle attract mode is active, render soft pulsing watermark prompt
@@ -581,6 +625,10 @@ public class MainMenuScreen extends BaseScreen implements InputProcessor {
             attractModeRenderer = null;
         }
         if (stage != null) stage.dispose();
+        if (hudSkin != null) {
+            hudSkin.dispose();
+            hudSkin = null;
+        }
         if (titleFont != null) titleFont.dispose();
         if (regularFont != null) regularFont.dispose();
         if (buttonFont != null) buttonFont.dispose();

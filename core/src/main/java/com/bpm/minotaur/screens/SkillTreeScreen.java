@@ -19,7 +19,15 @@ import com.bpm.minotaur.gamedata.progression.ShelterAltar;
 import com.bpm.minotaur.gamedata.progression.SkillDefinition;
 import com.bpm.minotaur.gamedata.progression.SkillId;
 import com.bpm.minotaur.gamedata.progression.SkillRegistry;
+import com.badlogic.gdx.utils.Align;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiGlyphs;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiStyles;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.List;
 
@@ -41,6 +49,9 @@ public class SkillTreeScreen extends BaseScreen {
     private Label statusLabel;
     private Table rootTable;
 
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "SKILLTREE";
+
     public SkillTreeScreen(Tarmin2 game, GameScreen parentScreen, Player player, Maze maze) {
         super(game);
         this.parentScreen = parentScreen;
@@ -57,6 +68,7 @@ public class SkillTreeScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
 
         buildUI();
     }
@@ -86,34 +98,37 @@ public class SkillTreeScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         header.add(title).center().row();
 
+        // SKILL-1: this was the whole of it. Five labels in one unbroken row, the last of them
+        // a 44-character bracketed sentence, came to more than the 1840 units the screen has.
+        // The header is inside a fillParent root, so its preferred width made the *root* wider
+        // than the stage -- which is why the attributes column was clipped off the left, Arcana
+        // off the right, and the footer off the bottom. Nothing else on this screen was wrong
+        // with its own width. SKILL-7: the counters are chips and the Training Grounds state
+        // is an info strip on its own row, not a fifth item competing for the same line.
         Table statsRow = new Table();
         statsRow.padTop(6);
 
-        Label lvlLabel = new Label("LEVEL " + player.getLevel(),
-                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_ANTIQUE));
-        statsRow.add(lvlLabel).padRight(30);
-
-        Label xpLabel = new Label("XP: " + player.getExperience() + " / " + player.getStats().getExperienceToNextLevel(),
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        statsRow.add(xpLabel).padRight(40);
-
         int attrPts = player.getStats().getUnallocatedAttributePoints();
-        Label attrPtsLabel = new Label("Attribute Points: " + attrPts,
-                new Label.LabelStyle(hudSkin.getFontMain(), attrPts > 0 ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_GOLD_MUTED));
-        statsRow.add(attrPtsLabel).padRight(40);
-
         int skillPts = player.getStats().getUnallocatedSkillPoints();
-        Label skillPtsLabel = new Label("Skill Points: " + skillPts,
-                new Label.LabelStyle(hudSkin.getFontMain(), skillPts > 0 ? HudSkin.COL_EXP_AMBER : HudSkin.COL_GOLD_MUTED));
-        statsRow.add(skillPtsLabel).padRight(40);
-
         boolean trainingActive = isTrainingGroundsUnlocked();
-        Label trainingStatusLabel = new Label(
-                trainingActive ? "[ TRAINING GROUNDS: Active ]" : "[ TRAINING GROUNDS: Build at Shelter Altar ]",
-                new Label.LabelStyle(hudSkin.getFontSmall(), trainingActive ? HudSkin.COL_FOOD_GREEN : HudSkin.COL_GOLD_MUTED));
-        statsRow.add(trainingStatusLabel);
+
+        statsRow.add(buildChip("LEVEL " + player.getLevel(), UiTheme.GOLD)).padRight(UiTheme.PAD_MD);
+        statsRow.add(buildChip("XP " + player.getExperience() + " / "
+                + player.getStats().getExperienceToNextLevel(), UiTheme.TEXT)).padRight(UiTheme.PAD_MD);
+        statsRow.add(buildChip(UiNames.plural(attrPts, "attribute point"),
+                attrPts > 0 ? UiTheme.SUCCESS : UiTheme.TEXT_DIM)).padRight(UiTheme.PAD_MD);
+        statsRow.add(buildChip(UiNames.plural(skillPts, "skill point"),
+                skillPts > 0 ? UiTheme.GOLD : UiTheme.TEXT_DIM));
 
         header.add(statsRow).center().row();
+
+        Label trainingStatusLabel = UiLabels.wrapping(
+                trainingActive
+                        ? "Training Grounds active -- skills can be learned here."
+                        : "Training Grounds not built. Raise it at the Shelter Altar to learn skills.",
+                new Label.LabelStyle(hudSkin.getFontSmall(), trainingActive ? UiTheme.SUCCESS : UiTheme.INFO));
+        trainingStatusLabel.setAlignment(Align.center);
+        header.add(trainingStatusLabel).growX().padTop(UiTheme.PAD_SM).row();
         rootTable.add(header).fillX().padBottom(16).row();
 
         // --- 2. BODY (ATTRIBUTES LEFT, SKILL TREES RIGHT) ---
@@ -140,12 +155,13 @@ public class SkillTreeScreen extends BaseScreen {
         footer.setBackground(hudSkin.getPanelBg());
         footer.pad(10, 20, 10, 20);
 
-        Label hints = new Label("[ESC / K] Return to Game    [+] Allocate Attribute Points anywhere    [Skill Card] View details & learn perks",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        footer.add(hints).left().expandX();
+        statusLabel = UiLabels.ellipsized("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+        footer.add(statusLabel).left().expandX();
 
-        statusLabel = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-        footer.add(statusLabel).right();
+        footer.add(new KeyHintLegend(hudSkin)
+                .hint("CLICK", "Skill details")
+                .hint("K", "Close")
+                .escapeHint("Return to game")).right();
 
         rootTable.add(footer).fillX();
         stage.addActor(rootTable);
@@ -208,9 +224,16 @@ public class SkillTreeScreen extends BaseScreen {
         Table table = new Table();
 
         // 3 Columns: Warfare, Finesse, Arcana
-        Table warfareCol = buildDisciplineColumn(SkillId.Discipline.WARFARE, "WARFARE", "Might, Heavy Armor & Dual-Wielding", HudSkin.COL_HP_RED);
-        Table finesseCol = buildDisciplineColumn(SkillId.Discipline.FINESSE, "FINESSE", "Agility, Criticals & Marksmanship", HudSkin.COL_FOOD_GREEN);
-        Table arcanaCol = buildDisciplineColumn(SkillId.Discipline.ARCANA, "ARCANA", "Spellweaving, Runic Power & Evocation", HudSkin.COL_MP_BLUE);
+        // SKILL-6: the three schools were red, green and blue -- red against green is the pair
+        // most colour-blind players cannot separate, and the game used two greens elsewhere.
+        // These three survive deuteranopia and protanopia, and each carries a glyph as well,
+        // because colour is never allowed to be the only signal.
+        Table warfareCol = buildDisciplineColumn(SkillId.Discipline.WARFARE,
+                UiGlyphs.GLYPH_WARFARE + " WARFARE", "Might, heavy armor and dual-wielding", UiTheme.SCHOOL_WARFARE);
+        Table finesseCol = buildDisciplineColumn(SkillId.Discipline.FINESSE,
+                UiGlyphs.GLYPH_FINESSE + " FINESSE", "Agility, criticals and marksmanship", UiTheme.SCHOOL_FINESSE);
+        Table arcanaCol = buildDisciplineColumn(SkillId.Discipline.ARCANA,
+                UiGlyphs.GLYPH_ARCANA + " ARCANA", "Spellweaving, runic power and evocation", UiTheme.SCHOOL_ARCANA);
 
         table.add(warfareCol).expand().fill().padRight(12);
         table.add(finesseCol).expand().fill().padRight(12);
@@ -225,11 +248,15 @@ public class SkillTreeScreen extends BaseScreen {
         col.pad(12);
         col.top();
 
-        Label titleLabel = new Label(title, new Label.LabelStyle(hudSkin.getFontHeader(), themeColor));
-        col.add(titleLabel).center().row();
+        // SKILL-2: neither of these had a width, and the subtitle is wider than a third of the
+        // panel, so it ran out of the column and across the school next door.
+        Label titleLabel = UiLabels.ellipsized(title, new Label.LabelStyle(hudSkin.getFontHeader(), themeColor));
+        titleLabel.setAlignment(Align.center);
+        col.add(titleLabel).growX().center().row();
 
-        Label subLabel = new Label(subtitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        col.add(subLabel).center().padBottom(12).row();
+        Label subLabel = UiLabels.wrapping(subtitle, UiStyles.caption(hudSkin));
+        subLabel.setAlignment(Align.center);
+        col.add(subLabel).growX().center().padBottom(12).row();
 
         // Group skills by Tier (1, 2, 3)
         for (int tier = 1; tier <= 3; tier++) {
@@ -261,33 +288,43 @@ public class SkillTreeScreen extends BaseScreen {
             card.setBackground(hudSkin.getPanelBg());
         }
 
-        Label nameLabel = new Label(skill.getName(), new Label.LabelStyle(hudSkin.getFontMain(),
-                learned ? HudSkin.COL_FOOD_GREEN : (canLearn ? HudSkin.COL_GOLD_BRIGHT : Color.GRAY)));
-        card.add(nameLabel).left().expandX();
+        Label nameLabel = UiLabels.ellipsized(skill.getName(), new Label.LabelStyle(hudSkin.getFontMain(),
+                learned ? UiTheme.SUCCESS : (canLearn ? UiTheme.TEXT : UiTheme.TEXT_OFF)));
+        card.add(nameLabel).left().growX();
 
+        // SKILL-4: every node that was not learned printed "[ LOCKED ]", so the column read as
+        // a wall of the same word and said nothing about which one the player could take next.
+        // A learnable node is simply bright; a locked one is dimmed and carries a lock mark,
+        // and the detail pane below names the single thing blocking it.
         String statusBadge;
         Color badgeColor;
         if (learned) {
-            statusBadge = "[ LEARNED ]";
-            badgeColor = HudSkin.COL_FOOD_GREEN;
+            statusBadge = "+";
+            badgeColor = UiTheme.SUCCESS;
         } else if (canLearn) {
             if (!isTrainingGroundsUnlocked()) {
-                statusBadge = "[ DUMMY REQ ]";
-                badgeColor = HudSkin.COL_TEMP_ORANGE;
+                statusBadge = "x";
+                badgeColor = UiTheme.INFO;
             } else if (player.getStats().getUnallocatedSkillPoints() > 0) {
-                statusBadge = "[ 1 SP ]";
-                badgeColor = HudSkin.COL_GOLD_BRIGHT;
+                statusBadge = "1 SP";
+                badgeColor = UiTheme.GOLD;
             } else {
-                statusBadge = "[ 0 SP ]";
-                badgeColor = HudSkin.COL_GOLD_MUTED;
+                statusBadge = "1 SP";
+                badgeColor = UiTheme.TEXT_OFF;
             }
         } else {
-            statusBadge = "[ LOCKED ]";
-            badgeColor = Color.DARK_GRAY;
+            statusBadge = "x";
+            badgeColor = UiTheme.TEXT_OFF;
+        }
+        if (!learned && !canLearn) {
+            card.setColor(1f, 1f, 1f, 0.55f);
         }
 
         Label badgeLabel = new Label(statusBadge, new Label.LabelStyle(hudSkin.getFontSmall(), badgeColor));
-        card.add(badgeLabel).right().row();
+        badgeLabel.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                learned ? "Learned" : (canLearn ? "Costs 1 skill point" : blockingRequirement(skill)),
+                hudSkin.getTooltipManager(), hudSkin.getTooltipStyle()));
+        card.add(badgeLabel).right().padLeft(UiTheme.PAD_SM).row();
 
         card.addListener(new ClickListener() {
             @Override
@@ -315,26 +352,28 @@ public class SkillTreeScreen extends BaseScreen {
         int skillPoints = player.getStats().getUnallocatedSkillPoints();
 
         // Top line: Name + Open5e reference + Action Button
+        // SKILL-3: the name, the Open5e reference and the action button all shared this row
+        // with no widths, so "TRAINING GROUNDS LOCKED" -- the longest label the button ever
+        // takes -- was drawn over the header beside it. The two text cells truncate; the
+        // button keeps its own cell and is a real disabled button with its reason below.
         Table headerRow = new Table();
-        Label name = new Label(def.getName().toUpperCase(), new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        Label name = UiLabels.ellipsized(def.getName().toUpperCase(),
+                new Label.LabelStyle(hudSkin.getFontHeader(), UiTheme.GOLD));
         headerRow.add(name).left();
 
-        Label ref = new Label("  (" + def.getOpen5eReference() + " - Tier " + def.getTier() + " " + def.getDiscipline().name() + ")",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        headerRow.add(ref).left().expandX();
+        Label ref = UiLabels.ellipsized("  (" + def.getOpen5eReference() + " - Tier " + def.getTier()
+                        + " " + UiNames.of(def.getDiscipline()) + ")",
+                UiStyles.caption(hudSkin));
+        headerRow.add(ref).left().growX();
 
         if (learned) {
-            Label learnedBadge = new Label("[ MASTERED ]", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_FOOD_GREEN));
-            headerRow.add(learnedBadge).right();
+            Label learnedBadge = new Label("MASTERED", new Label.LabelStyle(hudSkin.getFontHeader(), UiTheme.SUCCESS));
+            headerRow.add(learnedBadge).right().padLeft(UiTheme.PAD_MD);
         } else {
-            TextButton learnBtn = createActionButton(
-                    !trainingActive ? "TRAINING GROUNDS LOCKED" :
-                            (skillPoints <= 0 ? "NEED SKILL POINT" :
-                                    (!canLearn ? "PREREQUISITES NOT MET" : "LEARN SKILL (1 SP)"))
-            );
-
+            // The button says what it does; the reason it cannot is a caption under it.
+            TextButton learnBtn = createActionButton("LEARN SKILL");
             boolean enabled = canLearn && trainingActive && (skillPoints > 0);
-            learnBtn.setDisabled(!enabled);
+            UiStyles.setEnabled(learnBtn, enabled);
             if (!enabled) {
                 learnBtn.setColor(0.6f, 0.6f, 0.6f, 0.6f);
             }
@@ -355,15 +394,22 @@ public class SkillTreeScreen extends BaseScreen {
                 }
             });
 
-            headerRow.add(learnBtn).right().height(38);
+            Table learnCol = new Table();
+            learnCol.add(learnBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).row();
+            if (!enabled) {
+                String reason = !trainingActive ? "Needs the Training Grounds"
+                        : (skillPoints <= 0 ? "Needs a skill point" : blockingRequirement(def));
+                learnCol.add(UiLabels.ellipsized(reason, UiStyles.caption(hudSkin, UiTheme.DANGER)))
+                        .right().padTop(UiTheme.PAD_XS);
+            }
+            headerRow.add(learnCol).right().padLeft(UiTheme.PAD_MD);
         }
 
         panel.add(headerRow).fillX().padBottom(10).row();
 
         // Description
-        Label desc = new Label(def.getDescription(), new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-        desc.setWrap(true);
-        panel.add(desc).fillX().padBottom(10).row();
+        Label desc = UiLabels.wrapping(def.getDescription(), UiStyles.body(hudSkin));
+        panel.add(desc).growX().padBottom(10).row();
 
         // Prerequisites Row
         StringBuilder prereqStr = new StringBuilder("Prerequisites: ");
@@ -382,14 +428,14 @@ public class SkillTreeScreen extends BaseScreen {
                 if (!first) prereqStr.append(", ");
                 SkillDefinition reqDef = SkillRegistry.getInstance().getDefinition(reqId);
                 boolean hasReq = player.hasSkill(reqId);
-                prereqStr.append(reqDef != null ? reqDef.getName() : reqId.name())
-                        .append(hasReq ? " [OK]" : " [MISSING]");
+                prereqStr.append(reqDef != null ? reqDef.getName() : UiNames.of(reqId))
+                        .append(hasReq ? " (have)" : " (missing)");
                 first = false;
             }
         }
 
-        Label prereqLabel = new Label(prereqStr.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        panel.add(prereqLabel).left().padBottom(4).row();
+        Label prereqLabel = UiLabels.wrapping(prereqStr.toString(), UiStyles.caption(hudSkin));
+        panel.add(prereqLabel).growX().left().padBottom(4).row();
 
         if (!trainingActive && !learned) {
             Label trainingNotice = new Label("Shelter Training Grounds provides martial guidance and combat drills.",
@@ -398,6 +444,42 @@ public class SkillTreeScreen extends BaseScreen {
         }
 
         return panel;
+    }
+
+    /**
+     * The one requirement standing between the player and this skill.
+     *
+     * <p>SKILL-4: the tree printed "[ LOCKED ]" on every unlearned node, which tells the player
+     * nothing they did not already know. A node is blocked by one thing at a time, and that is
+     * the thing worth saying.
+     */
+    private String blockingRequirement(SkillDefinition def) {
+        if (def == null) {
+            return "Locked";
+        }
+        if (def.getRequiredStat() != null && def.getRequiredStatValue() > 10) {
+            int current = player.getStats().getEffectiveStat(def.getRequiredStat());
+            if (current < def.getRequiredStatValue()) {
+                return "Needs " + def.getRequiredStat().getDisplayName() + " "
+                        + def.getRequiredStatValue() + " - have " + current;
+            }
+        }
+        for (SkillId reqId : def.getPrerequisites()) {
+            if (!player.hasSkill(reqId)) {
+                SkillDefinition reqDef = SkillRegistry.getInstance().getDefinition(reqId);
+                return "Needs " + (reqDef != null ? reqDef.getName() : UiNames.of(reqId));
+            }
+        }
+        return "Locked";
+    }
+
+    /** A counter as a chip: a bordered pill sized to its own text (SPEC section 4). */
+    private Table buildChip(String text, Color color) {
+        Table chip = new Table();
+        chip.setBackground(hudSkin.getCardBg());
+        chip.add(UiLabels.of(text, new Label.LabelStyle(hudSkin.getFontSmall(), color)))
+                .pad(UiTheme.PAD_XS, UiTheme.PAD_MD, UiTheme.PAD_XS, UiTheme.PAD_MD);
+        return chip;
     }
 
     private TextButton createActionButton(String text) {
@@ -435,6 +517,11 @@ public class SkillTreeScreen extends BaseScreen {
             return true;
         }
         return super.keyDown(keycode);
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     @Override
