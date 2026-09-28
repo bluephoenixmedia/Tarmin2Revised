@@ -113,7 +113,7 @@ public class GraveLootScreen extends BaseScreen {
         String epitaph = (bonesData != null && bonesData.epitaph != null) ? bonesData.epitaph : "Fell in the depths";
         int floor = (bonesData != null) ? bonesData.floorLevel : 1;
         int strata = (bonesData != null) ? bonesData.strataDepth : 1;
-        statusLabel = new Label("Floor " + floor + " (Strata " + strata + ") — " + epitaph,
+        statusLabel = new Label("Floor " + floor + " (Strata " + strata + ") - " + epitaph,
                 new Label.LabelStyle(font, Color.LIGHT_GRAY));
         root.add(statusLabel).padBottom(20).colspan(3).row();
 

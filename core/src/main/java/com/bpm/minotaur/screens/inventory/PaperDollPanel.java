@@ -157,8 +157,10 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         slotArms = equip("Arms", ItemType.ARMS, 167f, 616f); // far-left, lower-mid row (left of pair)
         slotHands = equip("Hands", ItemType.GAUNTLETS, 280f, 616f); // lower-mid row (right of pair)
         slotLegs = equip("Legs", ItemType.LEGS, 221f, 502f); // far-left, lower row
-        slotFeetL = equip("Feet", ItemType.BOOTS, 165f, 382f); // bottom row (left boot)
-        slotFeetR = equip("Feet", ItemType.BOOTS, 280f, 382f); // bottom row (right boot)
+        // INV-5: both boot slots read "Feet", so the pair was indistinguishable and the
+        // label told the player nothing the outline had not already said.
+        slotFeetL = equip("Feet L", ItemType.BOOTS, 165f, 382f); // bottom row (left boot)
+        slotFeetR = equip("Feet R", ItemType.BOOTS, 280f, 382f); // bottom row (right boot)
 
         // ── Right column (weapons / rings, run top to bottom on the right side) ─
         slotWeaponMain = equip("R.Hand", ItemType.SWORD, 810f, 844f); // right side, upper row
@@ -208,6 +210,15 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         // width
         slot.setPosition(x - SLOT_SZ / 2f, y);
         dnd.register(slot);
+        // INV-5: an empty slot shows a short label, and a filled one hides it behind the item
+        // icon -- so once a slot is in use there is nothing saying what it is. The tooltip
+        // answers that whether the slot is empty or not.
+        slot.addListener(new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip(
+                name, com.bpm.minotaur.ui.UiTooltips.manager(),
+                new com.badlogic.gdx.scenes.scene2d.ui.TextTooltip.TextTooltipStyle(
+                        new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(
+                                skin.getFontSmall(), InventorySkin.COL_TEXT_VALUE),
+                        skin.getPanelBoxDrawable())));
         allEquip.add(slot);
         addActor(slot);
         return slot;

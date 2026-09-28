@@ -267,7 +267,7 @@ public class DebugRenderer {
                 // CHECK VISIBILITY
                 if (!maze.isVisited(x, y)) {
                     // Draw Fog of War
-                    rowBuilder.append("░░ ");
+                    rowBuilder.append(":: ");
                 } else {
                     // Draw Revealed Tile
                     GridPoint2 pos = new GridPoint2(x, y);

@@ -64,19 +64,19 @@ public class StatusPillBar extends Table {
         if (player.getStats() != null) {
             float temp = player.getStats().getBodyTemperature();
             if (temp < 32.0f) {
-                addPill(String.format("HYPO %.0f°", temp), Color.valueOf("8CD6FF"),
+                addPill(String.format("HYPO %.0fC", temp), Color.valueOf("8CD6FF"),
                         "Hypothermia Exposure",
                         "[ENVIRONMENT]",
                         "Extreme cold gnaws at your body (1 HP damage every 10 turns, blurred vision).",
                         "Stand near a lit Campfire or Lantern, drink warm broth, or equip warmth rings.");
             } else if (temp < 35.0f) {
-                addPill(String.format("CHILL %.0f°", temp), HudSkin.COL_WATER_CYAN,
+                addPill(String.format("CHILL %.0fC", temp), HudSkin.COL_WATER_CYAN,
                         "Chilled Exposure",
                         "[ENVIRONMENT]",
                         "Bitter cold slows your reflexes (-20% move and attack speed).",
                         "Warm yourself by a campfire, equip heavier fur/armor, or seek shelter.");
             } else if (temp > 38.0f) {
-                addPill(String.format("HEAT %.0f°", temp), HudSkin.COL_TEMP_ORANGE,
+                addPill(String.format("HEAT %.0fC", temp), HudSkin.COL_TEMP_ORANGE,
                         "Heatstroke / Hyperthermia",
                         "[ENVIRONMENT]",
                         "Overheating causes heavy perspiration (doubled thirst decay and exhaustion).",

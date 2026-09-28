@@ -111,7 +111,6 @@ public class HudSkin implements Disposable {
     private Drawable tabInactive;
     private Drawable whitePixelDrawable;
     private TextTooltip.TextTooltipStyle tooltipStyle;
-    private TooltipManager tooltipManager;
 
     // Textures for direct rendering or bars
     private Texture whitePixel;
@@ -747,13 +746,7 @@ public class HudSkin implements Disposable {
 
     /** Tooltip timing shared by every tooltip in the game, so they all behave the same. */
     public TooltipManager getTooltipManager() {
-        if (tooltipManager == null) {
-            tooltipManager = new TooltipManager();
-            tooltipManager.initialTime = 0.35f;
-            tooltipManager.resetTime = 0.1f;
-            tooltipManager.animations = false;
-        }
-        return tooltipManager;
+        return com.bpm.minotaur.ui.UiTooltips.manager();
     }
     public Texture getWhitePixel() { return whitePixel; }
     /** The white pixel as a drawable, for widgets that fill a rect inside their own draw(). */

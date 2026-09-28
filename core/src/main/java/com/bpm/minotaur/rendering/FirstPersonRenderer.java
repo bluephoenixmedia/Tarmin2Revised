@@ -558,7 +558,7 @@ public class FirstPersonRenderer {
             if (retroLogTimer >= 1f) {
                 retroLogTimer = 0f;
                 Gdx.app.log("FirstPersonRenderer [RETRO]",
-                        "Wall render summary — wallColumns=" + retroWallsRendered
+                        "Wall render summary - wallColumns=" + retroWallsRendered
                         + " skyColumns=" + retroSkyColumns
                         + " wallColor=" + currentWallColor
                         + " fog=" + fogEnabled

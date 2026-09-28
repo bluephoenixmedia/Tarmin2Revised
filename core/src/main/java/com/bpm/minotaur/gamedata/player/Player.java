@@ -263,7 +263,7 @@ public class Player {
         if (expected > unlockedSpellSlots) {
             setUnlockedSpellSlots(expected);
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("✦ Spell Slot " + expected + " unlocked! Press [Q] to prepare spells.", 4f));
+                eventManager.addEvent(new GameEvent("Spell Slot " + expected + " unlocked! Press [Q] to prepare spells.", 4f));
             }
             if (soundManager != null) {
                 soundManager.playDoorOpenSound();

@@ -136,6 +136,8 @@ public class Hud implements Disposable {
 
     // --- Action Chronicle Labels (5 lines) ---
     private final Label[] chronicleLabels = new Label[5];
+    /** Text width of the chronicle zone, inside its own padding. */
+    private static final float CHRONICLE_W = 636f;
 
     // Combat Menu
     public CombatMenu combatMenu;
@@ -302,7 +304,9 @@ public class Hud implements Disposable {
         delveZone.pad(8f);
 
         chronicleZone.setBackground(hudSkin.getPanelBg());
-        chronicleZone.pad(8f);
+        // 6 rather than 8: the newest line is allowed to wrap to two, and the dashboard's
+        // 200-unit band has to hold the header, four history lines and that second line.
+        chronicleZone.pad(6f);
 
         // ══════════════════════════════════════════════════════════════════
         // ZONE 1: Character & Vitals (~450px)
@@ -569,11 +573,20 @@ public class Hud implements Disposable {
         Label chronicleHeader = new Label("CHRONICLE", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         chronicleZone.add(chronicleHeader).left().padBottom(2).row();
 
-        for (int i = 0; i < 5; i++) {
+        // LEVELUP-4 / HUD-6: all five lines were single-line and ellipsized, so the message
+        // that just arrived -- the only one a player is actually reading -- was the one most
+        // likely to be cut off mid-sentence. The four older lines stay ellipsized, because
+        // they are context and a wall of wrapped history is worse than a short one. The newest
+        // line wraps instead, and the zone has room for it to take a second line.
+        for (int i = 0; i < 4; i++) {
             chronicleLabels[i] = new Label("", logLabelStyle);
             chronicleLabels[i].setEllipsis(true);
-            chronicleZone.add(chronicleLabels[i]).left().width(632).padBottom(1).row();
+            chronicleZone.add(chronicleLabels[i]).left().width(CHRONICLE_W).padBottom(1).row();
         }
+        chronicleLabels[4] = new Label("", logLabelStyle);
+        chronicleLabels[4].setWrap(true);
+        chronicleZone.add(chronicleLabels[4]).left().top().width(CHRONICLE_W)
+                .maxHeight(hudSkin.getFontLog().getLineHeight() * 2f).padBottom(1).row();
         logLabel = chronicleLabels[4]; // Alias for backward compatibility
 
         // --- Assemble Bottom Bar Table ---

@@ -289,7 +289,7 @@ public class EntityRenderer {
             if (retroLogTimer >= 1f) {
                 retroLogTimer = 0f;
                 Gdx.app.log("EntityRenderer [RETRO]",
-                        "Frame summary — monsters=" + retroMonsterCount
+                        "Frame summary - monsters=" + retroMonsterCount
                         + " items/ladders=" + retroItemCount
                         + " scenery=" + retroSceneryCount
                         + " missingSpriteFallbacks=" + retroMissingSpriteFallbacks
@@ -1086,7 +1086,7 @@ public class EntityRenderer {
         } else {
             retroMissingSpriteFallbacks++;
             Gdx.app.log("EntityRenderer [RETRO]",
-                    "Monster has no sprite data — rendering solid rect fallback. type=" + monster.getType()
+                    "Monster has no sprite data - rendering solid rect fallback. type=" + monster.getType()
                     + " screenX=" + screenX + " dist=" + String.format("%.2f", transformY));
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
@@ -1160,7 +1160,7 @@ public class EntityRenderer {
         } else {
             retroMissingSpriteFallbacks++;
             Gdx.app.log("EntityRenderer [RETRO]",
-                    "Item has no sprite data — rendering solid rect fallback. type=" + item.getType()
+                    "Item has no sprite data - rendering solid rect fallback. type=" + item.getType()
                     + " modified=" + item.isModified() + " screenX=" + screenX);
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);

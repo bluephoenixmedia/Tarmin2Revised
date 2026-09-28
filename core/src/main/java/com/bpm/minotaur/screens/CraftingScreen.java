@@ -27,6 +27,13 @@ import com.bpm.minotaur.gamedata.item.ShelterChest;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.CraftingManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiStyles;
+import com.bpm.minotaur.ui.UiTabs;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,10 +70,7 @@ public class CraftingScreen extends BaseScreen {
     private Table rightPanelContent;
     private Label resourceBarLabel;
     private Label feedbackLabel;
-    private TextButton tabBtnForge;
-    private TextButton tabBtnSalvage;
-    private TextButton tabBtnOssuary;
-    private TextButton tabBtnAlchemy;
+    private UiTabs tabs;
     private CraftingManager.AlchemyRecipe selectedRecipe;
 
     private final boolean fieldMode;
@@ -94,10 +98,18 @@ public class CraftingScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
 
         buildScreenLayout();
         refreshAll();
     }
+
+    /** One square of the die net (WORK-3). Every face uses it, so the cross reads as a grid. */
+    private static final float FACE_W = 190f;
+    private static final float FACE_H = 78f;
+
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "WORKSHOP";
 
     private void buildScreenLayout() {
         stage.clear();
@@ -128,18 +140,18 @@ public class CraftingScreen extends BaseScreen {
         root.add(header).fillX().padBottom(15).row();
 
         // --- 2. TAB SWITCHER BAR ---
-        Table tabBar = new Table();
-        tabBtnForge = createTabButton("[ 1 : FORGE & REFINE ]", 0);
-        tabBtnSalvage = createTabButton("[ 2 : SALVAGE & SCRAP ]", 1);
-        tabBtnOssuary = createTabButton("[ 3 : OSSUARY & RELICS ]", 2);
-        tabBtnAlchemy = createTabButton("[ 4 : ALCHEMY CAULDRON ]", 3);
-
-        tabBar.add(tabBtnForge).size(400, 50).padRight(20);
-        tabBar.add(tabBtnSalvage).size(400, 50).padRight(20);
-        tabBar.add(tabBtnOssuary).size(400, 50).padRight(20);
-        tabBar.add(tabBtnAlchemy).size(400, 50);
-
-        root.add(tabBar).center().padBottom(15).row();
+        // WORK-1 (RC5): "[ 3 : OSSUARY & RELICS ]" is wider than the 400 its cell allowed, so
+        // the closing bracket of one tab and the opening bracket of the next were drawn over
+        // each other -- "]][" and "]D[". The number goes in a keycap and the tab is as wide as
+        // its name.
+        tabs = new UiTabs(hudSkin)
+                .addTab(1, "Forge & refine")
+                .addTab(2, "Salvage & scrap")
+                .addTab(3, "Ossuary & relics")
+                .addTab(4, "Alchemy cauldron");
+        tabs.onSelect(this::switchTab);
+        tabs.setSelectedSilently(currentTab);
+        root.add(tabs).center().padBottom(15).row();
 
         // --- 3. RESOURCE INVENTORY BAR ---
         Table resBar = new Table();
@@ -157,6 +169,12 @@ public class CraftingScreen extends BaseScreen {
         leftContainer.setBackground(hudSkin.getPanelBg());
         leftPanelContent = new Table();
         leftPanelContent.top().left();
+        // WORK-4: panel headers rendered with the top row of their glyphs cut off --
+        // "Trophies" as "Iropnies". The first row of content starts exactly at the scroll
+        // pane's top edge, and a ScrollPane scissors to its own bounds, so any part of a glyph
+        // that reaches above the Label's measured height is clipped away. A little top padding
+        // gives the ascenders somewhere to be.
+        leftPanelContent.padTop(UiTheme.PAD_SM);
         ScrollPane leftScroll = new ScrollPane(leftPanelContent);
         leftScroll.setFadeScrollBars(false);
         leftContainer.add(leftScroll).expand().fill().pad(15);
@@ -168,6 +186,7 @@ public class CraftingScreen extends BaseScreen {
         rightContainer.setBackground(hudSkin.getPanelBg());
         rightPanelContent = new Table();
         rightPanelContent.top();
+        rightPanelContent.padTop(UiTheme.PAD_SM);
         ScrollPane rightScroll = new ScrollPane(rightPanelContent);
         rightScroll.setFadeScrollBars(false);
         rightContainer.add(rightScroll).expand().fill().pad(20);
@@ -177,46 +196,17 @@ public class CraftingScreen extends BaseScreen {
         root.add(body).expand().fill().row();
 
         // --- 5. BOTTOM FEEDBACK BANNER ---
-        feedbackLabel = new Label("Select an item to begin.", new Label.LabelStyle(hudSkin.getFontLog(), Color.WHITE));
+        feedbackLabel = UiLabels.ellipsized("", new Label.LabelStyle(hudSkin.getFontLog(), Color.WHITE));
         feedbackLabel.setAlignment(Align.center);
-        root.add(feedbackLabel).padTop(10).center();
+        Table footer = new Table();
+        footer.add(feedbackLabel).growX().center();
+        // WORK-12: nothing on this screen said how to leave it.
+        footer.add(new KeyHintLegend(hudSkin)
+                .hint("1-4", "Tab")
+                .escapeHint("Back to shelter")).right();
+        root.add(footer).growX().padTop(10);
 
         stage.addActor(root);
-    }
-
-    private TextButton createTabButton(String text, final int tabIndex) {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontMain();
-        style.fontColor = Color.LIGHT_GRAY;
-        style.overFontColor = HudSkin.COL_GOLD_BRIGHT;
-        style.up = hudSkin.getSlotRecessed();
-        style.down = hudSkin.getSlotActive();
-        style.over = hudSkin.getTooltipBg();
-
-        final TextButton btn = new TextButton(text, style);
-        btn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                switchTab(tabIndex);
-            }
-        });
-        return btn;
-    }
-
-    /** Applies the mockup's filled-gold active tab / dark inactive tab look. */
-    private void applyTabButtonState(TextButton btn, boolean active) {
-        TextButton.TextButtonStyle style = btn.getStyle();
-        if (active) {
-            style.up = hudSkin.getPrimaryButtonUp();
-            style.down = hudSkin.getPrimaryButtonDown();
-            style.over = hudSkin.getPrimaryButtonUp();
-            btn.getLabel().setColor(HudSkin.COL_TEXT_ON_GOLD);
-        } else {
-            style.up = hudSkin.getSlotRecessed();
-            style.down = hudSkin.getSlotActive();
-            style.over = hudSkin.getTooltipBg();
-            btn.getLabel().setColor(HudSkin.COL_GOLD_MUTED);
-        }
     }
 
     public void switchTab(int index) {
@@ -228,22 +218,18 @@ public class CraftingScreen extends BaseScreen {
         boneEdge = null;
         boneCore = null;
         selectedRecipe = null;
-        feedbackLabel.setText("Tab switched.");
+        // WORK-11: this used to read "Tab switched.", which is a developer's note, not news.
+        feedbackLabel.setText("");
+        if (tabs != null) {
+            tabs.setSelectedSilently(index);
+        }
         refreshAll();
     }
 
     private void refreshAll() {
-        updateTabButtonStyles();
         updateResourceBar();
         populateLeftBrowser();
         populateRightWorkbench();
-    }
-
-    private void updateTabButtonStyles() {
-        applyTabButtonState(tabBtnForge, currentTab == 0);
-        applyTabButtonState(tabBtnSalvage, currentTab == 1);
-        applyTabButtonState(tabBtnOssuary, currentTab == 2);
-        applyTabButtonState(tabBtnAlchemy, currentTab == 3);
     }
 
     private void updateResourceBar() {
@@ -411,7 +397,7 @@ public class CraftingScreen extends BaseScreen {
 
         CraftingManager.AlchemyCategory[] categories = CraftingManager.AlchemyCategory.values();
         for (CraftingManager.AlchemyCategory category : categories) {
-            Label catLabel = new Label(category.name(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+            Label catLabel = new Label(UiNames.of(category), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             leftPanelContent.add(catLabel).left().padTop(10).padBottom(4).row();
 
             for (final CraftingManager.AlchemyRecipe recipe : craftingManager.getAlchemyRecipes()) {
@@ -479,7 +465,7 @@ public class CraftingScreen extends BaseScreen {
         Label nameLabel = new Label(selectedRecipe.name, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         previewCard.add(nameLabel).left().row();
 
-        Label catLabel = new Label("Category: " + selectedRecipe.category.name(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        Label catLabel = new Label("Category: " + UiNames.of(selectedRecipe.category), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         previewCard.add(catLabel).left().padTop(4).row();
 
         Label descLabel = new Label(selectedRecipe.description, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
@@ -491,7 +477,7 @@ public class CraftingScreen extends BaseScreen {
         for (Map.Entry<ItemType, Integer> entry : selectedRecipe.reagents.entrySet()) {
             if (i++ > 0) reagentText.append(",  ");
             int have = craftingManager.countMaterial(player, entry.getKey());
-            reagentText.append(entry.getValue()).append("x ").append(entry.getKey().name())
+            reagentText.append(entry.getValue()).append("x ").append(UiNames.of(entry.getKey()))
                     .append(" (have ").append(have).append(")");
         }
         Label reagentLabel = new Label(reagentText.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE));
@@ -517,7 +503,7 @@ public class CraftingScreen extends BaseScreen {
                 refreshAll();
             }
         });
-        rightPanelContent.add(brewBtn).size(320, 50);
+        rightPanelContent.add(brewBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H);
     }
 
     // --- TAB 0: FORGE & REFINE ---
@@ -550,7 +536,7 @@ public class CraftingScreen extends BaseScreen {
         if (selectedTargetItem.isModified()) {
             StringBuilder sb = new StringBuilder("Current Properties: ");
             for (ItemModifier mod : selectedTargetItem.getModifiers()) {
-                sb.append("• ").append(mod.displayName).append(" ");
+                sb.append("- ").append(mod.displayName).append(" ");
             }
             Label modLabel = new Label(sb.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
             modLabel.setWrap(true);
@@ -613,7 +599,7 @@ public class CraftingScreen extends BaseScreen {
                     }
                 }
             });
-            honeSection.add(honeBtn).size(340, 45).left();
+            honeSection.add(honeBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
         }
 
         rightPanelContent.add(honeSection).expandX().fillX().padBottom(20).row();
@@ -640,7 +626,7 @@ public class CraftingScreen extends BaseScreen {
             if (selectedTrophy != null) {
                 ItemModifier mod = craftingManager.getInfusionModifier(selectedTargetItem, selectedTrophy);
                 if (mod != null) {
-                    Label modPreview = new Label("Enchantment Preview: Adds " + mod.displayName + " (" + mod.type.name() + " +" + mod.value + ")", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+                    Label modPreview = new Label("Enchantment Preview: Adds " + mod.displayName + " (" + UiNames.of(mod.type) + " +" + mod.value + ")", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
                     infuseSection.add(modPreview).left().padTop(4).padBottom(10).row();
                 }
                 boolean canInfuse = craftingManager.canInfuse(selectedTargetItem, selectedTrophy, player);
@@ -659,7 +645,7 @@ public class CraftingScreen extends BaseScreen {
                         }
                     }
                 });
-                infuseSection.add(infuseBtn).size(380, 45).left();
+                infuseSection.add(infuseBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
             }
         }
 
@@ -702,7 +688,7 @@ public class CraftingScreen extends BaseScreen {
                     refreshAll();
                 }
             });
-            singleSalvage.add(scrapBtn).size(400, 48).left();
+            singleSalvage.add(scrapBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
         }
 
         rightPanelContent.add(singleSalvage).expandX().fillX().padBottom(30).row();
@@ -730,7 +716,7 @@ public class CraftingScreen extends BaseScreen {
                 refreshAll();
             }
         });
-        batchScrap.add(quickScrapBtn).size(480, 50).left();
+        batchScrap.add(quickScrapBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
 
         rightPanelContent.add(batchScrap).expandX().fillX();
     }
@@ -768,25 +754,31 @@ public class CraftingScreen extends BaseScreen {
         DieFace f4 = (traitCore != null) ? traitCore.faces[1] : null;
 
         // Visual 6-Sided Unfolded Die Net Diagram (Cross Pattern)
+        // WORK-3: the net is a 4x3 cross -- poles on faces 1 and 6, edge on 2 and 5, core on 3
+        // and 4 -- but its cells were 130 wide while every face's own title needed more, so the
+        // labels crossed their boxes' borders and the rows did not line up as a grid. One cell
+        // size for every square, and labels short enough to live in one.
         Table netTable = new Table();
         netTable.pad(6);
-        // Row 1: Top Pole (F1)
-        netTable.add().size(130, 48); // Left spacer
-        netTable.add(createFaceBox("F1 (Top Pole)", f1, traitStruct != null ? traitStruct.boneColor : null)).size(150, 48).pad(2);
-        netTable.add().size(130, 48); // Right spacer
-        netTable.add().size(130, 48).row(); // Far right spacer
+        netTable.defaults().size(FACE_W, FACE_H).pad(2);
 
-        // Row 2: Equator (F4 Core, F2 Edge, F3 Core, F5 Edge)
-        netTable.add(createFaceBox("F4 (Core)", f4, traitCore != null ? traitCore.boneColor : null)).size(130, 48).pad(2);
-        netTable.add(createFaceBox("F2 (Edge)", f2, traitEdge != null ? traitEdge.boneColor : null)).size(130, 48).pad(2);
-        netTable.add(createFaceBox("F3 (Core)", f3, traitCore != null ? traitCore.boneColor : null)).size(130, 48).pad(2);
-        netTable.add(createFaceBox("F5 (Edge)", f5, traitEdge != null ? traitEdge.boneColor : null)).size(130, 48).pad(2).row();
+        // Row 1: top pole
+        netTable.add();
+        netTable.add(createFaceBox("1 - Pole", f1, traitStruct != null ? traitStruct.boneColor : null));
+        netTable.add();
+        netTable.add().row();
 
-        // Row 3: Bottom Pole (F6)
-        netTable.add().size(130, 48); // Left spacer
-        netTable.add(createFaceBox("F6 (Bottom Pole)", f6, traitStruct != null ? traitStruct.boneColor : null)).size(150, 48).pad(2);
-        netTable.add().size(130, 48); // Right spacer
-        netTable.add().size(130, 48).row(); // Far right spacer
+        // Row 2: the equator
+        netTable.add(createFaceBox("4 - Core", f4, traitCore != null ? traitCore.boneColor : null));
+        netTable.add(createFaceBox("2 - Edge", f2, traitEdge != null ? traitEdge.boneColor : null));
+        netTable.add(createFaceBox("3 - Core", f3, traitCore != null ? traitCore.boneColor : null));
+        netTable.add(createFaceBox("5 - Edge", f5, traitEdge != null ? traitEdge.boneColor : null)).row();
+
+        // Row 3: bottom pole
+        netTable.add();
+        netTable.add(createFaceBox("6 - Pole", f6, traitStruct != null ? traitStruct.boneColor : null));
+        netTable.add();
+        netTable.add().row();
 
         diceSection.add(netTable).center().padTop(4).padBottom(6).row();
 
@@ -799,8 +791,8 @@ public class CraftingScreen extends BaseScreen {
         boolean isResonant = (traitStruct != null && traitEdge != null && traitCore != null
                 && traitStruct.source == traitEdge.source && traitEdge.source == traitCore.source);
         if (isResonant) {
-            String resTitle = "★ PURE " + traitStruct.source.name().replace('_', ' ') + " RESONANCE ACTIVE: "
-                    + (traitStruct.resonanceName != null ? traitStruct.resonanceName : "+25% Potency") + " ★";
+            String resTitle = "PURE " + UiNames.caps(traitStruct.source) + " RESONANCE ACTIVE: "
+                    + (traitStruct.resonanceName != null ? traitStruct.resonanceName : "+25% Potency") + "";
             Label resLabel = new Label(resTitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_BRIGHT));
             diceSection.add(resLabel).center().padBottom(8).row();
         }
@@ -842,7 +834,7 @@ public class CraftingScreen extends BaseScreen {
                 }
             }
         });
-        diceBtnRow.add(carveBtn).size(320, 45).padRight(15);
+        diceBtnRow.add(carveBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padRight(15);
 
         TextButton clearBonesBtn = createActionButton("Clear Bone Slots", true);
         clearBonesBtn.addListener(new ClickListener() {
@@ -854,7 +846,7 @@ public class CraftingScreen extends BaseScreen {
                 refreshAll();
             }
         });
-        diceBtnRow.add(clearBonesBtn).size(260, 45);
+        diceBtnRow.add(clearBonesBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H);
 
         diceSection.add(diceBtnRow).left();
         rightPanelContent.add(diceSection).expandX().fillX().padBottom(25).row();
@@ -893,7 +885,7 @@ public class CraftingScreen extends BaseScreen {
                 }
             }
         });
-        talismanSection.add(forgeBtn).size(320, 45).left();
+        talismanSection.add(forgeBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).left();
 
         rightPanelContent.add(talismanSection).expandX().fillX();
     }
@@ -903,20 +895,33 @@ public class CraftingScreen extends BaseScreen {
         box.setBackground(hudSkin.getDoubleBorderPanel());
         box.pad(4, 6, 4, 6);
 
-        Label titleLbl = new Label(roleTitle, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        box.add(titleLbl).center().row();
+        Label titleLbl = UiLabels.ellipsized(roleTitle, UiStyles.caption(hudSkin));
+        box.add(titleLbl).growX().center().row();
 
-        String traitText = (face != null) ? face.getLabel() + " (" + face.getType().name() + " " + face.getValue() + ")" : "[ Empty ]";
-        Color textColor = (face != null && boneColor != null) ? boneColor : Color.GRAY;
-        Label traitLbl = new Label(traitText, new Label.LabelStyle(hudSkin.getFontSmall(), textColor));
-        box.add(traitLbl).center().padTop(2);
+        // WORK-5: the modifier type was printed as its enum constant.
+        String traitText = (face != null)
+                ? face.getLabel() + " (" + UiNames.of(face.getType()) + " " + face.getValue() + ")"
+                : "Empty";
+        Color textColor = (face != null && boneColor != null) ? boneColor : UiTheme.TEXT_OFF;
+        Label traitLbl = UiLabels.wrapping(traitText, new Label.LabelStyle(hudSkin.getFontSmall(), textColor));
+        traitLbl.setAlignment(Align.center);
+        box.add(traitLbl).growX().center().padTop(2);
 
         return box;
     }
 
+    /**
+     * An action button.
+     *
+     * <p>WORK-2: these were drawn at the header size in cells fixed between 260 and 480 units,
+     * and several labels -- "Scrap All Junk Debris in Storage", "Carve Die into Pool",
+     * "Forge Bone Talisman" -- are wider than that at that size. A TextButton does not clip, so
+     * the overflow ran across whatever was beside it. Body size, and every caller now gives the
+     * cell a minimum rather than a fixed width.
+     */
     private TextButton createActionButton(String text, boolean enabled) {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontHeader();
+        style.font = hudSkin.getFontMain();
         if (enabled) {
             style.fontColor = HudSkin.COL_TEXT_ON_GOLD;
             style.overFontColor = HudSkin.COL_TEXT_ON_GOLD;
@@ -959,23 +964,12 @@ public class CraftingScreen extends BaseScreen {
             game.setScreen(parentScreen);
             return true;
         }
-        if (keycode == Input.Keys.NUM_1 || keycode == Input.Keys.NUMPAD_1) {
-            switchTab(0);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_2 || keycode == Input.Keys.NUMPAD_2) {
-            switchTab(1);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
-            switchTab(2);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_4 || keycode == Input.Keys.NUMPAD_4) {
-            switchTab(3);
-            return true;
-        }
-        return false;
+        return tabs != null && tabs.handleKey(keycode);
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     @Override
@@ -994,7 +988,7 @@ public class CraftingScreen extends BaseScreen {
             int i = 0;
             for (java.util.Map.Entry<ItemType, Integer> entry : counts.entrySet()) {
                 if (i++ > 0) sb.append(", ");
-                sb.append(entry.getValue()).append("x ").append(entry.getKey().name());
+                sb.append(entry.getValue()).append("x ").append(UiNames.of(entry.getKey()));
             }
             return sb;
         }
