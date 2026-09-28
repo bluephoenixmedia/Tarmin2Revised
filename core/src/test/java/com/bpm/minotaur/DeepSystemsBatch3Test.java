@@ -178,7 +178,12 @@ public class DeepSystemsBatch3Test {
         assertNotNull(betterResult);
         assertTrue("Should be upgrade", betterResult.isUpgrade);
         assertFalse(betterResult.isDowngrade);
-        assertTrue("Badge should contain ▲", betterResult.badge.contains("▲"));
+        // The badge used to be a black up-pointing triangle. intellivision.ttf has no glyph
+        // for it, so on the world interaction card it rendered as a missing-glyph box -- the
+        // one place this badge is ever shown. It says UP and DOWN now (RC4).
+        assertTrue("Badge should mark an upgrade", betterResult.badge.contains("UP"));
+        assertEquals("Badge must be renderable in the game font",
+                -1, com.bpm.minotaur.ui.UiGlyphs.firstUnsupportedIndex(betterResult.badge));
         assertEquals(GearComparison.COLOR_UPGRADE, betterResult.color);
 
         // Compare a 1d4 weapon on the ground (Dagger: avg 2.5, worse)
@@ -188,7 +193,9 @@ public class DeepSystemsBatch3Test {
         assertNotNull(worseResult);
         assertFalse(worseResult.isUpgrade);
         assertTrue("Should be downgrade", worseResult.isDowngrade);
-        assertTrue("Badge should contain ▼", worseResult.badge.contains("▼"));
+        assertTrue("Badge should mark a downgrade", worseResult.badge.contains("DOWN"));
+        assertEquals("Badge must be renderable in the game font",
+                -1, com.bpm.minotaur.ui.UiGlyphs.firstUnsupportedIndex(worseResult.badge));
         assertEquals(GearComparison.COLOR_DOWNGRADE, worseResult.color);
 
         // Compare identical weapon (equal)

@@ -20,6 +20,21 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private final Table col2 = new Table();
     private final Table col3 = new Table();
 
+    /**
+     * INV-1: the three columns were 250 + 14 + 225 + 14 + 250 = 753 units wide, inside a panel
+     * with 24 units of its own padding, inside a container the book's art gives 760 units. The
+     * sum overran the page edge, so the third column was cut off. And each column's key and
+     * value widths added up to exactly the column width, leaving no gutter, so a long value
+     * ran straight into the next column. These constants add back to less than the box, with
+     * room between the columns and between each key and its value.
+     */
+    private static final float BOX_W   = 760f;
+    private static final float PAD_H   = 12f;
+    private static final float GUTTER  = 16f;
+    private static final float COL_W   = (BOX_W - 2 * PAD_H - 2 * GUTTER) / 3f;  // 234
+    private static final float KEY_W   = COL_W * 0.58f;
+    private static final float VALUE_W = COL_W * 0.38f;
+
     private static final Color COL_HEADER = Color.valueOf("4A2E10FF");
     private static final Color COL_KEY    = Color.valueOf("2C1A08FF");
     private static final Color COL_VAL    = Color.valueOf("111111FF");
@@ -33,11 +48,11 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         this.skin = skin;
 
         top().left();
-        pad(4, 12, 4, 12);
+        pad(4, PAD_H, 4, PAD_H);
 
-        add(col1).top().left().width(250f).padRight(14);
-        add(col2).top().left().width(225f).padRight(14);
-        add(col3).top().left().width(250f);
+        add(col1).top().left().width(COL_W).padRight(GUTTER);
+        add(col2).top().left().width(COL_W).padRight(GUTTER);
+        add(col3).top().left().width(COL_W);
 
         buildRows();
     }
@@ -95,8 +110,10 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     private void stat(Table col, String key, String value, Color valueColor) {
         Label k = new Label(key + ":", new Label.LabelStyle(skin.getFontSmall(), COL_KEY));
         Label v = new Label(value, new Label.LabelStyle(skin.getFontSmall(), valueColor));
-        col.add(k).left().width(130f).padBottom(1);
-        col.add(v).right().width(95f).padBottom(1).row();
+        k.setEllipsis(true);
+        v.setEllipsis(true);
+        col.add(k).left().width(KEY_W).padBottom(1);
+        col.add(v).right().width(VALUE_W).padBottom(1).row();
     }
 
     // ── Colour helpers ────────────────────────────────────────────────

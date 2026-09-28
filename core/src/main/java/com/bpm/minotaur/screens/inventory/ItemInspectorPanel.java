@@ -134,7 +134,7 @@ public class ItemInspectorPanel extends Table {
             modTable.top().left();
             for (ItemModifier mod : item.getModifiers()) {
                 String modText = (mod.value >= 0 ? "+" : "") + mod.value + " " + (mod.type != null ? mod.type.name().replace('_', ' ') : "");
-                Label modLabel = new Label("• " + modText, new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
+                Label modLabel = new Label("- " + modText, new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
                 modTable.add(modLabel).left().row();
             }
             contentTable.add(modTable).left().padBottom(4).row();

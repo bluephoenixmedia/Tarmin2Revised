@@ -29,6 +29,15 @@ public class WorldInteractionCard extends Table {
 
     private Runnable onAction;
 
+    /**
+     * Where the bottom of the card sits, in stage units.
+     *
+     * <p>HUD-1: this was a literal 208, chosen to clear the 200-unit dashboard -- but the spell
+     * hotbar also starts just above the dashboard, so a centred prompt was drawn across the
+     * right-hand spell slots. The HUD sets this from whatever is actually below the card.
+     */
+    private float anchorY = 208f;
+
     public WorldInteractionCard(HudSkin skin) {
         this.skin = skin;
         setBackground(skin.getParchmentCard());
@@ -129,12 +138,19 @@ public class WorldInteractionCard extends Table {
 
         pack();
 
-        // Center horizontally in virtual 1920 viewport, sit at Y=208f (above 200px HUD)
+        // Centred in the 1920-unit viewport, resting on whatever the HUD says is below it.
         float posX = (1920f - getWidth()) / 2f;
-        float posY = 208f;
-        setPosition(posX, posY);
+        setPosition(posX, anchorY);
         toFront();
         setVisible(true);
+    }
+
+    /** Sets the bottom edge of the card, so it clears whatever the HUD has put above the bar. */
+    public void setAnchorY(float anchorY) {
+        this.anchorY = anchorY;
+        if (isVisible()) {
+            setPosition((1920f - getWidth()) / 2f, anchorY);
+        }
     }
 
     public void hide() {

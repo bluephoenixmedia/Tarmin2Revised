@@ -15,6 +15,9 @@ import com.bpm.minotaur.managers.SettingsManager;
  */
 public class SpellbookPanel extends Table {
 
+    /** Width of the painted "Spellbook:" box on new_inventory.png, in stage units. */
+    private static final float BOX_W = 370f;
+
     private final Player player;
     private final InventorySkin skin;
 
@@ -23,7 +26,6 @@ public class SpellbookPanel extends Table {
         this.skin   = skin;
 
         top().left();
-        padTop(12);
 
         refresh();
     }
@@ -31,27 +33,32 @@ public class SpellbookPanel extends Table {
     public void refresh() {
         clear();
 
-        add(new Label("SPELL SLOTS", new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_HEADER)))
-                .left().padBottom(4).row();
-
+        // INV-2: this panel had seven rows -- a heading, five slots and a footer -- inside a
+        // painted box with room for about six, so the footer was drawn below the frame. The
+        // heading is already painted on the page ("Spellbook:") and the footer repeated a
+        // shortcut that belongs in the page legend, so both come out and the five slots fit.
         for (int i = 0; i < 5; i++) {
             String text;
             Color color;
             if (i >= player.getUnlockedSpellSlots()) {
-                text = "LOCKED";
+                // Five identical "LOCKED" lines told the player nothing. Each says when.
+                text = "Locked - level " + com.bpm.minotaur.gamedata.player.Player.levelForSlot(i + 1);
                 color = InventorySkin.COL_TEXT_MUTED;
             } else {
                 SpellTemplate spell = SpellDataManager.getSpell(player.getPreparedSpell(i));
-                text = spell != null ? spell.getName() : "-- empty --";
-                color = spell != null ? InventorySkin.COL_PAGE_LIGHT : InventorySkin.COL_TEXT_MUTED;
+                text = spell != null ? spell.getName() : "Empty";
+                color = spell != null ? InventorySkin.COL_TEXT_VALUE : InventorySkin.COL_TEXT_MUTED;
             }
-            Label line = new Label("[" + com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i] + "] " + text, new Label.LabelStyle(skin.getFontSmall(), color));
+            Label line = new Label(com.bpm.minotaur.screens.SpellbookScreen.SLOT_KEYS[i] + "  " + text,
+                    new Label.LabelStyle(skin.getFontSmall(), color));
             line.setEllipsis(true);
-            add(line).width(340).left().row();
+            add(line).width(BOX_W).left().row();
         }
 
         String key = Input.Keys.toString(SettingsManager.getInstance().getKey("SPELLBOOK"));
-        add(new Label(player.getKnownSpellIds().size() + " known -- Open Spellbook [" + key + "]",
-                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_HEADER))).left().padTop(6).row();
+        Label foot = new Label(player.getKnownSpellIds().size() + " known   -   " + key + " to open",
+                new Label.LabelStyle(skin.getFontSmall(), InventorySkin.COL_TEXT_MUTED));
+        foot.setEllipsis(true);
+        add(foot).width(BOX_W).left().padTop(2).row();
     }
 }

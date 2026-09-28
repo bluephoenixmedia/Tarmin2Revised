@@ -26,6 +26,13 @@ import com.bpm.minotaur.managers.CookingManager;
 import com.bpm.minotaur.managers.CookingManager.CookingRecipe;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiStyles;
+import com.bpm.minotaur.ui.UiTabs;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,10 +74,10 @@ public class CookingScreen extends BaseScreen {
     private Table rightPanelContent;
     private Label resourceBarLabel;
     private Label feedbackLabel;
-    private TextButton tabBtnWhipUp;
-    private TextButton tabBtnCauldron;
-    private TextButton tabBtnCookbook;
-    private TextButton tabBtnRest;
+    private UiTabs tabs;
+
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "HEARTH";
 
     private final boolean fieldMode;
 
@@ -97,6 +104,7 @@ public class CookingScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
 
         buildScreenLayout();
         refreshAll();
@@ -131,18 +139,17 @@ public class CookingScreen extends BaseScreen {
         root.add(header).fillX().padBottom(12).row();
 
         // --- 2. TAB SWITCHER BAR ---
-        Table tabBar = new Table();
-        tabBtnWhipUp = createTabButton("[ 1 : WHIP UP A MEAL ]", 0);
-        tabBtnCauldron = createTabButton("[ 2 : CAULDRON (CUSTOM) ]", 1);
-        tabBtnCookbook = createTabButton("[ 3 : COOKBOOK & CODEX ]", 2);
-        tabBtnRest = createTabButton("[ 4 : REST BY HEARTH ]", 3);
-
-        tabBar.add(tabBtnWhipUp).size(380, 48).padRight(15);
-        tabBar.add(tabBtnCauldron).size(380, 48).padRight(15);
-        tabBar.add(tabBtnCookbook).size(380, 48).padRight(15);
-        tabBar.add(tabBtnRest).size(380, 48);
-
-        root.add(tabBar).center().padBottom(12).row();
+        // HEARTH-1 (RC5): four labels of the shape "[ 2 : CAULDRON (CUSTOM) ]" in cells fixed
+        // at 380, which the longest of them exceeds -- so the tab name and the next tab's
+        // bracketed number were drawn over each other and it rendered as "MEAL [2".
+        tabs = new UiTabs(hudSkin)
+                .addTab(1, "Whip up a meal")
+                .addTab(2, "Cauldron")
+                .addTab(3, "Cookbook & codex")
+                .addTab(4, "Rest by hearth");
+        tabs.onSelect(this::switchTab);
+        tabs.setSelectedSilently(currentTab);
+        root.add(tabs).center().padBottom(12).row();
 
         // --- 3. RESOURCE STATUS BAR ---
         Table resBar = new Table();
@@ -186,37 +193,26 @@ public class CookingScreen extends BaseScreen {
         feedbackLabel.setAlignment(Align.left);
         footer.add(feedbackLabel).expandX().left().padLeft(20);
 
-        TextButton backBtn = createActionButton("[ ESC / O : Back to Shelter ]", true);
+        // HEARTH-2: the label carried its own two shortcuts and a destination, at the header
+        // font, in a 400-unit cell -- so it was clipped at both ends and read
+        // "ESC / O : Back to Shelt...". The button says what it does; the keys are in the
+        // legend beside it.
+        TextButton backBtn = createActionButton("BACK TO SHELTER", true);
         backBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 game.setScreen(parentScreen);
             }
         });
-        footer.add(backBtn).size(400, 48).right().padRight(20);
+        footer.add(new KeyHintLegend(hudSkin)
+                .hint("1-4", "Tab")
+                .hint("O", "Close")
+                .escapeHint("Back to shelter")).right().padRight(UiTheme.PAD_XL);
+        footer.add(backBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right().padRight(20);
 
         root.add(footer).fillX();
 
         stage.addActor(root);
-    }
-
-    private TextButton createTabButton(String text, final int tabIndex) {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = hudSkin.getFontMain();
-        style.fontColor = Color.LIGHT_GRAY;
-        style.overFontColor = HudSkin.COL_GOLD_BRIGHT;
-        style.up = hudSkin.getSlotRecessed();
-        style.down = hudSkin.getSlotActive();
-        style.over = hudSkin.getSlotActive();
-
-        TextButton btn = new TextButton(text, style);
-        btn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                switchTab(tabIndex);
-            }
-        });
-        return btn;
     }
 
     private TextButton createActionButton(String text, boolean enabled) {
@@ -244,35 +240,13 @@ public class CookingScreen extends BaseScreen {
 
     public void switchTab(int tabIndex) {
         this.currentTab = tabIndex;
-        updateTabButtonStyles();
+        if (tabs != null) {
+            tabs.setSelectedSilently(tabIndex);
+        }
         refreshRightPanel();
     }
 
-    /** Applies the mockup's filled-gold active tab / dark inactive tab look. */
-    private void applyTabButtonState(TextButton btn, boolean active) {
-        TextButton.TextButtonStyle style = btn.getStyle();
-        if (active) {
-            style.up = hudSkin.getPrimaryButtonUp();
-            style.down = hudSkin.getPrimaryButtonDown();
-            style.over = hudSkin.getPrimaryButtonUp();
-            btn.getLabel().setColor(HudSkin.COL_TEXT_ON_GOLD);
-        } else {
-            style.up = hudSkin.getSlotRecessed();
-            style.down = hudSkin.getSlotActive();
-            style.over = hudSkin.getSlotActive();
-            btn.getLabel().setColor(HudSkin.COL_GOLD_MUTED);
-        }
-    }
-
-    private void updateTabButtonStyles() {
-        applyTabButtonState(tabBtnWhipUp, currentTab == 0);
-        applyTabButtonState(tabBtnCauldron, currentTab == 1);
-        applyTabButtonState(tabBtnCookbook, currentTab == 2);
-        applyTabButtonState(tabBtnRest, currentTab == 3);
-    }
-
     private void refreshAll() {
-        updateTabButtonStyles();
         refreshResourceBar();
         refreshLeftPanelPantry();
         refreshRightPanel();
@@ -326,11 +300,13 @@ public class CookingScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         leftPanelContent.add(title).left().padBottom(6).row();
 
-        Label sub = new Label(fieldMode
-                ? "Draws from your Backpack only. Click to add to Cauldron."
-                : "Draws from Backpack & Shelter Chest. Click to add to Cauldron.",
-                new Label.LabelStyle(hudSkin.getFontSmall(), Color.GRAY));
-        leftPanelContent.add(sub).left().padBottom(15).row();
+        // HEARTH-4: this line had no width, so in a 720-unit panel it was cut at
+        // "Click to ad...". It wraps now.
+        Label sub = UiLabels.wrapping(fieldMode
+                ? "Draws from your backpack only. Click an item to add it to the cauldron."
+                : "Draws from your backpack and the shelter chest. Click an item to add it to the cauldron.",
+                UiStyles.caption(hudSkin));
+        leftPanelContent.add(sub).growX().left().padBottom(15).row();
 
         List<PantryEntry> pantry = getUnifiedPantryItems();
         if (pantry.isEmpty()) {
@@ -344,23 +320,24 @@ public class CookingScreen extends BaseScreen {
             Table row = new Table();
             row.setBackground(hudSkin.getSlotRecessed());
 
-            String sourceBadge = entry.fromChest ? "[CHEST]" : "[PACK]";
+            // HEARTH-5: the source was a bracketed word taking as much room as the item name.
+            String sourceBadge = entry.fromChest ? "Chest" : "Pack";
             Color sourceCol = entry.fromChest ? HudSkin.COL_GOLD_MUTED : HudSkin.COL_WATER_CYAN;
             Label badgeLbl = new Label(sourceBadge, new Label.LabelStyle(hudSkin.getFontSmall(), sourceCol));
-            row.add(badgeLbl).padLeft(10).padRight(10);
+            row.add(badgeLbl).width(90f).padLeft(10).padRight(10);
 
             String name = entry.item.getDisplayName();
             MonsterType src = entry.item.getCorpseSource();
             if (src != null) {
                 if (cookingManager.isGibIdentified(src)) {
                     StatusEffectType eff = cookingManager.getEffectForMonster(src);
-                    if (eff != null) name += " [" + eff.name().replace('_', ' ') + "]";
+                    if (eff != null) name += " (" + UiNames.of(eff) + ")";
                 } else {
                     name += " [?]";
                 }
             }
-            Label nameLbl = new Label(name, new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-            row.add(nameLbl).expandX().left();
+            Label nameLbl = UiLabels.ellipsized(name, UiStyles.body(hudSkin));
+            row.add(nameLbl).growX().left();
 
             TextButton addBtn = createActionButton("+ Add", cauldronIngredients.size() < 3);
             addBtn.addListener(new ClickListener() {
@@ -458,25 +435,37 @@ public class CookingScreen extends BaseScreen {
         boolean canCook = hasResources && !quickIngredients.isEmpty();
 
         Table btnRow = new Table();
-        TextButton feastBtn = createActionButton("FEAST AT HEARTH (EAT NOW)", canCook);
-        feastBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                cookMealAction(quickIngredients, true);
-            }
-        });
-        btnRow.add(feastBtn).size(460, 56).padRight(25);
-
-        TextButton packBtn = createActionButton("PACK FIELD RATIONS", canCook);
-        packBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                cookMealAction(quickIngredients, false);
-            }
-        });
-        btnRow.add(packBtn).size(460, 56);
+        addActionWithCaption(btnRow, "FEAST", "Eat it here and now", canCook,
+                () -> cookMealAction(quickIngredients, true));
+        addActionWithCaption(btnRow, "PACK RATIONS", "Carry it into the delve", canCook,
+                () -> cookMealAction(quickIngredients, false));
 
         rightPanelContent.add(btnRow).left().row();
+    }
+
+    /**
+     * An action button with its cost or consequence underneath (HEARTH-3).
+     *
+     * <p>The labels here used to carry both -- "FEAST AT HEARTH (EAT NOW)", "REST AND STOKE
+     * FIRE (1 Kindling)" -- at the header font, in cells narrower than the text. A verb fits in
+     * a button; a condition belongs in a caption.
+     */
+    private void addActionWithCaption(Table row, String verb, String caption, boolean enabled, Runnable action) {
+        TextButton btn = createActionButton(verb, enabled);
+        btn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (enabled) {
+                    action.run();
+                }
+            }
+        });
+        Table col = new Table();
+        col.add(btn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).growX().row();
+        col.add(UiLabels.ellipsized(caption,
+                UiStyles.caption(hudSkin, enabled ? UiTheme.TEXT_DIM : UiTheme.DANGER)))
+                .center().padTop(UiTheme.PAD_XS);
+        row.add(col).padRight(UiTheme.PAD_XL).top();
     }
 
     // --- TAB 1: CAULDRON (CUSTOM MIXING) ---
@@ -577,7 +566,7 @@ public class CookingScreen extends BaseScreen {
             StringBuilder boons = new StringBuilder("Boons: ");
             for (int i = 0; i < previewEffects.size(); i++) {
                 if (i > 0) boons.append(", ");
-                boons.append(previewEffects.get(i).name().replace('_', ' '));
+                boons.append(UiNames.of(previewEffects.get(i)));
             }
             boons.append(" (").append(dur).append(" turns)");
             Label boonsLbl = new Label(boons.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_PARCHMENT_AFFORD));
@@ -596,23 +585,10 @@ public class CookingScreen extends BaseScreen {
         boolean canCook = hasResources && !currentItems.isEmpty();
 
         Table btnRow = new Table();
-        TextButton feastBtn = createActionButton("FEAST AT HEARTH (EAT NOW)", canCook);
-        feastBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                cookMealAction(currentItems, true);
-            }
-        });
-        btnRow.add(feastBtn).size(460, 56).padRight(25);
-
-        TextButton packBtn = createActionButton("PACK FIELD RATIONS", canCook);
-        packBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                cookMealAction(currentItems, false);
-            }
-        });
-        btnRow.add(packBtn).size(460, 56);
+        addActionWithCaption(btnRow, "FEAST", "Eat it here and now", canCook,
+                () -> cookMealAction(currentItems, true));
+        addActionWithCaption(btnRow, "PACK RATIONS", "Carry it into the delve", canCook,
+                () -> cookMealAction(currentItems, false));
 
         rightPanelContent.add(btnRow).left().row();
     }
@@ -623,9 +599,11 @@ public class CookingScreen extends BaseScreen {
                 new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         rightPanelContent.add(tabTitle).left().padBottom(6).row();
 
-        Label desc = new Label("Documented recipes and identified monster essences. Click [Auto-Fill] to load ingredients into Cauldron.",
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.LIGHT_GRAY));
-        rightPanelContent.add(desc).left().padBottom(15).row();
+        Label desc = UiLabels.wrapping(
+                "Documented recipes and identified monster essences. Auto-Fill loads a recipe's "
+                        + "ingredients into the cauldron.",
+                UiStyles.body(hudSkin, UiTheme.TEXT_DIM));
+        rightPanelContent.add(desc).growX().left().padBottom(15).row();
 
         List<PantryEntry> pantry = getUnifiedPantryItems();
 
@@ -635,21 +613,26 @@ public class CookingScreen extends BaseScreen {
             row.pad(10);
 
             boolean isDiscovered = cookingManager.isRecipeDiscovered(recipe.name);
-            Label nameLbl = new Label(isDiscovered ? recipe.name : "??? Unknown Recipe",
-                    new Label.LabelStyle(hudSkin.getFontHeader(), isDiscovered ? HudSkin.COL_GOLD_ANTIQUE : Color.GRAY));
-            row.add(nameLbl).expandX().left().row();
+            // HEARTH-4: none of these three had a width, so the cards grew to whatever the
+            // longest ingredient list needed and ran off the right of the panel.
+            Label nameLbl = UiLabels.ellipsized(isDiscovered ? recipe.name : "Unknown recipe",
+                    new Label.LabelStyle(hudSkin.getFontHeader(), isDiscovered ? HudSkin.COL_GOLD_ANTIQUE : UiTheme.TEXT_OFF));
+            row.add(nameLbl).growX().left().row();
 
-            Label rDesc = new Label(isDiscovered ? recipe.description : "Experiment with monster gibs in the Cauldron to discover this recipe.",
-                    new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY));
-            row.add(rDesc).left().padTop(2).padBottom(4).row();
+            Label rDesc = UiLabels.wrapping(isDiscovered ? recipe.description
+                            : "Experiment with monster gibs in the cauldron to discover this recipe.",
+                    UiStyles.caption(hudSkin));
+            row.add(rDesc).growX().left().padTop(2).padBottom(4).row();
 
-            StringBuilder ingStr = new StringBuilder("Required: ");
+            // HEARTH-6: this printed the ItemType constants, so the requirement line read
+            // "GIB<-FLESH, MONSTER<-EYE".
+            StringBuilder ingStr = new StringBuilder("Needs: ");
             for (int i = 0; i < recipe.ingredients.size(); i++) {
                 if (i > 0) ingStr.append(", ");
-                ingStr.append(recipe.ingredients.get(i).name());
+                ingStr.append(UiNames.of(recipe.ingredients.get(i)));
             }
-            Label reqLbl = new Label(ingStr.toString(), new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE));
-            row.add(reqLbl).left().row();
+            Label reqLbl = UiLabels.wrapping(ingStr.toString(), UiStyles.caption(hudSkin, UiTheme.TEXT));
+            row.add(reqLbl).growX().left().row();
 
             // Auto fill button
             if (isDiscovered) {
@@ -666,7 +649,7 @@ public class CookingScreen extends BaseScreen {
                         refreshAll();
                     }
                 });
-                row.add(fillBtn).size(180, 36).right().padTop(4).row();
+                row.add(fillBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right().padTop(4).row();
             }
 
             rightPanelContent.add(row).expandX().fillX().padBottom(10).row();
@@ -711,26 +694,23 @@ public class CookingScreen extends BaseScreen {
         statsBox.setBackground(hudSkin.getSlotRecessed());
         statsBox.pad(20);
 
-        statsBox.add(new Label("• Health Restored: +" + healAmt + " HP",
+        statsBox.add(new Label("- Health Restored: +" + healAmt + " HP",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_HP_RED))).left().padBottom(6).row();
-        statsBox.add(new Label("• Body Warmth: Stabilized to cozy normal 37.0°C",
+        statsBox.add(new Label("- Body Warmth: stabilised to a normal 37.0C",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEMP_ORANGE))).left().padBottom(6).row();
-        statsBox.add(new Label("• Satiety Restored: +20 Sustenance",
+        statsBox.add(new Label("- Satiety Restored: +20 Sustenance",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_FOOD_GREEN))).left().padBottom(6).row();
-        statsBox.add(new Label("• Time Advanced: +45 Minutes (Day/Night Progression)",
+        statsBox.add(new Label("- Time Advanced: +45 minutes",
                 new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_GOLD_BRIGHT))).left().row();
 
         rightPanelContent.add(statsBox).expandX().fillX().padBottom(25).row();
 
         boolean hasKindling = player.getStats().getKindlingCount() >= 1;
-        TextButton restBtn = createActionButton("REST AND STOKE FIRE (1 Kindling)", hasKindling);
-        restBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                performRestAction();
-            }
-        });
-        rightPanelContent.add(restBtn).size(560, 56).left().row();
+        Table restRow = new Table();
+        addActionWithCaption(restRow, "REST AND STOKE THE FIRE",
+                hasKindling ? "Costs 1 kindling" : "Needs 1 kindling - have none",
+                hasKindling, this::performRestAction);
+        rightPanelContent.add(restRow).left().row();
     }
 
     // -------------------------------------------------------------------------
@@ -851,7 +831,7 @@ public class CookingScreen extends BaseScreen {
 
         parentScreen.getEventManager().addEvent(
                 new GameEvent("You rest by the hearth fire. Embers crackle warmly as 45 minutes pass. (+" + healAmt + " HP)", 3.5f));
-        feedbackLabel.setText("Rested by the hearth fire. Healed " + healAmt + " HP and warmed to 37.0°C.");
+        feedbackLabel.setText("Rested by the hearth fire. Healed " + healAmt + " HP and warmed to 37.0C.");
         feedbackLabel.setColor(HudSkin.COL_FOOD_GREEN);
 
         refreshAll();
@@ -881,23 +861,12 @@ public class CookingScreen extends BaseScreen {
             game.setScreen(parentScreen);
             return true;
         }
-        if (keycode == Input.Keys.NUM_1 || keycode == Input.Keys.NUMPAD_1) {
-            switchTab(0);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_2 || keycode == Input.Keys.NUMPAD_2) {
-            switchTab(1);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_3 || keycode == Input.Keys.NUMPAD_3) {
-            switchTab(2);
-            return true;
-        }
-        if (keycode == Input.Keys.NUM_4 || keycode == Input.Keys.NUMPAD_4) {
-            switchTab(3);
-            return true;
-        }
-        return false;
+        return tabs != null && tabs.handleKey(keycode);
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     @Override

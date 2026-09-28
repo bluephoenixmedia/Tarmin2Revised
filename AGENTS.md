@@ -48,3 +48,29 @@ the other side had started reading. Compile and test every merge.
 - **Core Loop**: Maintain the integrity of the Delve & Return Expedition loop: Shelter Hub -> Overland/Strata Delve -> Return to Camp -> Prepare for Castle Tarmin.
 - **Combat**: Keep grid combat fast and responsive (bump-to-attack in melee, directional projectile ballistics for bows, crossbows and thrown weapons, spellcast overlays). Calculations run under the hood with instant floating damage and combat log feedback.
 - **Firearms are the exception to ballistics**: muskets and pistols resolve hitscan, carried by a muzzle flash and powder smoke rather than a travelling sprite. Suddenness is the only thing a gun has over a bow, and a ball you can watch cross the room takes it away. Their cost is paid elsewhere -- a multi-turn reload, a noise pulse that wakes the level, and ammunition that never litters the floor. See `core/src/main/java/com/bpm/minotaur/gamedata/firearm/`.
+
+---
+
+## UI overhaul (pre-launch) — standing rules
+
+- Spec: `docs/ui-overhaul/SPEC.md` (findings, tokens, components, libGDX notes).
+  Mockups: `docs/ui-overhaul/mockups/` (`Tarmin UI 2b.dc.html` is the design
+  canvas, direction 2B "Carved Frame"). Prompts: `docs/ui-overhaul/PROMPTS.md`.
+- **Virtual canvas.** SPEC §5.1 proposes a 640x360 `PixelUiViewport`. This repo
+  already has one consistent virtual canvas -- every UI stage is
+  `FitViewport(1920, 1080)` -- and the design canvas is authored at 1920x1080
+  with `intellivision.ttf`. So the spec's intent (one integer-scaled canvas, no
+  fractional font scaling) is met by keeping 1920x1080 and treating **1 vu = 3
+  canvas units**. `UiTheme` exposes every §3 size in canvas units. Do not
+  introduce a second virtual resolution.
+- Approach: minimal diffs that extend existing classes. No architectural
+  rewrites. Inspect existing code before changing it and state the plan first.
+- PROTECTED: inventory paper doll + armor overlay coordinates. Never move,
+  resize, re-scale the doll or edit overlay offsets. Wrap, don't edit.
+- Layout: Scene2D Tables only; no hand-placed text; wrap or ellipsize every
+  Label; font line heights from metrics; integer font scales only.
+- UI text never comes from enum `name()`/`toString()` -- use `UiNames`.
+- Colors/sizes come from `UiTheme` / `HudSkin`, never literals in screen code.
+- Every UI string must survive `UiGlyphs.sanitize` -- `intellivision.ttf` has no
+  `_`, no degree sign and no box-drawing glyphs (see `UiGlyphsTest`).
+- When a finding is done, tick its checkbox in `docs/ui-overhaul/SPEC.md`.

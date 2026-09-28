@@ -10,7 +10,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.liquid.LiquidType;
 import com.bpm.minotaur.generation.Biome;
-import com.bpm.minotaur.rendering.Skybox3DRenderer;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
@@ -61,9 +60,13 @@ public class AttractModeRenderer implements Disposable {
     private final Map<String, List<ChunkSubMesh>> cachedMeshes = new HashMap<>();
     private final Set<String> activeKeys = new HashSet<>();
 
-    // 3D Skybox
-    private Skybox3DRenderer skyboxRenderer;
-    private final Skybox3DRenderer.SkyState skyState = new Skybox3DRenderer.SkyState();
+    /**
+     * The dark behind the maze, and the embers in it.
+     *
+     * <p>Replaces the sky dome. The flyover is meant to be crossing a ruin, and every gap in
+     * the maze floor was showing a lit seascape through it.
+     */
+    private VoidBackdrop voidBackdrop;
 
     public AttractModeRenderer() {
         this.splinePath = new AttractSplinePath();
@@ -126,7 +129,7 @@ public class AttractModeRenderer implements Disposable {
 
             liquidBatcher = new DynamicQuadBatcher();
 
-            skyboxRenderer = new Skybox3DRenderer();
+            voidBackdrop = new VoidBackdrop();
         } catch (Throwable t) {
             Gdx.app.error(TAG, "Initialization error in AttractModeRenderer: " + t.getMessage(), t);
         }
@@ -158,6 +161,12 @@ public class AttractModeRenderer implements Disposable {
 
         Biome currentBiome = splinePath.getBiomeAt(flightTime);
         splinePath.getAtmosphere(flightTime, currentFogColor, currentFogDist);
+        // Distance fog blends geometry toward this colour. Left at the biome's daylight haze
+        // it would paint a bright horizon across a black sky.
+        if (voidBackdrop != null) {
+            voidBackdrop.applyFog(currentFogColor);
+            voidBackdrop.update(delta);
+        }
         soundManager.update(currentPos, currentBiome);
 
         // Update active chunk streaming around camera
@@ -229,17 +238,13 @@ public class AttractModeRenderer implements Disposable {
         camera.viewportHeight = viewport.getWorldHeight();
         camera.update();
 
-        // 1. Render Skybox Dome Pass
-        if (skyboxRenderer != null && skyboxRenderer.isInitialized()) {
-            skyState.camX = camera.position.x * 0.05f;
-            skyState.camZ = camera.position.z * 0.05f;
-            skyState.forwardX = camera.direction.x;
-            skyState.forwardZ = camera.direction.z;
-            skyState.cloudCover = 0.35f;
-            skyboxRenderer.renderDirect(viewport, skyState, Gdx.graphics.getDeltaTime());
-            Gdx.gl.glClear(GL20.GL_DEPTH_BUFFER_BIT);
+        // 1. The void. No sky dome: there is nothing above the ruin worth looking at, and
+        // what the maze's gaps used to show through the floor was a sunlit sea.
+        if (voidBackdrop != null) {
+            voidBackdrop.clear();
         } else {
-            Gdx.gl.glClearColor(currentFogColor.r, currentFogColor.g, currentFogColor.b, 1f);
+            Gdx.gl.glClearColor(VoidBackdrop.VOID_COLOR.r, VoidBackdrop.VOID_COLOR.g,
+                    VoidBackdrop.VOID_COLOR.b, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         }
 
@@ -253,7 +258,11 @@ public class AttractModeRenderer implements Disposable {
         worldShader.setUniformMatrix("u_worldTrans", identityMatrix);
         worldShader.setUniformf("u_cameraPos", camera.position);
         worldShader.setUniformi("u_retroMode", 0);
-        worldShader.setUniformf("u_doomFactor", 0.0f);
+        // u_doomFactor scales the ambient and directional terms in world3d.frag, so zero meant
+        // the terrain was contributing no light at all -- everything visible in the flyover was
+        // either the sky dome or distance fog. With the dome gone that would have left a black
+        // screen. 1.0 is the shader's undoomed value, the same as an unthreatened world.
+        worldShader.setUniformf("u_doomFactor", 1.0f);
         worldShader.setUniformf("u_fogEnabled", 1.0f);
         worldShader.setUniformf("u_fogDistance", currentFogDist[0]);
         worldShader.setUniformf("u_fogColor", currentFogColor.r, currentFogColor.g, currentFogColor.b);
@@ -274,6 +283,12 @@ public class AttractModeRenderer implements Disposable {
 
         // 3. Render Translucent Water & Liquid Quads
         renderLiquids();
+
+        // 4. Embers in the dark, additive and occluded by the maze -- so one below the floor
+        // only shows through a gap.
+        if (voidBackdrop != null) {
+            voidBackdrop.render(camera, worldShader);
+        }
 
 
     }
@@ -377,6 +392,10 @@ public class AttractModeRenderer implements Disposable {
         }
         if (soundManager != null) {
             soundManager.dispose();
+        }
+        if (voidBackdrop != null) {
+            voidBackdrop.dispose();
+            voidBackdrop = null;
         }
 
         for (List<ChunkSubMesh> list : cachedMeshes.values()) {

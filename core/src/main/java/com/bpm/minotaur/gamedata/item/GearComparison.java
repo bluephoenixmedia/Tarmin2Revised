@@ -64,11 +64,11 @@ public class GearComparison {
         float diff = candAvg - eqAvg;
         if (diff > 0.05f) {
             String badge = (equipped == null)
-                    ? String.format("▲ (+%.1f Dmg)", candAvg)
-                    : String.format("▲ (+%.1f Dmg)", diff);
+                    ? String.format("UP (+%.1f Dmg)", candAvg)
+                    : String.format("UP (+%.1f Dmg)", diff);
             return new ComparisonResult(diff, badge, COLOR_UPGRADE, true, false);
         } else if (diff < -0.05f) {
-            String badge = String.format("▼ (%.1f Dmg)", diff);
+            String badge = String.format("DOWN (%.1f Dmg)", diff);
             return new ComparisonResult(diff, badge, COLOR_DOWNGRADE, false, true);
         } else {
             return new ComparisonResult(0f, "- (= Dmg)", COLOR_SIDEGRADE, false, false);
@@ -84,11 +84,11 @@ public class GearComparison {
         int diff = candAC - eqAC;
         if (diff > 0) {
             String badge = (equipped == null)
-                    ? "▲ (+" + candAC + " AC)"
-                    : "▲ (+" + diff + " AC)";
+                    ? "UP (+" + candAC + " AC)"
+                    : "UP (+" + diff + " AC)";
             return new ComparisonResult(diff, badge, COLOR_UPGRADE, true, false);
         } else if (diff < 0) {
-            String badge = "▼ (" + diff + " AC)";
+            String badge = "DOWN (" + diff + " AC)";
             return new ComparisonResult(diff, badge, COLOR_DOWNGRADE, false, true);
         } else {
             return new ComparisonResult(0f, "- (= AC)", COLOR_SIDEGRADE, false, false);

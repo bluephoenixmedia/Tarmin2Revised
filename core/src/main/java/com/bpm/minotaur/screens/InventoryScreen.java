@@ -987,7 +987,7 @@ public class InventoryScreen extends BaseScreen {
         sRow(leftStatsCol, "Stamina",    player.getEffectiveStamina() + " dice",                        Color.WHITE);
         sRow(leftStatsCol, "Speed",      String.valueOf(player.getEffectiveSpeed()),                     Color.WHITE);
         sRow(leftStatsCol, "Crit Chance",Math.round(player.getCritChance() * 100) + "%",                Color.WHITE);
-        sRow(leftStatsCol, "Crit Damage",String.format("%.1f×", player.getCritMultiplier()),       Color.WHITE);
+        sRow(leftStatsCol, "Crit Damage",String.format("%.1fx", player.getCritMultiplier()),       Color.WHITE);
         sRow(leftStatsCol, "Dodge",      Math.round(player.getDodgeChance() * 100) + "%",               Color.WHITE);
         sRow(leftStatsCol, "Spell Power","+" + player.getSpellPower(),                                   Color.WHITE);
 
@@ -997,7 +997,7 @@ public class InventoryScreen extends BaseScreen {
              sat < 20 ? Color.RED : sat < 50 ? Color.YELLOW : Color.WHITE);
 
         float temp = player.getStats().getBodyTemperature();
-        sRow(rightStatsCol, "Body Temp", String.format("%.1f°C", temp),
+        sRow(rightStatsCol, "Body Temp", String.format("%.1fC", temp),
              (temp < 33f || temp > 41f) ? Color.RED : (temp < 35f || temp > 39f) ? Color.YELLOW : Color.WHITE);
 
         int hyd = player.getStats().getHydration();

@@ -24,6 +24,11 @@ import com.bpm.minotaur.gamedata.spells.Tome;
 import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.bpm.minotaur.managers.SettingsManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiContexts;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiStyles;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +67,9 @@ public class SpellbookScreen extends BaseScreen {
     private String selectedSpellId;
     private String schoolFilter; // null = every school
 
+    /** This screen's entry on the input-context stack (SPEC 5.6). */
+    private static final String CONTEXT = "SPELLBOOK";
+
     public SpellbookScreen(Tarmin2 game, GameScreen parentScreen, Player player, Maze maze) {
         super(game);
         this.parentScreen = parentScreen;
@@ -79,6 +87,7 @@ public class SpellbookScreen extends BaseScreen {
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(this);
         Gdx.input.setInputProcessor(multiplexer);
+        UiContexts.push(CONTEXT, UiContexts.Kind.PANEL);
 
         buildUI();
     }
@@ -137,11 +146,16 @@ public class SpellbookScreen extends BaseScreen {
         Table footer = new Table();
         footer.setBackground(hudSkin.getPanelBg());
         footer.pad(12, 20, 12, 20);
-        Label keyHints = new Label("[ESC/" + keyName() + "] CLOSE   Click a spell, then a slot (or drag it) to assign   Right-click a slot to clear",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        footer.add(keyHints).left().expandX();
-        statusLabel = new Label("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-        footer.add(statusLabel).right();
+        // SPELL-6: this was one long sentence carrying three separate instructions and a
+        // bracketed key, which is exactly what the legend component is for.
+        statusLabel = UiLabels.ellipsized("", new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
+        footer.add(statusLabel).left().expandX();
+        footer.add(new KeyHintLegend(hudSkin)
+                .hint("CLICK", "Assign")
+                .hint("DRAG", "Assign")
+                .hint("R-CLICK", "Clear slot")
+                .hint(keyName(), "Close")
+                .escapeHint("Close")).right();
         root.add(footer).fillX();
 
         stage.addActor(root);
@@ -183,30 +197,33 @@ public class SpellbookScreen extends BaseScreen {
         cell.setBackground(unlocked ? hudSkin.getSlotActive() : hudSkin.getSlotRecessed());
         cell.pad(8, 12, 8, 12);
 
-        Label keyLabel = new Label("SLOT " + (slot + 1) + "  [" + SLOT_KEYS[slot] + "]",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        cell.add(keyLabel).left().row();
+        Label keyLabel = UiLabels.ellipsized("SLOT " + (slot + 1) + "   " + SLOT_KEYS[slot],
+                UiStyles.caption(hudSkin));
+        cell.add(keyLabel).growX().left().height(hudSkin.getFontSmall().getLineHeight()).row();
 
         String name;
         String sub;
         Color nameColor;
         if (!unlocked) {
-            name = "LOCKED";
-            sub = "Unlocks at Level " + Player.levelForSlot(slot + 1);
-            nameColor = Color.DARK_GRAY;
+            name = "Locked";
+            sub = "Unlocks at level " + Player.levelForSlot(slot + 1);
+            nameColor = UiTheme.TEXT_OFF;
         } else if (spell != null) {
             name = spell.getName();
             sub = costText(spell);
-            nameColor = Color.CYAN;
+            nameColor = UiTheme.TEXT;
         } else {
-            name = "-- empty --";
-            sub = "";
-            nameColor = HudSkin.COL_GOLD_MUTED;
+            name = "Empty";
+            sub = "Click a spell, then this slot";
+            nameColor = UiTheme.TEXT_DIM;
         }
-        Label nameLabel = new Label(name, new Label.LabelStyle(hudSkin.getFontMain(), nameColor));
-        nameLabel.setEllipsis(true);
-        cell.add(nameLabel).width(300).left().row();
-        cell.add(new Label(sub, new Label.LabelStyle(hudSkin.getFontSmall(), Color.LIGHT_GRAY))).left();
+        // SPELL-1: the three lines of a slot card share one column and must each own a row
+        // with its own height. A cell given a fixed height that is smaller than its contents
+        // will compress the rows into each other, which is what printed two lines at one Y.
+        Label nameLabel = UiLabels.ellipsized(name, new Label.LabelStyle(hudSkin.getFontMain(), nameColor));
+        cell.add(nameLabel).growX().left().height(hudSkin.getFontMain().getLineHeight()).row();
+        cell.add(UiLabels.ellipsized(sub, UiStyles.caption(hudSkin)))
+                .growX().left().height(hudSkin.getFontSmall().getLineHeight());
 
         if (!unlocked) {
             return cell;
@@ -409,9 +426,9 @@ public class SpellbookScreen extends BaseScreen {
     // =========================================================================
 
     private void buildTomeChoice(TomeChoice choice) {
-        detailPanel.add(new Label("THE " + choice.getTome().getDisplayName().toUpperCase(Locale.ROOT)
+        detailPanel.add(UiLabels.wrapping("THE " + choice.getTome().getDisplayName().toUpperCase(Locale.ROOT)
                         + " -- CHOOSE ONE SPELL TO LEARN",
-                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT))).left().row();
+                new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT))).growX().left().row();
 
         Table cards = new Table();
         cards.top().left();
@@ -432,7 +449,7 @@ public class SpellbookScreen extends BaseScreen {
                     chooseTomeSpell(id);
                 }
             });
-            card.add(learn).colspan(2).left().width(420).height(44).padTop(10).row();
+            card.add(learn).colspan(2).left().minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padTop(10).row();
             cards.add(card).width(820).left().padBottom(12).row();
         }
         ScrollPane scroll = new ScrollPane(cards);
@@ -450,7 +467,7 @@ public class SpellbookScreen extends BaseScreen {
                     refresh();
                 }
             });
-            detailPanel.add(reroll).left().width(300).height(44).padTop(8).row();
+            detailPanel.add(reroll).left().minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padTop(8).row();
         }
     }
 
@@ -482,14 +499,21 @@ public class SpellbookScreen extends BaseScreen {
         panel.add(new Label(levelText + "  -  " + capitalize(spell.getSchool()),
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE))).left().colspan(2).padBottom(12).row();
 
+        // SPELL-3: the panel used to print every row whether or not it had a value, so a
+        // light spell advertised "Range 0 tiles" and "Damage 0 Radiant" -- two facts that are
+        // not true and one that is not interesting. A row that would read zero is left out.
         detailRow(panel, hudSkin, "Cost", costText(spell));
-        detailRow(panel, hudSkin, "Range", spell.getRange() + (spell.getRange() == 1 ? " tile" : " tiles"));
-        detailRow(panel, hudSkin, "Target", capitalize(spell.getTargetType()));
-        if (spell.getDamageDice() != null && !spell.getDamageDice().isEmpty()) {
+        if (spell.getRange() > 0) {
+            detailRow(panel, hudSkin, "Range", spell.getRange() + (spell.getRange() == 1 ? " tile" : " tiles"));
+        }
+        if (spell.getTargetType() != null && !spell.getTargetType().isEmpty()) {
+            detailRow(panel, hudSkin, "Target", capitalize(spell.getTargetType()));
+        }
+        if (hasDamage(spell)) {
             detailRow(panel, hudSkin, "Damage", spell.getDamageDice() + " " + capitalize(spell.getDamageType()));
         }
         if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()) {
-            detailRow(panel, hudSkin, "Effect", capitalize(spell.getStatusEffect().replace('_', ' ')));
+            detailRow(panel, hudSkin, "Effect", com.bpm.minotaur.ui.UiNames.fromConstant(spell.getStatusEffect()));
         }
         if (spell.getDuration() != null && !spell.getDuration().isEmpty()) {
             detailRow(panel, hudSkin, "Duration", spell.getDuration());
@@ -501,9 +525,28 @@ public class SpellbookScreen extends BaseScreen {
         panel.add(desc).width(width).left().colspan(2).padTop(14).row();
     }
 
+    /**
+     * One stat row: name on the left in TEXT_DIM, value on the right in TEXT.
+     *
+     * <p>SPELL-2: these rows used to take whatever height the Table gave them, which at this
+     * font size was less than the cap height, so consecutive rows overlapped. The row height
+     * comes from the font's own metric now rather than from the layout's leftovers.
+     */
     private static void detailRow(Table panel, HudSkin hudSkin, String key, String value) {
-        panel.add(new Label(key, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED))).width(140).left();
-        panel.add(new Label(value, new Label.LabelStyle(hudSkin.getFontSmall(), Color.WHITE))).left().expandX().row();
+        float line = hudSkin.getFontSmall().getLineHeight();
+        panel.add(UiLabels.ellipsized(key, UiStyles.caption(hudSkin))).width(200).left().height(line);
+        panel.add(UiLabels.ellipsized(value, UiStyles.caption(hudSkin, UiTheme.TEXT)))
+                .left().growX().height(line).row();
+    }
+
+    /** Whether a spell does damage worth printing -- "0" and an empty dice string are not. */
+    private static boolean hasDamage(SpellTemplate spell) {
+        String dice = spell.getDamageDice();
+        if (dice == null || dice.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = dice.trim();
+        return !trimmed.equals("0") && !trimmed.equals("0d0");
     }
 
     private static String costText(SpellTemplate spell) {
@@ -533,6 +576,11 @@ public class SpellbookScreen extends BaseScreen {
 
     private static String keyName() {
         return Input.Keys.toString(SettingsManager.getInstance().getKey("SPELLBOOK"));
+    }
+
+    @Override
+    public void hide() {
+        UiContexts.pop(CONTEXT);
     }
 
     private void close() {

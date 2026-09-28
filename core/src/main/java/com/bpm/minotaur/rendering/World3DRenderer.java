@@ -1740,9 +1740,15 @@ public class World3DRenderer implements Disposable {
                         h *= t.modelScale;
                     }
 
-                    // Bounds safety for dungeon floor items
-                    h = Math.max(0.06f, Math.min(0.6f, h));
-                    w = Math.max(0.06f, Math.min(0.8f, w));
+                    // Bounds safety for dungeon floor items. The caps scale with what the
+                    // item's own data asks for, because they exist to stop a stray sprite
+                    // filling the corridor -- not to overrule a prop that is meant to be
+                    // large. A standing piece like the shelter altar declares its height in
+                    // items.json and was silently clipped back to the floor-item cap.
+                    float maxH = 0.6f * Math.max(1f, sy);
+                    float maxW = 0.8f * Math.max(1f, sx);
+                    h = Math.max(0.06f, Math.min(maxH, h));
+                    w = Math.max(0.06f, Math.min(maxW, w));
 
                     // Check if item is at player's feet (same tile as player)
                     float px = player.getPosition().x;

@@ -17,6 +17,11 @@ import com.bpm.minotaur.managers.MonsterPursuitManager;
 import com.bpm.minotaur.managers.MusicManager;
 import com.bpm.minotaur.managers.SaveManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiModal;
+import com.bpm.minotaur.ui.UiStyles;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -107,14 +112,21 @@ public class SaveSlotSelectScreen extends BaseScreen {
         backStyle.down = hudSkin.getSlotActive();
         backStyle.over = hudSkin.getSlotActive();
 
-        TextButton backBtn = new TextButton("BACK TO MAIN MENU  [ESC]", backStyle);
+        TextButton backBtn = new TextButton("BACK TO MAIN MENU", backStyle);
         backBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 close();
             }
         });
-        root.add(backBtn).minWidth(360).height(52).padBottom(25).row();
+        root.add(backBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padBottom(UiTheme.PAD_MD).row();
+
+        // SLOTS-7: the header carried low-contrast instructions and the buttons carried their
+        // own hotkeys. One legend in the safe area says all of it once.
+        root.add(new KeyHintLegend(hudSkin)
+                .hint("1-3", "Choose slot")
+                .hint("ENTER", "Confirm")
+                .escapeHint("Back")).right().padBottom(UiTheme.SAFE).row();
     }
 
     private Table buildSlotCard(final int slotIndex) {
@@ -127,11 +139,13 @@ public class SaveSlotSelectScreen extends BaseScreen {
             // Empty Slot Card
             // Same font and padding as the occupied branch below, or the headers sit
             // at different heights across a row of cards.
-            Label slotNum = new Label("SLOT " + slotIndex + "  [" + slotIndex + "]",
+            // SLOTS-5: "SLOT 1 [1]" said the same thing twice -- the bracket was the hotkey,
+            // which now lives in the legend at the foot of the screen.
+            Label slotNum = new Label("SLOT " + slotIndex,
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_TEXT_MUTED));
             card.add(slotNum).padBottom(4).row();
 
-            Label emptyLabel = new Label("- EMPTY SLOT -", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEXT_MUTED));
+            Label emptyLabel = new Label("Empty", new Label.LabelStyle(hudSkin.getFontMain(), HudSkin.COL_TEXT_MUTED));
             card.add(emptyLabel).expandY().row();
 
             TextButton.TextButtonStyle startStyle = new TextButton.TextButtonStyle();
@@ -153,16 +167,17 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
         } else {
             // Occupied Slot Card
-            Label slotNum = new Label("SLOT " + slotIndex + "  [" + slotIndex + "]",
+            Label slotNum = new Label("SLOT " + slotIndex,
                     new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             card.add(slotNum).padBottom(4).row();
 
-            Label heroName = new Label(meta.characterName, new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
-            card.add(heroName).padBottom(4).row();
+            Label heroName = UiLabels.ellipsized(meta.characterName,
+                    new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+            card.add(heroName).growX().padBottom(4).row();
 
-            Label heroClass = new Label("Level " + meta.level + " " + meta.characterClass,
-                    new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE));
-            card.add(heroClass).padBottom(12).row();
+            Label heroClass = UiLabels.ellipsized("Lv " + meta.level + " " + meta.characterClass,
+                    new Label.LabelStyle(hudSkin.getFontMain(), UiTheme.TEXT));
+            card.add(heroClass).growX().padBottom(12).row();
 
             // Stats row
             Table statsTable = new Table();
@@ -177,16 +192,18 @@ public class SaveSlotSelectScreen extends BaseScreen {
             card.add(locLabel).padBottom(8).row();
 
             // Mode & Heat
-            String modeDisplay = meta.gameMode;
+            // SLOTS-5: "MODERN" on its own is a value with no field name.
+            String modeDisplay = "Ruleset: " + com.bpm.minotaur.ui.UiNames.fromConstant(meta.gameMode);
             if (meta.tormentLevel > 0) {
-                modeDisplay += " [Torment " + meta.tormentLevel + "]";
+                modeDisplay += "   Torment " + meta.tormentLevel;
             }
-            Label modeLabel = new Label(modeDisplay, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE));
-            card.add(modeLabel).padBottom(8).row();
+            Label modeLabel = UiLabels.ellipsized(modeDisplay,
+                    new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_ANTIQUE));
+            card.add(modeLabel).growX().padBottom(8).row();
 
             // Doom Death Counter
             Color doomColor = (meta.deathCount > 35) ? HudSkin.COL_HP_CRITICAL : HudSkin.COL_TEMP_ORANGE;
-            Label doomLabel = new Label("Doom Deaths: " + meta.deathCount + "/" + meta.maxDeaths,
+            Label doomLabel = new Label("Doom: " + meta.deathCount + " of " + meta.maxDeaths + " deaths",
                     new Label.LabelStyle(hudSkin.getFontSmall(), doomColor));
             card.add(doomLabel).padBottom(12).row();
 
@@ -206,7 +223,10 @@ public class SaveSlotSelectScreen extends BaseScreen {
             playStyle.down = hudSkin.getPrimaryButtonDown();
             playStyle.over = hudSkin.getPrimaryButtonDown();
 
-            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : "RESUME DELVE", playStyle);
+            // SLOTS-3: Overwrite used to wear the same gold fill as Create, so the destructive
+            // action and the inviting one were indistinguishable. Destructive is never gold.
+            TextButton playBtn = new TextButton(newGameMode ? "OVERWRITE" : "RESUME DELVE",
+                    newGameMode ? UiStyles.danger(hudSkin) : playStyle);
             playBtn.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -251,7 +271,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
     }
 
     private void showModeSelectDialog(final int slotIndex) {
-        Dialog dialog = new Dialog("SELECT GAME MODE",
+        Dialog dialog = new Dialog("",
                 new Window.WindowStyle(hudSkin.getFontHeader(), Color.WHITE, hudSkin.getDoubleBorderPanel())) {
             @Override
             protected void result(Object object) {
@@ -277,12 +297,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
         cancelBtnStyle.down = hudSkin.getSlotActive();
         cancelBtnStyle.over = hudSkin.getSlotActive();
 
-        dialog.getContentTable().pad(25);
-        dialog.getButtonTable().pad(20);
-        dialog.getButtonTable().defaults().pad(8).height(48);
-
-        dialog.text(new Label("Classic Mode has been unlocked! Choose your expedition style:",
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));
+        UiModal.style(dialog, hudSkin, "SELECT GAME MODE", false);
+        UiModal.text(dialog, hudSkin, "Classic Mode has been unlocked. Choose your expedition style.");
         dialog.button("MODERN EXPEDITION", "MODERN", modeBtnStyle);
         dialog.button("CLASSIC TARMIN (1982)", "CLASSIC", modeBtnStyle);
         dialog.button("CANCEL", null, cancelBtnStyle);
@@ -290,7 +306,7 @@ public class SaveSlotSelectScreen extends BaseScreen {
     }
 
     private void confirmOverwrite(final int slotIndex, final SlotMetadata meta) {
-        Dialog dialog = new Dialog("OVERWRITE WARNING",
+        Dialog dialog = new Dialog("",
                 new Window.WindowStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL, hudSkin.getDoubleBorderPanel())) {
             @Override
             protected void result(Object object) {
@@ -315,19 +331,20 @@ public class SaveSlotSelectScreen extends BaseScreen {
         cancelBtnStyle.down = hudSkin.getPrimaryButtonDown();
         cancelBtnStyle.over = hudSkin.getPrimaryButtonDown();
 
-        dialog.getContentTable().pad(25);
-        dialog.getButtonTable().pad(20);
-        dialog.getButtonTable().defaults().pad(8).height(48);
-
-        dialog.text(new Label("Are you sure you want to overwrite Level " + meta.level + " " + meta.characterName + "?\nAll save data in Slot " + slotIndex + " will be PERMANENTLY lost.",
-                new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));
+        UiModal.style(dialog, hudSkin, "OVERWRITE THIS EXPEDITION?", true);
+        // SLOTS-9: plain language about what is actually lost, and the character named the way
+        // the rest of the game names them.
+        UiModal.text(dialog, hudSkin, meta.characterName + " -- Lv " + meta.level + " " + meta.characterClass
+                + " -- and everything in slot " + slotIndex + " is deleted. This cannot be undone.");
         dialog.button("YES, OVERWRITE", true, alertBtnStyle);
         dialog.button("CANCEL", false, cancelBtnStyle);
+        // The safe action takes focus, so Enter on a warning does not destroy a save.
+        dialog.key(com.badlogic.gdx.Input.Keys.ESCAPE, false);
         dialog.show(stage);
     }
 
     private void confirmDelete(final int slotIndex, final SlotMetadata meta) {
-        Dialog dialog = new Dialog("DELETE SAVE SLOT",
+        Dialog dialog = new Dialog("",
                 new Window.WindowStyle(hudSkin.getFontHeader(), HudSkin.COL_HP_CRITICAL, hudSkin.getDoubleBorderPanel())) {
             @Override
             protected void result(Object object) {
@@ -353,9 +370,8 @@ public class SaveSlotSelectScreen extends BaseScreen {
         cancelBtnStyle.down = hudSkin.getPrimaryButtonDown();
         cancelBtnStyle.over = hudSkin.getPrimaryButtonDown();
 
-        dialog.getContentTable().pad(25);
-        dialog.getButtonTable().pad(20);
-        dialog.getButtonTable().defaults().pad(8).height(48);
+        UiModal.style(dialog, hudSkin, "DELETE THIS EXPEDITION?", true);
+        dialog.key(com.badlogic.gdx.Input.Keys.ESCAPE, false);
 
         dialog.text(new Label("Permanently delete " + meta.characterName + " (Level " + meta.level + ")?\nThis action cannot be undone.",
                 new Label.LabelStyle(hudSkin.getFontMain(), Color.WHITE)));

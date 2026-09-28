@@ -16,6 +16,10 @@ import com.bpm.minotaur.gamedata.item.ShelterChest;
 import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.DivinityManager;
 import com.bpm.minotaur.rendering.HudSkin;
+import com.bpm.minotaur.ui.KeyHintLegend;
+import com.bpm.minotaur.ui.UiLabels;
+import com.bpm.minotaur.ui.UiNames;
+import com.bpm.minotaur.ui.UiTheme;
 
 import java.util.List;
 
@@ -111,7 +115,11 @@ public class ShelterChestScreen extends BaseScreen {
                 purchaseLootRetentionUpgrade();
             }
         });
-        shrine.add(upgradeLootRetentionBtn).width(320).height(48).right();
+        // STASH-1: this cell was a hard 320. "UPGRADE LOOT RETENTION" needs more than that at
+        // the body size, and a TextButton does not clip -- it centres the label and lets it run
+        // out of both ends, over the balance on its left and off the panel on its right. Every
+        // fixed button width on this screen became a minimum for the same reason.
+        shrine.add(upgradeLootRetentionBtn).minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).right();
         root.add(shrine).fillX().padBottom(20).row();
 
         // --- BODY: Chest | Transfer Rail | Backpack ---
@@ -133,9 +141,9 @@ public class ShelterChestScreen extends BaseScreen {
         Label chestHint = new Label("Store gibs and spare gear before descending -- the forge and hearth draw from this chest as well as your pack.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         chestHint.setWrap(true);
-        chestPanel.add(chestHint).width(680).left().padTop(14).row();
+        chestPanel.add(chestHint).growX().left().padTop(14).row();
 
-        body.add(chestPanel).width(760).expandY().fillY().padRight(20);
+        body.add(chestPanel).grow().padRight(20);
 
         // Center transfer rail
         Table centerCol = new Table();
@@ -160,10 +168,13 @@ public class ShelterChestScreen extends BaseScreen {
                 storeAllGibs();
             }
         });
-        centerCol.add(storeBtn).width(210).height(56).padBottom(18).row();
-        centerCol.add(takeBtn).width(210).height(56).padBottom(34).row();
-        centerCol.add(storeAllBtn).width(210).height(64).row();
-        body.add(centerCol).width(230).center();
+        // STASH-3: "STORE ALL GIBS" is wider than the 210 this column used to force on it.
+        // The three buttons share one width so the rail stays a rail, but that width is now the
+        // widest label rather than a guess.
+        centerCol.add(storeBtn).growX().height(UiTheme.BUTTON_H).padBottom(18).row();
+        centerCol.add(takeBtn).growX().height(UiTheme.BUTTON_H).padBottom(34).row();
+        centerCol.add(storeAllBtn).growX().height(UiTheme.BUTTON_H).row();
+        body.add(centerCol).center().padLeft(UiTheme.PAD_MD).padRight(UiTheme.PAD_MD);
 
         Table packPanel = buildColumnPanel();
         packCountLabel = new Label("", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
@@ -181,9 +192,9 @@ public class ShelterChestScreen extends BaseScreen {
         Label packHint = new Label("Click an item, then STORE/TAKE -- or double-click to transfer instantly.",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
         packHint.setWrap(true);
-        packPanel.add(packHint).width(680).left().padTop(14).row();
+        packPanel.add(packHint).growX().left().padTop(14).row();
 
-        body.add(packPanel).width(760).expandY().fillY();
+        body.add(packPanel).grow();
 
         root.add(body).expand().fill().padBottom(16).row();
 
@@ -191,12 +202,19 @@ public class ShelterChestScreen extends BaseScreen {
         Table footer = new Table();
         footer.setBackground(hudSkin.getPanelBg());
         footer.pad(14, 22, 14, 22);
-        Label keyHints = new Label("[↑↓] SELECT   [ENTER] TRANSFER   [A] STORE ALL GIBS   [ESC] CLOSE CHEST",
-                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        footer.add(keyHints).left().expandX();
-        statusLabel = new Label("Click an item, then [STORE] or [TAKE].",
+        // STASH-7: this line carried literal up/down arrows, which intellivision.ttf has no
+        // glyphs for, so the hint read "[  ] SELECT" with two boxes where the keys should be.
+        // STASH-8: the same instruction also appeared in the status line and in the backpack
+        // hint. One legend, in the safe area, is the whole of it.
+        statusLabel = new Label("",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_FOOD_GREEN));
-        footer.add(statusLabel).right();
+        footer.add(statusLabel).left().expandX();
+        KeyHintLegend legend = new KeyHintLegend(hudSkin)
+                .hint(KeyHintLegend.ARROWS_UD, "Select")
+                .hint("ENTER", "Transfer")
+                .hint("A", "Store gibs")
+                .escapeHint("Close");
+        footer.add(legend).right();
         root.add(footer).fillX();
 
         stage.addActor(root);
@@ -266,15 +284,18 @@ public class ShelterChestScreen extends BaseScreen {
         infoCol.left();
         String displayName = item.getDisplayName();
         if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = item.getType() != null ? item.getType().name() : "Unknown Item";
+            displayName = UiNames.of(item.getType());
         }
-        Label nameLbl = new Label(displayName,
+        Label nameLbl = UiLabels.ellipsized(displayName,
                 new Label.LabelStyle(hudSkin.getFontMain(), isSelected ? HudSkin.COL_GOLD_BRIGHT : HudSkin.COL_GOLD_ANTIQUE));
-        String typeInfo = item.getType() != null ? item.getType().name() : "";
-        Label codeLbl = new Label(typeInfo, new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
-        infoCol.add(nameLbl).left().row();
-        infoCol.add(codeLbl).left();
-        row.add(infoCol).expandX().left();
+        // STASH-2: this second line used to print the ItemType constant verbatim, so every row
+        // carried a debug id -- and because the font draws underscore as an arrow it read as
+        // "BAT<-GUANO". What a player wants under the name is what kind of thing it is.
+        Label codeLbl = UiLabels.ellipsized(UiNames.of(item.getCategory()),
+                new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
+        infoCol.add(nameLbl).left().growX().row();
+        infoCol.add(codeLbl).left().growX();
+        row.add(infoCol).expandX().fillX().left();
 
         row.setTouchable(Touchable.enabled);
         row.addListener(new ClickListener() {
