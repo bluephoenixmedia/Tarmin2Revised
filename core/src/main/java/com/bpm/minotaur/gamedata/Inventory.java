@@ -263,4 +263,16 @@ public class Inventory {
         }
         mainInventory.clear();
     }
+
+    public void clearQuickSlots() {
+        for (int i = 0; i < quickSlots.length; i++) {
+            quickSlots[i] = null;
+        }
+    }
+
+    public void setQuickSlot(int index, Item item) {
+        if (index >= 0 && index < quickSlots.length) {
+            quickSlots[index] = item;
+        }
+    }
 }

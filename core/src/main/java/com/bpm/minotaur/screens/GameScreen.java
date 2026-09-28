@@ -1293,8 +1293,8 @@ public class GameScreen extends BaseScreen {
                 combatManager.endCombat();
             }
 
-            // 3. Lose equipped gear (weapons, offhand, armor, jewelry); backpack items
-            //    and quickslots are secured and carry over into the shelter.
+            // 3. Full Expedition Reset: lose equipped gear, weapons, offhand, backpack items,
+            //    and quickslots upon death. Only items previously secured in the Shelter Chest survive.
             int lostCount = 0;
             if (player.getInventory().getRightHand() != null) {
                 lostCount++;
@@ -1309,10 +1309,15 @@ public class GameScreen extends BaseScreen {
                 player.getEquipment().stripAllEquipped();
             }
 
-            int retainedCount = player.getInventory().getMainInventory().size();
+            lostCount += player.getInventory().getMainInventory().size();
+            player.getInventory().getMainInventory().clear();
+
             for (Item qs : player.getInventory().getQuickSlots()) {
-                if (qs != null) retainedCount++;
+                if (qs != null) lostCount++;
             }
+            player.getInventory().clearQuickSlots();
+
+            int retainedCount = 0;
 
             // 4. Finalize run telemetry & build the run epitaph
             com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
@@ -1681,14 +1686,24 @@ public class GameScreen extends BaseScreen {
         Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
         player.getInventory().setRightHand(starterWeapon);
 
+        // Reset the combat dice pool so it cleanly contains the starter Rusty Iron Die
+        if (player.getStats() != null && player.getStats().getDicePool() != null) {
+            player.getStats().getDicePool().clear();
+            com.bpm.minotaur.gamedata.dice.Die starterDie = starterWeapon.getGrantedDie() != null
+                    ? starterWeapon.getGrantedDie()
+                    : com.bpm.minotaur.gamedata.dice.DiceFactory.create("Rusty Iron Die");
+            player.getStats().getDicePool().add(starterDie);
+        }
+
         // He wakes in the Shelter washed: the blood of the last expedition does not carry into the next.
         player.washBlood();
 
         // Clean weapon state upon shelter awakening: reset attack timer/combos, clear blood decals,
-        // and force re-synchronization of equipped items and motion profiles.
+        // clear old equipment references, and force re-synchronization of equipped items and motion profiles.
         if (weaponOverlay != null) {
             weaponOverlay.reset();
             weaponOverlay.clearBloodDecals();
+            weaponOverlay.clearEquipment();
             weaponOverlay.forceRefreshEquipment(player.getInventory().getRightHand(), player.getInventory().getLeftHand());
         }
 
@@ -3144,23 +3159,21 @@ public class GameScreen extends BaseScreen {
                 return true;
             }
             case Input.Keys.F5: {
-                // Session-only: unlocks every biome portal and waives the Crest
-                // cost so biomes can be reached without farming. Never written
-                // to the save -- see BiomePortal.DEBUG_UNLOCK_ALL.
-                com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL =
-                        !com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
-                boolean portalsOn = com.bpm.minotaur.gamedata.progression.BiomePortal.DEBUG_UNLOCK_ALL;
+                // Session-only: toggles the comprehensive shelter debug sandbox.
+                // Materialises all 10 stations, maxes Altar blessing trees and ascension stats,
+                // unlocks skill tree, opens all biome portals, and grants divinities/crests.
+                com.bpm.minotaur.gamedata.progression.ShelterAltar altar =
+                        com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance();
+                boolean debugOn = !altar.isDebugAllUnlocked();
+                altar.setDebugAllUnlocked(debugOn);
 
-                // The shelter chunk is served from cache or from its save file
-                // and is never regenerated, so the portals have to be stood up
-                // in the maze the player is currently standing in. Telling them
-                // to "re-enter the shelter" would simply not work.
-                if (portalsOn) {
-                    com.bpm.minotaur.gamedata.progression.BiomePortal.materialiseDebugPortals(
-                            maze, game.getItemDataManager(), game.getAssetManager());
+                if (debugOn) {
+                    altar.materialiseAllStations(maze, game.getItemDataManager(), game.getAssetManager());
+                    com.bpm.minotaur.managers.DivinityManager.getInstance().addDivinities(100);
+                    altar.addCrestsOfValor(20);
                 }
                 eventManager.addEvent(new GameEvent(
-                        "Debug portals: " + (portalsOn ? "ALL UNLOCKED" : "OFF (existing portals remain this session)"),
+                        "Debug Shelter: " + (debugOn ? "ALL FEATURES UNLOCKED (Stations, Altar, Ascension, Skills, Portals)" : "OFF (existing stations remain this session)"),
                         3f));
                 return true;
             }

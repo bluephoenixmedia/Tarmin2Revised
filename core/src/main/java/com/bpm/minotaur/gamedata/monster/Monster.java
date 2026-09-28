@@ -231,6 +231,8 @@ public class Monster implements Renderable {
      */
     private boolean bridgeBoss = false;
     private boolean invulnerable = false; // Objective-critical NPC; damage is discarded
+    private int stunImmunityTurns = 0; // Concussion resilience: turns of stun immunity after recovering
+    private int staggerTurns = 0;      // Staggered status: breaks poise, reduces effective AC and accuracy
 
     // Public constructor for unit testing combat mechanics without LibGDX asset loaders
     public Monster(MonsterType type, int hp, int ac) {
@@ -866,6 +868,18 @@ public class Monster implements Renderable {
     }
 
     public int getArmorClass() {
+        int ac = armorClass;
+        if (isStaggered()) {
+            ac -= 2;
+        }
+        return ac;
+    }
+
+    public int getEffectiveArmorClass() {
+        return getArmorClass();
+    }
+
+    public int getBaseArmorClass() {
         return armorClass;
     }
 
@@ -1206,13 +1220,15 @@ public class Monster implements Renderable {
         return dmg;
     }
 
-    public void applyStun(int turns) {
-        if (turns > this.stunTurns) {
-            this.stunTurns = turns;
+    public boolean applyStun(int turns) {
+        if (turns <= 0 || isStunImmune() || isStunned()) {
+            return false;
         }
+        this.stunTurns = turns;
         if (statusManager != null) {
             statusManager.addEffect(StatusEffectType.PARALYZED, turns, 0, false);
         }
+        return true;
     }
 
     public boolean isStunned() {
@@ -1226,9 +1242,49 @@ public class Monster implements Renderable {
     public void decrementStun() {
         if (stunTurns > 0) {
             stunTurns--;
-            if (stunTurns <= 0 && statusManager != null && statusManager.hasEffect(StatusEffectType.PARALYZED)) {
-                statusManager.removeEffect(StatusEffectType.PARALYZED);
+            if (stunTurns <= 0) {
+                if (statusManager != null && statusManager.hasEffect(StatusEffectType.PARALYZED)) {
+                    statusManager.removeEffect(StatusEffectType.PARALYZED);
+                }
+                // Concussion Resilience: 2 turns of stun immunity after recovering from stun
+                this.stunImmunityTurns = 2;
             }
+        }
+    }
+
+    public boolean isStunImmune() {
+        return stunImmunityTurns > 0;
+    }
+
+    public int getStunImmunityTurns() {
+        return stunImmunityTurns;
+    }
+
+    public void setStunImmunityTurns(int turns) {
+        this.stunImmunityTurns = Math.max(0, turns);
+    }
+
+    public void decrementStunImmunity() {
+        if (stunImmunityTurns > 0) {
+            stunImmunityTurns--;
+        }
+    }
+
+    public boolean isStaggered() {
+        return staggerTurns > 0;
+    }
+
+    public int getStaggerTurns() {
+        return staggerTurns;
+    }
+
+    public void applyStagger(int turns) {
+        this.staggerTurns = Math.max(this.staggerTurns, turns);
+    }
+
+    public void decrementStagger() {
+        if (staggerTurns > 0) {
+            staggerTurns--;
         }
     }
 }
