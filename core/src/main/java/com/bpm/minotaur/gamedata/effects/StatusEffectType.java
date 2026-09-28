@@ -33,6 +33,14 @@ public enum StatusEffectType {
     RECOVERING,
     PARALYZED,
     FROZEN,
+    /**
+     * Standing in obscuring fog: you cannot see out and nothing can see in.
+     *
+     * <p>Positional rather than inflicted -- GameScreen syncs it against the tile you are on
+     * each world turn, so it appears and clears as you walk. It must stay above FOCUSED in
+     * this enum, because everything below that ordinal is treated as a buff.
+     */
+    OBSCURED,
 
     // Positive Effects (Buffs)
     FOCUSED,

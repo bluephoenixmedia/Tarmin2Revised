@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.gore.GoreManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.monster.Monster;
+import com.bpm.minotaur.gamedata.effects.area.AreaEffectManager;
 import com.bpm.minotaur.gamedata.liquid.LiquidManager;
 import com.bpm.minotaur.gamedata.liquid.LiquidType;
 import com.bpm.minotaur.rendering.RetroTheme;
@@ -52,6 +53,8 @@ public class Maze {
     public void setShopkeeper(ShopkeeperNpc shopkeeper) {
         this.shopkeeper = shopkeeper;
     }
+
+    private AreaEffectManager areaEffects;
 
     public Maze(int level, int[][] wallData) {
         this.level = level;
@@ -101,6 +104,41 @@ public class Maze {
 
     public void addHomeTile(GridPoint2 pos) {
         homeTiles.add(pos);
+    }
+
+    /**
+     * Lingering tile effects -- clouds -- in this chunk.
+     *
+     * <p>Created on first use and never serialised: the world is regenerated from a seed, so a
+     * cloud belongs to the chunk it was cast in and dies with it.
+     */
+    public AreaEffectManager getAreaEffects() {
+        if (areaEffects == null) {
+            areaEffects = new AreaEffectManager(getWidth(), getHeight());
+        }
+        return areaEffects;
+    }
+
+    /** True when any lingering tile effect is active, so callers can skip the work entirely. */
+    public boolean hasAreaEffects() {
+        return areaEffects != null && areaEffects.activeTileCount() > 0;
+    }
+
+    /**
+     * Whether obscuring fog stands on a tile.
+     *
+     * <p>Here rather than at each call site because five of them -- monster sight, hostile
+     * detection, the projectile raycast, the fog wash and the status sync -- would otherwise
+     * each write the same {@code hasAreaEffects() && getAreaEffects().isObscured(...)} walk,
+     * and each would have to remember the null-and-empty guard.
+     */
+    public boolean isObscured(int x, int y) {
+        return hasAreaEffects() && areaEffects.isObscured(x, y);
+    }
+
+    /** Whether obscuring fog lies on the line between two tiles. See {@link #isObscured}. */
+    public boolean fogBlocksSight(int x0, int y0, int x1, int y1) {
+        return hasAreaEffects() && areaEffects.blocksSight(x0, y0, x1, y1);
     }
 
     public LiquidManager getLiquidManager() {

@@ -107,6 +107,13 @@ public class World3DRenderer implements Disposable {
     private final Texture fluidTexture;
     private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
+    /** Soft round falloff for fog puffs, so a cloud is vapour rather than a grid of squares. */
+    private final Texture fogPuffTexture;
+    // Reused every puff: renderAreaEffects runs each frame over up to a 25x25 tile window with
+    // three billboards a tile, so allocating a Color and a TextureRegion per puff would be
+    // roughly two thousand short-lived objects a frame.
+    private final TextureRegion fogPuffRegion = new TextureRegion();
+    private final Color fogTint = new Color();
 
     /**
      * Authored sigils for the rune above a themed gate, keyed by theme.
@@ -160,6 +167,15 @@ public class World3DRenderer implements Disposable {
 
     public static final float DEFAULT_FOV = DebugManager.DEFAULT_FOV_3D;
     private float totalTime = 0f;
+
+    /**
+     * How far you can see inside a cloud, in world units.
+     *
+     * <p>About two tiles: a monster one square away is still a shape lunging at you, which is
+     * the difference between obscured and blindfolded, and anything further is gone.
+     */
+    private static final float OBSCURED_FOG_DISTANCE = 2.2f;
+    private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -268,6 +284,8 @@ public class World3DRenderer implements Disposable {
         pix.fill();
         this.blankTexture = new Texture(pix);
         pix.dispose();
+
+        this.fogPuffTexture = buildFogPuffTexture();
 
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
@@ -628,7 +646,16 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_dirLightDir", currentDirLightDir);
         shader.setUniformf("u_dirLightColor", currentDirLightColor.r, currentDirLightColor.g, currentDirLightColor.b);
 
-        // Fog
+        // Fog. Standing inside an obscuring cloud overrides whatever the biome or the weather
+        // wanted: the world closes to about two tiles and goes grey. This is what "heavily
+        // obscured" looks like from the inside, and it is also the whole of the retro-mode
+        // visualisation, which gets no puffs.
+        if (maze != null && player != null
+                && maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+            fogEnabled = true;
+            fogDistance = OBSCURED_FOG_DISTANCE;
+            fogColor.set(OBSCURED_FOG_COLOR);
+        }
         shader.setUniformf("u_fogEnabled", fogEnabled ? 1.0f : 0.0f);
         shader.setUniformf("u_fogDistance", fogDistance);
         shader.setUniformf("u_fogColor", fogColor.r, fogColor.g, fogColor.b);
@@ -700,6 +727,7 @@ public class World3DRenderer implements Disposable {
 
         // A. Gore System: Coplanar Wall Decals, Floor Decals, Particles, Gibs
         renderLiquids(maze, player, isRetro);
+        renderAreaEffects(maze, player, isRetro);
         renderBiomePortals(maze, player);
         renderGore(maze, worldManager, isRetro, theme);
 
@@ -1194,6 +1222,107 @@ public class World3DRenderer implements Disposable {
                     camRight, camUp, camDir);
             dynamicBatcher.flush(shader, portalVortexFrames[frame].getTexture());
         }
+    }
+
+    /** Tiles either side of the player worth drawing fog for. */
+    private static final int FOG_DRAW_RADIUS = 12;
+    /** Stacked billboards per fogged tile. Three reads as a column of vapour; one reads as a card. */
+    private static final int FOG_PUFFS_PER_TILE = 3;
+
+    /**
+     * Draws the obscuring clouds standing in the world.
+     *
+     * <p>Seen from outside, a cloud has to have a visible extent -- an area-denial spell whose
+     * edges you cannot judge cannot be aimed or trusted. Each fogged tile gets a few drifting
+     * billboards at staggered heights, phase-offset by tile coordinate so neighbouring tiles do
+     * not pulse in lockstep and the bank reads as one body of vapour rather than a grid.
+     *
+     * <p>Seen from inside, the puffs are not the effect: the collapsing fog distance in the
+     * shader is (see the uniform block in render()). Puffs are skipped on the player's own tile
+     * so they do not paint over the whole screen at point-blank range.
+     *
+     * <p>Retro mode gets no puffs at all -- the flat grey wash the fog-distance override
+     * produces is the whole of the visualisation there, which is the deliberate trade for not
+     * building volumetrics twice.
+     */
+    private void renderAreaEffects(Maze maze, Player player, boolean isRetro) {
+        if (isRetro || maze == null || !maze.hasAreaEffects() || fogPuffTexture == null) {
+            return;
+        }
+
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+
+        // Walk the window around the player rather than the whole chunk, the way renderLiquids
+        // does. Scanning 64x64 to discard all but a 25x25 slice is work for nothing, and this
+        // runs every frame.
+        int minX = Math.max(0, px - FOG_DRAW_RADIUS);
+        int maxX = Math.min(maze.getWidth() - 1, px + FOG_DRAW_RADIUS);
+        int minY = Math.max(0, py - FOG_DRAW_RADIUS);
+        int maxY = Math.min(maze.getHeight() - 1, py + FOG_DRAW_RADIUS);
+
+        fogPuffRegion.setRegion(fogPuffTexture);
+        boolean any = false;
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                if (!maze.isObscured(x, y)) {
+                    continue;
+                }
+                // The player's own tile is skipped: at point-blank a puff paints the screen,
+                // and the fog-distance collapse is what conveys being inside the cloud.
+                if (x == px && y == py) {
+                    continue;
+                }
+
+                // A cloud thins as it disperses, so the last turns of one look like the last.
+                float life = Math.min(1f, maze.getAreaEffects().turnsRemainingAt(x, y) / 4f);
+                fogTint.set(0.80f, 0.82f, 0.85f, 0.30f * life);
+
+                for (int i = 0; i < FOG_PUFFS_PER_TILE; i++) {
+                    float phase = totalTime * 0.35f + x * 1.7f + y * 2.3f + i * 2.1f;
+                    float driftX = (float) Math.sin(phase) * 0.18f;
+                    float driftZ = (float) Math.cos(phase * 0.8f) * 0.18f;
+                    float bob = (float) Math.sin(phase * 0.6f) * 0.06f;
+
+                    float height = 0.22f + i * 0.26f + bob;
+                    float size = 0.85f + (float) Math.sin(phase * 0.5f) * 0.12f;
+
+                    dynamicBatcher.addBillboard(
+                            x + 0.5f + driftX, height, -(y + 0.5f) + driftZ,
+                            size, size, fogPuffRegion, fogTint, camRight, camUp, camDir);
+                    any = true;
+                }
+            }
+        }
+
+        if (any) {
+            Gdx.gl.glDepthMask(false);
+            dynamicBatcher.flush(shader, fogPuffTexture);
+            Gdx.gl.glDepthMask(true);
+        }
+    }
+
+    /** A soft round alpha falloff. Reused for every puff. */
+    private static Texture buildFogPuffTexture() {
+        int size = 32;
+        Pixmap p = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        float c = (size - 1) / 2f;
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                float dx = (x - c) / c;
+                float dy = (y - c) / c;
+                float d = (float) Math.sqrt(dx * dx + dy * dy);
+                float a = Math.max(0f, Math.min(1f, 1f - d));
+                a = a * a;
+                p.setColor(1f, 1f, 1f, a);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture t = new Texture(p);
+        t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        p.dispose();
+        return t;
     }
 
     private void renderLiquids(Maze maze, Player player, boolean isRetro) {
@@ -1877,6 +2006,9 @@ public class World3DRenderer implements Disposable {
         }
         sceneryTextureCache.clear();
         blankTexture.dispose();
+        if (fogPuffTexture != null) {
+            fogPuffTexture.dispose();
+        }
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();
 

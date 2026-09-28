@@ -258,6 +258,29 @@ public class CombatManager {
      */
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
             boolean revealDisguises) {
+        return raycastProjectile(origin, direction, maxRange, sourceIsPlayer, revealDisguises, true);
+    }
+
+    /**
+     * Traces a line that obscuring fog does not stop.
+     *
+     * <p>For finding where a cloud should be placed, which is the one trace that must reach
+     * through fog: a second cast should be able to extend a cloud you are already standing in
+     * rather than landing at its own edge. Everything else -- every attack -- goes through
+     * {@link #raycastProjectile} and is swallowed by fog.
+     */
+    public HitResult raycastIgnoringFog(Vector2 origin, Direction direction, int maxRange) {
+        return raycastProjectile(origin, direction, maxRange, true, false, false);
+    }
+
+    /**
+     * @param stoppedByFog when true, the ray dies in the first obscuring tile it enters beyond
+     *        the caster's own reach. That is how Fog Cloud blocks shooting: a shot into or
+     *        across a cloud is swallowed at its edge rather than flying on to a target nobody
+     *        can see. Prefer {@link #raycastIgnoringFog} to passing false here.
+     */
+    public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
+            boolean revealDisguises, boolean stoppedByFog) {
         int startX = (int) origin.x;
         int startY = (int) origin.y;
 
@@ -310,6 +333,13 @@ public class CombatManager {
                 if (disguised != null && disguised.isMimicSeen()) {
                     revealMimicPreEmptively(currentPos, maze.getLevel());
                 }
+            }
+
+            // Obscuring fog eats the shot at its boundary. The first step is exempt so a
+            // point-blank swing or shot at something standing next to you still connects,
+            // which is the same adjacency rule monster sight uses.
+            if (stoppedByFog && i >= 1 && maze.isObscured(currentX, currentY)) {
+                return new HitResult(currentPos, HitResult.HitType.NOTHING, null);
             }
 
             if (maze.getMonsters().containsKey(currentPos)) {
