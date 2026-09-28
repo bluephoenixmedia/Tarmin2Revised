@@ -78,9 +78,14 @@ public class SaveManagerTest {
         ProfileData profile = saveManager.getProfile();
         assertNotNull(profile);
 
+        // classicModeUnlocked is slot-scoped, so we need an active slot first.
+        saveManager.startNewGame(1, "MODERN", "Theseus", "Warrior");
         saveManager.unlockClassicMode();
         assertTrue(saveManager.isClassicModeUnlocked());
-        assertTrue(saveManager.getProfile().classicModeUnlocked);
+        // Verify the flag lives on the slot metadata (not global profile) --
+        // this is intentional: a new character must not inherit another slot's victory.
+        assertTrue(saveManager.getSlotMetadata(1).classicModeUnlocked);
+        saveManager.deleteSlot(1);
     }
 
     @Test
