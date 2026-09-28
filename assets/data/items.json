@@ -658,10 +658,7 @@
         "isUsable": false,
         "isContainer": false,
         "isRing": false,
-        "scale": {
-            "x": 1.0,
-            "y": 1.0
-        },
+        "scale": { "x": 1.0, "y": 2.5 },
         "variants": [
             {
                 "color": "GOLD",
