@@ -66,6 +66,14 @@ being re-priced:
   with a give-up at 5 turns. Pursuit decay already existed; this work only made the threshold
   scale with intelligence.
 
+## Raised by review, not decided
+
+**Should fog hide monsters from the "is it safe?" check?** `HostileSight.anyInView` gates the
+calm-only actions — changing spell slots and studying a Tome. Making fog block it was
+implemented, then reverted: it is not among the decisions above, and it is not cosmetic. It
+would let you re-slot spells and read a Tome with something two tiles away that has lost you.
+Arguably right, but it is its own decision.
+
 ## Not built
 
 Cloudkill, Stinking Cloud, Incendiary Cloud, Sleet Storm and Darkness still resolve as generic
