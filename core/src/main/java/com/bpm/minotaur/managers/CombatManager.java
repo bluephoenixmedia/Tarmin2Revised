@@ -258,6 +258,18 @@ public class CombatManager {
      */
     public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
             boolean revealDisguises) {
+        return raycastProjectile(origin, direction, maxRange, sourceIsPlayer, revealDisguises, true);
+    }
+
+    /**
+     * @param stoppedByFog when true, the ray dies in the first obscuring tile it enters beyond
+     *        the caster's own reach. That is how Fog Cloud blocks shooting: a shot into or
+     *        across a cloud is swallowed at its edge rather than flying on to a target nobody
+     *        can see. Only Fog Cloud's own placement trace passes false, so that a second cast
+     *        can extend a cloud you are already standing in instead of landing at its edge.
+     */
+    public HitResult raycastProjectile(Vector2 origin, Direction direction, int maxRange, boolean sourceIsPlayer,
+            boolean revealDisguises, boolean stoppedByFog) {
         int startX = (int) origin.x;
         int startY = (int) origin.y;
 
@@ -310,6 +322,13 @@ public class CombatManager {
                 if (disguised != null && disguised.isMimicSeen()) {
                     revealMimicPreEmptively(currentPos, maze.getLevel());
                 }
+            }
+
+            // Obscuring fog eats the shot at its boundary. The first step is exempt so a
+            // point-blank swing or shot at something standing next to you still connects,
+            // which is the same adjacency rule monster sight uses.
+            if (stoppedByFog && i >= 1 && maze.hasAreaEffects() && maze.getAreaEffects().isObscured(currentX, currentY)) {
+                return new HitResult(currentPos, HitResult.HitType.NOTHING, null);
             }
 
             if (maze.getMonsters().containsKey(currentPos)) {

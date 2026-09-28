@@ -26,9 +26,16 @@ public final class HostileSight {
                 continue;
             }
             Vector2 at = monster.getPosition();
-            if (from.dst(at) <= SIGHT_RANGE_TILES && LaserBurst.hasLineOfSight(maze, from, at)) {
-                return true;
+            if (from.dst(at) > SIGHT_RANGE_TILES || !LaserBurst.hasLineOfSight(maze, from, at)) {
+                continue;
             }
+            // A hostile you cannot see through obscuring fog is not "in view": if the cloud
+            // has hidden you from each other, the lull is real and you may use it.
+            if (maze.hasAreaEffects() && maze.getAreaEffects()
+                    .blocksSight((int) from.x, (int) from.y, (int) at.x, (int) at.y)) {
+                continue;
+            }
+            return true;
         }
         return false;
     }

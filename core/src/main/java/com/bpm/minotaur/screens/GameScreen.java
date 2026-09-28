@@ -1813,6 +1813,58 @@ public class GameScreen extends BaseScreen {
         DebugRenderer.printMazeToConsole(maze);
     }
 
+    /**
+     * Ages the lingering clouds in this chunk by one world turn.
+     *
+     * <p>Wind only reaches a cloud that is out under the sky: on the surface, and not beneath a
+     * roof. Underground there is no weather, so fog holds for its full duration -- which is the
+     * difference the player is meant to feel between casting it in a storm and casting it in a
+     * corridor.
+     */
+    private void tickAreaEffects() {
+        if (maze == null || !maze.hasAreaEffects()) {
+            return;
+        }
+        float windSpeed = 0f;
+        boolean underOpenSky = currentLevel() == 1 && player != null
+                && !maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y);
+        if (underOpenSky && worldManager != null && worldManager.getWeatherManager() != null) {
+            com.badlogic.gdx.math.Vector3 wind = new com.badlogic.gdx.math.Vector3();
+            worldManager.getWeatherManager().getWindVector(wind);
+            windSpeed = wind.len();
+        }
+        maze.getAreaEffects().tick(windSpeed);
+        syncObscuredStatus();
+    }
+
+    /**
+     * Keeps the player's OBSCURED status matching the tile they are standing on.
+     *
+     * <p>Fog is a place, not something cast on you, so the status is derived rather than
+     * inflicted -- walk in and it appears, walk out and it clears. The chronicle line fires
+     * only on the change, because a message every turn you stand in a cloud is noise. Without
+     * this the player would have no on-screen answer to "why did my shot miss".
+     */
+    private void syncObscuredStatus() {
+        if (player == null || player.getStatusManager() == null) {
+            return;
+        }
+        boolean inFog = maze != null && maze.hasAreaEffects()
+                && maze.getAreaEffects().isObscured((int) player.getPosition().x, (int) player.getPosition().y);
+        boolean wasInFog = player.getStatusManager().hasEffect(StatusEffectType.OBSCURED);
+
+        if (inFog && !wasInFog) {
+            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, 1, 1, false);
+            eventManager.addEvent(new GameEvent("Fog closes over you. You can see nothing beyond arm's reach.", 2f));
+        } else if (inFog) {
+            // Refresh, or updateTurn would expire it while the player is still standing in it.
+            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, 1, 1, false);
+        } else if (wasInFog) {
+            player.getStatusManager().removeEffect(StatusEffectType.OBSCURED);
+            eventManager.addEvent(new GameEvent("You step clear of the fog.", 1.5f));
+        }
+    }
+
     private void playerTurnTakesAction() {
         if (MusicManager.getInstance().isResting()) {
             MusicManager.getInstance().setResting(false);
@@ -1824,6 +1876,7 @@ public class GameScreen extends BaseScreen {
         checkForMimicInFront();
         combatManager.tickReload();
         tickPowderDampness();
+        tickAreaEffects();
         if (player.getInjuryManager() != null) {
             player.getInjuryManager().updateStep(player, maze, eventManager);
         }

@@ -53,6 +53,8 @@ public class Maze {
         this.shopkeeper = shopkeeper;
     }
 
+    private com.bpm.minotaur.gamedata.effects.area.AreaEffectManager areaEffects;
+
     public Maze(int level, int[][] wallData) {
         this.level = level;
         this.wallData = wallData;
@@ -101,6 +103,24 @@ public class Maze {
 
     public void addHomeTile(GridPoint2 pos) {
         homeTiles.add(pos);
+    }
+
+    /**
+     * Lingering tile effects -- clouds -- in this chunk.
+     *
+     * <p>Created on first use and never serialised: the world is regenerated from a seed, so a
+     * cloud belongs to the chunk it was cast in and dies with it.
+     */
+    public com.bpm.minotaur.gamedata.effects.area.AreaEffectManager getAreaEffects() {
+        if (areaEffects == null) {
+            areaEffects = new com.bpm.minotaur.gamedata.effects.area.AreaEffectManager(getWidth(), getHeight());
+        }
+        return areaEffects;
+    }
+
+    /** True when any lingering tile effect is active, so callers can skip the work entirely. */
+    public boolean hasAreaEffects() {
+        return areaEffects != null && areaEffects.activeTileCount() > 0;
     }
 
     public LiquidManager getLiquidManager() {

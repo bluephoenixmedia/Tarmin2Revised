@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.gamedata.DamageType;
 import com.bpm.minotaur.gamedata.Direction;
+import com.bpm.minotaur.gamedata.effects.area.AreaEffectType;
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.utils.DiceRoller;
@@ -114,6 +115,9 @@ public class SpellExecutionEngine {
             return true;
         } else if ("WORD_OF_RECALL".equalsIgnoreCase(bespoke)) {
             resolveWordOfRecallBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("FOG_CLOUD".equalsIgnoreCase(bespoke)) {
+            resolveFogCloudBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
         }
 
@@ -322,6 +326,80 @@ public class SpellExecutionEngine {
             eventManager.addEvent(new GameEvent("A deafening thunderclap rings through the hallway!", 1.5f));
         }
     }
+
+    /**
+     * Fog Cloud: a bank of obscuring vapour that occupies tiles rather than dealing damage.
+     *
+     * <p>Cast down the facing, so it can be dropped at your feet to cover a retreat or thrown
+     * into a doorway to seal a room you are not standing in. Where it lands, it spreads by
+     * flood fill -- through openings, around corners, never into stone.
+     *
+     * <p>It does no damage. That is not an omission: the generated entry said 2d6 FORCE, which
+     * is wrong for this spell in every edition, and a utility spell that also chips for seven
+     * is a worse-designed spell rather than a more generous one.
+     */
+    private static void resolveFogCloudBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                               GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        if (maze == null) {
+            return;
+        }
+
+        int castRange = Math.min(FOG_MAX_RANGE, Math.max(1, spell.getRange()));
+        // Fog does not block fog: a second cast should be able to reach past the cloud you are
+        // already standing in and extend it, not stop at its own edge.
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, false, false)
+                : null;
+
+        // Where the ray stopped is where the cloud wells up. On a wall hit that is the last
+        // open tile before it, because fog cannot form inside stone.
+        Direction facing = player.getFacing();
+        int fx = (int) facing.getVector().x;
+        int fy = (int) facing.getVector().y;
+        int centerX;
+        int centerY;
+        if (hit != null && hit.collisionPoint != null) {
+            centerX = hit.collisionPoint.x;
+            centerY = hit.collisionPoint.y;
+            if (maze.isWall(centerX, centerY)) {
+                centerX -= fx;
+                centerY -= fy;
+            }
+        } else {
+            centerX = (int) player.getPosition().x + fx * castRange;
+            centerY = (int) player.getPosition().y + fy * castRange;
+        }
+        if (maze.isWall(centerX, centerY)) {
+            centerX = (int) player.getPosition().x;
+            centerY = (int) player.getPosition().y;
+        }
+
+        int tiles = maze.getAreaEffects().apply(maze, centerX, centerY,
+                AreaEffectType.OBSCURING, FOG_RADIUS_TILES, FOG_DURATION_TURNS);
+
+        if (tiles <= 0) {
+            eventManager.addEvent(new GameEvent("The vapour finds nowhere to gather.", 1.5f));
+            return;
+        }
+
+        // A pale swell rather than a detonation.
+        if (gs != null && gs.getSpellPostProcessor() != null) {
+            gs.getSpellPostProcessor().triggerVignette(archetype.getPrimaryColor(), 0.55f, 0.9f);
+        }
+        if (combatManager != null && combatManager.getAnimationManager() != null) {
+            Vector3 center3d = new Vector3(centerX + 0.5f, 0.5f, centerY + 0.5f);
+            combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 26);
+        }
+
+        eventManager.addEvent(new GameEvent("Grey fog boils up and fills the passage.", 2f));
+    }
+
+    /** How far down your facing the cloud can be placed. */
+    private static final int FOG_MAX_RANGE = 6;
+    /** Steps the cloud spreads from where it lands. */
+    private static final int FOG_RADIUS_TILES = 2;
+    /** World turns a cloud lasts in still air. */
+    private static final int FOG_DURATION_TURNS = 10;
 
     private static void resolveShieldBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                              GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {

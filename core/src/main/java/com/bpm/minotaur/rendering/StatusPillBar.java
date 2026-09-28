@@ -84,6 +84,18 @@ public class StatusPillBar extends Table {
             }
         }
 
+        // 2b. Obscuring fog. Positional rather than inflicted, so it has no countdown: it
+        // lasts exactly as long as the player stands in the cloud. Worth a pill because it is
+        // the reason their shots are being swallowed, and nothing else on screen says so.
+        if (player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.OBSCURED)) {
+            addPill("FOG", Color.valueOf("D2D6DA"),
+                    "Heavily Obscured",
+                    "[VAPOUR]",
+                    "You cannot see out of the fog and nothing can see in. Ranged attacks and spells "
+                            + "are swallowed at its edge, in both directions; melee still lands.",
+                    "Walk out of the cloud, or wait for it to disperse.");
+        }
+
         // 3. Poison & Toxicity
         if (player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.POISONED)) {
             ActiveStatusEffect eff = player.getStatusManager().getEffect(StatusEffectType.POISONED);

@@ -703,6 +703,14 @@ public class SoundManager {
                                 playRetroSound(f, 0.07f, 0.9f);
                             }
                             break;
+                        case OBSCURING_MIST:
+                            // A long, soft exhalation rather than an impact: fog arrives, it
+                            // does not land. This switch has no default, so an archetype
+                            // without a case here casts in silence.
+                            for (int f : new int[] { 300, 260, 230, 205, 185, 170 }) {
+                                playRetroSound(f, 0.075f, 0.28f);
+                            }
+                            break;
                     }
                 } catch (Exception ignored) {
                 }

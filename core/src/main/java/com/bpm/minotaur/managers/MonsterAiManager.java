@@ -351,7 +351,10 @@ public class MonsterAiManager {
                 target = playerGridPos;
             } else {
                 monster.setTurnsSinceLastSeen(monster.getTurnsSinceLastSeen() + 1);
-                if (monster.getTurnsSinceLastSeen() > 5) {
+                // Was a flat 5 for every creature. A cloud should buy you longer against a
+                // rat than against something that can think.
+                if (com.bpm.minotaur.gamedata.monster.PursuitMemory.shouldGiveUp(
+                        monster.getTurnsSinceLastSeen(), monster.getIntelligence())) {
                     monster.setState(Monster.MonsterState.WANDERING);
                     monster.setLastKnownTargetPos(null);
                 }
@@ -454,6 +457,14 @@ public class MonsterAiManager {
         int y0 = start.y;
         int x1 = end.x;
         int y1 = end.y;
+
+        // Obscuring fog blocks sight the way stone does, and this is the one place every
+        // sighting goes through: acquiring the player, spotting a rival, and the clear-shot
+        // test a ranged monster makes before firing. Adjacent tiles are exempt inside
+        // blocksSight -- a thing standing next to you in the cloud has not lost you.
+        if (maze != null && maze.hasAreaEffects() && maze.getAreaEffects().blocksSight(x0, y0, x1, y1)) {
+            return false;
+        }
 
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
