@@ -1,0 +1,9 @@
+## UI overhaul (pre-launch) — standing rules
+
+- Spec: `docs/ui-overhaul/SPEC.md` (findings, tokens, components, libGDX notes). Mockups: `docs/ui-overhaul/mockups/`. Prompts: `docs/ui-overhaul/PROMPTS.md`.
+- Approach: minimal diffs that extend existing classes. No architectural rewrites. Inspect existing code before changing it and state the plan first.
+- PROTECTED: inventory paper doll + armor overlay coordinates. Never move, resize, re-scale the doll or edit overlay offsets. Wrap, don't edit. Golden screenshots in `docs/ui-overhaul/golden/` must match at 0 px after every change.
+- Layout: Scene2D Tables only; no hand-placed text; wrap or ellipsize every Label; font line heights from metrics; integer font scales only.
+- UI text never comes from enum `name()`/`toString()` — use the string table.
+- Colors/sizes come from `UiTheme` / `skin.json`, never literals in screen code.
+- When a finding is done, tick its checkbox in SPEC.md.
