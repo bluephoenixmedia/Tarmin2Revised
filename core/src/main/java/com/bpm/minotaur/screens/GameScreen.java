@@ -798,6 +798,8 @@ public class GameScreen extends BaseScreen {
             firstPersonRenderer.renderTemperatureVignette(shapeRenderer, game.getViewport(),
                     player.getStats().getBodyTemperature(), time);
 
+            renderObscuringFogWash();
+
             if (spellCastOverlay != null && spellCastOverlay.isActive()) {
                 shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -1442,6 +1444,35 @@ public class GameScreen extends BaseScreen {
      * makes it blood rather than a red filter. Spatter arrives in staggered waves so the screen
      * fills rather than flashing.
      */
+    /**
+     * The raycaster's version of standing in fog: a flat grey wash over the play area.
+     *
+     * <p>The 3D engine collapses its own distance fog for this, which is both cheaper and
+     * better-looking, so this only runs for the raycaster. Volumetric fog was not built twice
+     * -- the deliberate trade is that the retro engine gets the mechanics exactly and a plainer
+     * picture of them. What it must not be is invisible: a cloud that blinds you without
+     * showing itself is a bug report.
+     */
+    private void renderObscuringFogWash() {
+        if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
+            return;
+        }
+        if (player == null || maze == null || !maze.hasAreaEffects()) {
+            return;
+        }
+        if (!maze.getAreaEffects().isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return;
+        }
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.62f, 0.64f, 0.67f, 0.66f);
+        shapeRenderer.rect(0, HUD_HEIGHT, VIRTUAL_WIDTH, GAME_HEIGHT);
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
     private void renderDeathBlood(float alpha) {
         if (alpha <= 0f) return;
 
