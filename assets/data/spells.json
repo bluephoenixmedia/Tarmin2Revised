@@ -2425,7 +2425,7 @@
     "range": 6,
     "targetType": "BURST",
     "damageDice": "0",
-    "damageType": "NONE",
+    "damageType": null,
     "domain": "SPIRITUAL",
     "duration": "10 turns",
     "statusEffect": null,

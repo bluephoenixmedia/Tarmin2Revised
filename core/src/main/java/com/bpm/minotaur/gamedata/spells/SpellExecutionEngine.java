@@ -327,6 +327,13 @@ public class SpellExecutionEngine {
         }
     }
 
+    /** How far down your facing the cloud can be placed. */
+    private static final int FOG_MAX_RANGE = 6;
+    /** Steps the cloud spreads from where it lands. */
+    private static final int FOG_RADIUS_TILES = 2;
+    /** World turns a cloud lasts in still air. */
+    private static final int FOG_DURATION_TURNS = 10;
+
     /**
      * Fog Cloud: a bank of obscuring vapour that occupies tiles rather than dealing damage.
      *
@@ -348,7 +355,7 @@ public class SpellExecutionEngine {
         // Fog does not block fog: a second cast should be able to reach past the cloud you are
         // already standing in and extend it, not stop at its own edge.
         HitResult hit = (combatManager != null)
-                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(), castRange, true, false, false)
+                ? combatManager.raycastIgnoringFog(player.getPosition(), player.getFacing(), castRange)
                 : null;
 
         // Where the ray stopped is where the cloud wells up. On a wall hit that is the last
@@ -393,13 +400,6 @@ public class SpellExecutionEngine {
 
         eventManager.addEvent(new GameEvent("Grey fog boils up and fills the passage.", 2f));
     }
-
-    /** How far down your facing the cloud can be placed. */
-    private static final int FOG_MAX_RANGE = 6;
-    /** Steps the cloud spreads from where it lands. */
-    private static final int FOG_RADIUS_TILES = 2;
-    /** World turns a cloud lasts in still air. */
-    private static final int FOG_DURATION_TURNS = 10;
 
     private static void resolveShieldBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                              GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {

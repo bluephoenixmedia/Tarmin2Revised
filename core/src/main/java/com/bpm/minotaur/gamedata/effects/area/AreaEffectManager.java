@@ -28,11 +28,6 @@ public final class AreaEffectManager {
      */
     public static final float DISPERSING_WIND_SPEED = 4.0f;
 
-    /** Visits one tile that currently holds an effect. */
-    public interface TileVisitor {
-        void visit(int x, int y, AreaEffectType type, int turnsRemaining);
-    }
-
     private final int width;
     private final int height;
 
@@ -141,21 +136,26 @@ public final class AreaEffectManager {
     /**
      * Ages every cloud by one world turn.
      *
-     * <p>{@code windSpeed} is the magnitude of {@code WeatherManager.getWindVector()} where the
-     * player is, or zero underground and indoors. At or above {@link #DISPERSING_WIND_SPEED}
-     * what is left is halved before the ordinary decrement, so a cloud that would have lasted
-     * ten turns is gone in three.
+     * <p>{@code windSpeed} is the magnitude of {@code WeatherManager.getWindVector()}. At or
+     * above {@link #DISPERSING_WIND_SPEED} what is left is halved before the ordinary
+     * decrement, so a cloud that would have lasted ten turns is gone in three.
+     *
+     * <p>Exposure is decided per tile, not per player: a cloud out under the sky keeps
+     * dispersing whether or not the caster has since stepped into a doorway, and a cloud
+     * indoors or underground holds even in a gale. {@code maze} may be null, in which case
+     * nothing is treated as exposed.
      */
-    public void tick(float windSpeed) {
+    public void tick(Maze maze, float windSpeed) {
         if (activeTiles == 0) {
             return;
         }
-        boolean dispersing = windSpeed >= DISPERSING_WIND_SPEED;
+        boolean windy = windSpeed >= DISPERSING_WIND_SPEED;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 if (types[y][x] == 0) {
                     continue;
                 }
+                boolean dispersing = windy && maze != null && !maze.isIndoors(x, y);
                 int left = turns[y][x];
                 if (dispersing) {
                     left /= 2;
@@ -209,19 +209,6 @@ public final class AreaEffectManager {
     /** How many tiles hold an effect. Zero means {@link #tick} and the renderer can bail early. */
     public int activeTileCount() {
         return activeTiles;
-    }
-
-    public void forEachActive(TileVisitor visitor) {
-        if (visitor == null || activeTiles == 0) {
-            return;
-        }
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (types[y][x] != 0) {
-                    visitor.visit(x, y, AreaEffectType.values()[types[y][x] - 1], turns[y][x]);
-                }
-            }
-        }
     }
 
     // --- Sight -----------------------------------------------------------

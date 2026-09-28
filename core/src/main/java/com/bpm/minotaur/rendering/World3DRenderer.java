@@ -109,6 +109,11 @@ public class World3DRenderer implements Disposable {
     private final Texture blankTexture;
     /** Soft round falloff for fog puffs, so a cloud is vapour rather than a grid of squares. */
     private final Texture fogPuffTexture;
+    // Reused every puff: renderAreaEffects runs each frame over up to a 25x25 tile window with
+    // three billboards a tile, so allocating a Color and a TextureRegion per puff would be
+    // roughly two thousand short-lived objects a frame.
+    private final TextureRegion fogPuffRegion = new TextureRegion();
+    private final Color fogTint = new Color();
 
     /**
      * Authored sigils for the rune above a themed gate, keyed by theme.
@@ -645,8 +650,8 @@ public class World3DRenderer implements Disposable {
         // wanted: the world closes to about two tiles and goes grey. This is what "heavily
         // obscured" looks like from the inside, and it is also the whole of the retro-mode
         // visualisation, which gets no puffs.
-        if (maze != null && player != null && maze.hasAreaEffects()
-                && maze.getAreaEffects().isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+        if (maze != null && player != null
+                && maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
             fogEnabled = true;
             fogDistance = OBSCURED_FOG_DISTANCE;
             fogColor.set(OBSCURED_FOG_COLOR);
@@ -1219,6 +1224,11 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /** Tiles either side of the player worth drawing fog for. */
+    private static final int FOG_DRAW_RADIUS = 12;
+    /** Stacked billboards per fogged tile. Three reads as a column of vapour; one reads as a card. */
+    private static final int FOG_PUFFS_PER_TILE = 3;
+
     /**
      * Draws the obscuring clouds standing in the world.
      *
@@ -1240,53 +1250,58 @@ public class World3DRenderer implements Disposable {
             return;
         }
 
-        final int px = (int) player.getPosition().x;
-        final int py = (int) player.getPosition().y;
-        final TextureRegion region = new TextureRegion(fogPuffTexture);
-        final boolean[] any = {false};
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
 
-        maze.getAreaEffects().forEachActive((x, y, type, turnsRemaining) -> {
-            if (type != com.bpm.minotaur.gamedata.effects.area.AreaEffectType.OBSCURING) {
-                return;
+        // Walk the window around the player rather than the whole chunk, the way renderLiquids
+        // does. Scanning 64x64 to discard all but a 25x25 slice is work for nothing, and this
+        // runs every frame.
+        int minX = Math.max(0, px - FOG_DRAW_RADIUS);
+        int maxX = Math.min(maze.getWidth() - 1, px + FOG_DRAW_RADIUS);
+        int minY = Math.max(0, py - FOG_DRAW_RADIUS);
+        int maxY = Math.min(maze.getHeight() - 1, py + FOG_DRAW_RADIUS);
+
+        fogPuffRegion.setRegion(fogPuffTexture);
+        boolean any = false;
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                if (!maze.isObscured(x, y)) {
+                    continue;
+                }
+                // The player's own tile is skipped: at point-blank a puff paints the screen,
+                // and the fog-distance collapse is what conveys being inside the cloud.
+                if (x == px && y == py) {
+                    continue;
+                }
+
+                // A cloud thins as it disperses, so the last turns of one look like the last.
+                float life = Math.min(1f, maze.getAreaEffects().turnsRemainingAt(x, y) / 4f);
+                fogTint.set(0.80f, 0.82f, 0.85f, 0.30f * life);
+
+                for (int i = 0; i < FOG_PUFFS_PER_TILE; i++) {
+                    float phase = totalTime * 0.35f + x * 1.7f + y * 2.3f + i * 2.1f;
+                    float driftX = (float) Math.sin(phase) * 0.18f;
+                    float driftZ = (float) Math.cos(phase * 0.8f) * 0.18f;
+                    float bob = (float) Math.sin(phase * 0.6f) * 0.06f;
+
+                    float height = 0.22f + i * 0.26f + bob;
+                    float size = 0.85f + (float) Math.sin(phase * 0.5f) * 0.12f;
+
+                    dynamicBatcher.addBillboard(
+                            x + 0.5f + driftX, height, -(y + 0.5f) + driftZ,
+                            size, size, fogPuffRegion, fogTint, camRight, camUp, camDir);
+                    any = true;
+                }
             }
-            if (Math.abs(x - px) > FOG_DRAW_RADIUS || Math.abs(y - py) > FOG_DRAW_RADIUS) {
-                return;
-            }
-            if (x == px && y == py) {
-                return;
-            }
+        }
 
-            // A cloud thins out as it disperses, so the last turns of one are visibly the last.
-            float life = Math.min(1f, turnsRemaining / 4f);
-
-            for (int i = 0; i < FOG_PUFFS_PER_TILE; i++) {
-                float phase = totalTime * 0.35f + x * 1.7f + y * 2.3f + i * 2.1f;
-                float driftX = (float) Math.sin(phase) * 0.18f;
-                float driftZ = (float) Math.cos(phase * 0.8f) * 0.18f;
-                float bob = (float) Math.sin(phase * 0.6f) * 0.06f;
-
-                float height = 0.22f + i * 0.26f + bob;
-                float size = 0.85f + (float) Math.sin(phase * 0.5f) * 0.12f;
-
-                Color tint = new Color(0.80f, 0.82f, 0.85f, 0.30f * life);
-                dynamicBatcher.addBillboard(
-                        x + 0.5f + driftX, height, -(y + 0.5f) + driftZ,
-                        size, size, region, tint, camRight, camUp, camDir);
-                any[0] = true;
-            }
-        });
-
-        if (any[0]) {
+        if (any) {
             Gdx.gl.glDepthMask(false);
             dynamicBatcher.flush(shader, fogPuffTexture);
             Gdx.gl.glDepthMask(true);
         }
     }
-
-    /** Tiles either side of the player worth drawing fog for. */
-    private static final int FOG_DRAW_RADIUS = 12;
-    /** Stacked billboards per fogged tile. Three reads as a column of vapour; one reads as a card. */
-    private static final int FOG_PUFFS_PER_TILE = 3;
 
     /** A soft round alpha falloff. Reused for every puff. */
     private static Texture buildFogPuffTexture() {

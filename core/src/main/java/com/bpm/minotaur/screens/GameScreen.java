@@ -20,6 +20,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.Vector3;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.rendering.SpellPostProcessor;
 import com.bpm.minotaur.rendering.SpellCastOverlay;
@@ -1437,14 +1439,6 @@ public class GameScreen extends BaseScreen {
     }
 
     /**
-     * The blood taking the screen.
-     *
-     * <p>Two layers, because either alone falls short: the deepening wash carries the blacking-out
-     * read and guarantees full opacity on schedule for the handover, while the spatter is what
-     * makes it blood rather than a red filter. Spatter arrives in staggered waves so the screen
-     * fills rather than flashing.
-     */
-    /**
      * The raycaster's version of standing in fog: a flat grey wash over the play area.
      *
      * <p>The 3D engine collapses its own distance fog for this, which is both cheaper and
@@ -1457,10 +1451,8 @@ public class GameScreen extends BaseScreen {
         if (debugManager.getRenderEngine() == DebugManager.RenderEngine.PLANAR_3D) {
             return;
         }
-        if (player == null || maze == null || !maze.hasAreaEffects()) {
-            return;
-        }
-        if (!maze.getAreaEffects().isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
+        if (player == null || maze == null
+                || !maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y)) {
             return;
         }
 
@@ -1473,6 +1465,14 @@ public class GameScreen extends BaseScreen {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
+    /**
+     * The blood taking the screen.
+     *
+     * <p>Two layers, because either alone falls short: the deepening wash carries the blacking-out
+     * read and guarantees full opacity on schedule for the handover, while the spatter is what
+     * makes it blood rather than a red filter. Spatter arrives in staggered waves so the screen
+     * fills rather than flashing.
+     */
     private void renderDeathBlood(float alpha) {
         if (alpha <= 0f) return;
 
@@ -1856,15 +1856,15 @@ public class GameScreen extends BaseScreen {
         if (maze == null || !maze.hasAreaEffects()) {
             return;
         }
+        // The wind is the weather's, not the player's. Asking whether the *player* is under
+        // the sky would have stopped an outdoor cloud dispersing the moment they stepped
+        // indoors; the manager tests each tile itself.
         float windSpeed = 0f;
-        boolean underOpenSky = currentLevel() == 1 && player != null
-                && !maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y);
-        if (underOpenSky && worldManager != null && worldManager.getWeatherManager() != null) {
-            com.badlogic.gdx.math.Vector3 wind = new com.badlogic.gdx.math.Vector3();
-            worldManager.getWeatherManager().getWindVector(wind);
-            windSpeed = wind.len();
+        if (worldManager != null && worldManager.getWeatherManager() != null) {
+            worldManager.getWeatherManager().getWindVector(scratchWind);
+            windSpeed = scratchWind.len();
         }
-        maze.getAreaEffects().tick(windSpeed);
+        maze.getAreaEffects().tick(maze, windSpeed);
         syncObscuredStatus();
     }
 
@@ -1872,29 +1872,56 @@ public class GameScreen extends BaseScreen {
      * Keeps the player's OBSCURED status matching the tile they are standing on.
      *
      * <p>Fog is a place, not something cast on you, so the status is derived rather than
-     * inflicted -- walk in and it appears, walk out and it clears. The chronicle line fires
-     * only on the change, because a message every turn you stand in a cloud is noise. Without
-     * this the player would have no on-screen answer to "why did my shot miss".
+     * inflicted -- walk in and it appears, walk out and it clears. Without it the player has
+     * no on-screen answer to "why did my shot miss".
+     *
+     * <p>The entering and leaving lines fire on the transition only, and the transition is
+     * tracked here rather than read back off the status. The status cannot be the source of
+     * truth: {@code StatusManager.updateTurn()} runs earlier in {@code playerTurnTakesAction}
+     * than this does, so whatever this applies has already been aged once before the next turn
+     * reads it. Reading it back made every turn in a cloud look like a fresh entry, which
+     * re-announced the fog every turn and meant leaving it was never announced at all.
      */
     private void syncObscuredStatus() {
         if (player == null || player.getStatusManager() == null) {
             return;
         }
-        boolean inFog = maze != null && maze.hasAreaEffects()
-                && maze.getAreaEffects().isObscured((int) player.getPosition().x, (int) player.getPosition().y);
-        boolean wasInFog = player.getStatusManager().hasEffect(StatusEffectType.OBSCURED);
+        boolean inFog = maze != null
+                && maze.isObscured((int) player.getPosition().x, (int) player.getPosition().y);
 
-        if (inFog && !wasInFog) {
-            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, 1, 1, false);
+        if (inFog == playerWasObscured) {
+            if (inFog) {
+                // Hold the pill lit. StatusManager.updateTurn() runs earlier in the same turn
+                // than this does, so a status applied here with a duration of 1 would already
+                // have been decremented to nothing by the time the next turn asked about it.
+                player.getStatusManager().addEffect(StatusEffectType.OBSCURED, OBSCURED_STATUS_TURNS, 1, false);
+            }
+            return;
+        }
+
+        playerWasObscured = inFog;
+        if (inFog) {
+            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, OBSCURED_STATUS_TURNS, 1, false);
             eventManager.addEvent(new GameEvent("Fog closes over you. You can see nothing beyond arm's reach.", 2f));
-        } else if (inFog) {
-            // Refresh, or updateTurn would expire it while the player is still standing in it.
-            player.getStatusManager().addEffect(StatusEffectType.OBSCURED, 1, 1, false);
-        } else if (wasInFog) {
+        } else {
             player.getStatusManager().removeEffect(StatusEffectType.OBSCURED);
             eventManager.addEvent(new GameEvent("You step clear of the fog.", 1.5f));
         }
     }
+
+    /**
+     * Whether the player was standing in fog at the end of the last world turn.
+     *
+     * <p>The transition, not the status, is what the chronicle lines key off -- see
+     * {@link #syncObscuredStatus}.
+     */
+    private boolean playerWasObscured;
+
+    /** Turns the OBSCURED pill is applied for, so it survives one StatusManager.updateTurn(). */
+    private static final int OBSCURED_STATUS_TURNS = 2;
+
+    /** Reused: the wind vector is read once a turn. */
+    private final Vector3 scratchWind = new Vector3();
 
     private void playerTurnTakesAction() {
         if (MusicManager.getInstance().isResting()) {

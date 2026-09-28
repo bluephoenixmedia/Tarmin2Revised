@@ -107,10 +107,10 @@ public class AreaEffectManagerTest {
         m.apply(maze, 4, 4, AreaEffectType.OBSCURING, 1, 3);
 
         assertEquals(3, m.turnsRemainingAt(4, 4));
-        m.tick(0f);
+        m.tick(maze, 0f);
         assertEquals(2, m.turnsRemainingAt(4, 4));
-        m.tick(0f);
-        m.tick(0f);
+        m.tick(maze, 0f);
+        m.tick(maze, 0f);
         assertFalse(m.isActive(4, 4));
         assertEquals(0, m.activeTileCount());
     }
@@ -121,8 +121,8 @@ public class AreaEffectManagerTest {
         AreaEffectManager m = manager(15);
 
         m.apply(maze, 5, 5, AreaEffectType.OBSCURING, 1, 10);
-        m.tick(0f);
-        m.tick(0f);
+        m.tick(maze, 0f);
+        m.tick(maze, 0f);
         assertEquals(8, m.turnsRemainingAt(5, 5));
 
         // A second cast one tile over: the shared tile goes back to full, and the new tiles
@@ -150,7 +150,7 @@ public class AreaEffectManagerTest {
         Maze maze = openMaze(9);
         AreaEffectManager m = manager(9);
         m.apply(maze, 4, 4, AreaEffectType.OBSCURING, 1, 10);
-        m.tick(AreaEffectManager.DISPERSING_WIND_SPEED - 0.1f);
+        m.tick(maze, AreaEffectManager.DISPERSING_WIND_SPEED - 0.1f);
         assertEquals("below the threshold the wind does nothing extra", 9, m.turnsRemainingAt(4, 4));
     }
 
@@ -161,12 +161,29 @@ public class AreaEffectManagerTest {
         m.apply(maze, 4, 4, AreaEffectType.OBSCURING, 1, 10);
 
         // Halving on top of the ordinary decrement: 10 -> 4 -> 1 -> gone.
-        m.tick(AreaEffectManager.DISPERSING_WIND_SPEED);
+        m.tick(maze, AreaEffectManager.DISPERSING_WIND_SPEED);
         assertEquals(4, m.turnsRemainingAt(4, 4));
-        m.tick(AreaEffectManager.DISPERSING_WIND_SPEED);
+        m.tick(maze, AreaEffectManager.DISPERSING_WIND_SPEED);
         assertEquals(1, m.turnsRemainingAt(4, 4));
-        m.tick(AreaEffectManager.DISPERSING_WIND_SPEED);
+        m.tick(maze, AreaEffectManager.DISPERSING_WIND_SPEED);
         assertFalse(m.isActive(4, 4));
+    }
+
+    @Test
+    public void shelteredTilesHoldTheirFogEvenInAGale() {
+        // Wind is tested per tile, not against wherever the player happens to be standing:
+        // a cloud indoors must not be torn apart because the caster walked outside, and an
+        // outdoor cloud must keep dispersing after they step in.
+        Maze maze = openMaze(9);
+        maze.setHomeTiles(java.util.Collections.singletonList(new com.badlogic.gdx.math.GridPoint2(2, 2)));
+        AreaEffectManager m = manager(9);
+        m.apply(maze, 2, 2, AreaEffectType.OBSCURING, 0, 10);
+        m.apply(maze, 6, 6, AreaEffectType.OBSCURING, 0, 10);
+
+        m.tick(maze, AreaEffectManager.DISPERSING_WIND_SPEED);
+
+        assertEquals("a sheltered tile only takes the ordinary decrement", 9, m.turnsRemainingAt(2, 2));
+        assertEquals("an exposed tile is halved as well", 4, m.turnsRemainingAt(6, 6));
     }
 
     // --- Sight -----------------------------------------------------------
@@ -242,23 +259,33 @@ public class AreaEffectManagerTest {
     @Test
     public void tickingAnEmptyGridIsFree() {
         AreaEffectManager m = manager(9);
-        m.tick(0f);
+        m.tick(openMaze(9), 0f);
+        assertEquals(0, m.activeTileCount());
+        // A null maze means nothing is treated as exposed, rather than an exception.
+        m.tick(null, 99f);
         assertEquals(0, m.activeTileCount());
     }
 
     @Test
-    public void everyActiveTileIsVisitedOnceForRendering() {
+    public void whatApplyReportsIsWhatTheGridHolds() {
+        // The renderer walks a window of tiles and asks each one, so the count apply() returns
+        // has to agree with what a scan finds -- otherwise a cloud would draw at a different
+        // size from the one it blocks sight over.
         Maze maze = openMaze(11);
         AreaEffectManager m = manager(11);
         int filled = m.apply(maze, 5, 5, AreaEffectType.OBSCURING, 1, 10);
 
-        final int[] seen = {0};
-        m.forEachActive((x, y, type, turnsLeft) -> {
-            seen[0]++;
-            assertEquals(AreaEffectType.OBSCURING, type);
-            assertTrue(turnsLeft > 0);
-        });
-        assertEquals(filled, seen[0]);
+        int found = 0;
+        for (int y = 0; y < 11; y++) {
+            for (int x = 0; x < 11; x++) {
+                if (m.isActive(x, y)) {
+                    found++;
+                    assertEquals(AreaEffectType.OBSCURING, m.typeAt(x, y));
+                    assertTrue(m.turnsRemainingAt(x, y) > 0);
+                }
+            }
+        }
+        assertEquals(filled, found);
         assertEquals(filled, m.activeTileCount());
     }
 }

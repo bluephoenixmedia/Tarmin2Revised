@@ -462,7 +462,7 @@ public class MonsterAiManager {
         // sighting goes through: acquiring the player, spotting a rival, and the clear-shot
         // test a ranged monster makes before firing. Adjacent tiles are exempt inside
         // blocksSight -- a thing standing next to you in the cloud has not lost you.
-        if (maze != null && maze.hasAreaEffects() && maze.getAreaEffects().blocksSight(x0, y0, x1, y1)) {
+        if (maze != null && maze.fogBlocksSight(x0, y0, x1, y1)) {
             return false;
         }
 
