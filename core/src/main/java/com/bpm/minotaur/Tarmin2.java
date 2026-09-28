@@ -133,7 +133,7 @@ public class Tarmin2 extends Game {
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_ambient.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_fuxx.ogg");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_maze.mp3");
-        MusicManager.getInstance().loadMusic("sounds/music/tarmin_core.mp3");
+        MusicManager.getInstance().loadMusic("sounds/music/Exsurge_Gloria.mp3");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_catacombs_drone.wav");
         MusicManager.getInstance().loadMusic("sounds/music/tarmin_boss_tension.wav");
 
