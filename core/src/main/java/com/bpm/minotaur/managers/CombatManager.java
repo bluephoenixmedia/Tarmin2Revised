@@ -3288,39 +3288,17 @@ public class CombatManager {
         DivinityOrbManager.getInstance().spawnOrb();
     }
 
+    private final java.util.Random woundRandom = new java.util.Random();
+
     private void applyCombatHitWound(Monster monster, int actualDamage, Item weapon) {
         if (monster == null || actualDamage <= 0) return;
 
-        AnimationArchetype arch = AnimationArchetype.fromItem(weapon);
-        WoundDecal.WoundType woundType;
-        switch (arch) {
-            case BLUNT_CRUSHING:
-            case FLAIL_WHIP:
-            case BRAWLING:
-            case SHIELD:
-                woundType = WoundDecal.WoundType.CRUSH;
-                break;
-            case THRUSTING_PIERCE:
-                woundType = (weapon != null && weapon.isFinesse())
-                        ? WoundDecal.WoundType.SLICE
-                        : WoundDecal.WoundType.STAB;
-                break;
-            case RANGED_BOW:
-            case RANGED_FIREARM:
-                woundType = WoundDecal.WoundType.PUNCTURE;
-                break;
-            case SLASHING_1H:
-            case SLASHING_2H:
-            case AXE_CHOPPING:
-            case POLEARM_SWEEP:
-            default:
-                if (weapon != null && weapon.isFinesse()) {
-                    woundType = WoundDecal.WoundType.SLICE;
-                } else {
-                    woundType = WoundDecal.WoundType.SLASH;
-                }
-                break;
-        }
+        // The weapon's own damage type decides the wound; see WoundTypeResolver.
+        WoundDecal.WoundType woundType = com.bpm.minotaur.gamedata.gore.WoundTypeResolver.resolve(
+                weapon != null ? weapon.getDamageType() : null,
+                AnimationArchetype.fromItem(weapon),
+                weapon != null && weapon.isFinesse(),
+                null);
 
         float angle = MathUtils.random(-0.75f, 0.75f);
         if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
@@ -3339,8 +3317,12 @@ public class CombatManager {
         WoundDecalRegistry registry = WoundDecalRegistry.getInstance();
         TextureRegion decalRegion = registry.getRandomRegion(woundType);
 
-        float u = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
-        float v = MathUtils.clamp(0.5f + MathUtils.random(-0.15f, 0.15f), 0.15f, 0.85f);
+        // On the creature, clear of the wounds it already has -- not always the middle of the sprite.
+        float[] site = com.bpm.minotaur.gamedata.gore.WoundPlacement.pick(
+                com.bpm.minotaur.rendering.MonsterSilhouettes.forMonster(monster),
+                monster.getWoundDecals(), woundRandom);
+        float u = site[0];
+        float v = site[1];
 
         float aspect = WoundDecalRegistry.getAspectRatio(decalRegion, woundType);
         float length = MathUtils.clamp(0.20f + actualDamage * 0.008f, 0.16f, 0.45f);

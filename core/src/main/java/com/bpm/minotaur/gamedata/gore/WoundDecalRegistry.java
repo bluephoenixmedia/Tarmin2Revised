@@ -16,12 +16,19 @@ public class WoundDecalRegistry {
 
     private static WoundDecalRegistry instance;
 
-    // Categorized decal indices (1-indexed matching decals/wound in gore.atlas)
-    public static final int[] SLASH_INDICES = {6, 10, 11, 14, 17, 18, 19, 26, 30, 31, 37, 38, 39};
-    public static final int[] SLICE_INDICES = {2, 6, 10, 11, 17, 18, 22, 30, 37, 38};
-    public static final int[] STAB_INDICES = {1, 2, 4, 5, 8, 13, 21, 22, 24, 25, 28, 33};
-    public static final int[] PUNCTURE_INDICES = {1, 3, 4, 5, 13, 21, 23, 24, 25, 33, 34};
-    public static final int[] CRUSH_INDICES = {7, 9, 12, 14, 15, 16, 20, 24, 27, 28, 29, 32, 34, 35, 36, 40};
+    // Categorized decal indices (1-indexed matching decals/wound in gore.atlas).
+    //
+    // Sorted by what each decal actually looks like. The old pools put burn marks (4, 17, 37) and
+    // bruises (9, 18, 29, 36, 38) in the blade pools, claw marks in the stab pools, and thin slits
+    // in the blunt pool, so a sword could leave a burn and a mace a slit. A decal is shared only
+    // where the art honestly fits both: narrow slits serve slash and slice, small holes serve stab
+    // and puncture. Burns have a pool of their own for fire and lightning.
+    public static final int[] SLASH_INDICES = {1, 2, 5, 6, 10, 11, 14, 15, 21, 22, 25, 26, 31, 35, 39};
+    public static final int[] SLICE_INDICES = {1, 6, 10, 12, 19, 21, 30, 32, 39};
+    public static final int[] STAB_INDICES = {1, 3, 13, 21, 23, 32, 33};
+    public static final int[] PUNCTURE_INDICES = {3, 7, 13, 16, 20, 23, 27, 33, 40};
+    public static final int[] CRUSH_INDICES = {8, 9, 18, 24, 28, 29, 34, 36, 38};
+    public static final int[] SCORCH_INDICES = {4, 17, 37};
 
     private final Map<WoundDecal.WoundType, Array<TextureRegion>> categorizedPools = new EnumMap<>(WoundDecal.WoundType.class);
     private final Array<TextureRegion> allRegions = new Array<>();
@@ -65,6 +72,7 @@ public class WoundDecalRegistry {
         populateCategory(atlas, WoundDecal.WoundType.STAB, STAB_INDICES);
         populateCategory(atlas, WoundDecal.WoundType.PUNCTURE, PUNCTURE_INDICES);
         populateCategory(atlas, WoundDecal.WoundType.CRUSH, CRUSH_INDICES);
+        populateCategory(atlas, WoundDecal.WoundType.SCORCH, SCORCH_INDICES);
 
         loaded = !allRegions.isEmpty();
     }
