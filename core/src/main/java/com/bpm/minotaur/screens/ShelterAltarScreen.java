@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -268,7 +269,7 @@ public class ShelterAltarScreen extends BaseScreen {
             }
         }
 
-        ScrollPane scroll = new ScrollPane(grid);
+        ScrollPane scroll = new ScrollPane(grid, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill();
     }
@@ -545,7 +546,7 @@ public class ShelterAltarScreen extends BaseScreen {
             }
         }
 
-        ScrollPane scroll = new ScrollPane(list);
+        ScrollPane scroll = new ScrollPane(list, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill();
     }

@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -384,7 +385,7 @@ public class CodexScreen extends BaseScreen {
             grid.add(emptyLbl).padTop(80).expandX().center();
         }
 
-        ScrollPane scroll = new ScrollPane(grid);
+        ScrollPane scroll = new ScrollPane(grid, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
         bodyContainer.add(scroll).expand().fill().row();
@@ -574,7 +575,7 @@ public class CodexScreen extends BaseScreen {
             content.add(circleSection).fillX().padBottom(16).row();
         }
 
-        ScrollPane scroll = new ScrollPane(content);
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill().row();
     }
@@ -761,7 +762,7 @@ public class CodexScreen extends BaseScreen {
         }
         content.add(ascGrid).fillX().row();
 
-        ScrollPane scroll = new ScrollPane(content);
+        ScrollPane scroll = new ScrollPane(content, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         bodyContainer.add(scroll).expand().fill().row();
     }

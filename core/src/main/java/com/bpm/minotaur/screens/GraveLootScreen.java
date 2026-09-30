@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -127,7 +128,7 @@ public class GraveLootScreen extends BaseScreen {
 
         graveTable = new Table();
         populateGraveTable();
-        ScrollPane graveScroll = new ScrollPane(graveTable);
+        ScrollPane graveScroll = new ScrollPane(graveTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         graveScroll.setFadeScrollBars(false);
         leftPanel.add(graveScroll).size(650, 500).row();
 
@@ -176,7 +177,7 @@ public class GraveLootScreen extends BaseScreen {
 
         backpackTable = new Table();
         populateBackpackTable();
-        ScrollPane backpackScroll = new ScrollPane(backpackTable);
+        ScrollPane backpackScroll = new ScrollPane(backpackTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         backpackScroll.setFadeScrollBars(false);
         rightPanel.add(backpackScroll).size(650, 500).row();
 

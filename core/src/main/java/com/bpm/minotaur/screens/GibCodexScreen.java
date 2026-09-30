@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -139,7 +140,7 @@ public class GibCodexScreen extends BaseScreen {
             addCodexRow(bodyTable, style, mt, allEffects.get(mt), false);
         }
 
-        ScrollPane scroll = new ScrollPane(bodyTable);
+        ScrollPane scroll = new ScrollPane(bodyTable, UiStyles.scrollPane(new TextureRegionDrawable(whitePixel)));
         scroll.setFadeScrollBars(false);
         rootTable.add(scroll).colspan(3).width(1600).height(700).pad(10).row();
 

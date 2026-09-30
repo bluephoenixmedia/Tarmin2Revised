@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -134,7 +135,7 @@ public class ShelterChestScreen extends BaseScreen {
 
         chestRows = new Table();
         chestRows.top().left();
-        ScrollPane chestScroll = new ScrollPane(chestRows);
+        ScrollPane chestScroll = new ScrollPane(chestRows, UiStyles.scrollPane(hudSkin));
         chestScroll.setFadeScrollBars(false);
         chestPanel.add(chestScroll).expand().fill().row();
 
@@ -185,7 +186,7 @@ public class ShelterChestScreen extends BaseScreen {
 
         packRows = new Table();
         packRows.top().left();
-        ScrollPane packScroll = new ScrollPane(packRows);
+        ScrollPane packScroll = new ScrollPane(packRows, UiStyles.scrollPane(hudSkin));
         packScroll.setFadeScrollBars(false);
         packPanel.add(packScroll).expand().fill().row();
 

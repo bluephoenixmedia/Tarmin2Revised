@@ -515,7 +515,9 @@ public class ShopkeeperWindow extends Table {
     }
 
     private ScrollPane.ScrollPaneStyle makePaneStyle() {
-        ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
+        ScrollPane.ScrollPaneStyle style = (hudSkin != null)
+                ? com.bpm.minotaur.ui.UiStyles.scrollPane(hudSkin)
+                : new ScrollPane.ScrollPaneStyle();
         if (hudSkin != null) {
             style.background = hudSkin.getSlotRecessed();
         }

@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -79,7 +80,7 @@ public class ControlsScreen extends BaseScreen {
         scrollContainer.setBackground(hudSkin.getSlotRecessed());
         scrollContainer.pad(12);
 
-        ScrollPane scrollPane = new ScrollPane(keyTable);
+        ScrollPane scrollPane = new ScrollPane(keyTable, UiStyles.scrollPane(hudSkin));
         scrollPane.setFadeScrollBars(false);
         scrollContainer.add(scrollPane).size(560, 420).expand().fill();
 
