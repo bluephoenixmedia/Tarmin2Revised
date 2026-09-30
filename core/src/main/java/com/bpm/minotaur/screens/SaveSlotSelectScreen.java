@@ -435,6 +435,14 @@ public class SaveSlotSelectScreen extends BaseScreen {
 
         // Load persistent shelter chest for the active slot
         com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().load(game.getItemDataManager(), game.getAssetManager());
+
+        // The character died and the game was left before they awoke. Their gear is already
+        // stripped in this save; finish the respawn instead of resuming at 0 HP.
+        if (worldData != null && worldData.respawnPending) {
+            SaveManager.getInstance().setRespawnPending(true);
+            com.bpm.minotaur.managers.DoomManager doom = com.bpm.minotaur.managers.DoomManager.getInstance();
+            gameScreen.respawnInShelter(0, 0, doom.getDeathCount(), doom.getBridgeIntegrity());
+        }
     }
 
     private void close() {
