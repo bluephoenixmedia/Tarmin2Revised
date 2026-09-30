@@ -465,6 +465,30 @@ public class Maze {
         return false;
     }
 
+    /**
+     * Whether a melee blow can cross from (px,py) into the adjacent tile (tx,ty): the edge
+     * between them is open and the target tile holds no closed door or gate.
+     *
+     * <p>Deliberately does not ask {@link #isWall}. That treats wall data of exactly 1 as a
+     * solid block, but 1 is also WEST's edge mask, so a tile whose only wall is its west
+     * edge read as solid and a monster standing in it could not be struck.
+     */
+    public boolean canMeleeInto(int px, int py, int tx, int ty) {
+        if (tx < 0 || tx >= getWidth() || ty < 0 || ty >= getHeight()) {
+            return false;
+        }
+        Direction dir = Direction.fromDelta(tx - px, ty - py);
+        if (dir != null && isWallBlocking(px, py, dir)) {
+            return false;
+        }
+        Object obj = getGameObjectAt(tx, ty);
+        if (obj instanceof Door door
+                && (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING)) {
+            return false;
+        }
+        return !(obj instanceof Gate gate && gate.getState() != Gate.GateState.OPEN);
+    }
+
     public boolean isPassable(int x, int y) {
         if (x < 0 || x >= wallData[0].length || y < 0 || y >= wallData.length) {
             return false;
