@@ -1319,6 +1319,12 @@ public class GameScreen extends BaseScreen {
 
             int retainedCount = 0;
 
+            // Put the stripped character on disk now. The death screen can be left by quitting
+            // or crashing, and the last pre-death autosave would otherwise return the whole kit
+            // at the next load. The flag makes that load finish the respawn.
+            SaveManager.getInstance().setRespawnPending(true);
+            SaveManager.getInstance().saveActiveSlot(player, worldManager);
+
             // 4. Finalize run telemetry & build the run epitaph
             com.bpm.minotaur.telemetry.TelemetryManager telemetry = com.bpm.minotaur.telemetry.TelemetryManager.getInstance();
             if (player.getInjuryManager() != null) {
@@ -1783,7 +1789,7 @@ public class GameScreen extends BaseScreen {
         if (hud != null) {
             hud.addMessage("You awaken back in the Shelter Bed.");
             if (lostCount > 0) {
-                hud.addMessage("Stripped of " + lostCount + " equipped item" + (lostCount == 1 ? "" : "s") + " upon falling. Backpack secured.");
+                hud.addMessage("Lost " + lostCount + " item" + (lostCount == 1 ? "" : "s") + " upon falling.");
             }
             hud.addMessage("The world beyond the Shelter has changed -- a new expedition awaits.");
             hud.addMessage(String.format("Tarmin's Hunger grows: Doom at %d%% (Death %d/50).", (int) bridge, deaths));
@@ -1792,6 +1798,10 @@ public class GameScreen extends BaseScreen {
             eventManager.addEvent(new GameEvent("You awaken back at the Shelter... Tarmin's hunger grows.", 4f));
         }
         soundManager.playDoorOpenSound();
+
+        // The death is now fully resolved: clear the pending marker and persist the new run.
+        SaveManager.getInstance().setRespawnPending(false);
+        SaveManager.getInstance().saveActiveSlot(player, worldManager);
 
         game.setScreen(this);
     }

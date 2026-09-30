@@ -31,6 +31,7 @@ public class SaveManager {
     private static final String PROFILE_FILE = ROOT_SAVES_DIR + "profile.json";
 
     private int activeSlotIndex = 1; // 1, 2, or 3
+    private boolean respawnPending = false;
     private final java.util.List<SlotScopedState> slotScoped = new java.util.ArrayList<>();
     private ProfileData profile;
     private final Json json;
@@ -109,6 +110,21 @@ public class SaveManager {
     }
 
     /**
+     * Whether the active slot's character is dead and has not yet awoken in the Shelter.
+     *
+     * <p>Death strips the character in memory, but the death screen can be left by quitting or
+     * crashing. Without this marker on disk the last pre-death autosave would win at the next
+     * load and hand the whole kit back.
+     */
+    public boolean isRespawnPending() {
+        return respawnPending;
+    }
+
+    public void setRespawnPending(boolean respawnPending) {
+        this.respawnPending = respawnPending;
+    }
+
+    /**
      * Registers state with the SaveManager if there is one.
      *
      * <p>Every progression singleton needs this in its constructor, and tests
@@ -140,6 +156,7 @@ public class SaveManager {
         int resolved = Math.max(1, Math.min(MAX_SLOTS, slotIndex));
         boolean changed = resolved != this.activeSlotIndex;
         this.activeSlotIndex = resolved;
+        this.respawnPending = false;
         getProfile().lastPlayedSlot = this.activeSlotIndex;
         saveProfile();
 
@@ -341,6 +358,7 @@ public class SaveManager {
                 }
             }
             worldData.pendingPursuers = MonsterPursuitManager.getInstance().toSaveData();
+            worldData.respawnPending = respawnPending;
             atomicWriteJson(getFileHandle(getActiveSlotFilePath("world.json")), worldData);
 
             // 4. Save Chest, Doom, Divinities

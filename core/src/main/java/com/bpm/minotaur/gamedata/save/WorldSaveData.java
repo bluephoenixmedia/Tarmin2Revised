@@ -21,6 +21,12 @@ public class WorldSaveData {
     public int tormentLevel = 0;
     public List<String> activeTormentModifiers = new ArrayList<>();
     public String factionMatrix;
+    /**
+     * True from the moment the player dies until they awaken in the Shelter. A save written in
+     * that window holds the stripped character, and loading it must finish the respawn rather
+     * than resume a corpse at 0 HP.
+     */
+    public boolean respawnPending = false;
 
     public static class PendingPursuerSaveData {
         public Monster.MonsterType monsterType;
