@@ -280,20 +280,20 @@ public class MonsterAiManager {
                     }
                 }
 
-                // Priority 2: Ranged Offensive Spellcasting (2 <= dist <= 8 with clear LoS)
+                // Priority 2: Ranged Offensive Spellcasting (2 <= dist <= 8). The line to the
+                // player is judged per spell inside MonsterSpellExecutor, because a wall-piercing
+                // spell from a wall-piercing caster does not need one and nothing else may pass.
                 if (dist >= 2 && dist <= 8) {
-                    if (checkLineOfSight(maze, monsterGridPos, playerGridPos)) {
-                        int chance = monster.getSpellChance() > 0 ? monster.getSpellChance() : 60;
-                        if (Math.random() * 100 < chance) {
-                            String offSpell = monster.getSpellbook().selectOffensiveSpell(
-                                    monster.getCurrentMP(),
-                                    dist,
-                                    SpellDataManager.getInstance());
-                            if (offSpell != null) {
-                                GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
-                                if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
-                                    return; // Cast spell, turn consumed
-                                }
+                    int chance = monster.getSpellChance() > 0 ? monster.getSpellChance() : 60;
+                    if (Math.random() * 100 < chance) {
+                        String offSpell = monster.getSpellbook().selectOffensiveSpell(
+                                monster.getCurrentMP(),
+                                dist,
+                                SpellDataManager.getInstance());
+                        if (offSpell != null) {
+                            GameEventManager em = (combatManager.getGameScreen() != null) ? combatManager.getGameScreen().getEventManager() : null;
+                            if (MonsterSpellExecutor.castMonsterSpell(monster, offSpell, player, maze, em, combatManager)) {
+                                return; // Cast spell, turn consumed
                             }
                         }
                     }

@@ -2866,7 +2866,11 @@ public class CombatManager {
 
         // 2. TACTICAL Logic (Spellcasting)
         if (!actionTaken && ai == MonsterTemplate.AiType.TACTICAL) {
-            if (random.nextInt(100) < monster.getSpellChance()) {
+            // Combat can begin across a room (a shot or a zap starts it), so the caster still needs a
+            // clear line to the player. This cast used to land through any wall.
+            boolean clearLine = com.bpm.minotaur.gamedata.spells.MonsterSpellSight
+                    .assess(maze, monster, player.getPosition(), null).canCast();
+            if (clearLine && random.nextInt(100) < monster.getSpellChance()) {
                 performMonsterSpell();
                 actionTaken = true;
             }

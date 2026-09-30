@@ -36,6 +36,20 @@ public class MonsterSpellExecutor {
             return false;
         }
 
+        // Self-targeted spells need no line to the player. Everything else does: a spell that
+        // cannot reach its target is not cast, and costs nothing.
+        String earlyTargetType = spell.getTargetType() != null ? spell.getTargetType().toUpperCase() : "PROJECTILE";
+        boolean selfSpell = "SELF".equals(earlyTargetType) || spellId.contains("HEAL") || spellId.contains("SHIELD")
+                || spellId.contains("MISTY") || spellId.contains("TELEPORT");
+        boolean piercedWalls = false;
+        if (!selfSpell) {
+            MonsterSpellSight.Reach reach = MonsterSpellSight.assess(maze, caster, player.getPosition(), spell);
+            if (!reach.canCast()) {
+                return false;
+            }
+            piercedWalls = (reach == MonsterSpellSight.Reach.THROUGH_WALLS);
+        }
+
         // Deduct MP if spell has an MP cost
         if (spell.getMpCost() > 0) {
             if (!caster.hasEnoughMana(spell.getMpCost())) {
@@ -64,6 +78,10 @@ public class MonsterSpellExecutor {
         String monsterName = caster.getMonsterType() != null ? caster.getMonsterType() : "Monster";
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(monsterName + " casts " + spell.getName() + "!", 2.0f));
+            if (piercedWalls) {
+                // The one cast that ignores stone says so, so it is never mistaken for a bug.
+                eventManager.addEvent(new GameEvent("You feel something probing your mind through the stone!", 3.0f));
+            }
         }
 
         GameScreen gs = (combatManager != null) ? combatManager.getGameScreen() : null;

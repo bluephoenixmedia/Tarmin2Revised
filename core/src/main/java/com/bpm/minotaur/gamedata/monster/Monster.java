@@ -770,6 +770,16 @@ public class Monster implements Renderable {
         return intelligence;
     }
 
+    /**
+     * Whether this monster can use a wall-piercing spell without a clear line: tagged in its
+     * template, or of extreme intelligence. Only half of the rule; the spell must pierce too.
+     */
+    public boolean canCastThroughWalls() {
+        MonsterTemplate t = getTemplate();
+        return (t != null && t.wallPiercingCaster)
+                || intelligence >= com.bpm.minotaur.gamedata.spells.MonsterSpellSight.EXTREME_INTELLIGENCE;
+    }
+
     public StatusManager getStatusManager() {
         return statusManager;
     }
