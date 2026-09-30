@@ -1807,7 +1807,7 @@ public class World3DRenderer implements Disposable {
                         h *= 1.0f + progress * 0.22f;
                     }
 
-                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, it.getColor(), camRight, camUp, camDir);
+                    dynamicBatcher.addBillboard(renderX, renderFeetY, renderZ, w, h, region, ItemSpriteTint.forItem(it, isRetro), camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
                 }
             } else if (r instanceof Scenery) {
