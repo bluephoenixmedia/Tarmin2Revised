@@ -2060,18 +2060,7 @@ public class GameScreen extends BaseScreen {
         int py = (int) Math.floor(player.getPosition().y);
 
         // A player cannot melee-strike through a solid wall, closed door, or closed gate
-        Direction dir = Direction.fromDelta(tx - px, ty - py);
-        if (dir != null && maze.isWallBlocking(px, py, dir)) {
-            return null;
-        }
-        if (maze.isWall(tx, ty)) {
-            return null;
-        }
-        Object obj = maze.getGameObjectAt(tx, ty);
-        if (obj instanceof Door door && (door.getState() == Door.DoorState.CLOSED || door.getState() == Door.DoorState.CLOSING)) {
-            return null;
-        }
-        if (obj instanceof Gate gate && gate.getState() != Gate.GateState.OPEN) {
+        if (!maze.canMeleeInto(px, py, tx, ty)) {
             return null;
         }
 
