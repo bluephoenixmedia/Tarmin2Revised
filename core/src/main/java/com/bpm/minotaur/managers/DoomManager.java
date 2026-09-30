@@ -324,6 +324,7 @@ public class DoomManager implements SlotScopedState {
             state.bridgeBossActive = this.bridgeBossActive;
             state.apocalypseTriggered = this.apocalypseTriggered;
             state.bridgeBossSummons = this.bridgeBossSummons;
+            state.expeditionTurns = this.expeditionTurns;
 
             file.writeString(json.prettyPrint(state), false);
             if (Gdx.app != null) {
@@ -347,6 +348,7 @@ public class DoomManager implements SlotScopedState {
                     this.bridgeBossActive = state.bridgeBossActive;
                     this.apocalypseTriggered = state.apocalypseTriggered;
                     this.bridgeBossSummons = state.bridgeBossSummons;
+                    this.expeditionTurns = state.expeditionTurns;
                     if (Gdx.app != null) {
                         Gdx.app.log("DoomManager", "Loaded Doom State. Deaths: " + deathCount + " | BridgeBoss: " + bridgeBossActive);
                     }
@@ -369,6 +371,8 @@ public class DoomManager implements SlotScopedState {
         public boolean bridgeBossActive = false;
         public boolean apocalypseTriggered = false;
         public int bridgeBossSummons = 0;
+        /** Feeds the Doom stage; absent (0) in saves written before it was persisted. */
+        public int expeditionTurns = 0;
     }
 
     @Override

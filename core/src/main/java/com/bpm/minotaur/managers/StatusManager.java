@@ -189,4 +189,22 @@ public class StatusManager {
     public ObjectMap.Values<ActiveStatusEffect> getActiveEffects() {
         return activeEffects.values();
     }
+
+    /**
+     * Replaces the live effects with saved ones.
+     *
+     * <p>Deliberately bypasses {@link #addEffect}: that applies ring immunities and posts an
+     * "effect applied" event, and restoring a save is neither a new application nor news.
+     */
+    public void restoreEffects(java.util.List<ActiveStatusEffect> saved) {
+        activeEffects.clear();
+        if (saved == null) {
+            return;
+        }
+        for (ActiveStatusEffect effect : saved) {
+            if (effect != null && effect.getType() != null) {
+                activeEffects.put(effect.getType(), effect);
+            }
+        }
+    }
 }

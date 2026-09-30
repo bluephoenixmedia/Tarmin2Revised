@@ -1655,6 +1655,8 @@ public class GameScreen extends BaseScreen {
         // 1. Wipe the explored world -- every chunk (including chunk 0,0) is wiped and reseeded
         worldManager.wipeExploredWorldOnDeath();
         DivinityManager.getInstance().onWorldReset();
+        // A new expedition starts the escalation clock over; only the sleep and altar paths did.
+        DoomManager.getInstance().resetExpeditionTurns();
         if (worldManager.getDayNightManager() != null) {
             worldManager.getDayNightManager().setTimeOfDay(com.bpm.minotaur.managers.DayNightManager.DAWN_SUNRISE);
         }

@@ -98,6 +98,33 @@ public class PlayerSaveData {
     // on worn items travels inside each ItemSaveData.
     public com.bpm.minotaur.gamedata.gore.PlayerBlood blood;
 
+    // Run state that used to be lost on every reload. All of these are null in saves written
+    // before they were persisted; null means "leave the character as it is", while an empty
+    // list means the character really had none.
+    public List<com.bpm.minotaur.gamedata.effects.ActiveStatusEffect> statusEffects;
+    public List<com.bpm.minotaur.gamedata.effects.StatusEffectType> mealEffects;
+    public List<InjurySaveData> injuries;
+    public com.bpm.minotaur.gamedata.injury.IllnessStage illnessStage;
+    public int illnessTimer;
+    public int injuryStepCounter;
+    public int bleedDamageThisRun;
+    public Integer fieldRestCooldownTurns;
+    public Integer temporaryHP;
+    public Integer kindlingCount;
+    public Integer cookingWaterCount;
+    public Integer cookingSkill;
+
+    /** One open wound, with the running state a fresh InjuryRecord would reset. */
+    public static class InjurySaveData {
+        public com.bpm.minotaur.gamedata.injury.BodyPart bodyPart;
+        public com.bpm.minotaur.gamedata.injury.InjuryType injuryType;
+        public int severity = 1;
+        public boolean treated;
+        public boolean infected;
+        public int turnsUntreated;
+        public int bleedTicksRemaining;
+    }
+
     public PlayerSaveData() {
     }
 
@@ -146,11 +173,46 @@ public class PlayerSaveData {
             this.powderDampness = stats.getPowderDampness();
             this.treasureScore = stats.getTreasureScore();
 
+            this.temporaryHP = stats.getTemporaryHP();
+            this.kindlingCount = stats.getKindlingCount();
+            this.cookingWaterCount = stats.getCookingWaterCount();
+            this.cookingSkill = stats.getCookingSkill();
+
             this.unallocatedAttributePoints = stats.getUnallocatedAttributePoints();
             this.unallocatedSkillPoints = stats.getUnallocatedSkillPoints();
             for (com.bpm.minotaur.gamedata.progression.SkillId s : stats.getUnlockedSkills()) {
                 this.unlockedSkills.add(s.name());
             }
+        }
+
+        // Status effects, meal buffs and wounds
+        if (player.getStatusManager() != null) {
+            this.statusEffects = new ArrayList<>();
+            for (com.bpm.minotaur.gamedata.effects.ActiveStatusEffect effect : player.getStatusManager().getActiveEffects()) {
+                this.statusEffects.add(new com.bpm.minotaur.gamedata.effects.ActiveStatusEffect(
+                        effect.getType(), effect.getDuration(), effect.getPotency()));
+            }
+        }
+        this.mealEffects = new ArrayList<>(player.getActiveMealEffects());
+        this.fieldRestCooldownTurns = player.getFieldRestCooldownTurns();
+        com.bpm.minotaur.gamedata.injury.InjuryManager injuryManager = player.getInjuryManager();
+        if (injuryManager != null) {
+            this.injuries = new ArrayList<>();
+            for (com.bpm.minotaur.gamedata.injury.InjuryRecord record : injuryManager.getInjuries().values()) {
+                InjurySaveData d = new InjurySaveData();
+                d.bodyPart = record.getBodyPart();
+                d.injuryType = record.getInjuryType();
+                d.severity = record.getSeverity();
+                d.treated = record.isTreated();
+                d.infected = record.isInfected();
+                d.turnsUntreated = record.getTurnsUntreated();
+                d.bleedTicksRemaining = record.getBleedTicksRemaining();
+                this.injuries.add(d);
+            }
+            this.illnessStage = injuryManager.getIllnessStage();
+            this.illnessTimer = injuryManager.getIllnessTimer();
+            this.injuryStepCounter = injuryManager.getStepCounter();
+            this.bleedDamageThisRun = injuryManager.getBleedDamageThisRun();
         }
 
         // Equipment
@@ -254,6 +316,11 @@ public class PlayerSaveData {
             stats.setPowderDampness(powderDampness);
             stats.setTreasureScore(treasureScore);
 
+            if (temporaryHP != null) stats.setTemporaryHP(temporaryHP);
+            if (kindlingCount != null) stats.setKindlingCount(kindlingCount);
+            if (cookingWaterCount != null) stats.setCookingWaterCount(cookingWaterCount);
+            if (cookingSkill != null) stats.setCookingSkill(cookingSkill);
+
             stats.setUnallocatedAttributePoints(unallocatedAttributePoints);
             stats.setUnallocatedSkillPoints(unallocatedSkillPoints);
             if (unlockedSkills != null) {
@@ -263,6 +330,31 @@ public class PlayerSaveData {
                     } catch (Exception ignored) {}
                 }
             }
+        }
+
+        // Status effects, meal buffs and wounds
+        if (statusEffects != null && player.getStatusManager() != null) {
+            player.getStatusManager().restoreEffects(statusEffects);
+        }
+        if (mealEffects != null) {
+            player.restoreActiveMealEffects(mealEffects);
+        }
+        if (fieldRestCooldownTurns != null) {
+            player.restoreFieldRestCooldownTurns(fieldRestCooldownTurns);
+        }
+        com.bpm.minotaur.gamedata.injury.InjuryManager injuryManager = player.getInjuryManager();
+        if (injuries != null && injuryManager != null) {
+            injuryManager.cureAll();
+            for (InjurySaveData d : injuries) {
+                if (d == null || d.bodyPart == null || d.injuryType == null) {
+                    continue;
+                }
+                com.bpm.minotaur.gamedata.injury.InjuryRecord record =
+                        new com.bpm.minotaur.gamedata.injury.InjuryRecord(d.bodyPart, d.injuryType, d.severity);
+                record.restoreState(d.treated, d.infected, d.turnsUntreated, d.bleedTicksRemaining);
+                injuryManager.restoreInjury(record);
+            }
+            injuryManager.restoreClocks(illnessStage, illnessTimer, injuryStepCounter, bleedDamageThisRun);
         }
 
         // Equipment

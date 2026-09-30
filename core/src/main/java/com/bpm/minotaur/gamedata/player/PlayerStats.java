@@ -679,6 +679,7 @@ public class PlayerStats {
 
     public int getCookingSkill() { return cookingSkill; }
     public void incrementCookingSkill() { this.cookingSkill++; }
+    public void setCookingSkill(int skill) { this.cookingSkill = Math.max(0, skill); }
 
     // --- Progression Reboot: Attribute & Skill Allocation Methods ---
 

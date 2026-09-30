@@ -1676,6 +1676,18 @@ public class Player {
         return java.util.Collections.unmodifiableList(activeMealEffects);
     }
 
+    /** Puts back which effects came from the last meal, so the next one can replace them. */
+    public void restoreActiveMealEffects(List<StatusEffectType> saved) {
+        activeMealEffects.clear();
+        if (saved != null) {
+            activeMealEffects.addAll(saved);
+        }
+    }
+
+    public void restoreFieldRestCooldownTurns(int turns) {
+        fieldRestCooldownTurns = Math.max(0, turns);
+    }
+
     private void drinkToxicConcoction(Item potion, int damage, int strBonus, int maxHpPenalty, int toxicityAdd,
             String msg, GameEventManager eventManager) {
         // 1. Damage (The Ordeal)

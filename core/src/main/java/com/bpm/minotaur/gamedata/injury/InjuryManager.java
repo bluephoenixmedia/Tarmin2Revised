@@ -210,6 +210,29 @@ public class InjuryManager {
         return record;
     }
 
+    public int getIllnessTimer() {
+        return illnessTimer;
+    }
+
+    public int getStepCounter() {
+        return stepCounter;
+    }
+
+    /** Puts back the clocks and totals of a saved character; see {@link #restoreInjury}. */
+    public void restoreClocks(IllnessStage stage, int illnessTimer, int stepCounter, int bleedDamageThisRun) {
+        this.illnessStage = stage != null ? stage : IllnessStage.HEALTHY;
+        this.illnessTimer = Math.max(0, illnessTimer);
+        this.stepCounter = Math.max(0, stepCounter);
+        this.bleedDamageThisRun = Math.max(0, bleedDamageThisRun);
+    }
+
+    /** Puts a saved wound back exactly as it was, bypassing the merge rules of inflictInjury. */
+    public void restoreInjury(InjuryRecord record) {
+        if (record != null) {
+            injuries.put(record.getBodyPart(), record);
+        }
+    }
+
     public void removeInjury(BodyPart part) {
         injuries.remove(part);
     }
