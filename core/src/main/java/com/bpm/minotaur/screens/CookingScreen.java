@@ -167,7 +167,7 @@ public class CookingScreen extends BaseScreen {
         leftContainer.setBackground(hudSkin.getPanelBg());
         leftPanelContent = new Table();
         leftPanelContent.top().left();
-        ScrollPane leftScroll = new ScrollPane(leftPanelContent);
+        ScrollPane leftScroll = new ScrollPane(leftPanelContent, UiStyles.scrollPane(hudSkin));
         leftScroll.setFadeScrollBars(false);
         leftContainer.add(leftScroll).expand().fill().pad(15);
 
@@ -178,7 +178,7 @@ public class CookingScreen extends BaseScreen {
         rightContainer.setBackground(hudSkin.getPanelBg());
         rightPanelContent = new Table();
         rightPanelContent.top().left();
-        ScrollPane rightScroll = new ScrollPane(rightPanelContent);
+        ScrollPane rightScroll = new ScrollPane(rightPanelContent, UiStyles.scrollPane(hudSkin));
         rightScroll.setFadeScrollBars(false);
         rightContainer.add(rightScroll).expand().fill().pad(15);
 

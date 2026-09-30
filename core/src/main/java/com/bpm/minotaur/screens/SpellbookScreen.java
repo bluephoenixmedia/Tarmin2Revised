@@ -128,7 +128,7 @@ public class SpellbookScreen extends BaseScreen {
         listColumn.add(filterBar).left().padBottom(10).row();
         spellList = new Table();
         spellList.top().left();
-        ScrollPane scroll = new ScrollPane(spellList);
+        ScrollPane scroll = new ScrollPane(spellList, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
         listColumn.add(scroll).expand().fill();
@@ -452,7 +452,7 @@ public class SpellbookScreen extends BaseScreen {
             card.add(learn).colspan(2).left().minWidth(UiTheme.BUTTON_MIN_W).height(UiTheme.BUTTON_H).padTop(10).row();
             cards.add(card).width(820).left().padBottom(12).row();
         }
-        ScrollPane scroll = new ScrollPane(cards);
+        ScrollPane scroll = new ScrollPane(cards, UiStyles.scrollPane(hudSkin));
         scroll.setFadeScrollBars(false);
         scroll.setScrollingDisabled(true, false);
         detailPanel.add(scroll).expand().fill().padTop(12).row();

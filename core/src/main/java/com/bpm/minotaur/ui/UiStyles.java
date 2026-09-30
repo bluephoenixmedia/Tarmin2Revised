@@ -3,7 +3,12 @@ package com.bpm.minotaur.ui;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.BaseDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.bpm.minotaur.rendering.HudSkin;
 
 /**
@@ -161,6 +166,58 @@ public final class UiStyles {
         button.setTouchable(enabled
                 ? com.badlogic.gdx.scenes.scene2d.Touchable.enabled
                 : com.badlogic.gdx.scenes.scene2d.Touchable.disabled);
+    }
+
+    // --- Scrolling --------------------------------------------------------
+
+    /**
+     * The one scroll bar every scrolling list, grid and panel uses.
+     *
+     * <p>A {@code new ScrollPane(actor)} carries an empty style with no bar drawables, so a pane
+     * that was told not to fade its bars still drew nothing: the list scrolled and nothing showed
+     * that it could. Every scroll pane takes its style from here.
+     */
+    public static ScrollPane.ScrollPaneStyle scrollPane(HudSkin skin) {
+        return scrollPane(skin.getWhitePixelDrawable());
+    }
+
+    /** Same bar, for screens that have a white pixel of their own but no {@link HudSkin}. */
+    public static ScrollPane.ScrollPaneStyle scrollPane(Drawable whitePixel) {
+        Drawable track = tinted(whitePixel, UiTheme.BG_INSET);
+        Drawable knob = tinted(whitePixel, UiTheme.LINE_BRIGHT);
+        return scrollPane(track, knob);
+    }
+
+    /** Wires a track and a knob into a style at the standard thickness. */
+    public static ScrollPane.ScrollPaneStyle scrollPane(Drawable track, Drawable knob) {
+        ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
+        style.vScroll = copyWithThickness(track, UiTheme.SCROLL_W, 0f);
+        style.vScrollKnob = copyWithThickness(knob, UiTheme.SCROLL_W, 0f);
+        style.hScroll = copyWithThickness(track, 0f, UiTheme.SCROLL_W);
+        style.hScrollKnob = copyWithThickness(knob, 0f, UiTheme.SCROLL_W);
+        return style;
+    }
+
+    private static Drawable tinted(Drawable pixel, Color color) {
+        if (pixel instanceof TextureRegionDrawable) {
+            return ((TextureRegionDrawable) pixel).tint(color);
+        }
+        return pixel;
+    }
+
+    /** A drawable is shared state: set the bar's thickness on a copy, never on the skin's own. */
+    private static Drawable copyWithThickness(Drawable source, float minWidth, float minHeight) {
+        BaseDrawable copy;
+        if (source instanceof SpriteDrawable) {
+            copy = new SpriteDrawable((SpriteDrawable) source);
+        } else if (source instanceof TextureRegionDrawable) {
+            copy = new TextureRegionDrawable((TextureRegionDrawable) source);
+        } else {
+            copy = new BaseDrawable(source);
+        }
+        copy.setMinWidth(minWidth);
+        copy.setMinHeight(minHeight);
+        return copy;
     }
 
     /** The font a role uses, for code that measures text rather than laying it out. */

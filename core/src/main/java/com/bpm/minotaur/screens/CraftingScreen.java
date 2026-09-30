@@ -175,7 +175,7 @@ public class CraftingScreen extends BaseScreen {
         // that reaches above the Label's measured height is clipped away. A little top padding
         // gives the ascenders somewhere to be.
         leftPanelContent.padTop(UiTheme.PAD_SM);
-        ScrollPane leftScroll = new ScrollPane(leftPanelContent);
+        ScrollPane leftScroll = new ScrollPane(leftPanelContent, UiStyles.scrollPane(hudSkin));
         leftScroll.setFadeScrollBars(false);
         leftContainer.add(leftScroll).expand().fill().pad(15);
 
@@ -187,7 +187,7 @@ public class CraftingScreen extends BaseScreen {
         rightPanelContent = new Table();
         rightPanelContent.top();
         rightPanelContent.padTop(UiTheme.PAD_SM);
-        ScrollPane rightScroll = new ScrollPane(rightPanelContent);
+        ScrollPane rightScroll = new ScrollPane(rightPanelContent, UiStyles.scrollPane(hudSkin));
         rightScroll.setFadeScrollBars(false);
         rightContainer.add(rightScroll).expand().fill().pad(20);
 

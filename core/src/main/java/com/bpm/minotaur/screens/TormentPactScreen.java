@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -89,7 +90,7 @@ public class TormentPactScreen extends BaseScreen {
         modifiersTable = new Table();
         populateModifiersTable();
 
-        ScrollPane scrollPane = new ScrollPane(modifiersTable);
+        ScrollPane scrollPane = new ScrollPane(modifiersTable, UiStyles.scrollPane(hudSkin));
         scrollPane.setFadeScrollBars(false);
         listContainer.add(scrollPane).size(1160, 530).expand().fill();
 

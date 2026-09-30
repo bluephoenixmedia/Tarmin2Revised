@@ -121,6 +121,8 @@ public final class UiTheme {
 
     // --- Sizes (SPEC section 3, in canvas units) --------------------------
 
+    /** Thickness of a scroll bar's track and knob. */
+    public static final float SCROLL_W = 4 * VU;
     public static final float BUTTON_H = 22 * VU;
     public static final float BUTTON_MIN_W = 96 * VU;
     /** Every item in a vertical menu shares this width, so the column is not ragged. */

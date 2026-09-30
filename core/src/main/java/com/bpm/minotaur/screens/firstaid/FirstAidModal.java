@@ -1,5 +1,6 @@
 package com.bpm.minotaur.screens.firstaid;
 
+import com.bpm.minotaur.ui.UiStyles;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -340,7 +341,7 @@ public class FirstAidModal extends BaseScreen {
         supplyListTable = new Table();
         supplyListTable.top().left();
 
-        ScrollPane scrollPane = new ScrollPane(supplyListTable);
+        ScrollPane scrollPane = new ScrollPane(supplyListTable, UiStyles.scrollPane(hudSkin));
         scrollPane.setFadeScrollBars(false);
         panel.add(scrollPane).expand().fill();
 
