@@ -31,6 +31,32 @@ CLIPS = {
     'hit_sparks': ('directional_impact_004/directional_impact_004_small_yellow', 0.30, True),
     # Attention
     'alert': ('symbol_alert_001_large_red', 1.20, False),
+    # Spell impacts on a target, by archetype. Small variants: the pixel art scales up cleanly.
+    'impact_flame': ('epic_explosion_001/epic_explosion_001_small_orange', 0.55, True),
+    'impact_explosive': ('epic_explosion_002/epic_explosion_002_small_yellow', 0.60, True),
+    'impact_frost': ('round_sparkle_burst_001/round_sparkle_burst_001_small_blue', 0.55, True),
+    'impact_lightning': ('lightning_burst_003/lightning_burst_003_small_violet', 0.45, True),
+    'impact_force': ('symmetrical_impact_002/symmetrical_impact_002_small_blue', 0.45, True),
+    'impact_holy': ('round_light_burst_001/round_light_burst_001_small_yellow', 0.55, True),
+    'impact_necrotic': ('spell_absorb_001/spell_absorb_001_small_violet', 0.90, True),
+    'impact_toxic': ('spell_poison_001/spell_poison_001_small_green', 0.80, True),
+    'impact_warp': ('scifi_warp_003/scifi_warp_003_small_blue', 0.60, True),
+    'impact_psychic': ('stylized_explosion_002/stylized_explosion_002_small_violet', 0.50, True),
+    'impact_thunder': ('symmetrical_impact_006/symmetrical_impact_006_small_yellow', 0.45, True),
+    # Spells the player casts on themselves, drawn over the view. Heal, attack and defense get the
+    # large art; the rest use the small variants, which read as chunky pixels at this size.
+    'self_heal': ('spell_heal_001/spell_heal_001_large_red', 0.90, True),
+    'self_hearts': ('round_heart_burst_001/round_heart_burst_001_small_red', 1.00, True),
+    'self_haste': ('spell_haste_001/spell_haste_001_small_green', 1.20, True),
+    'self_attack_up': ('spell_attack_up_001/spell_attack_up_001_large_red', 0.90, True),
+    'self_defense_up': ('spell_defense_up_001/spell_defense_up_001_large_blue', 0.90, True),
+    'self_poison': ('spell_poison_001/spell_poison_001_small_green', 0.90, True),
+    'self_absorb': ('spell_absorb_001/spell_absorb_001_small_violet', 1.10, True),
+    'self_death': ('spell_death_001/spell_death_001_small_red', 1.50, True),
+    # Casting, and stepping through space
+    'cast_charge': ('scifi_charge_up_001/scifi_charge_up_001_small_yellow', 0.50, True),
+    'warp_depart': ('scifi_warp_003/scifi_warp_003_small_blue', 0.55, True),
+    'warp_arrive': ('scifi_warp_001/scifi_warp_001_small_green', 0.55, True),
 }
 
 
