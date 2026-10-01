@@ -4,6 +4,7 @@ import com.bpm.minotaur.gamedata.monster.HostileSight;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
 import com.bpm.minotaur.gamedata.spells.SpellDataManager;
 import com.bpm.minotaur.gamedata.spells.SpellTemplate;
+import com.bpm.minotaur.gamedata.spells.SpellbookStudy;
 import com.bpm.minotaur.gamedata.spells.Tome;
 import com.bpm.minotaur.gamedata.spells.TomeChoice;
 import com.badlogic.gdx.Gdx;
@@ -583,11 +584,22 @@ public class Player {
 
     /**
      * Reads a spellbook to learn the spell contained within.
-     * Level-gated: player must be high enough level, otherwise displays an event and preserves the book.
+     *
+     * <p>A book at or under the player's level is read safely. A book above it is not refused:
+     * the first attempt only warns of the risk and keeps the book, and a second attempt on the
+     * same book takes the gamble, after NetHack -- see {@link SpellbookStudy}.
      *
      * @return true if the spell was learned, false otherwise
      */
     public boolean readSpellbook(Item book, GameEventManager eventManager) {
+        return readSpellbook(book, eventManager, studyRng);
+    }
+
+    private final Random studyRng = new Random();
+    /** The above-level book the player has been warned about and may now attempt. */
+    private Item riskyStudyWarnedFor;
+
+    public boolean readSpellbook(Item book, GameEventManager eventManager, Random rng) {
         if (book == null) {
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("You have no book to read.", 1.5f));
@@ -629,16 +641,30 @@ public class Player {
         com.bpm.minotaur.gamedata.spells.SpellTemplate spell = com.bpm.minotaur.gamedata.spells.SpellDataManager.getSpell(spellId);
         int reqLevel = getRequiredPlayerLevelForSpell(spell);
 
-        // Check if player's level is high enough
-        if (this.getLevel() < reqLevel) {
-            if (eventManager != null) {
-                eventManager.addEvent(new GameEvent(
-                    "The text in " + book.getDisplayName() + " is too complicated to understand! (Requires Level " + reqLevel + ")",
-                    3.0f
-                ));
+        // A book above the player's level is a gamble, not a refusal.
+        boolean gambled = false;
+        if (SpellbookStudy.isRisky(reqLevel, this.getLevel())
+                && !knownSpellIds.contains(spellId.toUpperCase())) {
+            int bookLevel = spell != null ? spell.level : 1;
+            float risk = SpellbookStudy.failureChance(stats.getIntelligence(), getLevel(), bookLevel);
+            if (riskyStudyWarnedFor != book) {
+                // Warn first, and keep the book: nothing is risked until the player says so.
+                riskyStudyWarnedFor = book;
+                if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent(
+                        "The text in " + book.getDisplayName() + " is too complicated to understand! (Requires Level "
+                        + reqLevel + ") Study it again to try anyway: " + Math.round(risk * 100) + "% risk of a mishap.",
+                        4.0f
+                    ));
+                }
+                return false;
             }
-            // DO NOT consume the book -- player keeps it until leveling up!
-            return false;
+            riskyStudyWarnedFor = null;
+            if (rng.nextFloat() < risk) {
+                failSpellbookStudy(book, bookLevel, rng, eventManager);
+                return false;
+            }
+            gambled = true;
         }
 
         // Check if player already knows this spell
@@ -663,14 +689,76 @@ public class Player {
         }
 
         String spellName = spell != null ? spell.getName() : spellId;
+        String against = gambled ? " Against the odds," : "";
         String msg = slot >= 0
-                ? "You study " + book.getDisplayName() + " and master " + spellName + "! Prepared in slot " + (slot + 1) + "."
-                : "You study " + book.getDisplayName() + " and master " + spellName + "! Inscribed into your Spellbook.";
+                ? "You study " + book.getDisplayName() + " and master " + spellName + "!" + against + " Prepared in slot " + (slot + 1) + "."
+                : "You study " + book.getDisplayName() + " and master " + spellName + "!" + against + " Inscribed into your Spellbook.";
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent(msg, 3.0f));
         }
 
         return true;
+    }
+
+    /**
+     * A reading above the player's level went wrong: apply the graded mishap, put the player out
+     * of the world for the length of it, and maybe lose the book.
+     */
+    private void failSpellbookStudy(Item book, int bookLevel, Random rng, GameEventManager eventManager) {
+        SpellbookStudy.Failure failure = SpellbookStudy.rollFailure(bookLevel, rng);
+        String name = book.getDisplayName();
+        String message;
+        switch (failure.mishap) {
+            case STING:
+                loseHpToBook(2);
+                message = "The pages of " + name + " sting your fingers! (-2 HP)";
+                break;
+            case CONFUSION:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSED, 8, 1, false);
+                message = "The words of " + name + " swim and tangle in your mind. You are confused!";
+                break;
+            case BLINDNESS:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BLIND, 12, 1, false);
+                message = "A flash of light bursts from " + name + ". You are blinded!";
+                break;
+            case HALLUCINATION:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HALLUCINATING, 15, 1, false);
+                message = "The diagrams in " + name + " crawl across the walls. You are hallucinating!";
+                break;
+            case WOUND:
+                injuryManager.inflictInjury(com.bpm.minotaur.gamedata.injury.BodyPart.ARMS,
+                        com.bpm.minotaur.gamedata.injury.InjuryType.LACERATION_BLEEDING, 1 + (bookLevel >= 6 ? 1 : 0));
+                message = "The edge of " + name + " slices your hand open!";
+                break;
+            case POISON:
+                statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.POISONED, 6, 1, false);
+                message = "The ink of " + name + " is laced with venom. You are poisoned!";
+                break;
+            default: {
+                // The book goes up in the reader's hands. Heavy, but never the whole of what is left.
+                int blast = Math.min(1 + rng.nextInt(2 * Math.max(1, bookLevel)), Math.max(0, stats.getCurrentHP() - 1));
+                loseHpToBook(blast);
+                message = name + " explodes in your hands! (-" + blast + " HP)";
+                break;
+            }
+        }
+        // A failed reading is a long one: the player nods off over the page.
+        statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.SLEEP, failure.delayTurns, 1, false);
+        if (failure.destroysBook) {
+            inventory.removeItem(book);
+            message += " The spellbook crumbles to dust.";
+        }
+        if (eventManager != null) {
+            eventManager.addEvent(new GameEvent(message, 4.0f));
+        }
+    }
+
+    /**
+     * Hurt by a book's own magic: armour does nothing against it, and it never kills. A gamble
+     * the player chose to take should cost them, not end the run on a paper cut.
+     */
+    private void loseHpToBook(int amount) {
+        stats.setCurrentHP(Math.max(1, stats.getCurrentHP() - Math.max(0, amount)));
     }
 
     // --- Tome Study & Tome Choice ---
@@ -1164,6 +1252,14 @@ public class Player {
             }
             eventManager.addEvent(new GameEvent("Equipped " + item.getDisplayName() + ".", 2.0f));
             soundManager.playPickupItemSound();
+            return true;
+        }
+
+        // A spellbook the player cannot learn yet (too high a level, or already known) must not be
+        // read off the floor: that took it off the map and then declined to read it, so the book was
+        // simply lost. Take it instead, to study when ready.
+        if (item.isSpellbook() && !canLearnSpellbook(item)) {
+            interactWithItem(maze, eventManager, soundManager, discoveryManager);
             return true;
         }
 
