@@ -21,6 +21,12 @@ public class UnlockData {
 
     public Map<String, UnlockRequirement> unlockPlan = new HashMap<>(); // ItemId -> Requirement
 
+    /**
+     * Categories of the most recent run unlocks (WEAPON, ARMOR, ITEM), most recent first. The
+     * unlock roll leans away from what it has just handed out; see UnlockRotation.
+     */
+    public java.util.List<String> recentUnlockCategories = new java.util.ArrayList<>();
+
     public transient java.util.List<String> sessionUnlocks = new java.util.ArrayList<>();
 
     public UnlockData() {

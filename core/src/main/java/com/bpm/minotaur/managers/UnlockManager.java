@@ -354,15 +354,51 @@ public class UnlockManager implements SlotScopedState {
             return newlyUnlocked;
         }
 
-        Collections.shuffle(eligible);
-        int grantCount = Math.min(unlocksToGrant, eligible.size());
-        for (int i = 0; i < grantCount; i++) {
-            com.bpm.minotaur.gamedata.item.Item.ItemType unlockedType = eligible.get(i);
-            unlockContent(unlockedType.name());
-            newlyUnlocked.add(unlockedType);
+        // Choose a category first, leaning away from the ones just received, then an item within
+        // it. A flat shuffle let the largest category take almost every roll.
+        List<UnlockRotation.Candidate> candidates = new ArrayList<>();
+        for (com.bpm.minotaur.gamedata.item.Item.ItemType type : eligible) {
+            candidates.add(new UnlockRotation.Candidate(type, categoryOf(type)));
+        }
+        List<UnlockRotation.Category> recent = new ArrayList<>();
+        if (data.recentUnlockCategories != null) {
+            for (String name : data.recentUnlockCategories) {
+                try {
+                    recent.add(UnlockRotation.Category.valueOf(name));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
         }
 
+        List<UnlockRotation.Candidate> picked =
+                UnlockRotation.pick(candidates, recent, unlocksToGrant, new java.util.Random());
+        for (UnlockRotation.Candidate candidate : picked) {
+            unlockContent(candidate.type.name());
+            newlyUnlocked.add(candidate.type);
+            if (data.recentUnlockCategories == null) {
+                data.recentUnlockCategories = new ArrayList<>();
+            }
+            data.recentUnlockCategories.add(0, candidate.category.name());
+        }
+        while (data.recentUnlockCategories != null
+                && data.recentUnlockCategories.size() > UnlockRotation.HISTORY_LENGTH) {
+            data.recentUnlockCategories.remove(data.recentUnlockCategories.size() - 1);
+        }
+        save();
+
         return newlyUnlocked;
+    }
+
+    /** Which unlock category an item belongs to: weapons, armour, and everything else. */
+    private UnlockRotation.Category categoryOf(com.bpm.minotaur.gamedata.item.Item.ItemType type) {
+        com.bpm.minotaur.gamedata.item.ItemTemplate t = itemDataManager.getTemplate(type);
+        if (t != null && t.isWeapon) {
+            return UnlockRotation.Category.WEAPON;
+        }
+        if (t != null && t.isArmor) {
+            return UnlockRotation.Category.ARMOR;
+        }
+        return UnlockRotation.Category.ITEM;
     }
 
     public UnlockData getData() {
