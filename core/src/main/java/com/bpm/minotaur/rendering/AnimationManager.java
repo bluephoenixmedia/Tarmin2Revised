@@ -72,7 +72,8 @@ public class AnimationManager {
     }
 
     /**
-     * Plays a frame-sequence clip by its fx.json id at a world position (x, height, -y). An unknown
+     * Plays a frame-sequence clip by its fx.json id at a world position (x, height, +y: the renderer
+     * negates z, as it does for explosions; see HitFx.position). An unknown
      * clip is ignored: a missing effect must never get in the way of a hit.
      */
     public void spawnFx(String clipId, com.badlogic.gdx.math.Vector3 position3D, float scale) {

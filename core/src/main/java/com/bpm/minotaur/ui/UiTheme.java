@@ -121,6 +121,8 @@ public final class UiTheme {
 
     // --- Sizes (SPEC section 3, in canvas units) --------------------------
 
+    /** Height of the red alert symbol shown when the player needs to look at something. */
+    public static final float ALERT_ICON = 50 * VU;
     /** Thickness of a scroll bar's track and knob. */
     public static final float SCROLL_W = 4 * VU;
     public static final float BUTTON_H = 22 * VU;

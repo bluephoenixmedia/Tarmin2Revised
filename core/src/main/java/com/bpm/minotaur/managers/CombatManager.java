@@ -1210,6 +1210,8 @@ public class CombatManager {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                spawnHitFx(target, GoreProfile.fromMonster(target),
+                        actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
 
@@ -1540,6 +1542,8 @@ public class CombatManager {
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 int bashDmg = Math.max(1, DiceRoller.roll("1d4") + shield.getArmorClassBonus());
                 int actual = target.takeDamage(bashDmg, DamageType.PHYSICAL);
+                spawnHitFx(target, GoreProfile.fromMonster(target),
+                        actual / (float) Math.max(1, target.getMaxHP()), false);
                 soundManager.playWeaponImpact(true);
                 gs.addTrauma(0.28f);
                 eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getMonsterType() + " for " + actual, 1.2f));
@@ -3506,9 +3510,10 @@ public class CombatManager {
             return;
         }
         com.bpm.minotaur.gamedata.gore.HitFx.Spec spec = com.bpm.minotaur.gamedata.gore.HitFx.forHit(
-                profile, damageShare, crit, target.getCurrentHP() <= 0);
+                profile, target.getFamily(), target.getType(), damageShare, crit, target.getCurrentHP() <= 0);
         animationManager.spawnFx(spec.clipId,
-                new Vector3(target.getPosition().x, 0.5f, -target.getPosition().y), spec.scale);
+                com.bpm.minotaur.gamedata.gore.HitFx.position(target.getPosition().x, target.getPosition().y),
+                spec.scale);
     }
 
     private void applyWeaponBlood(int intensity, GoreProfile profile) {

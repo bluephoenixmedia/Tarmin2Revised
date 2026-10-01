@@ -57,6 +57,7 @@ public final class FxClips {
     private final Map<String, Clip> clips = new HashMap<>();
     private final Map<String, TextureRegion[]> regions = new HashMap<>();
     private Texture atlas;
+    private boolean atlasFailed;
 
     private FxClips(String atlasPath) {
         this.atlasPath = atlasPath;
@@ -127,7 +128,7 @@ public final class FxClips {
             return null;
         }
         TextureRegion[] frames = regions.get(id);
-        if (frames == null) {
+        if (frames == null && !atlasFailed) {
             frames = slice(clip);
             if (frames == null) {
                 return null;
@@ -151,10 +152,21 @@ public final class FxClips {
             }
             return out;
         } catch (Exception e) {
+            atlasFailed = true; // say so once, not on every frame of every effect
             if (Gdx.app != null) {
                 Gdx.app.error("FxClips", "Cannot load the effects atlas " + atlasPath, e);
             }
             return null;
+        }
+    }
+
+    /** Releases the atlas texture; the library loads it again if an effect is played afterwards. */
+    public static synchronized void disposeShared() {
+        if (instance != null) {
+            if (instance.atlas != null) {
+                instance.atlas.dispose();
+            }
+            instance = null;
         }
     }
 }

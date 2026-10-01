@@ -314,6 +314,7 @@ public class Tarmin2 extends Game {
 
         MusicManager.getInstance().dispose();
         com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance().dispose();
+        com.bpm.minotaur.rendering.vfx.FxClips.disposeShared();
     }
 
     @Override

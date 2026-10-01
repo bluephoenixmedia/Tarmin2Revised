@@ -12,6 +12,13 @@ public class AlertMonitorTest {
 
     private static final float DT = 0.1f;
 
+    /** A monitor that has already taken its baseline, so the next change is a real one. */
+    private AlertMonitor primed() {
+        AlertMonitor monitor = new AlertMonitor();
+        monitor.update(DT, calm());
+        return monitor;
+    }
+
     /** Healthy, nothing owed, fed and watered. */
     private AlertMonitor.Snapshot calm() {
         return new AlertMonitor.Snapshot(1.0f, 0, 0, 0);
@@ -58,7 +65,7 @@ public class AlertMonitorTest {
 
     @Test
     public void newlyUnspentPointsAlertButHavingThemDoesNot() {
-        AlertMonitor monitor = new AlertMonitor();
+        AlertMonitor monitor = primed();
         assertEquals(AlertMonitor.Reason.UNSPENT_POINTS, monitor.update(DT, new AlertMonitor.Snapshot(1f, 2, 0, 0)));
         elapse(monitor, 10f, new AlertMonitor.Snapshot(1f, 2, 0, 0));
         assertNull(monitor.update(DT, new AlertMonitor.Snapshot(1f, 2, 0, 0)));
@@ -69,7 +76,7 @@ public class AlertMonitorTest {
 
     @Test
     public void gettingHungrierOrThirstierAlertsButEatingDoesNot() {
-        AlertMonitor monitor = new AlertMonitor();
+        AlertMonitor monitor = primed();
         assertEquals(AlertMonitor.Reason.HUNGER, monitor.update(DT, new AlertMonitor.Snapshot(1f, 0, 1, 0)));
         elapse(monitor, 5f, new AlertMonitor.Snapshot(1f, 0, 1, 0));
         assertEquals(AlertMonitor.Reason.HUNGER, monitor.update(DT, new AlertMonitor.Snapshot(1f, 0, 2, 0)));
@@ -92,9 +99,56 @@ public class AlertMonitorTest {
 
     @Test
     public void healthTakesPriorityWhenSeveralThingsHappenAtOnce() {
-        AlertMonitor monitor = new AlertMonitor();
+        AlertMonitor monitor = primed();
         monitor.noteMonsterNoticed();
         assertEquals(AlertMonitor.Reason.LOW_HEALTH, monitor.update(DT, new AlertMonitor.Snapshot(0.1f, 3, 2, 2)));
+    }
+
+    @Test
+    public void theFirstLookOnlySetsABaselineSoLoadingASaveNeverAlerts() {
+        // A save loaded with points to spend, low health or an empty stomach is not news.
+        AlertMonitor monitor = new AlertMonitor();
+        assertNull(monitor.update(DT, new AlertMonitor.Snapshot(0.10f, 4, 2, 2)));
+        elapse(monitor, 10f, new AlertMonitor.Snapshot(0.10f, 4, 2, 2));
+        assertNull("still the same state, still no alert", monitor.update(DT, new AlertMonitor.Snapshot(0.10f, 4, 2, 2)));
+        // ...but getting worse after that is.
+        assertEquals(AlertMonitor.Reason.UNSPENT_POINTS, monitor.update(DT, new AlertMonitor.Snapshot(0.10f, 5, 2, 2)));
+    }
+
+    @Test
+    public void resettingTakesANewBaselineAndDropsAnythingPending() {
+        AlertMonitor monitor = new AlertMonitor();
+        monitor.update(DT, calm());
+        monitor.noteMonsterNoticed();
+        monitor.reset();
+
+        assertNull("the pending notice must not survive a death", monitor.update(DT, calm()));
+        assertNull("a respawn with points owed is a baseline, not an alert",
+                monitor.update(DT, new AlertMonitor.Snapshot(1f, 0, 0, 0)));
+    }
+
+    @Test
+    public void ranksComeFromTheRealStats() {
+        com.bpm.minotaur.gamedata.player.PlayerStats stats =
+                new com.bpm.minotaur.gamedata.player.PlayerStats(com.bpm.minotaur.gamedata.Difficulty.MEDIUM);
+        stats.setMaxHP(20);
+        stats.setCurrentHP(5);
+        stats.setSatiety(60f);
+        stats.setHydration(60f);
+        AlertMonitor.Snapshot fine = AlertMonitor.Snapshot.of(stats);
+        assertEquals(0.25f, fine.healthShare(), 0.001f);
+        assertEquals(0, fine.hungerRank());
+        assertEquals(0, fine.thirstRank());
+
+        stats.setSatiety(10f);
+        stats.setHydration(10f);
+        assertEquals("hungry", 1, AlertMonitor.Snapshot.of(stats).hungerRank());
+        assertEquals("thirsty", 1, AlertMonitor.Snapshot.of(stats).thirstRank());
+
+        stats.setSatiety(0f);
+        stats.setHydration(0f);
+        assertEquals("starving", 2, AlertMonitor.Snapshot.of(stats).hungerRank());
+        assertEquals("parched", 2, AlertMonitor.Snapshot.of(stats).thirstRank());
     }
 
     private static void elapse(AlertMonitor monitor, float seconds, AlertMonitor.Snapshot snapshot) {

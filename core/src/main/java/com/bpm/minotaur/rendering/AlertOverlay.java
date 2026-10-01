@@ -13,8 +13,7 @@ import com.bpm.minotaur.rendering.vfx.FxClips;
  */
 public class AlertOverlay {
 
-    /** Height of the symbol on the 1080-unit UI canvas, and how far up the screen it sits. */
-    private static final float SIZE = 150f;
+    /** How far up the screen the symbol sits, as a share of its height. */
     private static final float HEIGHT_FRACTION = 0.74f;
 
     private float elapsed = -1f;
@@ -52,9 +51,10 @@ public class AlertOverlay {
             return;
         }
         float aspect = clip.frameWidth / (float) clip.frameHeight;
-        float w = SIZE * aspect;
+        final float size = com.bpm.minotaur.ui.UiTheme.ALERT_ICON;
+        float w = size * aspect;
         float x = (viewport.getWorldWidth() - w) * 0.5f;
         float y = viewport.getWorldHeight() * HEIGHT_FRACTION;
-        batch.draw(frame, x, y, w, SIZE);
+        batch.draw(frame, x, y, w, size);
     }
 }
