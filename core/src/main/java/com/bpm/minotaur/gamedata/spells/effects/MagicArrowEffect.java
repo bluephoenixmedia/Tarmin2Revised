@@ -43,7 +43,7 @@ public class MagicArrowEffect implements SpellEffect {
 
         if (targetMonster != null) {
             int magicDamage = 5 + (player.getLevel());
-            int actualDamage = targetMonster.takeDamage(magicDamage);
+            int actualDamage = targetMonster.takeSpellDamage(magicDamage);
 
             if (combatManager != null) {
                 combatManager.showDamageText(actualDamage, new GridPoint2((int) targetMonster.getPosition().x, (int) targetMonster.getPosition().y));

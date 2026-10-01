@@ -153,6 +153,34 @@ public class Player {
         return injuryManager == null || injuryManager.canWieldTwoHanded();
     }
 
+    /**
+     * Magic resistance in percent: the sum of every enchantment on what is worn and what is held,
+     * capped. Cuts the damage of spells, not of weapons; see {@link com.bpm.minotaur.gamedata.MagicResistance}.
+     */
+    public int getMagicResistance() {
+        int total = equipment.getEquippedModifierSum(ModifierType.BONUS_MAGIC_RESISTANCE);
+        for (Item held : new Item[] { inventory.getRightHand(), inventory.getLeftHand() }) {
+            if (held != null && held.getModifiers() != null) {
+                for (com.bpm.minotaur.gamedata.item.ItemModifier mod : held.getModifiers()) {
+                    if (mod.type == ModifierType.BONUS_MAGIC_RESISTANCE) {
+                        total += mod.value;
+                    }
+                }
+            }
+        }
+        return com.bpm.minotaur.gamedata.MagicResistance.clampForPlayer(total);
+    }
+
+    /** A spell's damage after this player's magic resistance, for callers that also quote the figure. */
+    public int reduceSpellDamage(int amount) {
+        return com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, getMagicResistance());
+    }
+
+    /** Damage from a spell: cut by magic resistance, then taken like any other hit. */
+    public int takeSpellDamage(int amount, DamageType type) {
+        return takeDamage(reduceSpellDamage(amount), type);
+    }
+
     /** Weight of one arrow or shot, so a full quiver is felt but not crippling. */
     private static final float AMMO_WEIGHT = 0.05f;
 

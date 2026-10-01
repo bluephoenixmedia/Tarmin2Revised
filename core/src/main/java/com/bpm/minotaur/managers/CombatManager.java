@@ -1593,42 +1593,43 @@ public class CombatManager {
                         BalanceLogger.getInstance().log("DICE_EFFECT", "Sacrifice! Took " + cost + " damage.");
                     }
                     break;
-                case FIRE:
-                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
-                        BalanceLogger.getInstance().log("DICE_EFFECT", "Fire Resisted by " + monster.getMonsterType());
+                case FIRE: {
+                    int fire = (monster != null)
+                            ? com.bpm.minotaur.gamedata.MagicResistance.reduce(val, monster.getMagicResistance()) : val;
+                    if (fire < val) {
                         eventManager.addEvent(new GameEvent("Resisted Fire!", 0.5f));
-                    } else {
-                        fireDamage += val;
-                        BalanceLogger.getInstance().log("DICE_EFFECT", "Fire Charge: " + val);
                     }
+                    fireDamage += fire;
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Fire Charge: " + fire);
                     break;
-                case ICE:
-                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
-                        BalanceLogger.getInstance().log("DICE_EFFECT", "Ice Resisted by " + monster.getMonsterType());
+                }
+                case ICE: {
+                    int resist = (monster != null) ? monster.getMagicResistance() : 0;
+                    int ice = com.bpm.minotaur.gamedata.MagicResistance.reduce(val, resist);
+                    if (ice < val) {
                         eventManager.addEvent(new GameEvent("Resisted Ice!", 0.5f));
-                    } else {
-                        // Cold damage + potentially slow
-                        totalDamage += val;
-                        if (monster != null) {
-                            monster.getStatusManager().addEffect(StatusEffectType.SLOWED, 2, 1, false);
-                        }
-                        BalanceLogger.getInstance().log("DICE_EFFECT", "Ice Damage: " + val);
                     }
+                    // Cold damage + potentially slow
+                    totalDamage += ice;
+                    if (monster != null && !com.bpm.minotaur.gamedata.MagicResistance.resists(resist, random)) {
+                        monster.getStatusManager().addEffect(StatusEffectType.SLOWED, 2, 1, false);
+                    }
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Ice Damage: " + ice);
                     break;
-                case LIGHTNING:
-                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
-                        BalanceLogger.getInstance().log("DICE_EFFECT",
-                                "Lightning Resisted by " + monster.getMonsterType());
+                }
+                case LIGHTNING: {
+                    int bolt = (monster != null)
+                            ? com.bpm.minotaur.gamedata.MagicResistance.reduce(val, monster.getMagicResistance()) : val;
+                    if (bolt < val) {
                         eventManager.addEvent(new GameEvent("Resisted Lightning!", 0.5f));
-                    } else {
-                        lightningDamage += val;
-                        BalanceLogger.getInstance().log("DICE_EFFECT", "Lightning Charge: " + val);
                     }
+                    lightningDamage += bolt;
+                    BalanceLogger.getInstance().log("DICE_EFFECT", "Lightning Charge: " + bolt);
                     break;
-                case POISON:
-                    if (monster != null && random.nextInt(100) < monster.getMagicResistance()) {
-                        BalanceLogger.getInstance().log("DICE_EFFECT",
-                                "Poison Resisted by " + monster.getMonsterType());
+                }
+                case POISON: {
+                    int poisonResist = (monster != null) ? monster.getMagicResistance() : 0;
+                    if (com.bpm.minotaur.gamedata.MagicResistance.resists(poisonResist, random)) {
                         eventManager.addEvent(new GameEvent("Resisted Poison!", 0.5f));
                     } else {
                         poisonStacks += val;
@@ -1638,6 +1639,7 @@ public class CombatManager {
                         BalanceLogger.getInstance().log("DICE_EFFECT", "Poison Stacks: " + val);
                     }
                     break;
+                }
                 case GOLD:
                     player.getStats().incrementTreasureScore(val);
                     eventManager.addEvent(new GameEvent("Stole " + val + " Gold!", 1f));
@@ -2297,7 +2299,10 @@ public class CombatManager {
                 damageType = projDef.getDefaultDamageType();
             }
 
-            actualDamage = player.takeDamage(dmg, damageType);
+            // A fire bolt or a sorcerous bolt is a spell and is cut by magic resistance; an arrow is not.
+            actualDamage = com.bpm.minotaur.gamedata.MagicResistance.isMagical(damageType)
+                    ? player.takeSpellDamage(dmg, damageType)
+                    : player.takeDamage(dmg, damageType);
 
             if (actualDamage > 0) {
                 if (damageType == DamageType.PHYSICAL) {
@@ -2919,7 +2924,7 @@ public class CombatManager {
             return;
         }
         eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
-        int spellDmg = 5 + monster.getIntelligence();
+        int spellDmg = player.reduceSpellDamage(5 + monster.getIntelligence());
         player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         BalanceLogger.getInstance().logCombatRound("MONSTER", "Spell", -1, spellDmg, player.getWarStrength());
 

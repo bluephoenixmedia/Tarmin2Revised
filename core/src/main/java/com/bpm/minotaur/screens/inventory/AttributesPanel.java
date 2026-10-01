@@ -88,6 +88,7 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         stat(col2, "Wisdom", String.valueOf(player.getEffectiveWisdom()), COL_VAL);
         stat(col2, "Charisma", String.valueOf(player.getEffectiveCharisma()), COL_VAL);
         stat(col2, "Luck", String.valueOf(player.getLuck()), COL_VAL);
+        stat(col2, "Magic Resist", player.getMagicResistance() + "%", COL_BLUE);
 
         // ── Column 3: Survival & Economy ───────────────────────────
         addSectionHeader(col3, "SURVIVAL & RES");

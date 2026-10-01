@@ -134,6 +134,10 @@ public class ItemInspectorPanel extends Table {
             modTable.top().left();
             for (ItemModifier mod : item.getModifiers()) {
                 String modText = (mod.value >= 0 ? "+" : "") + mod.value + " " + (mod.type != null ? mod.type.name().replace('_', ' ') : "");
+                if (mod.type == com.bpm.minotaur.gamedata.ModifierType.BONUS_MAGIC_RESISTANCE) {
+                    // A percentage, and it should read as one.
+                    modText = (mod.value >= 0 ? "+" : "") + mod.value + "% Magic Resistance";
+                }
                 Label modLabel = new Label("- " + modText, new Label.LabelStyle(skin.getFontSmall(), COL_MAGIC));
                 modTable.add(modLabel).left().row();
             }

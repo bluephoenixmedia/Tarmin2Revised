@@ -331,7 +331,7 @@ public class WandExecutionEngine {
                         return;
                     }
                     int dmg = DiceRoller.roll("3d6") + 2;
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.ORANGE);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
@@ -352,8 +352,10 @@ public class WandExecutionEngine {
                         return;
                     }
                     int dmg = DiceRoller.roll("2d8") + 2;
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
-                    target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
+                    if (!com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
+                        target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    }
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
@@ -371,7 +373,7 @@ public class WandExecutionEngine {
                     int totalDmg = 0;
                     for (int i = 0; i < 3; i++) {
                         int dartDmg = DiceRoller.roll("1d4") + 1;
-                        totalDmg += target.takeDamage(dartDmg, DamageType.SPIRITUAL, false);
+                        totalDmg += target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
                     }
                     if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
@@ -450,7 +452,7 @@ public class WandExecutionEngine {
                 if (target != null) {
                     boolean isUndeadOrDark = isUndeadOrDemon(target);
                     int dmg = isUndeadOrDark ? DiceRoller.roll("3d8") : DiceRoller.roll("1d6");
-                    int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                    int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.YELLOW);
                     if (eventManager != null) {
                         String desc = isUndeadOrDark

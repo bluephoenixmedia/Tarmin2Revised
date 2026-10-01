@@ -4,6 +4,7 @@ import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.Item.ItemType;
 import com.bpm.minotaur.gamedata.item.ItemColor;
 import com.bpm.minotaur.gamedata.item.ItemDataManager;
+import com.bpm.minotaur.gamedata.item.ItemModifier;
 import com.bpm.minotaur.gamedata.item.ItemTemplate;
 import com.bpm.minotaur.gamedata.item.ShelterChest;
 import com.bpm.minotaur.managers.CraftingManager;
@@ -157,6 +158,41 @@ public class CraftingManagerTest {
         // 3rd infusion should be rejected by 2-socket cap
         assertFalse("Cannot infuse beyond 2 sockets", craftingManager.canInfuse(dagger, tooth, inventory));
         assertFalse(craftingManager.infuseTrophy(inventory, dagger, tooth));
+    }
+
+    @Test
+    public void glowingLichenWardsArmourAndWeaponsAgainstMagic() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        Item sword = createWeapon(ItemType.SWORD, "Shortsword");
+        Item lichen = createDebris(ItemType.GLOWING_LICHEN, "Glowing Lichen");
+
+        ItemModifier onArmour = craftingManager.getInfusionModifier(breastplate, lichen);
+        ItemModifier onWeapon = craftingManager.getInfusionModifier(sword, lichen);
+
+        assertEquals(ModifierType.BONUS_MAGIC_RESISTANCE, onArmour.type);
+        assertEquals(ModifierType.BONUS_MAGIC_RESISTANCE, onWeapon.type);
+        assertTrue("armour takes the stronger ward", onArmour.value > onWeapon.value);
+        assertTrue(onArmour.value >= 5 && onArmour.value <= 15);
+        assertTrue(onWeapon.value >= 5 && onWeapon.value <= 15);
+    }
+
+    @Test
+    public void strangeMetalKeepsItsElementalInfusion() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        Item metal = createDebris(ItemType.STRANGE_METAL, "Strange Metal");
+        assertEquals(ModifierType.RESIST_FIRE, craftingManager.getInfusionModifier(breastplate, metal).type);
+    }
+
+    @Test
+    public void infusingWardingStacksOnlyUpToTheTwoSockets() {
+        Item breastplate = createArmor(ItemType.BREASTPLATE, "Breastplate", 4);
+        for (int i = 0; i < 3; i++) {
+            inventory.pickupToBackpack(createDebris(ItemType.GLOWING_LICHEN, "Glowing Lichen"));
+        }
+        assertTrue(craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
+        assertTrue(craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
+        assertFalse("a third ward is refused by the socket cap",
+                craftingManager.infuseTrophy(inventory, breastplate, inventory.getMainInventory().get(0)));
     }
 
     @Test

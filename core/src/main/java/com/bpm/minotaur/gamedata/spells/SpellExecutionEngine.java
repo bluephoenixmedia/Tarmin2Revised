@@ -224,7 +224,7 @@ public class SpellExecutionEngine {
             int totalDmg = 0;
             for (int i = 0; i < 3; i++) {
                 int dartDmg = DiceRoller.roll("1d4") + 1;
-                int actual = target.takeDamage(dartDmg, DamageType.SPIRITUAL, false);
+                int actual = target.takeSpellDamage(dartDmg, DamageType.SPIRITUAL, false);
                 totalDmg += actual;
             }
             if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint);
@@ -306,7 +306,7 @@ public class SpellExecutionEngine {
 
         if (target != null && target.getCurrentHP() > 0) {
             int dmg = calculateSpellDamage(spell, player);
-            int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
             // Pushback mechanic: attempt to push monster back 1 tile
@@ -526,11 +526,12 @@ public class SpellExecutionEngine {
 
             int dmg = calculateSpellDamage(spell, player);
 
-            int actualDmg = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int actualDmg = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
             eventManager.addEvent(new GameEvent(spell.getName() + " hits " + target.getType() + " for " + actualDmg + "!", 1.5f));
 
-            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()) {
+            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()
+                    && !com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
                 try {
                     StatusEffectType effect = StatusEffectType.valueOf(spell.getStatusEffect().toUpperCase());
                     target.getStatusManager().addEffect(effect, 5, 1, false);
@@ -590,7 +591,7 @@ public class SpellExecutionEngine {
             }
 
             int dmg = calculateSpellDamage(spell, player);
-            int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+            int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
 
@@ -618,7 +619,7 @@ public class SpellExecutionEngine {
 
                 int dmg = calculateSpellDamage(spell, player);
 
-                int actual = target.takeDamage(dmg, DamageType.SPIRITUAL, false);
+                int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
                 hits++;
 

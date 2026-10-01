@@ -147,7 +147,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);
@@ -206,7 +206,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);
@@ -274,6 +274,14 @@ public class MonsterSpellExecutor {
     private static void applySpellStatusEffectsToPlayer(SpellTemplate spell, Player player,
             GameEventManager eventManager, Monster caster) {
         if (spell == null || player == null) return;
+
+        // The status riding on a spell is resisted at the same rate the spell's damage is cut.
+        if (com.bpm.minotaur.gamedata.MagicResistance.resists(player.getMagicResistance())) {
+            if (eventManager != null) {
+                eventManager.addEvent(new GameEvent("You shrug off the spell's lingering effect!", 2.0f));
+            }
+            return;
+        }
 
         String id = spell.getId() != null ? spell.getId().toUpperCase() : "";
         String dt = spell.getDamageType() != null ? spell.getDamageType().toUpperCase() : "";

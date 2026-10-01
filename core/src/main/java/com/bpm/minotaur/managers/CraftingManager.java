@@ -691,10 +691,15 @@ public class CraftingManager {
                         ? new ItemModifier(ModifierType.ADD_POISON_DAMAGE, 2, "Venomous")
                         : new ItemModifier(ModifierType.RESIST_DISEASE, 15, "Inoculated");
             case STRANGE_METAL:
-            case GLOWING_LICHEN:
                 return isWeapon
                         ? new ItemModifier(ModifierType.ADD_FIRE_DAMAGE, 2, "Flaming")
                         : new ItemModifier(ModifierType.RESIST_FIRE, 15, "Insulated");
+            case GLOWING_LICHEN:
+                // The enchanting trophy: its glow wards a piece against spells. Armour takes the
+                // stronger ward; a blade carries a lighter one.
+                return isWeapon
+                        ? new ItemModifier(ModifierType.BONUS_MAGIC_RESISTANCE, 5, "Warding")
+                        : new ItemModifier(ModifierType.BONUS_MAGIC_RESISTANCE, 10, "Warded");
             case BAT_WING:
             case GIB_ORGAN:
                 return isWeapon

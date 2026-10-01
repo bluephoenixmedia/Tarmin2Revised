@@ -164,7 +164,7 @@ public class GhostPlayerMonster extends Monster {
         // 3. Magic Arrow
         if (knownSpells.contains("MAGIC_ARROW") && getCurrentMP() >= 4) {
             setCurrentMP(getCurrentMP() - 4);
-            int spellDmg = 7 + getIntelligence() / 2;
+            int spellDmg = target.reduceSpellDamage(7 + getIntelligence() / 2);
             target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts Magic Arrow! (" + spellDmg + " dmg)", 2f));
@@ -175,7 +175,7 @@ public class GhostPlayerMonster extends Monster {
 
         // Fallback default spell if other spells were stored
         setCurrentMP(Math.max(0, getCurrentMP() - 3));
-        int spellDmg = 5 + getIntelligence() / 3;
+        int spellDmg = target.reduceSpellDamage(5 + getIntelligence() / 3);
         target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts a phantom bolt! (" + spellDmg + " dmg)", 2f));
