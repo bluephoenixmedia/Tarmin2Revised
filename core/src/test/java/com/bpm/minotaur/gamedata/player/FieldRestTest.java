@@ -146,4 +146,18 @@ public class FieldRestTest {
         Player.FieldRestResult third = player.attemptFieldRest(eventManager);
         assertTrue("Once the cooldown fully elapses, resting works again", third.success);
     }
+
+    @Test
+    public void starterLanternGoesInTheLeftHandWithoutDisplacingAnything() {
+        com.bpm.minotaur.gamedata.item.Item lantern = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
+        assertTrue(player.giveStarterLantern(lantern));
+        assertSame(lantern, player.getInventory().getLeftHand());
+
+        com.bpm.minotaur.gamedata.item.Item other = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
+        assertFalse(player.giveStarterLantern(other));
+        assertSame(lantern, player.getInventory().getLeftHand());
+        assertFalse(player.giveStarterLantern(null));
+    }
 }

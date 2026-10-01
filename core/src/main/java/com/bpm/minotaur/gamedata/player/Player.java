@@ -1077,6 +1077,8 @@ public class Player {
             BalanceLogger.getInstance().log("DICE_DEBUG", "Added initial die: " + knife.getGrantedDie().getName());
         }
 
+        giveStarterLantern(itemDataManager.createItem(Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, assetManager));
+
         // No starting armour. The player sets out in their own clothes, so the
         // first scrap of protection found in the dungeon is a real upgrade
         // rather than a sidegrade on a free +1 AC.
@@ -3518,6 +3520,19 @@ public class Player {
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
         if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) chance += 0.10f;
         return Math.min(0.95f, chance);
+    }
+
+    /**
+     * The lantern the player carries in their left hand from the first step and again after every
+     * death -- the art shows it there, so the game must put it there. Never displaces something the
+     * player already holds; returns whether the lantern was taken up.
+     */
+    public boolean giveStarterLantern(Item lantern) {
+        if (lantern == null || inventory.getLeftHand() != null) {
+            return false;
+        }
+        inventory.setLeftHand(lantern);
+        return true;
     }
 
     public Item getEquippedLeft() {
