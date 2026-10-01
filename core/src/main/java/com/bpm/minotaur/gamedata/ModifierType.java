@@ -43,6 +43,8 @@ public enum ModifierType {
     BONUS_DODGE,
     /** +N to toxicity tier thresholds (delays medium/critical tier onset) */
     BONUS_TOXICITY_THRESHOLD,
+    /** +N percentage points of magic resistance: cuts spell damage by N% (stacks, capped). */
+    BONUS_MAGIC_RESISTANCE,
 
     // --- Elemental/Effect Damage (Weapons) ---
     ADD_FIRE_DAMAGE,

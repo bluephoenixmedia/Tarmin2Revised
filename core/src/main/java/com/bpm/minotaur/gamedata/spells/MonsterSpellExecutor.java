@@ -147,7 +147,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);
@@ -206,7 +206,7 @@ public class MonsterSpellExecutor {
             }
         } catch (Exception ignored) {}
 
-        int taken = player.takeDamage(finalDmg, dt);
+        int taken = player.takeSpellDamage(finalDmg, dt);
 
         if (combatManager != null) {
             combatManager.showPlayerDamageText(taken, false, dt);

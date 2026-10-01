@@ -270,7 +270,7 @@ public class Monster implements Renderable {
         MonsterTemplate template = dataManager.getTemplate(type);
 
         this.armorClass = template.armorClass;
-        this.magicResistance = template.magicResistance;
+        this.magicResistance = com.bpm.minotaur.gamedata.MagicResistance.clampForMonster(template.magicResistance);
 
         this.maxHP = template.maxHP;
         this.currentHP = this.maxHP;
@@ -550,6 +550,24 @@ public class Monster implements Renderable {
 
     public int takeDamage(int amount, DamageType damageType) {
         return takeDamage(amount, damageType, false);
+    }
+
+    /**
+     * Damage from a spell or wand: cut by this monster's magic resistance, then taken like any
+     * other hit. Weapon blows go through {@code takeDamage} and ignore resistance.
+     */
+    public int takeSpellDamage(int amount, DamageType damageType, boolean isCrit) {
+        return takeDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, magicResistance),
+                damageType, isCrit);
+    }
+
+    /** Untyped spell damage, for effects that have no element to name. */
+    public int takeSpellDamage(int amount) {
+        return takeDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, magicResistance));
+    }
+
+    public void setMagicResistance(int percent) {
+        this.magicResistance = com.bpm.minotaur.gamedata.MagicResistance.clampForMonster(percent);
     }
 
     public int takeDamage(int amount, boolean isCrit) {

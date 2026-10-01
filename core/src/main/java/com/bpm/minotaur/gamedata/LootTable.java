@@ -164,6 +164,14 @@ public class LootTable {
             new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.SPIRITUAL_WEAPON),
             new ModInfo(ModifierType.BONUS_SPELL_POWER, 13, 99, 3, 3, "Supreme", ItemCategory.RING),
 
+            // --- MAGIC RESISTANCE (percentage points off spell damage; stacks, capped at 75) ---
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  3, 12,  5,  5, "Warded",    ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  8, 99, 10, 10, "Spellproof", ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE, 14, 99, 15, 15, "Aegis",     ItemCategory.ARMOR),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  6, 99,  5,  5, "Warding",   ItemCategory.WAR_WEAPON),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE,  5, 14,  5,  5, "Warding",   ItemCategory.RING),
+            new ModInfo(ModifierType.BONUS_MAGIC_RESISTANCE, 13, 99, 10, 10, "Spellward", ItemCategory.RING),
+
             // --- STAMINA (extra dice selectable per combat round) ---
             new ModInfo(ModifierType.BONUS_STAMINA,  5, 14, 1, 1, "Vigorous", ItemCategory.ARMOR),
             new ModInfo(ModifierType.BONUS_STAMINA, 13, 99, 2, 2, "Tireless", ItemCategory.ARMOR),

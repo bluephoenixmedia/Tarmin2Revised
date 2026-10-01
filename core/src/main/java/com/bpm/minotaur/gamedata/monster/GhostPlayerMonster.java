@@ -165,7 +165,7 @@ public class GhostPlayerMonster extends Monster {
         if (knownSpells.contains("MAGIC_ARROW") && getCurrentMP() >= 4) {
             setCurrentMP(getCurrentMP() - 4);
             int spellDmg = 7 + getIntelligence() / 2;
-            target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
+            target.takeSpiritualDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(spellDmg, target.getMagicResistance()), DamageType.SORCERY);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts Magic Arrow! (" + spellDmg + " dmg)", 2f));
             }
@@ -176,7 +176,7 @@ public class GhostPlayerMonster extends Monster {
         // Fallback default spell if other spells were stored
         setCurrentMP(Math.max(0, getCurrentMP() - 3));
         int spellDmg = 5 + getIntelligence() / 3;
-        target.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
+        target.takeSpiritualDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(spellDmg, target.getMagicResistance()), DamageType.SORCERY);
         if (eventManager != null) {
             eventManager.addEvent(new GameEvent("The ghost of " + ghostPlayerName + " casts a phantom bolt! (" + spellDmg + " dmg)", 2f));
         }
