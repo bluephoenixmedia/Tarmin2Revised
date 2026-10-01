@@ -3207,6 +3207,7 @@
   },
   "BAT": {
       "baseLevel": 1,
+    "frequency": 5,
       "maxHP": 5,
       "maxMP": 0,
       "armorClass": 13,
@@ -3268,6 +3269,7 @@
   },
   "GIANT_BEE": {
       "baseLevel": 2,
+    "frequency": 4,
       "maxHP": 6,
       "maxMP": 0,
       "armorClass": 14,
@@ -3329,6 +3331,7 @@
   },
   "GIANT_SNAIL": {
       "baseLevel": 2,
+    "frequency": 3,
       "maxHP": 20,
       "maxMP": 0,
       "armorClass": 8,
@@ -3382,6 +3385,7 @@
   },
   "GIANT_CENTIPEDE": {
       "baseLevel": 3,
+    "frequency": 5,
       "maxHP": 14,
       "maxMP": 0,
       "armorClass": 12,
@@ -3450,7 +3454,8 @@
       ]
   },
   "LANDSTALKER": {
-      "baseLevel": 5,
+      "baseLevel": 4,
+    "frequency": 4,
       "maxHP": 30,
       "maxMP": 0,
       "armorClass": 15,
@@ -3503,7 +3508,8 @@
       ]
   },
   "COCKATRICE": {
-      "baseLevel": 6,
+      "baseLevel": 5,
+    "frequency": 3,
       "maxHP": 22,
       "maxMP": 0,
       "armorClass": 13,
@@ -3565,7 +3571,8 @@
       ]
   },
   "LIZARD_WARRIOR": {
-      "baseLevel": 6,
+      "baseLevel": 5,
+    "frequency": 4,
       "maxHP": 28,
       "maxMP": 0,
       "armorClass": 15,
@@ -3618,7 +3625,8 @@
       ]
   },
   "BEETLESCRATCH": {
-      "baseLevel": 7,
+      "baseLevel": 6,
+    "frequency": 3,
       "maxHP": 26,
       "maxMP": 0,
       "armorClass": 14,
@@ -3717,7 +3725,8 @@
       ]
   },
   "JESTER": {
-      "baseLevel": 7,
+      "baseLevel": 6,
+    "frequency": 2,
       "maxHP": 24,
       "maxMP": 0,
       "armorClass": 14,
@@ -3791,7 +3800,8 @@
       ]
   },
   "SPECTER": {
-      "baseLevel": 8,
+      "baseLevel": 7,
+    "frequency": 2,
       "maxHP": 28,
       "maxMP": 0,
       "armorClass": 15,
@@ -3893,7 +3903,8 @@
       ]
   },
   "SAGE": {
-      "baseLevel": 9,
+      "baseLevel": 8,
+    "frequency": 2,
       "maxHP": 30,
       "maxMP": 0,
       "armorClass": 14,
@@ -3994,7 +4005,8 @@
       ]
   },
   "SKELETAL_WIZARD": {
-      "baseLevel": 10,
+      "baseLevel": 9,
+    "frequency": 2,
       "maxHP": 34,
       "maxMP": 0,
       "armorClass": 15,

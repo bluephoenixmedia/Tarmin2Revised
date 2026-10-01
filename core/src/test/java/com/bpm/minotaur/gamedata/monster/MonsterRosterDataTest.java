@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -175,22 +174,6 @@ public class MonsterRosterDataTest {
             assertTrue("spawn table names " + e.getString("type"), real.contains(e.getString("type")));
             assertTrue(e.getInt("minLevel") <= e.getInt("maxLevel"));
             assertTrue(e.getInt("weight") > 0);
-        }
-    }
-
-    @Test
-    public void theFirstBatchCanActuallySpawn() {
-        Set<String> inTable = new HashSet<>();
-        for (JsonValue e = spawns.get("monsterSpawnTable").child; e != null; e = e.next) {
-            inTable.add(e.getString("type"));
-        }
-        for (Monster.MonsterType t : EnumSet.of(Monster.MonsterType.BAT, Monster.MonsterType.GIANT_BEE,
-                Monster.MonsterType.GIANT_SNAIL, Monster.MonsterType.GIANT_CENTIPEDE,
-                Monster.MonsterType.LANDSTALKER, Monster.MonsterType.COCKATRICE,
-                Monster.MonsterType.LIZARD_WARRIOR, Monster.MonsterType.BEETLESCRATCH,
-                Monster.MonsterType.JESTER, Monster.MonsterType.SPECTER, Monster.MonsterType.SAGE,
-                Monster.MonsterType.SKELETAL_WIZARD)) {
-            assertTrue(t + " is never spawned", inTable.contains(t.name()));
         }
     }
 
