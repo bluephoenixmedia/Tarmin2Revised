@@ -1,0 +1,37 @@
+{
+  "impacts": {
+    "FLAME_BOLT": { "clip": "impact_flame", "scale": 1.3 },
+    "EXPLOSIVE_BURST": { "clip": "impact_explosive", "scale": 1.8 },
+    "FROST_RAY": { "clip": "impact_frost", "scale": 1.2 },
+    "LIGHTNING_ARC": { "clip": "impact_lightning", "scale": 1.2 },
+    "FORCE_MISSILE": { "clip": "impact_force", "scale": 1.0 },
+    "HOLY_RADIANCE": { "clip": "impact_holy", "scale": 1.4 },
+    "NECROTIC_DRAIN": { "clip": "impact_necrotic", "scale": 1.2 },
+    "TOXIC_CLOUD": { "clip": "impact_toxic", "scale": 1.3 },
+    "OBSCURING_MIST": { "clip": "hit_smoke", "scale": 1.6 },
+    "SPATIAL_WARP": { "clip": "impact_warp", "scale": 1.3 },
+    "ARCANE_WARD": { "clip": "impact_force", "scale": 1.0 },
+    "PSYCHIC_SHOCK": { "clip": "impact_psychic", "scale": 1.2 },
+    "THUNDER_CONCUSSION": { "clip": "impact_thunder", "scale": 1.5 }
+  },
+  "self": {
+    "_comment": "The first entry whose words appear in the spell's name wins; if none does, the archetype's default (if any) is used.",
+    "byName": [
+      { "words": ["cure", "heal", "restor", "regenerat"], "clips": ["self_heal", "self_hearts"] },
+      { "words": ["haste", "expeditious", "swift"], "clips": ["self_haste"] },
+      { "words": ["bless", "heroism", "strength", "might", "rage", "favor", "enlarge"], "clips": ["self_attack_up"] },
+      { "words": ["shield", "armor", "ward", "protect", "skin", "barrier", "resist", "blur", "guardian"], "clips": ["self_defense_up"] },
+      { "words": ["poison"], "clips": ["self_poison"] },
+      { "words": ["vampiric", "drain", "absorb", "false life"], "clips": ["self_absorb"] }
+    ],
+    "byArchetype": {
+      "ARCANE_WARD": ["self_defense_up"],
+      "NECROTIC_DRAIN": ["self_absorb"],
+      "TOXIC_CLOUD": ["self_poison"],
+      "SPATIAL_WARP": ["warp_arrive"]
+    },
+    "size": 420
+  },
+  "cast": { "clip": "cast_charge", "size": 220 },
+  "warp": { "depart": "warp_depart", "arrive": "warp_arrive", "size": 520 }
+}

@@ -115,6 +115,7 @@ public class GameScreen extends BaseScreen {
     private SpellCastOverlay spellCastOverlay;
     private final com.bpm.minotaur.managers.AlertMonitor alertMonitor = new com.bpm.minotaur.managers.AlertMonitor();
     private final com.bpm.minotaur.rendering.AlertOverlay alertOverlay = new com.bpm.minotaur.rendering.AlertOverlay();
+    private final com.bpm.minotaur.rendering.ScreenFxOverlay screenFx = new com.bpm.minotaur.rendering.ScreenFxOverlay();
     private final com.bpm.minotaur.rendering.vfx.DamageFlash damageFlash = new com.bpm.minotaur.rendering.vfx.DamageFlash();
     private int lastPlayerHp = -1;
     private final SpriteBatch postProcessBatch = new SpriteBatch();
@@ -799,6 +800,7 @@ public class GameScreen extends BaseScreen {
             damageFlash.render(shapeRenderer, game.getViewport());
             game.getBatch().begin();
             alertOverlay.render(game.getBatch(), game.getViewport());
+            screenFx.render(game.getBatch(), game.getViewport());
             game.getBatch().end();
 
             if (combatManager.getAttackIndicatorMonster() != null
@@ -1427,6 +1429,7 @@ public class GameScreen extends BaseScreen {
     /** Feeds the alert monitor what the player's state is, and flashes the symbol when it says to. */
     private void updateAlert(float delta) {
         alertOverlay.update(delta);
+        screenFx.update(delta);
         damageFlash.update(delta);
         if (player == null || player.getStats() == null) {
             return;
@@ -1449,6 +1452,7 @@ public class GameScreen extends BaseScreen {
 
         if (alertMonitor.update(delta, com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats)) != null) {
             alertOverlay.trigger();
+            soundManager.playEvent("alert");
         }
     }
 
@@ -1691,6 +1695,7 @@ public class GameScreen extends BaseScreen {
         this.pendingDeathScreen = null;
         this.alertMonitor.reset();
         this.damageFlash.reset();
+        this.screenFx.clear();
         this.lastPlayerHp = -1;
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
@@ -3941,6 +3946,11 @@ public class GameScreen extends BaseScreen {
 
     public SpellPostProcessor getSpellPostProcessor() {
         return spellPostProcessor;
+    }
+
+    /** Screen-space clips: self-cast glows, the casting charge, warp flashes. */
+    public com.bpm.minotaur.rendering.ScreenFxOverlay getScreenFx() {
+        return screenFx;
     }
 
     public SpellCastOverlay getSpellCastOverlay() {

@@ -77,6 +77,11 @@ public class SpellExecutionEngine {
             gs.getSpellCastOverlay().triggerCast(0.8f, null, spell.getRuneSchool(), archetype.getPrimaryColor());
         }
 
+        if (gs != null) {
+            SpellFx spellFx = SpellFx.getInstance();
+            gs.getScreenFx().play(spellFx.castClip(), 0.5f, 0.30f, spellFx.castSize());
+        }
+
         // 2. Trigger Domain-Specific Synthesized Audio
         if (combatManager != null && combatManager.getSoundManager() != null) {
             combatManager.getSoundManager().playSpellSound(archetype);
@@ -177,6 +182,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.FIRE, impact3d, 1.8f, 0.65f);
             combatManager.getAnimationManager().spawnArchetypeCascade(impact3d, VisualArchetype.EXPLOSIVE_BURST, 40);
+            playImpactFx(combatManager, VisualArchetype.EXPLOSIVE_BURST, impact3d);
         }
 
         // 3. Lingering Environmental Scorch Marks
@@ -216,6 +222,7 @@ public class SpellExecutionEngine {
             Vector3 target3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, target3d, 1.2f, 0.40f);
             combatManager.getAnimationManager().spawnArchetypeCascade(target3d, VisualArchetype.FORCE_MISSILE, 15);
+            playImpactFx(combatManager, VisualArchetype.FORCE_MISSILE, target3d);
         }
 
         // Hit resolution: deals 3 distinct dart strikes
@@ -263,12 +270,20 @@ public class SpellExecutionEngine {
 
         if (dest != null) {
             player.setPosition(dest);
+            if (gs != null) {
+                SpellFx spellFx = SpellFx.getInstance();
+                gs.getScreenFx().play(spellFx.warpDepartClip(), 0.5f, 0.5f, spellFx.warpSize());
+            }
             eventManager.addEvent(new GameEvent("You dissolve in mist and step across space!", 2.0f));
 
             if (combatManager != null && combatManager.getAnimationManager() != null) {
                 Vector3 dest3d = new Vector3(dest.x + 0.5f, 0.5f, dest.y + 0.5f);
                 combatManager.getAnimationManager().spawnExplosion(ExplosionType.WIND, dest3d, 1.5f, 0.50f);
                 combatManager.getAnimationManager().spawnArchetypeCascade(dest3d, VisualArchetype.SPATIAL_WARP, 25);
+            }
+            if (gs != null) {
+                SpellFx spellFx = SpellFx.getInstance();
+                gs.getScreenFx().play(spellFx.warpArriveClip(), 0.5f, 0.5f, spellFx.warpSize());
             }
         } else {
             eventManager.addEvent(new GameEvent("The space ahead is blocked!", 1.5f));
@@ -293,6 +308,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(ExplosionType.CONCUSSIVE, front3d, 1.7f, 0.50f);
             combatManager.getAnimationManager().spawnArchetypeCascade(front3d, VisualArchetype.THUNDER_CONCUSSION, 30);
+            playImpactFx(combatManager, VisualArchetype.THUNDER_CONCUSSION, front3d);
         }
 
         // Crack decal on the floor
@@ -396,6 +412,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             Vector3 center3d = new Vector3(centerX + 0.5f, 0.5f, centerY + 0.5f);
             combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 26);
+            playImpactFx(combatManager, archetype, center3d);
         }
 
         eventManager.addEvent(new GameEvent("Grey fog boils up and fills the passage.", 2f));
@@ -403,6 +420,8 @@ public class SpellExecutionEngine {
 
     private static void resolveShieldBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                              GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
+
         // 1. Protective Cyan Vignette
         if (gs != null && gs.getSpellPostProcessor() != null) {
             gs.getSpellPostProcessor().triggerVignette(new Color(0.25f, 0.75f, 1.0f, 1.0f), 0.9f, 0.6f);
@@ -437,6 +456,7 @@ public class SpellExecutionEngine {
         if (combatManager != null && combatManager.getSoundManager() != null) {
             combatManager.getSoundManager().playSpellSound(VisualArchetype.SPATIAL_WARP);
         }
+        gs.getScreenFx().play(SpellFx.getInstance().warpDepartClip(), 0.5f, 0.5f, SpellFx.getInstance().warpSize());
         eventManager.addEvent(new GameEvent("A blinding glyph surrounds you! You are pulled back to the Shelter.", 3.0f));
         gs.returnToShelter();
     }
@@ -452,6 +472,7 @@ public class SpellExecutionEngine {
 
     private static void resolveSelfSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                          GameEventManager eventManager, GameScreen gs) {
+        playSelfFx(spell, archetype, gs);
         // Healing
         if (isHealing(spell)) {
             int amount = DiceRoller.roll(spell.getDamageDice());
@@ -485,6 +506,26 @@ public class SpellExecutionEngine {
         eventManager.addEvent(new GameEvent("Arcane barrier envelops you! (+AC)", 2.0f));
     }
 
+    /** The glow over the view for a spell cast on oneself; what it looks like is chosen by spellfx.json. */
+    private static void playSelfFx(SpellTemplate spell, VisualArchetype archetype, GameScreen gs) {
+        if (gs == null) {
+            return;
+        }
+        SpellFx spellFx = SpellFx.getInstance();
+        List<String> clips = spellFx.selfClipsFor(spell.getName(), archetype);
+        for (String clip : clips) {
+            gs.getScreenFx().play(clip, 0.5f, 0.45f, spellFx.selfSize());
+        }
+    }
+
+    /** The impact flash for a spell's archetype, played where the spell lands. */
+    private static void playImpactFx(CombatManager combatManager, VisualArchetype archetype, Vector3 at) {
+        SpellFx.Impact impact = SpellFx.getInstance().impactFor(archetype);
+        if (impact != null && combatManager != null && combatManager.getAnimationManager() != null) {
+            combatManager.getAnimationManager().spawnFx(impact.clip, at, impact.scale);
+        }
+    }
+
     private static void resolveProjectileSpell(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
         int maxRange = Math.max(2, spell.getRange());
@@ -505,6 +546,7 @@ public class SpellExecutionEngine {
 
             Vector3 hit3d = new Vector3(targetPos.x, 0.5f, targetPos.y);
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), hit3d, 1.4f, 0.45f);
+            playImpactFx(combatManager, archetype, hit3d);
             combatManager.getAnimationManager().spawnArchetypeCascade(hit3d, archetype, 18);
         }
 
@@ -559,6 +601,7 @@ public class SpellExecutionEngine {
         Vector3 center3d = new Vector3(center.x + 0.5f, 0.5f, center.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), center3d, 1.8f, 0.60f);
+            playImpactFx(combatManager, archetype, center3d);
             combatManager.getAnimationManager().spawnArchetypeCascade(center3d, archetype, 25);
         }
 
@@ -580,6 +623,7 @@ public class SpellExecutionEngine {
         Vector3 touch3d = new Vector3(targetPos.x + 0.5f, 0.5f, targetPos.y + 0.5f);
         if (combatManager != null && combatManager.getAnimationManager() != null) {
             combatManager.getAnimationManager().spawnExplosion(getExplosionForArchetype(archetype), touch3d, 1.2f, 0.40f);
+            playImpactFx(combatManager, archetype, touch3d);
         }
 
         Monster target = maze.getMonsters().get(targetPos);

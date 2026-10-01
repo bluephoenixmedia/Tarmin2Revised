@@ -33,6 +33,9 @@ public class SoundManager {
     private float targetDampenFactor = 1.0f;
     private float currentBaseVol = 0.5f;
 
+    private SoundBank bank = SoundBank.parse(new com.badlogic.gdx.utils.JsonReader().parse("{}"));
+    private final java.util.Random bankRandom = new java.util.Random();
+
     private static SoundManager instance;
     private boolean swingToggle = false;
     private boolean laserToggle = false;
@@ -157,6 +160,7 @@ public class SoundManager {
         // Bags used to share the chest's lid-and-latch sound because the open
         // handler branched on ItemCategory rather than type.
         loadSound("bag_open", "sounds/bag_open.wav");
+        loadBank();
         // Descending used to play sounds/music/tarmin_enter_fx.ogg, which is the
         // retired player-death asset: commit 442c15d rewired the death *key* to
         // three staged cues but left call sites referencing the old file by raw
@@ -166,6 +170,43 @@ public class SoundManager {
         // --- Themed chunk entry stingers (contract slot g) ---
         loadSound("tarmin_roar", "sounds/tarmin_roar.mp3");
         loadSound("wind", "sounds/wind.ogg");
+    }
+
+    /** Loads every variant of every event in soundbank.json; a bad entry is logged and skipped, never fatal. */
+    private void loadBank() {
+        try {
+            bank = SoundBank.parse(new com.badlogic.gdx.utils.JsonReader().parse(Gdx.files.internal("data/soundbank.json")));
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Cannot read data/soundbank.json; falling back to the built-in sounds", e);
+            return;
+        }
+        for (String name : bank.eventNames()) {
+            for (String path : bank.get(name).files) {
+                loadSound(path, path);
+            }
+        }
+    }
+
+    /**
+     * Plays one variant of a bank event. Returns false when the event, or every one of its files, is
+     * unavailable, so a caller can fall back to the sound it used before the bank existed.
+     */
+    public boolean playEvent(String event) {
+        // Retro is synthesized by design; the recordings belong to the modern world.
+        if (debugManager != null && debugManager.getRenderMode() != DebugManager.RenderMode.MODERN) {
+            return false;
+        }
+        String path = bank.pick(event, bankRandom);
+        Sound sound = path == null ? null : modernSounds.get(path);
+        if (sound == null) {
+            return false;
+        }
+        SoundBank.Event e = bank.get(event);
+        long id = sound.play(e.volume * getEffectiveSfxVolume());
+        if (e.pitchJitter > 0f) {
+            sound.setPitch(id, MathUtils.random(1f - e.pitchJitter, 1f + e.pitchJitter));
+        }
+        return true;
     }
 
     private void loadSound(String key, String path) {
@@ -220,7 +261,9 @@ public class SoundManager {
 
     /** The groan as the body hits the floor. */
     public void playDeathImpact() {
-        playSound("player_body_fall", 0.9f);
+        if (!playEvent("death_impact")) {
+            playSound("player_body_fall", 0.9f);
+        }
     }
 
     /**
@@ -392,7 +435,9 @@ public class SoundManager {
 
     public void playCombatStartSound() {
         if (debugManager.getRenderMode() == DebugManager.RenderMode.MODERN) {
-            playSound("monster_roar");
+            if (!playEvent("monster_roar")) {
+                playSound("monster_roar");
+            }
         } else {
             // playSound("tarmin_roar");
         }
@@ -401,6 +446,9 @@ public class SoundManager {
     // --- NEW: Visceral Combat Audio ---
 
     public void playWeaponSwing() {
+        if (playEvent("swing")) {
+            return;
+        }
         String key = swingToggle ? "weapon_swing_2" : "weapon_swing";
         swingToggle = !swingToggle;
         if (!modernSounds.containsKey(key)) {
@@ -451,6 +499,9 @@ public class SoundManager {
     }
 
     public void playWeaponImpact(boolean heavy, boolean isMetal) {
+        if (isMetal ? playEvent("hit_blade") : heavy && playEvent("hit_blunt")) {
+            return;
+        }
         String sound;
         if (isMetal) {
             sound = heavy ? "metal_hit_heavy" : "metal_hit";
@@ -514,6 +565,9 @@ public class SoundManager {
      * player attack, melee or ranged, played the generic swing whoosh instead.
      */
     public void playBowShot() {
+        if (playEvent("bow_shot")) {
+            return;
+        }
         String key = modernSounds.containsKey("player_bow_attack") ? "player_bow_attack" : "weapon_swing";
         if (modernSounds.containsKey(key)) {
             long id = modernSounds.get(key).play(0.85f);
@@ -546,7 +600,9 @@ public class SoundManager {
     }
 
     public void playBagOpen() {
-        playSound("bag_open");
+        if (!playEvent("bag")) {
+            playSound("bag_open");
+        }
     }
 
     /** Level change via a ladder. Deliberately not a death cue. */
@@ -645,6 +701,10 @@ public class SoundManager {
 
     public void playSpellSound(com.bpm.minotaur.gamedata.spells.VisualArchetype archetype) {
         if (archetype == null) return;
+
+        if (playEvent("spell_" + archetype.name().toLowerCase())) {
+            return;
+        }
 
         // Check if modern audio asset exists
         String soundKey = archetype.getSoundKey();
@@ -812,6 +872,9 @@ public class SoundManager {
      * Synthesizes crisp cloth tearing and linen wrapping friction for field dressing.
      */
     public void playBandageTearSound() {
+        if (playEvent("bandage")) {
+            return;
+        }
         if (retroAudioDevice != null) {
             new Thread(() -> {
                 try {
