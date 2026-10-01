@@ -79,7 +79,11 @@ public enum GoreProfile {
             case GELATINOUS_CUBE:
                 return SLIME;
 
+            case SKELETAL_WIZARD:
+                return SKELETAL;
+
             case WRAITH:
+            case SPECTER:
                 return INCORPOREAL;
 
             default:

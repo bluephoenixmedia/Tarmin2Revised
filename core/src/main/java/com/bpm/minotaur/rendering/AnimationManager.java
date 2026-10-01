@@ -71,6 +71,19 @@ public class AnimationManager {
         return animations;
     }
 
+    /**
+     * Plays a frame-sequence clip by its fx.json id at a world position (x, height, -y). An unknown
+     * clip is ignored: a missing effect must never get in the way of a hit.
+     */
+    public void spawnFx(String clipId, com.badlogic.gdx.math.Vector3 position3D, float scale) {
+        com.bpm.minotaur.rendering.vfx.FxClips.Clip clip =
+                com.bpm.minotaur.rendering.vfx.FxClips.getInstance().get(clipId);
+        if (clip == null) {
+            return;
+        }
+        addAnimation(new Animation(clipId, position3D, scale, clip.duration, clip.additive));
+    }
+
     public void spawnExplosion(com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType type, com.badlogic.gdx.math.Vector3 position3D) {
         addAnimation(new Animation(type, position3D));
     }
