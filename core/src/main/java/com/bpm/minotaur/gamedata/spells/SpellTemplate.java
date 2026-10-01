@@ -23,8 +23,19 @@ public class SpellTemplate {
     public String description;
     /** Tomes whose Tome Choice may offer this spell (names of {@link Tome}); null for none. */
     public String[] tomePools;
+    /**
+     * Set for the few spells that reach a target through walls (mind-affecting ones). Psychic
+     * damage implies it. Never enough alone: the caster has to be able to use it too, see
+     * {@code MonsterSpellSight}.
+     */
+    public boolean ignoresLineOfSight = false;
 
     public SpellTemplate() {
+    }
+
+    /** True when this spell can reach a target without a clear line. */
+    public boolean pierces() {
+        return ignoresLineOfSight || "PSYCHIC".equalsIgnoreCase(damageType);
     }
 
     public String getId() {

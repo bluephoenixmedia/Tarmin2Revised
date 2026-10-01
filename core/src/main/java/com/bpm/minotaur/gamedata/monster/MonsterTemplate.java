@@ -27,6 +27,8 @@ public class MonsterTemplate {
     public int frequency = 0; // 0-7, weighted probability
     public int baseAC = 10; // Armor Class, descending scale (lower is better, 10 is base)
     public int magicResistance = 0; // 0-100%
+    /** A caster whose mind reaches through stone, so it may cast wall-piercing spells without a clear line. */
+    public boolean wallPiercingCaster = false;
     public int moveSpeed = 12; // Base speed (player usually 12)
 
     public Alignment alignment = Alignment.NEUTRAL; // Default
