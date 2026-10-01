@@ -108,6 +108,7 @@ public class SoundManager {
         loadSound("player_bow_attack", "sounds/player_bow_attack.wav");
         loadSound("player_spiritual_attack", "sounds/player_spiritual_attack.wav");
         loadSound("pickup_item", "sounds/pickup_item.wav");
+        loadSound("dimensional_shift", "sounds/dimensional_shift.wav");
         loadSound("door_open", "sounds/door_open.wav");
         // Death cues. "player_death" used to point at a music stinger, which is why death
         // never landed as an event; these three are staged across the death sequence.
@@ -414,8 +415,22 @@ public class SoundManager {
         }
     }
 
+    /** The warp between the mortal realm and the Retro dimension; kept as the name existing callers use. */
     public void playDimensionalWarpSound() {
+        playDimensionalShiftSound();
+    }
+
+    /**
+     * The sound of shifting dimension, played whenever the world changes into (or out of) Retro.
+     * Uses the recorded effect; the synthesized descending tones remain as the fallback for a build
+     * where that file is missing or cannot be decoded.
+     */
+    public void playDimensionalShiftSound() {
         stopWeatherEffects();
+        if (modernSounds.containsKey("dimensional_shift")) {
+            playSound("dimensional_shift");
+            return;
+        }
         if (retroAudioDevice != null) {
             new Thread(() -> {
                 try {

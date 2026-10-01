@@ -113,6 +113,10 @@ public class GameScreen extends BaseScreen {
     private boolean useCrtFilter = true;
     private SpellPostProcessor spellPostProcessor;
     private SpellCastOverlay spellCastOverlay;
+    private final com.bpm.minotaur.managers.AlertMonitor alertMonitor = new com.bpm.minotaur.managers.AlertMonitor();
+    private final com.bpm.minotaur.rendering.AlertOverlay alertOverlay = new com.bpm.minotaur.rendering.AlertOverlay();
+    private final com.bpm.minotaur.rendering.vfx.DamageFlash damageFlash = new com.bpm.minotaur.rendering.vfx.DamageFlash();
+    private int lastPlayerHp = -1;
     private final SpriteBatch postProcessBatch = new SpriteBatch();
     private float time = 0f;
 
@@ -217,6 +221,7 @@ public class GameScreen extends BaseScreen {
 
         this.monsterAiManager = new MonsterAiManager();
         this.monsterAiManager.setFactionMatrix(this.worldManager.getFactionMatrix());
+        this.monsterAiManager.setOnPlayerNoticed(alertMonitor::noteMonsterNoticed);
 
         // Initialize Input Multiplexer
         inputMultiplexer = new com.badlogic.gdx.InputMultiplexer();
@@ -568,6 +573,7 @@ public class GameScreen extends BaseScreen {
 
         updateDeathSequence(delta);
         updateAutoSave(delta);
+        updateAlert(delta);
 
         // Trigger Level-Up Attribute Allocation modal when safe (outside active combat)
         if (player != null && player.hasPendingLevelUpModal() && (combatManager == null || !combatManager.isInCombat())) {
@@ -789,6 +795,11 @@ public class GameScreen extends BaseScreen {
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();
             }
+
+            damageFlash.render(shapeRenderer, game.getViewport());
+            game.getBatch().begin();
+            alertOverlay.render(game.getBatch(), game.getViewport());
+            game.getBatch().end();
 
             if (combatManager.getAttackIndicatorMonster() != null
                     && combatManager.getAttackIndicatorVariant() == CombatManager.AttackIndicatorVariant.SCREEN_SLASH) {
@@ -1413,10 +1424,39 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+    /** Feeds the alert monitor what the player's state is, and flashes the symbol when it says to. */
+    private void updateAlert(float delta) {
+        alertOverlay.update(delta);
+        damageFlash.update(delta);
+        if (player == null || player.getStats() == null) {
+            return;
+        }
+        if (isDying()) {
+            // What was pending belongs to the life that is ending; the respawn takes a new baseline.
+            alertMonitor.reset();
+            damageFlash.reset();
+            lastPlayerHp = -1;
+            return;
+        }
+        PlayerStats stats = player.getStats();
+
+        // A short red flash at the screen edges whenever the player loses health.
+        int hp = stats.getCurrentHP();
+        if (lastPlayerHp >= 0 && hp < lastPlayerHp) {
+            damageFlash.trigger((lastPlayerHp - hp) / (float) Math.max(1, stats.getMaxHP()));
+        }
+        lastPlayerHp = hp;
+
+        if (alertMonitor.update(delta, com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats)) != null) {
+            alertOverlay.trigger();
+        }
+    }
+
     /**
      * Periodic auto-save every 60 seconds during active gameplay.
      * Guarantees players never lose progress on unexpected crashes or hangs.
      */
+
     public void updateAutoSave(float delta) {
         if (player == null || worldManager == null) return;
         if (deathSequence != null && deathSequence.isActive()) return;
@@ -1649,6 +1689,9 @@ public class GameScreen extends BaseScreen {
         this.deathWatch.reset();
         this.deathSequence.reset();
         this.pendingDeathScreen = null;
+        this.alertMonitor.reset();
+        this.damageFlash.reset();
+        this.lastPlayerHp = -1;
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();
 
@@ -3133,6 +3176,10 @@ public class GameScreen extends BaseScreen {
                 return true;
             case Input.Keys.F2:
                 debugManager.toggleRenderMode();
+                // Shifting into Retro is a dimensional shift; the toggle is a no-op inside the Void.
+                if (debugManager.isTransitioning() && debugManager.isModernToRetroTransition()) {
+                    soundManager.playDimensionalShiftSound();
+                }
                 return true;
             case Input.Keys.F3:
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;

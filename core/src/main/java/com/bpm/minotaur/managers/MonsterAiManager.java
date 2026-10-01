@@ -106,6 +106,13 @@ public class MonsterAiManager {
         }
     }
 
+    private Runnable onPlayerNoticed;
+
+    /** Called when a monster that was not hunting first notices the player; the HUD raises the alert. */
+    public void setOnPlayerNoticed(Runnable onPlayerNoticed) {
+        this.onPlayerNoticed = onPlayerNoticed;
+    }
+
     private FactionMatrix factionMatrix = new FactionMatrix();
 
     public FactionMatrix getFactionMatrix() {
@@ -196,6 +203,10 @@ public class MonsterAiManager {
                 monster.setTurnsSinceLastSeen(0);
             }
         } else if (playerSeen) {
+            boolean newlyNoticed = monster.getState() != Monster.MonsterState.HUNTING;
+            if (newlyNoticed && onPlayerNoticed != null) {
+                onPlayerNoticed.run();
+            }
             monster.setTargetMonster(null);
             monster.setState(Monster.MonsterState.HUNTING);
             monster.setLastKnownTargetPos(new GridPoint2(playerGridPos));

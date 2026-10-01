@@ -1926,6 +1926,10 @@ public class World3DRenderer implements Disposable {
             com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry registry = com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.getInstance();
             for (int i = 0; i < anims.size(); i++) {
                 Animation anim = anims.get(i);
+                if (anim.getType() == Animation.AnimationType.FX_CLIP_3D && anim.getFxClipId() != null) {
+                    renderFxClip(anim);
+                    continue;
+                }
                 if (anim.getType() == Animation.AnimationType.SPRITE_EXPLOSION_3D && anim.getExplosionType() != null) {
                     TextureRegion frame = registry.getFrame(anim.getExplosionType(), anim.getProgress());
                     if (frame != null && frame.getTexture() != null) {
@@ -1949,6 +1953,31 @@ public class World3DRenderer implements Disposable {
                     }
                 }
             }
+        }
+    }
+
+    /** One frame of a frame-sequence clip, as a camera-facing billboard at the animation's position. */
+    private void renderFxClip(Animation anim) {
+        com.bpm.minotaur.rendering.vfx.FxClips fx = com.bpm.minotaur.rendering.vfx.FxClips.getInstance();
+        TextureRegion frame = fx.getFrame(anim.getFxClipId(), anim.getProgress());
+        if (frame == null || frame.getTexture() == null) {
+            return;
+        }
+        com.bpm.minotaur.rendering.vfx.FxClips.Clip clip = fx.get(anim.getFxClipId());
+        float aspect = (clip != null && clip.frameHeight > 0) ? clip.frameWidth / (float) clip.frameHeight : 1f;
+        float h = anim.getScale3D();
+        float w = h * aspect;
+        Vector3 p3d = anim.getPosition3D();
+        float feetY = Math.max(0.01f, p3d.y - h * 0.5f);
+
+        if (anim.isAdditiveBlend()) {
+            Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE);
+        }
+        dynamicBatcher.addBillboard(p3d.x, feetY, -p3d.z, w, h, frame, Color.WHITE, camRight, camUp, camDir);
+        dynamicBatcher.flush(shader, frame.getTexture());
+        if (anim.isAdditiveBlend()) {
+            Gdx.gl.glBlendFunc(com.badlogic.gdx.graphics.GL20.GL_SRC_ALPHA, com.badlogic.gdx.graphics.GL20.GL_ONE_MINUS_SRC_ALPHA);
         }
     }
 

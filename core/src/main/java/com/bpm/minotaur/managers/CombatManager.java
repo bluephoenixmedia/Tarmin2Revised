@@ -1210,6 +1210,8 @@ public class CombatManager {
                 int dmg = DiceRoller.roll(weapon.getDamageDice()) + statBonus;
                 dmg = Math.max(1, dmg);
                 int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
+                spawnHitFx(target, GoreProfile.fromMonster(target),
+                        actual / (float) Math.max(1, target.getMaxHP()), false);
                 showDamageText(actual, hit.collisionPoint);
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
 
@@ -1540,6 +1542,8 @@ public class CombatManager {
             gs.getWeaponOverlay().setHitFrameCallback(profile -> {
                 int bashDmg = Math.max(1, DiceRoller.roll("1d4") + shield.getArmorClassBonus());
                 int actual = target.takeDamage(bashDmg, DamageType.PHYSICAL);
+                spawnHitFx(target, GoreProfile.fromMonster(target),
+                        actual / (float) Math.max(1, target.getMaxHP()), false);
                 soundManager.playWeaponImpact(true);
                 gs.addTrauma(0.28f);
                 eventManager.addEvent(new GameEvent("SHIELD BASH! Staggered " + target.getMonsterType() + " for " + actual, 1.2f));
@@ -1759,6 +1763,7 @@ public class CombatManager {
                 Vector3 dir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.15f, monster.getPosition().y - player.getPosition().y).nor();
                 GoreProfile profile = GoreProfile.fromMonster(monster);
                 maze.getGoreManager().spawnBloodSpray(hitPos, dir, Math.max(2, actualDamage / 2), profile);
+                spawnHitFx(monster, profile, actualDamage / (float) Math.max(1, monster.getMaxHP()), false);
             }
             showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
             eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
@@ -2173,6 +2178,7 @@ public class CombatManager {
 
                 applyWeaponBlood(bloodIntensity, profile);
                 splatterPlayer(bloodIntensity, profile, false);
+                spawnHitFx(monster, profile, damageRatio, isCrit);
             }
 
         } else {
@@ -3493,6 +3499,21 @@ public class CombatManager {
         player.getBlood().splatter(com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.forWound(
                 damage, player.getStats().getMaxHP(),
                 com.bpm.minotaur.gamedata.gore.BloodSpatterGenerator.rgb(c.r, c.g, c.b), bloodRandom));
+    }
+
+    /**
+     * The burst where a blow lands on a monster: a spurt of blood, or smoke or sparks for something
+     * that does not bleed. Placed at the monster's body height, in the modern renderer only.
+     */
+    private void spawnHitFx(Monster target, GoreProfile profile, float damageShare, boolean crit) {
+        if (animationManager == null || target == null) {
+            return;
+        }
+        com.bpm.minotaur.gamedata.gore.HitFx.Spec spec = com.bpm.minotaur.gamedata.gore.HitFx.forHit(
+                profile, target.getFamily(), target.getType(), damageShare, crit, target.getCurrentHP() <= 0);
+        animationManager.spawnFx(spec.clipId,
+                com.bpm.minotaur.gamedata.gore.HitFx.position(target.getPosition().x, target.getPosition().y),
+                spec.scale);
     }
 
     private void applyWeaponBlood(int intensity, GoreProfile profile) {
