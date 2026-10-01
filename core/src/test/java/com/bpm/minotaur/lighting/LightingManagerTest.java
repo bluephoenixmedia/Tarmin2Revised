@@ -25,6 +25,21 @@ public class LightingManagerTest {
     }
 
     @Test
+    public void theShelterLanternStationMakesTheCarriedLanternBurnBrighter() {
+        float plain = LightingManager.carriedLanternRadius(false, false);
+        float blessed = LightingManager.carriedLanternRadius(false, true);
+        assertEquals(LightingManager.LANTERN_RADIUS, plain, 0.001f);
+        assertEquals(LightingManager.LANTERN_RADIUS + LightingManager.STATION_LANTERN_RADIUS_BONUS, blessed, 0.001f);
+        assertTrue(LightingManager.carriedLanternIntensity(false, true) > LightingManager.carriedLanternIntensity(false, false));
+    }
+
+    @Test
+    public void theStationBonusStacksWithTheUndergroundBoost() {
+        assertEquals((LightingManager.LANTERN_RADIUS + LightingManager.STATION_LANTERN_RADIUS_BONUS) * 1.5f,
+                LightingManager.carriedLanternRadius(true, true), 0.001f);
+    }
+
+    @Test
     public void testLightSourceCreationAndProfiles() {
         LightSource campfire = new LightSource("cook_pot", 5f, 5f, LightingManager.COLOR_CAMPFIRE, 4.5f, 1.2f, LightSource.FlickerProfile.CAMPFIRE_FLICKER);
         assertEquals("cook_pot", campfire.getId());

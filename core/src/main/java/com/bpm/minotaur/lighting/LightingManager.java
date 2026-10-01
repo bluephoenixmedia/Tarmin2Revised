@@ -114,6 +114,20 @@ public class LightingManager {
     // since natural light is entirely absent there.
     private static final float UNDERGROUND_LANTERN_BOOST = 1.5f;
 
+    /** What owning the Shelter Lantern station does for the lantern you carry: it burns wider and brighter. */
+    public static final float STATION_LANTERN_RADIUS_BONUS = 1.0f;
+    public static final float STATION_LANTERN_INTENSITY_FACTOR = 1.10f;
+
+    public static float carriedLanternRadius(boolean underground, boolean stationOwned) {
+        float radius = LANTERN_RADIUS + (stationOwned ? STATION_LANTERN_RADIUS_BONUS : 0f);
+        return radius * (underground ? UNDERGROUND_LANTERN_BOOST : 1.0f);
+    }
+
+    public static float carriedLanternIntensity(boolean underground, boolean stationOwned) {
+        float intensity = LANTERN_INTENSITY * (stationOwned ? STATION_LANTERN_INTENSITY_FACTOR : 1.0f);
+        return intensity * (underground ? UNDERGROUND_LANTERN_BOOST : 1.0f);
+    }
+
     /**
      * Syncs player light coordinates and upgrades to Brass Lantern if equipped in either hand.
      */
@@ -138,9 +152,10 @@ public class LightingManager {
             playerLight.setProfile(LightSource.FlickerProfile.STEADY);
         } else if (hasLantern) {
             playerLight.setActive(lanternLit);
-            float boost = isUnderground ? UNDERGROUND_LANTERN_BOOST : 1.0f;
-            playerLight.setBaseRadius(LANTERN_RADIUS * boost);
-            playerLight.setBaseIntensity(LANTERN_INTENSITY * boost);
+            boolean stationOwned = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
+                    .hasStation(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN);
+            playerLight.setBaseRadius(carriedLanternRadius(isUnderground, stationOwned));
+            playerLight.setBaseIntensity(carriedLanternIntensity(isUnderground, stationOwned));
             playerLight.setBaseColor(COLOR_LANTERN);
             playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
         } else {
