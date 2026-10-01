@@ -45,7 +45,8 @@ public enum Faction {
         if (family == MonsterFamily.UNDEAD || lower.contains("skeleton") || lower.contains("ghoul") || lower.contains("wraith") || lower.contains("zombie")) {
             return UNDEAD;
         }
-        if (lower.contains("cultist") || lower.contains("sorcerer") || lower.contains("hermit") || lower.contains("outcast") || lower.contains("bandit")) {
+        if (lower.contains("cultist") || lower.contains("sorcerer") || lower.contains("hermit") || lower.contains("outcast") || lower.contains("bandit")
+                || lower.contains("sage") || lower.contains("jester")) {
             return OUTCASTS_AND_HERMITS;
         }
         if (family == MonsterFamily.BEAST || family == MonsterFamily.DEMON || family == MonsterFamily.MAGICAL || family == MonsterFamily.MYTHICAL) {

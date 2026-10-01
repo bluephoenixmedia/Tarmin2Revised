@@ -70,6 +70,14 @@ public class MonsterDataManager {
             if (template.texturePath != null && !template.texturePath.isEmpty()) {
                 assetManager.load(template.texturePath, Texture.class);
             }
+            if (template.variants != null) {
+                for (MonsterVariant variant : template.variants) {
+                    if (variant != null && variant.texturePath != null && !variant.texturePath.isEmpty()
+                            && !variant.texturePath.equals(template.texturePath)) {
+                        assetManager.load(variant.texturePath, Texture.class);
+                    }
+                }
+            }
             if (template.directionTextures != null) {
                 MonsterTemplate.DirectionTextures dt = template.directionTextures;
                 queueIfPresent(assetManager, dt.north);

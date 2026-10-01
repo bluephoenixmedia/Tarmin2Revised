@@ -36,6 +36,14 @@ public class Monster implements Renderable {
         HARPY(Category.NASTY),
         GARGOYLE(Category.NASTY),
         WERERAT(Category.NASTY),
+        // Added with the first batch of new sprites: the undead casters.
+        SPECTER(Category.NASTY),
+        SKELETAL_WIZARD(Category.NASTY),
+
+        // Humanoids the Spiritual Weapons are strong against
+        LIZARD_WARRIOR(Category.BAD),
+        JESTER(Category.BAD),
+        SAGE(Category.BAD),
 
         // Horrible Monsters (Vulnerable to both War and Spiritual)
         GIANT_ANT(Category.HORRIBLE),
@@ -72,7 +80,15 @@ public class Monster implements Renderable {
         AGIS(Category.HORRIBLE),
         DEMON_SLIME(Category.HORRIBLE),
         BRINGER_OF_DEATH(Category.HORRIBLE),
-        FALL_ANGEL(Category.HORRIBLE);
+        FALL_ANGEL(Category.HORRIBLE),
+        // Added with the first batch of new sprites: beasts and the things that crawl.
+        BAT(Category.HORRIBLE),
+        GIANT_BEE(Category.HORRIBLE),
+        GIANT_SNAIL(Category.HORRIBLE),
+        GIANT_CENTIPEDE(Category.HORRIBLE),
+        LANDSTALKER(Category.HORRIBLE),
+        COCKATRICE(Category.HORRIBLE),
+        BEETLESCRATCH(Category.HORRIBLE);
 
         private final Category category;
 
@@ -288,9 +304,12 @@ public class Monster implements Renderable {
         this.spriteData = template.spriteData;
         this.scale = new Vector2(template.scale.x, template.scale.y);
         this.statusManager = new StatusManager();
-        if (template.texturePath != null && !template.texturePath.isEmpty()) {
-            if (assetManager.isLoaded(template.texturePath, Texture.class)) {
-                this.texture = assetManager.get(template.texturePath, Texture.class);
+        // A colourway may have its own sprite (a Specter that burns looks different from one that freezes).
+        final MonsterVariant variant = MonsterVariant.forColor(template.variants, color);
+        final String spritePath = MonsterVariant.textureFor(template.variants, color, template.texturePath);
+        if (spritePath != null && !spritePath.isEmpty()) {
+            if (assetManager.isLoaded(spritePath, Texture.class)) {
+                this.texture = assetManager.get(spritePath, Texture.class);
                 if (template.isSpriteSheet) {
                     this.isSpriteSheet = true;
                     this.frameDuration = template.spriteFrameDuration;
@@ -312,7 +331,7 @@ public class Monster implements Renderable {
                 }
             } else {
                 com.badlogic.gdx.Gdx.app.error("Monster",
-                        "CRITICAL: Texture not loaded for " + type + "! Path: " + template.texturePath);
+                        "CRITICAL: Texture not loaded for " + type + "! Path: " + spritePath);
             }
         }
 
@@ -337,6 +356,12 @@ public class Monster implements Renderable {
         this.rangedProjectile = template.rangedProjectile != null ? template.rangedProjectile : "ARROW";
         this.rangedDamageDice = template.rangedDamageDice;
         this.rangedDamageType = template.rangedDamageType;
+        if (variant != null && variant.rangedProjectile != null) {
+            this.rangedProjectile = variant.rangedProjectile;
+        }
+        if (variant != null && variant.rangedDamageType != null) {
+            this.rangedDamageType = variant.rangedDamageType;
+        }
         this.rangedEffect = template.rangedEffect;
         this.rangedEffectChance = template.rangedEffectChance;
         this.rangedPreferredDistance = template.rangedPreferredDistance > 0 ? template.rangedPreferredDistance : 4f;
@@ -376,7 +401,7 @@ public class Monster implements Renderable {
                     this.intelligence,
                     this.level,
                     template.spellSchools,
-                    template.innateSpells,
+                    (variant != null && variant.innateSpells != null) ? variant.innateSpells : template.innateSpells,
                     com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance());
         }
 
