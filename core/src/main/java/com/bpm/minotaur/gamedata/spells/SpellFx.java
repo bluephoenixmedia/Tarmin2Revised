@@ -91,10 +91,11 @@ public final class SpellFx {
 
     /** The clips to play over the view when the player casts this on themselves; empty if none fit. */
     public List<String> selfClipsFor(String spellName, VisualArchetype archetype) {
-        String name = spellName == null ? "" : spellName.toLowerCase();
+        // Match whole-word prefixes, so "ward" finds Ward but not Toward and "might" not Almighty.
+        String name = spellName == null ? "" : " " + spellName.toLowerCase().replaceAll("[^a-z]+", " ");
         for (int i = 0; i < nameWords.size(); i++) {
             for (String word : nameWords.get(i)) {
-                if (name.contains(word)) {
+                if (name.contains(" " + word)) {
                     return nameClips.get(i);
                 }
             }
@@ -144,11 +145,7 @@ public final class SpellFx {
 
     public static synchronized SpellFx getInstance() {
         if (instance == null) {
-            SpellFx loaded = loadOrEmpty();
-            if (loaded.impacts.isEmpty()) {
-                return loaded; // not cached, so a later attempt with a working file system can still succeed
-            }
-            instance = loaded;
+            instance = loadOrEmpty(); // cached even when empty, so a missing file is logged once, not per cast
         }
         return instance;
     }

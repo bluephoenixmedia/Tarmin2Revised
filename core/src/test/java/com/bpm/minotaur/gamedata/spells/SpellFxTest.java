@@ -80,6 +80,13 @@ public class SpellFxTest {
     }
 
     @Test
+    public void namesMatchWholeWordsNotFragments() {
+        assertTrue(fx.selfClipsFor("Reward", VisualArchetype.HOLY_RADIANCE).isEmpty());
+        assertTrue(fx.selfClipsFor("Almighty Gaze", VisualArchetype.HOLY_RADIANCE).isEmpty());
+        assertEquals(Arrays.asList("self_defense_up"), fx.selfClipsFor("Ward of Light", VisualArchetype.HOLY_RADIANCE));
+    }
+
+    @Test
     public void thePlayerFacingSizesAreSane() {
         assertTrue(fx.selfSize() > 100f);
         assertTrue(fx.castSize() > 50f);

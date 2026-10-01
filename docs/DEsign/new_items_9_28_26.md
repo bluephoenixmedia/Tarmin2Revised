@@ -2,5 +2,23 @@
 - We need an encumbrance system that punishes the player for carrying too much gear. This should be based on weight (strength stat).
 - Inventory seems to be carried over upon death now (regression?)
 - Blood doesn't seem to collect on the equipped weapon after combat. (regression?)
-- Let's do a sanity check and ensure that ALL values, attributes, effects, player position, level, location etc are retained on a save / load scenario. Same for death / respawn 
- 
+- Let's do a sanity check and ensure that ALL values, attributes, food, water,  effects, player position, level, location etc are retained on a save / load scenario. Same for death / respawn 
+- The wound decals are all gathering on one spot on monsters. Also certain wound decals are only intended for certain weapon types, right now that is not working as expected.
+- Items render all blue sometimes for some reason, this needs to stop
+- Any menu item that allows the user to scroll should show the correct scroll bars in the UX
+- I keep encountering a bug where despite having a weapon equipped, I cannot attack, the game instead tells me I'm hitting a wall (which is not there)
+- The level up modal that allows skill distribution is not reacting to the mouse clicks
+- More powerful monsters should have a percentage of magic resistance. Let's introduce this concept to both the player and monsters. The player can get it as an attribute of certain weapons and armor that are embued. They can also embue via crafting.
+- Let's spread the unlock logic so that the player unlocks armor, items and weapons in a rotation. I see the same armor constantly right now.
+- Monsters seem to be able to cast spells through walls?
+- Let's add a few new monsters to the roster, check for new items in assets/images/monsters. Let's build them out.
+- I added a alert animation to C:\workspace\Tarmin2\assets\images\ui\symbol_alert_001_large_red, let's use it when appropriate to help indicate that the player needs to pay attention to something.
+- I added some blood spurt animations that we should use during combat (burst_splatter)
+- I added some spell animations to \assets\images\ui, let's use them when appropriate for spells / combat (smoke, scifi warpo, charge up, burst, heal, etc)
+- I added a new sound effect (dimensional shift) that can be used for when the player shifts to Retro mode
+- I added a variety of other new sound effects to assets/sounds, let's review what I added and determine where they should be used.
+- Unlocking the lantern in the shelter needs to have an actual buff effect to the player, let's think about it.
+-- Since the visuals for the game indicate it, the player should have a lantern in their left hand upon starting the game and retain for respawns as well.
+- The Sector Passage Gate model has a a texture and it's not at all aligned correctly. We tried to fix this before but gave up. I want to try again, even if we need to build an internal utlility that allows me to manually adjust the orientation of the texture . UV Mapping coordinates.
+- If more then one item naturally get generated or rendered view the player playing the game, we need a way to swap between the 2 items in the first person dialogue / notificatioj / toast menus, preferably by hitting the tab key
+
