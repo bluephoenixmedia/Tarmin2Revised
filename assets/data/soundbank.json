@@ -1,0 +1,30 @@
+{
+  "_comment": "Each event is a bank of interchangeable variants; one is picked at random per play. Paths are under assets/. Retune here, no code change.",
+  "events": {
+    "swing":       { "volume": 0.8,  "pitchJitter": 0.10, "files": ["sounds/sfx/swing_1.wav", "sounds/sfx/swing_2.wav", "sounds/sfx/swing_3.wav", "sounds/sfx/swing_4.wav", "sounds/sfx/swing_5.wav"] },
+    "hit_blade":   { "volume": 0.85, "pitchJitter": 0.08, "files": ["sounds/sfx/sword_1.wav", "sounds/sfx/sword_2.wav", "sounds/sfx/sword_3.wav", "sounds/sfx/sword_4.wav", "sounds/sfx/sword_5.wav", "sounds/sfx/sword_6.wav"] },
+    "hit_blunt":   { "volume": 0.9,  "pitchJitter": 0.08, "files": ["sounds/sfx/club_1.wav", "sounds/sfx/club_2.wav", "sounds/sfx/club_3.wav"] },
+    "bow_shot":    { "volume": 0.85, "pitchJitter": 0.05, "files": ["sounds/sfx/arrow_1.wav", "sounds/sfx/arrow_2.wav", "sounds/sfx/arrow_3.wav", "sounds/sfx/arrow_4.wav"] },
+    "monster_roar": { "volume": 0.9, "pitchJitter": 0.08, "files": ["sounds/sfx/zombie_roar_1.wav", "sounds/sfx/zombie_roar_2.wav", "sounds/sfx/zombie_roar_3.wav", "sounds/sfx/zombie_roar_4.wav", "sounds/sfx/zombie_roar_5.wav", "sounds/sfx/zombie_roar_6.wav"] },
+    "alert":       { "volume": 0.7,  "pitchJitter": 0.0,  "files": ["sounds/sfx/notify_1.wav", "sounds/sfx/notify_2.wav", "sounds/sfx/notify_3.wav"] },
+    "death_impact": { "volume": 1.0, "pitchJitter": 0.0,  "files": ["sounds/sfx/impact_1.wav", "sounds/sfx/impact_2.wav", "sounds/sfx/impact_3.wav"] },
+    "bandage":     { "volume": 0.8,  "pitchJitter": 0.05, "files": ["sounds/sfx/bandage_1.wav", "sounds/sfx/bandage_2.wav"] },
+    "bag":         { "volume": 0.8,  "pitchJitter": 0.05, "files": ["sounds/sfx/bag_1.wav", "sounds/sfx/bag_2.wav"] },
+    "drop":        { "volume": 0.8,  "pitchJitter": 0.05, "files": ["sounds/sfx/drop_1.wav", "sounds/sfx/drop_2.wav", "sounds/sfx/drop_3.wav"] },
+    "spell_flame_bolt": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_flame_bolt_1.wav", "sounds/sfx/spell_flame_bolt_2.wav"] },
+    "spell_frost_ray": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_frost_ray_1.wav", "sounds/sfx/spell_frost_ray_2.wav"] },
+    "spell_lightning_arc": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_lightning_arc_1.wav", "sounds/sfx/spell_lightning_arc_2.wav"] },
+    "spell_force_missile": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_force_missile_1.wav", "sounds/sfx/spell_force_missile_2.wav"] },
+    "spell_explosive_burst": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_explosive_burst_1.wav", "sounds/sfx/spell_explosive_burst_2.wav"] },
+    "spell_holy_radiance": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_holy_radiance_1.wav", "sounds/sfx/spell_holy_radiance_2.wav"] },
+    "spell_necrotic_drain": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_necrotic_drain_1.wav", "sounds/sfx/spell_necrotic_drain_2.wav"] },
+    "spell_toxic_cloud": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_toxic_cloud_1.wav", "sounds/sfx/spell_toxic_cloud_2.wav"] },
+    "spell_obscuring_mist": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_obscuring_mist_1.wav", "sounds/sfx/spell_obscuring_mist_2.wav"] },
+    "spell_spatial_warp": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_spatial_warp_1.wav", "sounds/sfx/spell_spatial_warp_2.wav"] },
+    "spell_arcane_ward": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_arcane_ward_1.wav", "sounds/sfx/spell_arcane_ward_2.wav"] },
+    "spell_psychic_shock": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_psychic_shock_1.wav", "sounds/sfx/spell_psychic_shock_2.wav"] },
+    "spell_thunder_concussion": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_thunder_concussion_1.wav", "sounds/sfx/spell_thunder_concussion_2.wav"] },
+    "spell_self": { "volume": 0.7, "pitchJitter": 0.03, "files": ["sounds/sfx/spell_self_1.wav", "sounds/sfx/spell_self_2.wav", "sounds/sfx/spell_self_3.wav"] },
+    "spell_warp": { "volume": 0.8, "pitchJitter": 0.03, "files": ["sounds/sfx/spell_warp_1.wav", "sounds/sfx/spell_warp_2.wav"] }
+  }
+}

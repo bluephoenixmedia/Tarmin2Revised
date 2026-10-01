@@ -1452,6 +1452,7 @@ public class GameScreen extends BaseScreen {
 
         if (alertMonitor.update(delta, com.bpm.minotaur.managers.AlertMonitor.Snapshot.of(stats)) != null) {
             alertOverlay.trigger();
+            soundManager.playEvent("alert");
         }
     }
 

@@ -1506,6 +1506,7 @@ public class Player {
                 }
                 inventory.setRightHand(null);
                 eventManager.addEvent(new GameEvent("Dropped " + itemInHand.getDisplayName(), 2f));
+                if (soundManager != null) soundManager.playEvent("drop");
             } else {
                 eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
             }

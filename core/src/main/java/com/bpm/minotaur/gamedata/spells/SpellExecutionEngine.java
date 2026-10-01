@@ -16,6 +16,7 @@ import com.bpm.minotaur.gamedata.player.Player;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.CombatManager.HitResult;
 import com.bpm.minotaur.managers.GameEventManager;
+import com.bpm.minotaur.managers.SoundManager;
 import com.bpm.minotaur.rendering.Animation;
 import com.bpm.minotaur.rendering.AnimationManager;
 import com.bpm.minotaur.rendering.vfx.SpellExplosionRegistry.ExplosionType;
@@ -274,6 +275,9 @@ public class SpellExecutionEngine {
                 SpellFx spellFx = SpellFx.getInstance();
                 gs.getScreenFx().play(spellFx.warpDepartClip(), 0.5f, 0.5f, spellFx.warpSize());
             }
+            if (SoundManager.getInstance() != null) {
+                SoundManager.getInstance().playEvent("spell_warp");
+            }
             eventManager.addEvent(new GameEvent("You dissolve in mist and step across space!", 2.0f));
 
             if (combatManager != null && combatManager.getAnimationManager() != null) {
@@ -457,6 +461,9 @@ public class SpellExecutionEngine {
             combatManager.getSoundManager().playSpellSound(VisualArchetype.SPATIAL_WARP);
         }
         gs.getScreenFx().play(SpellFx.getInstance().warpDepartClip(), 0.5f, 0.5f, SpellFx.getInstance().warpSize());
+        if (SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playEvent("spell_warp");
+        }
         eventManager.addEvent(new GameEvent("A blinding glyph surrounds you! You are pulled back to the Shelter.", 3.0f));
         gs.returnToShelter();
     }
@@ -512,8 +519,12 @@ public class SpellExecutionEngine {
             return;
         }
         SpellFx spellFx = SpellFx.getInstance();
-        for (String clip : spellFx.selfClipsFor(spell.getName(), archetype)) {
+        List<String> clips = spellFx.selfClipsFor(spell.getName(), archetype);
+        for (String clip : clips) {
             gs.getScreenFx().play(clip, 0.5f, 0.45f, spellFx.selfSize());
+        }
+        if (!clips.isEmpty() && SoundManager.getInstance() != null) {
+            SoundManager.getInstance().playEvent("spell_self");
         }
     }
 
