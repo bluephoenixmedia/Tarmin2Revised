@@ -63,8 +63,6 @@ public class SoundBankTest {
         for (com.bpm.minotaur.gamedata.spells.VisualArchetype a : com.bpm.minotaur.gamedata.spells.VisualArchetype.values()) {
             assertTrue("no cast sound for " + a, bank.has("spell_" + a.name().toLowerCase()));
         }
-        assertTrue(bank.has("spell_self"));
-        assertTrue(bank.has("spell_warp"));
     }
 
     @Test

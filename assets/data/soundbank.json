@@ -23,8 +23,6 @@
     "spell_spatial_warp": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_spatial_warp_1.wav", "sounds/sfx/spell_spatial_warp_2.wav"] },
     "spell_arcane_ward": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_arcane_ward_1.wav", "sounds/sfx/spell_arcane_ward_2.wav"] },
     "spell_psychic_shock": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_psychic_shock_1.wav", "sounds/sfx/spell_psychic_shock_2.wav"] },
-    "spell_thunder_concussion": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_thunder_concussion_1.wav", "sounds/sfx/spell_thunder_concussion_2.wav"] },
-    "spell_self": { "volume": 0.7, "pitchJitter": 0.03, "files": ["sounds/sfx/spell_self_1.wav", "sounds/sfx/spell_self_2.wav", "sounds/sfx/spell_self_3.wav"] },
-    "spell_warp": { "volume": 0.8, "pitchJitter": 0.03, "files": ["sounds/sfx/spell_warp_1.wav", "sounds/sfx/spell_warp_2.wav"] }
+    "spell_thunder_concussion": { "volume": 0.8, "pitchJitter": 0.04, "files": ["sounds/sfx/spell_thunder_concussion_1.wav", "sounds/sfx/spell_thunder_concussion_2.wav"] }
   }
 }

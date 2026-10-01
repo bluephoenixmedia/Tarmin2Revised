@@ -192,6 +192,10 @@ public class SoundManager {
      * unavailable, so a caller can fall back to the sound it used before the bank existed.
      */
     public boolean playEvent(String event) {
+        // Retro is synthesized by design; the recordings belong to the modern world.
+        if (debugManager != null && debugManager.getRenderMode() != DebugManager.RenderMode.MODERN) {
+            return false;
+        }
         String path = bank.pick(event, bankRandom);
         Sound sound = path == null ? null : modernSounds.get(path);
         if (sound == null) {
@@ -257,8 +261,9 @@ public class SoundManager {
 
     /** The groan as the body hits the floor. */
     public void playDeathImpact() {
-        playSound("player_body_fall", 0.9f);
-        playEvent("death_impact");
+        if (!playEvent("death_impact")) {
+            playSound("player_body_fall", 0.9f);
+        }
     }
 
     /**
@@ -494,7 +499,7 @@ public class SoundManager {
     }
 
     public void playWeaponImpact(boolean heavy, boolean isMetal) {
-        if (playEvent(isMetal ? "hit_blade" : heavy ? "hit_blunt" : "")) {
+        if (isMetal ? playEvent("hit_blade") : heavy && playEvent("hit_blunt")) {
             return;
         }
         String sound;
@@ -661,17 +666,12 @@ public class SoundManager {
     public void playMonsterReaction(Monster monster, float damageRatio) {
         if (monster.getCurrentHP() <= 0) {
             // Death sound (handled elsewhere usually, but good to have dedicated)
-            if (!playEvent("monster_roar")) {
-                playSound("monster_roar");
-            }
+            playSound("monster_roar");
             return;
         }
 
         if (damageRatio > 0.25f) {
             // Heavy Hit
-            if (playEvent("monster_roar")) {
-                return;
-            }
             if (modernSounds.containsKey("monster_roar_heavy")) {
                 long id = modernSounds.get("monster_roar_heavy").play();
                 modernSounds.get("monster_roar_heavy").setPitch(id, MathUtils.random(0.8f, 0.95f));

@@ -44,8 +44,6 @@ ARCHETYPES = ['FLAME_BOLT', 'FROST_RAY', 'LIGHTNING_ARC', 'FORCE_MISSILE', 'EXPL
               'THUNDER_CONCUSSION']
 for _i, _a in enumerate(ARCHETYPES):
     CURATED['spell_' + _a.lower()] = ('spells', 'Magic_Spell_Attack_Sfx_{n:02d}', range(2 * _i + 1, 2 * _i + 3))
-CURATED['spell_self'] = ('spells/Dreamy Whooshes', 'Motion_Dreamy_Whoosh_{n:02d}', range(1, 4))
-CURATED['spell_warp'] = ('spells', 'Orchestral_Whoosh_{n:02d}', range(1, 3))
 
 PACK_FOLDERS = ['alarms_sirens', 'ambient_maze', 'combat_sounds', 'cooking_ambient', 'event_sounds',
                 'monster_sounds', 'spells']
