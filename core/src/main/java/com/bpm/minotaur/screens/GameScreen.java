@@ -3133,6 +3133,10 @@ public class GameScreen extends BaseScreen {
                 return true;
             case Input.Keys.F2:
                 debugManager.toggleRenderMode();
+                // Shifting into Retro is a dimensional shift; the toggle is a no-op inside the Void.
+                if (debugManager.isTransitioning() && debugManager.isModernToRetroTransition()) {
+                    soundManager.playDimensionalShiftSound();
+                }
                 return true;
             case Input.Keys.F3:
                 SpawnManager.DEBUG_FORCE_MODIFIERS = !SpawnManager.DEBUG_FORCE_MODIFIERS;
