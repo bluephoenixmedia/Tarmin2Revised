@@ -2299,7 +2299,10 @@ public class CombatManager {
                 damageType = projDef.getDefaultDamageType();
             }
 
-            actualDamage = player.takeDamage(dmg, damageType);
+            // A fire bolt or a sorcerous bolt is a spell and is cut by magic resistance; an arrow is not.
+            actualDamage = com.bpm.minotaur.gamedata.MagicResistance.isMagical(damageType)
+                    ? player.takeSpellDamage(dmg, damageType)
+                    : player.takeDamage(dmg, damageType);
 
             if (actualDamage > 0) {
                 if (damageType == DamageType.PHYSICAL) {
@@ -2921,8 +2924,7 @@ public class CombatManager {
             return;
         }
         eventManager.addEvent(new GameEvent(monster.getType() + " casts a dark spell!", 2f));
-        int spellDmg = com.bpm.minotaur.gamedata.MagicResistance.reduce(
-                5 + monster.getIntelligence(), player.getMagicResistance());
+        int spellDmg = player.reduceSpellDamage(5 + monster.getIntelligence());
         player.takeSpiritualDamage(spellDmg, DamageType.SORCERY);
         BalanceLogger.getInstance().logCombatRound("MONSTER", "Spell", -1, spellDmg, player.getWarStrength());
 

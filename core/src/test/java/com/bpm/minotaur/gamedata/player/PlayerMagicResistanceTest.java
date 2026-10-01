@@ -63,6 +63,13 @@ public class PlayerMagicResistanceTest {
     }
 
     @Test
+    public void theReducedFigureIsAvailableForMessagesThatQuoteTheDamage() {
+        player.getEquipment().setWornChest(warded(50));
+        assertEquals(10, player.reduceSpellDamage(20));
+        assertEquals("a bare player is untouched", 20, new Player(0, 0).reduceSpellDamage(20));
+    }
+
+    @Test
     public void spellDamageIsCutByTheResistanceButPlainDamageIsNot() {
         Player bare = new Player(0, 0);
         bare.getStats().setAgility(10);

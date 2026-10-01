@@ -353,7 +353,9 @@ public class WandExecutionEngine {
                     }
                     int dmg = DiceRoller.roll("2d8") + 2;
                     int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
-                    target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    if (!com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
+                        target.getStatusManager().addEffect(StatusEffectType.FREEZING, 5, 1, false);
+                    }
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
@@ -388,7 +390,7 @@ public class WandExecutionEngine {
             case DIGGING:
                 if (target != null) {
                     int dmg = DiceRoller.roll("3d6");
-                    int actual = target.takeSpellDamage(dmg, DamageType.PHYSICAL, false);
+                    int actual = target.takeDamage(dmg, DamageType.PHYSICAL, false);
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.valueOf("E67E22"));
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The concussive beam blasts " + target.getType() + " for " + actual + " damage!", 1.8f));
 

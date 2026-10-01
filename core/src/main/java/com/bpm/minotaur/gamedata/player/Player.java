@@ -171,9 +171,14 @@ public class Player {
         return com.bpm.minotaur.gamedata.MagicResistance.clampForPlayer(total);
     }
 
+    /** A spell's damage after this player's magic resistance, for callers that also quote the figure. */
+    public int reduceSpellDamage(int amount) {
+        return com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, getMagicResistance());
+    }
+
     /** Damage from a spell: cut by magic resistance, then taken like any other hit. */
     public int takeSpellDamage(int amount, DamageType type) {
-        return takeDamage(com.bpm.minotaur.gamedata.MagicResistance.reduce(amount, getMagicResistance()), type);
+        return takeDamage(reduceSpellDamage(amount), type);
     }
 
     /** Weight of one arrow or shot, so a full quiver is felt but not crippling. */

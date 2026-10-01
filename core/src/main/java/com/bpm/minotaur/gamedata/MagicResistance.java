@@ -44,4 +44,31 @@ public final class MagicResistance {
     public static boolean resists(int resistancePercent, Random rng) {
         return resistancePercent > 0 && rng.nextInt(100) < resistancePercent;
     }
+
+    /** {@link #resists(int, Random)} with the shared generator, for sites that have none of their own. */
+    public static boolean resists(int resistancePercent) {
+        return resists(resistancePercent, java.util.concurrent.ThreadLocalRandom.current());
+    }
+
+    /**
+     * Whether this damage type is magical, and so subject to magic resistance. The elements and the
+     * arcane are; weapon blows, spiritual weapons and damage-over-time (poison, bleeding, disease)
+     * are not spells and are left alone.
+     */
+    public static boolean isMagical(DamageType type) {
+        if (type == null) {
+            return false;
+        }
+        switch (type) {
+            case FIRE:
+            case ICE:
+            case DARK:
+            case LIGHT:
+            case SORCERY:
+            case MAGICAL:
+                return true;
+            default:
+                return false;
+        }
+    }
 }

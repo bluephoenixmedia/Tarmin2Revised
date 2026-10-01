@@ -37,6 +37,27 @@ public class MagicResistanceTest {
     }
 
     @Test
+    public void onlyTheElementsAreMagicalAndBladesAndBluntForceAreNot() {
+        for (DamageType t : new DamageType[] { DamageType.FIRE, DamageType.ICE, DamageType.DARK,
+                DamageType.LIGHT, DamageType.SORCERY, DamageType.MAGICAL }) {
+            assertTrue(t + " is magical", MagicResistance.isMagical(t));
+        }
+        for (DamageType t : new DamageType[] { DamageType.PHYSICAL, DamageType.SPIRITUAL, DamageType.POISON,
+                DamageType.BLEED, DamageType.DISEASE }) {
+            assertFalse(t + " is not magical", MagicResistance.isMagical(t));
+        }
+        assertFalse(MagicResistance.isMagical(null));
+    }
+
+    @Test
+    public void noResistanceNeverResistsAndFullResistanceAlwaysDoes() {
+        for (int i = 0; i < 200; i++) {
+            assertFalse(MagicResistance.resists(0));
+            assertTrue(MagicResistance.resists(100));
+        }
+    }
+
+    @Test
     public void aStatusEffectIsResistedAtTheSameRateAsDamageIsCut() {
         Random rng = new Random(11);
         int resisted = 0;

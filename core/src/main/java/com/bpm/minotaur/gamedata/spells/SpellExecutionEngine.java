@@ -530,7 +530,8 @@ public class SpellExecutionEngine {
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
             eventManager.addEvent(new GameEvent(spell.getName() + " hits " + target.getType() + " for " + actualDmg + "!", 1.5f));
 
-            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()) {
+            if (spell.getStatusEffect() != null && !spell.getStatusEffect().isEmpty()
+                    && !com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
                 try {
                     StatusEffectType effect = StatusEffectType.valueOf(spell.getStatusEffect().toUpperCase());
                     target.getStatusManager().addEffect(effect, 5, 1, false);
