@@ -162,6 +162,8 @@ public class GameScreen extends BaseScreen {
     // --- NEW: Visceral Feedback Components ---
     private FirstPersonWeaponOverlay weaponOverlay;
     private com.bpm.minotaur.rendering.weaponview.WeaponViewTunerPanel weaponTunerPanel;
+    private final com.bpm.minotaur.rendering.gate.GateUvTunerPanel gateUvTunerPanel =
+            new com.bpm.minotaur.rendering.gate.GateUvTunerPanel(world3DRenderer.getGateUv(), world3DRenderer::applyGateUv);
     private CraftingManager craftingManager;
 
     public static class VisorDroplet {
@@ -355,6 +357,7 @@ public class GameScreen extends BaseScreen {
             // The F11 weapon tuner passes everything through while closed, and while open
             // has to see the arrows before the game turns them into movement.
             inputMultiplexer.addProcessor(weaponTunerPanel);
+            inputMultiplexer.addProcessor(gateUvTunerPanel);
             inputMultiplexer.addProcessor(hud.stage); // UI First
             inputMultiplexer.addProcessor(this); // Game Second
             Gdx.input.setInputProcessor(inputMultiplexer);
@@ -794,6 +797,7 @@ public class GameScreen extends BaseScreen {
                 game.getBatch().begin();
                 weaponOverlay.render(game.getBatch(), game.getViewport());
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
+                gateUvTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();
             }
 
@@ -3251,6 +3255,11 @@ public class GameScreen extends BaseScreen {
             case Input.Keys.F11:
                 // Plain F11 tunes the weapon view; shift+F11 keeps the weather debug. Not
                 // shift+F10: Tarmin2 opens the paperdoll editor on F10 whatever the modifiers.
+                if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+                    // Ctrl+F11 lines up the Sector Passage Gate texture; the panel closes itself.
+                    gateUvTunerPanel.open();
+                    return true;
+                }
                 if (!Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
                         && !Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
                     // Closing is handled by the panel itself, which sees F11 first while open.

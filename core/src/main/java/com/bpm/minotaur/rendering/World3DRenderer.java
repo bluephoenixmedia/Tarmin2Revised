@@ -146,6 +146,8 @@ public class World3DRenderer implements Disposable {
     private Model gateLeftDoorModel;
     private Model gateRightDoorModel;
     private Texture gateDiffuseTexture;
+    private final com.bpm.minotaur.rendering.gate.GateUv gateUv = com.bpm.minotaur.rendering.gate.GateUvTunerPanel.loadSaved();
+    private com.bpm.minotaur.rendering.gate.GateUvMeshes gateUvMeshes;
     private final Matrix4 gateTransform = new Matrix4();
 
     // Optional 3D skybox integration
@@ -311,6 +313,9 @@ public class World3DRenderer implements Disposable {
             if (Gdx.files.internal("models/gate/gate_diffuse.png").exists()) {
                 this.gateDiffuseTexture = new Texture(Gdx.files.internal("models/gate/gate_diffuse.png"));
             }
+            this.gateUvMeshes = new com.bpm.minotaur.rendering.gate.GateUvMeshes(
+                    gateFrameModel, gateLeftDoorModel, gateRightDoorModel);
+            applyGateUv();
 
         } catch (Exception e) {
             Gdx.app.error(TAG, "Failed to load 3D assets", e);
@@ -320,6 +325,18 @@ public class World3DRenderer implements Disposable {
             this.skybox3DRenderer = new Skybox3DRenderer();
         } catch (Exception e) {
             Gdx.app.error(TAG, "Failed to initialize Skybox3DRenderer: " + e.getMessage());
+        }
+    }
+
+    /** The hand-tunable texture mapping of the Sector Passage Gate; see GateUvTunerPanel. */
+    public com.bpm.minotaur.rendering.gate.GateUv getGateUv() {
+        return gateUv;
+    }
+
+    /** Re-maps the gate models from {@link #getGateUv()}; call after changing it. */
+    public void applyGateUv() {
+        if (gateUvMeshes != null) {
+            gateUvMeshes.apply(gateUv);
         }
     }
 
