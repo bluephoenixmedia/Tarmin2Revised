@@ -153,6 +153,46 @@ public class Player {
         return injuryManager == null || injuryManager.canWieldTwoHanded();
     }
 
+    /** Weight of one arrow or shot, so a full quiver is felt but not crippling. */
+    private static final float AMMO_WEIGHT = 0.05f;
+
+    /**
+     * Everything the player is carrying, in weight units: both hands, the quick slots, the pack,
+     * everything worn, ammunition, and gold.
+     */
+    public float getCarriedWeight() {
+        float total = 0f;
+        total += com.bpm.minotaur.gamedata.item.ItemWeights.of(inventory.getRightHand());
+        total += com.bpm.minotaur.gamedata.item.ItemWeights.of(inventory.getLeftHand());
+        for (Item quick : inventory.getQuickSlots()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(quick);
+        }
+        for (Item packed : inventory.getMainInventory()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(packed);
+        }
+        for (Item worn : equipment.getAllEquipped()) {
+            total += com.bpm.minotaur.gamedata.item.ItemWeights.of(worn);
+        }
+        total += (stats.getArrows() + stats.getShot()) * AMMO_WEIGHT;
+        total += Encumbrance.goldWeight(stats.getTreasureScore());
+        return total;
+    }
+
+    /** The most the player can carry before it costs them; follows Strength. */
+    public float getCarryCapacity() {
+        return Encumbrance.capacity(
+                stats.getEffectiveStat(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.STRENGTH));
+    }
+
+    public Encumbrance.Tier getEncumbrance() {
+        return Encumbrance.tier(getCarriedWeight(), getCarryCapacity());
+    }
+
+    /** How much faster food and water run down under the current load; 1 when travelling light. */
+    public float getMetabolicDrainFactor() {
+        return getEncumbrance().drainFactor;
+    }
+
     public int getEffectiveSpeed() {
         int speed = moveSpeed; // 12
         // AGI modifier shifts base speed
@@ -173,6 +213,8 @@ public class Player {
         if (injuryManager != null) {
             speed = (int) (speed * injuryManager.getEffectiveSpeedModifier());
         }
+        // Carrying more than Strength allows slows the player in three tiers.
+        speed = getEncumbrance().apply(speed);
         return Math.max(1, speed);
     }
 

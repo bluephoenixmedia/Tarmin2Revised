@@ -97,6 +97,8 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
         float temp = player.getStats().getBodyTemperature();
         stat(col3, "Body Temp", String.format("%.0f C", temp), tempColor(temp));
         stat(col3, "Stamina Pool", player.getEffectiveStamina() + " Dice", COL_VAL);
+        stat(col3, "Carry", Math.round(player.getCarriedWeight()) + " / " + Math.round(player.getCarryCapacity()),
+                carryColor());
         stat(col3, "Arrows", String.valueOf(player.getArrows()), COL_VAL);
         stat(col3, "Treasure", String.valueOf(player.getTreasureScore()), COL_GOLD);
         stat(col3, "Cook Skill", String.valueOf(player.getStats().getCookingSkill()), COL_VAL);
@@ -117,6 +119,19 @@ public class AttributesPanel extends Table implements InventoryEventBus.Listener
     }
 
     // ── Colour helpers ────────────────────────────────────────────────
+
+    /** Green while the load is fine, then orange, then red as the tiers bite. */
+    private Color carryColor() {
+        switch (player.getEncumbrance()) {
+            case BURDENED:
+                return Color.ORANGE;
+            case STRESSED:
+            case OVERLOADED:
+                return COL_RED;
+            default:
+                return COL_VAL;
+        }
+    }
 
     private Color hpColor() {
         int cur = player.getCurrentHP();

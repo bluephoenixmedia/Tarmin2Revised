@@ -129,6 +129,26 @@ public class StatusPillBar extends Table {
                     "Take medicinal curative potions or rest at sanctuary.");
         }
 
+        // 4b. Load. Present the moment the player carries more than Strength allows, because the
+        // slowdown is otherwise unexplained.
+        com.bpm.minotaur.gamedata.player.Encumbrance.Tier load = player.getEncumbrance();
+        if (load != com.bpm.minotaur.gamedata.player.Encumbrance.Tier.UNENCUMBERED) {
+            boolean heavy = load != com.bpm.minotaur.gamedata.player.Encumbrance.Tier.BURDENED;
+            String drain = heavy
+                    ? " You also burn through food and water " + Math.round((load.drainFactor - 1f) * 100) + "% faster."
+                    : "";
+            addPill(load.label.toUpperCase(),
+                    load == com.bpm.minotaur.gamedata.player.Encumbrance.Tier.OVERLOADED
+                            ? HudSkin.COL_HP_CRITICAL
+                            : (heavy ? HudSkin.COL_HP_RED : HudSkin.COL_TEMP_ORANGE),
+                    load.label + " by Weight",
+                    "[LOAD]",
+                    "You carry " + Math.round(player.getCarriedWeight()) + " of the "
+                            + Math.round(player.getCarryCapacity()) + " your Strength allows. Move speed is down to "
+                            + Math.round(load.speedFactor * 100) + "%." + drain,
+                    "Drop or stash heavy gear, spend consumables, or raise Strength.");
+        }
+
         // 5. Starvation & Dehydration
         if (player.getStats() != null) {
             PlayerStats stats = player.getStats();
