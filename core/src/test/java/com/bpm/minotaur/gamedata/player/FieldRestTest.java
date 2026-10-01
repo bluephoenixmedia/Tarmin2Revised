@@ -160,4 +160,14 @@ public class FieldRestTest {
         assertSame(lantern, player.getInventory().getLeftHand());
         assertFalse(player.giveStarterLantern(null));
     }
+
+    @Test
+    public void aLanternAlreadyInTheShelterChestIsNotDuplicated() {
+        com.bpm.minotaur.gamedata.item.Item stashed = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
+        com.bpm.minotaur.gamedata.item.Item fresh = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
+                com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
+        assertFalse(player.giveStarterLantern(fresh, java.util.Collections.singletonList(stashed)));
+        assertNull(player.getInventory().getLeftHand());
+    }
 }

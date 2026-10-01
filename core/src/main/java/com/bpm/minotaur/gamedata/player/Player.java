@@ -3518,7 +3518,14 @@ public class Player {
         chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
         chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
-        if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) chance += 0.10f;
+        if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) {
+            chance += 0.10f;
+            // The Shelter Lantern station keeps your flame: a steadier light to strike by.
+            if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
+                    .hasStation(com.bpm.minotaur.gamedata.progression.ShelterAltar.Station.LANTERN)) {
+                chance += LANTERN_STATION_CRIT_BONUS;
+            }
+        }
         return Math.min(0.95f, chance);
     }
 
@@ -3527,12 +3534,36 @@ public class Player {
      * death -- the art shows it there, so the game must put it there. Never displaces something the
      * player already holds; returns whether the lantern was taken up.
      */
+    public static final float LANTERN_STATION_CRIT_BONUS = 0.05f;
+
     public boolean giveStarterLantern(Item lantern) {
-        if (lantern == null || inventory.getLeftHand() != null) {
+        return giveStarterLantern(lantern, java.util.Collections.<Item>emptyList());
+    }
+
+    /**
+     * As {@link #giveStarterLantern(Item)}, but a player who already owns a lantern -- in a hand, the
+     * pack, a quickslot or the shelter chest ({@code stashed}) -- is not handed a second one, so a
+     * lantern stashed before dying cannot be duplicated by dying.
+     */
+    public boolean giveStarterLantern(Item lantern, java.util.List<Item> stashed) {
+        if (lantern == null || inventory.getLeftHand() != null || ownsLantern(stashed)) {
             return false;
         }
         inventory.setLeftHand(lantern);
         return true;
+    }
+
+    private boolean ownsLantern(java.util.List<Item> stashed) {
+        java.util.List<Item> held = new java.util.ArrayList<>(inventory.getMainInventory());
+        held.addAll(java.util.Arrays.asList(inventory.getQuickSlots()));
+        held.add(inventory.getRightHand());
+        held.addAll(stashed);
+        for (Item item : held) {
+            if (item != null && item.getType() == ItemType.BRASS_LANTERN) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Item getEquippedLeft() {

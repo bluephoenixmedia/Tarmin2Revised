@@ -1742,7 +1742,8 @@ public class GameScreen extends BaseScreen {
         Item starterWeapon = game.getItemDataManager().createItem(Item.ItemType.RUSTY_SWORD, 0, 0, ItemColor.GRAY, game.getAssetManager());
         player.getInventory().setRightHand(starterWeapon);
         player.giveStarterLantern(game.getItemDataManager().createItem(
-                Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, game.getAssetManager()));
+                Item.ItemType.BRASS_LANTERN, 0, 0, ItemColor.GOLD, game.getAssetManager()),
+                com.bpm.minotaur.gamedata.item.ShelterChest.getInstance().getItems());
 
         // Reset the combat dice pool so it cleanly contains the starter Rusty Iron Die
         if (player.getStats() != null && player.getStats().getDicePool() != null) {
