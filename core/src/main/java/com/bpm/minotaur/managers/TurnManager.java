@@ -340,8 +340,12 @@ public class TurnManager {
 
         // 1. Hunger & Thirst Decay (HEATSTROKE doubles thirst decay)
         boolean isHeatstroke = stats.getBodyTemperature() > 38.0f;
-        stats.modifySatiety(-SATIETY_DECAY * time);
-        stats.modifyHydration(-HYDRATION_DECAY * (isHeatstroke ? 2.0f : 1.0f) * time);
+        // A heavy load burns food and water faster (the Stressed and Overloaded tiers). The time
+        // passed in already stretches with the slower step, so that is taken back out here and
+        // only the tier's own drain factor remains.
+        float load = player.getMetabolicTimeScale();
+        stats.modifySatiety(-SATIETY_DECAY * load * time);
+        stats.modifyHydration(-HYDRATION_DECAY * load * (isHeatstroke ? 2.0f : 1.0f) * time);
 
         // 2. Temperature Logic
         if (worldManager != null && worldManager.getWeatherManager() != null) {
