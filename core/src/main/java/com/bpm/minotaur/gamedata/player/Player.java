@@ -180,15 +180,24 @@ public class Player {
 
     /** The most the player can carry before it costs them; follows Strength. */
     public float getCarryCapacity() {
-        return Encumbrance.capacity(
-                stats.getEffectiveStat(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.STRENGTH));
+        // Effective Strength, so a Giant Strength potion, a Ring of Strength or belt bonuses count.
+        return Encumbrance.capacity(getEffectiveStrength());
     }
 
     public Encumbrance.Tier getEncumbrance() {
         return Encumbrance.tier(getCarriedWeight(), getCarryCapacity());
     }
 
-    /** How much faster food and water run down under the current load; 1 when travelling light. */
+    /**
+     * How much to scale the game time of an action by before food and water run down: the load's
+     * drain factor, with the slowdown it also causes taken back out. See
+     * {@link Encumbrance.Tier#metabolicTimeScale()}.
+     */
+    public float getMetabolicTimeScale() {
+        return getEncumbrance().metabolicTimeScale();
+    }
+
+    /** How much faster food and water run down per action under the current load; 1 when light. */
     public float getMetabolicDrainFactor() {
         return getEncumbrance().drainFactor;
     }

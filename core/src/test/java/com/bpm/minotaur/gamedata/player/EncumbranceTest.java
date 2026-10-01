@@ -40,6 +40,16 @@ public class EncumbranceTest {
     }
 
     @Test
+    public void slowingTheStepDoesNotMultiplyTheFoodDrainPerAction() {
+        // A slower step takes more game time, and metabolism runs on game time. Without a
+        // correction a Stressed player would burn 1.5 x 2 = 3x per action, not the 1.5x promised.
+        for (Encumbrance.Tier tier : Encumbrance.Tier.values()) {
+            float perAction = (1f / tier.speedFactor) * tier.metabolicTimeScale();
+            assertEquals(tier + " drain per action", tier.drainFactor, perAction, 0.001f);
+        }
+    }
+
+    @Test
     public void anyMoveSpeedStaysAtLeastOne() {
         assertEquals(1, Encumbrance.Tier.OVERLOADED.apply(1));
         assertEquals(9, Encumbrance.Tier.BURDENED.apply(12));

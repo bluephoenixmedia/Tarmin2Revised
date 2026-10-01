@@ -35,6 +35,17 @@ public final class Encumbrance {
             this.drainFactor = drainFactor;
         }
 
+        /**
+         * What to multiply the game time of one action by before running food and water down.
+         *
+         * <p>A slower step takes more game time, and metabolism runs on game time, so the slowdown
+         * alone would already raise the drain per action. Cancelling it here leaves only
+         * {@link #drainFactor} in effect, which is what the tier is documented to do.
+         */
+        public float metabolicTimeScale() {
+            return speedFactor * drainFactor;
+        }
+
         /** A move speed with this tier's slowdown applied; never below 1. */
         public int apply(int speed) {
             return Math.max(1, (int) (speed * speedFactor));

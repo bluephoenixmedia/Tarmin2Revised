@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering;
 
+import com.bpm.minotaur.gamedata.player.Encumbrance;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -131,16 +132,15 @@ public class StatusPillBar extends Table {
 
         // 4b. Load. Present the moment the player carries more than Strength allows, because the
         // slowdown is otherwise unexplained.
-        com.bpm.minotaur.gamedata.player.Encumbrance.Tier load = player.getEncumbrance();
-        if (load != com.bpm.minotaur.gamedata.player.Encumbrance.Tier.UNENCUMBERED) {
-            boolean heavy = load != com.bpm.minotaur.gamedata.player.Encumbrance.Tier.BURDENED;
-            String drain = heavy
+        Encumbrance.Tier load = player.getEncumbrance();
+        if (load != Encumbrance.Tier.UNENCUMBERED) {
+            boolean drainsFood = load.drainFactor > 1f;
+            String drain = drainsFood
                     ? " You also burn through food and water " + Math.round((load.drainFactor - 1f) * 100) + "% faster."
                     : "";
-            addPill(load.label.toUpperCase(),
-                    load == com.bpm.minotaur.gamedata.player.Encumbrance.Tier.OVERLOADED
-                            ? HudSkin.COL_HP_CRITICAL
-                            : (heavy ? HudSkin.COL_HP_RED : HudSkin.COL_TEMP_ORANGE),
+            Color accent = load == Encumbrance.Tier.OVERLOADED ? HudSkin.COL_HP_CRITICAL
+                    : drainsFood ? HudSkin.COL_HP_RED : HudSkin.COL_TEMP_ORANGE;
+            addPill(load.label.toUpperCase(), accent,
                     load.label + " by Weight",
                     "[LOAD]",
                     "You carry " + Math.round(player.getCarriedWeight()) + " of the "

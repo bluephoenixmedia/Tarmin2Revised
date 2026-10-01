@@ -93,6 +93,26 @@ public class PlayerEncumbranceTest {
     }
 
     @Test
+    public void aStrengthBuffRaisesTheLimitToo() {
+        player.getInventory().getMainInventory().add(weightOf(Encumbrance.capacity(10) + 1f));
+        assertEquals(Encumbrance.Tier.BURDENED, player.getEncumbrance());
+
+        player.getStatusManager().addEffect(
+                com.bpm.minotaur.gamedata.effects.StatusEffectType.GIANT_STRENGTH, 50, 21, false);
+
+        assertEquals("a Giant Strength potion lets you carry more",
+                Encumbrance.Tier.UNENCUMBERED, player.getEncumbrance());
+    }
+
+    @Test
+    public void aFreshCharacterStartsWellUnderTheLimit() {
+        Player fresh = new Player(0, 0);
+        assertTrue("starting kit weighs " + fresh.getCarriedWeight() + " of " + fresh.getCarryCapacity(),
+                fresh.getCarriedWeight() < fresh.getCarryCapacity() * 0.5f);
+        assertEquals(Encumbrance.Tier.UNENCUMBERED, fresh.getEncumbrance());
+    }
+
+    @Test
     public void strengthRaisesTheLimit() {
         player.getInventory().getMainInventory().add(weightOf(Encumbrance.capacity(10) + 1f));
         assertEquals(Encumbrance.Tier.BURDENED, player.getEncumbrance());
