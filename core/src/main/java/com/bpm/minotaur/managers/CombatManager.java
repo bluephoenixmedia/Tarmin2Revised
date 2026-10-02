@@ -1179,9 +1179,143 @@ public class CombatManager {
         }
     }
 
+
+    /**
+     * Throws any item from the quick slots straight ahead. Weapons strike for their own damage,
+     * potions shatter and act on what they hit, and anything else simply drops where it lands.
+     */
+    public boolean throwItem(Item item) {
+        if (item == null) return false;
+        switch (com.bpm.minotaur.gamedata.item.ThrowRules.kindOf(item)) {
+            case WEAPON: return throwWeapon(item);
+            case POTION: return throwPotion(item);
+            default:     return throwOther(item);
+        }
+    }
+
+    private int throwRangeOf(Item item) {
+        return com.bpm.minotaur.gamedata.item.ThrowRules.range(item, player.getEffectiveStrengthModifier(),
+                com.bpm.minotaur.gamedata.item.ItemWeights.of(item));
+    }
+
+    /** Sends the flight animation and sound, and finds what the item would strike. */
+    private HitResult flyThrownItem(Item item, int range, String glyph) {
+        HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), range, true, true);
+        Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
+        Vector2 targetPos = hit.collisionPoint != null
+                ? new Vector2(hit.collisionPoint.x + 0.5f, hit.collisionPoint.y + 0.5f)
+                : startPos.cpy().add(player.getDirectionVector().cpy().scl(range));
+        soundManager.playWeaponSwing();
+        if (animationManager != null) {
+            animationManager.addAnimation(new Animation(
+                    Animation.AnimationType.PROJECTILE_PLAYER, startPos, targetPos,
+                    com.badlogic.gdx.graphics.Color.LIGHT_GRAY, 0.4f, new String[] { glyph }));
+        }
+        return hit;
+    }
+
+    /** The tile a thrown item comes to rest on: where it struck, or the end of its flight. */
+    private GridPoint2 restingTile(HitResult hit, int range) {
+        if (hit.collisionPoint != null) {
+            return new GridPoint2(hit.collisionPoint.x, hit.collisionPoint.y);
+        }
+        Vector2 land = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(range));
+        return new GridPoint2((int) land.x, (int) land.y);
+    }
+
+    /** Puts a thrown item down on the tile, or the nearest free neighbour (one item per tile). */
+    private void placeThrownItem(Item item, GridPoint2 tile) {
+        if (maze == null) return;
+        GridPoint2 spot = tile;
+        if (maze.getItems().containsKey(spot)) {
+            spot = null;
+            for (Direction d : Direction.values()) {
+                GridPoint2 n = new GridPoint2(tile.x + (int) d.getVector().x, tile.y + (int) d.getVector().y);
+                if (!maze.isWallBlocking(tile.x, tile.y, d) && !maze.getItems().containsKey(n)) {
+                    spot = n;
+                    break;
+                }
+            }
+        }
+        if (spot == null) {
+            player.dropItem(maze, item);
+            return;
+        }
+        item.setPosition(spot.x + 0.5f, spot.y + 0.5f);
+        maze.addItem(item);
+    }
+
+    private boolean throwOther(Item item) {
+        int range = throwRangeOf(item);
+        HitResult hit = flyThrownItem(item, range, "o");
+        player.getInventory().removeItem(item);
+        GridPoint2 tile = restingTile(hit, range);
+        placeThrownItem(item, tile);
+        String name = com.bpm.minotaur.gamedata.item.ItemName.natural(item.getFriendlyName());
+        if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            eventManager.addEvent(new GameEvent("The " + name + " bounces off " + hit.hitMonster.getType() + ".", 1.5f));
+        } else {
+            eventManager.addEvent(new GameEvent("The " + name + " clatters to the stone.", 1.2f));
+        }
+        return true;
+    }
+
+    private boolean throwPotion(Item potion) {
+        int range = throwRangeOf(potion);
+        HitResult hit = flyThrownItem(potion, range, "!");
+        player.getInventory().removeItem(potion);
+        GridPoint2 tile = restingTile(hit, range);
+        com.bpm.minotaur.gamedata.item.ThrowRules.Splash splash =
+                com.bpm.minotaur.gamedata.item.ThrowRules.splashFor(potion.getTrueEffect());
+        String name = com.bpm.minotaur.gamedata.item.ItemName.natural(potion.getFriendlyName());
+
+        if (animationManager != null) {
+            animationManager.spawnFx(com.bpm.minotaur.rendering.vfx.FxClipIds.HIT_SMOKE,
+                    com.bpm.minotaur.gamedata.gore.HitFx.position(tile.x + 0.5f, tile.y + 0.5f), 1.2f);
+        }
+
+        Monster direct = (hit.type == HitResult.HitType.MONSTER) ? hit.hitMonster : null;
+        if (direct == null || splash == null) {
+            eventManager.addEvent(new GameEvent("The " + name + " shatters"
+                    + (direct != null ? " on " + direct.getType() + "." : "."), 1.5f));
+            return true;
+        }
+
+        splashOnto(direct, splash, name);
+        if (splash.gas) {
+            for (int dx = -com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS;
+                 dx <= com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS; dx++) {
+                for (int dy = -com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS;
+                     dy <= com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS; dy++) {
+                    if (dx == 0 && dy == 0) continue;
+                    Monster other = maze.getMonsters().get(new GridPoint2(tile.x + dx, tile.y + dy));
+                    if (other != null && other != direct && other.getCurrentHP() > 0) {
+                        splashOnto(other, splash, name);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Applies a shattered potion's effect to one monster. */
+    private void splashOnto(Monster target, com.bpm.minotaur.gamedata.item.ThrowRules.Splash splash, String potionName) {
+        if (splash.healFraction > 0f) {
+            int amount = Math.max(1, (int) Math.ceil(target.getMaxHP() * splash.healFraction));
+            target.heal(amount);
+            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + target.getType()
+                    + " and heals it for " + amount + "!", 2f));
+        }
+        if (splash.status != null) {
+            target.getStatusManager().addEffect(splash.status, splash.duration, 1, false);
+            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + target.getType()
+                    + ": " + splash.status.name().toLowerCase().replace('_', ' ') + "!", 2f));
+        }
+    }
+
     public boolean throwWeapon(Item weapon) {
         if (weapon == null) return false;
-        int maxRange = Math.max(3, weapon.getRange());
+        int maxRange = throwRangeOf(weapon);
         HitResult hit = raycastProjectile(player.getPosition(), player.getFacing(), maxRange, true, true);
 
         Vector2 startPos = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(0.6f));
@@ -1199,7 +1333,7 @@ public class CombatManager {
         }
 
         int statBonus = Math.max(player.getEffectiveStrengthModifier(), player.getEffectiveDexterityModifier());
-        int attackRoll = DiceRoller.roll("1d20") + statBonus;
+        int attackRoll = DiceRoller.roll("1d20") + statBonus - com.bpm.minotaur.gamedata.item.ThrowRules.toHitPenalty(weapon);
 
         if (hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
             Monster target = hit.hitMonster;
