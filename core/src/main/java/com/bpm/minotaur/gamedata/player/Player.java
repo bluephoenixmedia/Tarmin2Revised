@@ -3687,8 +3687,12 @@ public class Player {
         return assetManager;
     }
 
+    /** Real hit points when the form was taken; damage that bypasses the form shows as a drop below this. */
+    private int hpAtFormEntry;
+
     public void enterForm(com.bpm.minotaur.gamedata.polymorph.PlayerForm newForm) {
         this.form = newForm;
+        this.hpAtFormEntry = stats.getCurrentHP();
     }
 
     /** Back to the player's own body, at the hit points they left it with. */
@@ -3696,7 +3700,6 @@ public class Player {
         if (form == null) {
             return;
         }
-        String name = form.name();
         form = null;
         if (events != null) {
             events.addEvent(new GameEvent("You return to your own shape" + (why == null ? "." : " (" + why + ")."), 3f));
@@ -3705,6 +3708,12 @@ public class Player {
 
     /** One turn in a form; the form ends when its time runs out. */
     public void tickForm(GameEventManager events) {
+        // Starvation, poison and the like hurt the real body, not the form: when that happens the
+        // change cannot hold, so the player is themselves again rather than dying in a borrowed body.
+        if (form != null && stats.getCurrentHP() < hpAtFormEntry) {
+            leaveForm(events, "the strain is too much");
+            return;
+        }
         if (form != null && form.tick()) {
             leaveForm(events, "the change wears off");
         }

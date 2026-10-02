@@ -1705,6 +1705,7 @@ public class GameScreen extends BaseScreen {
         this.alertMonitor.reset();
         this.damageFlash.reset();
         this.screenFx.clear();
+        player.leaveForm(null, null); // a new expedition starts in the player's own body
         this.lastPlayerHp = -1;
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();

@@ -96,4 +96,20 @@ public class PolymorphInPlayTest {
         assertNotNull(WandEffectType.valueOf("POLYMORPH"));
         assertNotNull(ScrollEffectType.valueOf("POLYMORPH"));
     }
+
+    @Test
+    public void realDamageThatBypassesTheFormEndsTheChange() {
+        player.enterForm(wolf());
+        player.getStats().setWarStrength(player.getStats().getCurrentHP() - 1);
+        player.tickForm(events);
+        assertFalse(player.isPolymorphed());
+    }
+
+    @Test
+    public void leavingAFormTwiceIsHarmless() {
+        player.enterForm(wolf());
+        player.leaveForm(null, null);
+        player.leaveForm(null, null);
+        assertFalse(player.isPolymorphed());
+    }
 }

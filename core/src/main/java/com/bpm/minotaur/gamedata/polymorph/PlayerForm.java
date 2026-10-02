@@ -48,10 +48,9 @@ public final class PlayerForm {
                 hands, t.baseLevel >= BURST_ARMOR_LEVEL, turns);
     }
 
-    /** Hits taken by the form, absorbed by its own hit points. Returns the damage that did NOT fit (always lost). */
-    public int absorb(int damage) {
+    /** Hits taken by the form come off its own hit points; whatever it cannot take is lost, never passed on. */
+    public void absorb(int damage) {
         hp = Math.max(0, hp - Math.max(0, damage));
-        return 0;
     }
 
     /** One turn passes; true when the time has run out. */

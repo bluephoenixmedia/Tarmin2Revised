@@ -1,5 +1,7 @@
 package com.bpm.minotaur.gamedata.polymorph;
 
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.MagicResistance;
@@ -66,7 +68,7 @@ public final class PolymorphEngine {
             say(events, "The " + who + " shrugs off the transformation!");
             return false;
         }
-        Monster.MonsterType next = PolymorphRules.pickMonsterType(baseLevels(data), target.getType(),
+        Monster.MonsterType next = PolymorphRules.pickMonsterType(baseLevels(data, player.getAssetManager()), target.getType(),
                 target.getLevel(), anyLevel, RNG);
         if (next == null) {
             say(events, "The " + who + " twists, then settles back as it was.");
@@ -93,15 +95,40 @@ public final class PolymorphEngine {
         return true;
     }
 
-    private static Map<Monster.MonsterType, Integer> baseLevels(MonsterDataManager data) {
+    /** Things polymorph must never produce: the world's bosses and things that are not real monsters. */
+    private static final java.util.Set<Monster.MonsterType> NEVER_MADE = java.util.EnumSet.of(
+            Monster.MonsterType.BRINGER_OF_DEATH, Monster.MonsterType.MIMIC);
+
+    private static Map<Monster.MonsterType, Integer> baseLevels(MonsterDataManager data, AssetManager assets) {
         Map<Monster.MonsterType, Integer> levels = new EnumMap<>(Monster.MonsterType.class);
         for (Monster.MonsterType type : data.getLoadedTypes()) {
+            if (NEVER_MADE.contains(type) || type.name().startsWith("PLAYER_")) {
+                continue;
+            }
             MonsterTemplate t = data.getTemplate(type);
-            if (t != null) {
+            // A monster whose picture is not loaded would come out invisible, so it is never offered.
+            if (t != null && hasLoadedPicture(t, assets)) {
                 levels.put(type, t.baseLevel);
             }
         }
         return levels;
+    }
+
+    private static boolean hasLoadedPicture(MonsterTemplate t, AssetManager assets) {
+        if (assets == null) {
+            return true; // nothing to check against (headless)
+        }
+        if (t.texturePath != null && !t.texturePath.isEmpty() && assets.isLoaded(t.texturePath, Texture.class)) {
+            return true;
+        }
+        if (t.variants != null) {
+            for (MonsterVariant v : t.variants) {
+                if (v != null && v.texturePath != null && assets.isLoaded(v.texturePath, Texture.class)) {
+                    return true;
+                }
+            }
+        }
+        return t.directionTextures != null;
     }
 
     // ------------------------------------------------------------------ items
@@ -180,7 +207,7 @@ public final class PolymorphEngine {
             say(events, "System shock! The change tears at you for " + dmg + " damage.");
             player.getStats().setWarStrength(Math.max(1, player.getStats().getWarStrength() - dmg));
         }
-        Monster.MonsterType next = PolymorphRules.pickMonsterType(baseLevels(data), null,
+        Monster.MonsterType next = PolymorphRules.pickMonsterType(baseLevels(data, player.getAssetManager()), null,
                 shock ? Math.max(1, level - 2) : level, anyLevel, RNG);
         if (next == null) {
             say(events, "The magic fizzles.");
