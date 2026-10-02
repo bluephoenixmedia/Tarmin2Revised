@@ -143,17 +143,19 @@ public class Hud implements Disposable {
     public CombatMenu combatMenu;
 
     private DiscoveryManager discoveryManager;
-    private Item toastItem = null;
-    private float toastTimer = 0f;
+    private final PickupToastQueue pickupToasts = new PickupToastQueue();
 
     public void setDiscoveryManager(DiscoveryManager discoveryManager) {
         this.discoveryManager = discoveryManager;
     }
 
     public void showPickupToast(Item item) {
-        if (item == null) return;
-        this.toastItem = item;
-        this.toastTimer = 2.5f;
+        pickupToasts.add(item);
+    }
+
+    /** Tab: swap between the items named in the pickup toast. False when there is nothing to swap. */
+    public boolean cycleToast() {
+        return pickupToasts.cycle();
     }
 
     // Portrait
@@ -2347,10 +2349,13 @@ public class Hud implements Disposable {
     }
 
     private void drawPickupToast() {
-        if (toastTimer <= 0f || toastItem == null) return;
-        toastTimer -= Gdx.graphics.getDeltaTime();
+        Item toastItem = pickupToasts.current();
+        if (toastItem == null) return;
+        int toastCount = pickupToasts.size();
+        int toastPosition = pickupToasts.position();
+        pickupToasts.update(Gdx.graphics.getDeltaTime());
 
-        float alpha = Math.min(1.0f, toastTimer * 2f);
+        float alpha = Math.min(1.0f, pickupToasts.remaining() * 2f);
         String name = groundItemDisplayName(toastItem);
         String cat = toastItem.getCategory() != null ? "[" + toastItem.getCategory().name().replace('_', ' ') + "]" : "";
         String detail = "";
@@ -2371,6 +2376,9 @@ public class Hud implements Disposable {
         }
 
         String text = "Acquired: " + name + " " + cat + detail;
+        if (toastCount > 1) {
+            text += "   [Tab] " + toastPosition + "/" + toastCount;
+        }
         GlyphLayout layout = new GlyphLayout(font, text);
         float boxW = layout.width + 50;
         float boxH = 48;
@@ -2468,7 +2476,7 @@ public class Hud implements Disposable {
         float boxX = (viewport.getWorldWidth() - boxW) / 2f;
         boolean hasBridge = com.bpm.minotaur.managers.DoomManager.getInstance().getBridgeIntegrity() > 0;
         float baseY = hasBridge ? 950f : 1000f;
-        float boxY = (toastTimer > 0f) ? (baseY - 60f) : baseY;
+        float boxY = pickupToasts.isActive() ? (baseY - 60f) : baseY;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);

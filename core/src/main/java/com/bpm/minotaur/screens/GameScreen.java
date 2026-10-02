@@ -3186,7 +3186,10 @@ public class GameScreen extends BaseScreen {
 
         {
             case Input.Keys.TAB:
-                hud.toggleControlsLegend();
+                // With several items in the pickup toast, Tab swaps between them; otherwise it opens the legend.
+                if (!hud.cycleToast()) {
+                    hud.toggleControlsLegend();
+                }
                 return true;
             case Input.Keys.F1:
                 debugManager.toggleOverlay();
