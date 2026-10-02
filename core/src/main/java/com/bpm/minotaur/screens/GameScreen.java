@@ -1921,6 +1921,7 @@ public class GameScreen extends BaseScreen {
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
+        hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
         player.setItemPickupListener(item -> hud.showPickupToast(item));
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);

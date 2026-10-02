@@ -22,7 +22,9 @@ public final class ThrowRules {
     }
 
     public static Kind kindOf(Item item) {
-        if (item.isWeapon()) {
+        // A wand or a bow is a weapon in the data but is not hurled; it just drops.
+        boolean notHurled = item.isWand() || (item.isRanged() && !item.isThrown());
+        if (item.isWeapon() && !notHurled) {
             return Kind.WEAPON;
         }
         if (item.isPotion()) {

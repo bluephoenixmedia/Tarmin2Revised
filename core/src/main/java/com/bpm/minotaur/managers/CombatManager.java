@@ -1217,7 +1217,16 @@ public class CombatManager {
     /** The tile a thrown item comes to rest on: where it struck, or the end of its flight. */
     private GridPoint2 restingTile(HitResult hit, int range) {
         if (hit.collisionPoint != null) {
-            return new GridPoint2(hit.collisionPoint.x, hit.collisionPoint.y);
+            GridPoint2 tile = new GridPoint2(hit.collisionPoint.x, hit.collisionPoint.y);
+            // A shut door or gate is where the flight ended, but nothing can lie in it: rest in front of it.
+            Object obj = maze.getGameObjectAt(tile.x, tile.y);
+            boolean shut = (obj instanceof Door && ((Door) obj).getState() != Door.DoorState.OPEN)
+                    || (obj instanceof Gate && ((Gate) obj).getState() != Gate.GateState.OPEN);
+            if (shut) {
+                tile.x -= (int) player.getFacing().getVector().x;
+                tile.y -= (int) player.getFacing().getVector().y;
+            }
+            return tile;
         }
         Vector2 land = player.getPosition().cpy().add(player.getDirectionVector().cpy().scl(range));
         return new GridPoint2((int) land.x, (int) land.y);
@@ -1231,7 +1240,8 @@ public class CombatManager {
             spot = null;
             for (Direction d : Direction.values()) {
                 GridPoint2 n = new GridPoint2(tile.x + (int) d.getVector().x, tile.y + (int) d.getVector().y);
-                if (!maze.isWallBlocking(tile.x, tile.y, d) && !maze.getItems().containsKey(n)) {
+                boolean inside = n.x >= 0 && n.x < maze.getWidth() && n.y >= 0 && n.y < maze.getHeight();
+                if (inside && !maze.isWallBlocking(tile.x, tile.y, d) && !maze.getItems().containsKey(n)) {
                     spot = n;
                     break;
                 }
@@ -1243,6 +1253,13 @@ public class CombatManager {
         }
         item.setPosition(spot.x + 0.5f, spot.y + 0.5f);
         maze.addItem(item);
+        if (item.getType() == Item.ItemType.BRASS_LANTERN) {
+            // Same as setting it down by hand: a lantern on the floor is a mounted light.
+            maze.addLight(new com.bpm.minotaur.lighting.LightSource("shelter_lantern_" + spot.x + "_" + spot.y,
+                    spot.x + 0.5f, spot.y + 0.5f, com.bpm.minotaur.lighting.LightingManager.COLOR_LANTERN, 5.0f,
+                    com.bpm.minotaur.lighting.LightingManager.MOUNTED_LANTERN_INTENSITY,
+                    com.bpm.minotaur.lighting.LightSource.FlickerProfile.LANTERN_BREATH));
+        }
     }
 
     private boolean throwOther(Item item) {
@@ -1281,7 +1298,8 @@ public class CombatManager {
             return true;
         }
 
-        splashOnto(direct, splash, name);
+        boolean known = potion.isIdentified();
+        splashOnto(direct, splash, name, known);
         if (splash.gas) {
             for (int dx = -com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS;
                  dx <= com.bpm.minotaur.gamedata.item.ThrowRules.GAS_RADIUS; dx++) {
@@ -1290,7 +1308,7 @@ public class CombatManager {
                     if (dx == 0 && dy == 0) continue;
                     Monster other = maze.getMonsters().get(new GridPoint2(tile.x + dx, tile.y + dy));
                     if (other != null && other != direct && other.getCurrentHP() > 0) {
-                        splashOnto(other, splash, name);
+                        splashOnto(other, splash, name, known);
                     }
                 }
             }
@@ -1299,17 +1317,25 @@ public class CombatManager {
     }
 
     /** Applies a shattered potion's effect to one monster. */
-    private void splashOnto(Monster target, com.bpm.minotaur.gamedata.item.ThrowRules.Splash splash, String potionName) {
+    private void splashOnto(Monster target, com.bpm.minotaur.gamedata.item.ThrowRules.Splash splash, String potionName,
+                            boolean effectKnown) {
+        String who = com.bpm.minotaur.ui.UiNames.of(target.getType());
+        int healed = 0;
         if (splash.healFraction > 0f) {
-            int amount = Math.max(1, (int) Math.ceil(target.getMaxHP() * splash.healFraction));
-            target.heal(amount);
-            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + target.getType()
-                    + " and heals it for " + amount + "!", 2f));
+            healed = Math.max(1, (int) Math.ceil(target.getMaxHP() * splash.healFraction));
+            target.heal(healed);
         }
         if (splash.status != null) {
             target.getStatusManager().addEffect(splash.status, splash.duration, 1, false);
-            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + target.getType()
-                    + ": " + splash.status.name().toLowerCase().replace('_', ' ') + "!", 2f));
+        }
+        // An unidentified potion must not give away what it is by what its message says.
+        if (!effectKnown) {
+            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + who + ".", 2f));
+        } else if (healed > 0) {
+            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + who + " and heals it for " + healed + "!", 2f));
+        } else {
+            eventManager.addEvent(new GameEvent("The " + potionName + " splashes " + who + ": "
+                    + com.bpm.minotaur.ui.UiNames.of(splash.status).toLowerCase() + "!", 2f));
         }
     }
 

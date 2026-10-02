@@ -136,4 +136,35 @@ public class ThrownItemsTest {
         assertTrue(maze.getItems().containsValue(first));
         assertTrue("the second item is not lost", maze.getItems().containsValue(second));
     }
+
+    @Test
+    public void aThrownLanternLightsTheFloorWhereItLands() {
+        ItemTemplate t = new ItemTemplate();
+        t.isBeltClip = true;
+        Item lantern = Item.fromTemplate(Item.ItemType.BRASS_LANTERN, t);
+        int lightsBefore = maze.getLights().size;
+        combat.throwItem(lantern);
+        assertTrue(maze.getItems().containsValue(lantern));
+        assertEquals(lightsBefore + 1, maze.getLights().size);
+    }
+
+    @Test
+    public void aWandIsNotHurledForDamageItJustLands() {
+        ItemTemplate t = new ItemTemplate();
+        t.isWeapon = true;
+        t.damageDice = "1d6";
+        Item wand = Item.fromTemplate(Item.ItemType.WAND, t);
+        assertEquals(ThrowRules.Kind.OTHER, ThrowRules.kindOf(wand));
+    }
+
+    @Test
+    public void anUnidentifiedPotionStillActsButKeepsItsSecret() {
+        Monster m = monsterAt(7f, 5f);
+        m.takeDamage(10, com.bpm.minotaur.gamedata.DamageType.PHYSICAL, false);
+        int before = m.getCurrentHP();
+        Item p = potion(PotionEffectType.SUPREME_HEALING);
+        assertFalse(p.isIdentified());
+        combat.throwItem(p);
+        assertTrue(m.getCurrentHP() > before);
+    }
 }
