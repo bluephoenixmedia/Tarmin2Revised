@@ -252,6 +252,9 @@ public class Player {
         }
         // Carrying more than Strength allows slows the player in three tiers.
         speed = getEncumbrance().apply(speed);
+        if (form != null) {
+            speed = form.applySpeed(speed);
+        }
         return Math.max(1, speed);
     }
 
@@ -508,6 +511,10 @@ public class Player {
     }
 
     public boolean castPreparedSpell(int slot, Maze maze, GameEventManager eventManager, CombatManager combatManager) {
+        if (!handsFree()) {
+            eventManager.addEvent(new GameEvent("You have no hands to cast with in this form.", 2f));
+            return false;
+        }
         if (slot >= unlockedSpellSlots) {
             eventManager.addEvent(new GameEvent("Spell slot " + (slot + 1) + " is locked! Study a Tome to unlock it.", 1.5f));
             return false;
@@ -1202,6 +1209,10 @@ public class Player {
 
     public boolean useQuickSlot(int slotIndex, GameEventManager eventManager, DiscoveryManager discoveryManager, Maze maze, CombatManager combatManager) {
         if (slotIndex < 0 || slotIndex >= inventory.getQuickSlots().length) return false;
+        if (!handsFree()) {
+            eventManager.addEvent(new GameEvent("You have no hands to use that in this form.", 2f));
+            return false;
+        }
         Item item = inventory.getQuickSlots()[slotIndex];
         if (item == null) {
             eventManager.addEvent(new GameEvent("Quick slot " + (slotIndex + 1) + " is empty.", 1.5f));
@@ -2046,6 +2057,20 @@ public class Player {
                 }
                 eventManager.addEvent(new GameEvent("Your possessions glow with understanding!", 2.0f));
                 break;
+            case POLYMORPH: {
+                // An item lying in front of (or under) you changes; with nothing there, you do.
+                GridPoint2 here = new GridPoint2((int) this.position.x, (int) this.position.y);
+                GridPoint2 ahead = new GridPoint2((int) (this.position.x + facing.getVector().x),
+                        (int) (this.position.y + facing.getVector().y));
+                if (maze.getItems().containsKey(ahead)) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, ahead, this, eventManager);
+                } else if (maze.getItems().containsKey(here)) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, here, this, eventManager);
+                } else {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphSelf(this, eventManager, false);
+                }
+                break;
+            }
             case TELEPORT: {
                 if (gs != null) {
                     if (gs.getSpellCastOverlay() != null) {
@@ -2446,6 +2471,9 @@ public class Player {
     }
 
     public int getArmorClass() { // 5e Base 10 + Dex (capped by Armor tier) + Equipment AC
+        if (form != null) {
+            return form.armorClass();
+        }
         int base = 10;
         int dexMod = getEffectiveDexterityModifier();
         int maxDex = (equipment != null) ? equipment.getMaxDexBonus() : 99;
@@ -2614,6 +2642,15 @@ public class Player {
         if (amount < 1) amount = 1;
 
         int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier()));
+
+        // In another body the form takes the blows; when it gives out you are yourself again, unhurt by it.
+        if (form != null) {
+            form.absorb(finalDamage);
+            if (form.isSpent()) {
+                leaveForm(eventManager, "the form gives out");
+            }
+            return finalDamage;
+        }
 
         // Cheat-Death check: Ring of Evasion (Charged)
         if (finalDamage >= (stats.getCurrentHP() + stats.getTemporaryHP()) && equipment.getRingCharges(com.bpm.minotaur.gamedata.item.RingEffectType.EVASION_CHARGED) > 0) {
@@ -3624,6 +3661,67 @@ public class Player {
             }
         }
         return false;
+    }
+
+
+    // --- Polymorph: the body the player is currently in, if any ---
+    private com.bpm.minotaur.gamedata.polymorph.PlayerForm form;
+
+    public com.bpm.minotaur.gamedata.polymorph.PlayerForm getForm() {
+        return form;
+    }
+
+    public boolean isPolymorphed() {
+        return form != null;
+    }
+
+    public MonsterDataManager getMonsterDataManager() {
+        return monsterDataManager;
+    }
+
+    public ItemDataManager getItemDataManager() {
+        return itemDataManager;
+    }
+
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    /** Real hit points when the form was taken; damage that bypasses the form shows as a drop below this. */
+    private int hpAtFormEntry;
+
+    public void enterForm(com.bpm.minotaur.gamedata.polymorph.PlayerForm newForm) {
+        this.form = newForm;
+        this.hpAtFormEntry = stats.getCurrentHP();
+    }
+
+    /** Back to the player's own body, at the hit points they left it with. */
+    public void leaveForm(GameEventManager events, String why) {
+        if (form == null) {
+            return;
+        }
+        form = null;
+        if (events != null) {
+            events.addEvent(new GameEvent("You return to your own shape" + (why == null ? "." : " (" + why + ")."), 3f));
+        }
+    }
+
+    /** One turn in a form; the form ends when its time runs out. */
+    public void tickForm(GameEventManager events) {
+        // Starvation, poison and the like hurt the real body, not the form: when that happens the
+        // change cannot hold, so the player is themselves again rather than dying in a borrowed body.
+        if (form != null && stats.getCurrentHP() < hpAtFormEntry) {
+            leaveForm(events, "the strain is too much");
+            return;
+        }
+        if (form != null && form.tick()) {
+            leaveForm(events, "the change wears off");
+        }
+    }
+
+    /** A form without hands cannot cast spells or use items. */
+    public boolean handsFree() {
+        return form == null || form.hasHands();
     }
 
     public Item getEquippedLeft() {

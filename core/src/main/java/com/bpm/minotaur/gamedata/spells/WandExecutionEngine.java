@@ -153,6 +153,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 return VisualArchetype.HOLY_RADIANCE;
             case TELEPORTATION:
+            case POLYMORPH:
                 return VisualArchetype.SPATIAL_WARP;
             default:
                 return VisualArchetype.FORCE_MISSILE;
@@ -173,6 +174,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 return ExplosionType.HOLY_CROSS;
             case TELEPORTATION:
+            case POLYMORPH:
                 return ExplosionType.VOID;
             default:
                 return ExplosionType.STANDARD;
@@ -192,6 +194,8 @@ public class WandExecutionEngine {
                 return "DIVINATION";
             case TELEPORTATION:
                 return "CONJURATION";
+            case POLYMORPH:
+                return "TRANSMUTATION";
             default:
                 return "EVOCATION";
         }
@@ -233,6 +237,7 @@ public class WandExecutionEngine {
             case LIGHT:
                 gs.getSpellPostProcessor().triggerVignette(new Color(1f, 0.95f, 0.6f, 1f), 0.9f, 0.7f);
                 break;
+            case POLYMORPH:
             case TELEPORTATION:
                 gs.getSpellPostProcessor().triggerGlitch(0.85f, 0.40f);
                 gs.getSpellPostProcessor().triggerChromaticAberration(0.80f, 0.45f);
@@ -503,6 +508,17 @@ public class WandExecutionEngine {
                     if (eventManager != null) {
                         eventManager.addEvent(new GameEvent("A chaotic spatial tear ripples across the hallway.", 1.2f));
                     }
+                }
+                break;
+
+            case POLYMORPH:
+                if (target != null) {
+                    com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphMonster(target, maze, player, combatManager, eventManager, false);
+                } else if (hit != null && hit.collisionPoint != null
+                        && com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, hit.collisionPoint, player, eventManager)) {
+                    // an item on the floor changed
+                } else if (eventManager != null) {
+                    eventManager.addEvent(new GameEvent("The shimmering bolt finds nothing to change.", 1.5f));
                 }
                 break;
         }

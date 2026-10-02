@@ -796,7 +796,9 @@ public class GameScreen extends BaseScreen {
                 weaponOverlay.renderTrails(shapeRenderer);
 
                 game.getBatch().begin();
-                weaponOverlay.render(game.getBatch(), game.getViewport());
+                if (player.handsFree()) { // a handless form has no hand to hold the weapon in
+                    weaponOverlay.render(game.getBatch(), game.getViewport());
+                }
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
                 gateUvTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();
@@ -1703,6 +1705,7 @@ public class GameScreen extends BaseScreen {
         this.alertMonitor.reset();
         this.damageFlash.reset();
         this.screenFx.clear();
+        player.leaveForm(null, null); // a new expedition starts in the player's own body
         this.lastPlayerHp = -1;
         this.world3DRenderer.setDeathSequence(null);
         com.bpm.minotaur.telemetry.TelemetryManager.getInstance().startNewRun();

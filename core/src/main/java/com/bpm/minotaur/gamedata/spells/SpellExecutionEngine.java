@@ -125,6 +125,9 @@ public class SpellExecutionEngine {
         } else if ("FOG_CLOUD".equalsIgnoreCase(bespoke)) {
             resolveFogCloudBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
+        } else if ("POLYMORPH".equalsIgnoreCase(bespoke)) {
+            resolvePolymorphBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
         } else if ("CHARM".equalsIgnoreCase(bespoke)) {
             resolveCharmBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
@@ -303,6 +306,30 @@ public class SpellExecutionEngine {
         target.setAllyTurns(CharmRules.duration(kind, casterLevel));
         eventManager.addEvent(new GameEvent("The " + who + " falls under your sway!", 2.5f));
         playImpactFx(combatManager, archetype, new Vector3(hit.collisionPoint.x + 0.5f, 0.5f, hit.collisionPoint.y + 0.5f));
+    }
+
+
+    /**
+     * Polymorph and True Polymorph: the monster in front changes into another, or failing that an
+     * item in front does, or failing that the caster does. True Polymorph ignores the level window.
+     */
+    private static void resolvePolymorphBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                                GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        boolean anyLevel = "TRUE_POLYMORPH".equalsIgnoreCase(spell.getId());
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(),
+                        Math.min(12, Math.max(2, spell.getRange())), true, true)
+                : null;
+        if (hit != null && hit.type == HitResult.HitType.MONSTER && hit.hitMonster != null) {
+            com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphMonster(
+                    hit.hitMonster, maze, player, combatManager, eventManager, anyLevel);
+            return;
+        }
+        if (hit != null && hit.collisionPoint != null
+                && com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphItemAt(maze, hit.collisionPoint, player, eventManager)) {
+            return;
+        }
+        com.bpm.minotaur.gamedata.polymorph.PolymorphEngine.polymorphSelf(player, eventManager, anyLevel);
     }
 
     private static void resolveMistyStepBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,

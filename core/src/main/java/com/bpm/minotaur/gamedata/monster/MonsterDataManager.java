@@ -58,6 +58,15 @@ public class MonsterDataManager {
         return template;
     }
 
+    /** Every monster type that has a template loaded. */
+    public java.util.List<Monster.MonsterType> getLoadedTypes() {
+        java.util.List<Monster.MonsterType> types = new java.util.ArrayList<>();
+        for (ObjectMap.Entry<Monster.MonsterType, MonsterTemplate> e : monsterTemplates.entries()) {
+            types.add(e.key);
+        }
+        return types;
+    }
+
     public ObjectMap.Values<MonsterTemplate> getAllTemplates() {
         return monsterTemplates.values();
     }

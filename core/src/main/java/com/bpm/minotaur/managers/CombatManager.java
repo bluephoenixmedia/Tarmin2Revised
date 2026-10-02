@@ -2051,8 +2051,11 @@ public class CombatManager {
         if (isHit || isGlancing) {
             DamageType dmgType = DamageType.PHYSICAL;
             String damageDice = "1d2";
-            boolean isArcaneSpark = isBookWeapon(attackWeapon);
-            if (isArcaneSpark) {
+            boolean isArcaneSpark = isBookWeapon(attackWeapon) && !player.isPolymorphed();
+            if (player.isPolymorphed()) {
+                // Teeth and claws, not the sword in a hand that is no longer there.
+                damageDice = player.getForm().damageDice();
+            } else if (isArcaneSpark) {
                 // Tome Weapon Attack: a Spiritual Arcane Spark replaces the book's own
                 // damage dice entirely -- see arcaneSparkDamage() for the 1d4+INT roll.
                 dmgType = DamageType.SPIRITUAL;
