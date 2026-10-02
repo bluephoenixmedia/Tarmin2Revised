@@ -557,6 +557,7 @@
     },
     "BRASS_LANTERN": {
         "friendlyName": "Brass Lantern",
+        "isBeltClip": true,
         "texturePath": "images/items/brass_lantern.png",
         "isImpassable": false,
         "spriteData": [

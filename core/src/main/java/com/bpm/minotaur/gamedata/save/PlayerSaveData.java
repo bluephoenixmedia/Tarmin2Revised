@@ -69,6 +69,7 @@ public class PlayerSaveData {
     public ItemSaveData wornRing;
     public ItemSaveData wornRing2;
     public ItemSaveData wornShield;
+    public ItemSaveData wornBelt;
 
     // Hands
     public ItemSaveData rightHand;
@@ -230,6 +231,7 @@ public class PlayerSaveData {
             this.wornRing = eq.getWornRing() != null ? new ItemSaveData(eq.getWornRing()) : null;
             this.wornRing2 = eq.getWornRing2() != null ? new ItemSaveData(eq.getWornRing2()) : null;
             this.wornShield = eq.getWornShield() != null ? new ItemSaveData(eq.getWornShield()) : null;
+            this.wornBelt = eq.getWornBelt() != null ? new ItemSaveData(eq.getWornBelt()) : null;
         }
 
         // Inventory
@@ -372,6 +374,7 @@ public class PlayerSaveData {
             eq.setWornRing(wornRing != null ? wornRing.toItem(itemDataManager, assetManager) : null);
             eq.setWornRing2(wornRing2 != null ? wornRing2.toItem(itemDataManager, assetManager) : null);
             eq.setWornShield(wornShield != null ? wornShield.toItem(itemDataManager, assetManager) : null);
+            eq.setWornBelt(wornBelt != null ? wornBelt.toItem(itemDataManager, assetManager) : null);
         }
 
         // Inventory
@@ -380,6 +383,7 @@ public class PlayerSaveData {
             inv.clear();
             inv.setRightHand(rightHand != null ? rightHand.toItem(itemDataManager, assetManager) : null);
             inv.setLeftHand(leftHand != null ? leftHand.toItem(itemDataManager, assetManager) : null);
+            player.migrateLanternToBelt(); // older saves carried the lantern in the left hand
 
             Item[] qs = inv.getQuickSlots();
             if (qs != null) {

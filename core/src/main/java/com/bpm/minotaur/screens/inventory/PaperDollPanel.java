@@ -98,7 +98,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
     private InventorySlot slotChest, slotArms, slotHands;
     private InventorySlot slotLegs, slotFeetL, slotFeetR;
     private InventorySlot slotWeaponMain, slotWeaponOff;
-    private InventorySlot slotRingL, slotRingR;
+    private InventorySlot slotRingL, slotRingR, slotBelt;
 
     private final List<InventorySlot> allEquip = new ArrayList<>();
 
@@ -167,6 +167,8 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         slotWeaponOff = equip("L.Hand", ItemType.SHIELD, 758f, 733f); // right side, mid row
         slotRingL = equip("Ring", ItemType.RING, 759f, 616f); // right side, lower-mid (left ring)
         slotRingR = equip("Ring 2", ItemType.RING, 870f, 615f); // right side, lower-mid (right ring)
+        // Belt clip: the lantern lives here. Sits under the rings, in the right column free lower row.
+        slotBelt = equip("Belt", ItemType.BRASS_LANTERN, 815f, 502f);
 
         // Ornate frame overlay (on top of paper doll widget, behind slots)
         // float frameW = PORTRAIT_W + 18f;
@@ -290,6 +292,7 @@ public class PaperDollPanel extends WidgetGroup implements InventoryEventBus.Lis
         slotWeaponOff.setItem(player.getInventory().getLeftHand());
         slotRingL.setItem(eq.getWornRing());
         slotRingR.setItem(eq.getWornRing2());
+        slotBelt.setItem(eq.getWornBelt());
 
         syncPaperDoll(eq);
     }

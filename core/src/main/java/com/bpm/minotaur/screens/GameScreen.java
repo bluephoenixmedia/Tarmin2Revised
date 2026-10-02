@@ -3161,10 +3161,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (keycode == SettingsManager.getInstance().getKey("TOGGLE_LANTERN")) {
-            boolean hasLantern = player.getInventory() != null &&
-                    ((player.getInventory().getLeftHand() != null && player.getInventory().getLeftHand().getType() == Item.ItemType.BRASS_LANTERN)
-                            || (player.getInventory().getRightHand() != null && player.getInventory().getRightHand().getType() == Item.ItemType.BRASS_LANTERN));
-            if (hasLantern) {
+            if (player.hasLantern()) {
                 boolean lit = worldManager.getLightingManager().toggleLantern();
                 soundManager.playDoorOpenSound();
                 String msg = "Lantern flame " + (lit ? "kindled." : "snuffed out.");

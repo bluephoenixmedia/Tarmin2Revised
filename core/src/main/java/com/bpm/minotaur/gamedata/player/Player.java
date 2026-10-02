@@ -1176,8 +1176,13 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
+        // A belt-clip item (the lantern) goes straight onto an empty belt, where it works and stays out of the way.
+        boolean clipped = item != null && item.isBeltClip() && equipment.getWornBelt() == null;
+        if (clipped) {
+            equipment.setWornBelt(item);
+        }
         // Food is now picked up normally
-        boolean pickedUp = inventory.pickup(item);
+        boolean pickedUp = clipped || inventory.pickup(item);
         if (pickedUp) {
             if (item.getGrantedDie() != null) {
                 stats.getDicePool().add(item.getGrantedDie());
@@ -3519,7 +3524,7 @@ public class Player {
         chance += getLuck() * 0.005f;                                        // effective luck (incl. equipment)
         chance += equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_CHANCE) / 100f;
         if (equipment.hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CRITICAL_EDGE)) chance += 0.10f;
-        if (inventory.getLeftHand() != null && inventory.getLeftHand().getType() == ItemType.BRASS_LANTERN) {
+        if (hasLantern()) {
             chance += 0.10f;
             // The Shelter Lantern station keeps your flame: a steadier light to strike by.
             if (com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance()
@@ -3549,17 +3554,46 @@ public class Player {
      * lantern stashed before dying cannot be duplicated by dying.
      */
     public boolean giveStarterLantern(Item lantern, java.util.List<Item> stashed) {
-        if (lantern == null || inventory.getLeftHand() != null || ownsLantern(stashed)) {
+        if (lantern == null || equipment.getWornBelt() != null || ownsLantern(stashed)) {
             return false;
         }
-        inventory.setLeftHand(lantern);
+        equipment.setWornBelt(lantern);
         return true;
+    }
+
+    /** The lantern the player carries, wherever it is: clipped to the belt first, then either hand. Null if none. */
+    public Item getCarriedLantern() {
+        Item[] places = { equipment.getWornBelt(), inventory.getLeftHand(), inventory.getRightHand() };
+        for (Item item : places) {
+            if (item != null && item.getType() == ItemType.BRASS_LANTERN) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasLantern() {
+        return getCarriedLantern() != null;
+    }
+
+    /**
+     * Saves from before the belt clip had the lantern in the left hand. Clips it, freeing the hand,
+     * when the belt is empty; otherwise leaves things alone.
+     */
+    public void migrateLanternToBelt() {
+        Item inLeft = inventory.getLeftHand();
+        if (equipment.getWornBelt() == null && inLeft != null && inLeft.getType() == ItemType.BRASS_LANTERN) {
+            equipment.setWornBelt(inLeft);
+            inventory.setLeftHand(null);
+        }
     }
 
     private boolean ownsLantern(java.util.List<Item> stashed) {
         java.util.List<Item> held = new java.util.ArrayList<>(inventory.getMainInventory());
         held.addAll(java.util.Arrays.asList(inventory.getQuickSlots()));
         held.add(inventory.getRightHand());
+        held.add(inventory.getLeftHand());
+        held.add(equipment.getWornBelt());
         held.addAll(stashed);
         for (Item item : held) {
             if (item != null && item.getType() == ItemType.BRASS_LANTERN) {

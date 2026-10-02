@@ -19,6 +19,7 @@ public class PlayerEquipment {
     private Item wornBoots = null; // Feet (New)
     private Item wornRing = null; // Ring 1
     private Item wornRing2 = null; // Ring 2
+    private Item wornBelt = null; // Belt clip: the lantern and other things that hang at the hip
 
     private Item wornShield = null; // Kept for legacy compatibility / explicit shield slot logic
 
@@ -34,7 +35,7 @@ public class PlayerEquipment {
         int total = 0;
         Item[] equippedItems = {
                 wornHelmet, wornEyes, wornNeck, wornBack, wornChest,
-                wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornRing2, wornShield
+                wornArms, wornGauntlets, wornLegs, wornBoots, wornRing, wornRing2, wornShield, wornBelt
         };
 
         // Debug Log Builder
@@ -289,6 +290,14 @@ public class PlayerEquipment {
         this.wornRing2 = item;
     }
 
+    public Item getWornBelt() {
+        return wornBelt;
+    }
+
+    public void setWornBelt(Item item) {
+        this.wornBelt = item;
+    }
+
     public Item getWornShield() {
         return wornShield;
     }
@@ -323,6 +332,8 @@ public class PlayerEquipment {
             items.add(wornRing2);
         if (wornShield != null)
             items.add(wornShield);
+        if (wornBelt != null)
+            items.add(wornBelt);
         return items;
     }
 
@@ -391,5 +402,6 @@ public class PlayerEquipment {
         wornRing = null;
         wornRing2 = null;
         wornShield = null;
+        wornBelt = null;
     }
 }
