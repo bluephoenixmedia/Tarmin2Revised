@@ -2433,7 +2433,7 @@ public class GameScreen extends BaseScreen {
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
                     if (m != null && !m.isBridgeBoss()
-                            && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
+                            && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
                             pursuers.add(m);
@@ -3989,7 +3989,7 @@ public class GameScreen extends BaseScreen {
                 List<GridPoint2> toRemove = new ArrayList<>();
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                    if (m != null && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
                         int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
                         if (dist <= 6) {
                             pursuers.add(m);

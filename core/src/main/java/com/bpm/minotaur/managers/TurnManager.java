@@ -192,8 +192,8 @@ public class TurnManager {
     private boolean attackShopkeeperIfAdjacent(Monster monster, Maze maze, GameEventManager eventManager,
             ItemDataManager itemDataManager, AssetManager assetManager) {
         ShopkeeperNpc shopkeeper = maze.getShopkeeper();
-        if (shopkeeper == null || !shopkeeper.isAlive())
-            return false;
+        if (shopkeeper == null || !shopkeeper.isAlive() || monster.isAlly())
+            return false; // the player's allies never turn on the merchant
 
         GridPoint2 monsterPos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
         GridPoint2 shopPos = shopkeeper.getGridPosition();

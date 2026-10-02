@@ -2776,19 +2776,26 @@ public class Player {
         }
 
         // --- WALKING INTO AN ALLY ---
-        // Monsters block movement, so the ally has to step out of the way first: it takes the tile the
-        // player is leaving. A wall between them still stops the move, as it would anywhere else.
+        // An ally on the next tile does not block the move; once every other check has passed it
+        // takes the tile the player is leaving (see below).
         com.bpm.minotaur.gamedata.monster.Monster allyAhead = maze.getMonsters().get(nextTile);
-        if (allyAhead != null && allyAhead.isAlly() && !maze.isWallBlocking(currentX, currentY, direction)) {
-            maze.getMonsters().remove(nextTile);
-            allyAhead.getPosition().set(currentX + 0.5f, currentY + 0.5f);
-            maze.getMonsters().put(new GridPoint2(currentX, currentY), allyAhead);
+        if (allyAhead != null && !allyAhead.isAlly()) {
+            allyAhead = null;
         }
 
         // --- GHOST WALL & MOVEMENT HANDLING ---
         boolean isGhostWall = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, currentX, currentY, direction);
         if (!isGhostWall) {
-            if (!maze.isPassable(nextX, nextY)) {
+            boolean passable;
+            if (allyAhead != null) {
+                // Judge the tile as if the ally were not on it.
+                maze.getMonsters().remove(nextTile);
+                passable = maze.isPassable(nextX, nextY);
+                maze.getMonsters().put(nextTile, allyAhead);
+            } else {
+                passable = maze.isPassable(nextX, nextY);
+            }
+            if (!passable) {
                 // Check specific reasons for blockage
                 if (Gdx.app != null && maze.getWallDataAt(nextX, nextY) == 1) {
                     Gdx.app.log("Player [DEBUG]", "Move blocked by WALL data at (" + nextX + "," + nextY + ")");
@@ -2831,6 +2838,12 @@ public class Player {
                 // Depleted statue: its encounter has already been resolved
                 bumpedDormantStatue = true;
             }
+        }
+
+        if (allyAhead != null && maze.getMonsters().get(nextTile) == allyAhead) {
+            maze.getMonsters().remove(nextTile);
+            allyAhead.getPosition().set(currentX + 0.5f, currentY + 0.5f);
+            maze.getMonsters().put(new GridPoint2(currentX, currentY), allyAhead);
         }
 
         position.set(nextX + 0.5f, nextY + 0.5f);

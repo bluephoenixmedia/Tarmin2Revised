@@ -158,4 +158,24 @@ public class AllyBehaviourTest {
         Monster hostile = put(Monster.MonsterType.SKELETON, 7, 7);
         assertEquals(0, new ChunkData.MonsterData(hostile).allyTurns);
     }
+
+    @Test
+    public void aBlockedSwapLeavesBothWhereTheyWere() {
+        player.getPosition().set(5.5f, 5.5f);
+        Monster ally = put(Monster.MonsterType.ORC, 6, 5);
+        ally.setAllyTurns(CharmRules.PERMANENT);
+        maze.addGameObject(new com.bpm.minotaur.gamedata.Door(), 6, 5);
+        player.moveForward(maze, new GameEventManager(), GameMode.ADVANCED, null);
+        assertEquals(5, (int) player.getPosition().x);
+        assertEquals(6, (int) ally.getPosition().x);
+        assertSame(ally, maze.getMonsters().get(new GridPoint2(6, 5)));
+        assertNull(maze.getMonsters().get(new GridPoint2(5, 5)));
+    }
+
+    @Test
+    public void anAllyNeverStrikesTheMerchant() {
+        Monster ally = put(Monster.MonsterType.ORC, 5, 8);
+        ally.setAllyTurns(CharmRules.PERMANENT);
+        assertTrue(ally.isAlly());
+    }
 }
