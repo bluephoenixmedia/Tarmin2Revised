@@ -18,7 +18,12 @@
 - I added a new sound effect (dimensional shift) that can be used for when the player shifts to Retro mode
 - I added a variety of other new sound effects to assets/sounds, let's review what I added and determine where they should be used.
 - Unlocking the lantern in the shelter needs to have an actual buff effect to the player, let's think about it.
--- Since the visuals for the game indicate it, the player should have a lantern in their left hand upon starting the game and retain for respawns as well.
+- Since the visuals for the game indicate it, the player should have a lantern in their left hand upon starting the game and retain for respawns as well.
 - The Sector Passage Gate model has a a texture and it's not at all aligned correctly. We tried to fix this before but gave up. I want to try again, even if we need to build an internal utlility that allows me to manually adjust the orientation of the texture . UV Mapping coordinates.
+- I need you to generate a markdown file that lists the easily tweakable settings in the game. This will allow me to more efficiently tweak the knobs to balance the game. Determine what knobs make sense as it relates to vaiables that have a starting value that when tweaked can change the various aspects of the gameplay.
 - If more then one item naturally get generated or rendered view the player playing the game, we need a way to swap between the 2 items in the first person dialogue / notificatioj / toast menus, preferably by hitting the tab key
+- Check out list of spells and see if anything would allow the player to charm a monster which would then follow them and fight for them until the spell ends. There should also be a much higher level spell that makes it permanent.
+- We need to introduce the concept of polymorph to the game, mimicking how nethack implements it. There should be a wand, scroll and learnable spell that can polymorph things. The player should be able to polymorph themselves too.
+- We should implement a right click contextual menu that opens on items in the quick slots in the HUD. It should offer to Throw, Use, Drop.  Throw should have the effect of the item on the item it strikes, whether that's NPC, monster or maze object. Thrown weapons do damage that makes sense per the weapon, thrown potions should have the potion effect on the hit object. Let's go through all of the possible effects from various item types and make sure they are handled correctly.
+- The lantern should not appear in the left weapon slot as visible, we should treat the lantern as a new equipment slot on the paper doll interface for Belt clip. It should default to that slot, freeing up the left hand slot and giving us a new variety of equipment to generate and code up (Belt Clip Items)
 

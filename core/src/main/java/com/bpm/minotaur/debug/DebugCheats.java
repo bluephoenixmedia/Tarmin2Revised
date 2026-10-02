@@ -17,9 +17,6 @@ import java.util.function.Function;
  */
 public final class DebugCheats {
 
-    /** Top of the Normal band: fed, but not Satiated. */
-    static final float REFILLED_SATIETY = 80f;
-
     private DebugCheats() {
     }
 
@@ -47,7 +44,7 @@ public final class DebugCheats {
         PlayerStats stats = player.getStats();
         player.heal(stats.getMaxHP());
         player.restoreMP(stats.getMaxMP());
-        stats.setSatiety(REFILLED_SATIETY);
+        stats.setSatiety(PlayerStats.STARTING_SATIETY);
         stats.setHydration(PlayerStats.MAX_HYDRATION);
     }
 
