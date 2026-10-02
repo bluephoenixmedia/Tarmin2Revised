@@ -260,4 +260,13 @@ public class TraitSystemTest {
             }
         }
     }
+
+    @Test
+    public void aSaveRecordsTheBaseMaximumSoATraitIsNotAppliedTwiceOnLoad() {
+        int base = player.getStats().getBaseMaxHP();
+        take("LUCKY_FOOL");
+        com.bpm.minotaur.gamedata.save.PlayerSaveData save = new com.bpm.minotaur.gamedata.save.PlayerSaveData(player);
+        assertEquals(base, save.maxHP);
+        assertTrue(player.getStats().getMaxHP() < base);
+    }
 }

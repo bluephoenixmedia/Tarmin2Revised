@@ -151,7 +151,7 @@ public class PlayerSaveData {
         PlayerStats stats = player.getStats();
         if (stats != null) {
             this.currentHP = stats.getCurrentHP();
-            this.maxHP = stats.getMaxHP();
+            this.maxHP = stats.getBaseMaxHP(); // not the trait-adjusted figure, or it would be applied twice on load
             this.currentMP = stats.getCurrentMP();
             this.maxMP = stats.getMaxMP();
 
