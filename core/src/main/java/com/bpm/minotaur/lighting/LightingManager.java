@@ -162,7 +162,7 @@ public class LightingManager {
             playerLight.setBaseColor(COLOR_TORCH);
             playerLight.setProfile(LightSource.FlickerProfile.TORCH_FLUTTER);
         }
-        float traitLight = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lightAdd");
+        float traitLight = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lightAdd") + com.bpm.minotaur.gamedata.trait.TraitEffects.add(isUnderground ? "lightUnderground" : "lightSurface");
         if (traitLight != 0f && !hasMote) {
             playerLight.setBaseRadius(playerLight.getBaseRadius() + traitLight);
         }

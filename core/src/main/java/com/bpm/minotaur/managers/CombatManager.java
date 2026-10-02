@@ -2142,6 +2142,13 @@ public class CombatManager {
                     }
                 }
 
+                // Born Coward: a monster that is hunting you and right beside you hits you where it hurts.
+                float huntedPenalty = com.bpm.minotaur.gamedata.trait.TraitEffects.add("huntedMeleePenalty");
+                if (huntedPenalty > 0f && monster.getState() == com.bpm.minotaur.gamedata.monster.Monster.MonsterState.HUNTING
+                        && player.getPosition().dst(monster.getPosition()) <= 1.5f) {
+                    totalDamage = Math.max(1, totalDamage - Math.round(huntedPenalty));
+                }
+
                 float meleeMult = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("meleeDamageMult");
                 if (meleeMult != 1f && (attackWeapon == null || !attackWeapon.isRanged())) {
                     totalDamage = Math.max(1, Math.round(totalDamage * meleeMult));
@@ -2172,6 +2179,11 @@ public class CombatManager {
                         || (attackWeapon != null && attackWeapon.getDamageType() != null && attackWeapon.getDamageType().equalsIgnoreCase("PIERCING"));
                 int monsterHpBefore = monster.getCurrentHP();
                 int actualDamage = monster.takeDamage(totalDamage, dmgType, isCrit, isPiercing);
+                // Bloodsoaked Saint: what you cut from them knits you back together.
+                float lifesteal = com.bpm.minotaur.gamedata.trait.TraitEffects.add("lifestealFraction");
+                if (lifesteal > 0f && actualDamage > 0 && (attackWeapon == null || !attackWeapon.isRanged())) {
+                    player.getStats().heal(Math.max(1, Math.round(actualDamage * lifesteal)));
+                }
 
                 // Brutal Cleave: Overkill damage cleaves into adjacent monster
                 if (player.hasSkill(SkillId.BRUTAL_CLEAVE) && monster.getCurrentHP() <= 0 && maze != null) {

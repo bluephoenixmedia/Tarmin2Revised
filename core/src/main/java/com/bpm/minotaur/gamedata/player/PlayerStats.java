@@ -104,7 +104,7 @@ public class PlayerStats {
         if (satiety <= 0f) return SatiationState.STARVING;
         if (satiety <= 25f) return SatiationState.HUNGRY;
         if (satiety <= 80f) return SatiationState.NORMAL;
-        if (satiety <= 110f) return SatiationState.SATIATED;
+        if (satiety <= 110f + com.bpm.minotaur.gamedata.trait.TraitEffects.add("chokeLimitAdd")) return SatiationState.SATIATED;
         return SatiationState.CHOKING;
     }
 
@@ -299,6 +299,8 @@ public class PlayerStats {
     }
 
     public void incrementTreasureScore(int amount) {
+        amount = Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("foundTreasureMult")); // Lucky Pariah finds more
+
         this.treasureScore += amount;
     }
 

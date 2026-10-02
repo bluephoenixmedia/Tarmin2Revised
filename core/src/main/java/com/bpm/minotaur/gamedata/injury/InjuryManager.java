@@ -129,7 +129,7 @@ public class InjuryManager {
         if (!heavy && !isCrit) {
             return null;
         }
-        float chance = isCrit ? CRIT_INJURY_CHANCE : HEAVY_HIT_INJURY_CHANCE;
+        float chance = (isCrit ? CRIT_INJURY_CHANCE : HEAVY_HIT_INJURY_CHANCE) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("injuryChanceMult");
         if (random.nextFloat() >= chance) {
             return null;
         }
@@ -465,8 +465,11 @@ public class InjuryManager {
             }
 
             rec.consumeBleedTick();
-            player.takeTrueDamage(BLEED_DAMAGE_PER_TICK);
-            bleedDamageThisRun += BLEED_DAMAGE_PER_TICK;
+            int bleed = com.bpm.minotaur.gamedata.trait.TraitEffects.scaleOverTime(BLEED_DAMAGE_PER_TICK, random);
+            if (bleed > 0) {
+                player.takeTrueDamage(bleed);
+                bleedDamageThisRun += bleed;
+            }
 
             // Spawn blood trail on floor
             if (maze != null && maze.getGoreManager() != null) {

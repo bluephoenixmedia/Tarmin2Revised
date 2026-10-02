@@ -43,6 +43,16 @@ public final class TraitEffects {
         return Math.round(add("stat." + stat));
     }
 
+    /**
+     * Damage over time (poison, bleeding) after a trait that softens it. A fraction is rolled, so
+     * 1 damage at 0.5 lands about half the time rather than rounding to nothing or to everything.
+     */
+    public static int scaleOverTime(int damage, java.util.Random rng) {
+        float scaled = damage * mult("overTimeMult");
+        int whole = (int) scaled;
+        return whole + (rng.nextFloat() < scaled - whole ? 1 : 0);
+    }
+
     public static boolean blocks(StatusEffectType type) {
         return current != null && current.blocked.contains(type);
     }

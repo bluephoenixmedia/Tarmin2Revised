@@ -3820,8 +3820,12 @@ public class GameScreen extends BaseScreen {
         }
 
         if (itemInFront != null && itemInFront.getType() == Item.ItemType.HOME_SLEEPING_BAG) {
-            player.getStats().setCurrentHP(player.getStats().getMaxHP());
-            player.getStats().setCurrentMP(player.getStats().getMaxMP());
+            // A trait can make the bed less restful (Paranoid Scout: half).
+            float rest = Math.min(1f, com.bpm.minotaur.gamedata.trait.TraitEffects.mult("bedRestMult"));
+            int hp = player.getStats().getCurrentHP();
+            int mp = player.getStats().getCurrentMP();
+            player.getStats().setCurrentHP(hp + Math.round((player.getStats().getMaxHP() - hp) * rest));
+            player.getStats().setCurrentMP(mp + Math.round((player.getStats().getMaxMP() - mp) * rest));
             player.getStatusManager().clearEffects();
             DoomManager.getInstance().resetExpeditionTurns();
             if (worldManager != null && worldManager.getDayNightManager() != null) {

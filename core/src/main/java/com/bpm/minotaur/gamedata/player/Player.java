@@ -642,7 +642,9 @@ public class Player {
         if (spell == null || spell.level <= 1) {
             return 1;
         }
-        return (spell.level - 1) * 2 + 1;
+        int early = Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellLearnEarly"));
+        int effective = Math.max(1, spell.level - early);
+        return effective <= 1 ? 1 : (effective - 1) * 2 + 1;
     }
 
     /**
@@ -3410,6 +3412,10 @@ public class Player {
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.DIMINUTIVE)) {
             chance += 0.15f;
         }
+        // Night Owl: at home in the dark below the surface.
+        if (traitMazeLevel > 1) {
+            chance += com.bpm.minotaur.gamedata.trait.TraitEffects.add("darkDodgeAdd");
+        }
         return Math.max(0f, chance * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("dodgeMult") + com.bpm.minotaur.gamedata.trait.TraitEffects.add("dodgeAdd"));
     }
 
@@ -3792,7 +3798,11 @@ public class Player {
     }
 
     /** Per-turn trait effects. Silent Lunatic: a hostile in view may send the player Berserk. */
+    /** Depth of the maze the player is in, as of the last turn; the surface is 1. */
+    private int traitMazeLevel = 1;
+
     public void tickTrait(Maze maze, GameEventManager events) {
+        traitMazeLevel = maze == null ? 1 : maze.getLevel();
         float chance = com.bpm.minotaur.gamedata.trait.TraitEffects.add("berserkChance");
         if (chance > 0f && maze != null && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BERZERK)
                 && com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)
