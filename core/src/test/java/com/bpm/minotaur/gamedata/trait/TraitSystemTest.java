@@ -269,4 +269,15 @@ public class TraitSystemTest {
         assertEquals(base, save.maxHP);
         assertTrue(player.getStats().getMaxHP() < base);
     }
+
+    @Test
+    public void potionAndMealHealingScaleButNaturalRegenerationDoesNot() {
+        take("COWARDLY_ALCHEMIST");
+        player.getStats().setCurrentHP(1);
+        player.getStats().healWithTrait(4);
+        assertEquals(7, player.getStats().getCurrentHP());
+        player.getStats().setCurrentHP(1);
+        player.getStats().heal(4);
+        assertEquals(5, player.getStats().getCurrentHP());
+    }
 }

@@ -815,7 +815,7 @@ public class CookingScreen extends BaseScreen {
 
         int skill = player.getStats().getCookingSkill();
         int healAmt = 15 + (skill * 4);
-        player.getStats().heal(healAmt);
+        player.getStats().healWithTrait(healAmt);
         player.getStats().modifySatiety(20f);
 
         // Warm body temperature to 37.0°C

@@ -489,6 +489,11 @@ public class PlayerStats {
      * 
      * @param amount The amount to heal.
      */
+    /** Healing from a potion, a meal or a spell, scaled by the player's trait (Cowardly Alchemist). */
+    public void healWithTrait(int amount) {
+        heal(Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("healMult")));
+    }
+
     public void heal(int amount) {
         if (amount <= 0)
             return;

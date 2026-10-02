@@ -2391,8 +2391,7 @@ public class Player {
     }
 
     public void heal(int amount) {
-        amount = Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("healMult"));
-        stats.heal(amount);
+        stats.healWithTrait(amount);
         if (com.badlogic.gdx.Gdx.app != null) {
             com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
         }

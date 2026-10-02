@@ -27,6 +27,9 @@ import com.bpm.minotaur.ui.UiTheme;
  */
 public class TraitChoiceScreen extends BaseScreen {
 
+    /** Width of one trait card on the 1920 wide canvas. */
+    private static final float CARD_W = 520f;
+
     private final GameScreen parent;
     private final Player player;
     private final HudSkin skin;
@@ -42,7 +45,7 @@ public class TraitChoiceScreen extends BaseScreen {
     @Override
     public void show() {
         stage = new Stage(new FitViewport(1920, 1080), game.getBatch());
-        Gdx.input.setInputProcessor(stage);
+        Gdx.input.setInputProcessor(new com.badlogic.gdx.InputMultiplexer(stage, this));
 
         Table backdrop = new Table();
         backdrop.setFillParent(true);
@@ -55,9 +58,9 @@ public class TraitChoiceScreen extends BaseScreen {
 
         Label title = new Label("CHOOSE YOUR PERSONALITY", new Label.LabelStyle(skin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         root.add(title).padBottom(UiTheme.PAD_MD).row();
-        Label sub = new Label(player.getTrait() == null
-                ? "It stays with you until the next time you are asked."
-                : "You are a " + player.getTrait().name + ". Choose a new self, or keep this one.",
+        Label sub = new Label(UiGlyphs.sanitize(player.getTrait() == null
+                ? "It stays with you until the next time you are asked. Press 1, 2 or 3, or click a card."
+                : "You are the " + player.getTrait().name + ". Choose a new self, or keep this one (Enter)."),
                 UiStyles.caption(skin, HudSkin.COL_GOLD_MUTED));
         root.add(sub).padBottom(UiTheme.PAD_XL).row();
 
@@ -66,13 +69,13 @@ public class TraitChoiceScreen extends BaseScreen {
         for (String id : player.getPendingTraitOffer()) {
             TraitDefinition def = catalog.get(id);
             if (def != null) {
-                cards.add(card(def)).width(520).top().pad(UiTheme.PAD_MD);
+                cards.add(card(def)).width(CARD_W).top().pad(UiTheme.PAD_MD);
             }
         }
         root.add(cards).row();
 
         if (player.getTrait() != null) {
-            TextButton keep = new TextButton("KEEP " + player.getTrait().name.toUpperCase(), UiStyles.secondary(skin));
+            TextButton keep = new TextButton(UiGlyphs.sanitize("KEEP " + player.getTrait().name.toUpperCase()), UiStyles.secondary(skin));
             keep.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
@@ -118,6 +121,26 @@ public class TraitChoiceScreen extends BaseScreen {
     }
 
     @Override
+    public boolean keyDown(int keycode) {
+        java.util.List<String> offer = player.getPendingTraitOffer();
+        int n = keycode - com.badlogic.gdx.Input.Keys.NUM_1;
+        if (n >= 0 && n < offer.size()) {
+            finish(offer.get(n));
+            return true;
+        }
+        if (keycode == com.badlogic.gdx.Input.Keys.ENTER && player.getTrait() != null) {
+            finish(null);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void hide() {
+        dispose();
+    }
+
+    @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(10f / 255f, 8f / 255f, 6f / 255f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -132,7 +155,12 @@ public class TraitChoiceScreen extends BaseScreen {
 
     @Override
     public void dispose() {
-        if (stage != null) stage.dispose();
-        if (skin != null) skin.dispose();
+        if (stage != null) {
+            stage.dispose();
+            stage = null;
+        }
+        if (skin != null) {
+            skin.dispose();
+        }
     }
 }
