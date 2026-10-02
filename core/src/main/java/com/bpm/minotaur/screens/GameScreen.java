@@ -801,8 +801,8 @@ public class GameScreen extends BaseScreen {
             game.getBatch().begin();
             alertOverlay.render(game.getBatch(), game.getViewport());
             screenFx.render(game.getBatch(), game.getViewport());
-            renderDebugLegend();
             game.getBatch().end();
+            renderDebugLegend(); // runs its own shape and batch passes, so only between batches
 
             if (combatManager.getAttackIndicatorMonster() != null
                     && combatManager.getAttackIndicatorVariant() == CombatManager.AttackIndicatorVariant.SCREEN_SLASH) {
