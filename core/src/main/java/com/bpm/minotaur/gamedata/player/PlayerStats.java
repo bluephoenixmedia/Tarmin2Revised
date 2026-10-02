@@ -223,7 +223,7 @@ public class PlayerStats {
 
         // Partial heal (25% of new max) — rewarding but not HP-resetting.
         // Full heals trivialized early floors by enabling HP-farming on weak mobs.
-        this.currentHP = Math.min(this.maxHP, this.currentHP + this.maxHP / 4);
+        this.currentHP = Math.min(getMaxHP(), this.currentHP + getMaxHP() / 4);
         this.currentMP = Math.min(this.maxMP, this.currentMP + this.maxMP / 4);
 
         // Progression Reboot: award 2 Attribute Points and 1 Skill Point per level
@@ -448,7 +448,13 @@ public class PlayerStats {
         this.treasureScore = treasureScore;
     }
 
+    /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...). */
     public int getMaxHP() {
+        return Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")));
+    }
+
+    /** The stored maximum, before any trait. This is what a save records and what level-ups build on. */
+    public int getBaseMaxHP() {
         return maxHP;
     }
 
@@ -483,12 +489,17 @@ public class PlayerStats {
      * 
      * @param amount The amount to heal.
      */
+    /** Healing from a potion, a meal or a spell, scaled by the player's trait (Cowardly Alchemist). */
+    public void healWithTrait(int amount) {
+        heal(Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("healMult")));
+    }
+
     public void heal(int amount) {
         if (amount <= 0)
             return;
         this.currentHP += amount;
-        if (this.currentHP > this.maxHP) {
-            this.currentHP = this.maxHP;
+        if (this.currentHP > getMaxHP()) {
+            this.currentHP = getMaxHP();
         }
     }
 

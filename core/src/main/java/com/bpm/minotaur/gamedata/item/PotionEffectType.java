@@ -103,25 +103,25 @@ public enum PotionEffectType {
             case HEALING: {
                 int dice = rollDice(2, 4) + 2;
                 int floor = (int) (stats.getMaxHP() * 0.20f);
-                stats.heal(Math.max(dice, Math.max(floor, 10)));
+                stats.healWithTrait(Math.max(dice, Math.max(floor, 10)));
                 break;
             }
             case GREATER_HEALING: {
                 int dice = rollDice(4, 4) + 4;
                 int floor = (int) (stats.getMaxHP() * 0.40f);
-                stats.heal(Math.max(dice, Math.max(floor, 20)));
+                stats.healWithTrait(Math.max(dice, Math.max(floor, 20)));
                 break;
             }
             case SUPERIOR_HEALING: {
                 int dice = rollDice(8, 4) + 8;
                 int floor = (int) (stats.getMaxHP() * 0.60f);
-                stats.heal(Math.max(dice, Math.max(floor, 35)));
+                stats.healWithTrait(Math.max(dice, Math.max(floor, 35)));
                 break;
             }
             case SUPREME_HEALING: {
                 int dice = rollDice(10, 4) + 20;
                 int floor = (int) (stats.getMaxHP() * 0.85f);
-                stats.heal(Math.max(dice, Math.max(floor, 60)));
+                stats.healWithTrait(Math.max(dice, Math.max(floor, 60)));
                 break;
             }
             case POISON: {
@@ -213,7 +213,7 @@ public enum PotionEffectType {
                 statusManager.removeEffect(StatusEffectType.SICK);
                 statusManager.removeEffect(StatusEffectType.EXHAUSTED);
                 statusManager.removeEffect(StatusEffectType.WEAKENED);
-                stats.heal((int) (stats.getMaxHP() * 0.5f));
+                stats.healWithTrait((int) (stats.getMaxHP() * 0.5f));
                 break;
             case CLARITY:
                 statusManager.removeEffect(StatusEffectType.CONFUSED);
@@ -238,7 +238,7 @@ public enum PotionEffectType {
                 statusManager.removeEffect(StatusEffectType.BLIND);
                 statusManager.removeEffect(StatusEffectType.PARALYZED);
                 statusManager.removeEffect(StatusEffectType.CONFUSED);
-                stats.heal(Math.max((int) (stats.getMaxHP() * 0.25f), 20));
+                stats.healWithTrait(Math.max((int) (stats.getMaxHP() * 0.25f), 20));
                 break;
         }
     }

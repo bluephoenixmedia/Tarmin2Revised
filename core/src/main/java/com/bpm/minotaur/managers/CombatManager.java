@@ -2005,6 +2005,7 @@ public class CombatManager {
         if (monster == null)
             return;
 
+
         // Determine attacking weapon: if off-hand combo strike, use left hand weapon
         Item attackWeapon = pendingWeapon;
         if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
@@ -2028,6 +2029,16 @@ public class CombatManager {
         boolean isCrit = (d20Roll == 20) || (random.nextFloat() < player.getCritChance());
         boolean isHit = isHit(attackRoll, targetAC, isCrit);
         boolean isGlancing = isGlancingBlow(attackRoll, targetAC, isCrit);
+
+        // Angry Genius: now and then the swing just goes wrong. It is an ordinary miss, so the turn
+        // passes and the monster answers like it would any other.
+        float failChance = com.bpm.minotaur.gamedata.trait.TraitEffects.add("attackFailChance");
+        if (failChance > 0f && random.nextFloat() < failChance) {
+            isHit = false;
+            isGlancing = false;
+            isCrit = false;
+            eventManager.addEvent(new GameEvent("Your anger gets the better of you and the attack goes wide!", 1.5f));
+        }
 
         // --- CONFUSION LOGIC (Instant) ---
         if (player.getStatusManager().hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.CONFUSION)) {
@@ -2129,6 +2140,11 @@ public class CombatManager {
                         totalDamage = (int) (totalDamage * 1.25f);
                         eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
                     }
+                }
+
+                float meleeMult = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("meleeDamageMult");
+                if (meleeMult != 1f && (attackWeapon == null || !attackWeapon.isRanged())) {
+                    totalDamage = Math.max(1, Math.round(totalDamage * meleeMult));
                 }
 
                 // Glancing Blow: 35% base damage

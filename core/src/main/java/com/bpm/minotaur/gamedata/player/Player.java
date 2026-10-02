@@ -168,7 +168,7 @@ public class Player {
                 }
             }
         }
-        return com.bpm.minotaur.gamedata.MagicResistance.clampForPlayer(total);
+        return com.bpm.minotaur.gamedata.MagicResistance.clampForPlayer(total + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("mrAdd")));
     }
 
     /** A spell's damage after this player's magic resistance, for callers that also quote the figure. */
@@ -209,7 +209,7 @@ public class Player {
     /** The most the player can carry before it costs them; follows Strength. */
     public float getCarryCapacity() {
         // Effective Strength, so a Giant Strength potion, a Ring of Strength or belt bonuses count.
-        return Encumbrance.capacity(getEffectiveStrength());
+        return Encumbrance.capacity(getEffectiveStrength()) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("carryMult");
     }
 
     public Encumbrance.Tier getEncumbrance() {
@@ -255,12 +255,13 @@ public class Player {
         if (form != null) {
             speed = form.applySpeed(speed);
         }
+        speed = Math.round(speed * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("speedMult"));
         return Math.max(1, speed);
     }
 
     /** Effective luck: base stat + equipment BONUS_LUCK, clamped to ±13. */
     public int getLuck() {
-        int effective = stats.getLuck() + equipment.getEquippedModifierSum(ModifierType.BONUS_LUCK);
+        int effective = stats.getLuck() + equipment.getEquippedModifierSum(ModifierType.BONUS_LUCK) + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("luckAdd"));
         return Math.max(-13, Math.min(13, effective));
     }
 
@@ -1048,6 +1049,7 @@ public class Player {
     }
 
     private void initStartingSpells() {
+        com.bpm.minotaur.gamedata.trait.TraitEffects.clear(); // a new player starts with no trait
         permanentSpellIds.clear();
         runSpellIds.clear();
         knownSpellIds.clear();
@@ -2389,7 +2391,7 @@ public class Player {
     }
 
     public void heal(int amount) {
-        stats.heal(amount);
+        stats.healWithTrait(amount);
         if (com.badlogic.gdx.Gdx.app != null) {
             com.badlogic.gdx.Gdx.app.log("Player", "Healed for " + amount + ". New HP: " + stats.getCurrentHP());
         }
@@ -2484,6 +2486,7 @@ public class Player {
         if (equipment != null) {
             ac += equipment.getACBonus();
         }
+        ac += Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("acAdd"));
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.HARDENED)) {
             ac += 4;
         }
@@ -2641,7 +2644,7 @@ public class Player {
         // Chip damage: always take at least 1 on a connected, non-dodged hit.
         if (amount < 1) amount = 1;
 
-        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier()));
+        int finalDamage = Math.max(1, (int) (amount * stats.getVulnerabilityMultiplier() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("damageTakenMult")));
 
         // In another body the form takes the blows; when it gives out you are yourself again, unhurt by it.
         if (form != null) {
@@ -3336,7 +3339,7 @@ public class Player {
         if (amount <= 0)
             return;
 
-        boolean leveled = stats.addExperience(amount);
+        boolean leveled = stats.addExperience(Math.max(1, Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("xpMult"))));
 
         if (leveled) {
             pendingLevelUpModal = true;
@@ -3407,7 +3410,7 @@ public class Player {
         if (statusManager != null && statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.DIMINUTIVE)) {
             chance += 0.15f;
         }
-        return chance;
+        return Math.max(0f, chance * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("dodgeMult") + com.bpm.minotaur.gamedata.trait.TraitEffects.add("dodgeAdd"));
     }
 
     /** Flat physical damage absorbed on a connected hit (BONUS_ABSORB from equipment). */
@@ -3454,41 +3457,41 @@ public class Player {
             int giantStr = (eff != null && eff.getPotency() > 0) ? eff.getPotency() : 21;
             return Math.max(baseStr, giantStr);
         }
-        return baseStr;
+        return baseStr + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("STR");
     }
 
     /** Dexterity including equipment BONUS_DEXTERITY and stacked Rings of Dexterity. */
     public int getEffectiveDexterity() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.DEXTERITY) * 5;
-        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus;
+        return stats.getDexterity() + equipment.getEquippedModifierSum(ModifierType.BONUS_DEXTERITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("DEX");
     }
 
     /** Constitution including equipment BONUS_CONSTITUTION and stacked Rings of Constitution. */
     public int getEffectiveConstitution() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.CONSTITUTION) * 5;
-        return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus;
+        return stats.getConstitution() + equipment.getEquippedModifierSum(ModifierType.BONUS_CONSTITUTION) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("CON");
     }
 
     /** Intelligence including equipment BONUS_INTELLIGENCE and stacked Rings of Intelligence. */
     public int getEffectiveIntelligence() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INTELLIGENCE) * 5;
-        return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus;
+        return stats.getIntelligence() + equipment.getEquippedModifierSum(ModifierType.BONUS_INTELLIGENCE) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("INT");
     }
 
     /** Wisdom including equipment BONUS_WISDOM and stacked Rings of Wisdom. */
     public int getEffectiveWisdom() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.WISDOM) * 5;
-        return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus;
+        return stats.getWisdom() + equipment.getEquippedModifierSum(ModifierType.BONUS_WISDOM) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("WIS");
     }
 
     /** Agility including equipment BONUS_AGILITY and stacked Rings of Agility. */
     public int getEffectiveAgility() {
         int bonus = equipment.countRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.AGILITY) * 5;
-        return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus;
+        return stats.getAgility() + equipment.getEquippedModifierSum(ModifierType.BONUS_AGILITY) + bonus + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("AGI");
     }
 
     public int getEffectiveCharisma() {
-        return stats.getCharisma() + equipment.getEquippedModifierSum(ModifierType.BONUS_CHARISMA);
+        return stats.getCharisma() + equipment.getEquippedModifierSum(ModifierType.BONUS_CHARISMA) + com.bpm.minotaur.gamedata.trait.TraitEffects.stat("CHA");
     }
 
     /**
@@ -3592,7 +3595,7 @@ public class Player {
                 chance += LANTERN_STATION_CRIT_BONUS;
             }
         }
-        return Math.min(0.95f, chance);
+        return Math.max(0f, Math.min(0.95f, chance + com.bpm.minotaur.gamedata.trait.TraitEffects.add("critAdd")));
     }
 
     /**
@@ -3724,6 +3727,83 @@ public class Player {
         return form == null || form.hasHands();
     }
 
+
+    // --- Personality trait: chosen on a new game and every fifth respawn ---
+    private String traitId;
+    private java.util.List<String> pendingTraitOffer = new java.util.ArrayList<>();
+    private int respawnsSinceChoice;
+    private final java.util.Random traitRng = new java.util.Random();
+
+    public String getTraitId() {
+        return traitId;
+    }
+
+    public com.bpm.minotaur.gamedata.trait.TraitDefinition getTrait() {
+        return com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().get(traitId);
+    }
+
+    public java.util.List<String> getPendingTraitOffer() {
+        return pendingTraitOffer;
+    }
+
+    public int getRespawnsSinceChoice() {
+        return respawnsSinceChoice;
+    }
+
+    /** Puts a saved trait state back; the active trait takes effect at once. */
+    public void restoreTrait(String id, java.util.List<String> pending, int respawns) {
+        this.pendingTraitOffer = pending == null ? new java.util.ArrayList<String>() : new java.util.ArrayList<>(pending);
+        this.respawnsSinceChoice = respawns;
+        applyTrait(id);
+    }
+
+    private void applyTrait(String id) {
+        this.traitId = id;
+        com.bpm.minotaur.gamedata.trait.TraitEffects.set(com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().get(id));
+        // A lower maximum must not leave the player above it.
+        if (stats.getCurrentHP() > stats.getMaxHP()) {
+            stats.setCurrentHP(stats.getMaxHP());
+        }
+    }
+
+    /** True when the player holds no trait and has not been offered any: a new game, or an older save. */
+    public boolean needsTraitOffer() {
+        return traitId == null && pendingTraitOffer.isEmpty();
+    }
+
+    /** Draws three traits to choose from; they wait here (and in the save) until one is picked. */
+    public void offerTraits() {
+        this.pendingTraitOffer = com.bpm.minotaur.gamedata.trait.TraitCatalog.getInstance().pickOffer(traitId, traitRng);
+    }
+
+    /** Takes the chosen trait, or keeps the current one when {@code id} is null, and closes the offer. */
+    public void chooseTrait(String id) {
+        if (id != null) {
+            applyTrait(id);
+        }
+        pendingTraitOffer = new java.util.ArrayList<>();
+        respawnsSinceChoice = 0;
+    }
+
+    /** Counts a respawn; true when it is time to offer a new choice. */
+    public boolean noteRespawn() {
+        respawnsSinceChoice++;
+        return com.bpm.minotaur.gamedata.trait.TraitCatalog.choiceDue(respawnsSinceChoice);
+    }
+
+    /** Per-turn trait effects. Silent Lunatic: a hostile in view may send the player Berserk. */
+    public void tickTrait(Maze maze, GameEventManager events) {
+        float chance = com.bpm.minotaur.gamedata.trait.TraitEffects.add("berserkChance");
+        if (chance > 0f && maze != null && !statusManager.hasEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BERZERK)
+                && com.bpm.minotaur.gamedata.monster.HostileSight.anyInView(maze, position)
+                && traitRng.nextFloat() < chance) {
+            statusManager.addEffect(com.bpm.minotaur.gamedata.effects.StatusEffectType.BERZERK, 4, 1, false);
+            if (events != null) {
+                events.addEvent(new GameEvent("Something snaps. You fly into a rage!", 2.5f));
+            }
+        }
+    }
+
     public Item getEquippedLeft() {
         return inventory.getLeftHand();
     }
@@ -3732,7 +3812,7 @@ public class Player {
      * Crit damage multiplier. Base 2.0×, each BONUS_CRIT_MULTIPLIER point adds 0.1×.
      */
     public float getCritMultiplier() {
-        return 2.0f + equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_MULTIPLIER) * 0.1f;
+        return 2.0f + equipment.getEquippedModifierSum(ModifierType.BONUS_CRIT_MULTIPLIER) * 0.1f + com.bpm.minotaur.gamedata.trait.TraitEffects.add("critMultAdd");
     }
 
     /**

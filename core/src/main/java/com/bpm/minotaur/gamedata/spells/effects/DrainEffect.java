@@ -50,7 +50,7 @@ public class DrainEffect implements SpellEffect {
         // --- Damage and heal ---
         int drainDamage = 3 + (player.getLevel() * 2);
         int actualDamage = targetMonster.takeSpellDamage(drainDamage);
-        player.getStats().heal(actualDamage);
+        player.getStats().healWithTrait(actualDamage);
 
         // --- Spawn blood-stream animation (monster -> player) ---
         if (animationManager != null) {

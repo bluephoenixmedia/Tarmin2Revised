@@ -344,8 +344,8 @@ public class TurnManager {
         // passed in already stretches with the slower step, so that is taken back out here and
         // only the tier's own drain factor remains.
         float load = player.getMetabolicTimeScale();
-        stats.modifySatiety(-SATIETY_DECAY * load * time);
-        stats.modifyHydration(-HYDRATION_DECAY * load * (isHeatstroke ? 2.0f : 1.0f) * time);
+        stats.modifySatiety(-SATIETY_DECAY * load * time * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("hungerMult"));
+        stats.modifyHydration(-HYDRATION_DECAY * load * (isHeatstroke ? 2.0f : 1.0f) * time * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("thirstMult"));
 
         // 2. Temperature Logic
         if (worldManager != null && worldManager.getWeatherManager() != null) {
@@ -426,10 +426,11 @@ public class TurnManager {
         }
 
         player.tickForm(eventManager);
+        player.tickTrait(maze, eventManager);
 
         // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
         PlayerStats.SatiationState satState = stats.getSatiationState();
-        int regenInterval = stats.getRegenIntervalTurns();
+        int regenInterval = Math.max(1, Math.round(stats.getRegenIntervalTurns() * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("regenMult")));
         if (satState != PlayerStats.SatiationState.STARVING && (turnCounter % regenInterval == 0)) {
             if (player.getCurrentHP() < stats.getMaxHP()) {
                 stats.heal(1);
