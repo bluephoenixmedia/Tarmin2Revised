@@ -4290,7 +4290,7 @@
     "description": "This spell transforms a creature that you can see within range into a new form. An unwilling creature must make a wisdom saving throw to avoid the effect. A shapechanger automatically succeeds on this saving throw. The transformation lasts for the duration, or until the target drops to 0 hit points...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "TRANSMUTATION",
-    "bespokeEffect": null
+    "bespokeEffect": "POLYMORPH"
   },
   "POWER_WORD_KILL": {
     "id": "POWER_WORD_KILL",
@@ -5727,7 +5727,7 @@
     "description": "Choose one creature or nonmagical object that you can see within range. You transform the creature into a different creature, the creature into an object, or the object into a creature (the object must be neither worn nor carried by another creature).  The transformation lasts for the duration, or u...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "TRANSMUTATION",
-    "bespokeEffect": null
+    "bespokeEffect": "POLYMORPH"
   },
   "TRUE_RESURRECTION": {
     "id": "TRUE_RESURRECTION",

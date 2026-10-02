@@ -796,7 +796,9 @@ public class GameScreen extends BaseScreen {
                 weaponOverlay.renderTrails(shapeRenderer);
 
                 game.getBatch().begin();
-                weaponOverlay.render(game.getBatch(), game.getViewport());
+                if (player.handsFree()) { // a handless form has no hand to hold the weapon in
+                    weaponOverlay.render(game.getBatch(), game.getViewport());
+                }
                 weaponTunerPanel.render(game.getBatch(), font, game.getViewport());
                 gateUvTunerPanel.render(game.getBatch(), font, game.getViewport());
                 game.getBatch().end();

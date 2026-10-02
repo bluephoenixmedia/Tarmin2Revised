@@ -425,6 +425,8 @@ public class TurnManager {
             applyExposureTiers(player, stats, eventManager, newTemp);
         }
 
+        player.tickForm(eventManager);
+
         // 3. Natural HP & MP Regeneration (NetHack 3-pillar model)
         PlayerStats.SatiationState satState = stats.getSatiationState();
         int regenInterval = stats.getRegenIntervalTurns();
