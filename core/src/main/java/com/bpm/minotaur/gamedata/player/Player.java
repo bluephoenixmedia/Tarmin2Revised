@@ -2775,6 +2775,16 @@ public class Player {
             }
         }
 
+        // --- WALKING INTO AN ALLY ---
+        // Monsters block movement, so the ally has to step out of the way first: it takes the tile the
+        // player is leaving. A wall between them still stops the move, as it would anywhere else.
+        com.bpm.minotaur.gamedata.monster.Monster allyAhead = maze.getMonsters().get(nextTile);
+        if (allyAhead != null && allyAhead.isAlly() && !maze.isWallBlocking(currentX, currentY, direction)) {
+            maze.getMonsters().remove(nextTile);
+            allyAhead.getPosition().set(currentX + 0.5f, currentY + 0.5f);
+            maze.getMonsters().put(new GridPoint2(currentX, currentY), allyAhead);
+        }
+
         // --- GHOST WALL & MOVEMENT HANDLING ---
         boolean isGhostWall = com.bpm.minotaur.managers.DimensionalManager.getInstance().isGhostWall(0, 0, currentX, currentY, direction);
         if (!isGhostWall) {

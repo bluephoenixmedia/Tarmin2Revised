@@ -955,6 +955,46 @@ public class Monster implements Renderable {
         return tameness;
     }
 
+    // --- Charm / dominate: a monster that fights for the player ---
+    /** 0 = not an ally, {@link CharmRules#PERMANENT} = for good, otherwise turns of charm left. */
+    private int allyTurns = 0;
+
+    public boolean isAlly() {
+        return allyTurns != 0;
+    }
+
+    public int getAllyTurns() {
+        return allyTurns;
+    }
+
+    /** Makes this monster the player's ally for the given turns (or permanently); 0 ends it. */
+    public void setAllyTurns(int turns) {
+        this.allyTurns = turns;
+        // An ally counts as untamed-for-calm-actions purposes the same way a tame monster does.
+        this.tameness = turns != 0 ? Math.max(1, tameness) : 0;
+        this.targetMonster = null;
+    }
+
+    /** One turn passes. True when a timed charm has just run out. */
+    public boolean tickAlly() {
+        if (allyTurns > 0) {
+            allyTurns--;
+            if (allyTurns == 0) {
+                tameness = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Ends the alliance: the monster is hostile again and goes straight for the player. */
+    public void endAlly() {
+        allyTurns = 0;
+        tameness = 0;
+        targetMonster = null;
+        state = MonsterState.HUNTING;
+    }
+
     public void setTameness(int tameness) {
         this.tameness = tameness;
     }

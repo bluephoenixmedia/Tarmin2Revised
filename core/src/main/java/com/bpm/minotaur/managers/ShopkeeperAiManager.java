@@ -245,7 +245,7 @@ public class ShopkeeperAiManager {
         Monster best = null;
         float bestDistance = Float.MAX_VALUE;
         for (Monster monster : maze.getMonsters().values()) {
-            if (monster.getCurrentHP() <= 0) {
+            if (monster.getCurrentHP() <= 0 || monster.isAlly()) {
                 continue;
             }
             float distance = origin.dst(monster.getPosition());

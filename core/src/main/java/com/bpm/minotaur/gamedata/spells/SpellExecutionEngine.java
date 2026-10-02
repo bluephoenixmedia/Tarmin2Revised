@@ -13,6 +13,7 @@ import com.bpm.minotaur.utils.DiceRoller;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.monster.Monster;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.monster.CharmRules;
 import com.bpm.minotaur.managers.CombatManager;
 import com.bpm.minotaur.managers.CombatManager.HitResult;
 import com.bpm.minotaur.managers.GameEventManager;
@@ -123,6 +124,9 @@ public class SpellExecutionEngine {
             return true;
         } else if ("FOG_CLOUD".equalsIgnoreCase(bespoke)) {
             resolveFogCloudBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
+            return true;
+        } else if ("CHARM".equalsIgnoreCase(bespoke)) {
+            resolveCharmBespoke(spell, archetype, player, maze, eventManager, combatManager, gs);
             return true;
         }
 
@@ -243,6 +247,62 @@ public class SpellExecutionEngine {
         } else {
             eventManager.addEvent(new GameEvent("Magic Missiles detonate against the corridor wall.", 1.2f));
         }
+    }
+
+
+    /**
+     * Charm Person and the Dominate spells: bring the first monster down the facing to the player's
+     * side, for a time or for good. Magic Resistance can throw it off; the rules of who can be held,
+     * and for how long, are in {@link CharmRules}.
+     */
+    private static void resolveCharmBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
+                                            GameEventManager eventManager, CombatManager combatManager, GameScreen gs) {
+        CharmRules.Kind kind = CharmRules.Kind.forSpell(spell.getId());
+        HitResult hit = (combatManager != null)
+                ? combatManager.raycastProjectile(player.getPosition(), player.getFacing(),
+                        Math.min(12, Math.max(2, spell.getRange())), true, true)
+                : null;
+        if (kind == null || hit == null || hit.type != HitResult.HitType.MONSTER || hit.hitMonster == null) {
+            eventManager.addEvent(new GameEvent("There is nothing there to bend to your will.", 1.5f));
+            return;
+        }
+        Monster target = hit.hitMonster;
+        String who = com.bpm.minotaur.ui.UiNames.of(target.getType());
+        int casterLevel = player.getStats().getLevel();
+
+        String refusal = CharmRules.refusal(kind, target, casterLevel);
+        if (refusal != null) {
+            eventManager.addEvent(new GameEvent("The " + who + " cannot be charmed: " + refusal + ".", 2.5f));
+            return;
+        }
+        if (com.bpm.minotaur.gamedata.MagicResistance.resists(target.getMagicResistance())) {
+            eventManager.addEvent(new GameEvent("The " + who + " shrugs off your spell!", 2.0f));
+            return;
+        }
+        if (kind.isPermanent()) {
+            int held = 0;
+            for (Monster m : maze.getMonsters().values()) {
+                if (m != null && m.getAllyTurns() == CharmRules.PERMANENT) {
+                    held++;
+                }
+            }
+            if (held >= CharmRules.permanentCap(player.getEffectiveCharisma() / 2 - 5)) {
+                eventManager.addEvent(new GameEvent("Your will cannot bind another servant.", 2.5f));
+                return;
+            }
+        } else {
+            // Only one timed charm at a time: casting again replaces the last.
+            for (Monster m : maze.getMonsters().values()) {
+                if (m != null && m != target && m.getAllyTurns() > 0) {
+                    m.endAlly();
+                    eventManager.addEvent(new GameEvent("The " + com.bpm.minotaur.ui.UiNames.of(m.getType())
+                            + " shakes off the old charm.", 2.0f));
+                }
+            }
+        }
+        target.setAllyTurns(CharmRules.duration(kind, casterLevel));
+        eventManager.addEvent(new GameEvent("The " + who + " falls under your sway!", 2.5f));
+        playImpactFx(combatManager, archetype, new Vector3(hit.collisionPoint.x + 0.5f, 0.5f, hit.collisionPoint.y + 0.5f));
     }
 
     private static void resolveMistyStepBespoke(SpellTemplate spell, VisualArchetype archetype, Player player, Maze maze,
