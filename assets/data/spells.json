@@ -765,7 +765,7 @@
     "description": "You attempt to charm a humanoid you can see within range. It must make a wisdom saving throw, and does so with advantage if you or your companions are fighting it. If it fails the saving throw, it is charmed by you until the spell ends or until you or your companions do anything harmful to it. The c...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "ENCHANTMENT",
-    "bespokeEffect": null
+    "bespokeEffect": "CHARM"
   },
   "CHILL_TOUCH": {
     "id": "CHILL_TOUCH",
@@ -1740,7 +1740,7 @@
     "description": "You attempt to beguile a beast that you can see within range. It must succeed on a wisdom saving throw or be charmed by you for the duration. If you or creatures that are friendly to you are fighting it, it has advantage on the saving throw. While the beast is charmed, you have a telepathic link wit...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "ENCHANTMENT",
-    "bespokeEffect": null
+    "bespokeEffect": "CHARM"
   },
   "DOMINATE_MONSTER": {
     "id": "DOMINATE_MONSTER",
@@ -1759,7 +1759,7 @@
     "description": "You attempt to beguile a creature that you can see within range. It must succeed on a wisdom saving throw or be charmed by you for the duration. If you or creatures that are friendly to you are fighting it, it has advantage on the saving throw. While the creature is charmed, you have a telepathic li...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "ENCHANTMENT",
-    "bespokeEffect": null
+    "bespokeEffect": "CHARM"
   },
   "DOMINATE_PERSON": {
     "id": "DOMINATE_PERSON",
@@ -1778,7 +1778,7 @@
     "description": "You attempt to beguile a humanoid that you can see within range. It must succeed on a wisdom saving throw or be charmed by you for the duration. If you or creatures that are friendly to you are fighting it, it has advantage on the saving throw. While the target is charmed, you have a telepathic link...",
     "secondaryArchetype": "PROJECTILE",
     "runeSchool": "ENCHANTMENT",
-    "bespokeEffect": null
+    "bespokeEffect": "CHARM"
   },
   "DREAM": {
     "id": "DREAM",

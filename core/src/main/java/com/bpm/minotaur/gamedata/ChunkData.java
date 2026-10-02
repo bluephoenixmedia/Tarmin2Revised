@@ -199,6 +199,7 @@ public class ChunkData {
             monster.setBridgeBoss(data.bridgeBoss);
             monster.setCurrentHP(data.warStrength);
             monster.setCurrentMP(data.spiritualStrength);
+            monster.setAllyTurns(data.allyTurns);
             maze.addMonster(monster);
         }
 
@@ -506,6 +507,8 @@ public class ChunkData {
         public float scaleY = 0f;
         public int maxHP = 0;
         public int moveSpeed = 0;
+        /** Charm state: 0 none, -1 permanent, else turns left. Old saves read 0. */
+        public int allyTurns = 0;
 
         public MonsterData() {
         }
@@ -524,6 +527,7 @@ public class ChunkData {
             }
             this.maxHP = monster.getMaxHP();
             this.moveSpeed = monster.getMoveSpeed();
+            this.allyTurns = monster.getAllyTurns();
         }
     }
 

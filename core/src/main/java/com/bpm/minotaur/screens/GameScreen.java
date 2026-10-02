@@ -578,6 +578,7 @@ public class GameScreen extends BaseScreen {
         updateDeathSequence(delta);
         updateAutoSave(delta);
         updateAlert(delta);
+        placePendingAllies();
 
         // Trigger Level-Up Attribute Allocation modal when safe (outside active combat)
         if (player != null && player.hasPendingLevelUpModal() && (combatManager == null || !combatManager.isInCombat())) {
@@ -1165,6 +1166,7 @@ public class GameScreen extends BaseScreen {
                 WorldManager.PortalWarp warp = (WorldManager.PortalWarp) event.payload;
                 Gdx.app.log("GameScreen", "Biome portal warp to chunk " + warp.chunkId);
 
+                collectEscortAllies();
                 if (maze != null) {
                     worldManager.saveCurrentChunk(maze);
                 }
@@ -2154,6 +2156,67 @@ public class GameScreen extends BaseScreen {
      *
      * @return the monster to strike, or null if this is not a fight.
      */
+
+    /** Allies this close to the player come with them through a ladder or gate. */
+    private static final int ALLY_ESCORT_RADIUS = 3;
+    private final List<Monster> pendingAllies = new ArrayList<>();
+
+    /**
+     * Takes the allies near the player out of the current maze, to arrive with them in the next. Must
+     * run before the chunk is saved, or the saved chunk would keep a second copy.
+     */
+    private void collectEscortAllies() {
+        if (maze == null || player == null) {
+            return;
+        }
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        List<GridPoint2> taken = new ArrayList<>();
+        for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
+            Monster m = entry.getValue();
+            if (m != null && m.isAlly() && m.getCurrentHP() > 0
+                    && Math.abs(entry.getKey().x - px) + Math.abs(entry.getKey().y - py) <= ALLY_ESCORT_RADIUS) {
+                pendingAllies.add(m);
+                taken.add(entry.getKey());
+            }
+        }
+        for (GridPoint2 pt : taken) {
+            maze.getMonsters().remove(pt);
+        }
+    }
+
+    /** Sets the escorted allies down on free tiles beside the player, once the new maze is in place. */
+    private void placePendingAllies() {
+        if (pendingAllies.isEmpty() || maze == null || player == null) {
+            return;
+        }
+        int px = (int) player.getPosition().x;
+        int py = (int) player.getPosition().y;
+        for (Monster ally : pendingAllies) {
+            GridPoint2 spot = null;
+            for (int r = 1; r <= ALLY_ESCORT_RADIUS && spot == null; r++) {
+                for (int dx = -r; dx <= r && spot == null; dx++) {
+                    for (int dy = -r; dy <= r && spot == null; dy++) {
+                        int x = px + dx;
+                        int y = py + dy;
+                        if ((dx == 0 && dy == 0) || x < 0 || y < 0 || x >= maze.getWidth() || y >= maze.getHeight()) {
+                            continue;
+                        }
+                        GridPoint2 tile = new GridPoint2(x, y);
+                        if (maze.isPassable(x, y) && !maze.getMonsters().containsKey(tile)) {
+                            spot = tile;
+                        }
+                    }
+                }
+            }
+            if (spot != null) {
+                ally.getPosition().set(spot.x + 0.5f, spot.y + 0.5f);
+                maze.getMonsters().put(spot, ally);
+            }
+        }
+        pendingAllies.clear();
+    }
+
     private Monster resolveBumpTarget(int tx, int ty) {
         if (maze == null || player == null) return null;
 
@@ -2169,7 +2232,8 @@ public class GameScreen extends BaseScreen {
 
         Monster existing = maze.getMonsters().get(tile);
         if (existing != null) {
-            return existing;
+            // Walking into an ally swaps places (Player.move); it is never a target.
+            return existing.isAlly() ? null : existing;
         }
 
         Item chest = com.bpm.minotaur.gamedata.monster.MimicReveal.disguisedMimicAt(maze, tile);
@@ -2369,7 +2433,7 @@ public class GameScreen extends BaseScreen {
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
                     if (m != null && !m.isBridgeBoss()
-                            && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
+                            && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canOperateDoors()) {
                         int dist = Math.abs(entry.getKey().x - gatePos.x) + Math.abs(entry.getKey().y - gatePos.y);
                         if (dist <= 8) {
                             pursuers.add(m);
@@ -2384,6 +2448,7 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        collectEscortAllies();
         if (maze != null)
             worldManager.saveCurrentChunk(this.maze);
         Maze newMaze = worldManager.loadChunk(transitionGate.getTargetChunkId());
@@ -3637,6 +3702,7 @@ public class GameScreen extends BaseScreen {
                     newPlayerX = player.getPosition().x;
                 }
 
+                collectEscortAllies();
                 worldManager.setCurrentChunk(newChunkId);
                 swapToChunk(neighbor);
                 player.getPosition().set(newPlayerX, newPlayerY);
@@ -3916,13 +3982,14 @@ public class GameScreen extends BaseScreen {
 
         if (ladder != null) {
             soundManager.playLadderTransition();
+            collectEscortAllies();
             GridPoint2 originLadderPos = new GridPoint2((int) ladder.getPosition().x, (int) ladder.getPosition().y);
             List<Monster> pursuers = new ArrayList<>();
             if (this.maze != null) {
                 List<GridPoint2> toRemove = new ArrayList<>();
                 for (Map.Entry<GridPoint2, Monster> entry : maze.getMonsters().entrySet()) {
                     Monster m = entry.getValue();
-                    if (m != null && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
+                    if (m != null && !m.isAlly() && m.getState() == Monster.MonsterState.HUNTING && m.canClimbLadders()) {
                         int dist = Math.abs(entry.getKey().x - originLadderPos.x) + Math.abs(entry.getKey().y - originLadderPos.y);
                         if (dist <= 6) {
                             pursuers.add(m);

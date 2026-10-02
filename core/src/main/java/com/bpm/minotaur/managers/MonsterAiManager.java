@@ -79,6 +79,12 @@ public class MonsterAiManager {
         playerGridPos.set((int) player.getPosition().x, (int) player.getPosition().y);
         monsterGridPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
 
+        // A charmed or dominated monster fights for the player and never turns on them.
+        if (monster.isAlly()) {
+            handleAlly(monster, maze, player, combatManager);
+            return;
+        }
+
         // --- NEW: State Machine Logic ---
 
         // 1. Check Awareness to potentially change state
@@ -103,6 +109,142 @@ public class MonsterAiManager {
             case HUNTING:
                 handleHuntingBehavior(monster, maze, player, combatManager);
                 break;
+        }
+    }
+
+
+    // --- Allies: charmed and dominated monsters fight for the player ---
+
+    /** How far an ally looks for something to fight, in tiles. */
+    static final int ALLY_SIGHT_TILES = 8;
+    /** An ally nearer than this to the player is content to stay put; farther, it closes up. */
+    static final int ALLY_FOLLOW_DISTANCE = 2;
+    private static final int ALLY_WARNING_TURNS = 3;
+
+    private void handleAlly(Monster ally, Maze maze, Player player, CombatManager combatManager) {
+        if (ally.tickAlly()) {
+            ally.endAlly();
+            announce(combatManager, "The " + com.bpm.minotaur.ui.UiNames.of(ally.getType())
+                    + " shakes off your charm and turns on you!");
+            return;
+        }
+        if (ally.getAllyTurns() == ALLY_WARNING_TURNS) {
+            announce(combatManager, "Your hold on the " + com.bpm.minotaur.ui.UiNames.of(ally.getType()) + " is wavering...");
+        }
+
+        Monster target = ally.getTargetMonster();
+        if (target != null) {
+            GridPoint2 at = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+            boolean valid = target.isAlive() && target.getCurrentHP() > 0 && !target.isAlly()
+                    && maze.getMonsters().get(at) == target;
+            if (!valid) {
+                target = null;
+            }
+        }
+        if (target == null) {
+            target = nearestEnemyOf(ally, maze);
+        }
+        ally.setTargetMonster(target);
+
+        if (target != null) {
+            GridPoint2 tp = new GridPoint2((int) target.getPosition().x, (int) target.getPosition().y);
+            int dist = Math.abs(monsterGridPos.x - tp.x) + Math.abs(monsterGridPos.y - tp.y);
+            if (dist <= 1) {
+                if (combatManager != null) {
+                    combatManager.monsterVsMonsterStrike(ally, target, maze);
+                }
+            } else {
+                allyStepToward(ally, tp, maze, player);
+            }
+            return;
+        }
+
+        int playerDist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
+        if (playerDist > ALLY_FOLLOW_DISTANCE) {
+            allyStepToward(ally, new GridPoint2(playerGridPos), maze, player);
+        }
+    }
+
+    /** The nearest living, non-allied monster in sight of the ally, or null. */
+    private Monster nearestEnemyOf(Monster ally, Maze maze) {
+        Monster best = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (Monster other : maze.getMonsters().values()) {
+            if (other == null || other == ally || other.isAlly() || !other.isAlive() || other.getCurrentHP() <= 0
+                    || other.isHidden()) {
+                continue;
+            }
+            GridPoint2 op = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
+            int d = Math.abs(monsterGridPos.x - op.x) + Math.abs(monsterGridPos.y - op.y);
+            if (d <= ALLY_SIGHT_TILES && d < bestDist && checkLineOfSight(maze, monsterGridPos, op)) {
+                best = other;
+                bestDist = d;
+            }
+        }
+        return best;
+    }
+
+    /** One step along the path to the goal, never onto the player or another creature. */
+    private void allyStepToward(Monster ally, GridPoint2 goal, Maze maze, Player player) {
+        List<GridPoint2> path = Pathfinder.findPath(maze, player, monsterGridPos, goal, ally.canOperateDoors());
+        GridPoint2 step;
+        if (path != null && !path.isEmpty()) {
+            step = path.get(0);
+        } else {
+            // The goal is usually a creature standing on its own tile, which the pathfinder treats as
+            // blocked; settle for any open neighbouring tile that gets strictly closer.
+            step = closerOpenNeighbour(maze, goal);
+            if (step == null) {
+                return;
+            }
+        }
+        if (step.x == playerGridPos.x && step.y == playerGridPos.y) {
+            return;
+        }
+        tempPos.set(step.x, step.y);
+        if (maze.getMonsters().containsKey(tempPos)) {
+            return;
+        }
+        Object atStep = maze.getGameObjectAt(step.x, step.y);
+        if (ally.canOperateDoors() && atStep instanceof com.bpm.minotaur.gamedata.Door) {
+            com.bpm.minotaur.gamedata.Door d = (com.bpm.minotaur.gamedata.Door) atStep;
+            if (d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSED
+                    || d.getState() == com.bpm.minotaur.gamedata.Door.DoorState.CLOSING) {
+                d.startOpening();
+                return;
+            }
+        }
+        moveMonsterTo(ally, maze, step.x, step.y);
+    }
+
+    private GridPoint2 closerOpenNeighbour(Maze maze, GridPoint2 goal) {
+        int here = Math.abs(monsterGridPos.x - goal.x) + Math.abs(monsterGridPos.y - goal.y);
+        GridPoint2 best = null;
+        int bestDist = here;
+        for (Direction dir : Direction.values()) {
+            if (maze.isWallBlocking(monsterGridPos.x, monsterGridPos.y, dir)) {
+                continue;
+            }
+            int nx = monsterGridPos.x + (int) dir.getVector().x;
+            int ny = monsterGridPos.y + (int) dir.getVector().y;
+            if (!maze.isPassable(nx, ny)) {
+                continue;
+            }
+            int d = Math.abs(nx - goal.x) + Math.abs(ny - goal.y);
+            if (d < bestDist) {
+                bestDist = d;
+                best = new GridPoint2(nx, ny);
+            }
+        }
+        return best;
+    }
+
+    private void announce(CombatManager combatManager, String message) {
+        if (combatManager != null && combatManager.getGameScreen() != null) {
+            GameEventManager em = combatManager.getGameScreen().getEventManager();
+            if (em != null) {
+                em.addEvent(new GameEvent(message, 2.5f));
+            }
         }
     }
 
@@ -172,7 +314,10 @@ public class MonsterAiManager {
         if (closestRival == null && maze != null && maze.getMonsters() != null) {
             for (Monster other : maze.getMonsters().values()) {
                 if (other == null || other == monster || !other.isAlive() || other.getCurrentHP() <= 0) continue;
-                if (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction())) {
+                // The player's allies are everyone's enemies, whatever faction they were born into.
+                boolean isEnemy = other.isAlly()
+                        || (factionMatrix != null && factionMatrix.isHostile(monster.getFaction(), other.getFaction()));
+                if (isEnemy) {
                     GridPoint2 otherPos = new GridPoint2((int) other.getPosition().x, (int) other.getPosition().y);
                     int d = Math.abs(monsterGridPos.x - otherPos.x) + Math.abs(monsterGridPos.y - otherPos.y);
                     if (d <= visualRange && d < closestRivalDist) {
