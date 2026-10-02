@@ -93,6 +93,8 @@ public class PlayerStats {
     private float bodyTemperature = 37.0f; // Celsius. Normal ~37.
 
     public static final float MAX_SATIETY = 120.0f;
+    /** Where every new expedition starts: comfortably Normal, not Hungry. Respawns use the same value. */
+    public static final float STARTING_SATIETY = 80.0f;
     public static final float MAX_HYDRATION = 100.0f;
     public static final float BODY_TEMP_NORMAL = 37.0f;
     public static final float BODY_TEMP_FREEZING = 32.0f; // Hypothermia start
@@ -150,7 +152,7 @@ public class PlayerStats {
         // Set stats based on difficulty
         this.currentHP = difficulty.startWarStrength; // Note: Difficulty field names might still be old
         this.currentMP = difficulty.startSpiritualStrength;
-        this.satiety = difficulty.startFood; // Map startFood to Satiety
+        this.satiety = STARTING_SATIETY;
         this.arrows = difficulty.startArrows;
         this.vulnerabilityMultiplier = difficulty.vulnerabilityMultiplier;
 

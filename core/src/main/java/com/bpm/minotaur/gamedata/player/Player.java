@@ -1083,8 +1083,9 @@ public class Player {
         // first scrap of protection found in the dungeon is a real upgrade
         // rather than a sidegrade on a free +1 AC.
 
-        Item ration = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
-        inventory.pickupToBackpack(ration);
+        for (int i = 0; i < STARTING_RATIONS; i++) {
+            inventory.pickupToBackpack(itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager));
+        }
 
         Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
         inventory.pickupToBackpack(waterskin);
@@ -3535,6 +3536,8 @@ public class Player {
      * player already holds; returns whether the lantern was taken up.
      */
     public static final float LANTERN_STATION_CRIT_BONUS = 0.05f;
+    /** A new game's food: enough that the first delves are about the maze, not the pantry. */
+    public static final int STARTING_RATIONS = 30;
 
     public boolean giveStarterLantern(Item lantern) {
         return giveStarterLantern(lantern, java.util.Collections.<Item>emptyList());

@@ -1719,7 +1719,7 @@ public class GameScreen extends BaseScreen {
         player.getStats().setCurrentHP(player.getStats().getMaxHP());
         player.getStats().setCurrentMP(player.getStats().getMaxMP());
         player.getStats().setBodyTemperature(PlayerStats.BODY_TEMP_NORMAL);
-        player.getStats().setSatiety(80.0f);
+        player.getStats().setSatiety(PlayerStats.STARTING_SATIETY);
         player.getStats().setHydration(80.0f);
         player.getStats().setToxicity(0);
         player.getStatusManager().clearEffects();
