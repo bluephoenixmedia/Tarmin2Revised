@@ -801,6 +801,7 @@ public class GameScreen extends BaseScreen {
             game.getBatch().begin();
             alertOverlay.render(game.getBatch(), game.getViewport());
             screenFx.render(game.getBatch(), game.getViewport());
+            renderDebugLegend();
             game.getBatch().end();
 
             if (combatManager.getAttackIndicatorMonster() != null
@@ -3173,6 +3174,10 @@ public class GameScreen extends BaseScreen {
             return true;
         }
 
+        if (handleDebugKey(keycode)) {
+            return true;
+        }
+
         switch (keycode)
 
         {
@@ -3229,7 +3234,7 @@ public class GameScreen extends BaseScreen {
                     altar.addCrestsOfValor(20);
                 }
                 eventManager.addEvent(new GameEvent(
-                        "Debug Shelter: " + (debugOn ? "ALL FEATURES UNLOCKED (Stations, Altar, Ascension, Skills, Portals)" : "OFF (existing stations remain this session)"),
+                        "DEBUG MODE: " + (debugOn ? "ON - all shelter features unlocked; debug keys listed top right" : "OFF (existing stations remain this session)"),
                         3f));
                 return true;
             }
@@ -3441,6 +3446,9 @@ public class GameScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        if (debugLegendFont != null) {
+            debugLegendFont.dispose();
+        }
         emberOverlay.dispose();
         if (player != null && worldManager != null) {
             SaveManager.getInstance().saveActiveSlot(player, worldManager);
@@ -3949,6 +3957,85 @@ public class GameScreen extends BaseScreen {
 
     public SpellPostProcessor getSpellPostProcessor() {
         return spellPostProcessor;
+    }
+
+    private com.badlogic.gdx.graphics.g2d.BitmapFont debugLegendFont;
+
+    /**
+     * The debug-mode keys and what they do, in a plain readable font (not the game's pixel font) at
+     * a small size, top right. Only drawn while debug mode (F5) is on. The text comes from DebugKeys,
+     * the same table that handles the keys.
+     */
+    private void renderDebugLegend() {
+        if (!com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked()) {
+            return;
+        }
+        if (debugLegendFont == null) {
+            debugLegendFont = new com.badlogic.gdx.graphics.g2d.BitmapFont(); // libGDX default Arial: crisp at 15px
+            debugLegendFont.getRegion().getTexture().setFilter(
+                    com.badlogic.gdx.graphics.Texture.TextureFilter.Linear, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        }
+        java.util.List<String> lines = com.bpm.minotaur.debug.DebugKeys.legend(true);
+        float lineH = debugLegendFont.getLineHeight() + 2f;
+        float width = 330f;
+        float height = lines.size() * lineH + 16f;
+        float x = game.getViewport().getWorldWidth() - width - 10f;
+        float top = game.getViewport().getWorldHeight() - 10f;
+
+        com.badlogic.gdx.Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        shapeRenderer.setProjectionMatrix(game.getViewport().getCamera().combined);
+        shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.65f);
+        shapeRenderer.rect(x, top - height, width, height);
+        shapeRenderer.end();
+
+        game.getBatch().setProjectionMatrix(game.getViewport().getCamera().combined);
+        game.getBatch().begin();
+        float y = top - 8f;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            boolean heading = i == 0 || line.endsWith(":");
+            debugLegendFont.setColor(heading ? com.badlogic.gdx.graphics.Color.GOLD : com.badlogic.gdx.graphics.Color.WHITE);
+            debugLegendFont.draw(game.getBatch(), line, x + 8f, y);
+            y -= lineH;
+        }
+        game.getBatch().end();
+    }
+
+    /** Runs a debug-only key when debug mode is on; returns whether the key was one. */
+    private boolean handleDebugKey(int keycode) {
+        boolean debugMode = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked();
+        com.bpm.minotaur.debug.DebugKeys.Action action = com.bpm.minotaur.debug.DebugKeys.actionFor(keycode, debugMode);
+        if (action == null) {
+            return false;
+        }
+        switch (action) {
+            case LEARN_ALL_SPELLS: {
+                java.util.List<String> ids = new java.util.ArrayList<>();
+                for (com.bpm.minotaur.gamedata.spells.SpellTemplate t
+                        : com.bpm.minotaur.gamedata.spells.SpellDataManager.getInstance().getAllSpells()) {
+                    ids.add(t.getId());
+                }
+                int learned = com.bpm.minotaur.debug.DebugCheats.learnAllSpells(player, ids);
+                eventManager.addEvent(new GameEvent("Debug: learned " + learned + " spells (" + ids.size() + " total)", 2.5f));
+                return true;
+            }
+            case LEVEL_UP:
+                com.bpm.minotaur.debug.DebugCheats.levelUp(player, eventManager);
+                return true;
+            case OPEN_ALL_ITEMS_CHEST: {
+                game.setScreen(new ShelterChestScreen(game, this, player, com.bpm.minotaur.debug.DebugCheats.allItemsChest(
+                        game.getItemDataManager().getLoadedTypes(),
+                        type -> game.getItemDataManager().createItem(type, 0, 0, ItemColor.GRAY, game.getAssetManager()))));
+                return true;
+            }
+            case REFILL:
+                com.bpm.minotaur.debug.DebugCheats.refill(player);
+                eventManager.addEvent(new GameEvent("Debug: HP, MP, food and water refilled", 2f));
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** Screen-space clips: self-cast glows, the casting charge, warp flashes. */
