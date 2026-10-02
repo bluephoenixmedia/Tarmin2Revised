@@ -28,6 +28,12 @@ public class ShelterChest {
 
     private final int capacity;
     private final List<Item> items;
+    /**
+     * Set only on the debug catalog chest: how to mint a fresh copy of an item type. Such a chest is
+     * never written to the save slot, and taking an item out puts a new one in its place, so it
+     * stays a complete catalog however many items are withdrawn.
+     */
+    private java.util.function.Function<Item.ItemType, Item> catalogFactory;
     private final Json json;
 
     private ShelterChest() {
@@ -40,6 +46,23 @@ public class ShelterChest {
         this.json = new Json();
         this.json.setOutputType(JsonWriter.OutputType.json);
         this.json.setIgnoreUnknownFields(true);
+    }
+
+    /** A throwaway chest holding one of every given item type; see {@link #catalogFactory}. */
+    public static ShelterChest catalog(List<Item.ItemType> types, java.util.function.Function<Item.ItemType, Item> factory) {
+        ShelterChest chest = new ShelterChest(Math.max(1, types.size()));
+        chest.catalogFactory = factory;
+        for (Item.ItemType type : types) {
+            Item item = factory.apply(type);
+            if (item != null) {
+                chest.items.add(item);
+            }
+        }
+        return chest;
+    }
+
+    public boolean isCatalog() {
+        return catalogFactory != null;
     }
 
     public static synchronized ShelterChest getInstance() {
@@ -88,7 +111,19 @@ public class ShelterChest {
     }
 
     public boolean removeItem(Item item) {
-        return items.remove(item);
+        int index = items.indexOf(item);
+        if (index < 0) {
+            return false;
+        }
+        if (catalogFactory != null) {
+            Item fresh = catalogFactory.apply(item.getType());
+            if (fresh != null) {
+                items.set(index, fresh);
+                return true;
+            }
+        }
+        items.remove(index);
+        return true;
     }
 
     public List<Item> getItems() {
@@ -103,6 +138,9 @@ public class ShelterChest {
      * Serializes chest items to disk via lightweight ItemSaveData DTOs.
      */
     public void save() {
+        if (catalogFactory != null) {
+            return; // the debug catalog must never overwrite the player's real stash
+        }
         try {
             FileHandle file = SaveManager.getInstance().getFileHandle(getSaveFilePath());
             file.parent().mkdirs();

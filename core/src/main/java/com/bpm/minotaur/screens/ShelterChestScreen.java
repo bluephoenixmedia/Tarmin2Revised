@@ -96,7 +96,7 @@ public class ShelterChestScreen extends BaseScreen {
         Table header = new Table();
         header.setBackground(hudSkin.getDoubleBorderPanel());
         header.pad(18, 24, 18, 24);
-        Label title = new Label("THE SHELTER STASH CHEST", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
+        Label title = new Label(chest.isCatalog() ? "DEBUG: ONE OF EVERY ITEM" : "THE SHELTER STASH CHEST", new Label.LabelStyle(hudSkin.getFontHeader(), HudSkin.COL_GOLD_BRIGHT));
         header.add(title).center().row();
         Label subtitle = new Label("Items stored here persist across expeditions and survive death",
                 new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
