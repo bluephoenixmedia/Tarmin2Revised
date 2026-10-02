@@ -253,7 +253,10 @@ public class TraitSystemTest {
                 "noticeMult", "berserkChance", "spellCostMult", "spellCostFlat", "xpMult", "damageTakenMult",
                 "attackFailChance", "regenMult", "buyMult", "sellMult", "critAdd", "critMultAdd", "carryMult",
                 "luckAdd", "maxHpMult", "divinityMult", "hungerMult", "thirstMult", "acAdd", "dodgeMult",
-                "dodgeAdd", "healMult", "meleeDamageMult", "lightAdd", "mrAdd", "speedMult"));
+                "dodgeAdd", "healMult", "meleeDamageMult", "lightAdd", "mrAdd", "speedMult",
+                "mimicDetectAdd", "bedRestMult", "lightUnderground", "lightSurface", "darkDodgeAdd", "chokeLimitAdd",
+                "undeadSpellDicePlus", "overTimeMult", "divinityKillAdd", "huntedMeleePenalty", "foundTreasureMult",
+                "noTrade", "spellLearnEarly", "lifestealFraction", "injuryChanceMult"));
         for (TraitDefinition t : catalog.all()) {
             for (String key : t.modifiers.keySet()) {
                 assertTrue(t.id + " uses a modifier nothing reads: " + key, key.startsWith("stat.") || known.contains(key));
@@ -279,5 +282,99 @@ public class TraitSystemTest {
         player.getStats().setCurrentHP(1);
         player.getStats().heal(4);
         assertEquals(5, player.getStats().getCurrentHP());
+    }
+
+    // ---- the nine traits that were held back until their last effect was built ----
+
+    @Test
+    public void allEighteenTraitsAreNowOffered() {
+        assertEquals(18, catalog.offerable().size());
+    }
+
+    @Test
+    public void paranoidScoutSpotsMimicsMoreOften() {
+        int plain = com.bpm.minotaur.gamedata.monster.MimicDetection.chancePercent(10);
+        take("PARANOID_SCOUT");
+        assertEquals(plain + 25, com.bpm.minotaur.gamedata.monster.MimicDetection.chancePercent(10));
+        assertEquals(0.5f, TraitEffects.mult("bedRestMult"), 0f);
+    }
+
+    @Test
+    public void nightOwlDodgesBetterOnlyBelowTheSurface() {
+        take("NIGHT_OWL");
+        float surface = player.getDodgeChance();
+        player.tickTrait(new com.bpm.minotaur.gamedata.Maze(2, new int[12][12]), null);
+        assertEquals(surface + 0.10f, player.getDodgeChance(), 0.001f);
+        player.tickTrait(new com.bpm.minotaur.gamedata.Maze(1, new int[12][12]), null);
+        assertEquals(surface, player.getDodgeChance(), 0.001f);
+    }
+
+    @Test
+    public void ironStomachResistsPoisonAndSicknessButChokesSooner() {
+        player.getStats().setSatiety(105f);
+        assertEquals(com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.SATIATED, player.getStats().getSatiationState());
+        take("IRON_STOMACH");
+        assertEquals(com.bpm.minotaur.gamedata.player.PlayerStats.SatiationState.CHOKING, player.getStats().getSatiationState());
+        player.getStatusManager().addEffect(StatusEffectType.POISONED, 5, 1, false);
+        player.getStatusManager().addEffect(StatusEffectType.SICK, 5, 1, false);
+        assertFalse(player.getStatusManager().hasEffect(StatusEffectType.POISONED));
+        assertFalse(player.getStatusManager().hasEffect(StatusEffectType.SICK));
+    }
+
+    @Test
+    public void hardyCynicTakesAboutHalfTheDamageOverTime() {
+        take("HARDY_CYNIC");
+        java.util.Random rng = new java.util.Random(4);
+        int total = 0;
+        for (int i = 0; i < 2000; i++) {
+            total += TraitEffects.scaleOverTime(1, rng);
+        }
+        assertTrue("expected about 1000, got " + total, total > 900 && total < 1100);
+        assertEquals(-1, Math.round(TraitEffects.add("divinityKillAdd")));
+        TraitEffects.clear();
+        assertEquals(1, TraitEffects.scaleOverTime(1, rng));
+    }
+
+    @Test
+    public void luckyPariahFindsMoreTreasureAndIsRefusedByMerchants() {
+        take("LUCKY_PARIAH");
+        player.getStats().incrementTreasureScore(100);
+        assertEquals(130, player.getStats().getTreasureScore());
+        assertTrue(TraitEffects.add("noTrade") > 0f);
+    }
+
+    @Test
+    public void hollowProphetLearnsSpellsOneLevelEarly() {
+        com.bpm.minotaur.gamedata.spells.SpellTemplate spell = new com.bpm.minotaur.gamedata.spells.SpellTemplate();
+        spell.level = 3;
+        assertEquals(5, Player.getRequiredPlayerLevelForSpell(spell));
+        take("HOLLOW_PROPHET");
+        assertEquals(3, Player.getRequiredPlayerLevelForSpell(spell));
+        spell.level = 1;
+        assertEquals(1, Player.getRequiredPlayerLevelForSpell(spell));
+    }
+
+    @Test
+    public void bornCowardIsFasterAndHarderToHit() {
+        int speed = player.getEffectiveSpeed();
+        take("BORN_COWARD");
+        assertTrue(player.getEffectiveSpeed() > speed);
+        assertEquals(2f, TraitEffects.add("huntedMeleePenalty"), 0f);
+    }
+
+    @Test
+    public void bloodsoakedSaintIsWoundedMoreOften() {
+        take("BLOODSOAKED_SAINT");
+        assertEquals(0.25f, TraitEffects.add("lifestealFraction"), 0f);
+        assertEquals(1.25f, TraitEffects.mult("injuryChanceMult"), 0f);
+    }
+
+    @Test
+    public void ghostWhispererResistsMagicAndIsNoticedFromFarther() {
+        int mr = player.getMagicResistance();
+        take("GHOST_WHISPERER");
+        assertEquals(mr + 20, player.getMagicResistance());
+        assertEquals(1.25f, TraitEffects.mult("noticeMult"), 0f);
+        assertEquals(2f, TraitEffects.add("undeadSpellDicePlus"), 0f);
     }
 }

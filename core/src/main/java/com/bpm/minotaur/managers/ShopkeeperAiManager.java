@@ -81,6 +81,12 @@ public class ShopkeeperAiManager {
 
         // 2. Player adjacent → trigger shop
         int distToPlayer = manDist(shopPos, playerPos);
+        if (distToPlayer == 1 && shopkeeper.getTradingCooldown() == 0 && com.bpm.minotaur.gamedata.trait.TraitEffects.add("noTrade") > 0f) {
+            // Lucky Pariah: he knows a bad omen when one walks up to his stall.
+            shopkeeper.setTradingCooldown(TRADING_COOLDOWN);
+            eventManager.addEvent(new GameEvent("The merchant takes one look at you and turns his back.", 2.5f));
+            return;
+        }
         if (distToPlayer == 1 && shopkeeper.getTradingCooldown() == 0) {
             shopkeeper.setState(ShopkeeperNpc.ShopkeeperState.TRADING);
             shopkeeper.setTradingCooldown(TRADING_COOLDOWN);

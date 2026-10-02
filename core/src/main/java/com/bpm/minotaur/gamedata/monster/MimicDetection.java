@@ -38,7 +38,7 @@ public final class MimicDetection {
      * Shelter Altar ascension bonus, which would make altar investment worthless here.
      */
     public static int chancePercent(int wisdom) {
-        int chance = BASE_CHANCE + (wisdom - 10) * PER_POINT;
+        int chance = BASE_CHANCE + (wisdom - 10) * PER_POINT + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("mimicDetectAdd"));
         return Math.max(MIN_CHANCE, Math.min(MAX_CHANCE, chance));
     }
 

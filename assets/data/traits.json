@@ -125,29 +125,36 @@
       "id": "PARANOID_SCOUT",
       "name": "Paranoid Scout",
       "good": "Carried light radius +1.5. Mimic detection +25 points.",
-      "bad": "Resting at the bed restores only 50% HP and MP.",
-      "enabled": false,
+      "bad": "Resting at the bed restores only half your missing HP and MP.",
+      "enabled": true,
       "modifiers": {
-        "lightAdd": 1.5
+        "lightAdd": 1.5,
+        "mimicDetectAdd": 25,
+        "bedRestMult": 0.5
       }
     },
     {
       "id": "NIGHT_OWL",
       "name": "Night Owl",
-      "good": "+2 light radius underground. +10% dodge in the dark.",
+      "good": "+2 light radius underground. +10% dodge below the surface.",
       "bad": "Light is 1 tile shorter on the surface. -1 Wisdom.",
-      "enabled": false,
+      "enabled": true,
       "modifiers": {
+        "lightUnderground": 2,
+        "lightSurface": -1,
+        "darkDodgeAdd": 0.1,
         "stat.WIS": -1
       }
     },
     {
       "id": "IRON_STOMACH",
       "name": "Iron Stomach",
-      "good": "Immune to poison and rotten-food sickness. Raw meat gives full value.",
-      "bad": "You are sick sooner when overfed.",
-      "enabled": false,
-      "modifiers": {},
+      "good": "Immune to poison and sickness. Raw monster flesh cannot hurt you.",
+      "bad": "You choke on food 10 points of fullness sooner than others do.",
+      "enabled": true,
+      "modifiers": {
+        "chokeLimitAdd": -10
+      },
       "blocks": [
         "POISONED",
         "SICK"
@@ -156,44 +163,50 @@
     {
       "id": "GHOST_WHISPERER",
       "name": "Ghost Whisperer",
-      "good": "+20% Magic Resistance. Spells do +2 damage per die to the undead.",
-      "bad": "Living monsters notice you from 25% farther away.",
-      "enabled": false,
+      "good": "+20% Magic Resistance. Damage spells do +2 damage per die to the undead.",
+      "bad": "Monsters notice you from 25% farther away.",
+      "enabled": true,
       "modifiers": {
         "mrAdd": 20,
-        "noticeMult": 1.25
+        "noticeMult": 1.25,
+        "undeadSpellDicePlus": 2
       }
     },
     {
       "id": "HARDY_CYNIC",
       "name": "Hardy Cynic",
-      "good": "Maximum HP +25%. Poison and bleed damage halved.",
+      "good": "Maximum HP +25%. Poison and bleeding hurt half as often.",
       "bad": "-25% experience. Kills give 1 less Divinity.",
-      "enabled": false,
+      "enabled": true,
       "modifiers": {
         "maxHpMult": 1.25,
-        "xpMult": 0.75
+        "xpMult": 0.75,
+        "overTimeMult": 0.5,
+        "divinityKillAdd": -1
       }
     },
     {
       "id": "BORN_COWARD",
       "name": "Born Coward",
       "good": "Move speed +25%. Dodge +10%.",
-      "bad": "Weapon damage -2 against a monster hunting you at point-blank range.",
-      "enabled": false,
+      "bad": "Your weapon does 2 less damage to a monster that is hunting you and right beside you.",
+      "enabled": true,
       "modifiers": {
         "speedMult": 1.25,
-        "dodgeAdd": 0.1
+        "dodgeAdd": 0.1,
+        "huntedMeleePenalty": 2
       }
     },
     {
       "id": "LUCKY_PARIAH",
       "name": "Lucky Pariah",
-      "good": "Crit chance +10%. Found gold and gems +30%.",
+      "good": "Crit chance +10%. Gold and gems you find are worth 30% more.",
       "bad": "Shopkeepers will not trade with you.",
-      "enabled": false,
+      "enabled": true,
       "modifiers": {
-        "critAdd": 0.1
+        "critAdd": 0.1,
+        "foundTreasureMult": 1.3,
+        "noTrade": 1
       }
     },
     {
@@ -201,8 +214,9 @@
       "name": "Hollow Prophet",
       "good": "Learns spells from books one level early. Spell cost -25%.",
       "bad": "Maximum HP -30%. Regeneration 50% slower.",
-      "enabled": false,
+      "enabled": true,
       "modifiers": {
+        "spellLearnEarly": 1,
         "spellCostMult": 0.75,
         "maxHpMult": 0.7,
         "regenMult": 2.0
@@ -212,9 +226,12 @@
       "id": "BLOODSOAKED_SAINT",
       "name": "Bloodsoaked Saint",
       "good": "Heals 1 HP for every 4 damage you deal in melee.",
-      "bad": "You bleed 25% more often and wounds close slower.",
-      "enabled": false,
-      "modifiers": {}
+      "bad": "You are 25% more likely to suffer a lasting wound.",
+      "enabled": true,
+      "modifiers": {
+        "lifestealFraction": 0.25,
+        "injuryChanceMult": 1.25
+      }
     }
   ]
 }

@@ -61,7 +61,7 @@ public class DivinityManager implements SlotScopedState {
     public int tryAwardChunkDivinities(String chunkKey, int dungeonLevel) {
         if (visitedChunksThisRun.contains(chunkKey)) return 0;
         visitedChunksThisRun.add(chunkKey);
-        int amount = Math.max(1, dungeonLevel);
+        int amount = Math.max(1, Math.round(Math.max(1, dungeonLevel) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("divinityMult")));
         currentDivinities += amount;
         save();
         return amount;
@@ -72,6 +72,7 @@ public class DivinityManager implements SlotScopedState {
      */
     public int awardKillDivinities(int monsterBaseLevel, int dungeonLevel) {
         int amount = Math.max(1, (monsterBaseLevel + dungeonLevel) / 2);
+        amount = Math.max(0, Math.round(amount * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("divinityMult")) + Math.round(com.bpm.minotaur.gamedata.trait.TraitEffects.add("divinityKillAdd")));
         currentDivinities += amount;
         save();
         return amount;

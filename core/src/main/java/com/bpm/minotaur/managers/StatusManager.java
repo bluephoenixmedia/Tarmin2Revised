@@ -169,6 +169,10 @@ public class StatusManager {
 
         if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
             com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
+            damage = com.bpm.minotaur.gamedata.trait.TraitEffects.scaleOverTime(damage, new java.util.Random());
+            if (damage <= 0) {
+                return; // a hardy body shrugs this tick off
+            }
             p.takeTrueDamage(damage);
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent(

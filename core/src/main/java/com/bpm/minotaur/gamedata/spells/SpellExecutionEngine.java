@@ -410,7 +410,7 @@ public class SpellExecutionEngine {
         Monster target = maze.getMonsters().get(targetTile);
 
         if (target != null && target.getCurrentHP() > 0) {
-            int dmg = calculateSpellDamage(spell, player);
+            int dmg = calculateSpellDamage(spell, player, target);
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
@@ -655,7 +655,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = calculateSpellDamage(spell, player);
+            int dmg = calculateSpellDamage(spell, player, target);
 
             int actualDmg = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actualDmg, hit.collisionPoint);
@@ -723,7 +723,7 @@ public class SpellExecutionEngine {
                 return;
             }
 
-            int dmg = calculateSpellDamage(spell, player);
+            int dmg = calculateSpellDamage(spell, player, target);
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetPos);
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
@@ -750,7 +750,7 @@ public class SpellExecutionEngine {
                     continue;
                 }
 
-                int dmg = calculateSpellDamage(spell, player);
+                int dmg = calculateSpellDamage(spell, player, target);
 
                 int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
                 if (combatManager != null) combatManager.showDamageText(actual, pos);
@@ -762,6 +762,25 @@ public class SpellExecutionEngine {
             }
         }
         return hits;
+    }
+
+    /** As above, plus Ghost Whisperer's extra damage per die against the undead. */
+    private static int calculateSpellDamage(SpellTemplate spell, Player player, Monster target) {
+        int dmg = calculateSpellDamage(spell, player);
+        float perDie = com.bpm.minotaur.gamedata.trait.TraitEffects.add("undeadSpellDicePlus");
+        if (perDie > 0f && target != null && target.getFamily() == com.bpm.minotaur.gamedata.monster.MonsterFamily.UNDEAD) {
+            dmg += Math.round(perDie * diceCount(spell.getDamageDice()));
+        }
+        return dmg;
+    }
+
+    private static int diceCount(String dice) {
+        try {
+            int d = dice.toLowerCase().indexOf('d');
+            return d <= 0 ? 1 : Integer.parseInt(dice.substring(0, d).trim());
+        } catch (Exception e) {
+            return 1;
+        }
     }
 
     private static int calculateSpellDamage(SpellTemplate spell, Player player) {
