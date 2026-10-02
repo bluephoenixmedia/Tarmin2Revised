@@ -131,7 +131,7 @@ public class DivinityManager implements SlotScopedState {
     }
 
     public void addDivinities(int amount) {
-        currentDivinities += Math.max(0, amount);
+        currentDivinities += Math.max(0, Math.round(Math.max(0, amount) * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("divinityMult")));
         save();
     }
 

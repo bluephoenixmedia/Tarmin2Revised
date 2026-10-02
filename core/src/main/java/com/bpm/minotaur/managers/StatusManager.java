@@ -35,6 +35,10 @@ public class StatusManager {
      * @param stackable If true, adds duration. If false, resets duration.
      */
     public void addEffect(StatusEffectType type, int duration, int potency, boolean stackable) {
+        if (owner instanceof com.bpm.minotaur.gamedata.player.Player
+                && com.bpm.minotaur.gamedata.trait.TraitEffects.blocks(type)) {
+            return; // the player's trait makes them immune
+        }
         if (owner instanceof com.bpm.minotaur.gamedata.player.Player) {
             com.bpm.minotaur.gamedata.player.Player p = (com.bpm.minotaur.gamedata.player.Player) owner;
             if (p.getEquipment() != null) {

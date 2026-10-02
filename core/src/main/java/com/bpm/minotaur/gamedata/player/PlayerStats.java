@@ -448,8 +448,9 @@ public class PlayerStats {
         this.treasureScore = treasureScore;
     }
 
+    /** Maximum HP, after any personality trait (Fasting Monk, Lucky Fool...). */
     public int getMaxHP() {
-        return maxHP;
+        return Math.max(1, Math.round(maxHP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("maxHpMult")));
     }
 
     public void setMaxHP(int maxHP) {
@@ -487,8 +488,8 @@ public class PlayerStats {
         if (amount <= 0)
             return;
         this.currentHP += amount;
-        if (this.currentHP > this.maxHP) {
-            this.currentHP = this.maxHP;
+        if (this.currentHP > getMaxHP()) {
+            this.currentHP = getMaxHP();
         }
     }
 

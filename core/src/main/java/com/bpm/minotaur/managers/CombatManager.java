@@ -2005,6 +2005,13 @@ public class CombatManager {
         if (monster == null)
             return;
 
+        // Angry Genius: now and then the swing just goes wrong.
+        float failChance = com.bpm.minotaur.gamedata.trait.TraitEffects.add("attackFailChance");
+        if (failChance > 0f && Math.random() < failChance) {
+            eventManager.addEvent(new GameEvent("Your anger gets the better of you and the attack goes wide!", 1.5f));
+            return;
+        }
+
         // Determine attacking weapon: if off-hand combo strike, use left hand weapon
         Item attackWeapon = pendingWeapon;
         if (currentMotionProfile != null && currentMotionProfile.isOffHand) {
@@ -2129,6 +2136,11 @@ public class CombatManager {
                         totalDamage = (int) (totalDamage * 1.25f);
                         eventManager.addEvent(new GameEvent("DEADEYE SNIPER! +25% Long-Range Damage!", 1.2f));
                     }
+                }
+
+                float meleeMult = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("meleeDamageMult");
+                if (meleeMult != 1f && (attackWeapon == null || !attackWeapon.isRanged())) {
+                    totalDamage = Math.max(1, Math.round(totalDamage * meleeMult));
                 }
 
                 // Glancing Blow: 35% base damage

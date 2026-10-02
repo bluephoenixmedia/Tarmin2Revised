@@ -273,7 +273,8 @@ public class MonsterAiManager {
         int playerDist = Math.abs(monsterGridPos.x - playerGridPos.x) + Math.abs(monsterGridPos.y - playerGridPos.y);
 
         // 1. Check Visual Awareness (Line of Sight)
-        int visualRange = 10 + (monster.getIntelligence() / 2);
+        float notice = com.bpm.minotaur.gamedata.trait.TraitEffects.mult("noticeMult");
+        int visualRange = Math.max(1, Math.round((10 + (monster.getIntelligence() / 2)) * notice));
 
         if (player.getEquipment() != null && player.getEquipment().hasRingEffect(com.bpm.minotaur.gamedata.item.RingEffectType.INVISIBILITY)) {
             visualRange = 2; // Drastically reduced range
@@ -286,7 +287,7 @@ public class MonsterAiManager {
 
         // 2. Check Audio Awareness (Hearing) if not seen
         if (!playerSeen) {
-            int hearingRange = 5 + (monster.getIntelligence());
+            int hearingRange = Math.max(1, Math.round((5 + (monster.getIntelligence())) * notice));
             if (playerDist <= hearingRange) {
                 int chance = 50 + (monster.getIntelligence() * 5) - (playerDist * 5);
                 if (chance > Math.random() * 100) {

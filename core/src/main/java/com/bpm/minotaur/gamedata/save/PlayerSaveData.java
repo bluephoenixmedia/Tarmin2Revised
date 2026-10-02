@@ -70,6 +70,10 @@ public class PlayerSaveData {
     public ItemSaveData wornRing2;
     public ItemSaveData wornShield;
     public ItemSaveData wornBelt;
+    /** Personality trait: the one held, an offer still waiting to be answered, and respawns since the last choice. */
+    public String traitId;
+    public java.util.List<String> pendingTraitOffer = new java.util.ArrayList<>();
+    public int respawnsSinceChoice;
 
     // Hands
     public ItemSaveData rightHand;
@@ -234,6 +238,10 @@ public class PlayerSaveData {
             this.wornBelt = eq.getWornBelt() != null ? new ItemSaveData(eq.getWornBelt()) : null;
         }
 
+        this.traitId = player.getTraitId();
+        this.pendingTraitOffer = new java.util.ArrayList<>(player.getPendingTraitOffer());
+        this.respawnsSinceChoice = player.getRespawnsSinceChoice();
+
         // Inventory
         Inventory inv = player.getInventory();
         if (inv != null) {
@@ -376,6 +384,8 @@ public class PlayerSaveData {
             eq.setWornShield(wornShield != null ? wornShield.toItem(itemDataManager, assetManager) : null);
             eq.setWornBelt(wornBelt != null ? wornBelt.toItem(itemDataManager, assetManager) : null);
         }
+
+        player.restoreTrait(traitId, pendingTraitOffer, respawnsSinceChoice);
 
         // Inventory
         Inventory inv = player.getInventory();

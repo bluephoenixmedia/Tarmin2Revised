@@ -655,6 +655,14 @@ public class GameScreen extends BaseScreen {
                 game.setScreen(new SpellbookScreen(game, this, player, maze));
                 return;
             }
+            if (player != null && player.needsTraitOffer()) {
+                player.offerTraits(); // a new game, or a save from before traits
+            }
+            if (player != null && !player.getPendingTraitOffer().isEmpty()
+                    && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
+                game.setScreen(new TraitChoiceScreen(game, this, player));
+                return;
+            }
 
             if (worldManager != null) {
                 worldManager.update(delta);
@@ -1735,6 +1743,9 @@ public class GameScreen extends BaseScreen {
         player.getStatusManager().clearEffects();
         player.abandonTomeStudy();
         player.clearRunSpellsOnDeath();
+        if (player.noteRespawn()) {
+            player.offerTraits(); // every fifth respawn: a new personality to choose
+        }
         // The Player instance survives death, so anatomical trauma must be wiped
         // explicitly -- otherwise open wounds, bleeding, and fever follow the
         // character into the next expedition and can bleed them out before their

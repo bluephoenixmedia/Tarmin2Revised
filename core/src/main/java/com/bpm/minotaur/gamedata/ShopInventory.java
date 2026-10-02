@@ -120,7 +120,7 @@ public class ShopInventory {
 
     public static int getBuyPrice(Item item, ItemDataManager idm) {
         int base = getBaseValue(item, idm);
-        return Math.max(1, (int) (base * MARKUP));
+        return Math.max(1, (int) (base * MARKUP * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("buyMult")));
     }
 
     /**
@@ -143,7 +143,7 @@ public class ShopInventory {
 
     public static int getSellPrice(Item item, ItemDataManager idm) {
         int base = getBaseValue(item, idm);
-        return Math.max(1, (int) (base * BUYBACK));
+        return Math.max(1, (int) (base * BUYBACK * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("sellMult")));
     }
 
     private static int getBaseValue(Item item, ItemDataManager idm) {

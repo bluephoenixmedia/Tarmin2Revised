@@ -55,6 +55,8 @@ public class SpellExecutionEngine {
             if (player.hasSkill(SkillId.SPELL_WEAVER)) {
                 effectiveCost = Math.max(1, effectiveCost - 1);
             }
+            effectiveCost = Math.max(1, Math.round(effectiveCost * com.bpm.minotaur.gamedata.trait.TraitEffects.mult("spellCostMult")
+                    + com.bpm.minotaur.gamedata.trait.TraitEffects.add("spellCostFlat")));
             if (player.hasSkill(SkillId.RUNIC_CONSERVATION) && com.badlogic.gdx.math.MathUtils.randomBoolean(0.25f)) {
                 effectiveCost = 0;
                 eventManager.addEvent(new GameEvent("RUNIC CONSERVATION: Free spell cast!", 1.5f));
