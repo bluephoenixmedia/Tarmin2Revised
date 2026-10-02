@@ -255,6 +255,7 @@ public class Item implements Renderable {
     private boolean isKey; // Removed final
     private boolean isUsable; // Removed final
     private boolean isContainer; // Removed final
+    private boolean isBeltClip;
     private boolean isRing; // Removed final
     private boolean isShield; // New Field, Removed final
     private boolean isHelmet; // New Field, Removed final
@@ -455,6 +456,7 @@ public class Item implements Renderable {
         item.isKey = template.isKey;
         item.isUsable = template.isUsable;
         item.isContainer = template.isContainer;
+        item.isBeltClip = template.isBeltClip;
         item.isRing = template.isRing;
         item.isGauntlets = template.isGauntlets;
         item.isLegs = template.isLegs;
@@ -511,6 +513,7 @@ public class Item implements Renderable {
             this.isKey = template.isKey;
             this.isUsable = template.isUsable;
             this.isContainer = template.isContainer;
+            this.isBeltClip = template.isBeltClip;
             this.isRing = template.isRing;
             this.isShield = template.isShield;
             this.isHelmet = template.isHelmet;
@@ -833,6 +836,10 @@ public class Item implements Renderable {
             if (name.endsWith("_BOOK") || name.startsWith("TOME_") || name.equals("SPECIAL_BOOK")) return false;
         }
         return isUsable && !isWeapon && !isArmor && !isRing && !isContainer && !isTreasure;
+    }
+
+    public boolean isBeltClip() {
+        return this.isBeltClip;
     }
 
     public boolean isContainer() {

@@ -271,6 +271,7 @@ public class InventoryDragDropHandler {
             case "Feet":   eq.setWornBoots(null);     break;
             case "Ring":   eq.setWornRing(null);      break;
             case "Ring 2": eq.setWornRing2(null);     break;
+            case "Belt":   eq.setWornBelt(null);      break;
             case "L.Hand": inv.setLeftHand(null);  eq.setWornShield(null); break;
             case "R.Hand": inv.setRightHand(null); break;
         }
@@ -292,6 +293,7 @@ public class InventoryDragDropHandler {
             case "Feet":   eq.setWornBoots(item);     break;
             case "Ring":   eq.setWornRing(item);      break;
             case "Ring 2": eq.setWornRing2(item);     break;
+            case "Belt":   eq.setWornBelt(item);      break;
             case "L.Hand": {
                 inv.setLeftHand(item);
                 boolean shield = item.isShield();

@@ -134,10 +134,7 @@ public class LightingManager {
     private void updatePlayerLight(Player player, Maze maze) {
         playerLight.setPosition(player.getPosition().x, player.getPosition().y);
 
-        Item offHand = (player.getInventory() != null) ? player.getInventory().getLeftHand() : null;
-        Item mainHand = (player.getInventory() != null) ? player.getInventory().getRightHand() : null;
-        boolean hasLantern = (offHand != null && offHand.getType() == ItemType.BRASS_LANTERN)
-                || (mainHand != null && mainHand.getType() == ItemType.BRASS_LANTERN);
+        boolean hasLantern = player.hasLantern();
 
         boolean isUnderground = maze != null && maze.getLevel() > 1;
 

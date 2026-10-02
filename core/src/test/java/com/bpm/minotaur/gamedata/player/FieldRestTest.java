@@ -148,16 +148,16 @@ public class FieldRestTest {
     }
 
     @Test
-    public void starterLanternGoesInTheLeftHandWithoutDisplacingAnything() {
+    public void starterLanternGoesOnTheBeltWithoutDisplacingAnything() {
         com.bpm.minotaur.gamedata.item.Item lantern = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
                 com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
         assertTrue(player.giveStarterLantern(lantern));
-        assertSame(lantern, player.getInventory().getLeftHand());
+        assertSame(lantern, player.getEquipment().getWornBelt());
 
         com.bpm.minotaur.gamedata.item.Item other = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
                 com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
         assertFalse(player.giveStarterLantern(other));
-        assertSame(lantern, player.getInventory().getLeftHand());
+        assertSame(lantern, player.getEquipment().getWornBelt());
         assertFalse(player.giveStarterLantern(null));
     }
 
@@ -168,6 +168,6 @@ public class FieldRestTest {
         com.bpm.minotaur.gamedata.item.Item fresh = com.bpm.minotaur.gamedata.item.Item.fromTemplate(
                 com.bpm.minotaur.gamedata.item.Item.ItemType.BRASS_LANTERN, new com.bpm.minotaur.gamedata.item.ItemTemplate());
         assertFalse(player.giveStarterLantern(fresh, java.util.Collections.singletonList(stashed)));
-        assertNull(player.getInventory().getLeftHand());
+        assertNull(player.getEquipment().getWornBelt());
     }
 }

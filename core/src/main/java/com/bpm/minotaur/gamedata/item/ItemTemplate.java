@@ -66,6 +66,8 @@ public class ItemTemplate {
     public boolean isKey;
     public boolean isUsable;
     public boolean isContainer;
+    /** May be worn on the belt clip (the lantern, and whatever else is made to hang there). */
+    public boolean isBeltClip;
     public boolean isRing;
     public boolean isShield; // New Field
     public boolean isHelmet; // New Field
