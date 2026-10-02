@@ -118,4 +118,21 @@ public class BeltClipTest {
         assertNull(player.getEquipment().getWornBelt());
         assertFalse(player.hasLantern());
     }
+
+    @Test
+    public void aFoundLanternClipsToAnEmptyBelt() {
+        Item found = lantern();
+        assertTrue(player.pickupItem(found));
+        assertSame(found, player.getEquipment().getWornBelt());
+        assertEquals(0, player.getInventory().getCarriedCount());
+    }
+
+    @Test
+    public void aSecondFoundLanternGoesToThePackNotOverTheBelt() {
+        Item first = lantern();
+        player.pickupItem(first);
+        Item second = lantern();
+        assertTrue(player.pickupItem(second));
+        assertSame(first, player.getEquipment().getWornBelt());
+    }
 }

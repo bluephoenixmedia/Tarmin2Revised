@@ -1176,8 +1176,13 @@ public class Player {
     }
 
     public boolean pickupItem(Item item) {
+        // A belt-clip item (the lantern) goes straight onto an empty belt, where it works and stays out of the way.
+        boolean clipped = item != null && item.isBeltClip() && equipment.getWornBelt() == null;
+        if (clipped) {
+            equipment.setWornBelt(item);
+        }
         // Food is now picked up normally
-        boolean pickedUp = inventory.pickup(item);
+        boolean pickedUp = clipped || inventory.pickup(item);
         if (pickedUp) {
             if (item.getGrantedDie() != null) {
                 stats.getDicePool().add(item.getGrantedDie());
