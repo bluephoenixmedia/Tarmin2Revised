@@ -1921,6 +1921,7 @@ public class GameScreen extends BaseScreen {
         hud = new Hud(game.getBatch(), player, maze, combatManager, eventManager, worldManager, game, debugManager,
                 gameMode);
         hud.setDiscoveryManager(this.discoveryManager);
+        hud.setGameScreen(this); // the quick-slot menu and the silhouette widget need it after a chunk swap too
         player.setItemPickupListener(item -> hud.showPickupToast(item));
         hud.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         combatManager.setHud(hud);
@@ -2005,6 +2006,38 @@ public class GameScreen extends BaseScreen {
 
     /** Reused: the wind vector is read once a turn. */
     private final Vector3 scratchWind = new Vector3();
+
+    /**
+     * Quick-slot menu: throws the item straight ahead. Exploration only, like the A key; in a fight
+     * the combat menu owns the turn.
+     */
+    public void throwQuickSlotItem(int slotIdx) {
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null) {
+            return;
+        }
+        if (combatManager.getCurrentState() != CombatManager.CombatState.INACTIVE) {
+            eventManager.addEvent(new GameEvent("You cannot throw that in the middle of a fight.", 1.5f));
+            return;
+        }
+        if (combatManager.throwItem(item)) {
+            playerTurnTakesAction();
+        }
+    }
+
+    /** Quick-slot menu: drops the item at your feet (or the nearest free tile). */
+    public void dropQuickSlotItem(int slotIdx) {
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null) {
+            return;
+        }
+        if (player.dropItem(maze, item)) {
+            player.getInventory().getQuickSlots()[slotIdx] = null;
+            eventManager.addEvent(new GameEvent("Dropped " + item.getDisplayName(), 2f));
+        } else {
+            eventManager.addEvent(new GameEvent("No space to drop here.", 2f));
+        }
+    }
 
     private void playerTurnTakesAction() {
         if (MusicManager.getInstance().isResting()) {

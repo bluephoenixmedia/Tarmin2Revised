@@ -154,6 +154,89 @@ public class Hud implements Disposable {
     }
 
     /** Tab: swap between the items named in the pickup toast. False when there is nothing to swap. */
+    private Table quickSlotMenu;
+
+    /** Right-click on a quick slot: Use, Throw or Drop the item in it. */
+    private void showQuickSlotMenu(final int slotIdx) {
+        hideQuickSlotMenu();
+        Item item = player.getInventory().getQuickSlots()[slotIdx];
+        if (item == null || gameScreen == null) {
+            return;
+        }
+        hudTooltip.hide();
+        Table menu = new Table();
+        menu.setBackground(hudSkin.getPanelBg());
+        menu.pad(6);
+        menu.add(quickSlotMenuButton("USE", new Runnable() {
+            @Override
+            public void run() {
+                if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
+                        || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
+                    combatManager.playerUseItem(slotIdx, discoveryManager);
+                } else {
+                    player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze, combatManager);
+                }
+            }
+        })).fillX().row();
+        menu.add(quickSlotMenuButton("THROW", new Runnable() {
+            @Override
+            public void run() {
+                gameScreen.throwQuickSlotItem(slotIdx);
+            }
+        })).fillX().padTop(4).row();
+        menu.add(quickSlotMenuButton("DROP", new Runnable() {
+            @Override
+            public void run() {
+                gameScreen.dropQuickSlotItem(slotIdx);
+            }
+        })).fillX().padTop(4).row();
+        menu.pack();
+        Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
+        menu.setPosition(pos.x + 25f, pos.y + 50f);
+        // Leaving the menu with the pointer closes it, so there is no stray state to clear.
+        menu.addListener(new InputListener() {
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (toActor == null || !toActor.isDescendantOf(quickSlotMenu)) {
+                    hideQuickSlotMenu();
+                }
+            }
+        });
+        quickSlotMenu = menu;
+        // Closes by itself if the pointer never enters it, so it cannot be left hanging over the view.
+        menu.addAction(com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence(
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.delay(4f),
+                com.badlogic.gdx.scenes.scene2d.actions.Actions.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (quickSlotMenu == menu) {
+                            hideQuickSlotMenu();
+                        }
+                    }
+                })));
+        stage.addActor(menu);
+    }
+
+    private com.badlogic.gdx.scenes.scene2d.ui.TextButton quickSlotMenuButton(String text, final Runnable action) {
+        com.badlogic.gdx.scenes.scene2d.ui.TextButton button = new com.badlogic.gdx.scenes.scene2d.ui.TextButton(
+                text, com.bpm.minotaur.ui.UiStyles.secondary(hudSkin));
+        button.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                hideQuickSlotMenu();
+                action.run();
+            }
+        });
+        return button;
+    }
+
+    private void hideQuickSlotMenu() {
+        if (quickSlotMenu != null) {
+            quickSlotMenu.remove();
+            quickSlotMenu = null;
+        }
+    }
+
     public boolean cycleToast() {
         return pickupToasts.cycle();
     }
@@ -428,10 +511,15 @@ public class Hud implements Disposable {
             Label badge = new Label(String.valueOf(i + 1), new Label.LabelStyle(hudSkin.getFontSmall(), HudSkin.COL_GOLD_MUTED));
             backpackSlots[i].add(badge).padLeft(3).padTop(1).row();
 
-            backpackSlots[i].addListener(new ClickListener() {
+            ClickListener slotClick = new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
+                    if (event.getButton() == com.badlogic.gdx.Input.Buttons.RIGHT) {
+                        showQuickSlotMenu(slotIdx);
+                        return;
+                    }
+                    hideQuickSlotMenu();
                     if (combatManager != null && (combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_MENU
                             || combatManager.getCurrentState() == CombatManager.CombatState.PLAYER_TURN)) {
                         combatManager.playerUseItem(slotIdx, discoveryManager);
@@ -439,7 +527,9 @@ public class Hud implements Disposable {
                         player.useQuickSlot(slotIdx, eventManager, discoveryManager, maze, combatManager);
                     }
                 }
-            });
+            };
+            slotClick.setButton(-1); // left clicks use the item as before; right clicks open the menu
+            backpackSlots[i].addListener(slotClick);
 
             backpackSlots[i].addListener(new InputListener() {
                 @Override
@@ -447,9 +537,9 @@ public class Hud implements Disposable {
                     if (encounterWindow != null && encounterWindow.isVisible()) return;
                     Item item = player.getInventory().getQuickSlots()[slotIdx];
                     Vector2 pos = backpackSlots[slotIdx].localToStageCoordinates(new Vector2(0, 0));
-                    String hotkeyHint = "Hotkey " + (slotIdx + 1);
+                    String hotkeyHint = "Hotkey " + (slotIdx + 1) + "  |  Right-click: Use / Throw / Drop";
                     if (item != null && item.isWeapon()) {
-                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]";
+                        hotkeyHint = "Throw / [" + (slotIdx + 1) + "]  |  Right-click: Use / Throw / Drop";
                     }
                     hudTooltip.show(item, pos.x + slotSize / 2f, pos.y, hotkeyHint);
                 }
