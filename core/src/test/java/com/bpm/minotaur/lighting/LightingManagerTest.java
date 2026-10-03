@@ -35,8 +35,42 @@ public class LightingManagerTest {
 
     @Test
     public void theStationBonusStacksWithTheUndergroundBoost() {
-        assertEquals((LightingManager.LANTERN_RADIUS + LightingManager.STATION_LANTERN_RADIUS_BONUS) * 1.5f,
+        assertEquals((LightingManager.LANTERN_RADIUS + LightingManager.STATION_LANTERN_RADIUS_BONUS) * 1.35f,
                 LightingManager.carriedLanternRadius(true, true), 0.001f);
+    }
+
+    /** What world3d.frag gives a lit surface: (1 - d/R)^2 * I, capped at 2.2. */
+    private static float lightAt(float distance, float radius, float intensity) {
+        float a = Math.max(0f, 1f - distance / radius);
+        return a * a * intensity;
+    }
+
+    @Test
+    public void undergroundTheLanternReachesFurtherWithoutWashingOutTheNearWall() {
+        float surface = lightAt(1f, LightingManager.carriedLanternRadius(false, false),
+                LightingManager.carriedLanternIntensity(false, false));
+        float under = lightAt(1f, LightingManager.carriedLanternRadius(true, false),
+                LightingManager.carriedLanternIntensity(true, false));
+        assertTrue("underground still brighter than the surface", under > surface);
+        // The old x1.5 on both radius and intensity put this at 1.87, near the 2.2 cap.
+        assertTrue("a wall one tile away must not glare: " + under, under < 1.4f);
+        assertTrue("and it reaches further underground",
+                LightingManager.carriedLanternRadius(true, false) > LightingManager.carriedLanternRadius(false, false));
+    }
+
+    @Test
+    public void theCarriedLanternFlameVisiblyFlickers() {
+        LightSource flame = new LightSource("lantern", 0f, 0f, LightingManager.COLOR_LANTERN, 5f, 1f,
+                LightSource.FlickerProfile.LANTERN_FLAME);
+        float lo = Float.MAX_VALUE, hi = -Float.MAX_VALUE;
+        for (int i = 0; i < 600; i++) { // ten seconds at 60 fps
+            flame.update(1f / 60f);
+            lo = Math.min(lo, flame.getCurrentIntensity());
+            hi = Math.max(hi, flame.getCurrentIntensity());
+        }
+        // LANTERN_BREATH swung 4% in total, which nobody could see.
+        assertTrue("the flame must swing at least 12% of its brightness: " + (hi - lo), hi - lo >= 0.12f);
+        assertTrue("but never gutter out", lo > 0.7f);
     }
 
     @Test
@@ -85,7 +119,7 @@ public class LightingManagerTest {
 
         lightingManager.update(0.016f, player, null);
         assertEquals(LightingManager.LANTERN_RADIUS, lightingManager.getPlayerLight().getBaseRadius(), 0.01f);
-        assertEquals(LightSource.FlickerProfile.LANTERN_BREATH, lightingManager.getPlayerLight().getProfile());
+        assertEquals(LightSource.FlickerProfile.LANTERN_FLAME, lightingManager.getPlayerLight().getProfile());
         assertEquals(LightingManager.LANTERN_INTENSITY, lightingManager.getPlayerLight().getBaseIntensity(), 0.01f);
         assertEquals(LightingManager.COLOR_LANTERN.r, lightingManager.getPlayerLight().getBaseColor().r, 0.01f);
 

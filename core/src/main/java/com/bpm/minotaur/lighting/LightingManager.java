@@ -24,7 +24,7 @@ public class LightingManager {
     public static final float LANTERN_RADIUS = 5.5f;
 
     public static final float TORCH_INTENSITY = 1.40f;           // 40% boost for personal light (was 1.0f)
-    public static final float LANTERN_INTENSITY = 1.61f;         // 40% boost for equipped brass lantern (was 1.15f)
+    public static final float LANTERN_INTENSITY = 1.45f;         // carried brass lantern (1.61 read a little hot; was 1.15 originally)
     public static final float MOUNTED_LANTERN_INTENSITY = 1.40f; // 40% boost for mounted lanterns (was 1.0f)
 
     public static final Color COLOR_TORCH = new Color(1.0f, 0.62f, 0.26f, 1.0f);     // Pine torch flame
@@ -110,9 +110,12 @@ public class LightingManager {
         return this.lanternLit;
     }
 
-    // Underground chunks (any level below the overworld) get a brighter carried lantern,
-    // since natural light is entirely absent there.
-    private static final float UNDERGROUND_LANTERN_BOOST = 1.5f;
+    // Underground (any level below the overworld) there is no daylight at all, so
+    // the carried lantern reaches further. Reach, mostly -- not glare: a x1.5 on
+    // intensity as well put a wall one tile away near the shader's cap (1.87 of
+    // 2.2) and washed the corridor out. Now it is ~1.25, still above the surface.
+    private static final float UNDERGROUND_LANTERN_RADIUS_BOOST = 1.35f;
+    private static final float UNDERGROUND_LANTERN_INTENSITY_BOOST = 1.15f;
 
     /** What owning the Shelter Lantern station does for the lantern you carry: it burns wider and brighter. */
     public static final float STATION_LANTERN_RADIUS_BONUS = 1.0f;
@@ -120,12 +123,12 @@ public class LightingManager {
 
     public static float carriedLanternRadius(boolean underground, boolean stationOwned) {
         float radius = LANTERN_RADIUS + (stationOwned ? STATION_LANTERN_RADIUS_BONUS : 0f);
-        return radius * (underground ? UNDERGROUND_LANTERN_BOOST : 1.0f);
+        return radius * (underground ? UNDERGROUND_LANTERN_RADIUS_BOOST : 1.0f);
     }
 
     public static float carriedLanternIntensity(boolean underground, boolean stationOwned) {
         float intensity = LANTERN_INTENSITY * (stationOwned ? STATION_LANTERN_INTENSITY_FACTOR : 1.0f);
-        return intensity * (underground ? UNDERGROUND_LANTERN_BOOST : 1.0f);
+        return intensity * (underground ? UNDERGROUND_LANTERN_INTENSITY_BOOST : 1.0f);
     }
 
     /**
@@ -154,7 +157,10 @@ public class LightingManager {
             playerLight.setBaseRadius(carriedLanternRadius(isUnderground, stationOwned));
             playerLight.setBaseIntensity(carriedLanternIntensity(isUnderground, stationOwned));
             playerLight.setBaseColor(COLOR_LANTERN);
-            playerLight.setProfile(LightSource.FlickerProfile.LANTERN_BREATH);
+            // A flame you carry wavers; LANTERN_BREATH's +/-2% swell was too calm
+            // to see, which is why the flicker vanished once everyone started
+            // with a lantern instead of a torch.
+            playerLight.setProfile(LightSource.FlickerProfile.LANTERN_FLAME);
         } else {
             playerLight.setActive(true);
             playerLight.setBaseRadius(TORCH_RADIUS);

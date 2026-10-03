@@ -87,7 +87,7 @@ public class BeltClipTest {
 
         player.getEquipment().setWornBelt(lantern());
         lighting.update(0.016f, player, null);
-        assertEquals(LightSource.FlickerProfile.LANTERN_BREATH, lighting.getPlayerLight().getProfile());
+        assertEquals(LightSource.FlickerProfile.LANTERN_FLAME, lighting.getPlayerLight().getProfile());
     }
 
     @Test
