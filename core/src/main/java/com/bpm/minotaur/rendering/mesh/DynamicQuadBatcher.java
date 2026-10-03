@@ -283,6 +283,31 @@ public class DynamicQuadBatcher implements Disposable {
             dir = (decal.side == 0) ? Direction.WEST : Direction.NORTH;
         }
 
+        emitWallQuad(dir, localGridX, localGridY, wX, r, h - r, h + r, u1, v1, u2, v2, packedColor, eps);
+
+        // A drip runs down from the splat's lower edge: a narrow column of the
+        // same texture stretched down the wall, so it reads as the splat's own
+        // blood sliding rather than a second mark.
+        if (decal.dripLength > 0.01f) {
+            float top = h - r * 0.4f;
+            float bottom = Math.max(0.0f, h - r - decal.dripLength);
+            float halfW = Math.max(0.012f, r * 0.12f);
+            float uMid = (u1 + u2) * 0.5f;
+            float uHalf = (u2 - u1) * 0.06f;
+            if (!ensureCapacity(1)) return;
+            emitWallQuad(dir, localGridX, localGridY, wX, halfW, bottom, top,
+                    uMid - uHalf, v1, uMid + uHalf, v2, packedColor, eps * 1.5f);
+        }
+    }
+
+    /**
+     * One quad flat on a wall face, {@code eps} off it along the normal.
+     * {@code wX} is the centre along the face, {@code halfW} half its width.
+     */
+    private void emitWallQuad(Direction dir, float localGridX, float localGridY, float wX, float halfW,
+                              float yBottom, float yTop, float u1, float v1, float u2, float v2,
+                              float packedColor, float eps) {
+        float r = halfW;
         switch (dir) {
             case EAST: {
                 // Moving EAST: hit EAST boundary of cell (X = localGridX + 1.0)
@@ -291,10 +316,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xPos, h - r, zCenter + r, u1, v1,
-                        xPos, h - r, zCenter - r, u2, v1,
-                        xPos, h + r, zCenter - r, u2, v2,
-                        xPos, h + r, zCenter + r, u1, v2,
+                        xPos, yBottom, zCenter + r, u1, v1,
+                        xPos, yBottom, zCenter - r, u2, v1,
+                        xPos, yTop, zCenter - r, u2, v2,
+                        xPos, yTop, zCenter + r, u1, v2,
                         -1f, 0f, 0f, packedColor
                 );
                 break;
@@ -306,10 +331,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float zCenter = -(localGridY + wX);
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xPos, h - r, zCenter - r, u1, v1,
-                        xPos, h - r, zCenter + r, u2, v1,
-                        xPos, h + r, zCenter + r, u2, v2,
-                        xPos, h + r, zCenter - r, u1, v2,
+                        xPos, yBottom, zCenter - r, u1, v1,
+                        xPos, yBottom, zCenter + r, u2, v1,
+                        xPos, yTop, zCenter + r, u2, v2,
+                        xPos, yTop, zCenter - r, u1, v2,
                         1f, 0f, 0f, packedColor
                 );
                 break;
@@ -321,10 +346,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xCenter - r, h - r, zPos, u1, v1,
-                        xCenter + r, h - r, zPos, u2, v1,
-                        xCenter + r, h + r, zPos, u2, v2,
-                        xCenter - r, h + r, zPos, u1, v2,
+                        xCenter - r, yBottom, zPos, u1, v1,
+                        xCenter + r, yBottom, zPos, u2, v1,
+                        xCenter + r, yTop, zPos, u2, v2,
+                        xCenter - r, yTop, zPos, u1, v2,
                         0f, 0f, 1f, packedColor
                 );
                 break;
@@ -336,10 +361,10 @@ public class DynamicQuadBatcher implements Disposable {
                 float xCenter = localGridX + wX;
                 ChunkMeshBuilder.addQuad(
                         vertices, indices,
-                        xCenter + r, h - r, zPos, u1, v1,
-                        xCenter - r, h - r, zPos, u2, v1,
-                        xCenter - r, h + r, zPos, u2, v2,
-                        xCenter + r, h + r, zPos, u1, v2,
+                        xCenter + r, yBottom, zPos, u1, v1,
+                        xCenter - r, yBottom, zPos, u2, v1,
+                        xCenter - r, yTop, zPos, u2, v2,
+                        xCenter + r, yTop, zPos, u1, v2,
                         0f, 0f, -1f, packedColor
                 );
                 break;

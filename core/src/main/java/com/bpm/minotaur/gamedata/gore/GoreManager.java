@@ -653,6 +653,12 @@ public class GoreManager {
         }
 
         wd.init(x, y, dir, wallX, height, splatRadius, color, tex);
+        if (GoreLevel.current().drips() && wd.radius >= WallDecal.DRIP_MIN_RADIUS && MathUtils.randomBoolean(0.6f)) {
+            boolean toFloor = MathUtils.randomBoolean(0.35f);
+            float gap = wd.floorGap();
+            wd.startDrip(toFloor ? gap : gap * MathUtils.random(0.25f, 0.8f),
+                    MathUtils.random(0.06f, 0.16f), toFloor);
+        }
         wallDecalsByKey.get(key).add(wd);
         activeWallDecals.add(wd);
     }
@@ -771,6 +777,9 @@ public class GoreManager {
         for (int i = activeWallDecals.size - 1; i >= 0; i--) {
             WallDecal wd = activeWallDecals.get(i);
             wd.update(delta, persistent);
+            if (wd.takeDripLanding()) {
+                pourDripOntoFloor(wd);
+            }
             if (wd.lifeTimer <= 0) {
                 removeWallDecalAt(i);
             }
@@ -785,6 +794,23 @@ public class GoreManager {
                 gibPool.free(g);
             }
         }
+    }
+
+    /** A drip that reached the floor pools at the foot of its wall. */
+    private void pourDripOntoFloor(WallDecal wd) {
+        float inset = 0.06f;
+        float x = wd.gridX + 0.5f;
+        float z = wd.gridY + 0.5f;
+        if (wd.dir != null) {
+            switch (wd.dir) {
+                case EAST: x = wd.gridX + 1f - inset; z = wd.gridY + wd.wallX; break;
+                case WEST: x = wd.gridX + inset; z = wd.gridY + wd.wallX; break;
+                case NORTH: x = wd.gridX + wd.wallX; z = wd.gridY + 1f - inset; break;
+                case SOUTH: x = wd.gridX + wd.wallX; z = wd.gridY + inset; break;
+                default: break;
+            }
+        }
+        spawnSurfaceDecal(tmpPos.set(x, SurfaceDecal.FLOOR_Y, z), wd.color, MathUtils.random(0.10f, 0.16f));
     }
 
     private Maze resolveMazeForWorldCell(int worldGridX, int worldGridY, Maze currentMaze, WorldManager worldManager) {
@@ -873,6 +899,7 @@ public class GoreManager {
                 data.b = d.color.b;
                 data.a = d.color.a;
                 data.lifeTimer = d.lifeTimer;
+                data.dripLength = d.dripLength;
                 chunkData.wallDecals.add(data);
             }
         }
@@ -936,6 +963,8 @@ public class GoreManager {
                 decal.init(data.gridX, data.gridY, dir, data.wallX, data.height, data.radius, c,
                         (smearTextures.size > 0) ? smearTextures.first() : null);
                 decal.restoreColor(data.r, data.g, data.b, data.a);
+                // A saved drip has finished running; it comes back as it was left.
+                decal.dripLength = data.dripLength;
                 decal.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : WallDecal.MAX_WALL_DECAL_LIFE;
                 activeWallDecals.add(decal);
 

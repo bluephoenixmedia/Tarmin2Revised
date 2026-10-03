@@ -41,6 +41,7 @@ public class WallDecal implements Pool.Poolable {
         this.maxLife = MAX_WALL_DECAL_LIFE;
         this.lifeTimer = MAX_WALL_DECAL_LIFE;
         this.age = 0f;
+        clearDrip();
         this.textureRegion = texture;
     }
 
@@ -53,6 +54,39 @@ public class WallDecal implements Pool.Poolable {
     /** Seconds since the splat landed; drives drying whether or not it ever fades. */
     public float age;
 
+    // --- Drip (guide step 5) ---
+    /** Splats smaller than this never drip; a fleck has no blood to run. */
+    public static final float DRIP_MIN_RADIUS = 0.10f;
+    /** How far the streak has run below the splat's lower edge, in wall units. */
+    public float dripLength;
+    public float dripTarget;
+    public float dripSpeed;
+    public boolean dripReachesFloor;
+    private boolean dripLanded;
+
+    /**
+     * Starts blood running down from this splat. A drip that reaches the floor
+     * reports it once through {@link #takeDripLanding()}.
+     */
+    public void startDrip(float target, float speed, boolean reachesFloor) {
+        this.dripTarget = Math.max(0f, target);
+        this.dripSpeed = Math.max(0.01f, speed);
+        this.dripReachesFloor = reachesFloor;
+        this.dripLanded = false;
+    }
+
+    /** Wall units from the splat's lower edge to the floor. */
+    public float floorGap() {
+        return Math.max(0f, height - radius);
+    }
+
+    /** True exactly once, when a floor-bound drip arrives. */
+    public boolean takeDripLanding() {
+        if (dripLanded || !dripReachesFloor || dripTarget <= 0f || dripLength < dripTarget) return false;
+        dripLanded = true;
+        return true;
+    }
+
     public void update(float delta) {
         update(delta, false);
     }
@@ -61,6 +95,12 @@ public class WallDecal implements Pool.Poolable {
     public void update(float delta, boolean persistent) {
         age += delta;
         if (!persistent) lifeTimer -= delta;
+
+        if (dripLength < dripTarget) {
+            // Runs quickest while fresh, then thickens and slows.
+            float slow = 1f - 0.6f * MathUtils.clamp(dripLength / Math.max(0.01f, dripTarget), 0f, 1f);
+            dripLength = Math.min(dripTarget, dripLength + dripSpeed * slow * delta);
+        }
 
         // Oxidation color shift
         float dryT = MathUtils.clamp(age / 30.0f, 0f, 1f);
@@ -76,8 +116,17 @@ public class WallDecal implements Pool.Poolable {
         }
     }
 
+    private void clearDrip() {
+        dripLength = 0f;
+        dripTarget = 0f;
+        dripSpeed = 0f;
+        dripReachesFloor = false;
+        dripLanded = false;
+    }
+
     @Override
     public void reset() {
+        clearDrip();
         this.dir = null;
         this.textureRegion = null;
         this.lifeTimer = 0f;

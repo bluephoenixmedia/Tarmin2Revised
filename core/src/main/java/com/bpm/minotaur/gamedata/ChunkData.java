@@ -659,6 +659,8 @@ public class ChunkData {
         public float b;
         public float a;
         public float lifeTimer;
+        /** How far the splat's drip had run; 0 for older saves. */
+        public float dripLength;
 
         public WallDecalData() {}
     }

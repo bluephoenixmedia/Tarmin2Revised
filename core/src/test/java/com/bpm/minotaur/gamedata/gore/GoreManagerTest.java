@@ -170,6 +170,7 @@ public class GoreManagerTest {
     public void onNormalBloodDriesButNeverFades() {
         goreManager.spawnSurfaceDecal(new Vector3(3, 0, 3), Color.RED, 0.25f);
         goreManager.spawnWallDecal(3, 3, Direction.NORTH, 0.5f, 0.5f, 0.15f, Color.RED);
+        goreManager.getActiveWallDecals().first().startDrip(0f, 0.1f, false);
         goreManager.update(600f, null);
 
         assertEquals(1, goreManager.getActiveDecals().size);
@@ -268,5 +269,45 @@ public class GoreManagerTest {
         goreManager.spawnSurfaceDecal(new Vector3(5f, 0, 5f), Color.RED, 0.2f);
         goreManager.spawnElementalScorch(new Vector3(5f, 0, 5f), Color.BLACK, 0.2f);
         assertTrue(goreManager.getActiveDecals().size > 1);
+    }
+
+    @Test
+    public void aDripThatReachesTheFloorPoolsAtTheFootOfItsWall() {
+        goreManager.spawnWallDecal(4, 4, Direction.NORTH, 0.5f, 0.6f, 0.15f, Color.RED);
+        WallDecal wd = goreManager.getActiveWallDecals().first();
+        wd.startDrip(wd.floorGap(), 0.2f, true);
+        int stainsBefore = goreManager.getActiveDecals().size;
+
+        goreManager.update(30f, null);
+        goreManager.update(1f, null);
+
+        assertEquals(wd.floorGap(), wd.dripLength, 0.001f);
+        assertEquals(stainsBefore + 1, goreManager.getActiveDecals().size);
+        SurfaceDecal pool = goreManager.getActiveDecals().peek();
+        assertTrue("against the north face", pool.position.z > 4.85f && pool.position.z < 5f);
+    }
+
+    @Test
+    public void aShortDripNeverReachesTheFloor() {
+        goreManager.spawnWallDecal(4, 4, Direction.NORTH, 0.5f, 0.6f, 0.15f, Color.RED);
+        WallDecal wd = goreManager.getActiveWallDecals().first();
+        wd.startDrip(wd.floorGap() * 0.5f, 0.2f, false);
+        goreManager.update(30f, null);
+        assertEquals(0, goreManager.getActiveDecals().size);
+    }
+
+    @Test
+    public void lowGoreNeverDrips() {
+        GoreLevel.setCurrent(GoreLevel.LOW);
+        try {
+            for (int i = 0; i < 60; i++) {
+                goreManager.spawnWallDecal(i, 0, Direction.NORTH, 0.5f, 0.6f, 0.15f, Color.RED);
+            }
+            for (WallDecal wd : goreManager.getActiveWallDecals()) {
+                assertEquals(0f, wd.dripTarget, 0f);
+            }
+        } finally {
+            GoreLevel.setCurrent(GoreLevel.NORMAL);
+        }
     }
 }
