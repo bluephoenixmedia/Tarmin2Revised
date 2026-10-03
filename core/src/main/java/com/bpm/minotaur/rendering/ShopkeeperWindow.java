@@ -330,11 +330,13 @@ public class ShopkeeperWindow extends Table {
         int idx = Math.min(playerSelection, playerItems.size() - 1);
         Item item = playerItems.get(idx);
         int price = ShopInventory.getSellPrice(item, itemDataManager);
+        String sold = item.getSingleDisplayName();
 
-        player.getInventory().removeItem(item);
+        // A stack sells one at a time, at one's price -- never thirty for one.
+        player.getInventory().consumeOne(item);
         player.getStats().setTreasureScore(player.getStats().getTreasureScore() + price);
-        eventManager.addEvent(new GameEvent("Sold " + item.getDisplayName() + " for " + price + "g.", 2.5f));
-        status("Sold " + item.getDisplayName() + " (+" + price + "g).");
+        eventManager.addEvent(new GameEvent("Sold " + sold + " for " + price + "g.", 2.5f));
+        status("Sold " + sold + " (+" + price + "g).");
         refresh();
     }
 

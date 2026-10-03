@@ -23,6 +23,8 @@ public class ItemSaveData {
     public int studyProgress;
     public String spellId;
     public String friendlyName;
+    /** Rations in this stack. 0 in saves from before stacking, which read as 1. */
+    public int stackCount;
 
     public ItemSaveData() {
     }
@@ -43,6 +45,7 @@ public class ItemSaveData {
             this.studyProgress = item.getStudyProgress();
             this.spellId = item.getSpellId();
             this.friendlyName = item.getFriendlyName();
+            this.stackCount = item.getStackCount();
         }
     }
 
@@ -64,6 +67,9 @@ public class ItemSaveData {
         if (friendlyName != null) {
             item.setFriendlyName(friendlyName);
             item.setName(friendlyName);
+        }
+        if (stackCount > 1) {
+            item.setStackCount(stackCount);
         }
         return item;
     }

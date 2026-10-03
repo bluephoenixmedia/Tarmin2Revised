@@ -418,6 +418,8 @@ public class PlayerSaveData {
                     }
                 }
             }
+            // Saves from before rations stacked carry them loose, one per slot.
+            inv.consolidateStacks();
         }
 
         // Spells

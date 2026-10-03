@@ -18,7 +18,7 @@ public class StartingFoodTest {
     }
 
     @Test
-    public void aNewGameCarriesThirtyRationsAndTheyFitTheBackpack() {
+    public void aNewGameCarriesThirtyRationsInOneSlot() {
         assertEquals(30, Player.STARTING_RATIONS);
         assertTrue(Player.STARTING_RATIONS < new com.bpm.minotaur.gamedata.Inventory().getMaxBackpackSize());
     }

@@ -1094,8 +1094,12 @@ public class Player {
         // first scrap of protection found in the dungeon is a real upgrade
         // rather than a sidegrade on a free +1 AC.
 
-        for (int i = 0; i < STARTING_RATIONS; i++) {
-            inventory.pickupToBackpack(itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager));
+        // One stack, one slot: rations stack, so thirty of them no longer fill
+        // thirty of the forty-eight backpack slots.
+        Item rations = itemDataManager.createItem(Item.ItemType.FOOD, 0, 0, ItemColor.TAN, assetManager);
+        if (rations != null) {
+            rations.setStackCount(STARTING_RATIONS);
+            inventory.pickupToBackpack(rations);
         }
 
         Item waterskin = itemDataManager.createItem(Item.ItemType.POTION_BLUE, 0, 0, ItemColor.BLUE, assetManager);
@@ -1561,7 +1565,7 @@ public class Player {
                     eventManager.addEvent(new GameEvent("You are too full to swallow! You choke violently!", 2.5f));
                 }
                 takeTrueDamage(3);
-                inventory.removeItem(item);
+                inventory.consumeOne(item);
                 return;
             }
 
@@ -1682,9 +1686,9 @@ public class Player {
                 }
             }
 
-            inventory.removeItem(item); // Consume it
+            inventory.consumeOne(item); // One ration off the stack
             if (eventManager != null) {
-                eventManager.addEvent(new GameEvent("You ate the " + item.getDisplayName() + ".", 2f));
+                eventManager.addEvent(new GameEvent("You ate the " + item.getSingleDisplayName() + ".", 2f));
             }
             if (soundManager != null) {
                 soundManager.playPickupItemSound();

@@ -273,6 +273,11 @@ public class Item implements Renderable {
     private int erosion = 0; // 0 = none, 1 = rusty/burnt, 2 = very rusty/burnt, 3 = corroded/rotted
     private int enchantment = 0; // +/- to hit/damage/AC
     private int charges = 0; // For wands and tools
+    /**
+     * How many identical items this one stands for. Only plain rations stack
+     * (see {@link #isStackable()}); everything else is always 1.
+     */
+    private int stackCount = 1;
     private boolean trapped = false; // chests/doors
 
     // --- Corpse Property ---
@@ -660,7 +665,16 @@ public class Item implements Renderable {
         return baseValue;
     }
 
+    /**
+     * The item's name, with the count when it stands for a stack: "Food x30".
+     */
     public String getDisplayName() {
+        String name = getSingleDisplayName();
+        return stackCount > 1 ? name + " x" + stackCount : name;
+    }
+
+    /** The name of one of these, without a stack count: what you eat, sell or cook. */
+    public String getSingleDisplayName() {
         if (isPotion)
             return this.friendlyName != null ? this.friendlyName : "Potion";
 
@@ -781,6 +795,34 @@ public class Item implements Renderable {
 
     public boolean isFood() {
         return this.isFood;
+    }
+
+    /**
+     * Plain rations stack: thirty of them are one slot, not thirty. Meals,
+     * butchered flesh and anything else with its own effects or source stay
+     * single, because each one is different.
+     */
+    public boolean isStackable() {
+        return type == ItemType.FOOD && isFood
+                && corpseSource == null
+                && (mealEffects == null || mealEffects.isEmpty());
+    }
+
+    /** Whether {@code other} can join this item's stack. */
+    public boolean canStackWith(Item other) {
+        return other != null && other != this && isStackable() && other.isStackable() && other.type == type;
+    }
+
+    public int getStackCount() {
+        return stackCount;
+    }
+
+    public void setStackCount(int count) {
+        this.stackCount = Math.max(1, count);
+    }
+
+    public void addToStack(int count) {
+        setStackCount(stackCount + Math.max(0, count));
     }
 
     public boolean isTreasure() {

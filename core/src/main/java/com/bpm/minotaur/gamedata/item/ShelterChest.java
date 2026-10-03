@@ -126,6 +126,15 @@ public class ShelterChest {
         return true;
     }
 
+    /** One off a stack in the chest, or the whole item when it is the last. */
+    public boolean consumeOne(Item item) {
+        if (item != null && item.getStackCount() > 1 && items.indexOf(item) >= 0) {
+            item.setStackCount(item.getStackCount() - 1);
+            return true;
+        }
+        return removeItem(item);
+    }
+
     public List<Item> getItems() {
         return Collections.unmodifiableList(items);
     }

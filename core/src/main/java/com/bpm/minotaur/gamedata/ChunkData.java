@@ -458,6 +458,8 @@ public class ChunkData {
         public List<ItemModifier> modifiers = new ArrayList<>();
         public List<ItemData> contents = new ArrayList<>();
         public int studyProgress;
+        /** Rations in a stack on the floor; 0 in older saves, read as 1. */
+        public int stackCount;
         public boolean isMimic;
         public boolean mimicSeen;
         public boolean mimicRollSpent;
@@ -472,6 +474,7 @@ public class ChunkData {
             this.y = (int) item.getPosition().y;
             this.modifiers = new ArrayList<>(item.getModifiers());
             this.studyProgress = item.getStudyProgress();
+            this.stackCount = item.getStackCount();
             this.isMimic = item.isMimic();
             this.mimicSeen = item.isMimicSeen();
             this.mimicRollSpent = item.isMimicRollSpent();
@@ -494,6 +497,9 @@ public class ChunkData {
                 return;
             }
             item.setStudyProgress(this.studyProgress);
+            if (this.stackCount > 1) {
+                item.setStackCount(this.stackCount);
+            }
             item.setMimic(this.isMimic);
             item.setMimicSeen(this.mimicSeen);
             item.setMimicRollSpent(this.mimicRollSpent);

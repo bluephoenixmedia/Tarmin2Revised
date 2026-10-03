@@ -773,9 +773,10 @@ public class CookingScreen extends BaseScreen {
         }
 
         // 4. Consume ingredients from pack first, then chest (never in field mode)
+        // One ration per ingredient slot, never the whole stack.
         for (Item ingr : ingredients) {
-            if (!player.getInventory().removeItem(ingr) && !fieldMode) {
-                ShelterChest.getInstance().removeItem(ingr);
+            if (!player.getInventory().consumeOne(ingr) && !fieldMode) {
+                ShelterChest.getInstance().consumeOne(ingr);
             }
         }
         ShelterChest.getInstance().save();
