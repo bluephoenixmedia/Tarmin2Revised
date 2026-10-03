@@ -98,8 +98,16 @@ public class World3DRenderer implements Disposable {
     private static final float CORPSE_FLATTEN = 0.45f;
     /** Widened as it flattens, so the body spreads rather than shrinking. */
     private static final float CORPSE_SPREAD = 1.2f;
-    /** A death frame may sprawl, but never wider than the tile it fell on. */
-    private static final float MAX_DEATH_FRAME_WIDTH = 1.0f;
+    /**
+     * How wide the widest frame of a death may sprawl, in tiles. A little over
+     * one: a body may spill past its tile's edge, but not across the next one.
+     */
+    private static final float MAX_DEATH_FRAME_WIDTH = 1.3f;
+    /**
+     * The most one rendered frame may move a death on. Loading the sheet or a
+     * hit-pause makes one long frame, which would otherwise skip half the death.
+     */
+    private static final float MAX_DEATH_STEP = 1f / 30f;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
@@ -1876,18 +1884,31 @@ public class World3DRenderer implements Disposable {
                         // monster died, settling on the last frame for good. The art
                         // already lies on the floor, so none of the laid-down-sprite
                         // treatment below (flip, tint, flatten, blood pool) applies.
-                        int[] f = deathAnim.getFrame(deathAnim.frameAt(sc.getDeathAnimSeconds()));
-                        int[] f0 = deathAnim.getFrame(0);
-                        float refH = sc.getDeathHeight() > 0f ? sc.getDeathHeight() : 0.8f;
-                        float unit = refH / f0[3];
-                        sw = f[2] * unit;
-                        sh = f[3] * unit;
-                        if (sw > MAX_DEATH_FRAME_WIDTH) {
-                            sh *= MAX_DEATH_FRAME_WIDTH / sw;
-                            sw = MAX_DEATH_FRAME_WIDTH;
+                        sc.advanceDeathAnimation(Gdx.graphics.getDeltaTime(), MAX_DEATH_STEP,
+                                Gdx.graphics.getFrameId());
+                        int frame = deathAnim.frameAt(sc.getDeathAnimSeconds());
+                        // Frame 0's visible body is sized exactly like the living
+                        // monster's billboard (stretch included), so the swap from
+                        // monster to death is seamless; every other frame shares
+                        // that scale. Every cell has the body centred and the floor
+                        // on its bottom edge, so it stands where the monster stood.
+                        float liveW = sc.getDeathWidth() > 0f ? sc.getDeathWidth() : 0.8f;
+                        float liveH = sc.getDeathHeight() > 0f ? sc.getDeathHeight() : 0.8f;
+                        float unitX = liveW / deathAnim.getBodyWidth();
+                        float unitY = liveH / deathAnim.getBodyHeight();
+                        // One scale for the whole death, set by its widest frame:
+                        // shrinking frame by frame would read as the body receding.
+                        float widest = deathAnim.getWidestFrame() * unitX;
+                        if (widest > MAX_DEATH_FRAME_WIDTH) {
+                            float k = MAX_DEATH_FRAME_WIDTH / widest;
+                            unitX *= k;
+                            unitY *= k;
                         }
+                        sw = deathAnim.getFrameWidth() * unitX;
+                        sh = deathAnim.getFrameHeight() * unitY;
                         corpseRegion.setTexture(tex);
-                        corpseRegion.setRegion(f[0], f[1], f[2], f[3]);
+                        corpseRegion.setRegion(deathAnim.frameX(frame), deathAnim.frameY(frame),
+                                deathAnim.getFrameWidth(), deathAnim.getFrameHeight());
                         reg = corpseRegion;
                         feetY = 0.0f;
                     } else if (sc.isMonsterRemains()) {

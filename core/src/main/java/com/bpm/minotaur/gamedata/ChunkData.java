@@ -287,6 +287,7 @@ public class ChunkData {
             }
             if (data.deathAnimId != null) {
                 s.setDeathAnimId(data.deathAnimId);
+                s.setDeathWidth(data.deathWidth);
                 s.setDeathHeight(data.deathHeight);
             }
             if (data.bonesData != null) {
@@ -413,6 +414,7 @@ public class ChunkData {
         public String corpseMonsterName;
         /** Monster texture whose death art this corpse shows; null for older saves. */
         public String deathAnimId;
+        public float deathWidth;
         public float deathHeight;
         public Boolean impassable;
         /**
@@ -438,6 +440,7 @@ public class ChunkData {
             this.objectiveConsumed = s.isObjectiveConsumed();
             this.corpseMonsterName = s.getCorpseMonsterName();
             this.deathAnimId = s.getDeathAnimId();
+            this.deathWidth = s.getDeathWidth();
             this.deathHeight = s.getDeathHeight();
             this.impassable = s.isImpassable();
             this.bonesData = s.getBonesData();

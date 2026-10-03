@@ -87,23 +87,12 @@ public class DrainEffect implements SpellEffect {
                 combatManager.handleMonsterDeath();
                 combatManager.setCurrentState(CombatManager.CombatState.VICTORY);
             } else {
-                handleRemoteKill(targetMonster, maze, player, eventManager);
+                // The combat manager's kill path is the one that leaves a corpse.
+                combatManager.handleRemoteKill(targetMonster);
             }
         } else if (combatManager != null && combatManager.getMonster() == null) {
             combatManager.startCombat(targetMonster);
         }
     }
 
-    private void handleRemoteKill(Monster m, Maze maze, Player player, GameEventManager eventManager) {
-        if (maze != null && m != null) {
-            maze.getMonsters().remove(
-                    new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
-        }
-        if (player != null && m != null) {
-            player.getStats().addExperience(m.getBaseExperience());
-        }
-        if (eventManager != null && m != null) {
-            eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
-        }
-    }
 }

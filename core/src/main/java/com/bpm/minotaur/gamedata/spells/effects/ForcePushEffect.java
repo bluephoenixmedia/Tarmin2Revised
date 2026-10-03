@@ -152,7 +152,8 @@ public class ForcePushEffect implements SpellEffect {
                 combatManager.handleMonsterDeath();
                 combatManager.setCurrentState(CombatManager.CombatState.VICTORY);
             } else {
-                handleRemoteKill(target, maze, player, eventManager);
+                // The combat manager's kill path is the one that leaves a corpse.
+                combatManager.handleRemoteKill(target);
             }
         } else if (combatManager != null && combatManager.getMonster() == null) {
             combatManager.startCombat(target);
@@ -198,19 +199,6 @@ public class ForcePushEffect implements SpellEffect {
         // Mark combat as won if this was the active combat target
         if (combatManager != null && monster == combatManager.getMonster()) {
             combatManager.setCurrentState(CombatManager.CombatState.VICTORY);
-        }
-    }
-
-    private void handleRemoteKill(Monster m, Maze maze, Player player, GameEventManager eventManager) {
-        if (maze != null && m != null) {
-            maze.getMonsters().remove(
-                    new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
-        }
-        if (player != null && m != null) {
-            player.addExperience(m.getBaseExperience(), eventManager);
-        }
-        if (eventManager != null && m != null) {
-            eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
         }
     }
 }

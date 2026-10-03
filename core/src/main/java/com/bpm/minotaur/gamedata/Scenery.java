@@ -69,11 +69,16 @@ public class Scenery implements Renderable {
      */
     private String deathAnimId;
     /**
-     * When the death began, in {@link System#currentTimeMillis()}; 0 once it has
-     * settled. Never saved -- a corpse that comes back from disk is already still.
+     * Seconds of the death shown so far, or -1 when it is not playing. Counted
+     * in rendered frames rather than wall time, so a hitch while the sheet loads
+     * cannot skip the animation. Never saved -- a corpse that comes back from
+     * disk is already still.
      */
-    private long deathStartMs;
-    /** World height of the living monster, which sets the scale of every death frame. */
+    private float deathElapsed = -1f;
+    /** The render frame that last advanced the death, so a second pass cannot double its speed. */
+    private long deathAdvancedFrame = -1L;
+    /** World size of the living monster's billboard, which sets the scale of every death frame. */
+    private float deathWidth;
     private float deathHeight;
 
     // --- NEW: Retro Colors ---
@@ -239,17 +244,37 @@ public class Scenery implements Renderable {
         this.deathHeight = deathHeight;
     }
 
-    /** Starts the death animation playing from its first frame, now. */
+    public float getDeathWidth() {
+        return deathWidth;
+    }
+
+    public void setDeathWidth(float deathWidth) {
+        this.deathWidth = deathWidth;
+    }
+
+    /** Starts the death animation playing from its first frame. */
     public void startDeathAnimation() {
-        this.deathStartMs = System.currentTimeMillis();
+        this.deathElapsed = 0f;
+        this.deathAdvancedFrame = -1L;
     }
 
     /**
-     * Seconds since the death began, or {@link Float#MAX_VALUE} when it is not
-     * playing -- which {@code DeathAnimation.frameAt} clamps onto the corpse frame.
+     * Moves the death on by one rendered frame. Only the first call for a given
+     * {@code renderFrame} counts, and a long frame counts as at most
+     * {@code maxStep}, so loading the sheet or a hit-pause cannot eat frames.
+     */
+    public void advanceDeathAnimation(float delta, float maxStep, long renderFrame) {
+        if (deathElapsed < 0f || renderFrame == deathAdvancedFrame) return;
+        deathAdvancedFrame = renderFrame;
+        deathElapsed += Math.max(0f, Math.min(delta, maxStep));
+    }
+
+    /**
+     * Seconds of the death shown so far, or {@link Float#MAX_VALUE} when it is
+     * not playing -- which {@code DeathAnimation.frameAt} clamps onto the corpse.
      */
     public float getDeathAnimSeconds() {
-        return deathStartMs == 0 ? Float.MAX_VALUE : (System.currentTimeMillis() - deathStartMs) / 1000f;
+        return deathElapsed < 0f ? Float.MAX_VALUE : deathElapsed;
     }
 
     public com.bpm.minotaur.gamedata.bones.BonesData getBonesData() {

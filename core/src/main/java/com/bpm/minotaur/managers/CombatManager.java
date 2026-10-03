@@ -2199,8 +2199,8 @@ public class CombatManager {
                                 eventManager.addEvent(new GameEvent("BRUTAL CLEAVE! Cleaved " + adjMonster.getMonsterType() + " for " + cleaved + " dmg!", 1.5f));
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
-                                    maze.getMonsters().remove(adjPos);
-                                    player.addExperience(adjMonster.getBaseExperience(), eventManager);
+                                    // The full kill path, so a cleaved monster leaves a body and dies on screen.
+                                    handleRemoteKill(adjMonster);
                                 }
                                 break;
                             }
@@ -2761,9 +2761,11 @@ public class CombatManager {
         // to leave the same dead armoured human regardless.
         if (maze.getScenery() != null) {
             boolean severed = overkillTier > 0;
-            // A clean kill of a monster with death art plays that art out and
-            // leaves its last frame; anything else keeps the old corpse.
-            com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = severed ? null : deathAnimationFor(monster);
+            // A monster with death art always plays it out and leaves its last
+            // frame, however hard it was hit: the art ends in a heap of its own,
+            // and the overkill still shows in the gibs, blood and hit-pause.
+            // Only monsters without art fall back to the old corpse or gore pile.
+            com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = deathAnimationFor(monster);
             String corpseTex = deathAnim != null ? deathAnim.getSheetPath()
                     : severed ? gorePileTexture() : monsterCorpseTexture(monster);
             Scenery corpse = new Scenery(
@@ -2778,7 +2780,9 @@ public class CombatManager {
                 float mh = monster.getScale().y;
                 if (mw > 0.82f) {
                     mh *= 0.82f / mw;
+                    mw = 0.82f;
                 }
+                corpse.setDeathWidth(mw);
                 corpse.setDeathHeight(mh);
                 corpse.startDeathAnimation();
             }
@@ -3464,7 +3468,11 @@ public class CombatManager {
                                 mw, mh, mReg, swingStartX, swingStartY, swingEndX, swingEndY
                         );
 
-                        if (slice.isSliced && mTex != null && profile.hasGibs) {
+                        // A monster with death art comes apart in its own frames;
+                        // cutting the living sprite in two as well would leave one
+                        // body flying off while another stands up to die.
+                        boolean hasDeathArt = deathAnimationFor(monster) != null;
+                        if (!hasDeathArt && slice.isSliced && mTex != null && profile.hasGibs) {
                             Vector3 cutVel = new Vector3(exitVector.x * 2.0f, MathUtils.random(3.5f, 5.5f), exitVector.z * 2.0f);
                             maze.getGoreManager().spawnSeveredLimbGib(
                                     gibOrigin, cutVel, mTex,

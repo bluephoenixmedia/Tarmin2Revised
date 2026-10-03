@@ -47,21 +47,19 @@ public class DeathAnimationCatalog {
         }
         try {
             JsonValue root = new JsonReader().parse(handle);
-            float defaultDuration = root.getFloat("frameDuration", 0.1f);
             JsonValue list = root.get("animations");
             if (list == null) return;
             for (JsonValue e = list.child; e != null; e = e.next) {
                 String monster = e.getString("monster", null);
                 String sheet = e.getString("sheet", null);
-                JsonValue rects = e.get("frames");
-                if (monster == null || sheet == null || rects == null || rects.size == 0) continue;
-                int[][] frames = new int[rects.size][];
-                int i = 0;
-                for (JsonValue r = rects.child; r != null; r = r.next) {
-                    frames[i++] = r.asIntArray();
-                }
-                byMonsterTexture.put(monster, new DeathAnimation(monster, sheet, frames,
-                        e.getFloat("frameDuration", defaultDuration)));
+                int count = e.getInt("frameCount", 0);
+                int fw = e.getInt("frameWidth", 0);
+                int fh = e.getInt("frameHeight", 0);
+                if (monster == null || sheet == null || count < 1 || fw < 1 || fh < 1) continue;
+                byMonsterTexture.put(monster, new DeathAnimation(monster, sheet,
+                        e.getInt("columns", 1), count, fw, fh,
+                        e.getInt("bodyWidth", fw), e.getInt("bodyHeight", fh),
+                        e.getInt("widestFrame", fw), e.getFloat("frameDuration", 0.2f)));
             }
             log("Loaded " + byMonsterTexture.size() + " death animations.");
         } catch (Exception ex) {
