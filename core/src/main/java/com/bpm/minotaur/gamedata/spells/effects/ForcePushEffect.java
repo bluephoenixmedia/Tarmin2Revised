@@ -192,6 +192,7 @@ public class ForcePushEffect implements SpellEffect {
         }
 
         // XP and kill events (mirrors handleMonsterDeath flow for remote kills)
+        if (!monster.claimDeath()) return;
         player.addExperience(monster.getBaseExperience(), eventManager);
         eventManager.addEvent(new GameEvent(
                 monster.getMonsterType() + " was CRUSHED against the wall!", 3f));

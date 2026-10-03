@@ -744,6 +744,24 @@ public class Monster implements Renderable {
         return currentHP;
     }
 
+    /** Set once this monster's death has been paid out. */
+    private boolean deathClaimed = false;
+
+    /**
+     * Claims this monster's death for whoever is about to pay it out --
+     * experience, divinities, the corpse, the kill count. True for the first
+     * caller only: a monster dies once, however many kill paths reach it.
+     */
+    public boolean claimDeath() {
+        if (deathClaimed) return false;
+        deathClaimed = true;
+        return true;
+    }
+
+    public boolean isDeathClaimed() {
+        return deathClaimed;
+    }
+
     // Deprecated alias for compatibility if needed, but better to remove
     public int getWarStrength() {
         return currentHP;

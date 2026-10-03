@@ -414,18 +414,21 @@ public class SpellExecutionEngine {
             int actual = target.takeSpellDamage(dmg, DamageType.SPIRITUAL, false);
             if (combatManager != null) combatManager.showDamageText(actual, targetTile);
 
+            if (target.getCurrentHP() <= 0) {
+                // Killed outright: it dies where it stood. Pushing a corpse is
+                // what used to strand it on the map, killable again for free.
+                eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
+                handleKill(target, targetTile, player, maze, combatManager, eventManager);
+                return;
+            }
+
             // Pushback mechanic: attempt to push monster back 1 tile
             GridPoint2 pushTile = new GridPoint2(targetTile.x + fx, targetTile.y + fy);
             if (!maze.isWall(pushTile.x, pushTile.y) && !maze.getMonsters().containsKey(pushTile)) {
-                maze.getMonsters().remove(targetTile);
-                maze.getMonsters().put(pushTile, target);
+                maze.moveMonster(target, pushTile.x, pushTile.y);
                 eventManager.addEvent(new GameEvent("THUNDERWAVE blasts " + target.getType() + " back!", 1.8f));
             } else {
                 eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
-            }
-
-            if (target.getCurrentHP() <= 0) {
-                handleKill(target, targetTile, player, maze, combatManager, eventManager);
             }
         } else {
             eventManager.addEvent(new GameEvent("A deafening thunderclap rings through the hallway!", 1.5f));
@@ -800,8 +803,10 @@ public class SpellExecutionEngine {
                 combatManager.handleRemoteKill(target);
             }
         } else {
-            maze.getMonsters().remove(pos);
-            player.addExperience(target.getBaseExperience(), eventManager);
+            maze.removeMonster(target);
+            if (target.claimDeath()) {
+                player.addExperience(target.getBaseExperience(), eventManager);
+            }
         }
         eventManager.addEvent(new GameEvent("Vanquished " + target.getType() + "!", 2.0f));
     }

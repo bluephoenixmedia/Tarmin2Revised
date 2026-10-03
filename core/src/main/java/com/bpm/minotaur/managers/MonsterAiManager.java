@@ -64,7 +64,7 @@ public class MonsterAiManager {
                 if (combatManager != null) {
                     combatManager.handleRemoteKill(monster);
                 } else {
-                    maze.getMonsters().remove(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+                    maze.removeMonster(monster);
                 }
                 return;
             }

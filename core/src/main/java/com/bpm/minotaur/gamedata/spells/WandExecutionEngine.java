@@ -403,9 +403,12 @@ public class WandExecutionEngine {
                     int pushX = hit.collisionPoint.x + (int) dir.getVector().x;
                     int pushY = hit.collisionPoint.y + (int) dir.getVector().y;
                     GridPoint2 pushTile = new GridPoint2(pushX, pushY);
-                    if (!maze.isWall(pushX, pushY) && !maze.getMonsters().containsKey(pushTile)) {
-                        maze.getMonsters().remove(hit.collisionPoint);
-                        maze.getMonsters().put(pushTile, target);
+                    // Only the living are pushed; a corpse dies where it stood
+                    // (see the Thunderwave fix). moveMonster keeps the map key
+                    // and the position together.
+                    if (target.getCurrentHP() > 0
+                            && !maze.isWall(pushX, pushY) && !maze.getMonsters().containsKey(pushTile)) {
+                        maze.moveMonster(target, pushX, pushY);
                     }
 
                     if (target.getCurrentHP() <= 0) {
@@ -553,8 +556,10 @@ public class WandExecutionEngine {
         if (combatManager != null) {
             combatManager.handleRemoteKill(target);
         } else {
-            maze.getMonsters().remove(targetPos);
-            player.addExperience(target.getBaseExperience(), eventManager);
+            maze.removeMonster(target);
+            if (target.claimDeath()) {
+                player.addExperience(target.getBaseExperience(), eventManager);
+            }
             if (eventManager != null) {
                 eventManager.addEvent(new GameEvent("Killed " + target.getMonsterType() + "!", 2f));
             }

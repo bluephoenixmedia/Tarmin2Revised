@@ -359,6 +359,33 @@ public class Maze {
         monsters.put(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), monster);
     }
 
+    /**
+     * Takes this monster off the map, wherever it is filed.
+     *
+     * <p>Removing by {@code monster.getPosition()} is only right while the map
+     * key and the position agree. When they drifted apart -- a push that moved
+     * the key but not the position -- a kill removed nothing, and the corpse
+     * stayed on the map to be killed again for experience, forever.
+     *
+     * @return whether it was on the map
+     */
+    public boolean removeMonster(Monster monster) {
+        if (monster == null) return false;
+        return monsters.values().removeIf(m -> m == monster);
+    }
+
+    /**
+     * Moves a monster to another tile, keeping its map key and its position
+     * together. Every push and knockback goes through here so the two cannot
+     * drift apart.
+     */
+    public void moveMonster(Monster monster, int tileX, int tileY) {
+        if (monster == null) return;
+        removeMonster(monster);
+        monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
+        monsters.put(new GridPoint2(tileX, tileY), monster);
+    }
+
     public Map<GridPoint2, Ladder> getLadders() {
         return ladders;
     }

@@ -508,6 +508,13 @@ public class CombatManager {
     }
 
     public void startCombat(Monster monster) {
+        if (monster != null && (monster.getCurrentHP() <= 0 || monster.isDeathClaimed())) {
+            // A fight with a corpse is how a dead monster got farmed for
+            // experience. Whatever left it on the map, take it off instead.
+            Gdx.app.error("CombatManager", "Refused combat with dead " + monster.getMonsterType());
+            if (maze != null) maze.removeMonster(monster);
+            return;
+        }
         if (currentState == CombatState.INACTIVE) {
             this.monster = monster;
 
@@ -776,8 +783,8 @@ public class CombatManager {
             defender.onAttackedBy(attacker);
 
             if (defender.getCurrentHP() <= 0) {
-                GridPoint2 defPos = new GridPoint2((int) defender.getPosition().x, (int) defender.getPosition().y);
-                targetMaze.getMonsters().remove(defPos);
+                targetMaze.removeMonster(defender);
+                if (!defender.claimDeath()) return;
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " slayed " + defender.getMonsterType() + "!", 2f));
                 }
@@ -1043,7 +1050,12 @@ public class CombatManager {
     }
 
     public void handleRemoteKill(Monster m) {
-        maze.getMonsters().remove(new GridPoint2((int) m.getPosition().x, (int) m.getPosition().y));
+        if (m == null) return;
+        maze.removeMonster(m);
+        if (!m.claimDeath()) {
+            Gdx.app.error("CombatManager", "Refused to pay out " + m.getMonsterType() + " twice");
+            return;
+        }
         player.addExperience(m.getBaseExperience(), eventManager);
         eventManager.addEvent(new GameEvent("Killed " + m.getMonsterType() + "!", 2f));
         com.bpm.minotaur.gamedata.monster.MonsterTemplate remoteTemplate = m.getTemplate();
@@ -2669,7 +2681,7 @@ public class CombatManager {
         if (currentState == CombatState.VICTORY) {
             // Log Victory
             BalanceLogger.getInstance().logCombatEnd("VICTORY", currentCombatTurns, damageTakenInCombat);
-            maze.getMonsters().remove(new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
+            maze.removeMonster(monster);
             endCombat();
         } else if (currentState == CombatState.DEFEAT) {
             // Log Defeat
@@ -3339,6 +3351,14 @@ public class CombatManager {
     // Extracted death logic to reuse for Poison kills
     public void handleMonsterDeath() {
         currentState = CombatState.VICTORY;
+        if (monster == null) return;
+        // Off the map first, by identity: a stale position must never leave a
+        // corpse standing where it can be killed again.
+        if (maze != null) maze.removeMonster(monster);
+        if (!monster.claimDeath()) {
+            Gdx.app.error("CombatManager", "Refused to pay out " + monster.getMonsterType() + " twice");
+            return;
+        }
         Gdx.app.log("CombatManager", "You have defeated " + monster.getMonsterType());
         eventManager.addEvent((new GameEvent("You have defeated " + monster.getMonsterType(), 2f)));
 
