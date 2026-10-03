@@ -89,6 +89,8 @@ public class World3DRenderer implements Disposable {
     private Texture bloodPoolTexture;
     /** Scratch regions, reused every frame rather than allocated per corpse. */
     private final TextureRegion corpseRegion = new TextureRegion();
+    /** Untextured stand-in for gore quads in retro mode; one instance, not one per drop per frame. */
+    private final TextureRegion goreBlankRegion = new TextureRegion();
     private final TextureRegion bloodPoolRegion = new TextureRegion();
 
     /** Darkened and drained of colour, so remains read as dead rather than idle. */
@@ -1409,6 +1411,7 @@ public class World3DRenderer implements Disposable {
 
         Texture currentTex = null;
         Texture blankTex = blankTexture;
+        if (blankTex != null && goreBlankRegion.getTexture() != blankTex) goreBlankRegion.setRegion(blankTex);
         Color retroTint = (theme != null && theme.wall != null) ? theme.wall : Color.WHITE;
 
         // 1. Coplanar Wall Decals
@@ -1453,7 +1456,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addFloorQuad(
                         localX, 0.002f, -localZ,
                         splatSize, splatSize,
-                        region != null ? region : new TextureRegion(blankTex), col
+                        region != null ? region : goreBlankRegion, col
                 );
             }
         }
@@ -1482,7 +1485,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addBillboard(
                         localX, p.position.y, -localZ,
                         pSize, pSize,
-                        region != null ? region : new TextureRegion(blankTex), col,
+                        region != null ? region : goreBlankRegion, col,
                         camRight, camUp, camDir
                 );
             }
@@ -1530,13 +1533,13 @@ public class World3DRenderer implements Disposable {
                     dynamicBatcher.addFloorQuad(
                             localX, 0.003f, -localZ,
                             gibSize * 0.5f, gibSize * 0.5f,
-                            region != null ? region : new TextureRegion(blankTex), col
+                            region != null ? region : goreBlankRegion, col
                     );
                 } else {
                     dynamicBatcher.addRotatedBillboard(
                             localX, Math.max(0.02f, g.position.y), -localZ,
                             gibSize, gibSize,
-                            region != null ? region : new TextureRegion(blankTex), col,
+                            region != null ? region : goreBlankRegion, col,
                             camRight, camUp, camDir,
                             g.rotation
                     );

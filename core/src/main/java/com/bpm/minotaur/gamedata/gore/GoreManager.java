@@ -77,6 +77,16 @@ public class GoreManager {
     private final Array<TextureRegion> gibTextures = new Array<>();
     private TextureRegion spatterTexture;
 
+    // Scratch state reused by every spawn: a burst of 60 drops must not
+    // allocate 120 objects in the frame combat is busiest (guide, "Zero
+    // Allocations"). Pool.obtain() + init() copy out of these.
+    private final Vector3 tmpVel = new Vector3();
+    private final Vector3 tmpDir = new Vector3();
+    private final Vector3 tmpPos = new Vector3();
+    private final Color tmpColor = new Color();
+    private final GridPoint2 tmpChunkId = new GridPoint2();
+    private static final Color BONE_TINT = new Color(0.90f, 0.88f, 0.80f, 1.0f);
+
     public GoreManager() {
     }
 
@@ -155,9 +165,9 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.4f, 0.4f);
             float speed = MathUtils.random(3.0f, 8.5f);
 
-            Vector3 vel = new Vector3(direction).scl(0.65f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(direction).scl(0.65f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
-            Color particleColor = new Color(baseColor);
+            Color particleColor = tmpColor.set(baseColor);
             if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
                 if (roll < 0.25f) {
@@ -206,7 +216,7 @@ public class GoreManager {
         if (count <= 0) return;
 
         Color baseColor = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
-        Vector3 outDir = (surfaceNormal != null && !surfaceNormal.isZero()) ? new Vector3(surfaceNormal).nor() : new Vector3(0, 0.3f, 1).nor();
+        Vector3 outDir = (surfaceNormal != null && !surfaceNormal.isZero()) ? tmpDir.set(surfaceNormal).nor() : tmpDir.set(0, 0.3f, 1).nor();
 
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -216,9 +226,9 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.5f, 0.5f);
             float speed = MathUtils.random(2.5f, 6.5f);
 
-            Vector3 vel = new Vector3(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(outDir).scl(0.7f).add(spreadX, spreadY, spreadZ).nor().scl(speed);
 
-            Color particleColor = new Color(baseColor);
+            Color particleColor = tmpColor.set(baseColor);
             if (profile == GoreProfile.FLESH || profile == GoreProfile.SKELETAL) {
                 float roll = MathUtils.random();
                 if (roll < 0.35f) {
@@ -255,11 +265,11 @@ public class GoreManager {
         int count = (overkillTier >= 2) ? MathUtils.random(7, 12) : MathUtils.random(3, 6);
 
         Color tint = (profile == GoreProfile.SKELETAL)
-                ? new Color(0.90f, 0.88f, 0.80f, 1.0f) // Ivory bone tint
+                ? BONE_TINT // Ivory bone tint
                 : Color.WHITE;
 
         Vector3 exitNorm = (exitVector != null && exitVector.len2() > 0.001f)
-                ? new Vector3(exitVector).nor()
+                ? tmpDir.set(exitVector).nor()
                 : Vector3.Y;
 
         for (int i = 0; i < count; i++) {
@@ -276,7 +286,7 @@ public class GoreManager {
             float radialSpeed = MathUtils.random(2.0f, 6.5f);
             float up = MathUtils.random(2.5f, 7.5f);
 
-            Vector3 vel = new Vector3(
+            Vector3 vel = tmpVel.set(
                     MathUtils.cos(angle) * radialSpeed + exitNorm.x * 2.0f,
                     up,
                     MathUtils.sin(angle) * radialSpeed + exitNorm.z * 2.0f
@@ -292,7 +302,7 @@ public class GoreManager {
             for (int i = 0; i < Math.min(2, overkillTier); i++) {
                 float ox = MathUtils.random(-0.35f, 0.35f);
                 float oz = MathUtils.random(-0.35f, 0.35f);
-                spawnSurfaceDecal(new Vector3(origin.x + ox, origin.y, origin.z + oz), stainCol, MathUtils.random(0.15f, 0.25f));
+                spawnSurfaceDecal(tmpPos.set(origin.x + ox, origin.y, origin.z + oz), stainCol, MathUtils.random(0.15f, 0.25f));
             }
         }
     }
@@ -320,10 +330,10 @@ public class GoreManager {
         int count = Math.min(30, MAX_ACTIVE_PARTICLES - activeParticles.size);
         if (count <= 0) return;
 
-        Color fountainColor = new Color(profile.primaryColor);
+        Color fountainColor = tmpColor.set(profile.primaryColor);
         fountainColor.r = Math.min(1.0f, fountainColor.r * 1.3f);
 
-        Vector3 fountainDir = (dir != null && dir.len2() > 0.01f) ? new Vector3(dir).nor() : new Vector3(0, 1, 0);
+        Vector3 fountainDir = (dir != null && dir.len2() > 0.01f) ? tmpDir.set(dir).nor() : tmpDir.set(0, 1, 0);
 
         for (int i = 0; i < count; i++) {
             BloodParticle p = particlePool.obtain();
@@ -332,7 +342,7 @@ public class GoreManager {
             float spreadZ = MathUtils.random(-0.25f, 0.25f);
             float speed = MathUtils.random(5.0f, 11.0f);
 
-            Vector3 vel = new Vector3(fountainDir.x * 0.4f + spreadX, spreadY, fountainDir.z * 0.4f + spreadZ).nor().scl(speed);
+            Vector3 vel = tmpVel.set(fountainDir.x * 0.4f + spreadX, spreadY, fountainDir.z * 0.4f + spreadZ).nor().scl(speed);
             float size = MathUtils.random(0.04f, 0.08f);
             float life = MathUtils.random(1.0f, 2.5f);
             TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
@@ -390,7 +400,7 @@ public class GoreManager {
         }
 
         Gib g = gibPool.obtain();
-        Vector3 vel = new Vector3(
+        Vector3 vel = tmpVel.set(
                 MathUtils.random(-1f, 1f),
                 MathUtils.random(3f, 6f),
                 MathUtils.random(-1f, 1f)
@@ -474,7 +484,7 @@ public class GoreManager {
         for (int i = 0; i < 2; i++) {
             float ox = MathUtils.random(-0.3f, 0.3f);
             float oz = MathUtils.random(-0.3f, 0.3f);
-            Vector3 splatPos = new Vector3(pos.x + ox, pos.y, pos.z + oz);
+            Vector3 splatPos = tmpPos.set(pos.x + ox, pos.y, pos.z + oz);
             spawnSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
         }
     }
@@ -585,7 +595,7 @@ public class GoreManager {
 
             // Door threshold deflection: closed door/gate drops blood to floor threshold
             if (hitDoorThreshold) {
-                spawnSurfaceDecal(new Vector3(prevX, 0.02f, prevZ), p.color, MathUtils.random(0.14f, 0.22f));
+                spawnSurfaceDecal(tmpPos.set(prevX, 0.02f, prevZ), p.color, MathUtils.random(0.14f, 0.22f));
                 activeParticles.removeIndex(i);
                 particlePool.free(p);
                 continue;
@@ -663,7 +673,7 @@ public class GoreManager {
             return currentMaze;
         }
 
-        return worldManager.getLoadedChunk(new GridPoint2(chunkX, chunkY));
+        return worldManager.getLoadedChunk(tmpChunkId.set(chunkX, chunkY));
     }
 
     private int resolveLocalCoord(int worldCoord, int chunkSize) {
