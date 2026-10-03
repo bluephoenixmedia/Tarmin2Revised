@@ -72,7 +72,7 @@ SKIP = {'merchant'}
 # median time to corpse is 0.94s. So: every death lands in about TARGET_SECONDS,
 # no frame shorter than 2 tics (it blurs past) or longer than 7 (it drags).
 TIC = 1.0 / 35.0
-TARGET_SECONDS = 0.8
+TARGET_SECONDS = 0.65  # 0.8 still read a fraction slow in play (2026-10-03)
 MIN_FRAME = 2 * TIC
 MAX_FRAME = 7 * TIC
 

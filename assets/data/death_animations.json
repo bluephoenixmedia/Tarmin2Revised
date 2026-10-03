@@ -12,7 +12,7 @@
       "bodyWidth": 782,
       "bodyHeight": 453,
       "widestFrame": 1237,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/basilisk.png",
@@ -25,7 +25,7 @@
       "bodyWidth": 339,
       "bodyHeight": 212,
       "widestFrame": 339,
-      "frameDuration": 0.067
+      "frameDuration": 0.057
     },
     {
       "monster": "images/monsters/beholder.png",
@@ -38,7 +38,7 @@
       "bodyWidth": 207,
       "bodyHeight": 254,
       "widestFrame": 226,
-      "frameDuration": 0.067
+      "frameDuration": 0.057
     },
     {
       "monster": "images/monsters/chimera.png",
@@ -51,7 +51,7 @@
       "bodyWidth": 332,
       "bodyHeight": 188,
       "widestFrame": 341,
-      "frameDuration": 0.073
+      "frameDuration": 0.059
     },
     {
       "monster": "images/monsters/dbeast.png",
@@ -77,7 +77,7 @@
       "bodyWidth": 331,
       "bodyHeight": 238,
       "widestFrame": 336,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/dwarf.png",
@@ -90,7 +90,7 @@
       "bodyWidth": 319,
       "bodyHeight": 242,
       "widestFrame": 358,
-      "frameDuration": 0.114
+      "frameDuration": 0.093
     },
     {
       "monster": "images/monsters/flayer.png",
@@ -103,7 +103,7 @@
       "bodyWidth": 246,
       "bodyHeight": 294,
       "widestFrame": 340,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/gargoyle.png",
@@ -116,7 +116,7 @@
       "bodyWidth": 330,
       "bodyHeight": 438,
       "widestFrame": 428,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/ghast.png",
@@ -129,7 +129,7 @@
       "bodyWidth": 296,
       "bodyHeight": 376,
       "widestFrame": 386,
-      "frameDuration": 0.089
+      "frameDuration": 0.072
     },
     {
       "monster": "images/monsters/ghoul.png",
@@ -142,7 +142,7 @@
       "bodyWidth": 372,
       "bodyHeight": 351,
       "widestFrame": 414,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/giant_ant.png",
@@ -155,7 +155,7 @@
       "bodyWidth": 774,
       "bodyHeight": 670,
       "widestFrame": 985,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/giant_snake.png",
@@ -168,7 +168,7 @@
       "bodyWidth": 554,
       "bodyHeight": 351,
       "widestFrame": 554,
-      "frameDuration": 0.114
+      "frameDuration": 0.093
     },
     {
       "monster": "images/monsters/giant.png",
@@ -181,7 +181,7 @@
       "bodyWidth": 412,
       "bodyHeight": 516,
       "widestFrame": 412,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/goblin.png",
@@ -207,7 +207,7 @@
       "bodyWidth": 472,
       "bodyHeight": 305,
       "widestFrame": 474,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/hobgoblin.png",
@@ -220,7 +220,7 @@
       "bodyWidth": 508,
       "bodyHeight": 480,
       "widestFrame": 725,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/hooded_skeleton.png",
@@ -233,7 +233,7 @@
       "bodyWidth": 190,
       "bodyHeight": 251,
       "widestFrame": 283,
-      "frameDuration": 0.062
+      "frameDuration": 0.057
     },
     {
       "monster": "images/monsters/hydra.png",
@@ -246,7 +246,7 @@
       "bodyWidth": 343,
       "bodyHeight": 231,
       "widestFrame": 345,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/iron_golem.png",
@@ -259,7 +259,7 @@
       "bodyWidth": 392,
       "bodyHeight": 272,
       "widestFrame": 392,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/kobold.png",
@@ -272,7 +272,7 @@
       "bodyWidth": 313,
       "bodyHeight": 331,
       "widestFrame": 618,
-      "frameDuration": 0.16
+      "frameDuration": 0.13
     },
     {
       "monster": "images/monsters/lich.png",
@@ -285,7 +285,7 @@
       "bodyWidth": 248,
       "bodyHeight": 302,
       "widestFrame": 338,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/medusa.png",
@@ -298,7 +298,7 @@
       "bodyWidth": 366,
       "bodyHeight": 271,
       "widestFrame": 366,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/mimic.png",
@@ -311,7 +311,7 @@
       "bodyWidth": 300,
       "bodyHeight": 275,
       "widestFrame": 336,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/minotaur.png",
@@ -324,7 +324,7 @@
       "bodyWidth": 264,
       "bodyHeight": 361,
       "widestFrame": 324,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/mummy.png",
@@ -337,7 +337,7 @@
       "bodyWidth": 203,
       "bodyHeight": 347,
       "widestFrame": 330,
-      "frameDuration": 0.089
+      "frameDuration": 0.072
     },
     {
       "monster": "images/monsters/ogre.png",
@@ -350,7 +350,7 @@
       "bodyWidth": 294,
       "bodyHeight": 240,
       "widestFrame": 313,
-      "frameDuration": 0.114
+      "frameDuration": 0.093
     },
     {
       "monster": "images/monsters/orc.png",
@@ -363,7 +363,7 @@
       "bodyWidth": 302,
       "bodyHeight": 352,
       "widestFrame": 354,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/owlbear.png",
@@ -376,7 +376,7 @@
       "bodyWidth": 305,
       "bodyHeight": 350,
       "widestFrame": 415,
-      "frameDuration": 0.16
+      "frameDuration": 0.13
     },
     {
       "monster": "images/monsters/purple_worm.png",
@@ -389,7 +389,7 @@
       "bodyWidth": 206,
       "bodyHeight": 263,
       "widestFrame": 413,
-      "frameDuration": 0.089
+      "frameDuration": 0.072
     },
     {
       "monster": "images/monsters/rust.png",
@@ -402,7 +402,7 @@
       "bodyWidth": 468,
       "bodyHeight": 291,
       "widestFrame": 557,
-      "frameDuration": 0.16
+      "frameDuration": 0.13
     },
     {
       "monster": "images/monsters/giant_scorpion.png",
@@ -415,7 +415,7 @@
       "bodyWidth": 689,
       "bodyHeight": 434,
       "widestFrame": 694,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/skeleton.png",
@@ -428,7 +428,7 @@
       "bodyWidth": 252,
       "bodyHeight": 311,
       "widestFrame": 279,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/spider.png",
@@ -441,7 +441,7 @@
       "bodyWidth": 676,
       "bodyHeight": 337,
       "widestFrame": 680,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/troglodyte.png",
@@ -454,7 +454,7 @@
       "bodyWidth": 439,
       "bodyHeight": 246,
       "widestFrame": 439,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/troll.png",
@@ -467,7 +467,7 @@
       "bodyWidth": 297,
       "bodyHeight": 188,
       "widestFrame": 418,
-      "frameDuration": 0.062
+      "frameDuration": 0.057
     },
     {
       "monster": "images/monsters/wererat.png",
@@ -480,7 +480,7 @@
       "bodyWidth": 349,
       "bodyHeight": 212,
       "widestFrame": 349,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/werewolf.png",
@@ -493,7 +493,7 @@
       "bodyWidth": 355,
       "bodyHeight": 431,
       "widestFrame": 596,
-      "frameDuration": 0.16
+      "frameDuration": 0.13
     },
     {
       "monster": "images/monsters/wraith.png",
@@ -506,7 +506,7 @@
       "bodyWidth": 320,
       "bodyHeight": 369,
       "widestFrame": 373,
-      "frameDuration": 0.1
+      "frameDuration": 0.081
     },
     {
       "monster": "images/monsters/wyvern.png",
@@ -519,7 +519,7 @@
       "bodyWidth": 426,
       "bodyHeight": 343,
       "widestFrame": 466,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     },
     {
       "monster": "images/monsters/zombie.png",
@@ -532,7 +532,7 @@
       "bodyWidth": 302,
       "bodyHeight": 344,
       "widestFrame": 538,
-      "frameDuration": 0.133
+      "frameDuration": 0.108
     }
   ]
 }

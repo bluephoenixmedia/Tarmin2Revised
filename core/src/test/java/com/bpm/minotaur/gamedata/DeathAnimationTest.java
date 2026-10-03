@@ -73,7 +73,7 @@ public class DeathAnimationTest {
             String name = anim.getSheetPath();
             assertTrue(name + " frames flash past", anim.getFrameDuration() >= 2 * tic - 1e-3f);
             assertTrue(name + " frames drag", anim.getFrameDuration() <= 7 * tic + 1e-3f);
-            assertTrue(name + " is over before it registers", anim.getDuration() >= 0.6f);
+            assertTrue(name + " is over before it registers", anim.getDuration() >= 0.5f);
             assertTrue(name + " holds up the fight", anim.getDuration() <= 1.1f);
         }
     }
