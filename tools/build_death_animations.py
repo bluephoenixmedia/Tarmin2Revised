@@ -65,11 +65,16 @@ OUT_DIR = os.path.join(ROOT, 'assets', 'images', 'monsters', 'death_frames')
 # Sheets with no monster to attach to yet.
 SKIP = {'merchant'}
 
-# Every death lasts about this long, but no frame is shorter than MIN_FRAME
-# (or the art blurs past) or longer than MAX_FRAME (or it stutters).
-TARGET_SECONDS = 2.2
-MIN_FRAME = 0.15
-MAX_FRAME = 0.35
+# Pacing follows Project Brutality (Doom runs at 35 tics a second). Its short
+# deaths hold each frame 5-8 tics -- Imp TR97 A8 B8 C6 D6, Zombieman PSSR A6
+# BCD6 -- and its long ones drop to 2-3 tics so they still land inside a
+# second (BrutalizedImp4: 15 frames in 0.86s). Across its 120 death states the
+# median time to corpse is 0.94s. So: every death lands in about TARGET_SECONDS,
+# no frame shorter than 2 tics (it blurs past) or longer than 7 (it drags).
+TIC = 1.0 / 35.0
+TARGET_SECONDS = 0.8
+MIN_FRAME = 2 * TIC
+MAX_FRAME = 7 * TIC
 
 
 def mask_of(path):

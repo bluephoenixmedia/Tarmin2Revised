@@ -61,13 +61,20 @@ public class DeathAnimationTest {
         assertEquals("every sheet except the merchant's is wired", 41, checked);
     }
 
+    /**
+     * Project Brutality pacing, in Doom's 35 tics a second: a frame held 2-7
+     * tics, a death down in under a second however many frames it has. Fast
+     * enough not to hold up a fight, long enough to see.
+     */
     @Test
-    public void everyDeathLastsLongEnoughToWatch() {
+    public void everyDeathIsQuickButVisible() {
+        float tic = 1f / 35f;
         for (DeathAnimation anim : DeathAnimationCatalog.getInstance().all()) {
             String name = anim.getSheetPath();
-            assertTrue(name + " frames flash past", anim.getFrameDuration() >= 0.15f);
-            assertTrue(name + " frames stutter", anim.getFrameDuration() <= 0.35f);
-            assertTrue(name + " is over before it registers", anim.getDuration() >= 1.5f);
+            assertTrue(name + " frames flash past", anim.getFrameDuration() >= 2 * tic - 1e-3f);
+            assertTrue(name + " frames drag", anim.getFrameDuration() <= 7 * tic + 1e-3f);
+            assertTrue(name + " is over before it registers", anim.getDuration() >= 0.6f);
+            assertTrue(name + " holds up the fight", anim.getDuration() <= 1.1f);
         }
     }
 
