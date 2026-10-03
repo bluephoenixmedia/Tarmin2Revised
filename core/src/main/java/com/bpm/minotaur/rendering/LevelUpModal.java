@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.bpm.minotaur.gamedata.GameEvent;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.gamedata.player.PlayerStats;
 import com.bpm.minotaur.gamedata.progression.ShelterAltar;
 import com.bpm.minotaur.managers.GameEventManager;
 import com.bpm.minotaur.managers.SoundManager;
@@ -330,11 +331,24 @@ public class LevelUpModal extends Table {
         return activePlayer.getStats().getUnallocatedAttributePoints() - stagedTotal();
     }
 
+    /** Whether one more point can be staged on {@code stat}: the cap is on the trained value only. */
+    private boolean canStage(ShelterAltar.StatType stat) {
+        return activePlayer != null && stat != null && remaining() > 0
+                && activePlayer.getStats().getBaseStat(stat) + stagedFor(stat) < PlayerStats.MAX_ATTRIBUTE_CAP;
+    }
+
     private void stage(ShelterAltar.StatType stat) {
-        if (activePlayer == null || stat == null || remaining() <= 0) {
+        if (activePlayer == null || stat == null) {
             return;
         }
-        if (activePlayer.getStats().getEffectiveStat(stat) + stagedFor(stat) >= 20) {
+        if (!canStage(stat)) {
+            // Say why instead of ignoring the press: a silent + read as a broken mouse.
+            if (activeEventManager != null) {
+                activeEventManager.addEvent(new GameEvent(remaining() <= 0
+                        ? "No attribute points left to spend."
+                        : stat.getDisplayName() + " is already trained to the cap of "
+                                + PlayerStats.MAX_ATTRIBUTE_CAP + ".", 2f));
+            }
             return;
         }
         staged.put(stat, stagedFor(stat) + 1);
@@ -416,13 +430,15 @@ public class LevelUpModal extends Table {
             label.setText(text);
             label.setColor(pending > 0 ? UiTheme.SUCCESS : UiTheme.GOLD);
 
+            // Steppers are only dimmed, never made untouchable: a press on a dim + still reaches
+            // stage(), which says why it cannot add. UiStyles.setEnabled would swallow the click.
             TextButton plus = plusButtons.get(stat);
             if (plus != null) {
-                UiStyles.setEnabled(plus, unspent > 0 && preview < 20);
+                plus.setDisabled(!canStage(stat));
             }
             TextButton minus = minusButtons.get(stat);
             if (minus != null) {
-                UiStyles.setEnabled(minus, pending > 0);
+                minus.setDisabled(pending <= 0);
             }
         }
 

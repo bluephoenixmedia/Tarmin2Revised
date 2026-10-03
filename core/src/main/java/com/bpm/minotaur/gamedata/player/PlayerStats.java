@@ -746,9 +746,28 @@ public class PlayerStats {
         return hasSkill(com.bpm.minotaur.gamedata.progression.SkillId.DUAL_WIELDER);
     }
 
+    /**
+     * The most a point can raise an attribute to. It caps the <i>trained</i> value only:
+     * Ascension bonuses from the Shelter altar sit on top and never use up the headroom.
+     */
+    public static final int MAX_ATTRIBUTE_CAP = 20;
+
+    /** An attribute as trained with level-up points, without Ascension bonuses. */
+    public int getBaseStat(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
+        if (stat == null) return 10;
+        switch (stat) {
+            case STRENGTH: return strength;
+            case DEXTERITY: return dexterity;
+            case CONSTITUTION: return constitution;
+            case INTELLIGENCE: return intelligence;
+            case WISDOM: return wisdom;
+            case AGILITY: return agility;
+            default: return 10;
+        }
+    }
+
     public boolean allocateAttribute(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType stat) {
         if (unallocatedAttributePoints <= 0 || stat == null) return false;
-        final int MAX_ATTRIBUTE_CAP = 20;
 
         switch (stat) {
             case STRENGTH:
