@@ -395,6 +395,7 @@ public class FirstPersonWeaponOverlay {
     }
 
     public void addBloodToWeapon() {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         this.bloodLevel = Math.min(1.0f, this.bloodLevel + 0.35f);
     }
 
@@ -546,6 +547,7 @@ public class FirstPersonWeaponOverlay {
      * and blended with realistic translucent opacity.
      */
     public void addBloodDecals(int count, Color color, TextureRegion texture) {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         Color baseColor = (color != null) ? color : com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
         for (int i = 0; i < count; i++) {
             if (weaponBloodDecals.size() >= MAX_WEAPON_BLOOD_DECALS) {

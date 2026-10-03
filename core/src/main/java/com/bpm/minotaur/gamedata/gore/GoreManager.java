@@ -139,6 +139,10 @@ public class GoreManager {
 
     // --- Spawn API ---
 
+    private static boolean goreOff() {
+        return !GoreLevel.current().enabled();
+    }
+
     public void spawnBloodSpray(Vector3 origin, Vector3 direction, int intensity) {
         spawnBloodSpray(origin, direction, intensity, GoreProfile.FLESH);
     }
@@ -148,8 +152,9 @@ public class GoreManager {
 
         // Incorporeal creatures emit no blood or particles
         if (profile == GoreProfile.INCORPOREAL) return;
+        if (goreOff()) return;
 
-        int count = Math.max(3, intensity * 6);
+        int count = GoreLevel.current().count(Math.max(3, intensity * 6));
 
         // Budget check
         int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
@@ -209,8 +214,9 @@ public class GoreManager {
         if (profile == null) profile = GoreProfile.FLESH;
         if (!profile.hasBlood) return;
         if (profile == GoreProfile.INCORPOREAL) return;
+        if (goreOff()) return;
 
-        int count = MathUtils.clamp(4 + damage / 3, 4, 12);
+        int count = GoreLevel.current().count(MathUtils.clamp(4 + damage / 3, 4, 12));
         int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
         count = Math.min(count, availableSlots);
         if (count <= 0) return;
@@ -261,8 +267,9 @@ public class GoreManager {
     public void spawnGibExplosion(Vector3 origin, Vector3 exitVector, int overkillTier, GoreProfile profile) {
         if (profile == null) profile = GoreProfile.FLESH;
         if (!profile.hasGibs) return;
+        if (goreOff()) return;
 
-        int count = (overkillTier >= 2) ? MathUtils.random(7, 12) : MathUtils.random(3, 6);
+        int count = GoreLevel.current().count((overkillTier >= 2) ? MathUtils.random(7, 12) : MathUtils.random(3, 6));
 
         Color tint = (profile == GoreProfile.SKELETAL)
                 ? BONE_TINT // Ivory bone tint
@@ -308,6 +315,7 @@ public class GoreManager {
     }
 
     public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
+        if (goreOff()) return null;
         if (activeGibs.size >= MAX_ACTIVE_GIBS) {
             Gib oldest = activeGibs.removeIndex(0);
             gibPool.free(oldest);
@@ -322,12 +330,13 @@ public class GoreManager {
 
     public void spawnArterialFountain(Vector3 origin, Vector3 dir, float duration, GoreProfile profile) {
         if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff()) return;
         if (!profile.hasBlood) {
             spawnBloodSpray(origin, dir, 8, profile);
             return;
         }
 
-        int count = Math.min(30, MAX_ACTIVE_PARTICLES - activeParticles.size);
+        int count = Math.min(GoreLevel.current().count(30), MAX_ACTIVE_PARTICLES - activeParticles.size);
         if (count <= 0) return;
 
         Color fountainColor = tmpColor.set(profile.primaryColor);
@@ -360,6 +369,7 @@ public class GoreManager {
 
     public void spawnRetroGibs(Vector3 origin, String[] spriteData, Color color) {
         if (spriteData == null || spriteData.length == 0) return;
+        if (goreOff()) return;
 
         int rows = spriteData.length;
         int cols = spriteData[0].length();
@@ -461,6 +471,12 @@ public class GoreManager {
     }
 
     public void spawnSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
+        if (goreOff()) return;
+        placeSurfaceDecal(pos, color, targetRadius);
+    }
+
+    /** A floor mark regardless of the gore level: scorch and frost are not blood. */
+    private void placeSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
         // A doorway has no floor quad and no framing walls, so blood there reads
         // as hanging in the opening rather than lying on the ground.
         if (!canHoldSurfaceDecal(decalMaze, pos)) return;
@@ -480,12 +496,12 @@ public class GoreManager {
      * Spawns elemental ground marks (scorch, frost, acid, holy rune) at the specified position.
      */
     public void spawnElementalScorch(Vector3 pos, Color color, float radius) {
-        spawnSurfaceDecal(pos, color, radius);
+        placeSurfaceDecal(pos, color, radius);
         for (int i = 0; i < 2; i++) {
             float ox = MathUtils.random(-0.3f, 0.3f);
             float oz = MathUtils.random(-0.3f, 0.3f);
             Vector3 splatPos = tmpPos.set(pos.x + ox, pos.y, pos.z + oz);
-            spawnSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
+            placeSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
         }
     }
 

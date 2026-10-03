@@ -79,6 +79,10 @@ public class SettingsManager {
         // Load Audio Volumes (Defaults: Music 70%, SFX 80%)
         musicVolume = prefs.getFloat("musicVolume", 0.70f);
         sfxVolume = prefs.getFloat("sfxVolume", 0.80f);
+
+        // Gore level: one process-wide value the gore systems read.
+        com.bpm.minotaur.gamedata.gore.GoreLevel.setCurrent(
+                com.bpm.minotaur.gamedata.gore.GoreLevel.parse(prefs.getString("goreLevel", null)));
         MusicManager.getInstance().setMasterVolume(musicVolume);
 
         // Load Key Bindings
@@ -133,6 +137,19 @@ public class SettingsManager {
         Preferences prefs = getPrefs();
         if (prefs != null) {
             prefs.putBoolean("skipIntroVideo", skip).flush();
+        }
+    }
+
+    // --- Gore Level ---
+    public com.bpm.minotaur.gamedata.gore.GoreLevel getGoreLevel() {
+        return com.bpm.minotaur.gamedata.gore.GoreLevel.current();
+    }
+
+    public void setGoreLevel(com.bpm.minotaur.gamedata.gore.GoreLevel level) {
+        com.bpm.minotaur.gamedata.gore.GoreLevel.setCurrent(level);
+        Preferences prefs = getPrefs();
+        if (prefs != null) {
+            prefs.putString("goreLevel", com.bpm.minotaur.gamedata.gore.GoreLevel.current().name()).flush();
         }
     }
 

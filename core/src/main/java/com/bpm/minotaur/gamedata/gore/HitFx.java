@@ -46,7 +46,9 @@ public final class HitFx {
         if (type == Monster.MonsterType.IRON_GOLEM || type == Monster.MonsterType.GARGOYLE) {
             return new Spec(FxClipIds.HIT_SPARKS, 0.7f);
         }
-        if (family == MonsterFamily.UNDEAD || p == GoreProfile.INCORPOREAL || p == GoreProfile.SLIME || !p.hasBlood) {
+        // With gore off nothing bleeds: a hit still lands, as a puff.
+        if (!GoreLevel.current().enabled()
+                || family == MonsterFamily.UNDEAD || p == GoreProfile.INCORPOREAL || p == GoreProfile.SLIME || !p.hasBlood) {
             return new Spec(FxClipIds.HIT_SMOKE, 0.9f);
         }
         boolean large = crit || kill || damageShare >= HEAVY_HIT_SHARE;

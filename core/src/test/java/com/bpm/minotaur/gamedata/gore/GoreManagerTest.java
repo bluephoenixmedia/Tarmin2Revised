@@ -146,4 +146,23 @@ public class GoreManagerTest {
         assertEquals(2, freshManager.getActiveDecals().size);
         assertEquals(1, freshManager.getActiveWallDecals().size);
     }
+
+    @Test
+    public void goreOffSpawnsNoBloodGibsOrStainsButKeepsScorch() {
+        GoreLevel.setCurrent(GoreLevel.OFF);
+        try {
+            Vector3 at = new Vector3(5, 0.5f, 5);
+            goreManager.spawnBloodSpray(at, Vector3.X, 8, GoreProfile.FLESH);
+            goreManager.spawnArterialFountain(at, Vector3.Y, 2f, GoreProfile.FLESH);
+            goreManager.spawnGibExplosion(at, Vector3.Y, 2, GoreProfile.FLESH);
+            assertEquals(0, goreManager.getActiveParticles().size);
+            assertEquals(0, goreManager.getActiveGibs().size);
+            assertEquals(0, goreManager.getActiveDecals().size);
+
+            goreManager.spawnElementalScorch(at, Color.BLACK, 0.4f);
+            assertTrue(goreManager.getActiveDecals().size > 0);
+        } finally {
+            GoreLevel.setCurrent(GoreLevel.NORMAL);
+        }
+    }
 }

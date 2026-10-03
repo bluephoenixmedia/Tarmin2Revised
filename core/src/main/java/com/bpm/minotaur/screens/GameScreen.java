@@ -991,6 +991,7 @@ public class GameScreen extends BaseScreen {
     }
 
     public void triggerVisorSplatter() {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
         if (visorDropletTextures.isEmpty() || game.getViewport() == null) return;
         int count = com.badlogic.gdx.math.MathUtils.random(1, 3);
         float vw = game.getViewport().getWorldWidth();

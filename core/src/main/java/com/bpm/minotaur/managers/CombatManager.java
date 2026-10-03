@@ -3551,6 +3551,8 @@ public class CombatManager {
 
     private void applyCombatHitWound(Monster monster, int actualDamage, Item weapon) {
         if (monster == null || actualDamage <= 0) return;
+        // Gore off: no wound marks on the creature and no burst from them.
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
 
         // The weapon's own damage type decides the wound; see WoundTypeResolver.
         WoundDecal.WoundType woundType = com.bpm.minotaur.gamedata.gore.WoundTypeResolver.resolve(
@@ -3722,7 +3724,8 @@ public class CombatManager {
      * and soul mist are not blood.
      */
     private void splatterPlayer(int intensity, GoreProfile profile, boolean kill) {
-        if (intensity <= 0 || profile == null || !profile.hasBlood || player == null) {
+        if (intensity <= 0 || profile == null || !profile.hasBlood || player == null
+                || !com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) {
             return;
         }
         com.badlogic.gdx.graphics.Color c = profile.primaryColor != null
@@ -3736,7 +3739,7 @@ public class CombatManager {
 
     /** His own blood, from a wound, sized by how much of him the blow took. */
     private void bleedPlayer(int damage) {
-        if (damage <= 0 || player == null) {
+        if (damage <= 0 || player == null || !com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) {
             return;
         }
         com.badlogic.gdx.graphics.Color c = com.bpm.minotaur.gamedata.gore.GoreManager.UNIFIED_BLOOD_COLOR;
@@ -3761,7 +3764,8 @@ public class CombatManager {
     }
 
     private void applyWeaponBlood(int intensity, GoreProfile profile) {
-        if (intensity <= 0 || game == null || !(game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)) {
+        if (intensity <= 0 || game == null || !(game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen)
+                || !com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) {
             return;
         }
         com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
