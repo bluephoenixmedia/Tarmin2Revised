@@ -66,11 +66,28 @@ public class SurfaceDecal implements Pool.Poolable {
         expandTimer = 0f;
         lifeTimer = 0f;
         age = 0f;
+        isBlood = true;
         textureRegion = null;
     }
 
     /** Seconds since the stain landed; drives drying whether or not it ever fades. */
     public float age;
+
+    /** False for scorch, frost and other spell marks, which blood never pools into. */
+    public boolean isBlood = true;
+
+    /**
+     * Fresh blood landing in this puddle: it spreads to {@code newRadius} and
+     * is wet again, so a fight's newest blood never looks a minute old.
+     */
+    public void feed(float newRadius) {
+        if (newRadius > targetSize) {
+            initialSize = size;
+            targetSize = newRadius;
+            expandTimer = 0f;
+        }
+        age = 0f;
+    }
 
     public void update(float delta) {
         update(delta, false);

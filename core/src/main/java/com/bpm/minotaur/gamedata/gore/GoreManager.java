@@ -563,11 +563,47 @@ public class GoreManager {
 
     public void spawnSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
         if (goreOff()) return;
-        placeSurfaceDecal(pos, color, targetRadius);
+        if (pos != null && growNearbyPuddle(pos, color, targetRadius)) return;
+        placeSurfaceDecal(pos, color, targetRadius, true);
+    }
+
+    /** How near a landing drop must be to an existing puddle to feed it, in tiles. */
+    public static final float PUDDLE_MERGE_RADIUS = 0.25f;
+    /** The largest a puddle grows from merged drops. */
+    public static final float MAX_PUDDLE_RADIUS = 0.6f;
+    /** Share of a drop's area a puddle gains; most of the drop splashes, not pools. */
+    private static final float MERGE_AREA_SHARE = 0.35f;
+
+    /**
+     * Feeds the nearest blood puddle within {@link #PUDDLE_MERGE_RADIUS}
+     * instead of laying a new decal (guide step 4). Without this a spray
+     * reads as scattered dots and fills the pool long before a floor looks
+     * soaked.
+     */
+    private boolean growNearbyPuddle(Vector3 pos, Color color, float radius) {
+        SurfaceDecal nearest = null;
+        float bestD2 = PUDDLE_MERGE_RADIUS * PUDDLE_MERGE_RADIUS;
+        for (int i = 0; i < activeSurfaceDecals.size; i++) {
+            SurfaceDecal d = activeSurfaceDecals.get(i);
+            if (!d.isBlood) continue;
+            float dx = d.position.x - pos.x;
+            float dz = d.position.z - pos.z;
+            float d2 = dx * dx + dz * dz;
+            if (d2 <= bestD2) {
+                bestD2 = d2;
+                nearest = d;
+            }
+        }
+        if (nearest == null) return false;
+
+        float grown = (float) Math.sqrt(nearest.targetSize * nearest.targetSize
+                + MERGE_AREA_SHARE * radius * radius);
+        nearest.feed(Math.min(MAX_PUDDLE_RADIUS, grown));
+        return true;
     }
 
     /** A floor mark regardless of the gore level: scorch and frost are not blood. */
-    private void placeSurfaceDecal(Vector3 pos, Color color, float targetRadius) {
+    private void placeSurfaceDecal(Vector3 pos, Color color, float targetRadius, boolean blood) {
         // A doorway has no floor quad and no framing walls, so blood there reads
         // as hanging in the opening rather than lying on the ground.
         if (!canHoldSurfaceDecal(decalMaze, pos)) return;
@@ -577,6 +613,7 @@ public class GoreManager {
         SurfaceDecal d = surfaceDecalPool.obtain();
         TextureRegion tex = (smearTextures.size > 0) ? smearTextures.random() : spatterTexture;
         d.init(pos, color, targetRadius, tex);
+        d.isBlood = blood;
         activeSurfaceDecals.add(d);
     }
 
@@ -584,12 +621,12 @@ public class GoreManager {
      * Spawns elemental ground marks (scorch, frost, acid, holy rune) at the specified position.
      */
     public void spawnElementalScorch(Vector3 pos, Color color, float radius) {
-        placeSurfaceDecal(pos, color, radius);
+        placeSurfaceDecal(pos, color, radius, false);
         for (int i = 0; i < 2; i++) {
             float ox = MathUtils.random(-0.3f, 0.3f);
             float oz = MathUtils.random(-0.3f, 0.3f);
             Vector3 splatPos = tmpPos.set(pos.x + ox, pos.y, pos.z + oz);
-            placeSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f));
+            placeSurfaceDecal(splatPos, color, radius * MathUtils.random(0.45f, 0.75f), false);
         }
     }
 

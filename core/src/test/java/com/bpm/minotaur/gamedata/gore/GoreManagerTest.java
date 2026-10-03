@@ -235,4 +235,38 @@ public class GoreManagerTest {
         assertEquals(1, goreManager.getActiveDecals().size);
         assertEquals(1, goreManager.getActiveWallDecals().size);
     }
+
+    @Test
+    public void aDropLandingInAPuddleGrowsIt() {
+        goreManager.spawnSurfaceDecal(new Vector3(5f, 0, 5f), Color.RED, 0.2f);
+        float before = goreManager.getActiveDecals().first().targetSize;
+
+        goreManager.spawnSurfaceDecal(new Vector3(5.1f, 0, 5.1f), Color.RED, 0.2f);
+
+        assertEquals(1, goreManager.getActiveDecals().size);
+        assertTrue(goreManager.getActiveDecals().first().targetSize > before);
+    }
+
+    @Test
+    public void aDropClearOfEveryPuddleStartsANewOne() {
+        goreManager.spawnSurfaceDecal(new Vector3(5f, 0, 5f), Color.RED, 0.2f);
+        goreManager.spawnSurfaceDecal(new Vector3(6f, 0, 5f), Color.RED, 0.2f);
+        assertEquals(2, goreManager.getActiveDecals().size);
+    }
+
+    @Test
+    public void aPuddleStopsGrowingAtItsCap() {
+        for (int i = 0; i < 200; i++) {
+            goreManager.spawnSurfaceDecal(new Vector3(5f, 0, 5f), Color.RED, 0.25f);
+        }
+        assertEquals(1, goreManager.getActiveDecals().size);
+        assertTrue(goreManager.getActiveDecals().first().targetSize <= GoreManager.MAX_PUDDLE_RADIUS + 0.001f);
+    }
+
+    @Test
+    public void scorchMarksDoNotMergeIntoBlood() {
+        goreManager.spawnSurfaceDecal(new Vector3(5f, 0, 5f), Color.RED, 0.2f);
+        goreManager.spawnElementalScorch(new Vector3(5f, 0, 5f), Color.BLACK, 0.2f);
+        assertTrue(goreManager.getActiveDecals().size > 1);
+    }
 }
