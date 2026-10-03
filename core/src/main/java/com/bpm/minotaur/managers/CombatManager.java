@@ -2397,6 +2397,9 @@ public class CombatManager {
                     maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.3f);
                 }
 
+                // A puff of mist on top: volume in the air that never costs a decal.
+                maze.getGoreManager().spawnBloodMist(hitPos, exitDir, bloodIntensity, profile);
+
                 applyWeaponBlood(bloodIntensity, profile);
                 splatterPlayer(bloodIntensity, profile, false);
                 spawnHitFx(monster, profile, damageRatio, isCrit);

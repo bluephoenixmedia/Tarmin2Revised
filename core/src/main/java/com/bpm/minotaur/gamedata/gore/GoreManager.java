@@ -464,6 +464,47 @@ public class GoreManager {
         }
     }
 
+    /**
+     * A puff of fine, fast blood that hangs and fades in the air without
+     * leaving a mark: the volume of a meaty hit at no cost to the decal pools.
+     */
+    public void spawnBloodMist(Vector3 origin, Vector3 direction, int intensity, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff() || origin == null || !profile.hasBlood) return;
+        int count = Math.min(GoreLevel.current().count(6 + intensity * 2), particleBudget() - activeParticles.size);
+        if (count <= 0) return;
+        Color base = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+        Vector3 dir = (direction != null && direction.len2() > 0.001f) ? tmpDir.set(direction).nor() : tmpDir.set(0, 0.3f, 1).nor();
+        for (int i = 0; i < count; i++) {
+            BloodParticle p = particlePool.obtain();
+            Vector3 vel = tmpVel.set(dir).scl(0.6f)
+                    .add(MathUtils.random(-0.6f, 0.6f), MathUtils.random(-0.1f, 0.7f), MathUtils.random(-0.6f, 0.6f))
+                    .nor().scl(MathUtils.random(4.0f, 9.0f));
+            Color c = tmpColor.set(Math.min(1f, base.r * 1.15f), base.g, base.b, 0.7f);
+            TextureRegion tex = (dropTextures.size > 0) ? dropTextures.random() : null;
+            p.init(origin, vel, c, MathUtils.random(0.18f, 0.40f), MathUtils.random(0.02f, 0.04f), tex);
+            p.mist = true;
+            activeParticles.add(p);
+        }
+    }
+
+    /** Below this share of max HP, a bleeding monster marks every tile it leaves. */
+    public static final float TRAIL_HP_SHARE = 0.30f;
+
+    public static boolean leavesBloodTrail(int hp, int maxHp, GoreProfile profile) {
+        if (profile == null || !profile.hasBlood || !profile.createsFloorStains) return false;
+        return hp > 0 && maxHp > 0 && (float) hp / maxHp < TRAIL_HP_SHARE;
+    }
+
+    /** A wounded monster's blood on the tile it just left, in world coordinates. */
+    public void spawnWoundTrail(float worldX, float worldZ, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff()) return;
+        Color c = (profile.primaryColor != null) ? profile.primaryColor : UNIFIED_BLOOD_COLOR;
+        spawnSurfaceDecal(tmpPos.set(worldX + MathUtils.random(-0.25f, 0.25f), SurfaceDecal.FLOOR_Y,
+                worldZ + MathUtils.random(-0.25f, 0.25f)), c, MathUtils.random(0.10f, 0.17f));
+    }
+
     public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
         if (goreOff()) return null;
         makeRoomForGib();
@@ -783,6 +824,13 @@ public class GoreManager {
                         }
                     }
                 }
+            }
+
+            // Mist disperses where it lands; it is volume in the air, not paint.
+            if (p.mist && (hitDoorThreshold || hitWall || p.onGround || p.lifeTimer <= 0)) {
+                activeParticles.removeIndex(i);
+                particlePool.free(p);
+                continue;
             }
 
             // Door threshold deflection: closed door/gate drops blood to floor threshold

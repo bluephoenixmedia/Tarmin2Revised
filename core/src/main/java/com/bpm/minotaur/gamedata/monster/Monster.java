@@ -617,26 +617,31 @@ public class Monster implements Renderable {
             this.currentHP = 0;
         }
         lastHitTimeMillis = System.currentTimeMillis();
+        lastHitWeight = com.bpm.minotaur.gamedata.gore.HitReaction.weight(taken, getMaxHP(), isCrit);
         return taken;
     }
 
     // --- Hit Recoil / Flash Feedback ---
     private long lastHitTimeMillis = -1L;
-    private static final float HIT_FLASH_DURATION_SEC = 0.12f;
-    private static final float HIT_RECOIL_DISTANCE = 0.18f;
+    /** How heavy the last blow was, 0..1 (see HitReaction): scales recoil and flash. */
+    private float lastHitWeight = 0f;
 
     /** 0.0 = just hit, 1.0 = flash fully faded (or never hit). */
     public float getHitFlashProgress() {
         if (lastHitTimeMillis < 0) return 1f;
         float elapsed = (System.currentTimeMillis() - lastHitTimeMillis) / 1000f;
-        return Math.min(1f, elapsed / HIT_FLASH_DURATION_SEC);
+        return Math.min(1f, elapsed / com.bpm.minotaur.gamedata.gore.HitReaction.flashSeconds(lastHitWeight));
     }
 
-    /** Spring-back displacement magnitude for the current moment, easing to 0. */
+    /**
+     * Spring-back displacement for the current moment: a scratch flinches, a
+     * crit staggers. Eases out so the snap back reads as weight, not a slide.
+     */
     public float getHitRecoilOffset() {
         float progress = getHitFlashProgress();
         if (progress >= 1f) return 0f;
-        return HIT_RECOIL_DISTANCE * (1f - progress);
+        float remaining = 1f - progress;
+        return com.bpm.minotaur.gamedata.gore.HitReaction.recoilDistance(lastHitWeight) * remaining * remaining;
     }
 
     public int takeDamage(int amount) {

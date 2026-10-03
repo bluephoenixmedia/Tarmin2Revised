@@ -310,4 +310,30 @@ public class GoreManagerTest {
             GoreLevel.setCurrent(GoreLevel.NORMAL);
         }
     }
+
+    @Test
+    public void mistHangsAndFadesWithoutLeavingAMark() {
+        goreManager.spawnBloodMist(new Vector3(5, 0.5f, 5), Vector3.X, 8, GoreProfile.FLESH);
+        assertTrue(goreManager.getActiveParticles().size > 0);
+        for (int i = 0; i < 120; i++) goreManager.update(1f / 30f, null);
+        assertEquals(0, goreManager.getActiveParticles().size);
+        assertEquals(0, goreManager.getActiveDecals().size);
+    }
+
+    @Test
+    public void onlyABadlyWoundedBleederLeavesATrail() {
+        assertTrue(GoreManager.leavesBloodTrail(29, 100, GoreProfile.FLESH));
+        assertFalse(GoreManager.leavesBloodTrail(30, 100, GoreProfile.FLESH));
+        assertFalse(GoreManager.leavesBloodTrail(0, 100, GoreProfile.FLESH));
+        assertFalse(GoreManager.leavesBloodTrail(5, 100, GoreProfile.INCORPOREAL));
+    }
+
+    @Test
+    public void aWoundTrailStainsTheTileLeft() {
+        goreManager.spawnWoundTrail(7.5f, 9.5f, GoreProfile.FLESH);
+        assertEquals(1, goreManager.getActiveDecals().size);
+        SurfaceDecal d = goreManager.getActiveDecals().first();
+        assertEquals(7.5f, d.position.x, 0.26f);
+        assertEquals(9.5f, d.position.z, 0.26f);
+    }
 }
