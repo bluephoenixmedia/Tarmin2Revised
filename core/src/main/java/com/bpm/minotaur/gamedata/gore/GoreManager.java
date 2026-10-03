@@ -411,6 +411,59 @@ public class GoreManager {
         }
     }
 
+    /**
+     * Gibs tinted for how the body died -- char-black, ice-blue, ash-grey --
+     * with no blood on the floor. Elemental deaths do not bleed.
+     */
+    public void spawnTintedGibs(Vector3 origin, int overkillTier, Color tint) {
+        if (goreOff() || origin == null) return;
+        int count = GoreLevel.current().count((overkillTier >= 2) ? MathUtils.random(8, 12) : MathUtils.random(4, 7));
+        for (int i = 0; i < count; i++) {
+            makeRoomForGib();
+            Gib g = gibPool.obtain();
+            TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
+            float angle = MathUtils.random(0, 360) * MathUtils.degreesToRadians;
+            float radialSpeed = MathUtils.random(1.5f, 5.5f);
+            Vector3 vel = tmpVel.set(MathUtils.cos(angle) * radialSpeed, MathUtils.random(2.0f, 6.0f),
+                    MathUtils.sin(angle) * radialSpeed);
+            g.init(origin, vel, tex, tint != null ? tint : Color.WHITE);
+            activeGibs.add(g);
+        }
+    }
+
+    /**
+     * A heavy shot's exit wound: gibs and blood blown out of the far side in a
+     * tight cone along {@code exitVector}, fast enough to reach and paint the
+     * wall behind.
+     */
+    public void spawnExitBurst(Vector3 origin, Vector3 exitVector, GoreProfile profile) {
+        if (profile == null) profile = GoreProfile.FLESH;
+        if (goreOff() || origin == null || profile == GoreProfile.INCORPOREAL) return;
+        Vector3 exit = (exitVector != null && exitVector.len2() > 0.001f)
+                ? tmpDir.set(exitVector.x, 0f, exitVector.z).nor()
+                : tmpDir.set(0f, 0f, 1f);
+        float ex = exit.x;
+        float ez = exit.z;
+
+        if (profile.hasGibs) {
+            Color tint = (profile == GoreProfile.SKELETAL) ? BONE_TINT : Color.WHITE;
+            int count = GoreLevel.current().count(MathUtils.random(9, 14));
+            for (int i = 0; i < count; i++) {
+                makeRoomForGib();
+                Gib g = gibPool.obtain();
+                TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
+                float speed = MathUtils.random(5.0f, 9.5f);
+                float side = MathUtils.random(-1.6f, 1.6f);
+                Vector3 vel = tmpVel.set(ex * speed - ez * side, MathUtils.random(1.5f, 4.0f), ez * speed + ex * side);
+                g.init(origin, vel, tex, tint);
+                activeGibs.add(g);
+            }
+        }
+        if (profile.hasBlood) {
+            spawnBloodSpray(origin, tmpPos.set(ex, 0.1f, ez), 12, profile);
+        }
+    }
+
     public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
         if (goreOff()) return null;
         makeRoomForGib();

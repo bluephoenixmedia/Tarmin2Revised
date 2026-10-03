@@ -9,6 +9,10 @@ import com.badlogic.gdx.Screen;
 import com.bpm.minotaur.Tarmin2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.gamedata.gore.GoreProfile;
+import com.bpm.minotaur.gamedata.gore.CorpseFinish;
+import com.bpm.minotaur.gamedata.gore.DeathGore;
+import com.bpm.minotaur.gamedata.gore.GoreLevel;
+import com.bpm.minotaur.gamedata.gore.KillCause;
 import com.bpm.minotaur.gamedata.effects.ActiveStatusEffect;
 import com.bpm.minotaur.gamedata.effects.StatusEffectType;
 import com.bpm.minotaur.gamedata.item.Item;
@@ -138,6 +142,8 @@ public class CombatManager {
     private final ItemDataManager itemDataManager;
 
     private int lastDamageDealt = 0;
+    /** The last landed blow was a crit or a combo finisher; a killing one earns a bigger death. */
+    private boolean lastHitCritOrFinisher = false;
 
     private Item pendingWeapon;
     private boolean pendingIsRanged;
@@ -788,7 +794,9 @@ public class CombatManager {
                 if (eventManager != null) {
                     eventManager.addEvent(new GameEvent(attacker.getMonsterType() + " slayed " + defender.getMonsterType() + "!", 2f));
                 }
-                spawnCorpseEffects(defender, Math.max(0, taken - defender.getMaxHP()));
+                int infightTier = DeathGore.overkillTier(Math.max(0, -defender.getCurrentHP()),
+                        defender.getMaxHP(), false, GoreLevel.current());
+                spawnCorpseEffects(defender, DeathGore.plan(KillCause.none(), infightTier, GoreLevel.current()));
             }
         } else {
             if (eventManager != null) {
@@ -1050,6 +1058,11 @@ public class CombatManager {
     }
 
     public void handleRemoteKill(Monster m) {
+        handleRemoteKill(m, KillCause.none());
+    }
+
+    /** A kill away from the engaged fight -- a spell, a bolt, a thrown blade -- still dies on screen. */
+    public void handleRemoteKill(Monster m, KillCause cause) {
         if (m == null) return;
         maze.removeMonster(m);
         if (!m.claimDeath()) {
@@ -1063,7 +1076,7 @@ public class CombatManager {
             DivinityManager.getInstance().awardKillDivinities(remoteTemplate.baseLevel, maze.getLevel());
         }
         DivinityOrbManager.getInstance().spawnOrb();
-        spawnCorpseEffects(m, 0);
+        spawnCorpseEffects(m, spawnDeathGore(m, cause));
 
         // Caves of Qud Night Hunter trigger
         if (player != null && player.getStatusManager() != null && player.getStatusManager().hasEffect(StatusEffectType.NIGHT_HUNTER)) {
@@ -1388,11 +1401,12 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent("Threw " + com.bpm.minotaur.gamedata.item.ItemName.natural(weapon.getFriendlyName()) + " into " + target.getType() + " for " + actual + " dmg!", 1.5f));
 
                 if (target.getCurrentHP() <= 0) {
+                    KillCause thrownCause = KillCause.weapon(AnimationArchetype.fromItem(weapon), false);
                     if (target == this.monster) {
-                        handleMonsterDeath();
+                        handleMonsterDeath(thrownCause);
                         currentState = CombatState.VICTORY;
                     } else {
-                        handleRemoteKill(target);
+                        handleRemoteKill(target, thrownCause);
                     }
                 }
             } else {
@@ -1941,6 +1955,7 @@ public class CombatManager {
             eventManager.addEvent(new GameEvent("Hit! " + actualDamage + " dmg", 2f));
 
             lastDamageDealt = actualDamage;
+            lastHitCritOrFinisher = false;
         } else {
             if (poisonStacks == 0 && playerCurrentBlock == 0 && healing == 0) {
                 eventManager.addEvent(new GameEvent("Miss!", 1f));
@@ -2097,6 +2112,7 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent(monster.getType() + " is immune to " + attackCategory + " attacks!", 1.5f));
                 showDamageText(0, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y));
                 lastDamageDealt = 0;
+                lastHitCritOrFinisher = false;
                 soundManager.playWeaponImpact(false);
             } else {
                 int totalDamage;
@@ -2212,7 +2228,8 @@ public class CombatManager {
                                 showDamageText(cleaved, adjPos, "CLEAVE! ", com.badlogic.gdx.graphics.Color.ORANGE);
                                 if (adjMonster.getCurrentHP() <= 0) {
                                     // The full kill path, so a cleaved monster leaves a body and dies on screen.
-                                    handleRemoteKill(adjMonster);
+                                    handleRemoteKill(adjMonster, KillCause.weapon(AnimationArchetype.fromItem(
+                                            player.getInventory() != null ? player.getInventory().getRightHand() : null), false));
                                 }
                                 break;
                             }
@@ -2275,6 +2292,7 @@ public class CombatManager {
 
                 showDamageText(actualDamage, new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y), dmgPrefix, textColor, isCrit, dmgType);
                 lastDamageDealt = actualDamage;
+                lastHitCritOrFinisher = isCrit || (currentMotionProfile != null && currentMotionProfile.isFinisher);
 
                 com.bpm.minotaur.telemetry.TelemetryManager.getInstance().recordAttack(
                         isGlancing ? com.bpm.minotaur.telemetry.TelemetryManager.HitType.GLANCING
@@ -2720,7 +2738,7 @@ public class CombatManager {
     }
 
     private void spawnCorpseEffects(Monster monster) {
-        spawnCorpseEffects(monster, 0);
+        spawnCorpseEffects(monster, null);
     }
 
     /**
@@ -2761,9 +2779,11 @@ public class CombatManager {
         return "images/scenery/decomposing_corpse.png";
     }
 
-    private void spawnCorpseEffects(Monster monster, int overkillTier) {
+    /** @param plan how it died; null is a clean kill */
+    private void spawnCorpseEffects(Monster monster, DeathGore.Plan plan) {
         if (maze == null || itemDataManager == null)
             return;
+        int overkillTier = (plan != null) ? plan.tier : 0;
 
         GridPoint2 pos = new GridPoint2((int) monster.getPosition().x, (int) monster.getPosition().y);
 
@@ -2772,18 +2792,20 @@ public class CombatManager {
         // you can recognise, a dismembered one leaves a heap. Every monster used
         // to leave the same dead armoured human regardless.
         if (maze.getScenery() != null) {
-            boolean severed = overkillTier > 0;
-            // A monster with death art always plays it out and leaves its last
-            // frame, however hard it was hit: the art ends in a heap of its own,
-            // and the overkill still shows in the gibs, blood and hit-pause.
-            // Only monsters without art fall back to the old corpse or gore pile.
-            com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = deathAnimationFor(monster);
+            boolean severed = plan != null && plan.gorePile;
+            // Death art plays on a clean or tier-1 kill and leaves its last
+            // frame. A full gib death, a decapitation, and frost/ash/melt
+            // deaths replace it: the body is gone, or not in a state the art
+            // ever drew.
+            com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim =
+                    (plan == null || plan.playDeathArt) ? deathAnimationFor(monster) : null;
             String corpseTex = deathAnim != null ? deathAnim.getSheetPath()
                     : severed ? gorePileTexture() : monsterCorpseTexture(monster);
             Scenery corpse = new Scenery(
                     severed ? Scenery.SceneryType.GORE_PILE : Scenery.SceneryType.MONSTER_REMAINS,
                     pos.x, pos.y, corpseTex);
             corpse.setCorpseMonsterName(monster.getMonsterType());
+            corpse.setCorpseFinish(plan != null ? plan.finish : CorpseFinish.NONE);
             if (deathAnim != null) {
                 corpse.setDeathAnimId(deathAnim.getMonsterTexture());
                 // Same sizing rule the renderer applies to a living monster, so
@@ -3248,7 +3270,7 @@ public class CombatManager {
 
             if (monster.getWarStrength() <= 0) {
                 // Trigger death logic reuse
-                handleMonsterDeath();
+                handleMonsterDeath(KillCause.none());
                 return;
             }
         }
@@ -3261,7 +3283,7 @@ public class CombatManager {
             BalanceLogger.getInstance().log("COMBAT_EFFECT", "Monster bled for " + dmg + " damage.");
 
             if (monster.getWarStrength() <= 0) {
-                handleMonsterDeath();
+                handleMonsterDeath(KillCause.none());
                 return;
             }
         }
@@ -3350,6 +3372,20 @@ public class CombatManager {
 
     // Extracted death logic to reuse for Poison kills
     public void handleMonsterDeath() {
+        handleMonsterDeath(heldWeaponKillCause());
+    }
+
+    /** The engaged monster's killing blow came from the weapon in hand. */
+    private KillCause heldWeaponKillCause() {
+        Item weapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
+        return KillCause.weapon(AnimationArchetype.fromItem(weapon), lastHitCritOrFinisher);
+    }
+
+    /**
+     * @param cause what killed it -- a spell's archetype, a thrown or held
+     *              weapon, or nothing (bleed, poison) -- which decides its death
+     */
+    public void handleMonsterDeath(KillCause cause) {
         currentState = CombatState.VICTORY;
         if (monster == null) return;
         // Off the map first, by identity: a stale position must never leave a
@@ -3403,7 +3439,34 @@ public class CombatManager {
 
         maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.10f);
 
-        // --- GIB & OVERKILL ANIMATION ---
+        DeathGore.Plan deathPlan = spawnDeathGore(monster, cause);
+        spawnCorpseEffects(monster, deathPlan);
+        DivinityOrbManager.getInstance().spawnOrb();
+    }
+
+    // --- Death gore ---------------------------------------------------------
+
+    private static final com.badlogic.gdx.graphics.Color ICE_GIB_TINT = new com.badlogic.gdx.graphics.Color(0.72f, 0.90f, 1.0f, 0.95f);
+    private static final com.badlogic.gdx.graphics.Color CHAR_GIB_TINT = new com.badlogic.gdx.graphics.Color(0.18f, 0.14f, 0.12f, 1f);
+    private static final com.badlogic.gdx.graphics.Color ASH_TINT = new com.badlogic.gdx.graphics.Color(0.30f, 0.30f, 0.32f, 0.9f);
+    private static final com.badlogic.gdx.graphics.Color ACID_TINT = new com.badlogic.gdx.graphics.Color(0.30f, 0.85f, 0.25f, 0.85f);
+    /** Height on the sprite, from the top, where a decapitation cuts. */
+    private static final float NECK_CUT_FROM_TOP = 0.28f;
+
+    /**
+     * Throws the gore for a death: decides it with {@link DeathGore} from the
+     * overkill and what killed it, then carries it out. Returns the plan so the
+     * corpse can match it.
+     */
+    private DeathGore.Plan spawnDeathGore(Monster monster, KillCause cause) {
+        GoreLevel level = GoreLevel.current();
+        if (cause == null) cause = KillCause.none();
+        int overkill = Math.max(0, -monster.getCurrentHP());
+        int tier = DeathGore.overkillTier(overkill, monster.getMaxHP(), cause.critOrFinisher, level);
+        DeathGore.Plan plan = DeathGore.plan(cause, tier, level);
+        if (maze == null || maze.getGoreManager() == null || player == null) return plan;
+        com.bpm.minotaur.gamedata.gore.GoreManager gore = maze.getGoreManager();
+
         GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
         float worldX = cid.x * 36.0f + monster.getPosition().x;
         float worldZ = cid.y * 36.0f + monster.getPosition().y;
@@ -3413,138 +3476,185 @@ public class CombatManager {
                 0.25f,
                 monster.getPosition().y - player.getPosition().y
         ).nor();
-
         GoreProfile profile = GoreProfile.fromMonster(monster);
-
-        int maxHp = Math.max(1, monster.getMaxHP());
-        int overkill = Math.max(0, -monster.getCurrentHP());
-        float overkillRatio = (float) overkill / (float) maxHp;
-        boolean isHeavyKill = (lastDamageDealt >= maxHp * 0.40f);
 
         MonsterDecalCompositor.getInstance().releaseMonster(monster, false);
 
-        int overkillTier = 0;
-        if (overkillRatio >= 0.50f || (isHeavyKill && overkillRatio >= 0.25f)) {
-            overkillTier = 2; // Complete Obliteration
-        } else if (overkillRatio >= 0.25f || isHeavyKill) {
-            overkillTier = 1; // Significant Dismemberment
-        }
-
-        Item killWeapon = (player != null && player.getInventory() != null) ? player.getInventory().getRightHand() : null;
-        AnimationArchetype killArch = AnimationArchetype.fromItem(killWeapon);
-
-        if (overkillTier > 0) {
-            // Trigger Visor Blood Droplet splash & camera trauma & hit-pause
-            if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
-                com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-                float dist = player.getPosition().dst(monster.getPosition());
-                if (dist <= 1.5f) {
-                    gs.triggerVisorSplatter();
-                }
-                gs.triggerHitPause(0.12f);
-                gs.addTrauma(overkillTier == 2 ? 0.6f : 0.35f);
+        if (plan.tier > 0 && game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            // Visor splash, camera trauma and hit-pause sell the big death.
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            if (plan.blood && player.getPosition().dst(monster.getPosition()) <= 1.5f) {
+                gs.triggerVisorSplatter();
             }
+            gs.triggerHitPause(plan.tier >= 2 ? 0.14f : 0.10f);
+            gs.addTrauma(plan.tier >= 2 ? 0.6f : 0.35f);
         }
 
-        int killBloodIntensity;
         if (DebugManager.getInstance().getRenderMode() == DebugManager.RenderMode.RETRO) {
             String[] spriteData = monster.getSpriteData();
             if (spriteData != null) {
-                maze.getGoreManager().spawnRetroGibs(gibOrigin, spriteData, monster.getColor());
-                killBloodIntensity = 0;
+                gore.spawnRetroGibs(gibOrigin, spriteData, monster.getColor());
             } else {
-                maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, Math.max(1, overkillTier), profile);
-                killBloodIntensity = 0;
+                gore.spawnGibExplosion(gibOrigin, exitVector, Math.max(1, plan.tier), profile);
             }
-        } else {
-            if (overkillTier > 0) {
-                killBloodIntensity = (overkillTier == 2) ? 8 : 5;
-
-                switch (killArch) {
-                    case SLASHING_1H:
-                    case SLASHING_2H:
-                    case AXE_CHOPPING:
-                    case POLEARM_SWEEP: {
-                        // Freeform bisection
-                        float swingStartX = 0.8f, swingStartY = 0.2f, swingEndX = 0.2f, swingEndY = 0.8f;
-                        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
-                            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
-                            if (gs.getWeaponOverlay() != null) {
-                                CombatMotionProfile cmp = gs.getWeaponOverlay().getCurrentProfile();
-                                if (cmp != null) {
-                                    swingStartX = cmp.startXRel;
-                                    swingStartY = cmp.startYRel;
-                                    swingEndX = cmp.endXRel;
-                                    swingEndY = cmp.endYRel;
-                                }
-                            }
-                        }
-
-                        float mw = monster.getScale().x;
-                        float mh = monster.getScale().y;
-                        TextureRegion mReg = monster.getTextureRegion();
-                        Texture mTex = (mReg != null) ? mReg.getTexture() : monster.getTexture();
-                        BillboardSlicer.SlicedResult slice = BillboardSlicer.sliceFromSwing(
-                                mw, mh, mReg, swingStartX, swingStartY, swingEndX, swingEndY
-                        );
-
-                        // A monster with death art comes apart in its own frames;
-                        // cutting the living sprite in two as well would leave one
-                        // body flying off while another stands up to die.
-                        boolean hasDeathArt = deathAnimationFor(monster) != null;
-                        if (!hasDeathArt && slice.isSliced && mTex != null && profile.hasGibs) {
-                            Vector3 cutVel = new Vector3(exitVector.x * 2.0f, MathUtils.random(3.5f, 5.5f), exitVector.z * 2.0f);
-                            maze.getGoreManager().spawnSeveredLimbGib(
-                                    gibOrigin, cutVel, mTex,
-                                    slice.severedVertices, slice.severedUVs, null, profile
-                            );
-                            if (slice.trunkVertices != null && slice.trunkVertices.length >= 6) {
-                                Vector3 trunkVel = new Vector3(-exitVector.x * 0.6f, MathUtils.random(0.5f, 1.8f), -exitVector.z * 0.6f);
-                                maze.getGoreManager().spawnSeveredLimbGib(
-                                        gibOrigin, trunkVel, mTex,
-                                        slice.trunkVertices, slice.trunkUVs, null, profile
-                                );
-                            }
-                            maze.getGoreManager().spawnArterialFountain(gibOrigin, Vector3.Y, 2.0f, profile);
-                        } else {
-                            maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
-                            maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
-                        }
-                        break;
-                    }
-                    case BLUNT_CRUSHING:
-                    case FLAIL_WHIP:
-                    case BRAWLING:
-                    case SHIELD: {
-                        maze.getGoreManager().spawnCrushShatter(gibOrigin, profile);
-                        break;
-                    }
-                    case THRUSTING_PIERCE:
-                    case RANGED_BOW:
-                    case RANGED_FIREARM: {
-                        maze.getGoreManager().spawnArterialFountain(gibOrigin, exitVector, 2.0f, profile);
-                        maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
-                        break;
-                    }
-                    default: {
-                        maze.getGoreManager().spawnGibExplosion(gibOrigin, exitVector, overkillTier, profile);
-                        maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
-                        break;
-                    }
-                }
-            } else {
-                killBloodIntensity = 2;
-                maze.getGoreManager().spawnBloodSpray(gibOrigin, exitVector, killBloodIntensity, profile);
-            }
+            return plan;
         }
 
-        // Weapon shares in the killing blow's blood, same as every other
-        // player-caused hit above.
-        applyWeaponBlood(killBloodIntensity, profile);
-        splatterPlayer(killBloodIntensity, profile, true);
+        // A tier-1 death with art plays that art; the weapon only adds its blood.
+        boolean artPlays = plan.playDeathArt && deathAnimationFor(monster) != null;
+        int blood = 0;
+        switch (plan.style) {
+            case CLEAN:
+                blood = (plan.tier >= 1) ? 5 : 2;
+                gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                if (plan.tier >= 1 && !artPlays) {
+                    gore.spawnGibExplosion(gibOrigin, exitVector, 1, profile);
+                }
+                break;
+            case GIB:
+                blood = 8;
+                gore.spawnGibExplosion(gibOrigin, exitVector, 2, profile);
+                gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                break;
+            case SLICE:
+                blood = (plan.tier >= 2) ? 8 : 5;
+                if (artPlays || !sliceAlongSwing(monster, gore, gibOrigin, exitVector, profile)) {
+                    if (!artPlays) gore.spawnGibExplosion(gibOrigin, exitVector, plan.tier, profile);
+                    gore.spawnArterialFountain(gibOrigin, Vector3.Y, 2.0f, profile);
+                }
+                gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                break;
+            case CRUSH:
+                blood = (plan.tier >= 2) ? 8 : 5;
+                if (artPlays) {
+                    gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                    gore.spawnGibExplosion(gibOrigin, exitVector, 1, profile);
+                } else {
+                    gore.spawnCrushShatter(gibOrigin, profile);
+                }
+                break;
+            case FOUNTAIN:
+                blood = (plan.tier >= 2) ? 8 : 5;
+                gore.spawnArterialFountain(gibOrigin, exitVector, 2.0f, profile);
+                gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                if (plan.tier >= 2) gore.spawnGibExplosion(gibOrigin, exitVector, 1, profile);
+                break;
+            case RANGED_BURST:
+                blood = 8;
+                gore.spawnExitBurst(gibOrigin, exitVector, profile);
+                gore.spawnGibExplosion(gibOrigin, exitVector, 1, profile);
+                break;
+            case DECAPITATE:
+                blood = 6;
+                decapitate(monster, gore, gibOrigin, exitVector, profile);
+                gore.spawnBloodSpray(gibOrigin, exitVector, blood, profile);
+                break;
+            case CHARRED:
+                gore.spawnElementalScorch(floorAt(gibOrigin), cause.spell != null
+                        ? cause.spell.getDecalColor() : CHAR_GIB_TINT, 0.55f);
+                spawnDeathFx(monster, com.bpm.minotaur.rendering.vfx.FxClipIds.HIT_SMOKE, 1.5f);
+                if (plan.gibs) gore.spawnTintedGibs(gibOrigin, plan.tier, CHAR_GIB_TINT);
+                break;
+            case FROST_SHATTER:
+                gore.spawnElementalScorch(floorAt(gibOrigin), cause.spell != null
+                        ? cause.spell.getDecalColor() : ICE_GIB_TINT, 0.5f);
+                gore.spawnTintedGibs(gibOrigin, Math.max(1, plan.tier) + 1, ICE_GIB_TINT);
+                break;
+            case ASH:
+                spawnDeathFx(monster, com.bpm.minotaur.rendering.vfx.FxClipIds.HIT_SPARKS, 1.3f);
+                gore.spawnElementalScorch(floorAt(gibOrigin), ASH_TINT, 0.5f);
+                gore.spawnTintedGibs(gibOrigin, 1, ASH_TINT);
+                break;
+            case MELT:
+                gore.spawnElementalScorch(floorAt(gibOrigin), ACID_TINT, 0.7f);
+                spawnDeathFx(monster, com.bpm.minotaur.rendering.vfx.FxClipIds.HIT_SMOKE, 1.0f);
+                break;
+            default:
+                break;
+        }
 
-        spawnCorpseEffects(monster, overkillTier);
-        DivinityOrbManager.getInstance().spawnOrb();
+        // Only a weapon in hand gets bloody, and only from something that bled.
+        if (plan.blood && cause.weapon != null) {
+            applyWeaponBlood(blood, profile);
+        }
+        if (plan.blood) {
+            splatterPlayer(blood, profile, true);
+        }
+        return plan;
+    }
+
+    private static Vector3 floorAt(Vector3 p) {
+        return new Vector3(p.x, 0.02f, p.z);
+    }
+
+    private void spawnDeathFx(Monster monster, String clipId, float scale) {
+        if (animationManager == null || monster == null) return;
+        animationManager.spawnFx(clipId,
+                com.bpm.minotaur.gamedata.gore.HitFx.position(monster.getPosition().x, monster.getPosition().y), scale);
+    }
+
+    /** Cuts the living sprite in two along the current swing. False if it could not be cut. */
+    private boolean sliceAlongSwing(Monster monster, com.bpm.minotaur.gamedata.gore.GoreManager gore,
+                                    Vector3 gibOrigin, Vector3 exitVector, GoreProfile profile) {
+        float swingStartX = 0.8f, swingStartY = 0.2f, swingEndX = 0.2f, swingEndY = 0.8f;
+        if (game != null && game.getScreen() instanceof com.bpm.minotaur.screens.GameScreen) {
+            com.bpm.minotaur.screens.GameScreen gs = (com.bpm.minotaur.screens.GameScreen) game.getScreen();
+            if (gs.getWeaponOverlay() != null) {
+                CombatMotionProfile cmp = gs.getWeaponOverlay().getCurrentProfile();
+                if (cmp != null) {
+                    swingStartX = cmp.startXRel;
+                    swingStartY = cmp.startYRel;
+                    swingEndX = cmp.endXRel;
+                    swingEndY = cmp.endYRel;
+                }
+            }
+        }
+        TextureRegion mReg = monster.getTextureRegion();
+        Texture mTex = (mReg != null) ? mReg.getTexture() : monster.getTexture();
+        if (mTex == null || !profile.hasGibs) return false;
+        BillboardSlicer.SlicedResult slice = BillboardSlicer.sliceFromSwing(
+                monster.getScale().x, monster.getScale().y, mReg, swingStartX, swingStartY, swingEndX, swingEndY);
+        if (!slice.isSliced) return false;
+
+        Vector3 cutVel = new Vector3(exitVector.x * 2.0f, MathUtils.random(3.5f, 5.5f), exitVector.z * 2.0f);
+        gore.spawnSeveredLimbGib(gibOrigin, cutVel, mTex, slice.severedVertices, slice.severedUVs, null, profile);
+        if (slice.trunkVertices != null && slice.trunkVertices.length >= 6) {
+            Vector3 trunkVel = new Vector3(-exitVector.x * 0.6f, MathUtils.random(0.5f, 1.8f), -exitVector.z * 0.6f);
+            gore.spawnSeveredLimbGib(gibOrigin, trunkVel, mTex, slice.trunkVertices, slice.trunkUVs, null, profile);
+        }
+        gore.spawnArterialFountain(gibOrigin, Vector3.Y, 2.0f, profile);
+        return true;
+    }
+
+    /**
+     * The head flies up and away, spinning; the neck fountains. The body stays
+     * behind as a headless corpse (see {@link CorpseFinish#HEADLESS}).
+     */
+    private void decapitate(Monster monster, com.bpm.minotaur.gamedata.gore.GoreManager gore,
+                            Vector3 gibOrigin, Vector3 exitVector, GoreProfile profile) {
+        float mw = monster.getScale().x;
+        float mh = monster.getScale().y;
+        if (mw > 0.82f) {
+            mh *= 0.82f / mw;
+            mw = 0.82f;
+        }
+        Vector3 neck = new Vector3(gibOrigin.x, Math.max(0.3f, mh * (1f - NECK_CUT_FROM_TOP)), gibOrigin.z);
+
+        TextureRegion mReg = monster.getTextureRegion();
+        Texture mTex = (mReg != null) ? mReg.getTexture() : monster.getTexture();
+        BillboardSlicer.SlicedResult slice = (mTex != null)
+                ? BillboardSlicer.sliceFromSwing(mw, mh, mReg, 0f, NECK_CUT_FROM_TOP, 1f, NECK_CUT_FROM_TOP)
+                : null;
+        if (slice != null && slice.isSliced && profile.hasGibs) {
+            Vector3 headVel = new Vector3(exitVector.x * 1.5f, MathUtils.random(5.5f, 7.5f), exitVector.z * 1.5f);
+            // Untinted: a head should look like the monster's head.
+            com.bpm.minotaur.gamedata.gore.Gib head = gore.spawnSeveredLimbGib(
+                    neck, headVel, mTex, slice.severedVertices, slice.severedUVs, null, null);
+            if (head != null) head.rotationalVelocity = MathUtils.randomSign() * MathUtils.random(420f, 720f);
+        } else {
+            gore.spawnGibExplosion(neck, exitVector, 1, profile);
+        }
+        gore.spawnArterialFountain(neck, Vector3.Y, 2.0f, profile);
     }
 
     private final java.util.Random woundRandom = new java.util.Random();
@@ -3669,17 +3779,9 @@ public class CombatManager {
                 eventManager.addEvent(new GameEvent("LACERATION! " + monster.getMonsterType() + " is bleeding (" + bleedDmg + " dmg/turn)!", 1.5f));
             }
             if (monster.getCurrentHP() <= 0 && (isCrit || isFinisher || actualDamage > 12)) {
+                // The cut itself is the death gore's (DeathGore): a crit or finisher
+                // slash decapitates, and a second gib burst here buried it.
                 eventManager.addEvent(new GameEvent("SEVERING BLOW! Cleaved through " + monster.getMonsterType() + "!", 2.0f));
-                GridPoint2 cid = (worldManager != null) ? worldManager.getCurrentPlayerChunkId() : new GridPoint2(0, 0);
-                float wx = cid.x * 36.0f + monster.getPosition().x;
-                float wz = cid.y * 36.0f + monster.getPosition().y;
-                Vector3 hitPos = new Vector3(wx, 0.5f, wz);
-                Vector3 exitDir = new Vector3(monster.getPosition().x - player.getPosition().x, 0.2f, monster.getPosition().y - player.getPosition().y).nor();
-                GoreProfile profile = GoreProfile.fromMonster(monster);
-                if (maze != null && maze.getGoreManager() != null) {
-                    maze.getGoreManager().spawnGibExplosion(hitPos, exitDir, 2, profile);
-                    maze.addBlood((int) monster.getPosition().x, (int) monster.getPosition().y, 0.2f);
-                }
             }
         }
 

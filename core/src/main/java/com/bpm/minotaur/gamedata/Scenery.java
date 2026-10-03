@@ -236,6 +236,18 @@ public class Scenery implements Renderable {
         this.deathAnimId = deathAnimId;
     }
 
+    /** How the body looks for the way it died: charred, frozen, headless... */
+    private com.bpm.minotaur.gamedata.gore.CorpseFinish corpseFinish =
+            com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE;
+
+    public com.bpm.minotaur.gamedata.gore.CorpseFinish getCorpseFinish() {
+        return corpseFinish;
+    }
+
+    public void setCorpseFinish(com.bpm.minotaur.gamedata.gore.CorpseFinish finish) {
+        this.corpseFinish = (finish != null) ? finish : com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE;
+    }
+
     public float getDeathHeight() {
         return deathHeight;
     }
