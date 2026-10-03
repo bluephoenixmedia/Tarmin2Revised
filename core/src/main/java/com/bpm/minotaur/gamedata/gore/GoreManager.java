@@ -29,11 +29,12 @@ public class GoreManager {
 
     public static final Color UNIFIED_BLOOD_COLOR = new Color(0.77f, 0.12f, 0.12f, 1.0f);
 
-    // --- High-Performance Pool Budgets ---
-    public static final int MAX_ACTIVE_PARTICLES = 250;
-    public static final int MAX_ACTIVE_GIBS = 40;
-    public static final int MAX_ACTIVE_SURFACE_DECALS = 200;
-    public static final int MAX_ACTIVE_WALL_DECALS = 100;
+    // --- High-Performance Pool Budgets (at GoreLevel.NORMAL; see GoreLevel#budget) ---
+    // Blood stays until recycled, so these decide how painted a room can get.
+    public static final int MAX_ACTIVE_PARTICLES = 400;
+    public static final int MAX_ACTIVE_GIBS = 150;
+    public static final int MAX_ACTIVE_SURFACE_DECALS = 600;
+    public static final int MAX_ACTIVE_WALL_DECALS = 400;
 
     // --- Entity Pools ---
     private final Pool<BloodParticle> particlePool = new Pool<BloodParticle>(64, MAX_ACTIVE_PARTICLES) {
@@ -87,7 +88,106 @@ public class GoreManager {
     private final GridPoint2 tmpChunkId = new GridPoint2();
     private static final Color BONE_TINT = new Color(0.90f, 0.88f, 0.80f, 1.0f);
 
+    // Where the player stands, in world coordinates (x, maze-y). A full pool
+    // recycles whatever lies farthest from here, so the fight in front of the
+    // player is never the blood that disappears.
+    private float viewerX, viewerZ;
+    private boolean hasViewer;
+
     public GoreManager() {
+    }
+
+    public void setViewer(float worldX, float worldZ) {
+        this.viewerX = worldX;
+        this.viewerZ = worldZ;
+        this.hasViewer = true;
+    }
+
+    private static int particleBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_PARTICLES);
+    }
+
+    private static int gibBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_GIBS);
+    }
+
+    private static int surfaceBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_SURFACE_DECALS);
+    }
+
+    private static int wallBudget() {
+        return GoreLevel.current().budget(MAX_ACTIVE_WALL_DECALS);
+    }
+
+    private float viewerDist2(float x, float z) {
+        float dx = x - viewerX;
+        float dz = z - viewerZ;
+        return dx * dx + dz * dz;
+    }
+
+    private void makeRoomForGib() {
+        while (activeGibs.size >= gibBudget() && activeGibs.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeGibs.size; i++) {
+                    Gib g = activeGibs.get(i);
+                    float d = viewerDist2(g.position.x, g.position.z);
+                    if (d > best) {
+                        best = d;
+                        victim = i;
+                    }
+                }
+            }
+            gibPool.free(activeGibs.removeIndex(victim));
+        }
+    }
+
+    private void makeRoomForSurfaceDecal() {
+        while (activeSurfaceDecals.size >= surfaceBudget() && activeSurfaceDecals.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeSurfaceDecals.size; i++) {
+                    SurfaceDecal d = activeSurfaceDecals.get(i);
+                    float dist = viewerDist2(d.position.x, d.position.z);
+                    if (dist > best) {
+                        best = dist;
+                        victim = i;
+                    }
+                }
+            }
+            surfaceDecalPool.free(activeSurfaceDecals.removeIndex(victim));
+        }
+    }
+
+    private void makeRoomForWallDecal() {
+        while (activeWallDecals.size >= wallBudget() && activeWallDecals.size > 0) {
+            int victim = 0;
+            if (hasViewer) {
+                float best = -1f;
+                for (int i = 0; i < activeWallDecals.size; i++) {
+                    WallDecal w = activeWallDecals.get(i);
+                    float dist = viewerDist2(w.gridX + 0.5f, w.gridY + 0.5f);
+                    if (dist > best) {
+                        best = dist;
+                        victim = i;
+                    }
+                }
+            }
+            removeWallDecalAt(victim);
+        }
+    }
+
+    private void removeWallDecalAt(int index) {
+        WallDecal old = activeWallDecals.removeIndex(index);
+        int oldKey = (old.gridX * 1000 + old.gridY) * 2 + old.side;
+        Array<WallDecal> list = wallDecalsByKey.get(oldKey);
+        if (list != null) {
+            list.removeValue(old, true);
+            if (list.size == 0) wallDecalsByKey.remove(oldKey);
+        }
+        wallDecalPool.free(old);
     }
 
     public void setTextures(TextureAtlas atlas) {
@@ -154,10 +254,10 @@ public class GoreManager {
         if (profile == GoreProfile.INCORPOREAL) return;
         if (goreOff()) return;
 
-        int count = GoreLevel.current().count(Math.max(3, intensity * 6));
+        int count = GoreLevel.current().count(Math.max(6, intensity * 12));
 
         // Budget check
-        int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
+        int availableSlots = particleBudget() - activeParticles.size;
         count = Math.min(count, availableSlots);
         if (count <= 0) return;
 
@@ -216,8 +316,8 @@ public class GoreManager {
         if (profile == GoreProfile.INCORPOREAL) return;
         if (goreOff()) return;
 
-        int count = GoreLevel.current().count(MathUtils.clamp(4 + damage / 3, 4, 12));
-        int availableSlots = MAX_ACTIVE_PARTICLES - activeParticles.size;
+        int count = GoreLevel.current().count(MathUtils.clamp(8 + damage * 2 / 3, 8, 24));
+        int availableSlots = particleBudget() - activeParticles.size;
         count = Math.min(count, availableSlots);
         if (count <= 0) return;
 
@@ -280,10 +380,7 @@ public class GoreManager {
                 : Vector3.Y;
 
         for (int i = 0; i < count; i++) {
-            if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-                Gib oldest = activeGibs.removeIndex(0);
-                gibPool.free(oldest);
-            }
+            makeRoomForGib();
 
             Gib g = gibPool.obtain();
             TextureRegion tex = (gibTextures.size > 0) ? gibTextures.random() : null;
@@ -316,10 +413,7 @@ public class GoreManager {
 
     public Gib spawnSeveredLimbGib(Vector3 origin, Vector3 velocity, Texture tex, float[] polyVertices, float[] polyUVs, float[] seamVertices, GoreProfile profile) {
         if (goreOff()) return null;
-        if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-            Gib oldest = activeGibs.removeIndex(0);
-            gibPool.free(oldest);
-        }
+        makeRoomForGib();
 
         Gib g = gibPool.obtain();
         Color tint = (profile != null && profile.primaryColor != null) ? profile.primaryColor : Color.WHITE;
@@ -336,7 +430,7 @@ public class GoreManager {
             return;
         }
 
-        int count = Math.min(GoreLevel.current().count(30), MAX_ACTIVE_PARTICLES - activeParticles.size);
+        int count = Math.min(GoreLevel.current().count(60), particleBudget() - activeParticles.size);
         if (count <= 0) return;
 
         Color fountainColor = tmpColor.set(profile.primaryColor);
@@ -404,10 +498,7 @@ public class GoreManager {
 
         if (isEmpty) return;
 
-        if (activeGibs.size >= MAX_ACTIVE_GIBS) {
-            Gib oldest = activeGibs.removeIndex(0);
-            gibPool.free(oldest);
-        }
+        makeRoomForGib();
 
         Gib g = gibPool.obtain();
         Vector3 vel = tmpVel.set(
@@ -481,10 +572,7 @@ public class GoreManager {
         // as hanging in the opening rather than lying on the ground.
         if (!canHoldSurfaceDecal(decalMaze, pos)) return;
 
-        if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) {
-            SurfaceDecal old = activeSurfaceDecals.removeIndex(0);
-            surfaceDecalPool.free(old);
-        }
+        makeRoomForSurfaceDecal();
 
         SurfaceDecal d = surfaceDecalPool.obtain();
         TextureRegion tex = (smearTextures.size > 0) ? smearTextures.random() : spatterTexture;
@@ -506,16 +594,8 @@ public class GoreManager {
     }
 
     public void spawnWallDecal(int x, int y, Direction dir, float wallX, float height, float radius, Color color) {
-        if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) {
-            WallDecal old = activeWallDecals.removeIndex(0);
-            int oldKey = (old.gridX * 1000 + old.gridY) * 2 + old.side;
-            Array<WallDecal> list = wallDecalsByKey.get(oldKey);
-            if (list != null) {
-                list.removeValue(old, true);
-                if (list.size == 0) wallDecalsByKey.remove(oldKey);
-            }
-            wallDecalPool.free(old);
-        }
+        if (goreOff()) return;
+        makeRoomForWallDecal();
 
         int side = (dir == Direction.EAST || dir == Direction.WEST) ? 0 : 1;
         int key = (x * 1000 + y) * 2 + side;
@@ -640,9 +720,10 @@ public class GoreManager {
         }
 
         // 2. Update Floor Surface Decals
+        boolean persistent = GoreLevel.current().persistent();
         for (int i = activeSurfaceDecals.size - 1; i >= 0; i--) {
             SurfaceDecal d = activeSurfaceDecals.get(i);
-            d.update(delta);
+            d.update(delta, persistent);
             if (d.lifeTimer <= 0) {
                 activeSurfaceDecals.removeIndex(i);
                 surfaceDecalPool.free(d);
@@ -652,23 +733,16 @@ public class GoreManager {
         // 3. Update Wall Decals
         for (int i = activeWallDecals.size - 1; i >= 0; i--) {
             WallDecal wd = activeWallDecals.get(i);
-            wd.update(delta);
+            wd.update(delta, persistent);
             if (wd.lifeTimer <= 0) {
-                activeWallDecals.removeIndex(i);
-                int key = (wd.gridX * 1000 + wd.gridY) * 2 + wd.side;
-                Array<WallDecal> list = wallDecalsByKey.get(key);
-                if (list != null) {
-                    list.removeValue(wd, true);
-                    if (list.size == 0) wallDecalsByKey.remove(key);
-                }
-                wallDecalPool.free(wd);
+                removeWallDecalAt(i);
             }
         }
 
         // 4. Update Gibs
         for (int i = activeGibs.size - 1; i >= 0; i--) {
             Gib g = activeGibs.get(i);
-            g.update(delta);
+            g.update(delta, persistent);
             if (g.lifeTimer <= 0) {
                 activeGibs.removeIndex(i);
                 gibPool.free(g);
@@ -726,8 +800,10 @@ public class GoreManager {
 
         for (int i = 0; i < activeSurfaceDecals.size; i++) {
             SurfaceDecal d = activeSurfaceDecals.get(i);
+            // z is the maze's second axis; y is height off the floor, and
+            // reading it put every stain in chunk row 0.
             int cx = (int) Math.floor(d.position.x / 36f);
-            int cy = (int) Math.floor(d.position.y / 36f);
+            int cy = (int) Math.floor(d.position.z / 36f);
             if (cx == chunkId.x && cy == chunkId.y) {
                 ChunkData.DecalData data = new ChunkData.DecalData();
                 data.x = d.position.x;
@@ -768,7 +844,7 @@ public class GoreManager {
             Gib g = activeGibs.get(i);
             if (g.onGround) {
                 int cx = (int) Math.floor(g.position.x / 36f);
-                int cy = (int) Math.floor(g.position.y / 36f);
+                int cy = (int) Math.floor(g.position.z / 36f);
                 if (cx == chunkId.x && cy == chunkId.y) {
                     ChunkData.GibData data = new ChunkData.GibData();
                     data.x = g.position.x;
@@ -789,12 +865,16 @@ public class GoreManager {
     public void importChunkGore(GridPoint2 chunkId, ChunkData chunkData) {
         if (chunkId == null || chunkData == null) return;
 
+        // The manager outlives chunk loads, so blood from an earlier visit may
+        // still be live; the save is the authority for its chunk.
+        clearChunkGore(chunkId);
+
         if (chunkData.surfaceDecals != null) {
             for (ChunkData.DecalData data : chunkData.surfaceDecals) {
-                if (activeSurfaceDecals.size >= MAX_ACTIVE_SURFACE_DECALS) break;
+                if (activeSurfaceDecals.size >= surfaceBudget()) break;
                 SurfaceDecal decal = surfaceDecalPool.obtain();
                 decal.position.set(data.x, data.y, data.z);
-                decal.color.set(data.r, data.g, data.b, data.a);
+                decal.restoreColor(data.r, data.g, data.b, data.a);
                 decal.size = data.size;
                 decal.initialSize = data.size;
                 decal.targetSize = data.size;
@@ -808,7 +888,7 @@ public class GoreManager {
 
         if (chunkData.wallDecals != null) {
             for (ChunkData.WallDecalData data : chunkData.wallDecals) {
-                if (activeWallDecals.size >= MAX_ACTIVE_WALL_DECALS) break;
+                if (activeWallDecals.size >= wallBudget()) break;
                 WallDecal decal = wallDecalPool.obtain();
                 Direction dir = Direction.NORTH;
                 try {
@@ -818,6 +898,7 @@ public class GoreManager {
                 Color c = new Color(data.r, data.g, data.b, data.a);
                 decal.init(data.gridX, data.gridY, dir, data.wallX, data.height, data.radius, c,
                         (smearTextures.size > 0) ? smearTextures.first() : null);
+                decal.restoreColor(data.r, data.g, data.b, data.a);
                 decal.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : WallDecal.MAX_WALL_DECAL_LIFE;
                 activeWallDecals.add(decal);
 
@@ -829,7 +910,7 @@ public class GoreManager {
 
         if (chunkData.gibs != null) {
             for (ChunkData.GibData data : chunkData.gibs) {
-                if (activeGibs.size >= MAX_ACTIVE_GIBS) break;
+                if (activeGibs.size >= gibBudget()) break;
                 Gib gib = gibPool.obtain();
                 gib.position.set(data.x, data.y, data.z);
                 gib.velocity.setZero();
@@ -840,6 +921,31 @@ public class GoreManager {
                 gib.lifeTimer = data.lifeTimer > 0 ? data.lifeTimer : Gib.MAX_GIB_LIFE;
                 gib.textureRegion = (gibTextures.size > 0) ? gibTextures.first() : null;
                 activeGibs.add(gib);
+            }
+        }
+    }
+
+    private static boolean inChunk(float worldX, float worldZ, GridPoint2 chunkId) {
+        return (int) Math.floor(worldX / 36f) == chunkId.x && (int) Math.floor(worldZ / 36f) == chunkId.y;
+    }
+
+    private void clearChunkGore(GridPoint2 chunkId) {
+        for (int i = activeSurfaceDecals.size - 1; i >= 0; i--) {
+            SurfaceDecal d = activeSurfaceDecals.get(i);
+            if (inChunk(d.position.x, d.position.z, chunkId)) {
+                surfaceDecalPool.free(activeSurfaceDecals.removeIndex(i));
+            }
+        }
+        for (int i = activeWallDecals.size - 1; i >= 0; i--) {
+            WallDecal w = activeWallDecals.get(i);
+            if (inChunk(w.gridX, w.gridY, chunkId)) {
+                removeWallDecalAt(i);
+            }
+        }
+        for (int i = activeGibs.size - 1; i >= 0; i--) {
+            Gib g = activeGibs.get(i);
+            if (g.onGround && inChunk(g.position.x, g.position.z, chunkId)) {
+                gibPool.free(activeGibs.removeIndex(i));
             }
         }
     }

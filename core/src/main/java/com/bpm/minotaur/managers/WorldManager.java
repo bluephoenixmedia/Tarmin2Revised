@@ -780,6 +780,10 @@ public class WorldManager {
         }
 
         if (goreManager != null) {
+            if (playerReference != null && currentPlayerChunkId != null) {
+                goreManager.setViewer(currentPlayerChunkId.x * 36.0f + playerReference.getPosition().x,
+                        currentPlayerChunkId.y * 36.0f + playerReference.getPosition().y);
+            }
             goreManager.update(delta, currentMaze, this);
         }
     }

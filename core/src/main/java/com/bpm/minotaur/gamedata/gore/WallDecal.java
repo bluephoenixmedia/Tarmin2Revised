@@ -40,6 +40,7 @@ public class WallDecal implements Pool.Poolable {
 
         this.maxLife = MAX_WALL_DECAL_LIFE;
         this.lifeTimer = MAX_WALL_DECAL_LIFE;
+        this.age = 0f;
         this.textureRegion = texture;
     }
 
@@ -49,18 +50,26 @@ public class WallDecal implements Pool.Poolable {
         init(x, y, fallbackDir, wx, h, r, c, texture);
     }
 
+    /** Seconds since the splat landed; drives drying whether or not it ever fades. */
+    public float age;
+
     public void update(float delta) {
-        lifeTimer -= delta;
+        update(delta, false);
+    }
+
+    /** @param persistent true when blood stays until recycled (see {@link GoreLevel#persistent()}) */
+    public void update(float delta, boolean persistent) {
+        age += delta;
+        if (!persistent) lifeTimer -= delta;
 
         // Oxidation color shift
-        float age = maxLife - lifeTimer;
         float dryT = MathUtils.clamp(age / 30.0f, 0f, 1f);
         color.r = MathUtils.lerp(freshColor.r, driedColor.r, dryT);
         color.g = MathUtils.lerp(freshColor.g, driedColor.g, dryT);
         color.b = MathUtils.lerp(freshColor.b, driedColor.b, dryT);
 
         // Alpha fadeout
-        if (lifeTimer <= FADE_DURATION) {
+        if (!persistent && lifeTimer <= FADE_DURATION) {
             color.a = MathUtils.clamp(lifeTimer / FADE_DURATION, 0f, 1f) * freshColor.a;
         } else {
             color.a = freshColor.a;
@@ -75,5 +84,16 @@ public class WallDecal implements Pool.Poolable {
         this.color.set(Color.WHITE);
         this.freshColor.set(Color.WHITE);
         this.driedColor.set(Color.WHITE);
+    }
+
+    /**
+     * Sets a saved stain's colour as both fresh and dried: it already dried
+     * before it was saved, and drying it again from there would blacken it
+     * (or, with the reset colours, bleach it white).
+     */
+    public void restoreColor(float r, float g, float b, float a) {
+        freshColor.set(r, g, b, a);
+        driedColor.set(r, g, b, a);
+        color.set(r, g, b, a);
     }
 }

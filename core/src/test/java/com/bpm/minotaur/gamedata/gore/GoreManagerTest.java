@@ -108,14 +108,14 @@ public class GoreManagerTest {
 
     @Test
     public void testDecalPoolLimits() {
-        // Adding 250 surface decals should cap at MAX_ACTIVE_SURFACE_DECALS (200) via FIFO
-        for (int i = 0; i < 250; i++) {
+        // Overfilling the floor caps at MAX_ACTIVE_SURFACE_DECALS
+        for (int i = 0; i < GoreManager.MAX_ACTIVE_SURFACE_DECALS + 50; i++) {
             goreManager.spawnSurfaceDecal(new Vector3(i, 0, i), Color.RED, 0.20f);
         }
         assertEquals(GoreManager.MAX_ACTIVE_SURFACE_DECALS, goreManager.getActiveDecals().size);
 
-        // Adding 150 wall decals should cap at MAX_ACTIVE_WALL_DECALS (100) via FIFO
-        for (int i = 0; i < 150; i++) {
+        // Overfilling the walls caps at MAX_ACTIVE_WALL_DECALS
+        for (int i = 0; i < GoreManager.MAX_ACTIVE_WALL_DECALS + 50; i++) {
             goreManager.spawnWallDecal(i, i, Direction.NORTH, 0.5f, 0.5f, 0.15f, Color.RED);
         }
         assertEquals(GoreManager.MAX_ACTIVE_WALL_DECALS, goreManager.getActiveWallDecals().size);
@@ -164,5 +164,75 @@ public class GoreManagerTest {
         } finally {
             GoreLevel.setCurrent(GoreLevel.NORMAL);
         }
+    }
+
+    @Test
+    public void onNormalBloodDriesButNeverFades() {
+        goreManager.spawnSurfaceDecal(new Vector3(3, 0, 3), Color.RED, 0.25f);
+        goreManager.spawnWallDecal(3, 3, Direction.NORTH, 0.5f, 0.5f, 0.15f, Color.RED);
+        goreManager.update(600f, null);
+
+        assertEquals(1, goreManager.getActiveDecals().size);
+        assertEquals(1, goreManager.getActiveWallDecals().size);
+        SurfaceDecal d = goreManager.getActiveDecals().first();
+        assertEquals(1f, d.color.a, 0.001f);
+        assertTrue("dried darker", d.color.r < Color.RED.r);
+    }
+
+    @Test
+    public void onLowBloodFadesAsItUsedTo() {
+        GoreLevel.setCurrent(GoreLevel.LOW);
+        try {
+            goreManager.spawnSurfaceDecal(new Vector3(3, 0, 3), Color.RED, 0.25f);
+            goreManager.update(SurfaceDecal.MAX_DECAL_LIFE + 1f, null);
+            assertEquals(0, goreManager.getActiveDecals().size);
+        } finally {
+            GoreLevel.setCurrent(GoreLevel.NORMAL);
+        }
+    }
+
+    @Test
+    public void aFullFloorRecyclesTheStainFarthestFromThePlayer() {
+        goreManager.setViewer(0f, 0f);
+        int budget = GoreManager.MAX_ACTIVE_SURFACE_DECALS;
+        Vector3 far = new Vector3(30.5f, 0, 30.5f);
+        for (int i = 0; i < budget; i++) {
+            if (i == budget / 2) {
+                goreManager.spawnSurfaceDecal(far, Color.RED, 0.2f);
+            } else {
+                goreManager.spawnSurfaceDecal(new Vector3(0.5f + (i % 25), 0, 0.5f + (i / 25) * 0.9f), Color.RED, 0.2f);
+            }
+        }
+        assertEquals(budget, goreManager.getActiveDecals().size);
+
+        goreManager.spawnSurfaceDecal(new Vector3(12.0f, 0, 25.0f), Color.RED, 0.2f);
+
+        assertEquals(budget, goreManager.getActiveDecals().size);
+        for (SurfaceDecal d : goreManager.getActiveDecals()) {
+            assertFalse("the far stain went first", d.position.x == far.x && d.position.z == far.z);
+        }
+    }
+
+    @Test
+    public void floorStainsSaveWithTheChunkTheyLieIn() {
+        // z is the maze's second axis; y is height off the floor.
+        goreManager.spawnSurfaceDecal(new Vector3(10, 0, 50), Color.RED, 0.25f);
+        com.bpm.minotaur.gamedata.ChunkData data = new com.bpm.minotaur.gamedata.ChunkData();
+        goreManager.exportChunkGore(new com.badlogic.gdx.math.GridPoint2(0, 1), data);
+        assertEquals(1, data.surfaceDecals.size());
+    }
+
+    @Test
+    public void reimportingAChunkDoesNotDoubleItsBlood() {
+        com.badlogic.gdx.math.GridPoint2 chunk = new com.badlogic.gdx.math.GridPoint2(0, 0);
+        goreManager.spawnSurfaceDecal(new Vector3(10, 0, 10), Color.RED, 0.25f);
+        goreManager.spawnWallDecal(10, 10, Direction.NORTH, 0.5f, 0.5f, 0.20f, Color.RED);
+        com.bpm.minotaur.gamedata.ChunkData data = new com.bpm.minotaur.gamedata.ChunkData();
+        goreManager.exportChunkGore(chunk, data);
+
+        goreManager.importChunkGore(chunk, data);
+
+        assertEquals(1, goreManager.getActiveDecals().size);
+        assertEquals(1, goreManager.getActiveWallDecals().size);
     }
 }
