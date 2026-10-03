@@ -130,6 +130,9 @@ public class WorldManager {
         this.encounterManager = encounterManager;
         this.spawnTableData = spawnTableData;
         this.soundManager = soundManager;
+        if (this.soundManager != null) {
+            this.goreManager.setListener(this.soundManager::playGibLand);
+        }
         this.cookingManager = new CookingManager();
 
         this.weatherManager = new WeatherManager(this);

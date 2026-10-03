@@ -3576,6 +3576,16 @@ public class CombatManager {
                 break;
         }
 
+        if (soundManager != null) {
+            boolean burst = plan.gibs || plan.style == DeathGore.Style.DECAPITATE
+                    || plan.style == DeathGore.Style.SLICE || plan.style == DeathGore.Style.GIB;
+            if (burst) soundManager.playGibBurst();
+            if (plan.style == DeathGore.Style.CRUSH || (burst && profile == GoreProfile.SKELETAL)
+                    || plan.style == DeathGore.Style.FROST_SHATTER) {
+                soundManager.playBoneCrack();
+            }
+        }
+
         // Only a weapon in hand gets bloody, and only from something that bled.
         if (plan.blood && cause.weapon != null) {
             applyWeaponBlood(blood, profile);

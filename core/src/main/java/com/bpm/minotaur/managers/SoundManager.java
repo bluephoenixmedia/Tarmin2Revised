@@ -514,6 +514,32 @@ public class SoundManager {
         }
     }
 
+    /**
+     * A gore sound from the soundbank ({@code gore_*} events), or, until an
+     * event has files, {@code meat_hit} pitched to stand in for it: low and
+     * loud for a burst, high and quiet for a gib landing. Silent with gore off.
+     */
+    public void playGore(String event, float fallbackVolume, float pitchLow, float pitchHigh) {
+        if (!com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()) return;
+        if (playEvent(event)) return;
+        Sound meat = modernSounds.get("meat_hit");
+        if (meat == null) return;
+        long id = meat.play(fallbackVolume * getEffectiveSfxVolume());
+        meat.setPitch(id, MathUtils.random(pitchLow, pitchHigh));
+    }
+
+    public void playGibBurst() {
+        playGore("gore_gib_burst", 1.0f, 0.62f, 0.75f);
+    }
+
+    public void playGibLand() {
+        playGore("gore_gib_land", 0.35f, 1.25f, 1.5f);
+    }
+
+    public void playBoneCrack() {
+        playGore("gore_bone_crack", 0.8f, 1.45f, 1.7f);
+    }
+
     public void playUiClick() {
         if (modernSounds.containsKey("ui_click")) {
             long id = modernSounds.get("ui_click").play(0.6f);

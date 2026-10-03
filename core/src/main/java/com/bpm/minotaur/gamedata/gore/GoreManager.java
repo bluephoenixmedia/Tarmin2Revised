@@ -97,6 +97,20 @@ public class GoreManager {
     public GoreManager() {
     }
 
+    /** Told when gore makes a sound-worthy moment; the gore model itself stays silent. */
+    public interface Listener {
+        void onGibLanded();
+    }
+
+    private Listener listener;
+    /** A gib burst lands as a patter, not forty simultaneous thuds. */
+    private static final float GIB_LAND_SOUND_GAP = 0.07f;
+    private float gibLandCooldown;
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
     public void setViewer(float worldX, float worldZ) {
         this.viewerX = worldX;
         this.viewerZ = worldZ;
@@ -887,9 +901,15 @@ public class GoreManager {
         }
 
         // 4. Update Gibs
+        gibLandCooldown -= delta;
         for (int i = activeGibs.size - 1; i >= 0; i--) {
             Gib g = activeGibs.get(i);
+            boolean wasAirborne = !g.onGround;
             g.update(delta, persistent);
+            if (wasAirborne && g.onGround && listener != null && gibLandCooldown <= 0f) {
+                gibLandCooldown = GIB_LAND_SOUND_GAP;
+                listener.onGibLanded();
+            }
             if (g.lifeTimer <= 0) {
                 activeGibs.removeIndex(i);
                 gibPool.free(g);
