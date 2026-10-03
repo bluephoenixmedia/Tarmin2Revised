@@ -2714,8 +2714,8 @@ public class CombatManager {
     /**
      * The corpse sprite for a cleanly killed monster: its own art.
      *
-     * <p>No monster has death art -- only 4 of 54 have spritesheets at all, and
-     * those are looping idles -- so the corpse is the living sprite laid down.
+     * <p>Monsters with death art never reach this (see {@code deathAnimationFor});
+     * the rest have only a living sprite, so the corpse is that sprite laid down.
      * The renderer rotates, darkens and squashes it, which is what stops an
      * upright idle pose reading as a bug rather than a body.
      */
@@ -2728,6 +2728,15 @@ public class CombatManager {
             }
         }
         return gorePileTexture();
+    }
+
+    private com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnimationFor(Monster monster) {
+        if (monster == null || monster.getTemplate() == null) return null;
+        com.bpm.minotaur.gamedata.monster.DeathAnimation anim =
+                com.bpm.minotaur.gamedata.monster.DeathAnimationCatalog.getInstance()
+                        .forMonsterTexture(monster.getTemplate().texturePath);
+        if (anim == null || Gdx.files == null || !Gdx.files.internal(anim.getSheetPath()).exists()) return null;
+        return anim;
     }
 
     /**
@@ -2752,11 +2761,27 @@ public class CombatManager {
         // to leave the same dead armoured human regardless.
         if (maze.getScenery() != null) {
             boolean severed = overkillTier > 0;
-            String corpseTex = severed ? gorePileTexture() : monsterCorpseTexture(monster);
+            // A clean kill of a monster with death art plays that art out and
+            // leaves its last frame; anything else keeps the old corpse.
+            com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = severed ? null : deathAnimationFor(monster);
+            String corpseTex = deathAnim != null ? deathAnim.getSheetPath()
+                    : severed ? gorePileTexture() : monsterCorpseTexture(monster);
             Scenery corpse = new Scenery(
                     severed ? Scenery.SceneryType.GORE_PILE : Scenery.SceneryType.MONSTER_REMAINS,
                     pos.x, pos.y, corpseTex);
             corpse.setCorpseMonsterName(monster.getMonsterType());
+            if (deathAnim != null) {
+                corpse.setDeathAnimId(deathAnim.getMonsterTexture());
+                // Same sizing rule the renderer applies to a living monster, so
+                // frame 0 of the death lands exactly where the monster stood.
+                float mw = monster.getScale().x;
+                float mh = monster.getScale().y;
+                if (mw > 0.82f) {
+                    mh *= 0.82f / mw;
+                }
+                corpse.setDeathHeight(mh);
+                corpse.startDeathAnimation();
+            }
             if (game != null && game.getAssetManager() != null) {
                 AssetManager am = game.getAssetManager();
                 if (Gdx.files != null && Gdx.files.internal(corpseTex).exists()) {

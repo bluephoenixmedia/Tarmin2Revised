@@ -98,6 +98,8 @@ public class World3DRenderer implements Disposable {
     private static final float CORPSE_FLATTEN = 0.45f;
     /** Widened as it flattens, so the body spreads rather than shrinking. */
     private static final float CORPSE_SPREAD = 1.2f;
+    /** A death frame may sprawl, but never wider than the tile it fell on. */
+    private static final float MAX_DEATH_FRAME_WIDTH = 1.0f;
     private final Texture forestWallTexture;
     private final Texture doorTexture;
     private final Texture gateTexture;
@@ -1865,7 +1867,30 @@ public class World3DRenderer implements Disposable {
                         feetY = -0.095f; // Project ~50 pixels lower in 3D viewport at 1-tile interaction distance
                     }
 
-                    if (sc.isMonsterRemains()) {
+                    com.bpm.minotaur.gamedata.monster.DeathAnimation deathAnim = sc.isMonsterRemains()
+                            ? com.bpm.minotaur.gamedata.monster.DeathAnimationCatalog.getInstance()
+                                    .forMonsterTexture(sc.getDeathAnimId())
+                            : null;
+                    if (deathAnim != null) {
+                        // Hand-drawn death art: the frame for how long ago the
+                        // monster died, settling on the last frame for good. The art
+                        // already lies on the floor, so none of the laid-down-sprite
+                        // treatment below (flip, tint, flatten, blood pool) applies.
+                        int[] f = deathAnim.getFrame(deathAnim.frameAt(sc.getDeathAnimSeconds()));
+                        int[] f0 = deathAnim.getFrame(0);
+                        float refH = sc.getDeathHeight() > 0f ? sc.getDeathHeight() : 0.8f;
+                        float unit = refH / f0[3];
+                        sw = f[2] * unit;
+                        sh = f[3] * unit;
+                        if (sw > MAX_DEATH_FRAME_WIDTH) {
+                            sh *= MAX_DEATH_FRAME_WIDTH / sw;
+                            sw = MAX_DEATH_FRAME_WIDTH;
+                        }
+                        corpseRegion.setTexture(tex);
+                        corpseRegion.setRegion(f[0], f[1], f[2], f[3]);
+                        reg = corpseRegion;
+                        feetY = 0.0f;
+                    } else if (sc.isMonsterRemains()) {
                         // A monster corpse is the living sprite laid down, so it
                         // needs work to stop reading as a monster standing in the
                         // wrong place: rotate it onto its side, darken it, squash

@@ -62,6 +62,20 @@ public class Scenery implements Renderable {
     private com.bpm.minotaur.gamedata.bones.BonesData bonesData;
     private String corpseMonsterName;
 
+    /**
+     * Texture path of the monster whose death art this corpse shows, or null for
+     * a corpse with none. Persisted: it is what lets a reloaded chunk rebuild the
+     * corpse from the sheet's last frame.
+     */
+    private String deathAnimId;
+    /**
+     * When the death began, in {@link System#currentTimeMillis()}; 0 once it has
+     * settled. Never saved -- a corpse that comes back from disk is already still.
+     */
+    private long deathStartMs;
+    /** World height of the living monster, which sets the scale of every death frame. */
+    private float deathHeight;
+
     // --- NEW: Retro Colors ---
     private static final Color treeTrunk = new Color(0x5d4a41ff); // Brown
     private static final Color treeLeaves = new Color(0x3e7b4cff); // Dark Green
@@ -207,6 +221,35 @@ public class Scenery implements Renderable {
 
     public void setCorpseMonsterName(String corpseMonsterName) {
         this.corpseMonsterName = corpseMonsterName;
+    }
+
+    public String getDeathAnimId() {
+        return deathAnimId;
+    }
+
+    public void setDeathAnimId(String deathAnimId) {
+        this.deathAnimId = deathAnimId;
+    }
+
+    public float getDeathHeight() {
+        return deathHeight;
+    }
+
+    public void setDeathHeight(float deathHeight) {
+        this.deathHeight = deathHeight;
+    }
+
+    /** Starts the death animation playing from its first frame, now. */
+    public void startDeathAnimation() {
+        this.deathStartMs = System.currentTimeMillis();
+    }
+
+    /**
+     * Seconds since the death began, or {@link Float#MAX_VALUE} when it is not
+     * playing -- which {@code DeathAnimation.frameAt} clamps onto the corpse frame.
+     */
+    public float getDeathAnimSeconds() {
+        return deathStartMs == 0 ? Float.MAX_VALUE : (System.currentTimeMillis() - deathStartMs) / 1000f;
     }
 
     public com.bpm.minotaur.gamedata.bones.BonesData getBonesData() {

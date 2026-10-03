@@ -285,6 +285,10 @@ public class ChunkData {
             if (data.corpseMonsterName != null) {
                 s.setCorpseMonsterName(data.corpseMonsterName);
             }
+            if (data.deathAnimId != null) {
+                s.setDeathAnimId(data.deathAnimId);
+                s.setDeathHeight(data.deathHeight);
+            }
             if (data.bonesData != null) {
                 s.setBonesData(data.bonesData);
             }
@@ -407,6 +411,9 @@ public class ChunkData {
         public boolean objectiveMarker;
         public boolean objectiveConsumed;
         public String corpseMonsterName;
+        /** Monster texture whose death art this corpse shows; null for older saves. */
+        public String deathAnimId;
+        public float deathHeight;
         public Boolean impassable;
         /**
          * A dead hero's bones: ghost state, epitaph and grave loot.
@@ -430,6 +437,8 @@ public class ChunkData {
             this.objectiveMarker = s.isObjectiveMarker() || s.isObjectiveConsumed();
             this.objectiveConsumed = s.isObjectiveConsumed();
             this.corpseMonsterName = s.getCorpseMonsterName();
+            this.deathAnimId = s.getDeathAnimId();
+            this.deathHeight = s.getDeathHeight();
             this.impassable = s.isImpassable();
             this.bonesData = s.getBonesData();
         }
