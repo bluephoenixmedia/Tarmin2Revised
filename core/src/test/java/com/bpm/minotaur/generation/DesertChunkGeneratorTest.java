@@ -51,4 +51,59 @@ public class DesertChunkGeneratorTest {
         }
         assertTrue("the desert has cacti and rocks", cacti > 0 && rocks > 0);
     }
+
+    @Test
+    public void mesasStandTwoAndAHalfWallsTall() {
+        Maze desert = generate(3L);
+        assertEquals(2.5f, com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder.ceilingHeightFor(desert, 5, 5), 0.001f);
+    }
+
+    @Test
+    public void anOasisLiesInHalfTheChunksAndAlwaysInASideBasin() {
+        int withOasis = 0;
+        int chunks = 40;
+        for (long seed = 1; seed <= chunks; seed++) {
+            Maze maze = generate(seed);
+            int water = 0;
+            for (int y = 0; y < maze.getHeight(); y++) {
+                for (int x = 0; x < maze.getWidth(); x++) {
+                    if (!maze.getLiquidManager().hasLiquidAt(x, y)) continue;
+                    water++;
+                    assertTrue("seed " + seed + ": oasis water at (" + x + "," + y + ") must be on open sand",
+                            com.bpm.minotaur.rendering.OpenGround.isOpen(maze, x, y)
+                                    || maze.getScenery().containsKey(new GridPoint2(x, y)));
+                    assertTrue("seed " + seed + ": the oasis lies away from the central bowl",
+                            Math.abs(x - 18) + Math.abs(y - 18) >= 8);
+                }
+            }
+            if (water > 0) withOasis++;
+        }
+        assertTrue("about half the chunks have an oasis, found " + withOasis + "/" + chunks,
+                withOasis >= chunks / 4 && withOasis <= chunks * 3 / 4);
+    }
+
+    @Test
+    public void desertFaunaRespectsTheSpawnTablesDepthWindows() {
+        com.bpm.minotaur.gamedata.spawntables.SpawnTableData table = new com.bpm.minotaur.gamedata.spawntables.SpawnTableData();
+        table.monsterSpawnTable = new com.badlogic.gdx.utils.Array<>();
+        table.monsterSpawnTable.add(entry("GIANT_SCORPION", 1, 99, 8));
+        table.monsterSpawnTable.add(entry("BASILISK", 12, 70, 3));
+        table.monsterSpawnTable.add(entry("KOBOLD", 1, 5, 12));
+
+        java.util.List<com.bpm.minotaur.gamedata.monster.Monster.MonsterType> atOne =
+                DesertChunkGenerator.faunaFor(table, 1);
+        assertEquals(java.util.List.of(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.GIANT_SCORPION), atOne);
+        assertTrue("a basilisk turns up deeper",
+                DesertChunkGenerator.faunaFor(table, 20).contains(com.bpm.minotaur.gamedata.monster.Monster.MonsterType.BASILISK));
+        assertTrue("no table, no fauna", DesertChunkGenerator.faunaFor(null, 1).isEmpty());
+    }
+
+    private static com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry entry(String type, int min, int max, int weight) {
+        com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry e = new com.bpm.minotaur.gamedata.spawntables.SpawnTableEntry();
+        e.type = type;
+        e.minLevel = min;
+        e.maxLevel = max;
+        e.weight = weight;
+        return e;
+    }
 }

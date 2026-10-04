@@ -27,6 +27,8 @@ public class ChunkMeshBuilder {
     public static final float STANDARD_CEILING_Y = 1.0f;
     /** The shelter stands half again as tall, so the hub reads as a room. */
     public static final float SHELTER_CEILING_Y = 1.5f;
+    /** Surface desert mesas tower over the canyons cut between them. */
+    public static final float DESERT_MESA_Y = 2.5f;
 
 
     // Wall & Door bitmasks matching Maze and FirstPersonRenderer
@@ -456,9 +458,11 @@ public class ChunkMeshBuilder {
      * between West facade (X = x) and East facade (X = x + 1), with stone sill, lintel,
      * jambs, connecting reveal surfaces, wall ceiling, and 3 double-sided vertical iron bars.
      */
-    /** Shelter tiles stand half again as tall as the rest of the world. */
+    /** Shelter tiles stand half again as tall as the rest of the world; surface desert mesas taller still. */
     public static float ceilingHeightFor(Maze maze, int x, int y) {
-        return maze.isHomeTile(x, y) ? SHELTER_CEILING_Y : STANDARD_CEILING_Y;
+        if (maze.isHomeTile(x, y)) return SHELTER_CEILING_Y;
+        if (maze.getBiome() == com.bpm.minotaur.generation.Biome.DESERT && maze.getLevel() == 1) return DESERT_MESA_Y;
+        return STANDARD_CEILING_Y;
     }
 
     private static void addWindowWallMesh(
