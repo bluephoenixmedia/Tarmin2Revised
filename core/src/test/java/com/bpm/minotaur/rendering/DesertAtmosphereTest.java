@@ -36,6 +36,16 @@ public class DesertAtmosphereTest {
     }
 
     @Test
+    public void weatherHazeDimsAtNightToo() {
+        Color blizzardFog = new Color(0.96f, 0.97f, 1.0f, 1f);
+        Color blizzard = DesertAtmosphere.fogColor(WeatherType.BLIZZARD, blizzardFog, VOLCANIC_NIGHT, new Color());
+        Color storm = DesertAtmosphere.fogColor(WeatherType.TORNADO, WHITE_FOG, VOLCANIC_NIGHT, new Color());
+
+        assertTrue("a night blizzard is not daylight-bright: " + blizzard, blizzard.r + blizzard.g + blizzard.b < 0.8f);
+        assertTrue("nor is a night dust storm: " + storm, storm.r + storm.g + storm.b < 0.5f);
+    }
+
+    @Test
     public void aTornadoIsADustStorm() {
         Color fog = DesertAtmosphere.fogColor(WeatherType.TORNADO, WHITE_FOG, Color.WHITE, new Color());
 

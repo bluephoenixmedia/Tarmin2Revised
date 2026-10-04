@@ -55,22 +55,9 @@ public final class ForestAtmosphere {
         if (weather == WeatherType.TORNADO) {
             out.lerp(TORNADO_FOG, 0.75f);
         } else {
-            out.lerp(weatherFog, weatherShare(weather));
+            out.lerp(weatherFog, WeatherFog.share(weather));
         }
         return applySkyShare(out, skyTint);
-    }
-
-    /** How strongly each weather's fog shows through the canopy fog. */
-    static float weatherShare(WeatherType weather) {
-        if (weather == null) return 0f;
-        switch (weather) {
-            case RAIN:     return 0.20f;
-            case STORM:    return 0.25f;
-            case FOG:      return 0.55f;
-            case SNOW:     return 0.60f;
-            case BLIZZARD: return 0.90f;
-            default:       return 0f;
-        }
     }
 
     /**

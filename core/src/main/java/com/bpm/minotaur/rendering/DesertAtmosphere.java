@@ -31,8 +31,9 @@ public final class DesertAtmosphere {
     private static final Color DUST = new Color(0.75f, 0.55f, 0.38f, 1f);
     /** Brings the dust back up to the sky's brightness after multiplying by it. */
     private static final float DUST_GAIN = 1.6f;
-    private static final Color DUST_STORM = new Color(0.45f, 0.30f, 0.18f, 1f);
-    private static final float DUST_STORM_SHARE = 0.8f;
+    /** Dark enough that a storm still reads as thick once the sky's brightness is applied. */
+    private static final Color DUST_STORM = new Color(0.28f, 0.18f, 0.10f, 1f);
+    private static final float DUST_STORM_SHARE = 0.85f;
 
     private DesertAtmosphere() {
     }
@@ -45,16 +46,17 @@ public final class DesertAtmosphere {
      * @param skyTint    the full volcanic sky tint
      */
     public static Color fogColor(WeatherType weather, Color weatherFog, Color skyTint, Color out) {
-        float lum = skyTint.r * 0.299f + skyTint.g * 0.587f + skyTint.b * 0.114f;
-        out.set(
-                DUST.r * MathUtils.lerp(lum, skyTint.r, SKY_TINT_SHARE) * DUST_GAIN,
-                DUST.g * MathUtils.lerp(lum, skyTint.g, SKY_TINT_SHARE) * DUST_GAIN,
-                DUST.b * MathUtils.lerp(lum, skyTint.b, SKY_TINT_SHARE) * DUST_GAIN,
-                1f).clamp();
         if (weather == WeatherType.TORNADO) {
-            return out.lerp(DUST_STORM, DUST_STORM_SHARE);
+            out.set(DUST).lerp(DUST_STORM, DUST_STORM_SHARE);
+        } else {
+            out.set(DUST).lerp(weatherFog, WeatherFog.share(weather));
         }
-        return out.lerp(weatherFog, ForestAtmosphere.weatherShare(weather));
+        // Whatever hangs in the air, it is lit by the sky: bright and red at dawn, dim at night.
+        float lum = skyTint.r * 0.299f + skyTint.g * 0.587f + skyTint.b * 0.114f;
+        out.r *= MathUtils.lerp(lum, skyTint.r, SKY_TINT_SHARE) * DUST_GAIN;
+        out.g *= MathUtils.lerp(lum, skyTint.g, SKY_TINT_SHARE) * DUST_GAIN;
+        out.b *= MathUtils.lerp(lum, skyTint.b, SKY_TINT_SHARE) * DUST_GAIN;
+        return out.clamp();
     }
 
     /**

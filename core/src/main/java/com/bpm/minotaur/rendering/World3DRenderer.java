@@ -47,7 +47,6 @@ import com.bpm.minotaur.managers.DayNightManager;
 import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
-import com.bpm.minotaur.weather.WeatherManager;
 import com.bpm.minotaur.rendering.mesh.BiomeSurfaces;
 import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
@@ -241,8 +240,9 @@ public class World3DRenderer implements Disposable {
     private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
-    // Under the surface forest's canopy (ForestAtmosphere). Eased so stepping
-    // from a trail into a glade opens the fog rather than snapping it.
+    // The wilderness biome's own atmosphere (ForestAtmosphere, DesertAtmosphere). Eased so
+    // stepping from a trail into a glade, or a canyon into a basin, opens the fog rather
+    // than snapping it.
     private Biome lastWildBiome = null;
     private float wildOpenness = 0f;
     private final Color wildFogColor = new Color();
@@ -601,7 +601,7 @@ public class World3DRenderer implements Disposable {
         if (wild != null) {
             float open = OpenGround.openness(maze,
                     (int) player.getPosition().x, (int) player.getPosition().y);
-            com.bpm.minotaur.weather.WeatherType weather = (wm != null) ? wm.getCurrentWeather() : null;
+            WeatherType weather = (wm != null) ? wm.getCurrentWeather() : null;
             Color weatherFog = (wm != null) ? wm.getFogColor() : Color.WHITE;
             if (underCanopy) {
                 ForestAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
