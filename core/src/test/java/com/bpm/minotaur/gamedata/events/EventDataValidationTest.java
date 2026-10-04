@@ -174,12 +174,17 @@ public class EventDataValidationTest {
     }
 
     @Test
-    public void everyImageExistsOrHasABiomePlaceholder() {
+    public void everyImageAndBiomeBackdropExists() {
         for (String biome : PLACEABLE_BIOMES) {
             assertTrue("missing placeholder for " + biome, asset(EventArt.placeholderFor(biome)).isFile());
         }
+        for (String biome : PLACEABLE_BIOMES) {
+            String backdrop = EventArt.background(new EventDefinition(), biome, p -> asset(p).isFile());
+            assertTrue("missing backdrop for " + biome, backdrop != null);
+        }
         for (EventDefinition e : catalog.all()) {
             assertTrue(e.id + " needs an imagePath", e.imagePath != null);
+            assertTrue(e.id + ": " + e.imagePath + " does not exist", asset(e.imagePath).isFile());
             for (String biome : e.biomes) {
                 assertTrue(e.id + " can only appear in placeable biomes", Arrays.asList(PLACEABLE_BIOMES).contains(biome));
             }

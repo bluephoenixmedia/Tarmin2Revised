@@ -74,7 +74,7 @@
         {
             "id": "EVENT_OAKHAVEN_CORPSE",
             "title": "The Corpse in Oakhaven Robes",
-            "imagePath": "images/events/oakhaven_corpse.png",
+            "imagePath": "images/events/oakhaven_corpse.jpg",
             "biomes": ["MAZE", "FOREST"],
             "text": "Slumped against the wall is a dried corpse in the grey robes of an Oakhaven archivist. Its face is uncomfortably like your own. One hand still grips a folded map whose ink seems to crawl.",
             "choices": [
@@ -111,7 +111,7 @@
         {
             "id": "EVENT_CHITINOUS_MOUND",
             "title": "The Chitinous Mound",
-            "imagePath": "images/events/chitinous_mound.png",
+            "imagePath": "images/events/chitinous_mound.jpg",
             "biomes": ["FOREST"],
             "maxDepth": 1,
             "text": "A mound of packed earth and resin blocks the trail, humming with the click of a thousand mandibles. Near its summit, half swallowed, the hilt of a weapon catches the light.",
@@ -143,7 +143,7 @@
         {
             "id": "EVENT_TRADER_OF_ROOTS",
             "title": "The Trader of Roots",
-            "imagePath": "images/events/trader_of_roots.png",
+            "imagePath": "images/events/trader_of_roots.jpg",
             "biomes": ["FOREST"],
             "maxDepth": 1,
             "text": "A figure of bark and moss sits cross-legged among the roots. It does not want gold. It wants something of you.",
@@ -178,7 +178,7 @@
         {
             "id": "EVENT_SNARED_SCORPION",
             "title": "The Thorn-Snared Scorpion",
-            "imagePath": "images/events/snared_scorpion.png",
+            "imagePath": "images/events/snared_scorpion.jpg",
             "biomes": ["FOREST"],
             "maxDepth": 1,
             "text": "Ahead, a giant scorpion thrashes in a net of living thorns. Each time it struggles the vines draw tighter, and the path beyond is choked with them.",
@@ -212,7 +212,7 @@
         {
             "id": "EVENT_MIRAGE_VENDOR",
             "title": "The Mirage Vendor",
-            "imagePath": "images/events/mirage_vendor.png",
+            "imagePath": "images/events/mirage_vendor.jpg",
             "biomes": ["DESERT"],
             "maxDepth": 1,
             "text": "A merchant sits beneath a striped awning that casts no shadow. Spread before him, impossibly cheap, are fine blades and jeweled rings. \"One coin,\" he smiles. \"Any of them.\"",
@@ -244,7 +244,7 @@
         {
             "id": "EVENT_SMOKY_BOTTLE",
             "title": "The Smoky Bottle",
-            "imagePath": "images/events/smoky_bottle.png",
+            "imagePath": "images/events/smoky_bottle.jpg",
             "biomes": ["DESERT"],
             "maxDepth": 1,
             "text": "Half buried in the sand is a stoppered bottle of smoked glass. Something inside it is moving, and it is warm to the touch.",
@@ -277,7 +277,7 @@
         {
             "id": "EVENT_LIGHTNING_SPIRE",
             "title": "The Lightning Spire",
-            "imagePath": "images/events/lightning_spire.png",
+            "imagePath": "images/events/lightning_spire.jpg",
             "biomes": ["DESERT"],
             "maxDepth": 1,
             "text": "A spire of black iron juts from the dunes. Lightning crawls over it in a constant stutter, and the sand around its base has fused into glass.",
@@ -310,7 +310,7 @@
         {
             "id": "EVENT_REFLECTION_OF_ELARA",
             "title": "The Reflection of Elara",
-            "imagePath": "images/events/reflection_of_elara.png",
+            "imagePath": "images/events/reflection_of_elara.jpg",
             "biomes": ["LAKELANDS"],
             "maxDepth": 1,
             "text": "In a still pool you see Elara's reflection, though no one stands on the bank. She is weeping. \"I am forgetting,\" she whispers. \"Do not let me go.\"",
@@ -343,7 +343,7 @@
         {
             "id": "EVENT_CORAL_ALTAR",
             "title": "The Coral Altar",
-            "imagePath": "images/events/coral_altar.png",
+            "imagePath": "images/events/coral_altar.jpg",
             "biomes": ["LAKELANDS"],
             "maxDepth": 1,
             "text": "An altar of pale coral rises from the shallows, dry despite the water lapping at its base. Old offerings crust its surface.",
@@ -378,7 +378,7 @@
         {
             "id": "EVENT_DROWNED_LIBRARY",
             "title": "The Drowned Library",
-            "imagePath": "images/events/drowned_library.png",
+            "imagePath": "images/events/drowned_library.jpg",
             "biomes": ["LAKELANDS", "MAZE"],
             "text": "Shelves of swollen books lean in black water. Oakhaven's crest is stamped on the spines. Someone carried these a long way from home.",
             "choices": [
@@ -411,7 +411,7 @@
         {
             "id": "EVENT_DROWNING_POOL",
             "title": "The Drowning Pool",
-            "imagePath": "images/events/drowning_pool.png",
+            "imagePath": "images/events/drowning_pool.jpg",
             "biomes": ["LAKELANDS"],
             "maxDepth": 1,
             "text": "The path drops into a flooded hollow. Through the murk, on a ledge at the bottom, a book lies sealed in a glass jar.",
@@ -437,7 +437,7 @@
         {
             "id": "EVENT_BLOOD_CIRCLE",
             "title": "The Blood Circle",
-            "imagePath": "images/events/blood_circle.png",
+            "imagePath": "images/events/blood_circle.jpg",
             "biomes": ["MAZE"],
             "minDepth": 4,
             "text": "A circle of runes has been drawn on the floor in old blood. At its centre lies a neat pile of bones, and the air above it hums.",

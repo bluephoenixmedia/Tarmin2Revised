@@ -18,8 +18,9 @@ public final class EventArt {
         return "images/events/placeholders/" + slug(biome) + ".png";
     }
 
-    public static String backgroundFor(String biome) {
-        return "images/events/backgrounds/" + slug(biome) + ".png";
+    /** The biome's default backdrop without its extension; art may arrive as PNG or JPEG. */
+    public static String backgroundBaseFor(String biome) {
+        return "images/events/backgrounds/" + slug(biome);
     }
 
     /** The scene image to load, given which asset paths exist. */
@@ -36,8 +37,13 @@ public final class EventArt {
         if (def.backgroundPath != null && exists.test(def.backgroundPath)) {
             return def.backgroundPath;
         }
-        String fallback = backgroundFor(biome);
-        return exists.test(fallback) ? fallback : null;
+        for (String ext : new String[]{".png", ".jpg"}) {
+            String fallback = backgroundBaseFor(biome) + ext;
+            if (exists.test(fallback)) {
+                return fallback;
+            }
+        }
+        return null;
     }
 
     private static String slug(String biome) {

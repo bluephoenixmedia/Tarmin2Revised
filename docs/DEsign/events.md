@@ -117,7 +117,7 @@ There is no Escape out of a scene: the ungated choice is the way out. After the 
 the window shows the result text and a Continue button.
 
 Behind the panel sits the event's `backgroundPath`, or the biome default
-`images/events/backgrounds/<biome>.png`, dimmed. If neither exists it falls back to the scrim.
+`images/events/backgrounds/<biome>.png` (or `.jpg`), dimmed. If neither exists it falls back to the scrim.
 If an event's `imagePath` is missing, the window shows the biome placeholder
 `images/events/placeholders/<biome>.png`.
 
