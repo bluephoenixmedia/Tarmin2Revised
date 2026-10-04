@@ -612,31 +612,45 @@ public class Monster implements Renderable {
         // Critical strikes and piercing strikes bypass armor soak completely.
         int reduction = (isCrit || isPiercing) ? 0 : Math.max(0, (armorClass - 14) / 2);
         int taken = Math.max(1, amount - reduction);
+        // Measured before the clamp below: HP stops at 0, so reading it after
+        // a kill always said the blow landed exactly enough.
+        lastOverkill = Math.max(0, taken - Math.max(0, this.currentHP));
         this.currentHP -= taken;
         if (this.currentHP < 0) {
             this.currentHP = 0;
         }
         lastHitTimeMillis = System.currentTimeMillis();
+        lastHitWeight = com.bpm.minotaur.gamedata.gore.HitReaction.weight(taken, getMaxHP(), isCrit);
         return taken;
     }
 
     // --- Hit Recoil / Flash Feedback ---
     private long lastHitTimeMillis = -1L;
-    private static final float HIT_FLASH_DURATION_SEC = 0.12f;
-    private static final float HIT_RECOIL_DISTANCE = 0.18f;
+    /** How heavy the last blow was, 0..1 (see HitReaction): scales recoil and flash. */
+    private float lastHitWeight = 0f;
+    /** Damage the last blow dealt beyond what HP it had left; what makes a gib death. */
+    private int lastOverkill = 0;
+
+    public int getLastOverkill() {
+        return lastOverkill;
+    }
 
     /** 0.0 = just hit, 1.0 = flash fully faded (or never hit). */
     public float getHitFlashProgress() {
         if (lastHitTimeMillis < 0) return 1f;
         float elapsed = (System.currentTimeMillis() - lastHitTimeMillis) / 1000f;
-        return Math.min(1f, elapsed / HIT_FLASH_DURATION_SEC);
+        return Math.min(1f, elapsed / com.bpm.minotaur.gamedata.gore.HitReaction.flashSeconds(lastHitWeight));
     }
 
-    /** Spring-back displacement magnitude for the current moment, easing to 0. */
+    /**
+     * Spring-back displacement for the current moment: a scratch flinches, a
+     * crit staggers. Eases out so the snap back reads as weight, not a slide.
+     */
     public float getHitRecoilOffset() {
         float progress = getHitFlashProgress();
         if (progress >= 1f) return 0f;
-        return HIT_RECOIL_DISTANCE * (1f - progress);
+        float remaining = 1f - progress;
+        return com.bpm.minotaur.gamedata.gore.HitReaction.recoilDistance(lastHitWeight) * remaining * remaining;
     }
 
     public int takeDamage(int amount) {

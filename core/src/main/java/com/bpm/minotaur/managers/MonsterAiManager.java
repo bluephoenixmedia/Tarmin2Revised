@@ -679,6 +679,7 @@ public class MonsterAiManager {
 
     private void moveMonsterTo(Monster monster, Maze maze, int targetX, int targetY) {
         tempPos.set((int) monster.getPosition().x, (int) monster.getPosition().y);
+        maze.bleedTrail(monster, tempPos.x, tempPos.y);
         maze.getMonsters().remove(tempPos);
         monster.getPosition().set(targetX + 0.5f, targetY + 0.5f);
         maze.getMonsters().put(new GridPoint2(targetX, targetY), monster);

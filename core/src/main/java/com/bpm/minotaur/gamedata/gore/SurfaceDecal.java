@@ -48,6 +48,7 @@ public class SurfaceDecal implements Pool.Poolable {
         this.targetSize = targetRadius;
         this.size = initialSize;
         this.expandTimer = 0f;
+        this.age = 0f;
         this.maxLife = MAX_DECAL_LIFE;
         this.lifeTimer = MAX_DECAL_LIFE;
         this.textureRegion = texture;
@@ -64,11 +65,38 @@ public class SurfaceDecal implements Pool.Poolable {
         targetSize = 0f;
         expandTimer = 0f;
         lifeTimer = 0f;
+        age = 0f;
+        isBlood = true;
         textureRegion = null;
     }
 
+    /** Seconds since the stain landed; drives drying whether or not it ever fades. */
+    public float age;
+
+    /** False for scorch, frost and other spell marks, which blood never pools into. */
+    public boolean isBlood = true;
+
+    /**
+     * Fresh blood landing in this puddle: it spreads to {@code newRadius} and
+     * is wet again, so a fight's newest blood never looks a minute old.
+     */
+    public void feed(float newRadius) {
+        if (newRadius > targetSize) {
+            initialSize = size;
+            targetSize = newRadius;
+            expandTimer = 0f;
+        }
+        age = 0f;
+    }
+
     public void update(float delta) {
-        lifeTimer -= delta;
+        update(delta, false);
+    }
+
+    /** @param persistent true when blood stays until recycled (see {@link GoreLevel#persistent()}) */
+    public void update(float delta, boolean persistent) {
+        age += delta;
+        if (!persistent) lifeTimer -= delta;
         expandTimer += delta;
 
         // 1. Dynamic puddle expansion over initial 0.4s
@@ -82,17 +110,27 @@ public class SurfaceDecal implements Pool.Poolable {
         }
 
         // 2. Oxidizing color transition (Crimson -> Dark Maroon) over first 30 seconds
-        float age = maxLife - lifeTimer;
         float dryT = MathUtils.clamp(age / 30.0f, 0f, 1f);
         color.r = MathUtils.lerp(freshColor.r, driedColor.r, dryT);
         color.g = MathUtils.lerp(freshColor.g, driedColor.g, dryT);
         color.b = MathUtils.lerp(freshColor.b, driedColor.b, dryT);
 
         // 3. Final 5s Alpha Fadeout
-        if (lifeTimer <= FADE_DURATION) {
+        if (!persistent && lifeTimer <= FADE_DURATION) {
             color.a = MathUtils.clamp(lifeTimer / FADE_DURATION, 0f, 1f) * freshColor.a;
         } else {
             color.a = freshColor.a;
         }
+    }
+
+    /**
+     * Sets a saved stain's colour as both fresh and dried: it already dried
+     * before it was saved, and drying it again from there would blacken it
+     * (or, with the reset colours, bleach it white).
+     */
+    public void restoreColor(float r, float g, float b, float a) {
+        freshColor.set(r, g, b, a);
+        driedColor.set(r, g, b, a);
+        color.set(r, g, b, a);
     }
 }

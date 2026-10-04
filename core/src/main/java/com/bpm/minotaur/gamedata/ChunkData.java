@@ -293,6 +293,9 @@ public class ChunkData {
                 s.setDeathWidth(data.deathWidth);
                 s.setDeathHeight(data.deathHeight);
             }
+            if (data.corpseFinish != null) {
+                s.setCorpseFinish(com.bpm.minotaur.gamedata.gore.CorpseFinish.parse(data.corpseFinish));
+            }
             if (data.bonesData != null) {
                 s.setBonesData(data.bonesData);
             }
@@ -419,6 +422,8 @@ public class ChunkData {
         public String deathAnimId;
         public float deathWidth;
         public float deathHeight;
+        /** {@link com.bpm.minotaur.gamedata.gore.CorpseFinish} name; null for plain bodies and older saves. */
+        public String corpseFinish;
         public Boolean impassable;
         /**
          * A dead hero's bones: ghost state, epitaph and grave loot.
@@ -445,6 +450,8 @@ public class ChunkData {
             this.deathAnimId = s.getDeathAnimId();
             this.deathWidth = s.getDeathWidth();
             this.deathHeight = s.getDeathHeight();
+            this.corpseFinish = (s.getCorpseFinish() != com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE)
+                    ? s.getCorpseFinish().name() : null;
             this.impassable = s.isImpassable();
             this.bonesData = s.getBonesData();
         }
@@ -659,6 +666,8 @@ public class ChunkData {
         public float b;
         public float a;
         public float lifeTimer;
+        /** How far the splat's drip had run; 0 for older saves. */
+        public float dripLength;
 
         public WallDecalData() {}
     }

@@ -340,7 +340,7 @@ public class WandExecutionEngine {
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.ORANGE);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The roaring flame engulfs " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -364,7 +364,7 @@ public class WandExecutionEngine {
                     if (combatManager != null) combatManager.showDamageText(actual, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("The freezing beam crystallizes " + target.getType() + " for " + actual + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -383,7 +383,7 @@ public class WandExecutionEngine {
                     if (combatManager != null) combatManager.showDamageText(totalDmg, hit.collisionPoint, "", Color.CYAN);
                     if (eventManager != null) eventManager.addEvent(new GameEvent("Glowing arcane missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -412,7 +412,7 @@ public class WandExecutionEngine {
                     }
 
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -469,7 +469,7 @@ public class WandExecutionEngine {
                         eventManager.addEvent(new GameEvent(desc, 1.8f));
                     }
                     if (target.getCurrentHP() <= 0) {
-                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                        handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, getArchetypeForWand(effect));
                     } else if (combatManager != null && combatManager.getCurrentState() == CombatManager.CombatState.INACTIVE) {
                         combatManager.startCombat(target);
                     }
@@ -552,9 +552,10 @@ public class WandExecutionEngine {
     }
 
     private static void handleKill(Monster target, GridPoint2 targetPos, Player player, Maze maze,
-                                   CombatManager combatManager, GameEventManager eventManager) {
+                                   CombatManager combatManager, GameEventManager eventManager,
+                                   VisualArchetype archetype) {
         if (combatManager != null) {
-            combatManager.handleRemoteKill(target);
+            combatManager.handleRemoteKill(target, com.bpm.minotaur.gamedata.gore.KillCause.spell(archetype));
         } else {
             maze.removeMonster(target);
             if (target.claimDeath()) {

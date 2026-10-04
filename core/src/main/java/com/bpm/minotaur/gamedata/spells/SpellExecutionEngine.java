@@ -247,7 +247,7 @@ public class SpellExecutionEngine {
             eventManager.addEvent(new GameEvent("Magic Missiles strike " + target.getType() + " for " + totalDmg + " damage!", 1.8f));
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
             }
         } else {
             eventManager.addEvent(new GameEvent("Magic Missiles detonate against the corridor wall.", 1.2f));
@@ -418,7 +418,7 @@ public class SpellExecutionEngine {
                 // Killed outright: it dies where it stood. Pushing a corpse is
                 // what used to strand it on the map, killable again for free.
                 eventManager.addEvent(new GameEvent("THUNDERWAVE slams " + target.getType() + " for " + actual + "!", 1.8f));
-                handleKill(target, targetTile, player, maze, combatManager, eventManager);
+                handleKill(target, targetTile, player, maze, combatManager, eventManager, archetype);
                 return;
             }
 
@@ -674,7 +674,7 @@ public class SpellExecutionEngine {
             }
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager);
+                handleKill(target, hit.collisionPoint, player, maze, combatManager, eventManager, archetype);
             }
         } else {
             eventManager.addEvent(new GameEvent(spell.getName() + " impacts the corridor wall.", 1.0f));
@@ -732,7 +732,7 @@ public class SpellExecutionEngine {
             eventManager.addEvent(new GameEvent("Touch of " + spell.getName() + " hits for " + actual + "!", 1.5f));
 
             if (target.getCurrentHP() <= 0) {
-                handleKill(target, targetPos, player, maze, combatManager, eventManager);
+                handleKill(target, targetPos, player, maze, combatManager, eventManager, archetype);
             }
         } else {
             eventManager.addEvent(new GameEvent("You reach out with " + spell.getName() + ", but find only empty air.", 1.0f));
@@ -760,7 +760,7 @@ public class SpellExecutionEngine {
                 hits++;
 
                 if (target.getCurrentHP() <= 0) {
-                    handleKill(target, pos, player, maze, combatManager, eventManager);
+                    handleKill(target, pos, player, maze, combatManager, eventManager, spell.getVisualArchetypeEnum());
                 }
             }
         }
@@ -795,12 +795,14 @@ public class SpellExecutionEngine {
     }
 
     private static void handleKill(Monster target, GridPoint2 pos, Player player, Maze maze,
-                                   CombatManager combatManager, GameEventManager eventManager) {
+                                   CombatManager combatManager, GameEventManager eventManager,
+                                   VisualArchetype archetype) {
         if (combatManager != null) {
+            com.bpm.minotaur.gamedata.gore.KillCause cause = com.bpm.minotaur.gamedata.gore.KillCause.spell(archetype);
             if (target == combatManager.getMonster()) {
-                combatManager.handleMonsterDeath();
+                combatManager.handleMonsterDeath(cause);
             } else {
-                combatManager.handleRemoteKill(target);
+                combatManager.handleRemoteKill(target, cause);
             }
         } else {
             maze.removeMonster(target);

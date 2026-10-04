@@ -130,6 +130,9 @@ public class WorldManager {
         this.encounterManager = encounterManager;
         this.spawnTableData = spawnTableData;
         this.soundManager = soundManager;
+        if (this.soundManager != null) {
+            this.goreManager.setListener(this.soundManager::playGibLand);
+        }
         this.cookingManager = new CookingManager();
 
         this.weatherManager = new WeatherManager(this);
@@ -780,6 +783,10 @@ public class WorldManager {
         }
 
         if (goreManager != null) {
+            if (playerReference != null && currentPlayerChunkId != null) {
+                goreManager.setViewer(currentPlayerChunkId.x * 36.0f + playerReference.getPosition().x,
+                        currentPlayerChunkId.y * 36.0f + playerReference.getPosition().y);
+            }
             goreManager.update(delta, currentMaze, this);
         }
     }

@@ -84,4 +84,15 @@ public class HitFxTest {
         assertEquals(3.5f, p.z, 0.0001f);
         assertTrue("body height", p.y > 0.2f && p.y < 1.0f);
     }
+
+    @Test
+    public void withGoreOffAFleshyHitIsAPuffNotBlood() {
+        GoreLevel.setCurrent(GoreLevel.OFF);
+        try {
+            assertEquals(FxClipIds.HIT_SMOKE,
+                    hit(Monster.MonsterType.GOBLIN, MonsterFamily.HUMANOID, 0.5f, true, true).clipId);
+        } finally {
+            GoreLevel.setCurrent(GoreLevel.NORMAL);
+        }
+    }
 }

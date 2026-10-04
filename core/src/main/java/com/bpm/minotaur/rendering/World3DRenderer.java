@@ -89,10 +89,20 @@ public class World3DRenderer implements Disposable {
     private Texture bloodPoolTexture;
     /** Scratch regions, reused every frame rather than allocated per corpse. */
     private final TextureRegion corpseRegion = new TextureRegion();
+    /** Untextured stand-in for gore quads in retro mode; one instance, not one per drop per frame. */
+    private final TextureRegion goreBlankRegion = new TextureRegion();
     private final TextureRegion bloodPoolRegion = new TextureRegion();
 
     /** Darkened and drained of colour, so remains read as dead rather than idle. */
     private static final Color CORPSE_TINT = new Color(0.42f, 0.36f, 0.34f, 1f);
+    // How a body looks for the way it died (CorpseFinish); multiplied over its tint.
+    private static final Color FINISH_CHARRED = new Color(0.20f, 0.16f, 0.15f, 1f);
+    private static final Color FINISH_FROZEN = new Color(0.70f, 0.88f, 1.00f, 1f);
+    private static final Color FINISH_ASH = new Color(0.34f, 0.34f, 0.36f, 1f);
+    private static final Color FINISH_MELTED = new Color(0.40f, 0.80f, 0.32f, 0.9f);
+    /** Share of a laid-down body's sprite, from the top, that a decapitation removes. */
+    private static final float HEADLESS_CROP = 0.28f;
+    private final Color corpseFinishTint = new Color();
     private static final Color BLOOD_POOL_TINT = new Color(0.45f, 0.05f, 0.06f, 0.85f);
     /** Squashed toward the floor; the sprite is an upright pose lying down. */
     private static final float CORPSE_FLATTEN = 0.45f;
@@ -1409,6 +1419,7 @@ public class World3DRenderer implements Disposable {
 
         Texture currentTex = null;
         Texture blankTex = blankTexture;
+        if (blankTex != null && goreBlankRegion.getTexture() != blankTex) goreBlankRegion.setRegion(blankTex);
         Color retroTint = (theme != null && theme.wall != null) ? theme.wall : Color.WHITE;
 
         // 1. Coplanar Wall Decals
@@ -1453,7 +1464,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addFloorQuad(
                         localX, 0.002f, -localZ,
                         splatSize, splatSize,
-                        region != null ? region : new TextureRegion(blankTex), col
+                        region != null ? region : goreBlankRegion, col
                 );
             }
         }
@@ -1482,7 +1493,7 @@ public class World3DRenderer implements Disposable {
                 dynamicBatcher.addBillboard(
                         localX, p.position.y, -localZ,
                         pSize, pSize,
-                        region != null ? region : new TextureRegion(blankTex), col,
+                        region != null ? region : goreBlankRegion, col,
                         camRight, camUp, camDir
                 );
             }
@@ -1530,13 +1541,13 @@ public class World3DRenderer implements Disposable {
                     dynamicBatcher.addFloorQuad(
                             localX, 0.003f, -localZ,
                             gibSize * 0.5f, gibSize * 0.5f,
-                            region != null ? region : new TextureRegion(blankTex), col
+                            region != null ? region : goreBlankRegion, col
                     );
                 } else {
                     dynamicBatcher.addRotatedBillboard(
                             localX, Math.max(0.02f, g.position.y), -localZ,
                             gibSize, gibSize,
-                            region != null ? region : new TextureRegion(blankTex), col,
+                            region != null ? region : goreBlankRegion, col,
                             camRight, camUp, camDir,
                             g.rotation
                     );
@@ -1928,11 +1939,43 @@ public class World3DRenderer implements Disposable {
                         sw = sw * CORPSE_SPREAD;
                         sh = sh * CORPSE_FLATTEN;
 
-                        if (bloodPoolTexture != null) {
+                        // Burnt, frozen, ashed and melted bodies did not bleed out, and
+                        // with gore off nothing does.
+                        com.bpm.minotaur.gamedata.gore.CorpseFinish bodyFinish = sc.getCorpseFinish();
+                        boolean bled = com.bpm.minotaur.gamedata.gore.GoreLevel.current().enabled()
+                                && (bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE
+                                    || bodyFinish == com.bpm.minotaur.gamedata.gore.CorpseFinish.HEADLESS);
+                        if (bloodPoolTexture != null && bled) {
                             bloodPoolRegion.setRegion(bloodPoolTexture);
                             dynamicBatcher.addBillboard(ex, 0.001f, wz, sw * 1.15f, sh * 0.5f,
                                     bloodPoolRegion, BLOOD_POOL_TINT, camRight, camUp, camDir);
                             dynamicBatcher.flush(shader, bloodPoolTexture);
+                        }
+                    }
+
+                    com.bpm.minotaur.gamedata.gore.CorpseFinish finish = sc.getCorpseFinish();
+                    if (finish != com.bpm.minotaur.gamedata.gore.CorpseFinish.NONE) {
+                        switch (finish) {
+                            case CHARRED: tint = corpseFinishTint.set(tint).mul(FINISH_CHARRED); break;
+                            case FROZEN: tint = corpseFinishTint.set(tint).mul(FINISH_FROZEN); break;
+                            case ASH: tint = corpseFinishTint.set(tint).mul(FINISH_ASH); break;
+                            case MELTED:
+                                // Sunk into its own slick: lower and wider.
+                                tint = corpseFinishTint.set(tint).mul(FINISH_MELTED);
+                                sh *= 0.45f;
+                                sw *= 1.15f;
+                                break;
+                            case HEADLESS:
+                                // The laid-down body minus its top: the head flew.
+                                if (deathAnim == null && reg == corpseRegion) {
+                                    float v = corpseRegion.getV();
+                                    float v2 = corpseRegion.getV2();
+                                    corpseRegion.setV(v + (v2 - v) * HEADLESS_CROP);
+                                    sh *= (1f - HEADLESS_CROP);
+                                }
+                                break;
+                            default:
+                                break;
                         }
                     }
 

@@ -149,11 +149,11 @@ public class ForcePushEffect implements SpellEffect {
         // Handle death or new combat entry
         if (target.getCurrentHP() <= 0) {
             if (combatManager != null && target == combatManager.getMonster()) {
-                combatManager.handleMonsterDeath();
+                combatManager.handleMonsterDeath(com.bpm.minotaur.gamedata.gore.KillCause.spell(com.bpm.minotaur.gamedata.spells.VisualArchetype.FORCE_MISSILE));
                 combatManager.setCurrentState(CombatManager.CombatState.VICTORY);
             } else {
                 // The combat manager's kill path is the one that leaves a corpse.
-                combatManager.handleRemoteKill(target);
+                combatManager.handleRemoteKill(target, com.bpm.minotaur.gamedata.gore.KillCause.spell(com.bpm.minotaur.gamedata.spells.VisualArchetype.FORCE_MISSILE));
             }
         } else if (combatManager != null && combatManager.getMonster() == null) {
             combatManager.startCombat(target);

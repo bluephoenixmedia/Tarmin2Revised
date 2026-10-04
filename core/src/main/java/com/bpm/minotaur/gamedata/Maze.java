@@ -71,6 +71,19 @@ public class Maze {
 
     private GridPoint2 chunkId = new GridPoint2(0, 0);
 
+    /**
+     * A badly wounded monster leaves blood on the tile it is leaving, so the
+     * player can follow it and the level remembers where it ran.
+     */
+    public void bleedTrail(Monster monster, int fromTileX, int fromTileY) {
+        if (goreManager == null || monster == null) return;
+        com.bpm.minotaur.gamedata.gore.GoreProfile profile = com.bpm.minotaur.gamedata.gore.GoreProfile.fromMonster(monster);
+        if (!GoreManager.leavesBloodTrail(monster.getCurrentHP(), monster.getMaxHP(), profile)) return;
+        int cx = (chunkId != null) ? chunkId.x : 0;
+        int cy = (chunkId != null) ? chunkId.y : 0;
+        goreManager.spawnWoundTrail(cx * 36.0f + fromTileX + 0.5f, cy * 36.0f + fromTileY + 0.5f, profile);
+    }
+
     public GridPoint2 getChunkId() {
         return chunkId;
     }
@@ -381,6 +394,7 @@ public class Maze {
      */
     public void moveMonster(Monster monster, int tileX, int tileY) {
         if (monster == null) return;
+        bleedTrail(monster, (int) monster.getPosition().x, (int) monster.getPosition().y);
         removeMonster(monster);
         monster.getPosition().set(tileX + 0.5f, tileY + 0.5f);
         monsters.put(new GridPoint2(tileX, tileY), monster);

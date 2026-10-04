@@ -30,6 +30,7 @@ public class SettingsScreen extends BaseScreen {
 
     private TextButton difficultyButton;
     private TextButton modeButton;
+    private TextButton goreButton;
     private Label musicVolLabel;
     private Label sfxVolLabel;
 
@@ -153,9 +154,21 @@ public class SettingsScreen extends BaseScreen {
             }
         });
         sfxTable.add(sfxPlus).width(48).height(44);
-        card.add(sfxTable).width(240).padBottom(28).row();
+        card.add(sfxTable).width(240).padBottom(16).row();
 
-        // 5. Controls CTA Button
+        // 5. Gore
+        card.add(new Label("Gore", labelStyle)).left().padRight(40).padBottom(28);
+        goreButton = new TextButton(com.bpm.minotaur.ui.UiNames.of(settingsManager.getGoreLevel()), btnStyle);
+        goreButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                settingsManager.setGoreLevel(settingsManager.getGoreLevel().next());
+                goreButton.setText(com.bpm.minotaur.ui.UiNames.of(settingsManager.getGoreLevel()));
+            }
+        });
+        card.add(goreButton).minWidth(240).height(48).padBottom(28).row();
+
+        // 6. Controls CTA Button
         TextButton.TextButtonStyle ctaStyle = new TextButton.TextButtonStyle();
         ctaStyle.font = hudSkin.getFontMain();
         ctaStyle.fontColor = HudSkin.COL_TEXT_ON_GOLD;
@@ -173,7 +186,7 @@ public class SettingsScreen extends BaseScreen {
         });
         card.add(controlsButton).colspan(2).minWidth(400).height(54).padBottom(16).center().row();
 
-        // 6. Back Button
+        // 7. Back Button
         TextButton backButton = new TextButton("BACK TO MAIN MENU  [ESC]", btnStyle);
         backButton.addListener(new ChangeListener() {
             @Override

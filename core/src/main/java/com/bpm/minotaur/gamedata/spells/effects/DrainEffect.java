@@ -84,11 +84,11 @@ public class DrainEffect implements SpellEffect {
         // --- Handle death or combat entry ---
         if (targetMonster.getCurrentHP() <= 0) {
             if (combatManager != null && targetMonster == combatManager.getMonster()) {
-                combatManager.handleMonsterDeath();
+                combatManager.handleMonsterDeath(com.bpm.minotaur.gamedata.gore.KillCause.spell(com.bpm.minotaur.gamedata.spells.VisualArchetype.NECROTIC_DRAIN));
                 combatManager.setCurrentState(CombatManager.CombatState.VICTORY);
             } else {
                 // The combat manager's kill path is the one that leaves a corpse.
-                combatManager.handleRemoteKill(targetMonster);
+                combatManager.handleRemoteKill(targetMonster, com.bpm.minotaur.gamedata.gore.KillCause.spell(com.bpm.minotaur.gamedata.spells.VisualArchetype.NECROTIC_DRAIN));
             }
         } else if (combatManager != null && combatManager.getMonster() == null) {
             combatManager.startCombat(targetMonster);
