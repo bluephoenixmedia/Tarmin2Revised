@@ -1,0 +1,465 @@
+{
+    "events": [
+        {
+            "id": "EVENT_BROKEN_MIRROR",
+            "title": "The Broken Mirror",
+            "imagePath": "images/events/broken_mirror.png",
+            "biomes": ["MAZE"],
+            "text": "A tall mirror stands in the corridor, its glass cracked into a web. Your reflection does not move when you do. It raises a hand, palm up, as if offering a trade.",
+            "choices": [
+                {
+                    "text": "Smash the mirror.",
+                    "success": [
+                        { "type": "SPAWN_MONSTER", "monsterId": "SPECTER", "text": "The glass bursts, and your reflection steps out of the frame." }
+                    ]
+                },
+                {
+                    "text": "Press your palm to the glass. (Lose 5 max HP)",
+                    "costs": [ { "type": "MAX_HP", "amount": -5 } ],
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemId": "SCROLL", "text": "The glass drinks something from you, then spits out a brittle scroll." }
+                    ]
+                },
+                {
+                    "text": "Hold your reflection's gaze.",
+                    "check": { "attribute": "WIS", "base": 0.4 },
+                    "success": [
+                        { "type": "XP", "amount": 150, "text": "You stare until you understand what looks back. It is a little less frightening now." }
+                    ],
+                    "failure": [
+                        { "type": "ADD_STATUS", "status": "CONFUSED", "duration": 10, "text": "The reflection stares back harder, and the corridor tilts." }
+                    ]
+                },
+                {
+                    "text": "Walk away.",
+                    "success": [ { "text": "You leave your reflection where it stands." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_WEEPING_STATUE",
+            "title": "The Weeping Statue",
+            "imagePath": "images/events/statue_cry.png",
+            "biomes": ["FOREST", "MAZE"],
+            "maxDepth": 3,
+            "text": "A moss-covered statue of a knight stands over a dry stone basin. Tears of blood run from its eyes and pool at its feet.",
+            "choices": [
+                {
+                    "text": "Drink from the basin.",
+                    "check": { "base": 0.5 },
+                    "success": [
+                        { "type": "HEAL", "amount": 15, "text": "The metallic taste fills you with a strange warmth." }
+                    ],
+                    "failure": [
+                        { "type": "DAMAGE", "amount": 4 },
+                        { "type": "ADD_STATUS", "status": "POISONED", "duration": 10, "text": "It burns your throat. The blood is fouled." }
+                    ]
+                },
+                {
+                    "text": "Search the basin stones.",
+                    "check": { "attribute": "INT", "base": 0.45 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemId": "RING_GOLD", "text": "A gold ring glints between the stones, long since dropped." }
+                    ],
+                    "failure": [
+                        { "text": "You find only moss and old blood." }
+                    ]
+                },
+                {
+                    "text": "Leave the knight to its grief.",
+                    "success": [ { "text": "You walk on. The weeping does not stop." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_OAKHAVEN_CORPSE",
+            "title": "The Corpse in Oakhaven Robes",
+            "imagePath": "images/events/oakhaven_corpse.png",
+            "biomes": ["MAZE", "FOREST"],
+            "text": "Slumped against the wall is a dried corpse in the grey robes of an Oakhaven archivist. Its face is uncomfortably like your own. One hand still grips a folded map whose ink seems to crawl.",
+            "choices": [
+                {
+                    "text": "Search the pockets.",
+                    "check": { "base": 0.6 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemId": "FOOD" },
+                        { "type": "GOLD", "amount": 15, "text": "A ration and a few coins. The dead do not need them." }
+                    ],
+                    "failure": [
+                        { "type": "SPAWN_MONSTER", "monsterId": "GHOUL", "text": "Something under the robes was not quite dead." }
+                    ]
+                },
+                {
+                    "text": "Bury the dead.",
+                    "success": [
+                        { "type": "LUCK", "amount": 1 },
+                        { "type": "CURE_STATUS", "status": "CURSED", "text": "You give the stranger a grave. Your step feels lighter for it." }
+                    ]
+                },
+                {
+                    "text": "Study the crawling map.",
+                    "check": { "attribute": "INT", "base": 0.5 },
+                    "success": [
+                        { "type": "REVEAL_MAP", "text": "The ink settles into the shape of this place." }
+                    ],
+                    "failure": [
+                        { "type": "ADD_STATUS", "status": "CONFUSED", "duration": 8, "text": "The lines writhe until your eyes ache." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_CHITINOUS_MOUND",
+            "title": "The Chitinous Mound",
+            "imagePath": "images/events/chitinous_mound.png",
+            "biomes": ["FOREST"],
+            "maxDepth": 1,
+            "text": "A mound of packed earth and resin blocks the trail, humming with the click of a thousand mandibles. Near its summit, half swallowed, the hilt of a weapon catches the light.",
+            "choices": [
+                {
+                    "text": "Dig the weapon out.",
+                    "check": { "attribute": "STR", "base": 0.45 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemPool": ["SWORD", "AXE", "SPEAR"], "text": "You wrench it free and stagger back before the swarm can answer." }
+                    ],
+                    "failure": [
+                        { "type": "DAMAGE", "amount": 4 },
+                        { "type": "SPAWN_MONSTER", "monsterId": "GIANT_ANT", "text": "The mound boils over. Something large comes out to meet you." }
+                    ]
+                },
+                {
+                    "text": "Offer two rations to the colony.",
+                    "costs": [ { "type": "TAKE_ITEM", "itemKind": "FOOD", "count": 2 } ],
+                    "success": [
+                        { "type": "ADD_STATUS", "status": "RESIST_POISON", "duration": 200, "text": "The colony takes your gift. Their scent clings to you, and stings will not." }
+                    ]
+                },
+                {
+                    "text": "Leave the colony be.",
+                    "success": [ { "text": "You find another way around." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_TRADER_OF_ROOTS",
+            "title": "The Trader of Roots",
+            "imagePath": "images/events/trader_of_roots.png",
+            "biomes": ["FOREST"],
+            "maxDepth": 1,
+            "text": "A figure of bark and moss sits cross-legged among the roots. It does not want gold. It wants something of you.",
+            "choices": [
+                {
+                    "text": "Trade blood. (Lose 8 max HP)",
+                    "costs": [ { "type": "MAX_HP", "amount": -8 } ],
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemPool": ["RING_BLUE", "RING_PINK", "RING_GREEN", "RING_PURPLE"], "text": "It presses a ring into your palm. It is warm, like something alive." }
+                    ]
+                },
+                {
+                    "text": "Trade thought. (Lose 6 max MP)",
+                    "costs": [ { "type": "MAX_MP", "amount": -6 } ],
+                    "success": [
+                        { "type": "ATTRIBUTE", "attribute": "CON", "amount": 1, "text": "Something in your chest hardens like heartwood." }
+                    ]
+                },
+                {
+                    "text": "Give it something cursed.",
+                    "costs": [ { "type": "TAKE_ITEM", "itemKind": "CURSED" } ],
+                    "success": [
+                        { "type": "GOLD", "amount": 40, "text": "It folds the cursed thing into its bark and pays you in old coin." }
+                    ]
+                },
+                {
+                    "text": "Decline.",
+                    "success": [ { "text": "It watches you go without a word." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_SNARED_SCORPION",
+            "title": "The Thorn-Snared Scorpion",
+            "imagePath": "images/events/snared_scorpion.png",
+            "biomes": ["FOREST"],
+            "maxDepth": 1,
+            "text": "Ahead, a giant scorpion thrashes in a net of living thorns. Each time it struggles the vines draw tighter, and the path beyond is choked with them.",
+            "choices": [
+                {
+                    "text": "Shoot it from here.",
+                    "requires": [ { "type": "HAS_ITEM", "itemKind": "RANGED_WEAPON", "label": "Needs a ranged weapon" } ],
+                    "success": [
+                        { "type": "XP", "amount": 60, "text": "Your shot finds a joint in its shell. The vines slacken, sated." }
+                    ]
+                },
+                {
+                    "text": "Hack through the vines.",
+                    "check": { "attribute": "DEX", "base": 0.5 },
+                    "success": [
+                        { "type": "XP", "amount": 30, "text": "You cut a narrow path and slip past while it struggles." }
+                    ],
+                    "failure": [
+                        { "type": "DAMAGE", "amount": 5 },
+                        { "type": "INJURY", "bodyPart": "ARMS", "injury": "LACERATION_BLEEDING", "severity": 1, "text": "A thorn opens your forearm to the bone." }
+                    ]
+                },
+                {
+                    "text": "Back away.",
+                    "success": [
+                        { "type": "SPAWN_MONSTER", "monsterId": "GIANT_SCORPION", "text": "The vines give way. The scorpion tears free and turns on you." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_MIRAGE_VENDOR",
+            "title": "The Mirage Vendor",
+            "imagePath": "images/events/mirage_vendor.png",
+            "biomes": ["DESERT"],
+            "maxDepth": 1,
+            "text": "A merchant sits beneath a striped awning that casts no shadow. Spread before him, impossibly cheap, are fine blades and jeweled rings. \"One coin,\" he smiles. \"Any of them.\"",
+            "choices": [
+                {
+                    "text": "Pay the coin. (1 gold)",
+                    "costs": [ { "type": "GOLD", "amount": -1 } ],
+                    "success": [
+                        { "type": "DAMAGE", "amount": 6 },
+                        { "type": "SPAWN_MONSTER", "monsterId": "MIMIC", "text": "You reach for a ring, and the awning folds into teeth." }
+                    ]
+                },
+                {
+                    "text": "Look closer.",
+                    "check": { "attribute": "WIS", "base": 0.5 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemId": "FOOD", "text": "The vendor wavers and is gone. Where he sat lies a single dried ration." }
+                    ],
+                    "failure": [
+                        { "type": "SPAWN_MONSTER", "monsterId": "MIMIC", "text": "You lean in to look, and the rug bites." }
+                    ]
+                },
+                {
+                    "text": "Walk on.",
+                    "success": [ { "text": "His smile follows you into the heat." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_SMOKY_BOTTLE",
+            "title": "The Smoky Bottle",
+            "imagePath": "images/events/smoky_bottle.png",
+            "biomes": ["DESERT"],
+            "maxDepth": 1,
+            "text": "Half buried in the sand is a stoppered bottle of smoked glass. Something inside it is moving, and it is warm to the touch.",
+            "choices": [
+                {
+                    "text": "Rub the glass.",
+                    "check": { "base": 0.25 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemPool": ["POTION_GIANT_STRENGTH", "POTION_HEROISM", "BOOTS_OF_SWIFTNESS", "AMULET_OF_INSIGHT"], "text": "Smoke pours out and takes the shape of a bowing figure. It leaves a gift, and is gone." }
+                    ],
+                    "failure": [
+                        { "type": "SPAWN_MONSTER", "monsterId": "WRAITH", "text": "The smoke pours out howling, and it is not grateful." }
+                    ]
+                },
+                {
+                    "text": "Drink it.",
+                    "success": [
+                        { "type": "XP", "amount": 80 },
+                        { "type": "ADD_STATUS", "status": "HALLUCINATING", "duration": 15, "text": "It tastes of ash and starlight. The dunes begin to breathe." }
+                    ]
+                },
+                {
+                    "text": "Smash it against a rock.",
+                    "success": [
+                        { "type": "ADD_STATUS", "status": "BLIND", "duration": 4, "text": "Acrid smoke stings your eyes. Whatever was inside is gone for good." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_LIGHTNING_SPIRE",
+            "title": "The Lightning Spire",
+            "imagePath": "images/events/lightning_spire.png",
+            "biomes": ["DESERT"],
+            "maxDepth": 1,
+            "text": "A spire of black iron juts from the dunes. Lightning crawls over it in a constant stutter, and the sand around its base has fused into glass.",
+            "choices": [
+                {
+                    "text": "Hold a scroll to the iron.",
+                    "costs": [ { "type": "TAKE_ITEM", "itemKind": "SCROLL" } ],
+                    "success": [
+                        { "type": "DAMAGE", "amount": 5 },
+                        { "type": "GIVE_ITEM", "itemId": "SMALL_LIGHTNING", "text": "The parchment chars and comes away crackling with stored lightning." }
+                    ]
+                },
+                {
+                    "text": "Lay your hands on the spire.",
+                    "check": { "attribute": "CON", "base": 0.45 },
+                    "success": [
+                        { "type": "MAX_MP", "amount": 5, "text": "The current runs through you and something stays behind." }
+                    ],
+                    "failure": [
+                        { "type": "DAMAGE", "amount": 8 },
+                        { "type": "INJURY", "bodyPart": "TORSO", "injury": "SEVERE_BURN", "severity": 1, "text": "The spire throws you into the sand, smoking." }
+                    ]
+                },
+                {
+                    "text": "Keep your distance.",
+                    "success": [ { "text": "You give the spire a wide berth." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_REFLECTION_OF_ELARA",
+            "title": "The Reflection of Elara",
+            "imagePath": "images/events/reflection_of_elara.png",
+            "biomes": ["LAKELANDS"],
+            "maxDepth": 1,
+            "text": "In a still pool you see Elara's reflection, though no one stands on the bank. She is weeping. \"I am forgetting,\" she whispers. \"Do not let me go.\"",
+            "choices": [
+                {
+                    "text": "Reach for her.",
+                    "success": [
+                        { "type": "DAMAGE", "amount": 6 },
+                        { "type": "ADD_STATUS", "status": "CHILLED", "duration": 20, "text": "Cold hands close on your wrist and pull. You tear free, soaked to the bone." }
+                    ]
+                },
+                {
+                    "text": "Look past the reflection.",
+                    "check": { "attribute": "WIS", "base": 0.45 },
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemPool": ["RING_BLUE", "RING_PINK", "RING_GREEN", "RING_PURPLE"], "text": "The image dissolves. On the pool bed lies a ring she once wore." }
+                    ],
+                    "failure": [
+                        { "type": "ADD_STATUS", "status": "CONFUSED", "duration": 6, "text": "Her face will not hold still. Neither will the bank beneath you." }
+                    ]
+                },
+                {
+                    "text": "Weep with her.",
+                    "success": [
+                        { "type": "RESTORE_MP", "amount": 15, "text": "When the tears stop, something in you is steadier." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_CORAL_ALTAR",
+            "title": "The Coral Altar",
+            "imagePath": "images/events/coral_altar.png",
+            "biomes": ["LAKELANDS"],
+            "maxDepth": 1,
+            "text": "An altar of pale coral rises from the shallows, dry despite the water lapping at its base. Old offerings crust its surface.",
+            "choices": [
+                {
+                    "text": "Kneel and pray.",
+                    "check": { "attribute": "WIS", "base": 0.5 },
+                    "success": [
+                        { "type": "HEAL", "amount": 20 },
+                        { "type": "CURE_STATUS", "status": "POISONED", "text": "Warmth spreads from the coral into your hands." }
+                    ],
+                    "failure": [
+                        { "type": "ADD_STATUS", "status": "CURSED", "duration": 30, "text": "The altar is silent. Then it is cold." }
+                    ]
+                },
+                {
+                    "text": "Pry loose the offerings.",
+                    "success": [
+                        { "type": "GOLD", "amount": 35 },
+                        { "type": "SPAWN_MONSTER", "monsterId": "ALLIGATOR", "text": "Coins come free in your hand. Something in the shallows noticed." }
+                    ]
+                },
+                {
+                    "text": "Lay an item on the altar.",
+                    "requires": [ { "type": "HAS_ITEM", "itemKind": "UNBLESSED", "label": "Nothing to offer" } ],
+                    "success": [
+                        { "type": "BLESS_ITEM", "itemKind": "UNBLESSED", "text": "The coral glows, and something you carry is blessed." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_DROWNED_LIBRARY",
+            "title": "The Drowned Library",
+            "imagePath": "images/events/drowned_library.png",
+            "biomes": ["LAKELANDS", "MAZE"],
+            "text": "Shelves of swollen books lean in black water. Oakhaven's crest is stamped on the spines. Someone carried these a long way from home.",
+            "choices": [
+                {
+                    "text": "Salvage what you can.",
+                    "success": [
+                        { "type": "GIVE_ITEM", "itemId": "SCROLL", "count": 2, "text": "Two scrolls survived, sealed in wax." }
+                    ]
+                },
+                {
+                    "text": "Read until you understand.",
+                    "check": { "attribute": "INT", "base": 0.5 },
+                    "success": [
+                        { "type": "IDENTIFY_ALL" },
+                        { "type": "XP", "amount": 40, "text": "Oakhaven's catalogues name everything you carry." }
+                    ],
+                    "failure": [
+                        { "type": "DRAIN_MP", "amount": 8, "text": "The ink has run too far. You come away with a headache and nothing else." }
+                    ]
+                },
+                {
+                    "text": "Burn the shelves for warmth.",
+                    "success": [
+                        { "type": "ADD_STATUS", "status": "WARMTH", "duration": 150 },
+                        { "type": "XP", "amount": 20, "text": "You feel the loss even as you warm your hands." }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_DROWNING_POOL",
+            "title": "The Drowning Pool",
+            "imagePath": "images/events/drowning_pool.png",
+            "biomes": ["LAKELANDS"],
+            "maxDepth": 1,
+            "text": "The path drops into a flooded hollow. Through the murk, on a ledge at the bottom, a book lies sealed in a glass jar.",
+            "choices": [
+                {
+                    "text": "Dive for it.",
+                    "check": { "attribute": "CON", "base": 0.45 },
+                    "success": [
+                        { "type": "ADD_STATUS", "status": "SOAKED", "duration": 30 },
+                        { "type": "GIVE_ITEM", "itemId": "SPIRITUAL_BOOK", "text": "Your lungs burn, but the jar comes up whole." }
+                    ],
+                    "failure": [
+                        { "type": "DAMAGE", "amount": 5 },
+                        { "type": "ADD_STATUS", "status": "HYPOTHERMIA", "duration": 20, "text": "The cold drives you back to the surface with nothing." }
+                    ]
+                },
+                {
+                    "text": "Leave it to the water.",
+                    "success": [ { "text": "The jar glints below you as you go." } ]
+                }
+            ]
+        },
+        {
+            "id": "EVENT_BLOOD_CIRCLE",
+            "title": "The Blood Circle",
+            "imagePath": "images/events/blood_circle.png",
+            "biomes": ["MAZE"],
+            "minDepth": 4,
+            "text": "A circle of runes has been drawn on the floor in old blood. At its centre lies a neat pile of bones, and the air above it hums.",
+            "choices": [
+                {
+                    "text": "Step into the circle. (Lose 8 max HP)",
+                    "costs": [ { "type": "MAX_HP", "amount": -8 } ],
+                    "success": [
+                        { "type": "MAX_MP", "amount": 8, "text": "The circle drinks, and then it gives." }
+                    ]
+                },
+                {
+                    "text": "Scuff out the runes.",
+                    "success": [
+                        { "type": "XP", "amount": 60, "text": "The hum dies. Whatever was being called will not come." }
+                    ]
+                },
+                {
+                    "text": "Step around it.",
+                    "success": [ { "text": "You keep to the wall and do not look back." } ]
+                }
+            ]
+        }
+    ]
+}

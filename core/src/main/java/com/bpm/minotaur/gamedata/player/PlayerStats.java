@@ -534,6 +534,10 @@ public class PlayerStats {
         this.dexterity = dexterity;
     }
 
+    public void modifyDexterity(int amount) {
+        this.dexterity += amount;
+    }
+
     public int getStrength() {
         return strength + getAscensionBonus(com.bpm.minotaur.gamedata.progression.ShelterAltar.StatType.STRENGTH);
     }
