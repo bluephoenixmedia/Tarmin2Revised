@@ -55,6 +55,10 @@ BONE = [(70, 58, 44), (130, 112, 86), (184, 168, 136), (226, 214, 184)]
 STRAW = [(58, 42, 24), (102, 78, 44), (150, 118, 70), (196, 164, 108)]
 DRY_SCRUB = [(50, 44, 24), (84, 76, 38), (122, 108, 56), (160, 146, 84)]
 DRIFTWOOD = [(44, 34, 28), (82, 66, 52), (126, 106, 84), (168, 150, 120)]
+WET_WOOD = [(22, 24, 25), (42, 45, 46), (65, 70, 72), (95, 100, 102)]
+REED_GOLD = [(32, 38, 22), (54, 64, 34), (82, 94, 48), (122, 138, 72)]
+LILYPAD = [(14, 36, 28), (24, 62, 46), (42, 102, 74), (72, 154, 112)]
+MUCK_MOUND = [(20, 18, 16), (36, 32, 28), (56, 48, 42), (78, 68, 58)]
 EMBER_RIM = (112, 44, 26)
 
 # Sprite name prefix -> (palette for green pixels, palette for the rest). The first
@@ -89,6 +93,22 @@ GROUPS = {
     "desert_campfire": (CACTUS, BARK),
     "desert_camp_tent": (CACTUS, BARK),
     "desert_": (SANDSTONE, SANDSTONE),
+    "lakelands_reeds_": (REED_GOLD, BARK),
+    "lakelands_swamp_grass_": (REED_GOLD, MOSS),
+    "lakelands_lilypads_": (LILYPAD, TEAL),
+    "lakelands_dock_": (WET_WOOD, WET_WOOD),
+    "lakelands_boat_": (WET_WOOD, WET_WOOD),
+    "lakelands_shrine_": (MOSS, STONE),
+    "lakelands_statue_": (MOSS, STONE),
+    "lakelands_mound_": (MOSS, MUCK_MOUND),
+    "lakelands_bones_": (BONE, BONE),
+    "lakelands_beast_skull": (BONE, BONE),
+    "lakelands_glowplant": (TEAL, TEAL),
+    "lakelands_underwater_plant": (TEAL, LILYPAD),
+    "lakelands_root_": (MOSS, DRIFTWOOD),
+    "lakelands_rock_": (MOSS, STONE),
+    "lakelands_tree_": (MOSS, DRIFTWOOD),
+    "lakelands_": (MOSS, STONE),
 }
 
 # Where a sprite is written, by name prefix: landmark_<id> is the forest's own
@@ -96,6 +116,7 @@ GROUPS = {
 OUTPUT_BY_PREFIX = {
     "landmark_": os.path.join(OUT_DIR, "props"),
     "desert_": os.path.join(IMG_DIR, "desert"),
+    "lakelands_": os.path.join(IMG_DIR, "lakelands"),
 }
 
 # Where each material's tone boundaries fall, as luminance percentiles.

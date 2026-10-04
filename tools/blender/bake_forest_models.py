@@ -149,11 +149,33 @@ MODELS = [
     Model("desert_camp_tent", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Tent_Medium_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.4)),
     Model("desert_scrub_01", "sized", (GENERIC, "Models/SM_Gen_Env_Bush_02.fbx"), {}, GENERIC_ATLAS, (0.7, 0.45)),
     Model("desert_scrub_02", "sized", (GOBLIN, "FBX/Environment/SM_Env_Bush_03.fbx"), {}, GOBLIN_ATLAS, (0.7, 0.45)),
+
+    # Lakelands: written to images/lakelands/. Reeds, lilypads, docks, boat wrecks, shrines, swamp mounds.
+    Model("lakelands_reeds_01", "sized", (GOBLIN, "FBX/Environment/SM_Env_Reeds_01.fbx"), {}, GOBLIN_ATLAS, (0.7, 1.0)),
+    Model("lakelands_reeds_02", "sized", (GOBLIN, "FBX/Environment/SM_Env_Reeds_02.fbx"), {}, GOBLIN_ATLAS, (0.7, 1.0)),
+    Model("lakelands_swamp_grass_01", "sized", (GOBLIN, "FBX/Environment/SM_Env_Swamp_Grass_01.fbx"), {}, GOBLIN_ATLAS, (0.6, 0.45)),
+    Model("lakelands_swamp_grass_02", "sized", (GOBLIN, "FBX/Environment/SM_Env_Swamp_Grass_02.fbx"), {}, GOBLIN_ATLAS, (0.6, 0.45)),
+    Model("lakelands_lilypads_01", "sized", (GENERIC, "Models/SM_Gen_Env_Lilypads_01.fbx"), {}, GENERIC_ATLAS, (0.8, 0.3)),
+    Model("lakelands_lilypads_02", "sized", (GENERIC, "Models/SM_Gen_Env_Lilypads_02.fbx"), {}, GENERIC_ATLAS, (0.8, 0.3)),
+    Model("lakelands_dock_post", "sized", (VIKING, "FBX/SM_Bld_Dock_Pillar_01.fbx"), {}, VIKING_ATLAS, (0.8, 1.5)),
+    Model("lakelands_dock_ramp", "sized", (VIKING, "FBX/SM_Bld_Dock_Wood_End_01.fbx"), {}, VIKING_ATLAS, (1.4, 0.9)),
+    Model("lakelands_boat_wreck", "sized", (VIKING, "FBX/SM_Veh_Boat_Small_01.fbx"), {}, VIKING_ATLAS, (2.2, 1.0)),
+    Model("lakelands_shrine_01", "sized", (GOBLIN, "FBX/Props/SM_Prop_Shrine_01.fbx"), {}, GOBLIN_ATLAS, (1.2, 1.8)),
+    Model("lakelands_statue_01", "sized", (VIKING, "FBX/SM_Prop_Statue_01.fbx"), {}, VIKING_ATLAS, (1.0, 2.0)),
+    Model("lakelands_mound_01", "sized", (GOBLIN, "FBX/Environment/SM_Env_Swamp_Mound_01.fbx"), {}, GOBLIN_ATLAS, (1.3, 0.7)),
+    Model("lakelands_bones_rib", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Rib_01.fbx"), {}, GOBLIN_ATLAS, (1.0, 0.7)),
+    Model("lakelands_beast_skull", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Skull_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.2)),
+    Model("lakelands_glowplant", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.7, 0.6)),
+    Model("lakelands_underwater_plant", "sized", ("models", "forest_other/lowpoly_marine_plant.glb"), None, None, (0.6, 0.5)),
+    Model("lakelands_root_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_01.fbx"), {}, ALPINE_ATLAS, (0.9, 0.4)),
+    Model("lakelands_rock_moss", "sized", ("models", "forest_other/rock1.glb"), None, None, (1.1, 0.9)),
+    Model("lakelands_tree_dead_01", "sized", (ADVENTURE, "FBX/SM_Env_TreeDead_01.fbx"), {}, ADVENTURE_ATLAS, (1.9, 3.2)),
+    Model("lakelands_tree_dead_02", "sized", (GENERIC, "Models/SM_Gen_Env_Tree_Dead_01.fbx"), {}, GENERIC_ATLAS, (1.9, 3.2)),
 ]
 
 
 def source_dirs():
-    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    argv = [a for a in (sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []) if not a.startswith("--")]
     models = argv[0] if len(argv) > 0 else os.path.join(REPO, "assets", "models")
     packs = argv[1] if len(argv) > 1 else os.path.join(REPO, "docs", "game_assets")
     return models, packs
@@ -302,10 +324,23 @@ def frame_camera(meshes, canvas):
 
 def main():
     models, packs = source_dirs()
-    only = set(a for a in os.environ.get("FOREST_BAKE_ONLY", "").split(",") if a)
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    only_arg = next((a.split("=", 1)[1] for a in argv if a.startswith("--only=")), None)
+    if only_arg is None:
+        only_arg = os.environ.get("FOREST_BAKE_ONLY", "")
+    only_tokens = set(a.strip() for a in only_arg.split(",") if a.strip())
+
+    def matches_only(name):
+        if not only_tokens:
+            return True
+        for t in only_tokens:
+            if name == t or name.startswith(t):
+                return True
+        return False
+
     os.makedirs(RAW_DIR, exist_ok=True)
     jobs = [(m, suffix, azimuth)
-            for m in MODELS if not only or m.name in only
+            for m in MODELS if matches_only(m.name)
             for suffix, azimuth in LIGHTINGS[m.kind]]
     print(f"--- Baking {len(jobs)} raw frames with Blender {bpy.app.version_string} ---")
 
