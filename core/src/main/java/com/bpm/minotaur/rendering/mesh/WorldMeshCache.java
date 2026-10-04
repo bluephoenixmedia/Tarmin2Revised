@@ -37,8 +37,7 @@ public class WorldMeshCache implements Disposable {
             boolean isIndoors,
             Texture wallTexture,
             Texture floorTexture,
-            Texture forestWallTexture,
-            Texture forestFloorTexture,
+            BiomeSurfaces biomeSurfaces,
             Texture ceilingTexture,
             WorldManager worldManager,
             WallTextureProvider wallProvider,
@@ -59,8 +58,8 @@ public class WorldMeshCache implements Disposable {
             this.lastCenterChunk.set(currentChunkId.x, currentChunkId.y);
         }
 
-        Texture currentWall = (maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestWallTexture != null) ? forestWallTexture : wallTexture;
-        Texture currentFloor = (maze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestFloorTexture != null) ? forestFloorTexture : floorTexture;
+        Texture currentWall = biomeSurfaces.wallFor(maze.getBiome(), wallTexture);
+        Texture currentFloor = biomeSurfaces.floorFor(maze.getBiome(), floorTexture);
 
         if (level > 1) {
             // --- DUNGEONS (Level > 1): Static Single-Floor Bake ---
@@ -112,8 +111,8 @@ public class WorldMeshCache implements Disposable {
                             if (neighborMeshes == null) {
                                 Maze neighborMaze = worldManager.requestLoadChunk(targetId);
                                 if (neighborMaze != null) {
-                                    Texture neighborWall = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestWallTexture != null) ? forestWallTexture : wallTexture;
-                                    Texture neighborFloor = (neighborMaze.getBiome() == com.bpm.minotaur.generation.Biome.FOREST && forestFloorTexture != null) ? forestFloorTexture : floorTexture;
+                                    Texture neighborWall = biomeSurfaces.wallFor(neighborMaze.getBiome(), wallTexture);
+                                    Texture neighborFloor = biomeSurfaces.floorFor(neighborMaze.getBiome(), floorTexture);
                                     long neighborSeed = seedFor(worldManager, level, targetId);
                                     neighborMeshes = ChunkMeshBuilder.buildChunk(
                                             neighborMaze,

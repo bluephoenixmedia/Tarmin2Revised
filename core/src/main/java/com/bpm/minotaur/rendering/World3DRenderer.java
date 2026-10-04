@@ -48,6 +48,7 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.rendering.mesh.BiomeSurfaces;
 import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
@@ -119,11 +120,11 @@ public class World3DRenderer implements Disposable {
      * hit-pause makes one long frame, which would otherwise skip half the death.
      */
     private static final float MAX_DEATH_STEP = 1f / 30f;
-    private final Texture forestWallTexture;
+    /** Each wilderness biome's own wall and floor art (forest, desert). */
+    private final BiomeSurfaces biomeSurfaces;
     private final Texture doorTexture;
     private final Texture gateTexture;
     private final Texture floorTexture;
-    private final Texture forestFloorTexture;
     /** Leaf ceiling over the surface forest; null if the art is missing, leaving the sky open. */
     private final Texture canopyTexture;
     private final Texture ceilingTexture;
@@ -242,10 +243,10 @@ public class World3DRenderer implements Disposable {
 
     // Under the surface forest's canopy (ForestAtmosphere). Eased so stepping
     // from a trail into a glade opens the fog rather than snapping it.
-    private boolean wasUnderCanopy = false;
-    private float canopyGlade = 0f;
-    private final Color canopyFogColor = new Color();
-    private final Color canopyFogTarget = new Color();
+    private Biome lastWildBiome = null;
+    private float wildOpenness = 0f;
+    private final Color wildFogColor = new Color();
+    private final Color wildFogTarget = new Color();
 
     public World3DRenderer() {
         this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
@@ -267,25 +268,13 @@ public class World3DRenderer implements Disposable {
         this.wallVariantProvider = new WallTextureProvider(this.wallTexture);
         this.wallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
-        if (Gdx.files.internal("images/forest_cliff.png").exists()) {
-            this.forestWallTexture = new Texture(Gdx.files.internal("images/forest_cliff.png"));
-            this.forestWallTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        } else {
-            this.forestWallTexture = this.wallTexture;
-        }
-
         this.doorTexture = new Texture(Gdx.files.internal("images/door.png"));
         this.gateTexture = new Texture(Gdx.files.internal("images/gate.png"));
 
         this.floorTexture = new Texture(Gdx.files.internal("images/floor.png"));
         this.floorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
 
-        if (Gdx.files.internal("images/floor_forest.png").exists()) {
-            this.forestFloorTexture = new Texture(Gdx.files.internal("images/floor_forest.png"));
-            this.forestFloorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        } else {
-            this.forestFloorTexture = this.floorTexture;
-        }
+        this.biomeSurfaces = BiomeSurfaces.load();
 
         if (Gdx.files.internal("images/forest/canopy.png").exists()) {
             this.canopyTexture = new Texture(Gdx.files.internal("images/forest/canopy.png"));
@@ -600,31 +589,41 @@ public class World3DRenderer implements Disposable {
             fogColor.set(biome.getFogColor());
         }
 
-        // The surface forest filters the volcanic light through its canopy: green-black fog
-        // closing to a few tiles on the trails, opening in the glades.
-        boolean underCanopy = currentLevel == 1 && !isIndoors && maze.getBiome() == Biome.FOREST;
+        // The wilderness surface biomes light themselves. The forest filters the volcanic
+        // light through its canopy into green-black fog; the desert takes it at full force
+        // as amber dust. Both close in along their corridors and open across their clearings.
+        Biome mazeBiome = maze.getBiome();
+        Biome wild = (currentLevel == 1 && !isIndoors && (mazeBiome == Biome.FOREST || mazeBiome == Biome.DESERT))
+                ? mazeBiome : null;
+        boolean underCanopy = wild == Biome.FOREST;
+        boolean onSand = wild == Biome.DESERT;
         Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
-        if (underCanopy) {
-            float glade = ForestAtmosphere.gladeFactor(maze,
+        if (wild != null) {
+            float open = OpenGround.openness(maze,
                     (int) player.getPosition().x, (int) player.getPosition().y);
-            ForestAtmosphere.fogColor(
-                    (wm != null) ? wm.getCurrentWeather() : null,
-                    (wm != null) ? wm.getFogColor() : Color.WHITE,
-                    fullSkyTint, canopyFogTarget);
-            if (wasUnderCanopy) {
-                float ease = Math.min(1f, delta * 1.5f);
-                canopyGlade = MathUtils.lerp(canopyGlade, glade, ease);
-                canopyFogColor.lerp(canopyFogTarget, ease);
+            com.bpm.minotaur.weather.WeatherType weather = (wm != null) ? wm.getCurrentWeather() : null;
+            Color weatherFog = (wm != null) ? wm.getFogColor() : Color.WHITE;
+            if (underCanopy) {
+                ForestAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             } else {
-                canopyGlade = glade;
-                canopyFogColor.set(canopyFogTarget);
+                DesertAtmosphere.fogColor(weather, weatherFog, fullSkyTint, wildFogTarget);
             }
+            if (wild == lastWildBiome) {
+                float ease = Math.min(1f, delta * 1.5f);
+                wildOpenness = MathUtils.lerp(wildOpenness, open, ease);
+                wildFogColor.lerp(wildFogTarget, ease);
+            } else {
+                wildOpenness = open;
+                wildFogColor.set(wildFogTarget);
+            }
+            float weatherFogDistance = (wm != null) ? wm.getFogDistance() : Float.MAX_VALUE;
             fogEnabled = true;
-            fogDistance = ForestAtmosphere.fogDistance(canopyGlade,
-                    (wm != null) ? wm.getFogDistance() : Float.MAX_VALUE);
-            fogColor.set(canopyFogColor);
+            fogDistance = underCanopy
+                    ? ForestAtmosphere.fogDistance(wildOpenness, weatherFogDistance)
+                    : DesertAtmosphere.fogDistance(wildOpenness, weatherFogDistance);
+            fogColor.set(wildFogColor);
         }
-        wasUnderCanopy = underCanopy;
+        lastWildBiome = wild;
 
         float bridgeIntegrity = DoomManager.getInstance().getBridgeIntegrity();
         float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
@@ -672,7 +671,7 @@ public class World3DRenderer implements Disposable {
         shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
         float rimStrength = skyOverhead ? 0.35f : 0f;
         if (underCanopy) {
-            rimStrength = ForestAtmosphere.canopyScale(rimStrength, ForestAtmosphere.CANOPY_RIM_SHARE, canopyGlade);
+            rimStrength = ForestAtmosphere.canopyScale(rimStrength, ForestAtmosphere.CANOPY_RIM_SHARE, wildOpenness);
         }
         shader.setUniformf("u_skyRimStrength", rimStrength);
 
@@ -711,9 +710,13 @@ public class World3DRenderer implements Disposable {
             // - Midday storm: ~0.35 - 0.38
             // - Clear midday: ~0.65 - 0.75
             float outdoorAmbientIntensity = MathUtils.clamp(dayAmbient * weatherDim * 0.72f, 0.08f, 0.75f);
+            if (onSand) {
+                // Bleached: the sand throws back far more light than masonry does.
+                outdoorAmbientIntensity *= DesertAtmosphere.BLEACH;
+            }
             if (underCanopy) {
                 outdoorAmbientIntensity = ForestAtmosphere.canopyScale(outdoorAmbientIntensity,
-                        ForestAtmosphere.CANOPY_AMBIENT_SHARE, canopyGlade);
+                        ForestAtmosphere.CANOPY_AMBIENT_SHARE, wildOpenness);
             }
             targetAmbientColor.mul(outdoorAmbientIntensity);
 
@@ -725,9 +728,10 @@ public class World3DRenderer implements Disposable {
                     Color sunColor = dnm.getDirectionalLightColor(scratchColor);
                     // Clouds diffuse sunlight during storm, keeping directional light soft
                     float sunIntensity = MathUtils.clamp(sunElevation, 0.15f, 1.0f) * (wm != null && wm.isStormy() ? 0.18f : 0.50f);
+                    if (onSand) sunIntensity *= DesertAtmosphere.BLEACH;
                     if (underCanopy) {
                         sunIntensity = ForestAtmosphere.canopyScale(sunIntensity,
-                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                                ForestAtmosphere.CANOPY_SUN_SHARE, wildOpenness);
                     }
                     targetDirLightColor.set(sunColor).mul(sunIntensity);
                 } else {
@@ -735,7 +739,7 @@ public class World3DRenderer implements Disposable {
                     float moonIntensity = (wm != null && wm.isStormy() ? 0.06f : 0.18f);
                     if (underCanopy) {
                         moonIntensity = ForestAtmosphere.canopyScale(moonIntensity,
-                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                                ForestAtmosphere.CANOPY_SUN_SHARE, wildOpenness);
                     }
                     targetDirLightColor.set(0.35f, 0.45f, 0.65f, 1.0f).mul(moonIntensity);
                 }
@@ -808,8 +812,7 @@ public class World3DRenderer implements Disposable {
                 isIndoors,
                 wallTexture,
                 floorTexture,
-                forestWallTexture,
-                forestFloorTexture,
+                biomeSurfaces,
                 ceilingTexture,
                 worldManager,
                 wallVariantProvider,
@@ -2309,11 +2312,10 @@ public class World3DRenderer implements Disposable {
         if (floorTextureSet != null) floorTextureSet.dispose();
         if (ceilingTextureSet != null) ceilingTextureSet.dispose();
         wallTexture.dispose();
-        if (forestWallTexture != null && forestWallTexture != wallTexture) forestWallTexture.dispose();
+        biomeSurfaces.dispose();
         doorTexture.dispose();
         gateTexture.dispose();
         floorTexture.dispose();
-        if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
         if (canopyTexture != null) canopyTexture.dispose();
         ceilingTexture.dispose();
 

@@ -19,6 +19,7 @@ import com.bpm.minotaur.gamedata.monster.MonsterDataManager;
 import com.bpm.minotaur.gamedata.spawntables.SpawnTableData;
 import com.bpm.minotaur.managers.SpawnManager;
 import com.bpm.minotaur.rendering.RetroTheme;
+import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 
 import java.util.*;
 
@@ -665,6 +666,10 @@ public class DesertChunkGenerator implements IChunkGenerator {
                         }
                     }
                     bitmaskedData[y][x] = mask;
+                } else {
+                    // Mesa rock is solid. Left at 0 it read as open sand, so the dust
+                    // haze would have treated a wall of rock as an open basin.
+                    bitmaskedData[y][x] = ChunkMeshBuilder.ALL_WALLS;
                 }
             }
         }

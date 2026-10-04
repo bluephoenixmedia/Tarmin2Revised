@@ -1,5 +1,6 @@
 package com.bpm.minotaur.generation;
 
+import com.bpm.minotaur.rendering.OpenGround;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
@@ -622,7 +623,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
     private Scatter pickScatter(Maze maze, int x, int y) {
         int mid = CHUNK_SIZE / 2;
-        float glade = ForestAtmosphere.gladeFactor(maze, x, y);
+        float glade = OpenGround.openness(maze, x, y);
         boolean offMainTrails = Math.abs(x - mid) > MAIN_TRAIL_HALF_WIDTH && Math.abs(y - mid) > MAIN_TRAIL_HALF_WIDTH;
         float roll = backdropRandom.nextFloat();
         if (offMainTrails && glade < GLADE && roll < 0.06f) return GLOWCAP;

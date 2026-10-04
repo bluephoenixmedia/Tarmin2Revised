@@ -2,8 +2,6 @@ package com.bpm.minotaur.rendering;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.bpm.minotaur.gamedata.Maze;
-import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.weather.WeatherType;
 
 /**
@@ -41,11 +39,6 @@ public final class ForestAtmosphere {
     public static final float CANOPY_RIM_SHARE = 0.30f;
     /** How much of the rain's slate-blue overcast reaches the canopy ambient. */
     public static final float CANOPY_OVERCAST_SHARE = 0.40f;
-
-    /** Share of open tiles in the 5x5 window around the player at which a glade starts, and is full. */
-    private static final float GLADE_OPENNESS_START = 0.45f;
-    private static final float GLADE_OPENNESS_FULL = 0.85f;
-    private static final int GLADE_RADIUS = 2;
 
     private ForestAtmosphere() {
     }
@@ -93,35 +86,6 @@ public final class ForestAtmosphere {
     /** Hue of the ambient light under the canopy, before day/night intensity is applied. */
     public static Color ambientHue(Color skyTint, Color out) {
         return applySkyShare(out.set(CANOPY_AMBIENT), skyTint);
-    }
-
-    /**
-     * 0 on a trail or among the trees, 1 in the middle of a glade: the share of
-     * open tiles around (x, y), eased so a trail widening for a tile or two
-     * does not count as a clearing.
-     */
-    public static float gladeFactor(Maze maze, int x, int y) {
-        int open = 0;
-        int total = 0;
-        for (int dy = -GLADE_RADIUS; dy <= GLADE_RADIUS; dy++) {
-            for (int dx = -GLADE_RADIUS; dx <= GLADE_RADIUS; dx++) {
-                total++;
-                if (isOpen(maze, x + dx, y + dy)) open++;
-            }
-        }
-        float openness = open / (float) total;
-        float t = MathUtils.clamp((openness - GLADE_OPENNESS_START)
-                / (GLADE_OPENNESS_FULL - GLADE_OPENNESS_START), 0f, 1f);
-        return t * t * (3f - 2f * t);
-    }
-
-    /**
-     * Ground you could stand on. Maze.isPassable no longer looks at wall data,
-     * so the cliff blocks around a forest chunk would otherwise count as open.
-     */
-    public static boolean isOpen(Maze maze, int x, int y) {
-        return maze.isPassable(x, y)
-                && (maze.getWallDataAt(x, y) & ChunkMeshBuilder.ALL_WALLS) != ChunkMeshBuilder.ALL_WALLS;
     }
 
     /** Scales a value that is {@code share} of itself under a closed canopy and whole in a glade. */

@@ -1,5 +1,6 @@
 package com.bpm.minotaur.rendering.mesh;
 
+import com.bpm.minotaur.rendering.OpenGround;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
@@ -150,8 +151,8 @@ public final class CanopyMeshBuilder {
                 // every one would scatter holes through it, so only real ground opens it.
                 Scenery scenery = maze.getScenery().get(at.set(x, y));
                 boolean bush = scenery != null && scenery.getType() == Scenery.SceneryType.BUSH;
-                cov[y][x] = !bush && ForestAtmosphere.isOpen(maze, x, y)
-                        ? TRAIL_COVERAGE * (1f - ForestAtmosphere.gladeFactor(maze, x, y))
+                cov[y][x] = !bush && OpenGround.isOpen(maze, x, y)
+                        ? TRAIL_COVERAGE * (1f - OpenGround.openness(maze, x, y))
                         : 1f;
             }
         }

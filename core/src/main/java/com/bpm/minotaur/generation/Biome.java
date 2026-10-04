@@ -19,7 +19,9 @@ public enum Biome {
     // pushed the multiplier well past 1.0, washing this out to near-white).
     FOREST(true, true, 8, new Color(0x0a / 255f, 0x18 / 255f, 0x0f / 255f, 1.0f), "images/skybox/skybox_forest.png",
             "images/floor_forest.png", "images/forest_cliff.png"),
-    DESERT(true, true, 20, new Color(0.7f, 0.6f, 0.4f, 1.0f)),
+    // No skybox of its own: the desert lies under the same burning sky as everywhere else.
+    DESERT(true, true, 20, new Color(0.7f, 0.6f, 0.4f, 1.0f), null,
+            "images/floor_desert.png", "images/desert_cliff.png"),
     MOUNTAINS(false, false, 100, null), // Not seamless, impassable
     LAKELANDS(true, true, 15, new Color(0.4f, 0.4f, 0.7f, 1.0f)),
     OCEAN(false, false, 100, null); // Not seamless, impassable
