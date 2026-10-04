@@ -64,4 +64,17 @@ public class DesertAtmosphereTest {
     public void sandIsBrighterThanTheMaze() {
         assertTrue(DesertAtmosphere.BLEACH > 1f);
     }
+
+    @Test
+    public void theAirShimmersOnlyThroughTheHeatOfAClearDay() {
+        assertEquals("before eleven the sand is not hot yet", 0f,
+                DesertAtmosphere.heatShimmer(0.40f, WeatherType.CLEAR), 0.001f);
+        assertEquals("at noon it is at its strongest", 1f,
+                DesertAtmosphere.heatShimmer(0.54f, WeatherType.CLEAR), 0.001f);
+        float rising = DesertAtmosphere.heatShimmer(0.48f, WeatherType.CLEAR);
+        assertTrue("it builds through the late morning: " + rising, rising > 0f && rising < 1f);
+        assertEquals("gone after three", 0f, DesertAtmosphere.heatShimmer(0.66f, WeatherType.CLEAR), 0.001f);
+        assertEquals("rain kills it", 0f, DesertAtmosphere.heatShimmer(0.54f, WeatherType.RAIN), 0.001f);
+        assertEquals("so does a dust storm", 0f, DesertAtmosphere.heatShimmer(0.54f, WeatherType.TORNADO), 0.001f);
+    }
 }

@@ -105,11 +105,25 @@ public class DesertChunkGenerator implements IChunkGenerator {
             "skull_pile", SKULL_PILE,
             "bone_pile", BONES[0]);
 
+    /**
+     * Ground cover: dry scrub and small bones. Render-only, like the forest's:
+     * it never blocks or takes a tile.
+     */
+    private static final Sprite[] GROUND_COVER = {
+            new Sprite("images/desert/scrub_01.png", 0.65f, 0.42f),
+            new Sprite("images/desert/scrub_02.png", 0.65f, 0.42f),
+            new Sprite("images/desert/scrub_01.png", 0.65f, 0.42f),
+            new Sprite("images/desert/bones_01.png", 0.4f, 0.3f),
+            new Sprite("images/desert/bones_rib.png", 0.45f, 0.3f),
+    };
+    /** Share of clear open sand that gets a piece of ground cover. */
+    private static final float SCATTER_SHARE = 0.2f;
+
     /** Every baked desert texture, for the asset preload. */
     public static List<String> textures() {
         List<String> paths = new ArrayList<>(Arrays.asList(CACTUS_TEXTURES));
         paths.addAll(Arrays.asList(ROCK_TEXTURES));
-        for (Sprite[] set : new Sprite[][]{DEAD_TREES, BONES, PALMS, REEDS, BASIN_LANDMARKS}) {
+        for (Sprite[] set : new Sprite[][]{DEAD_TREES, BONES, PALMS, REEDS, BASIN_LANDMARKS, GROUND_COVER}) {
             for (Sprite sp : set) paths.add(sp.path());
         }
         for (Sprite sp : DESERT_PROP_VARIANTS.values()) paths.add(sp.path());
@@ -219,7 +233,10 @@ public class DesertChunkGenerator implements IChunkGenerator {
         // 8. Spawn Chunk Transition Gates at 4 Cardinal Gates
         spawnTransitionGates(maze, this.finalLayout, chunkId);
 
-        // 9. Find valid player start position
+        // 9. Ground cover on what is left of the open sand
+        spawnGroundScatter(maze, assetManager, chunkSeed);
+
+        // 10. Find valid player start position
         findPlayerStart(this.finalLayout);
 
         return maze;
@@ -658,6 +675,35 @@ public class DesertChunkGenerator implements IChunkGenerator {
         sprite.applyTo(s, 1f);
         loadTextureSafely(s, sprite.path(), assetManager);
         maze.addScenery(s);
+    }
+
+    /**
+     * Scrub and small bones on a share of the clear open sand. Draws from its own
+     * random stream, so it leaves every other seeded placement where it was, and
+     * keeps off anything the player should notice.
+     */
+    private void spawnGroundScatter(Maze maze, AssetManager assetManager, long seed) {
+        Random rng = new Random(seed ^ 0x5CA77E2L);
+        GridPoint2 tile = new GridPoint2();
+        for (int y = 0; y < maze.getHeight(); y++) {
+            for (int x = 0; x < maze.getWidth(); x++) {
+                if (!OpenGround.isOpen(maze, x, y)) continue;
+                tile.set(x, y);
+                if (maze.getScenery().containsKey(tile) || maze.getItems().containsKey(tile)
+                        || maze.getLadders().containsKey(tile) || maze.getEventAt(x, y) != null
+                        || maze.getLiquidManager().hasLiquidAt(x, y) || maze.getGateAt(x, y) != null) continue;
+                if (rng.nextFloat() >= SCATTER_SHARE) continue;
+
+                Sprite sprite = GROUND_COVER[rng.nextInt(GROUND_COVER.length)];
+                Scenery s = new Scenery(Scenery.SceneryType.PROP, x, y);
+                s.getPosition().set(x + 0.5f + (rng.nextFloat() - 0.5f) * 0.5f,
+                        y + 0.5f + (rng.nextFloat() - 0.5f) * 0.5f);
+                s.setFlippedX(rng.nextBoolean());
+                sprite.applyTo(s, 0.85f + rng.nextFloat() * 0.3f);
+                loadTextureSafely(s, sprite.path(), assetManager);
+                maze.addBackdropScenery(s);
+            }
+        }
     }
 
     private void placeThemedProp(Maze maze, String propId, int x, int y, AssetManager assetManager) {

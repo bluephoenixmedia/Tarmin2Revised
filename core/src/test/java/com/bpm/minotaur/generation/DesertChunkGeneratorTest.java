@@ -199,4 +199,27 @@ public class DesertChunkGeneratorTest {
             }
         }
     }
+
+    @Test
+    public void groundCoverDecoratesOnlyClearOpenSand() {
+        int scatter = 0;
+        for (long seed = 1; seed <= 15; seed++) {
+            Maze maze = generate(seed);
+            for (Scenery s : maze.getBackdropScenery()) {
+                scatter++;
+                int x = (int) Math.floor(s.getPosition().x);
+                int y = (int) Math.floor(s.getPosition().y);
+                GridPoint2 tile = new GridPoint2(x, y);
+                assertTrue("ground cover at " + tile + " stands on open sand", OpenGround.isOpen(maze, x, y));
+                assertFalse("not on a solid prop's tile", maze.getScenery().containsKey(tile));
+                assertFalse("not in the water", maze.getLiquidManager().hasLiquidAt(x, y));
+                assertFalse("not hiding an item", maze.getItems().containsKey(tile));
+                assertFalse("not hiding a ladder", maze.getLadders().containsKey(tile));
+                assertNull("not hiding an event", maze.getEventAt(x, y));
+                assertTrue("below item height", s.getScale().y <= 0.5f);
+                assertTrue("baked art", s.getTexturePath().startsWith("images/desert/"));
+            }
+        }
+        assertTrue("the sand is scattered with ground cover, found " + scatter, scatter > 15 * 20);
+    }
 }

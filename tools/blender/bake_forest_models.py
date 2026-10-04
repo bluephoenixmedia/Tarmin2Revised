@@ -147,6 +147,8 @@ MODELS = [
     Model("desert_ruin_arch", "sized", (GOBLIN, "FBX/Props/SM_Prop_Ruins_Archway_01.fbx"), {}, GOBLIN_ATLAS, (2.4, 1.6)),
     Model("desert_campfire", "sized", (GOBLIN, "FBX/Props/SM_Prop_Camp_Fire_01.fbx"), {}, GOBLIN_ATLAS, (1.0, 0.7)),
     Model("desert_camp_tent", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Tent_Medium_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.4)),
+    Model("desert_scrub_01", "sized", (GENERIC, "Models/SM_Gen_Env_Bush_02.fbx"), {}, GENERIC_ATLAS, (0.7, 0.45)),
+    Model("desert_scrub_02", "sized", (GOBLIN, "FBX/Environment/SM_Env_Bush_03.fbx"), {}, GOBLIN_ATLAS, (0.7, 0.45)),
 ]
 
 

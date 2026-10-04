@@ -59,6 +59,28 @@ public final class DesertAtmosphere {
         return out.clamp();
     }
 
+    /** Time of day (0 midnight, 0.5 noon) the heat shimmer starts, peaks, starts to fade, and ends: 11:00-15:00. */
+    private static final float SHIMMER_START = 11f / 24f;
+    private static final float SHIMMER_FULL = 12f / 24f;
+    private static final float SHIMMER_FADE = 14f / 24f;
+    private static final float SHIMMER_END = 15f / 24f;
+
+    /**
+     * How strongly the air above the sand shimmers, 0 to 1: building from eleven,
+     * strongest from noon to two, gone by three, and only under a clear sky.
+     */
+    public static float heatShimmer(float timeOfDay, WeatherType weather) {
+        if (weather != null && weather != WeatherType.CLEAR) return 0f;
+        float rise = smoothstep(SHIMMER_START, SHIMMER_FULL, timeOfDay);
+        float fall = 1f - smoothstep(SHIMMER_FADE, SHIMMER_END, timeOfDay);
+        return rise * fall;
+    }
+
+    private static float smoothstep(float edge0, float edge1, float x) {
+        float t = MathUtils.clamp((x - edge0) / (edge1 - edge0), 0f, 1f);
+        return t * t * (3f - 2f * t);
+    }
+
     /**
      * Distance at which the world is fully fogged: the canyon value in a
      * corridor, opening to the basin value as {@code openness} reaches 1.
