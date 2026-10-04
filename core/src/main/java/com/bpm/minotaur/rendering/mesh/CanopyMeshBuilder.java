@@ -3,9 +3,9 @@ package com.bpm.minotaur.rendering.mesh;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ShortArray;
-import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.generation.Biome;
@@ -40,8 +40,7 @@ public final class CanopyMeshBuilder {
      * (not forest, underground, or no texture).
      */
     public static ChunkSubMesh build(Maze maze, Texture canopyTexture, float worldOffsetX, float worldOffsetZ) {
-        if (maze == null || canopyTexture == null
-                || maze.getBiome() != Biome.FOREST || maze.getLevel() != 1) {
+        if (canopyTexture == null || !hasCanopy(maze)) {
             return null;
         }
 
@@ -86,8 +85,26 @@ public final class CanopyMeshBuilder {
         return new ChunkSubMesh(canopyTexture, mesh, indices.size, ChunkSubMesh.Surface.CANOPY);
     }
 
+    /** Only the surface forest has a canopy; underground forest has a rock ceiling. */
+    public static boolean hasCanopy(Maze maze) {
+        return maze != null && maze.getBiome() == Biome.FOREST && maze.getLevel() == 1;
+    }
+
+    /** Tiles under a fully closed canopy, indexed [y][x]; null when the chunk has no canopy. */
+    public static boolean[][] closedTiles(Maze maze) {
+        if (!hasCanopy(maze)) return null;
+        float[][] cov = tileCoverage(maze);
+        boolean[][] closed = new boolean[cov.length][cov[0].length];
+        for (int y = 0; y < cov.length; y++) {
+            for (int x = 0; x < cov[0].length; x++) {
+                closed[y][x] = cov[y][x] >= 1f;
+            }
+        }
+        return closed;
+    }
+
     /** Canopy coverage per tile, indexed [y][x]: 1 is closed, 0 is open sky. */
-    public static float[][] tileCoverage(Maze maze) {
+    static float[][] tileCoverage(Maze maze) {
         int w = maze.getWidth();
         int h = maze.getHeight();
         float[][] cov = new float[h][w];

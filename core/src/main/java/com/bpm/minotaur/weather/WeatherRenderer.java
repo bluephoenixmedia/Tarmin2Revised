@@ -13,7 +13,6 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
-import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 
@@ -891,16 +890,7 @@ public class WeatherRenderer {
     private boolean isUnderClosedCanopy(Maze maze, int x, int y) {
         if (maze != canopyMaze) {
             canopyMaze = maze;
-            closedCanopy = null;
-            if (maze != null && maze.getLevel() == 1 && maze.getBiome() == Biome.FOREST) {
-                float[][] cov = CanopyMeshBuilder.tileCoverage(maze);
-                closedCanopy = new boolean[cov.length][cov[0].length];
-                for (int ty = 0; ty < cov.length; ty++) {
-                    for (int tx = 0; tx < cov[0].length; tx++) {
-                        closedCanopy[ty][tx] = cov[ty][tx] >= 1f;
-                    }
-                }
-            }
+            closedCanopy = CanopyMeshBuilder.closedTiles(maze);
         }
         return closedCanopy != null && y >= 0 && y < closedCanopy.length
                 && x >= 0 && x < closedCanopy[0].length && closedCanopy[y][x];
