@@ -33,6 +33,8 @@ public class Maze {
     private final List<Projectile> projectiles = new ArrayList<>();
     private final Map<GridPoint2, Gate> gates = new HashMap<>();
     private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
+    /** Hidden choice events (data/events.json), kept apart from the statues' encounter triggers. */
+    private final Map<GridPoint2, String> choiceEvents = new HashMap<>();
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
     private final List<Scenery> backdropScenery = new ArrayList<>();
@@ -243,6 +245,22 @@ public class Maze {
 
     public Map<GridPoint2, String> getEventTriggers() {
         return eventTriggers;
+    }
+
+    public void addChoiceEvent(int x, int y, String id) {
+        choiceEvents.put(new GridPoint2(x, y), id);
+    }
+
+    public String getChoiceEventAt(int x, int y) {
+        return choiceEvents.get(new GridPoint2(x, y));
+    }
+
+    public void removeChoiceEvent(int x, int y) {
+        choiceEvents.remove(new GridPoint2(x, y));
+    }
+
+    public Map<GridPoint2, String> getChoiceEvents() {
+        return choiceEvents;
     }
 
     public boolean isVisited(int x, int y) {

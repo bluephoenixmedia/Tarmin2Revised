@@ -14,6 +14,8 @@ public class GameEvent {
         /** A shelter biome portal or a return portal was used. Payload: WorldManager.PortalWarp. */
         BIOME_PORTAL_WARP,
         ENCOUNTER_TRIGGERED,
+        /** The player stepped onto a hidden choice event in the clear. Payload: the event id. */
+        CHOICE_EVENT_TRIGGERED,
         PLAYER_DIED,
         SHOPKEEPER_INTERACTION,
         /** The merchant fired his Void chain laser; payload is the resolved LaserBurst.BurstResult. */

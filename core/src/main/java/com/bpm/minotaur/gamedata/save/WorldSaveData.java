@@ -20,6 +20,8 @@ public class WorldSaveData {
     public String gameMode = "MODERN";
     public int tormentLevel = 0;
     public List<String> activeTormentModifiers = new ArrayList<>();
+    /** Choice events already placed this run, so a reload does not place them again. */
+    public List<String> seenChoiceEvents = new ArrayList<>();
     public String factionMatrix;
     /**
      * True from the moment the player dies until they awaken in the Shelter. A save written in

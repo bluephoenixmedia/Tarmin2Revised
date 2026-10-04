@@ -1046,8 +1046,20 @@ public class MazeChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                // No statue or marker: encounters are found by walking onto them,
-                // with no visual cue that one is there.
+                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
+                String img = (enc != null) ? enc.imagePath : null;
+                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
+                if (img != null && assetManager != null) {
+                    if (Gdx.files != null && Gdx.files.internal(img).exists()) {
+                        if (!assetManager.isLoaded(img)) {
+                            assetManager.load(img, Texture.class);
+                            assetManager.finishLoadingAsset(img);
+                        }
+                        statue.setTexture(assetManager.get(img, Texture.class));
+                    }
+                }
+                maze.addScenery(statue);
+                Gdx.app.log("MazeChunkGenerator", "Added event " + encounterId + " with statue at " + pos.x + "," + pos.y);
                 placed++;
             }
         }

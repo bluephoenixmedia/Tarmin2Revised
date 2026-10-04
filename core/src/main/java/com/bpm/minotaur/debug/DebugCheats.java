@@ -48,6 +48,15 @@ public final class DebugCheats {
         stats.setHydration(PlayerStats.MAX_HYDRATION);
     }
 
+    /**
+     * A choice event that could appear here, ignoring whether this run has placed it already, so
+     * every scene for a biome and depth can be tried. Null when none fits.
+     */
+    public static com.bpm.minotaur.gamedata.events.EventDefinition choiceEventFor(
+            com.bpm.minotaur.gamedata.events.EventCatalog catalog, String biome, int depth, java.util.Random rng) {
+        return catalog.pick(biome, depth, java.util.Collections.emptySet(), rng);
+    }
+
     /** A catalog chest with one of every item type; taking from it never empties it or touches the real stash. */
     public static ShelterChest allItemsChest(Collection<Item.ItemType> types, Function<Item.ItemType, Item> factory) {
         List<Item.ItemType> list = new ArrayList<>(types);

@@ -426,6 +426,17 @@ public class UXScreenCaptureScreen extends BaseScreen {
             setSubScreen(sharedGameScreen, () -> sharedGameScreen.getHud().getEncounterWindow().close());
         }));
 
+        // 25b: Choice Event (data/events.json) -- one with a gate and a check, so both tags show
+        tasks.add(new CaptureTask("25b_choice_event", "Choice Event Window", () -> {
+            com.bpm.minotaur.gamedata.events.EventDefinition def =
+                    com.bpm.minotaur.gamedata.events.EventCatalog.getInstance().get("EVENT_CORAL_ALTAR");
+            sharedGameScreen.getHud().getEventWindow().configure(sharedPlayer, sharedMaze,
+                    sharedGameScreen.getEventManager(), game.getItemDataManager(), game.getMonsterDataManager(),
+                    game.getAssetManager());
+            sharedGameScreen.getHud().getEventWindow().show(def, "LAKELANDS");
+            setSubScreen(sharedGameScreen, () -> sharedGameScreen.getHud().getEventWindow().close());
+        }));
+
         // 26: Bones Awaken Modal
         tasks.add(new CaptureTask("26_bones_awaken", "Hero Remains Bones Awakening Modal", () -> {
             Scenery corpse = new Scenery(Scenery.SceneryType.DECOMPOSING_CORPSE, (int) sharedPlayer.getPosition().x, (int) sharedPlayer.getPosition().y + 1);

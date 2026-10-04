@@ -43,6 +43,15 @@ public class DebugToolsTest {
     }
 
     @Test
+    public void theChoiceEventKeyPicksAnEventThatFitsThePlace() {
+        com.bpm.minotaur.gamedata.events.EventCatalog catalog = com.bpm.minotaur.gamedata.events.EventCatalog.fromJson(
+                "{ \"events\": [ { \"id\": \"DEEP\", \"biomes\": [\"MAZE\"], \"minDepth\": 4 } ] }");
+        assertEquals("DEEP", DebugCheats.choiceEventFor(catalog, "MAZE", 5, new java.util.Random(1)).id);
+        assertNull(DebugCheats.choiceEventFor(catalog, "MAZE", 1, new java.util.Random(1)));
+        assertNull(DebugCheats.choiceEventFor(catalog, "FOREST", 5, new java.util.Random(1)));
+    }
+
+    @Test
     public void theLegendSaysWhetherDebugModeIsOn() {
         assertTrue(DebugKeys.legend(true).get(0).contains("ON"));
         assertTrue(DebugKeys.legend(false).get(0).contains("OFF"));

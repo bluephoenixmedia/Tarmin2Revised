@@ -733,8 +733,13 @@ public class ForestChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                // No statue or marker: encounters are found by walking onto them,
-                // with no visual cue that one is there.
+                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
+                String img = (enc != null) ? enc.imagePath : null;
+                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
+                if (img != null) {
+                    loadTextureSafely(statue, img, assetManager);
+                }
+                maze.addScenery(statue);
                 placed++;
             }
         }

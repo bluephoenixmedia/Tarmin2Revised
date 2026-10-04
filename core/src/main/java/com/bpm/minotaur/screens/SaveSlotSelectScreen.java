@@ -405,6 +405,11 @@ public class SaveSlotSelectScreen extends BaseScreen {
         }
 
         GameScreen gameScreen = new GameScreen(game, level, com.bpm.minotaur.gamedata.Difficulty.EASY, mode);
+        // Before setScreen: show() may generate the first chunk, and its event pick must see
+        // which choice events this run has already placed.
+        if (worldData != null && gameScreen.getWorldManager() != null) {
+            gameScreen.getWorldManager().setSeenChoiceEvents(worldData.seenChoiceEvents);
+        }
         game.setScreen(gameScreen);
 
         if (worldData != null && gameScreen.getWorldManager() != null) {

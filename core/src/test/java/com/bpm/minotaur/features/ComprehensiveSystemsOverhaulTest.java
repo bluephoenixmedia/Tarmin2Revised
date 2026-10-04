@@ -121,19 +121,23 @@ public class ComprehensiveSystemsOverhaulTest {
     // ── Component 2: Statue Encounters ──────────────────────────────────────
 
     @Test
-    public void testAllFifteenStatueEncountersLoadWithValidChoices() {
+    public void testAllThirteenStatueEncountersLoadWithValidChoices() {
         EncounterManager manager = new EncounterManager();
         manager.load();
 
+        // The Weeping Statue and the Broken Mirror predate the statues and moved to the choice
+        // events in data/events.json; see docs/DEsign/events.md.
         String[] expectedIds = {
-                "EVENT_WEEPING_STATUE", "EVENT_BROKEN_MIRROR", "EVENT_DRAGON_STATUE",
+                "EVENT_DRAGON_STATUE",
                 "EVENT_TARMIN_STATUE", "EVENT_SKELETON_STATUE", "EVENT_DWARF_STATUE",
                 "EVENT_GHOST_STATUE", "EVENT_GHOUL_STATUE", "EVENT_SNAKE_STATUE",
                 "EVENT_GIANT_STATUE",
                 "EVENT_ANT_STATUE", "EVENT_CROC_STATUE", "EVENT_SCORPION_STATUE",
                 "EVENT_WRAITH_STATUE", "EVENT_OLD_DWARF_STATUE"
         };
-        assertEquals(15, expectedIds.length);
+        assertEquals(13, expectedIds.length);
+        assertNull("moved to the choice events", manager.getEncounter("EVENT_BROKEN_MIRROR"));
+        assertNull("moved to the choice events", manager.getEncounter("EVENT_WEEPING_STATUE"));
 
         for (String id : expectedIds) {
             Encounter enc = manager.getEncounter(id);
