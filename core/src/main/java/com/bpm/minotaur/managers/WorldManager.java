@@ -68,6 +68,9 @@ public class WorldManager {
     private final SoundManager soundManager;
 
     private final Map<Integer, RetroTheme.Theme> levelThemes = new HashMap<>();
+
+    /** Choice events already placed this run, so none is placed twice. Cleared with the world. */
+    private final java.util.Set<String> seenChoiceEvents = new java.util.LinkedHashSet<>();
     private RetroTheme.Theme currentLevelTheme = RetroTheme.STANDARD_THEME;
 
     private final BiomeManager biomeManager;
@@ -355,6 +358,7 @@ public class WorldManager {
         this.currentLevel = 1;
         this.currentLevelTheme = getThemeForLevel(1);
         this.pendingUpLadderPos = null;
+        seenChoiceEvents.clear();
 
         // 3. Delete Chunk Save Files (Keep Discovery, Keep Player meta if stored
         // separately)
@@ -549,6 +553,13 @@ public class WorldManager {
             com.bpm.minotaur.generation.theme.ChunkThemeDecorator.decorate(
                     newMaze, theme, chunkSeed, this.dataManager, this.itemDataManager, this.assetManager);
         }
+
+        // Hidden choice events (data/events.json). Statues are placed by the generators and are
+        // a separate feature; see docs/DEsign/events.md.
+        boolean isShelterChunk = (currentLevel == 1 && chunkId.x == 0 && chunkId.y == 0);
+        com.bpm.minotaur.gamedata.events.EventPlacer.place(newMaze, biome.name(), currentLevel, isShelterChunk,
+                com.bpm.minotaur.gamedata.events.EventCatalog.getInstance(), seenChoiceEvents,
+                new java.util.Random(chunkSeed ^ 0x5EED_E7E7L));
 
         // Stamp target chunk themes on boundary gates so glowing runes reveal the theme ahead
         for (Gate gate : newMaze.getGates().values()) {
@@ -900,6 +911,7 @@ public class WorldManager {
     public void wipeExploredWorldOnDeath() {
         loadedChunks.clear();
         levelThemes.clear();
+        seenChoiceEvents.clear();
         FileHandle dir = Gdx.files.local(getChunkSaveDir());
         if (dir.exists()) {
             for (FileHandle f : dir.list()) {
@@ -1115,6 +1127,18 @@ public class WorldManager {
 
     public FactionMatrix getFactionMatrix() {
         return factionMatrix;
+    }
+
+    /** Choice events placed so far this run; saved with the world. */
+    public java.util.Set<String> getSeenChoiceEvents() {
+        return seenChoiceEvents;
+    }
+
+    public void setSeenChoiceEvents(java.util.Collection<String> ids) {
+        seenChoiceEvents.clear();
+        if (ids != null) {
+            seenChoiceEvents.addAll(ids);
+        }
     }
 
     public void setFactionMatrix(FactionMatrix factionMatrix) {

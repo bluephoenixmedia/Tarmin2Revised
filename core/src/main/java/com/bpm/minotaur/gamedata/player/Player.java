@@ -2948,6 +2948,14 @@ public class Player {
             eventManager.addEvent(new GameEvent(
                     "An ancient carved monument. The residual magic has gone dormant.", 2.5f));
         }
+
+        // Hidden choice event: fires only in the clear, otherwise stays armed for the next step.
+        String choiceEventId = maze.getChoiceEventAt(nextX, nextY);
+        if (choiceEventId != null
+                && com.bpm.minotaur.gamedata.events.EventTriggerRule.isClear(maze, nextX, nextY)) {
+            eventManager.addEvent(new GameEvent(GameEvent.EventType.CHOICE_EVENT_TRIGGERED, choiceEventId));
+            maze.removeChoiceEvent(nextX, nextY);
+        }
     }
 
     public void turnLeft() {

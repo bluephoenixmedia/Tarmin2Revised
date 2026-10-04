@@ -40,6 +40,8 @@ public class ChunkData {
     public List<LadderData> ladders = new ArrayList<>();
     public List<SceneryData> scenery = new ArrayList<>();
     public List<EventData> events = new ArrayList<>();
+    /** Hidden choice events; absent on saves written before they existed. */
+    public List<EventData> choiceEvents = new ArrayList<>();
     public List<DecalData> surfaceDecals = new ArrayList<>();
     public List<WallDecalData> wallDecals = new ArrayList<>();
     public List<GibData> gibs = new ArrayList<>();
@@ -116,6 +118,10 @@ public class ChunkData {
 
         for (Map.Entry<GridPoint2, String> entry : maze.getEventTriggers().entrySet()) {
             this.events.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
+        }
+
+        for (Map.Entry<GridPoint2, String> entry : maze.getChoiceEvents().entrySet()) {
+            this.choiceEvents.add(new EventData(entry.getKey().x, entry.getKey().y, entry.getValue()));
         }
 
         if (maze.getScenery() != null) {
@@ -317,6 +323,12 @@ public class ChunkData {
         if (this.events != null) {
             for (EventData data : events) {
                 maze.addEvent(data.x, data.y, data.eventId);
+            }
+        }
+
+        if (this.choiceEvents != null) {
+            for (EventData data : choiceEvents) {
+                maze.addChoiceEvent(data.x, data.y, data.eventId);
             }
         }
 
