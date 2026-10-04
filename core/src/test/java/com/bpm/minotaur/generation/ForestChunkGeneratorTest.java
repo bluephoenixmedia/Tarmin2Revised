@@ -3,6 +3,7 @@ package com.bpm.minotaur.generation;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.bpm.minotaur.gamedata.*;
 import com.bpm.minotaur.rendering.RetroTheme;
 import org.junit.Before;
@@ -251,8 +252,13 @@ public class ForestChunkGeneratorTest {
 
         int pines = 0;
         int trees = 0;
+        int unseen = 0;
         for (Scenery s : maze.getScenery().values()) {
             if (s.getType() != Scenery.SceneryType.TREE) continue;
+            if (s.getTexturePath() == null) {
+                unseen++;
+                continue;
+            }
             trees++;
             assertTrue("unbaked tree sprite " + s.getTexturePath(), baked.contains(s.getTexturePath()));
             if (s.getTexturePath().contains("tree_pine_")) pines++;
@@ -260,6 +266,7 @@ public class ForestChunkGeneratorTest {
                     648f / 864f, s.getScale().x / s.getScale().y, 0.001f);
         }
         assertTrue("an alpine forest is mostly pine, was " + pines + "/" + trees, pines > trees * 0.8f);
+        assertTrue("trees deep in the stand are not drawn, found " + unseen, unseen > 0);
     }
 
     @Test
@@ -282,5 +289,27 @@ public class ForestChunkGeneratorTest {
             assertEquals(Scenery.SceneryType.TREE, owner.getType());
             assertTrue("backdrop trunks sit behind the tree in front", s.getScale().y < owner.getScale().y + 0.01f);
         }
+    }
+
+    @Test
+    public void thickerTrailEdgesCostNoMoreDrawsPerFrameThanTheOldForest() {
+        Maze maze = generateTestChunk(42L);
+        // The old forest drew a sprite for every tree tile, every frame. Now trees
+        // deep in the stand are not drawn and the renderer skips trees past
+        // FOREST_TREE_RANGE, so standing in the central glade costs no more.
+        Vector2 glade = new Vector2(18.5f, 18.5f);
+        float range = com.bpm.minotaur.rendering.World3DRenderer.FOREST_TREE_RANGE;
+        int treeTiles = 0;
+        int sprites = 0;
+        for (Scenery s : maze.getScenery().values()) {
+            if (s.getType() != Scenery.SceneryType.TREE) continue;
+            treeTiles++;
+            if (s.getTexturePath() != null && s.getPosition().dst(glade) <= range) sprites++;
+        }
+        for (Scenery s : maze.getBackdropScenery()) {
+            if (s.getPosition().dst(glade) <= range) sprites++;
+        }
+        assertTrue("glade draws " + sprites + " tree sprites; the old forest drew " + treeTiles,
+                sprites <= treeTiles);
     }
 }

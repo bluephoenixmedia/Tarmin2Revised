@@ -200,8 +200,8 @@ public class World3DRenderer implements Disposable {
      */
     private static final float OBSCURED_FOG_DISTANCE = 2.2f;
     private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
-    /** Tiles beyond which backdrop scenery is skipped: past the widest glade fog. */
-    private static final float BACKDROP_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 4f;
+    /** Tiles beyond which forest trees are skipped: just past the widest glade fog. */
+    public static final float FOREST_TREE_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 2f;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -1647,6 +1647,10 @@ public class World3DRenderer implements Disposable {
      */
     private float mimicIdlePhase = 0f;
 
+    private static boolean beyondTreeRange(Scenery tree, Player player) {
+        return tree.getPosition().dst2(player.getPosition()) > FOREST_TREE_RANGE * FOREST_TREE_RANGE;
+    }
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
         mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
@@ -1660,12 +1664,14 @@ public class World3DRenderer implements Disposable {
             }
         }
         entities.addAll(maze.getLadders().values());
-        entities.addAll(maze.getScenery().values());
-        // Backdrop trunks past the canopy fog are invisible, so they are not worth a draw.
+        // Forest trees past the canopy fog are invisible, so they are not worth a draw.
+        boolean cullTrees = maze.getBiome() == Biome.FOREST && maze.getLevel() == 1;
+        for (Scenery sc : maze.getScenery().values()) {
+            if (cullTrees && sc.getType() == Scenery.SceneryType.TREE && beyondTreeRange(sc, player)) continue;
+            entities.add(sc);
+        }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            if (backdrop.getPosition().dst2(player.getPosition()) < BACKDROP_RANGE * BACKDROP_RANGE) {
-                entities.add(backdrop);
-            }
+            if (!beyondTreeRange(backdrop, player)) entities.add(backdrop);
         }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
             entities.add(maze.getShopkeeper());
