@@ -27,6 +27,9 @@ public class ForestChunkGenerator implements IChunkGenerator {
     public static final int CHUNK_SIZE = 36;
 
     private final Random random = new Random();
+    // Backdrop trunks draw from their own stream so adding them leaves every
+    // other placement in a seeded chunk exactly where it was.
+    private final Random backdropRandom = new Random();
     private String[] finalLayout;
     private final GridPoint2 playerSpawnPoint = new GridPoint2(18, 18);
     private GridPoint2 forcedUpLadderPos = null;
@@ -50,6 +53,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
     /** Width over height of every baked tree sprite's canvas, so billboards never stretch. */
     private static final float TREE_ASPECT = 648f / 864f;
+    /** Three canopy heights: the trunks rise into the canopy and their crowns are lost above it. */
+    private static final float TREE_HEIGHT = 9.0f;
 
     private static final String[] BOULDER_TEXTURES = {
             "images/forest/rock_boulder_01.png",
@@ -79,6 +84,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
                               int playerLuck) {
 
         random.setSeed(chunkSeed);
+        backdropRandom.setSeed(chunkSeed ^ 0x7EE5L);
 
         // 1. Generate 36x36 procedural organic wilderness layout
         createProceduralForestLayout(CHUNK_SIZE, CHUNK_SIZE);
@@ -827,11 +833,15 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
                         // Organic scale jitter
                         float jitter = 0.92f + random.nextFloat() * 0.22f;
-                        float treeHeight = 4.0f * jitter;
+                        float treeHeight = TREE_HEIGHT * jitter;
                         s.scale.set(treeHeight * TREE_ASPECT, treeHeight);
 
                         loadTextureSafely(s, path, assetManager);
                         maze.addScenery(s);
+
+                        if (bordersOpenGround(layout, x, layoutY)) {
+                            addBackdropTrunks(maze, layout, x, y, layoutY, treeHeight, assetManager);
+                        }
                         break;
                     }
                     case 'R': {
@@ -910,6 +920,58 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
     private boolean isMaze(int x, int y) {
         return Math.max(Math.abs(x), Math.abs(y)) <= WorldConstants.CENTRAL_MAZE_RADIUS;
+    }
+
+    private boolean bordersOpenGround(String[] layout, int x, int layoutY) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int lx = x + dx;
+                int ly = layoutY + dy;
+                if (ly < 0 || ly >= layout.length || lx < 0 || lx >= layout[ly].length()) continue;
+                if (isTraversable(layout[ly].charAt(lx))) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * One or two shorter trunks behind the tree that edges a trail, so the
+     * trail is walled by a stand of trees rather than a row of single
+     * billboards with open field between them. They lean away from the open
+     * ground and stay inside the tree's own tile.
+     */
+    private void addBackdropTrunks(Maze maze, String[] layout, int x, int y, int layoutY,
+                                   float frontHeight, AssetManager assetManager) {
+        // Direction of the open ground, in maze coordinates (layout rows run top-down).
+        float openX = 0f;
+        float openY = 0f;
+        if (x > 0 && isTraversable(layout[layoutY].charAt(x - 1))) openX -= 1f;
+        if (x + 1 < layout[layoutY].length() && isTraversable(layout[layoutY].charAt(x + 1))) openX += 1f;
+        if (layoutY + 1 < layout.length && isTraversable(layout[layoutY + 1].charAt(x))) openY -= 1f;
+        if (layoutY > 0 && isTraversable(layout[layoutY - 1].charAt(x))) openY += 1f;
+        float len = (float) Math.sqrt(openX * openX + openY * openY);
+        if (len > 0f) {
+            openX /= len;
+            openY /= len;
+        }
+
+        int count = 1 + backdropRandom.nextInt(2);
+        for (int i = 0; i < count; i++) {
+            float px = x + 0.5f - openX * 0.25f + (backdropRandom.nextFloat() - 0.5f) * 0.4f;
+            float py = y + 0.5f - openY * 0.25f + (backdropRandom.nextFloat() - 0.5f) * 0.4f;
+            Scenery trunk = new Scenery(Scenery.SceneryType.TREE, x, y);
+            trunk.getPosition().set(
+                    Math.max(x + 0.05f, Math.min(x + 0.95f, px)),
+                    Math.max(y + 0.05f, Math.min(y + 0.95f, py)));
+            trunk.setFlippedX(backdropRandom.nextBoolean());
+            String path = backdropRandom.nextFloat() < 0.85f
+                    ? PINE_TEXTURES[backdropRandom.nextInt(PINE_TEXTURES.length)]
+                    : DEAD_TREE_TEXTURES[backdropRandom.nextInt(DEAD_TREE_TEXTURES.length)];
+            float height = frontHeight * (0.65f + backdropRandom.nextFloat() * 0.25f);
+            trunk.scale.set(height * TREE_ASPECT, height);
+            loadTextureSafely(trunk, path, assetManager);
+            maze.addBackdropScenery(trunk);
+        }
     }
 
     private boolean isWall(char c) {

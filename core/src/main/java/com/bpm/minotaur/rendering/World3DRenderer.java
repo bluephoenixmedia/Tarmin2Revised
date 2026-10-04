@@ -200,6 +200,8 @@ public class World3DRenderer implements Disposable {
      */
     private static final float OBSCURED_FOG_DISTANCE = 2.2f;
     private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
+    /** Tiles beyond which backdrop scenery is skipped: past the widest glade fog. */
+    private static final float BACKDROP_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 4f;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -1659,6 +1661,12 @@ public class World3DRenderer implements Disposable {
         }
         entities.addAll(maze.getLadders().values());
         entities.addAll(maze.getScenery().values());
+        // Backdrop trunks past the canopy fog are invisible, so they are not worth a draw.
+        for (Scenery backdrop : maze.getBackdropScenery()) {
+            if (backdrop.getPosition().dst2(player.getPosition()) < BACKDROP_RANGE * BACKDROP_RANGE) {
+                entities.add(backdrop);
+            }
+        }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
             entities.add(maze.getShopkeeper());
         }

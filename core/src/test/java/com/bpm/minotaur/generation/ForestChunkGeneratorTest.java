@@ -261,4 +261,26 @@ public class ForestChunkGeneratorTest {
         }
         assertTrue("an alpine forest is mostly pine, was " + pines + "/" + trees, pines > trees * 0.8f);
     }
+
+    @Test
+    public void treesLoomAndTrailEdgesThickenWithBackdropTrunks() {
+        Maze maze = generateTestChunk(42L);
+
+        for (Scenery s : maze.getScenery().values()) {
+            if (s.getType() == Scenery.SceneryType.TREE) {
+                assertTrue("trees rise into the canopy, was " + s.getScale().y, s.getScale().y >= 7.5f);
+            }
+        }
+
+        List<Scenery> backdrop = maze.getBackdropScenery();
+        assertTrue("trail edges get extra trunks, found " + backdrop.size(), backdrop.size() > 100);
+        for (Scenery s : backdrop) {
+            int tx = (int) Math.floor(s.getPosition().x);
+            int ty = (int) Math.floor(s.getPosition().y);
+            Scenery owner = maze.getScenery().get(new GridPoint2(tx, ty));
+            assertNotNull("backdrop trunk at " + s.getPosition() + " must stand in a tree tile", owner);
+            assertEquals(Scenery.SceneryType.TREE, owner.getType());
+            assertTrue("backdrop trunks sit behind the tree in front", s.getScale().y < owner.getScale().y + 0.01f);
+        }
+    }
 }
