@@ -49,6 +49,8 @@ UMBER = [(22, 17, 13), (36, 27, 19), (52, 39, 26), (70, 53, 34)]
 CAP = [(40, 16, 14), (72, 28, 22), (104, 46, 34), (150, 110, 84)]
 PETAL = [(60, 58, 52), (96, 92, 80), (140, 132, 112), (176, 168, 140)]
 TEAL = [(14, 38, 40), (24, 70, 70), (50, 120, 112), (120, 200, 180)]
+CACTUS = [(20, 38, 22), (34, 62, 32), (56, 92, 42), (88, 126, 58)]
+SANDSTONE = [(64, 26, 16), (112, 50, 28), (160, 82, 44), (206, 132, 78)]
 EMBER_RIM = (112, 44, 26)
 
 # Sprite name prefix -> (palette for green pixels, palette for the rest). The first
@@ -69,12 +71,15 @@ GROUPS = {
     "scatter_moss": (MOSS, STONE),
     "scatter_branch": (MOSS, BARK),
     "scatter_": (NEEDLES, BARK),
+    "desert_cactus_": (CACTUS, SANDSTONE),
+    "desert_rock_": (SANDSTONE, SANDSTONE),
 }
 
 # Where a sprite is written, by name prefix: landmark_<id> is the forest's own
 # variant of the shared prop <id>, so it lives apart from the other themes' art.
 OUTPUT_BY_PREFIX = {
     "landmark_": os.path.join(OUT_DIR, "props"),
+    "desert_": os.path.join(IMG_DIR, "desert"),
 }
 
 # Where each material's tone boundaries fall, as luminance percentiles.

@@ -37,8 +37,15 @@ public class DesertChunkGenerator implements IChunkGenerator {
     private final GridPoint2 playerSpawnPoint = new GridPoint2(18, 18);
     private GridPoint2 forcedUpLadderPos = null;
 
-    private static final String CACTUS_TEXTURE = "images/cactus.png";
-    private static final String ROCK_TEXTURE = "images/sandstone_rock.png";
+    /**
+     * Baked by tools/blender/bake_forest_models.py: path, billboard width and height.
+     * Each was rendered onto a canvas of this aspect, so it never stretches.
+     */
+    private static final String[] CACTUS_TEXTURES = {
+            "images/desert/cactus_tall.png", "images/desert/cactus_large.png", "images/desert/cactus_short.png"
+    };
+    private static final float[][] CACTUS_SIZES = {{0.9f, 2.4f}, {1.4f, 2.2f}, {0.9f, 1.2f}};
+    private static final String ROCK_TEXTURE = "images/desert/rock_01.png";
     private static final String DEAD_TREE_TEXTURE = "images/forest/tree_dead_01.png";
     private static final String BONE_PILE_TEXTURE = "images/props/bone_pile.png";
     private static final String SKULL_PILE_TEXTURE = "images/props/skull_pile.png";
@@ -588,8 +595,9 @@ public class DesertChunkGenerator implements IChunkGenerator {
                         Scenery s = new Scenery(Scenery.SceneryType.CACTUS, x, y);
                         s.setFlippedX(random.nextBoolean());
                         float jitter = 0.90f + random.nextFloat() * 0.25f;
-                        s.scale.set(1.5f * jitter, 2.5f * jitter);
-                        loadTextureSafely(s, CACTUS_TEXTURE, assetManager);
+                        int kind = random.nextInt(CACTUS_TEXTURES.length);
+                        s.scale.set(CACTUS_SIZES[kind][0] * jitter, CACTUS_SIZES[kind][1] * jitter);
+                        loadTextureSafely(s, CACTUS_TEXTURES[kind], assetManager);
                         maze.addScenery(s);
                         break;
                     }

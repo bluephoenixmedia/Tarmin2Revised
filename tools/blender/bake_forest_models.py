@@ -65,6 +65,7 @@ ADVENTURE = "POLYGON_Adventure_Pack_SourceFiles_v6"
 ALPINE_ATLAS = (ALPINE, "Textures/PolygonNatureBiomesS2_Alpine_Texture_01.png")
 ADVENTURE_ATLAS = (ADVENTURE, "Textures/PolyAdventureTexture_01.png")
 ALPINE_BUSH = (ALPINE, "Textures/Alpine_Bush_02.tga")
+KENNEY_NATURE = "Kenney Game Assets 1 version 42/3D assets/Nature Kit/Models/glTF format"
 GOBLIN = "POLYGON_Goblin_War_Camp_SourceFiles_v3"
 VIKING = "POLYGON_Viking_Realm_SourceFiles_v3/SourceFiles"
 GOBLIN_ATLAS = (GOBLIN, "Textures/Alts/PolygonGoblinWarCamp_Texture_01_A.png")
@@ -115,6 +116,13 @@ MODELS = [
     Model("scatter_branch_02", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_02.fbx"), {}, ALPINE_ATLAS, (0.8, 0.3)),
     Model("scatter_mushroom", "sized", (ADVENTURE, "FBX/SM_Env_Mushroom_01.fbx"), {}, ADVENTURE_ATLAS, (0.4, 0.4)),
     Model("scatter_glowcap", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.6, 0.5)),
+
+    # Desert: written to images/desert/. Kenney's cacti carry flat material colours; the
+    # boulder is the forest's rock model, recoloured into sandstone by the stylize pass.
+    Model("desert_cactus_tall", "sized", (KENNEY_NATURE, "cactus_tall.gltf"), None, None, (0.9, 2.4)),
+    Model("desert_cactus_large", "sized", (KENNEY_NATURE, "cactus_large.gltf"), None, None, (1.4, 2.2)),
+    Model("desert_cactus_short", "sized", (KENNEY_NATURE, "cactus_short.gltf"), None, None, (0.9, 1.2)),
+    Model("desert_rock_01", "sized", ("models", "forest_other/rock2.glb"), None, None, (1.2, 1.0)),
 ]
 
 
