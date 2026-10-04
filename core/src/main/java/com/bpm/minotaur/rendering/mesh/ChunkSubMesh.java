@@ -20,7 +20,7 @@ public class ChunkSubMesh implements Disposable {
      * texture for a ceiling. With six variants per palette that would have been
      * every wall but one.
      */
-    public enum Surface { WALL, FLOOR, CEILING }
+    public enum Surface { WALL, FLOOR, CEILING, CANOPY }
 
     private final Texture texture;
     private final Mesh mesh;

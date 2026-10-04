@@ -1315,86 +1315,88 @@ public class EntityRenderer {
     private void drawAsciiSprite(ShapeRenderer shapeRenderer, Renderable entity, String[] spriteData, int screenX,
             float transformY, Camera camera, Viewport viewport, float[] depthBuffer, int spriteWidth, int spriteHeight,
             float drawY) {
-        int drawStartX = Math.max(0, screenX - spriteWidth / 2);
+        if (transformY <= 0 || spriteWidth <= 0 || spriteHeight <= 0) return;
+        int left = screenX - spriteWidth / 2;
+        // Column 0 was never drawn; keep it that way.
+        int drawStartX = Math.max(1, left);
         int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
+        int screenHeight = viewport.getScreenHeight();
         boolean isModifiedItem = (entity instanceof Item && ((Item) entity).isModified());
 
-        // Pass 1: Draw Glow (if modified)
-        if (isModifiedItem) {
-            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-                if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth()
-                        && transformY < depthBuffer[stripe]) {
-                    int texX = (int) (((double) (stripe - (screenX - spriteWidth / 2)) / spriteWidth) * 24.0);
-                    for (int y = 0; y < spriteHeight; y++) {
-                        int screenY = (int) drawY + y;
-                        if (screenY < 0 || screenY >= viewport.getScreenHeight())
-                            continue;
-                        int texY = 23 - (int) (((double) y / spriteHeight) * 24.0);
-                        if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24 && texY < spriteData.length
-                                && texX < spriteData[texY].length()) {
-                            char pixelChar = spriteData[texY].charAt(texX);
-                            if (pixelChar != '.') {
-                                shapeRenderer.setColor(GLOW_COLOR_RETRO);
-                                shapeRenderer.rect(stripe - 1, screenY, 1, 1);
-                                shapeRenderer.rect(stripe + 1, screenY, 1, 1);
-                                shapeRenderer.rect(stripe, screenY - 1, 1, 1);
-                                shapeRenderer.rect(stripe, screenY + 1, 1, 1);
-                            }
-                        }
-                    }
-                }
-            }
+        // Lighting depends only on where the entity stands, so work it out once, not per pixel.
+        Color dynamicLight = new Color(1f, 1f, 1f, 1f);
+        LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
+        boolean isShelter = currentMaze != null && currentMaze.isHomeTile((int) entity.getPosition().x, (int) entity.getPosition().y);
+        boolean isIndoors = currentMaze != null && currentMaze.isIndoors((int) entity.getPosition().x, (int) entity.getPosition().y);
+        float baseAmbient = isShelter ? 0.35f : (isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
+        Color ambientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
+        if (lm != null) {
+            lm.calculateLightAt(entity.getPosition().x, entity.getPosition().y, currentMaze, dynamicLight, baseAmbient, ambientColor);
         }
+        float maxBright = Math.max(dynamicLight.r, Math.max(dynamicLight.g, dynamicLight.b));
+        boolean inPitchDarkness = entity instanceof Monster && maxBright < 0.12f;
 
-        // Pass 2: Draw Actual Pixels
-        for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-            if (transformY > 0 && stripe > 0 && stripe < viewport.getScreenWidth()
-                    && transformY < depthBuffer[stripe]) {
-                int texX = (int) (((double) (stripe - (screenX - spriteWidth / 2)) / spriteWidth) * 24.0);
-                for (int y = 0; y < spriteHeight; y++) {
-                    int screenY = (int) drawY + y;
-                    if (screenY < 0 || screenY >= viewport.getScreenHeight())
-                        continue;
-                    int texY = 23 - (int) (((double) y / spriteHeight) * 24.0);
-                    if (texX >= 0 && texX < 24 && texY >= 0 && texY < 24 && texY < spriteData.length
-                            && texX < spriteData[texY].length()) {
-                        char pixelChar = spriteData[texY].charAt(texX);
-                        if (pixelChar != '.') {
-                            Color dynamicLight = new Color(1f, 1f, 1f, 1f);
-                            LightingManager lm = (currentWorldManager != null) ? currentWorldManager.getLightingManager() : null;
-                            boolean isShelter = currentMaze != null && currentMaze.isHomeTile((int) entity.getPosition().x, (int) entity.getPosition().y);
-                            boolean isIndoors = currentMaze != null && currentMaze.isIndoors((int) entity.getPosition().x, (int) entity.getPosition().y);
-                            float baseAmbient = isShelter ? 0.35f : (isIndoors ? 0.04f : ((currentWorldManager != null && currentWorldManager.getDayNightManager() != null) ? currentWorldManager.getDayNightManager().getAmbientLight() : 0.4f));
-                            Color ambientColor = isShelter ? LightingManager.COLOR_SHELTER_AMBIENT : LightingManager.COLOR_COLD_VOID;
-                            if (lm != null) {
-                                lm.calculateLightAt(entity.getPosition().x, entity.getPosition().y, currentMaze, dynamicLight, baseAmbient, ambientColor);
-                            }
-                            float maxBright = Math.max(dynamicLight.r, Math.max(dynamicLight.g, dynamicLight.b));
-                            boolean isMonster = entity instanceof Monster;
-                            boolean inPitchDarkness = isMonster && maxBright < 0.12f;
-
-                            if (inPitchDarkness) {
-                                boolean isEyePixel = (texY >= 5 && texY <= 8 && (texX == 9 || texX == 10 || texX == 13 || texX == 14 || pixelChar == 'R' || pixelChar == 'Y' || pixelChar == 'G' || pixelChar == 'W'));
-                                if (isEyePixel) {
-                                    shapeRenderer.setColor(getMonsterEyeColor((Monster) entity));
-                                } else {
-                                    shapeRenderer.setColor(0.04f, 0.04f, 0.06f, 1f);
-                                }
-                            } else {
-                                Color pixelColor = getPixelColor(pixelChar, entity.getColor());
-                                dynamicLightScratch.set(
-                                        pixelColor.r * dynamicLight.r,
-                                        pixelColor.g * dynamicLight.g,
-                                        pixelColor.b * dynamicLight.b,
-                                        1f
-                                );
-                                shapeRenderer.setColor(dynamicLightScratch);
-                            }
-                            shapeRenderer.rect(stripe, screenY, 1, 1);
+        // A modified item's halo goes down under every cell first, so no cell's halo
+        // paints over a neighbour's pixels.
+        if (isModifiedItem) {
+            drawAsciiCells(spriteData, left, drawStartX, drawEndX, screenHeight, spriteWidth, spriteHeight, drawY,
+                    transformY, depthBuffer, (from, to, y0, y1, texY, column, pixelChar) -> {
+                        shapeRenderer.setColor(GLOW_COLOR_RETRO);
+                        shapeRenderer.rect(from - 1, y0, to - from + 2, y1 - y0);
+                        shapeRenderer.rect(from, y0 - 1, to - from, y1 - y0 + 2);
+                    });
+        }
+        drawAsciiCells(spriteData, left, drawStartX, drawEndX, screenHeight, spriteWidth, spriteHeight, drawY,
+                transformY, depthBuffer, (from, to, y0, y1, texY, column, pixelChar) -> {
+                    if (inPitchDarkness) {
+                        boolean isEyePixel = (texY >= 5 && texY <= 8 && (column == 9 || column == 10 || column == 13 || column == 14 || pixelChar == 'R' || pixelChar == 'Y' || pixelChar == 'G' || pixelChar == 'W'));
+                        if (isEyePixel) {
+                            shapeRenderer.setColor(getMonsterEyeColor((Monster) entity));
+                        } else {
+                            shapeRenderer.setColor(0.04f, 0.04f, 0.06f, 1f);
                         }
+                    } else {
+                        Color pixelColor = getPixelColor(pixelChar, entity.getColor());
+                        dynamicLightScratch.set(
+                                pixelColor.r * dynamicLight.r,
+                                pixelColor.g * dynamicLight.g,
+                                pixelColor.b * dynamicLight.b,
+                                1f
+                        );
+                        shapeRenderer.setColor(dynamicLightScratch);
                     }
+                    shapeRenderer.rect(from, y0, to - from, y1 - y0);
+                });
+    }
+
+    private interface AsciiCellSink {
+        void cell(int from, int to, int y0, int y1, int texY, int column, char pixelChar);
+    }
+
+    /**
+     * Visits each filled cell of a 24x24 ASCII sprite as one block per run of
+     * columns in front of the walls, covering exactly the screen pixels a
+     * per-pixel loop would have mapped to it, clipped to the screen.
+     */
+    private static void drawAsciiCells(String[] spriteData, int left, int drawStartX, int drawEndX, int screenHeight,
+            int spriteWidth, int spriteHeight, float drawY, float transformY, float[] depthBuffer, AsciiCellSink sink) {
+        for (int texX = 0; texX < 24; texX++) {
+            int x0 = Math.max(drawStartX, left + RaycastSpans.cellStart(texX, 24, spriteWidth));
+            int x1 = Math.min(drawEndX, left + RaycastSpans.cellStart(texX + 1, 24, spriteWidth));
+            if (x0 >= x1) continue;
+            final int column = texX;
+            RaycastSpans.visibleRuns(x0, x1, transformY, depthBuffer, (from, to) -> {
+                for (int texY = 0; texY < 24 && texY < spriteData.length; texY++) {
+                    if (column >= spriteData[texY].length()) continue;
+                    char pixelChar = spriteData[texY].charAt(column);
+                    if (pixelChar == '.') continue;
+                    int row = 23 - texY;
+                    int y0 = Math.max(0, (int) drawY + RaycastSpans.cellStart(row, 24, spriteHeight));
+                    int y1 = Math.min(screenHeight, (int) drawY + RaycastSpans.cellStart(row + 1, 24, spriteHeight));
+                    if (y0 >= y1) continue;
+                    sink.cell(from, to, y0, y1, texY, column, pixelChar);
                 }
-            }
+            });
         }
     }
 
@@ -1506,16 +1508,14 @@ public class EntityRenderer {
             int drawStartX = Math.max(0, screenX - spriteWidth / 2);
             int drawEndX = Math.min(viewport.getScreenWidth() - 1, screenX + spriteWidth / 2);
 
-            for (int stripe = drawStartX; stripe < drawEndX; stripe++) {
-                if (stripe >= 0 && stripe < depthBuffer.length) {
-                    if (transformY >= depthBuffer[stripe]) {
-                        continue;
-                    }
-                    float u = (float) (stripe - (screenX - spriteWidth / 2)) / (float) spriteWidth;
-                    spriteBatch.draw(scenery.getTexture(), stripe, drawY, 1, spriteHeight, u, 1,
-                            u + (1.0f / spriteWidth), 0);
-                }
-            }
+            // One quad per run of unoccluded columns: a forest tree spans the whole screen.
+            final int left = screenX - spriteWidth / 2;
+            final int width = spriteWidth;
+            final int height = spriteHeight;
+            final float bottom = drawY;
+            RaycastSpans.visibleRuns(drawStartX, drawEndX, transformY, depthBuffer, (from, to) ->
+                    spriteBatch.draw(scenery.getTexture(), from, bottom, to - from, height,
+                            (float) (from - left) / width, 1, (float) (to - left) / width, 0));
         } else {
             // DEBUG LOGGING
             // Gdx.app.log("EntityRenderer", "Skipping Scenery Render: transformY=" +

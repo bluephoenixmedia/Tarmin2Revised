@@ -22,6 +22,12 @@ public class WorldMeshCache implements Disposable {
     private Maze currentMaze = null;
     private int currentLevel = -1;
     private final GridPoint2 lastCenterChunk = new GridPoint2(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    private Texture canopyTexture;
+
+    /** The leaf ceiling over surface forest chunks; null leaves them open to the sky. */
+    public void setCanopyTexture(Texture canopyTexture) {
+        this.canopyTexture = canopyTexture;
+    }
 
     public List<ChunkSubMesh> getVisibleSubMeshes(
             Maze maze,
@@ -85,6 +91,7 @@ public class WorldMeshCache implements Disposable {
                         false, 0f, 0f,
                         wallProvider, sectorSeed, floorSet, ceilingSet
                 );
+                addCanopy(currentMeshes, maze, 0f, 0f);
                 cachedChunks.put(currentChunkKey, currentMeshes);
             }
             result.addAll(currentMeshes);
@@ -115,6 +122,7 @@ public class WorldMeshCache implements Disposable {
                                             false, offsetX, offsetZ,
                                             wallProvider, neighborSeed, floorSet, ceilingSet
                                     );
+                                    addCanopy(neighborMeshes, neighborMaze, offsetX, offsetZ);
                                     cachedChunks.put(neighborKey, neighborMeshes);
                                 }
                             }
@@ -128,6 +136,11 @@ public class WorldMeshCache implements Disposable {
         }
 
         return result;
+    }
+
+    private void addCanopy(List<ChunkSubMesh> meshes, Maze chunk, float offsetX, float offsetZ) {
+        ChunkSubMesh canopy = CanopyMeshBuilder.build(chunk, canopyTexture, offsetX, offsetZ);
+        if (canopy != null) meshes.add(canopy);
     }
 
     /**

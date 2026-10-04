@@ -35,6 +35,7 @@ public class Maze {
     private final Map<GridPoint2, String> eventTriggers = new HashMap<>(); // Encounters
 
     private final Map<GridPoint2, Scenery> scenery = new HashMap<>();
+    private final List<Scenery> backdropScenery = new ArrayList<>();
     private final Map<GridPoint2, Float> bloodMap = new HashMap<>();
     private LiquidManager liquidManager = new LiquidManager();
 
@@ -588,6 +589,19 @@ public class Maze {
             return;
         GridPoint2 pos = new GridPoint2((int) s.getPosition().x, (int) s.getPosition().y);
         scenery.put(pos, s);
+    }
+
+    /**
+     * Render-only scenery: the extra trunks that thicken a forest's trail edges.
+     * Kept out of the tile map so they never block movement, take a tile, or
+     * turn up in anything that reads scenery for game logic.
+     */
+    public List<Scenery> getBackdropScenery() {
+        return backdropScenery;
+    }
+
+    public void addBackdropScenery(Scenery s) {
+        if (s != null) backdropScenery.add(s);
     }
 
     public void removeScenery(int x, int y) {

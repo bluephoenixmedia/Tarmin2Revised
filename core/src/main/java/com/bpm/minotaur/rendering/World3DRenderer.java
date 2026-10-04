@@ -48,6 +48,7 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
@@ -123,12 +124,21 @@ public class World3DRenderer implements Disposable {
     private final Texture gateTexture;
     private final Texture floorTexture;
     private final Texture forestFloorTexture;
+    /** Leaf ceiling over the surface forest; null if the art is missing, leaving the sky open. */
+    private final Texture canopyTexture;
     private final Texture ceilingTexture;
     private final Texture fluidTexture;
     private final Map<String, Texture> sceneryTextureCache = new HashMap<>();
     private final Texture blankTexture;
     /** Soft round falloff for fog puffs, so a cloud is vapour rather than a grid of squares. */
     private final Texture fogPuffTexture;
+    /** Light shafts through the forest canopy's trail seam: chunky vertical gradient, tinted per frame. */
+    private final Texture shaftTexture;
+    private final TextureRegion shaftRegion;
+    private Maze shaftMaze;
+    private List<GridPoint2> shaftTiles = java.util.Collections.emptyList();
+    private final Vector3 shaftRight = new Vector3();
+    private final Color shaftColor = new Color();
     // Reused every puff: renderAreaEffects runs each frame over up to a 25x25 tile window with
     // three billboards a tile, so allocating a Color and a TextureRegion per puff would be
     // roughly two thousand short-lived objects a frame.
@@ -198,6 +208,14 @@ public class World3DRenderer implements Disposable {
      */
     private static final float OBSCURED_FOG_DISTANCE = 2.2f;
     private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
+    /** Tiles beyond which forest trees are skipped: just past the widest glade fog. */
+    public static final float FOREST_TREE_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 2f;
+    /** Light shafts: faint, a little over half a tile wide, drawn within the glade fog. */
+    private static final float SHAFT_ALPHA = 0.22f;
+    private static final float SHAFT_WIDTH = 0.55f;
+    private static final float SHAFT_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE;
+    /** Ground scatter is ankle-high: past the trail fog it is a speck, not worth a draw. */
+    private static final float SCATTER_RANGE = ForestAtmosphere.TRAIL_FOG_DISTANCE + 2f;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -221,6 +239,13 @@ public class World3DRenderer implements Disposable {
     // Separate from scratchColor: both are live within the same uniform-upload block.
     private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
+
+    // Under the surface forest's canopy (ForestAtmosphere). Eased so stepping
+    // from a trail into a glade opens the fog rather than snapping it.
+    private boolean wasUnderCanopy = false;
+    private float canopyGlade = 0f;
+    private final Color canopyFogColor = new Color();
+    private final Color canopyFogTarget = new Color();
 
     public World3DRenderer() {
         this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
@@ -260,6 +285,14 @@ public class World3DRenderer implements Disposable {
             this.forestFloorTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         } else {
             this.forestFloorTexture = this.floorTexture;
+        }
+
+        if (Gdx.files.internal("images/forest/canopy.png").exists()) {
+            this.canopyTexture = new Texture(Gdx.files.internal("images/forest/canopy.png"));
+            this.canopyTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+            this.canopyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        } else {
+            this.canopyTexture = null;
         }
 
         this.ceilingTexture = new Texture(Gdx.files.internal("images/floor.png"));
@@ -308,6 +341,8 @@ public class World3DRenderer implements Disposable {
         pix.dispose();
 
         this.fogPuffTexture = buildFogPuffTexture();
+        this.shaftTexture = buildShaftTexture();
+        this.shaftRegion = new TextureRegion(shaftTexture);
 
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
@@ -316,6 +351,7 @@ public class World3DRenderer implements Disposable {
         loadPortalTextures();
 
         this.meshCache = new WorldMeshCache();
+        this.meshCache.setCanopyTexture(canopyTexture);
         this.dynamicBatcher = new DynamicQuadBatcher();
 
         // Load 3D Skullgate Assets
@@ -564,6 +600,32 @@ public class World3DRenderer implements Disposable {
             fogColor.set(biome.getFogColor());
         }
 
+        // The surface forest filters the volcanic light through its canopy: green-black fog
+        // closing to a few tiles on the trails, opening in the glades.
+        boolean underCanopy = currentLevel == 1 && !isIndoors && maze.getBiome() == Biome.FOREST;
+        Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+        if (underCanopy) {
+            float glade = ForestAtmosphere.gladeFactor(maze,
+                    (int) player.getPosition().x, (int) player.getPosition().y);
+            ForestAtmosphere.fogColor(
+                    (wm != null) ? wm.getCurrentWeather() : null,
+                    (wm != null) ? wm.getFogColor() : Color.WHITE,
+                    fullSkyTint, canopyFogTarget);
+            if (wasUnderCanopy) {
+                float ease = Math.min(1f, delta * 1.5f);
+                canopyGlade = MathUtils.lerp(canopyGlade, glade, ease);
+                canopyFogColor.lerp(canopyFogTarget, ease);
+            } else {
+                canopyGlade = glade;
+                canopyFogColor.set(canopyFogTarget);
+            }
+            fogEnabled = true;
+            fogDistance = ForestAtmosphere.fogDistance(canopyGlade,
+                    (wm != null) ? wm.getFogDistance() : Float.MAX_VALUE);
+            fogColor.set(canopyFogColor);
+        }
+        wasUnderCanopy = underCanopy;
+
         float bridgeIntegrity = DoomManager.getInstance().getBridgeIntegrity();
         float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
         if (bridgeIntegrity > 50) {
@@ -608,7 +670,11 @@ public class World3DRenderer implements Disposable {
         // Damped like the ambient: the rim tints surfaces, it does not repaint them.
         Color rimTint = (dnm != null) ? dnm.getWorldTint(rimScratchColor) : Color.WHITE;
         shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
-        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+        float rimStrength = skyOverhead ? 0.35f : 0f;
+        if (underCanopy) {
+            rimStrength = ForestAtmosphere.canopyScale(rimStrength, ForestAtmosphere.CANOPY_RIM_SHARE, canopyGlade);
+        }
+        shader.setUniformf("u_skyRimStrength", rimStrength);
 
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
@@ -630,7 +696,14 @@ public class World3DRenderer implements Disposable {
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint
             float overcastFactor = (wm != null && wm.isPrecipitation()) ? 0.65f : 0.0f;
-            targetAmbientColor.set(skyTint).lerp(overcastTint, overcastFactor);
+            if (underCanopy) {
+                ForestAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+                // The canopy keeps its own colour in the rain; the slate overcast only greys it.
+                overcastFactor *= ForestAtmosphere.CANOPY_OVERCAST_SHARE;
+            } else {
+                targetAmbientColor.set(skyTint);
+            }
+            targetAmbientColor.lerp(overcastTint, overcastFactor);
 
             // Calibrated outdoor ambient intensity (soft, moody, never bleached):
             // - Night storm: ~0.10
@@ -638,6 +711,10 @@ public class World3DRenderer implements Disposable {
             // - Midday storm: ~0.35 - 0.38
             // - Clear midday: ~0.65 - 0.75
             float outdoorAmbientIntensity = MathUtils.clamp(dayAmbient * weatherDim * 0.72f, 0.08f, 0.75f);
+            if (underCanopy) {
+                outdoorAmbientIntensity = ForestAtmosphere.canopyScale(outdoorAmbientIntensity,
+                        ForestAtmosphere.CANOPY_AMBIENT_SHARE, canopyGlade);
+            }
             targetAmbientColor.mul(outdoorAmbientIntensity);
 
             // Directional Celestial Light (Sun in daytime, Moon at night)
@@ -648,10 +725,18 @@ public class World3DRenderer implements Disposable {
                     Color sunColor = dnm.getDirectionalLightColor(scratchColor);
                     // Clouds diffuse sunlight during storm, keeping directional light soft
                     float sunIntensity = MathUtils.clamp(sunElevation, 0.15f, 1.0f) * (wm != null && wm.isStormy() ? 0.18f : 0.50f);
+                    if (underCanopy) {
+                        sunIntensity = ForestAtmosphere.canopyScale(sunIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                    }
                     targetDirLightColor.set(sunColor).mul(sunIntensity);
                 } else {
                     dnm.getMoonDirection(targetDirLightDir);
                     float moonIntensity = (wm != null && wm.isStormy() ? 0.06f : 0.18f);
+                    if (underCanopy) {
+                        moonIntensity = ForestAtmosphere.canopyScale(moonIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                    }
                     targetDirLightColor.set(0.35f, 0.45f, 0.65f, 1.0f).mul(moonIntensity);
                 }
             } else {
@@ -699,7 +784,8 @@ public class World3DRenderer implements Disposable {
 
         // Dynamic surface weather modulation
         float wetness = (wm != null && currentLevel == 1) ? wm.getWetness() : 0.0f;
-        float snowAccum = (wm != null && currentLevel == 1) ? wm.getSnowAccumulation() : 0.0f;
+        // Snow falls through the canopy but never settles on the forest floor.
+        float snowAccum = (wm != null && currentLevel == 1 && !underCanopy) ? wm.getSnowAccumulation() : 0.0f;
         shader.setUniformf("u_wetness", wetness);
         shader.setUniformf("u_snowAccumulation", snowAccum);
 
@@ -708,6 +794,8 @@ public class World3DRenderer implements Disposable {
 
         // --- PASS 1: OPAQUE CHUNK SUB-MESHES & DYNAMIC SLIDING DOORS ---
         shader.setUniformf("u_alphaCutoff", 0.0f);
+        shader.setUniformf("u_vertexCoverage", 0.0f);
+        shader.setUniformf("u_unlit", 0.0f);
 
         RetroTheme.Theme theme = maze.getTheme();
         if (theme == null) theme = RetroTheme.STANDARD_THEME;
@@ -746,7 +834,17 @@ public class World3DRenderer implements Disposable {
             } else {
                 shader.setUniformf("u_retroBorder", 0.0f);
             }
+            boolean canopy = subMesh.getSurface() == ChunkSubMesh.Surface.CANOPY;
+            if (canopy) {
+                // Fronds cut out where coverage thins: see CanopyMeshBuilder.
+                shader.setUniformf("u_alphaCutoff", 0.5f);
+                shader.setUniformf("u_vertexCoverage", 1.0f);
+            }
             subMesh.render(shader);
+            if (canopy) {
+                shader.setUniformf("u_alphaCutoff", 0.0f);
+                shader.setUniformf("u_vertexCoverage", 0.0f);
+            }
         }
 
         // Dynamic Doors & Gates
@@ -771,6 +869,10 @@ public class World3DRenderer implements Disposable {
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
         renderProjectiles();
+
+        if (underCanopy && !isRetro) {
+            renderLightShafts(maze, player, fullSkyTint, (wm != null) ? wm.getGlobalLightDimmer() : 1f);
+        }
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
         // Weather particles and splashes spawn strictly on outdoor tiles (never under indoor roofs/shelters).
@@ -1340,6 +1442,59 @@ public class World3DRenderer implements Disposable {
         }
     }
 
+    /**
+     * Sky light falling through the canopy's trail seam: a tall additive beam on a
+     * fixed few seam tiles, tinted by the sky so it burns ember-red at dawn and
+     * all but vanishes at night. It stands upright whatever the camera's pitch.
+     */
+    private void renderLightShafts(Maze maze, Player player, Color skyTint, float weatherDim) {
+        if (maze != shaftMaze) {
+            shaftMaze = maze;
+            shaftTiles = CanopyMeshBuilder.shaftTiles(maze);
+        }
+        if (shaftTiles.isEmpty()) return;
+
+        shaftRight.set(camera.direction.x, 0f, camera.direction.z).nor().crs(Vector3.Y).nor();
+        shaftColor.set(skyTint.r, skyTint.g * 0.85f, skyTint.b * 0.7f, SHAFT_ALPHA * weatherDim);
+
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        Gdx.gl.glDepthMask(false);
+        shader.setUniformf("u_unlit", 1f);
+        float range2 = SHAFT_RANGE * SHAFT_RANGE;
+        for (GridPoint2 t : shaftTiles) {
+            float cx = t.x + 0.5f;
+            float cy = t.y + 0.5f;
+            if (player.getPosition().dst2(cx, cy) > range2) continue;
+            dynamicBatcher.addBillboard(cx, 0f, -cy, SHAFT_WIDTH, CanopyMeshBuilder.CANOPY_Y, shaftRegion,
+                    shaftColor, shaftRight, Vector3.Y, camDir);
+        }
+        dynamicBatcher.flush(shader, shaftTexture);
+        shader.setUniformf("u_unlit", 0f);
+        Gdx.gl.glDepthMask(true);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    /** 8x32, brightest at the canopy and fading to the floor, in four hard steps so it reads as pixel art. */
+    private static Texture buildShaftTexture() {
+        int w = 8;
+        int h = 32;
+        Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                float down = 1f - y / (float) (h - 1);
+                float across = 1f - Math.abs(x - (w - 1) / 2f) / (w / 2f);
+                float a = down * down * across;
+                a = Math.round(a * 4f) / 4f;
+                p.setColor(1f, 1f, 1f, a);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture t = new Texture(p);
+        t.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        p.dispose();
+        return t;
+    }
+
     /** A soft round alpha falloff. Reused for every puff. */
     private static Texture buildFogPuffTexture() {
         int size = 32;
@@ -1566,6 +1721,10 @@ public class World3DRenderer implements Disposable {
      */
     private float mimicIdlePhase = 0f;
 
+    private static boolean beyondTreeRange(Scenery tree, Player player) {
+        return tree.getPosition().dst2(player.getPosition()) > FOREST_TREE_RANGE * FOREST_TREE_RANGE;
+    }
+
     private void renderEntities(Maze maze, Player player, CombatManager combatManager, boolean isRetro, RetroTheme.Theme theme) {
         mimicIdlePhase = MimicBob.advance(mimicIdlePhase, com.badlogic.gdx.Gdx.graphics.getDeltaTime());
 
@@ -1579,7 +1738,16 @@ public class World3DRenderer implements Disposable {
             }
         }
         entities.addAll(maze.getLadders().values());
-        entities.addAll(maze.getScenery().values());
+        // Forest trees past the canopy fog are invisible, so they are not worth a draw.
+        boolean cullTrees = maze.getBiome() == Biome.FOREST && maze.getLevel() == 1;
+        for (Scenery sc : maze.getScenery().values()) {
+            if (cullTrees && sc.getType() == Scenery.SceneryType.TREE && beyondTreeRange(sc, player)) continue;
+            entities.add(sc);
+        }
+        for (Scenery backdrop : maze.getBackdropScenery()) {
+            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE : SCATTER_RANGE;
+            if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
+        }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
             entities.add(maze.getShopkeeper());
         }
@@ -1979,8 +2147,18 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
+                    // A prop that glows (campfire, runestone, glowcaps) draws at its own tint,
+                    // not darkened by the scene's light.
+                    Color glow = sc.getEmissiveTint();
+                    if (glow != null) {
+                        tint = glow;
+                        shader.setUniformf("u_unlit", 1f);
+                    }
                     dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
+                    if (glow != null) {
+                        shader.setUniformf("u_unlit", 0f);
+                    }
                 }
             } else if (r instanceof Ladder) {
                 Ladder ld = (Ladder) r;
@@ -2136,6 +2314,7 @@ public class World3DRenderer implements Disposable {
         gateTexture.dispose();
         floorTexture.dispose();
         if (forestFloorTexture != null && forestFloorTexture != floorTexture) forestFloorTexture.dispose();
+        if (canopyTexture != null) canopyTexture.dispose();
         ceilingTexture.dispose();
 
         if (fluidTexture != null && fluidTexture != blankTexture) {
@@ -2149,6 +2328,9 @@ public class World3DRenderer implements Disposable {
         blankTexture.dispose();
         if (fogPuffTexture != null) {
             fogPuffTexture.dispose();
+        }
+        if (shaftTexture != null) {
+            shaftTexture.dispose();
         }
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();

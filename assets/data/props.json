@@ -284,7 +284,7 @@
     },
     {
       "id": "stump_pine",
-      "asset": "images/props/stump_pine.png",
+      "asset": "images/forest/stump_pine_01.png",
       "renderMode": "SPRITE",
       "scaleX": 1.0,
       "scaleY": 0.8,
@@ -292,18 +292,18 @@
     },
     {
       "id": "log_fallen",
-      "asset": "images/props/log_fallen.png",
+      "asset": "images/forest/log_fallen_01.png",
       "renderMode": "SPRITE",
-      "scaleX": 1.2,
-      "scaleY": 0.6,
+      "scaleX": 1.5,
+      "scaleY": 1.2,
       "passable": false
     },
     {
       "id": "log_pile",
-      "asset": "images/props/log_pile.png",
+      "asset": "images/forest/log_pile_01.png",
       "renderMode": "SPRITE",
-      "scaleX": 1.1,
-      "scaleY": 0.8,
+      "scaleX": 1.25,
+      "scaleY": 1.0,
       "passable": false
     },
     {

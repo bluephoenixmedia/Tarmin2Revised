@@ -198,6 +198,10 @@ public class Scenery implements Renderable {
         return emissiveTint;
     }
 
+    public void setEmissiveTint(Color emissiveTint) {
+        this.emissiveTint = emissiveTint;
+    }
+
     public void setImpassable(boolean impassable) {
         this.impassable = impassable;
     }

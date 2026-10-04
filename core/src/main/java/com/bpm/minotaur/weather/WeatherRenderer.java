@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.bpm.minotaur.gamedata.Maze;
 import com.bpm.minotaur.gamedata.player.Player;
+import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
 
 /**
@@ -33,6 +34,13 @@ public class WeatherRenderer {
 
     private final WeatherManager weatherManager;
     private final Array<WeatherParticle> particles = new Array<>(false, 2500);
+
+    // Tiles of the current surface forest chunk under a closed canopy, rebuilt
+    // when the chunk changes. Rain and snow thin out under it and fall at full
+    // density through the trail seam and into the glades.
+    private static final int CANOPY_KEEP_IN_TEN = 3;
+    private Maze canopyMaze;
+    private boolean[][] closedCanopy;
     private final Array<SplashDroplet> splashDroplets = new Array<>(false, 250);
 
     private final Vector3 windVector = new Vector3();
@@ -467,6 +475,7 @@ public class WeatherRenderer {
             WeatherParticle p = particles.get(i);
             if (p.isDead) continue;
             if (maze != null && maze.isIndoors(MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
+            if (i % 10 >= CANOPY_KEEP_IN_TEN && isUnderClosedCanopy(maze, MathUtils.floor(p.x), MathUtils.floor(p.y))) continue;
 
             // World coords: X = p.x, Y = p.z, Z = -p.y
             float worldX = p.x;
@@ -877,6 +886,15 @@ public class WeatherRenderer {
     // -------------------------------------------------------------------------
     // INTERNAL PARTICLE CLASSES
     // -------------------------------------------------------------------------
+
+    private boolean isUnderClosedCanopy(Maze maze, int x, int y) {
+        if (maze != canopyMaze) {
+            canopyMaze = maze;
+            closedCanopy = CanopyMeshBuilder.closedTiles(maze);
+        }
+        return closedCanopy != null && y >= 0 && y < closedCanopy.length
+                && x >= 0 && x < closedCanopy[0].length && closedCanopy[y][x];
+    }
 
     public static class WeatherParticle {
         public float x, y, z;
