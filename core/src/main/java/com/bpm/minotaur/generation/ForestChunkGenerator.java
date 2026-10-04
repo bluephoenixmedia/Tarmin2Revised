@@ -69,19 +69,29 @@ public class ForestChunkGenerator implements IChunkGenerator {
             "campfire", "camp_tent", "cairn", "runestone", "ruined_pillar", "rubble_pile", "grave_mound", "bramble")));
     private static final String FOREST_PROP_DIR = "images/forest/props/";
 
-    /** Ground scatter: id, billboard width and height, at the aspect of the canvas each was baked on. */
-    private static final String[] SCATTER_IDS = {
-            "scatter_grass", "scatter_moss_01", "scatter_moss_02", "scatter_branch_01", "scatter_branch_02",
-            "scatter_mushroom", "scatter_flowers", "scatter_glowcap"
+    /**
+     * A kind of ground cover: billboard size at the aspect of the canvas it was
+     * baked on, and its weight among the everyday scatter.
+     */
+    private record Scatter(String id, float width, float height, float weight) {
+        String texture() {
+            return "images/forest/" + id + ".png";
+        }
+    }
+
+    private static final Scatter[] EVERYDAY_SCATTER = {
+            new Scatter("scatter_grass", 0.6f, 0.4f, 40f),
+            new Scatter("scatter_moss_01", 0.7f, 0.35f, 10f),
+            new Scatter("scatter_moss_02", 0.7f, 0.35f, 10f),
+            new Scatter("scatter_branch_01", 0.8f, 0.3f, 10f),
+            new Scatter("scatter_branch_02", 0.8f, 0.3f, 10f),
+            new Scatter("scatter_mushroom", 0.4f, 0.4f, 10f),
     };
-    private static final float[][] SCATTER_SIZES = {
-            {0.6f, 0.4f}, {0.7f, 0.35f}, {0.7f, 0.35f}, {0.8f, 0.3f}, {0.8f, 0.3f},
-            {0.4f, 0.4f}, {0.6f, 0.4f}, {0.5f, 0.42f}
-    };
-    /** Relative weights of the everyday scatter (the first six ids); flowers and glowcaps are placed by rule. */
-    private static final float[] SCATTER_WEIGHTS = {40f, 10f, 10f, 10f, 10f, 10f};
-    private static final int FLOWERS = 6;
-    private static final int GLOWCAP = 7;
+    /** Placed by rule rather than weight: flowers only in glades, glowcaps only down side trails. */
+    private static final Scatter FLOWERS = new Scatter("scatter_flowers", 0.6f, 0.4f, 0f);
+    private static final Scatter GLOWCAP = new Scatter("scatter_glowcap", 0.5f, 0.42f, 0f);
+    /** A tile at least this far into a glade counts as one. */
+    private static final float GLADE = 0.5f;
     /** Share of clear walkable tiles that get a piece of ground cover. */
     private static final float SCATTER_SHARE = 0.25f;
     /**
@@ -92,9 +102,11 @@ public class ForestChunkGenerator implements IChunkGenerator {
     private static final Color GLOWCAP_GLOW = new Color(0.45f, 1.0f, 0.9f, 1f);
 
     public static String[] scatterTextures() {
-        String[] paths = new String[SCATTER_IDS.length];
-        for (int i = 0; i < SCATTER_IDS.length; i++) paths[i] = "images/forest/" + SCATTER_IDS[i] + ".png";
-        return paths;
+        List<String> paths = new ArrayList<>();
+        for (Scatter s : EVERYDAY_SCATTER) paths.add(s.texture());
+        paths.add(FLOWERS.texture());
+        paths.add(GLOWCAP.texture());
+        return paths.toArray(new String[0]);
     }
 
     public static String[] propVariantTextures() {
@@ -592,38 +604,38 @@ public class ForestChunkGenerator implements IChunkGenerator {
                         || maze.getLadders().containsKey(tile) || maze.getEventAt(x, y) != null) continue;
                 if (backdropRandom.nextFloat() >= SCATTER_SHARE) continue;
 
-                int kind = pickScatter(maze, x, y);
+                Scatter kind = pickScatter(maze, x, y);
                 float jitter = 0.85f + backdropRandom.nextFloat() * 0.3f;
                 Scenery s = new Scenery(Scenery.SceneryType.PROP, x, y);
-                s.setPropId(SCATTER_IDS[kind]);
+                s.setPropId(kind.id());
                 s.getPosition().set(
                         x + 0.5f + (backdropRandom.nextFloat() - 0.5f) * 0.5f,
                         y + 0.5f + (backdropRandom.nextFloat() - 0.5f) * 0.5f);
-                s.scale.set(SCATTER_SIZES[kind][0] * jitter, SCATTER_SIZES[kind][1] * jitter);
+                s.scale.set(kind.width() * jitter, kind.height() * jitter);
                 s.setFlippedX(backdropRandom.nextBoolean());
                 if (kind == GLOWCAP) s.setEmissiveTint(GLOWCAP_GLOW);
-                loadTextureSafely(s, "images/forest/" + SCATTER_IDS[kind] + ".png", assetManager);
+                loadTextureSafely(s, kind.texture(), assetManager);
                 maze.addBackdropScenery(s);
             }
         }
     }
 
-    private int pickScatter(Maze maze, int x, int y) {
+    private Scatter pickScatter(Maze maze, int x, int y) {
         int mid = CHUNK_SIZE / 2;
         float glade = ForestAtmosphere.gladeFactor(maze, x, y);
         boolean offMainTrails = Math.abs(x - mid) > MAIN_TRAIL_HALF_WIDTH && Math.abs(y - mid) > MAIN_TRAIL_HALF_WIDTH;
         float roll = backdropRandom.nextFloat();
-        if (offMainTrails && glade < 0.5f && roll < 0.06f) return GLOWCAP;
-        if (glade >= 0.5f && roll < 0.35f) return FLOWERS;
+        if (offMainTrails && glade < GLADE && roll < 0.06f) return GLOWCAP;
+        if (glade >= GLADE && roll < 0.35f) return FLOWERS;
 
         float total = 0f;
-        for (float w : SCATTER_WEIGHTS) total += w;
+        for (Scatter s : EVERYDAY_SCATTER) total += s.weight();
         float pick = backdropRandom.nextFloat() * total;
-        for (int i = 0; i < SCATTER_WEIGHTS.length; i++) {
-            pick -= SCATTER_WEIGHTS[i];
-            if (pick < 0f) return i;
+        for (Scatter s : EVERYDAY_SCATTER) {
+            pick -= s.weight();
+            if (pick < 0f) return s;
         }
-        return 0;
+        return EVERYDAY_SCATTER[0];
     }
 
     private final Map<String, Texture> textureCache = new HashMap<>();

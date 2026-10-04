@@ -1336,30 +1336,18 @@ public class EntityRenderer {
         float maxBright = Math.max(dynamicLight.r, Math.max(dynamicLight.g, dynamicLight.b));
         boolean inPitchDarkness = entity instanceof Monster && maxBright < 0.12f;
 
-        // Each of the 24x24 sprite cells is one rectangle per run of unoccluded columns,
-        // covering exactly the screen pixels the old per-pixel loop mapped to it.
-        for (int texX = 0; texX < 24; texX++) {
-            int x0 = Math.max(drawStartX, left + RaycastSpans.cellStart(texX, 24, spriteWidth));
-            int x1 = Math.min(drawEndX, left + RaycastSpans.cellStart(texX + 1, 24, spriteWidth));
-            if (x0 >= x1) continue;
-            final int column = texX;
-            RaycastSpans.visibleRuns(x0, x1, transformY, depthBuffer, (from, to) -> {
-                for (int texY = 0; texY < 24 && texY < spriteData.length; texY++) {
-                    if (column >= spriteData[texY].length()) continue;
-                    char pixelChar = spriteData[texY].charAt(column);
-                    if (pixelChar == '.') continue;
-                    int row = 23 - texY;
-                    int y0 = Math.max(0, (int) drawY + RaycastSpans.cellStart(row, 24, spriteHeight));
-                    int y1 = Math.min(screenHeight, (int) drawY + RaycastSpans.cellStart(row + 1, 24, spriteHeight));
-                    if (y0 >= y1) continue;
-
-                    if (isModifiedItem) {
-                        // A one-pixel halo, drawn first so the cell itself covers its middle.
+        // A modified item's halo goes down under every cell first, so no cell's halo
+        // paints over a neighbour's pixels.
+        if (isModifiedItem) {
+            drawAsciiCells(spriteData, left, drawStartX, drawEndX, screenHeight, spriteWidth, spriteHeight, drawY,
+                    transformY, depthBuffer, (from, to, y0, y1, texY, column, pixelChar) -> {
                         shapeRenderer.setColor(GLOW_COLOR_RETRO);
                         shapeRenderer.rect(from - 1, y0, to - from + 2, y1 - y0);
                         shapeRenderer.rect(from, y0 - 1, to - from, y1 - y0 + 2);
-                    }
-
+                    });
+        }
+        drawAsciiCells(spriteData, left, drawStartX, drawEndX, screenHeight, spriteWidth, spriteHeight, drawY,
+                transformY, depthBuffer, (from, to, y0, y1, texY, column, pixelChar) -> {
                     if (inPitchDarkness) {
                         boolean isEyePixel = (texY >= 5 && texY <= 8 && (column == 9 || column == 10 || column == 13 || column == 14 || pixelChar == 'R' || pixelChar == 'Y' || pixelChar == 'G' || pixelChar == 'W'));
                         if (isEyePixel) {
@@ -1378,6 +1366,35 @@ public class EntityRenderer {
                         shapeRenderer.setColor(dynamicLightScratch);
                     }
                     shapeRenderer.rect(from, y0, to - from, y1 - y0);
+                });
+    }
+
+    private interface AsciiCellSink {
+        void cell(int from, int to, int y0, int y1, int texY, int column, char pixelChar);
+    }
+
+    /**
+     * Visits each filled cell of a 24x24 ASCII sprite as one block per run of
+     * columns in front of the walls, covering exactly the screen pixels a
+     * per-pixel loop would have mapped to it, clipped to the screen.
+     */
+    private static void drawAsciiCells(String[] spriteData, int left, int drawStartX, int drawEndX, int screenHeight,
+            int spriteWidth, int spriteHeight, float drawY, float transformY, float[] depthBuffer, AsciiCellSink sink) {
+        for (int texX = 0; texX < 24; texX++) {
+            int x0 = Math.max(drawStartX, left + RaycastSpans.cellStart(texX, 24, spriteWidth));
+            int x1 = Math.min(drawEndX, left + RaycastSpans.cellStart(texX + 1, 24, spriteWidth));
+            if (x0 >= x1) continue;
+            final int column = texX;
+            RaycastSpans.visibleRuns(x0, x1, transformY, depthBuffer, (from, to) -> {
+                for (int texY = 0; texY < 24 && texY < spriteData.length; texY++) {
+                    if (column >= spriteData[texY].length()) continue;
+                    char pixelChar = spriteData[texY].charAt(column);
+                    if (pixelChar == '.') continue;
+                    int row = 23 - texY;
+                    int y0 = Math.max(0, (int) drawY + RaycastSpans.cellStart(row, 24, spriteHeight));
+                    int y1 = Math.min(screenHeight, (int) drawY + RaycastSpans.cellStart(row + 1, 24, spriteHeight));
+                    if (y0 >= y1) continue;
+                    sink.cell(from, to, y0, y1, texY, column, pixelChar);
                 }
             });
         }

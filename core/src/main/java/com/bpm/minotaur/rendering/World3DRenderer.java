@@ -1442,7 +1442,6 @@ public class World3DRenderer implements Disposable {
         }
     }
 
-    /** A soft round alpha falloff. Reused for every puff. */
     /**
      * Sky light falling through the canopy's trail seam: a tall additive beam on a
      * fixed few seam tiles, tinted by the sky so it burns ember-red at dawn and
@@ -1496,6 +1495,7 @@ public class World3DRenderer implements Disposable {
         return t;
     }
 
+    /** A soft round alpha falloff. Reused for every puff. */
     private static Texture buildFogPuffTexture() {
         int size = 32;
         Pixmap p = new Pixmap(size, size, Pixmap.Format.RGBA8888);
