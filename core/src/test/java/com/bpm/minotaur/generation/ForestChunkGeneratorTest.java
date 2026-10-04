@@ -279,7 +279,10 @@ public class ForestChunkGeneratorTest {
             }
         }
 
-        List<Scenery> backdrop = maze.getBackdropScenery();
+        List<Scenery> backdrop = new ArrayList<>();
+        for (Scenery s : maze.getBackdropScenery()) {
+            if (s.getType() == Scenery.SceneryType.TREE) backdrop.add(s);
+        }
         assertTrue("trail edges get extra trunks, found " + backdrop.size(), backdrop.size() > 100);
         for (Scenery s : backdrop) {
             int tx = (int) Math.floor(s.getPosition().x);
@@ -307,9 +310,57 @@ public class ForestChunkGeneratorTest {
             if (s.getTexturePath() != null && s.getPosition().dst(glade) <= range) sprites++;
         }
         for (Scenery s : maze.getBackdropScenery()) {
-            if (s.getPosition().dst(glade) <= range) sprites++;
+            if (s.getType() == Scenery.SceneryType.TREE && s.getPosition().dst(glade) <= range) sprites++;
         }
         assertTrue("glade draws " + sprites + " tree sprites; the old forest drew " + treeTiles,
                 sprites <= treeTiles);
+    }
+
+    @Test
+    public void landmarkPropsWearTheForestsOwnPixelArtVariants() {
+        int checked = 0;
+        for (long seed = 1; seed <= 40; seed++) {
+            Maze maze = generateTestChunk(seed);
+            for (Scenery s : maze.getScenery().values()) {
+                if (s.getPropId() == null || !ForestChunkGenerator.FOREST_PROP_VARIANTS.contains(s.getPropId())) continue;
+                checked++;
+                assertEquals("images/forest/props/" + s.getPropId() + ".png", s.getTexturePath());
+            }
+        }
+        assertTrue("some landmark props were placed", checked > 0);
+    }
+
+    @Test
+    public void groundScatterDecoratesOnlyClearWalkableGround() {
+        int scatter = 0;
+        int glowcaps = 0;
+        for (long seed = 1; seed <= 20; seed++) {
+            Maze maze = generateTestChunk(seed);
+            for (Scenery s : maze.getBackdropScenery()) {
+                if (s.getType() == Scenery.SceneryType.TREE) continue;
+                scatter++;
+                int x = (int) Math.floor(s.getPosition().x);
+                int y = (int) Math.floor(s.getPosition().y);
+                GridPoint2 tile = new GridPoint2(x, y);
+                assertTrue("scatter " + s.getPropId() + " at " + tile + " must be on walkable ground",
+                        maze.isPassable(x, y) && !maze.getScenery().containsKey(tile));
+                assertFalse("scatter must not hide an item", maze.getItems().containsKey(tile));
+                assertFalse("scatter must not hide a ladder", maze.getLadders().containsKey(tile));
+                assertNull("scatter must not hide an event", maze.getEventAt(x, y));
+                assertTrue("scatter sits below item height", s.getScale().y <= 0.5f);
+                if ("scatter_flowers".equals(s.getPropId())) {
+                    assertTrue("flowers grow only in glades",
+                            com.bpm.minotaur.rendering.ForestAtmosphere.gladeFactor(maze, x, y) >= 0.5f);
+                }
+                if ("scatter_glowcap".equals(s.getPropId())) {
+                    glowcaps++;
+                    assertNotNull("glowcaps glow", s.getEmissiveTint());
+                    assertTrue("glowcaps keep off the main gate trails at " + tile,
+                            Math.abs(x - 18) > 3 && Math.abs(y - 18) > 3);
+                }
+            }
+        }
+        assertTrue("forests are scattered with ground cover, found " + scatter, scatter > 20 * 40);
+        assertTrue("glowcaps are rare but present, found " + glowcaps, glowcaps > 0 && glowcaps < scatter / 10);
     }
 }

@@ -202,6 +202,8 @@ public class World3DRenderer implements Disposable {
     private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
     /** Tiles beyond which forest trees are skipped: just past the widest glade fog. */
     public static final float FOREST_TREE_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 2f;
+    /** Ground scatter is ankle-high: past the trail fog it is a speck, not worth a draw. */
+    private static final float SCATTER_RANGE = ForestAtmosphere.TRAIL_FOG_DISTANCE + 2f;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -779,6 +781,7 @@ public class World3DRenderer implements Disposable {
         // --- PASS 1: OPAQUE CHUNK SUB-MESHES & DYNAMIC SLIDING DOORS ---
         shader.setUniformf("u_alphaCutoff", 0.0f);
         shader.setUniformf("u_vertexCoverage", 0.0f);
+        shader.setUniformf("u_unlit", 0.0f);
 
         RetroTheme.Theme theme = maze.getTheme();
         if (theme == null) theme = RetroTheme.STANDARD_THEME;
@@ -1671,7 +1674,8 @@ public class World3DRenderer implements Disposable {
             entities.add(sc);
         }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            if (!beyondTreeRange(backdrop, player)) entities.add(backdrop);
+            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE : SCATTER_RANGE;
+            if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
         }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {
             entities.add(maze.getShopkeeper());
@@ -2072,8 +2076,18 @@ public class World3DRenderer implements Disposable {
                         }
                     }
 
+                    // A prop that glows (campfire, runestone, glowcaps) draws at its own tint,
+                    // not darkened by the scene's light.
+                    Color glow = sc.getEmissiveTint();
+                    if (glow != null) {
+                        tint = glow;
+                        shader.setUniformf("u_unlit", 1f);
+                    }
                     dynamicBatcher.addBillboard(ex, feetY, wz, sw, sh, reg, tint, camRight, camUp, camDir);
                     dynamicBatcher.flush(shader, tex);
+                    if (glow != null) {
+                        shader.setUniformf("u_unlit", 0f);
+                    }
                 }
             } else if (r instanceof Ladder) {
                 Ladder ld = (Ladder) r;

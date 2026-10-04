@@ -29,6 +29,7 @@ the stylized PNGs are committed.
 import math
 import os
 import sys
+from collections import namedtuple
 
 import bpy
 from mathutils import Vector
@@ -38,16 +39,25 @@ RAW_DIR = os.path.join(REPO, "build", "forest_raw")
 
 # Art canvas per kind, in final sprite pixels, rendered at RAW_SCALE so the
 # stylize pass can downsample. Must match the aspects in ForestChunkGenerator.
+# A "sized" model takes its canvas from its in-game billboard size instead, at
+# the trees' density, so it never stretches and its pixels match theirs.
 CANVAS = {
     "tree": (648, 864),
     "prop": (240, 192),
 }
+PIXELS_PER_UNIT = 96
 RAW_SCALE = 2
 
 LIGHTINGS = {
     "tree": [("_l", -40.0), ("_r", 40.0)],
     "prop": [("", -40.0)],
+    "sized": [("", -40.0)],
 }
+
+# source is ("models", path) under models_dir or (pack, path) under game_assets_dir.
+# slots maps Synty material slot names to textures; None means the model brings its own.
+# size is the billboard's (width, height) in world units, for kind "sized".
+Model = namedtuple("Model", "name kind source slots fallback size", defaults=(None, None, None))
 KEY_ELEVATION = 50.0
 
 ALPINE = "POLYGON_NatureBiomes_AlpineMountain_SourceFiles_v3"
@@ -55,30 +65,56 @@ ADVENTURE = "POLYGON_Adventure_Pack_SourceFiles_v6"
 ALPINE_ATLAS = (ALPINE, "Textures/PolygonNatureBiomesS2_Alpine_Texture_01.png")
 ADVENTURE_ATLAS = (ADVENTURE, "Textures/PolyAdventureTexture_01.png")
 ALPINE_BUSH = (ALPINE, "Textures/Alpine_Bush_02.tga")
+GOBLIN = "POLYGON_Goblin_War_Camp_SourceFiles_v3"
+VIKING = "POLYGON_Viking_Realm_SourceFiles_v3/SourceFiles"
+GOBLIN_ATLAS = (GOBLIN, "Textures/Alts/PolygonGoblinWarCamp_Texture_01_A.png")
+VIKING_ATLAS = (VIKING, "Textures/Alts/PolygonVikingRealm_Texture_01_A.png")
 
-# (sprite name, kind, source, {material slot: texture} or None, fallback texture)
-# source is ("models", path) under models_dir or (pack, path) under game_assets_dir.
 MODELS = [
-    ("tree_pine_a", "tree", ("models", "trees/pine2.glb"), None, None),
-    ("tree_pine_b", "tree", ("models", "trees/pine3.glb"), None, None),
-    ("tree_pine_c", "tree", ("models", "trees/pine4.glb"), None, None),
-    ("tree_pine_d", "tree", ("models", "trees/pine5.glb"), None, None),
-    ("tree_dead_a", "tree", ("models", "forest_other/dead_tree.glb"), None, None),
-    ("tree_dead_b", "tree", ("models", "forest_other/dead_tree2.glb"), None, None),
-    ("tree_dead_c", "tree", ("models", "forest_other/dead_tree3.glb"), None, None),
-    ("tree_dead_d", "tree", ("models", "forest_other/dead_tree4.glb"), None, None),
-    ("tree_dead_e", "tree", ("models", "forest_other/dead_tree5.glb"), None, None),
+    Model("tree_pine_a", "tree", ("models", "trees/pine2.glb")),
+    Model("tree_pine_b", "tree", ("models", "trees/pine3.glb")),
+    Model("tree_pine_c", "tree", ("models", "trees/pine4.glb")),
+    Model("tree_pine_d", "tree", ("models", "trees/pine5.glb")),
+    Model("tree_dead_a", "tree", ("models", "forest_other/dead_tree.glb")),
+    Model("tree_dead_b", "tree", ("models", "forest_other/dead_tree2.glb")),
+    Model("tree_dead_c", "tree", ("models", "forest_other/dead_tree3.glb")),
+    Model("tree_dead_d", "tree", ("models", "forest_other/dead_tree4.glb")),
+    Model("tree_dead_e", "tree", ("models", "forest_other/dead_tree5.glb")),
 
-    ("rock_boulder_01", "prop", ("models", "forest_other/rock1.glb"), None, None),
-    ("rock_boulder_02", "prop", ("models", "forest_other/rock2.glb"), None, None),
-    ("rock_boulder_03", "prop", ("models", "forest_other/rock3.glb"), None, None),
+    Model("rock_boulder_01", "prop", ("models", "forest_other/rock1.glb")),
+    Model("rock_boulder_02", "prop", ("models", "forest_other/rock2.glb")),
+    Model("rock_boulder_03", "prop", ("models", "forest_other/rock3.glb")),
 
     # One material each, named BerryBush_01_MAT in the FBX whatever the material list says.
-    ("bush_01", "prop", (ALPINE, "FBX/Environment/SM_Env_Bush_02.fbx"), {}, ALPINE_BUSH),
-    ("bush_02", "prop", (ALPINE, "FBX/Environment/SM_Env_Bush_02_Alt.fbx"), {}, ALPINE_BUSH),
-    ("stump_pine_01", "prop", (ALPINE, "FBX/Environment/SM_Env_Pine_Stump_01.fbx"), {}, ALPINE_ATLAS),
-    ("log_fallen_01", "prop", (ADVENTURE, "FBX/SM_Env_TreeLog_01.fbx"), {}, ADVENTURE_ATLAS),
-    ("log_pile_01", "prop", (ADVENTURE, "FBX/SM_Prop_Logpile_01.fbx"), {}, ADVENTURE_ATLAS),
+    Model("bush_01", "prop", (ALPINE, "FBX/Environment/SM_Env_Bush_02.fbx"), {}, ALPINE_BUSH),
+    Model("bush_02", "prop", (ALPINE, "FBX/Environment/SM_Env_Bush_02_Alt.fbx"), {}, ALPINE_BUSH),
+    Model("stump_pine_01", "prop", (ALPINE, "FBX/Environment/SM_Env_Pine_Stump_01.fbx"), {}, ALPINE_ATLAS),
+    Model("log_fallen_01", "prop", (ADVENTURE, "FBX/SM_Env_TreeLog_01.fbx"), {}, ADVENTURE_ATLAS),
+    Model("log_pile_01", "prop", (ADVENTURE, "FBX/SM_Prop_Logpile_01.fbx"), {}, ADVENTURE_ATLAS),
+
+    # Forest variants of the shared landmark props, sized from props.json. Written to
+    # images/forest/props/<id>.png; other themes keep their own art.
+    Model("landmark_campfire", "sized", (GOBLIN, "FBX/Props/SM_Prop_Camp_Fire_01.fbx"), {}, GOBLIN_ATLAS, (1.0, 0.7)),
+    Model("landmark_camp_tent", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Tent_Medium_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.4)),
+    Model("landmark_cairn", "sized", (VIKING, "FBX/SM_Prop_Cairn_01.fbx"), {}, VIKING_ATLAS, (0.8, 1.0)),
+    Model("landmark_runestone", "sized", (VIKING, "FBX/SM_Prop_RuneStone_01.fbx"), {}, VIKING_ATLAS, (0.8, 1.3)),
+    Model("landmark_ruined_pillar", "sized", (GOBLIN, "FBX/Props/SM_Prop_Ruins_Pillar_01.fbx"), {}, GOBLIN_ATLAS, (0.9, 1.9)),
+    Model("landmark_rubble_pile", "sized", (GOBLIN, "FBX/Props/SM_Prop_Ruins_Damaged_01.fbx"), {}, GOBLIN_ATLAS, (1.1, 0.6)),
+    Model("landmark_grave_mound", "sized", (GOBLIN, "FBX/Environment/SM_Env_Swamp_Mound_01.fbx"), {}, GOBLIN_ATLAS, (1.1, 0.6)),
+    Model("landmark_bramble", "sized", (ALPINE, "FBX/Environment/SM_Env_Bush_01.fbx"), {},
+          (ALPINE, "Textures/Alpine_Bush_01.tga"), (1.1, 1.1)),
+
+    # Ground scatter: render-only decoration on walkable tiles.
+    Model("scatter_grass", "sized", (ALPINE, "FBX/Environment/SM_Env_Grass_01.fbx"), {},
+          (ALPINE, "Textures/Alpine_Grass_01.tga"), (0.6, 0.4)),
+    Model("scatter_flowers", "sized", (ALPINE, "FBX/Environment/SM_Env_Flowers_01.fbx"), {},
+          (ALPINE, "Textures/Flowers_01.tga"), (0.6, 0.4)),
+    Model("scatter_moss_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Moss_Lumps_01.fbx"), {}, ALPINE_ATLAS, (0.7, 0.35)),
+    Model("scatter_moss_02", "sized", (ALPINE, "FBX/Environment/SM_Env_Moss_Lumps_02.fbx"), {}, ALPINE_ATLAS, (0.7, 0.35)),
+    Model("scatter_branch_01", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_01.fbx"), {}, ALPINE_ATLAS, (0.8, 0.3)),
+    Model("scatter_branch_02", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_02.fbx"), {}, ALPINE_ATLAS, (0.8, 0.3)),
+    Model("scatter_mushroom", "sized", (ADVENTURE, "FBX/SM_Env_Mushroom_01.fbx"), {}, ADVENTURE_ATLAS, (0.4, 0.4)),
+    Model("scatter_glowcap", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.6, 0.5)),
 ]
 
 
@@ -94,7 +130,14 @@ def resolve(ref, models, packs):
     return os.path.join(models if root == "models" else os.path.join(packs, root), rel)
 
 
-def reset_scene(kind):
+def canvas_of(model):
+    if model.kind == "sized":
+        w, h = model.size
+        return max(8, round(w * PIXELS_PER_UNIT)), max(8, round(h * PIXELS_PER_UNIT))
+    return CANVAS[model.kind]
+
+
+def reset_scene(canvas):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     for engine in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES"):
@@ -103,7 +146,7 @@ def reset_scene(kind):
             break
         except TypeError:
             continue
-    w, h = CANVAS[kind]
+    w, h = canvas
     scene.render.resolution_x = w * RAW_SCALE
     scene.render.resolution_y = h * RAW_SCALE
     scene.render.resolution_percentage = 100
@@ -177,10 +220,9 @@ def assign_textures(meshes, slots, fallback, models, packs):
         for i, slot in enumerate(obj.material_slots):
             slot_name = slot.material.name.split(".")[0] if slot.material else ""
             ref = slots.get(slot_name, fallback)
-            key = ref
-            if key not in made:
-                made[key] = textured_material(f"{slot_name or 'atlas'}_lit", resolve(ref, models, packs))
-            obj.material_slots[i].material = made[key]
+            if ref not in made:
+                made[ref] = textured_material(f"{slot_name or 'atlas'}_lit", resolve(ref, models, packs))
+            obj.material_slots[i].material = made[ref]
         if not obj.material_slots:
             if fallback not in made:
                 made[fallback] = textured_material("atlas_lit", resolve(fallback, models, packs))
@@ -199,12 +241,12 @@ def bounds_of(meshes):
     return min_v, max_v
 
 
-def frame_camera(meshes, kind):
+def frame_camera(meshes, canvas):
     """Front orthographic view, base on the bottom edge, model fitted to the canvas."""
     bpy.context.view_layer.update()
     min_v, max_v = bounds_of(meshes)
     size = max_v - min_v
-    w, h = CANVAS[kind]
+    w, h = canvas
     aspect = w / h
     # ortho_scale spans the frame's longer side.
     vertical = max(size.z, size.x / aspect) * 1.02
@@ -228,27 +270,27 @@ def main():
     models, packs = source_dirs()
     only = set(a for a in os.environ.get("FOREST_BAKE_ONLY", "").split(",") if a)
     os.makedirs(RAW_DIR, exist_ok=True)
-    jobs = [(name, kind, src, slots, fallback, suffix, azimuth)
-            for name, kind, src, slots, fallback in MODELS
-            if not only or name in only
-            for suffix, azimuth in LIGHTINGS[kind]]
+    jobs = [(m, suffix, azimuth)
+            for m in MODELS if not only or m.name in only
+            for suffix, azimuth in LIGHTINGS[m.kind]]
     print(f"--- Baking {len(jobs)} raw frames with Blender {bpy.app.version_string} ---")
 
-    for i, (name, kind, src, slots, fallback, suffix, azimuth) in enumerate(jobs, 1):
-        path = resolve(src, models, packs)
-        out = os.path.join(RAW_DIR, f"{name}{suffix}.png")
+    for i, (model, suffix, azimuth) in enumerate(jobs, 1):
+        path = resolve(model.source, models, packs)
+        out = os.path.join(RAW_DIR, f"{model.name}{suffix}.png")
         if not os.path.exists(path):
             print(f"[{i}/{len(jobs)}] MISSING {path}")
             continue
-        reset_scene(kind)
+        canvas = canvas_of(model)
+        reset_scene(canvas)
         meshes = import_model(path)
         if not meshes:
             print(f"[{i}/{len(jobs)}] no meshes in {path}")
             continue
-        if slots is not None:
-            assign_textures(meshes, slots, fallback, models, packs)
+        if model.slots is not None:
+            assign_textures(meshes, model.slots, model.fallback, models, packs)
         add_lighting(azimuth)
-        frame_camera(meshes, kind)
+        frame_camera(meshes, canvas)
         bpy.context.scene.render.filepath = out
         bpy.ops.render.render(write_still=True)
         print(f"[{i}/{len(jobs)}] {out}")

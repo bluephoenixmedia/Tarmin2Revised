@@ -16,6 +16,7 @@ uniform vec4 u_retroColor;          // Flat base color for RETRO mode
 uniform float u_retroBorder;        // 1.0 = draw border outline, 0.0 = none
 uniform float u_alphaCutoff;        // 0.1 for alpha test discard, 0.0 for opaque
 uniform float u_vertexCoverage;     // 1.0 = vertex alpha scales the cutoff test (forest canopy), 0.0 = ignore it
+uniform float u_unlit;              // 1.0 = draws at its own colour, ignoring scene light (glowing props, light shafts)
 
 // Fog uniforms
 uniform float u_fogEnabled;
@@ -138,6 +139,11 @@ void main() {
         if (u_skyRimStrength > 0.001) {
             float skyFacing = max(v_normal.y, 0.0);
             finalColor.rgb += baseColor.rgb * u_skyRimColor * (skyFacing * u_skyRimStrength);
+        }
+
+        // Something that makes its own light is not darkened by the scene's. Fog still applies.
+        if (u_unlit > 0.5) {
+            finalColor = baseColor;
         }
     }
 

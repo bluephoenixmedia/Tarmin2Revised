@@ -46,15 +46,35 @@ BARK = [(24, 20, 18), (42, 33, 27), (61, 47, 36), (84, 66, 48)]
 STONE = [(30, 32, 31), (48, 51, 49), (68, 71, 67), (92, 95, 88)]
 MOSS = [(20, 28, 17), (31, 42, 24), (44, 57, 31), (58, 72, 38)]
 UMBER = [(22, 17, 13), (36, 27, 19), (52, 39, 26), (70, 53, 34)]
+CAP = [(40, 16, 14), (72, 28, 22), (104, 46, 34), (150, 110, 84)]
+PETAL = [(60, 58, 52), (96, 92, 80), (140, 132, 112), (176, 168, 140)]
+TEAL = [(14, 38, 40), (24, 70, 70), (50, 120, 112), (120, 200, 180)]
 EMBER_RIM = (112, 44, 26)
 
-# Sprite name prefix -> (palette for green pixels, palette for the rest).
+# Sprite name prefix -> (palette for green pixels, palette for the rest). The first
+# matching prefix wins, so specific names sit above the general ones.
 GROUPS = {
     "tree_": (NEEDLES, BARK),
     "bush_": (NEEDLES, BARK),
     "rock_": (MOSS, STONE),
     "stump_": (MOSS, BARK),
     "log_": (MOSS, BARK),
+    "landmark_campfire": (MOSS, BARK),
+    "landmark_camp_tent": (MOSS, BARK),
+    "landmark_bramble": (NEEDLES, BARK),
+    "landmark_": (MOSS, STONE),
+    "scatter_mushroom": (NEEDLES, CAP),
+    "scatter_flowers": (NEEDLES, PETAL),
+    "scatter_glowcap": (TEAL, TEAL),
+    "scatter_moss": (MOSS, STONE),
+    "scatter_branch": (MOSS, BARK),
+    "scatter_": (NEEDLES, BARK),
+}
+
+# Where a sprite is written, by name prefix: landmark_<id> is the forest's own
+# variant of the shared prop <id>, so it lives apart from the other themes' art.
+OUTPUT_BY_PREFIX = {
+    "landmark_": os.path.join(OUT_DIR, "props"),
 }
 
 # Where each material's tone boundaries fall, as luminance percentiles.
@@ -140,15 +160,22 @@ def stylize_sprites():
         prefix, palettes = group_of(os.path.basename(path))
         by_group.setdefault(prefix, (palettes, []))[1].append((path, load(path)))
 
-    os.makedirs(OUT_DIR, exist_ok=True)
     for prefix, (palettes, items) in by_group.items():
         frames = [frame for _, frame in items]
         green_cuts = thresholds(frames, True)
         other_cuts = thresholds(frames, False)
         for path, (rgb, mask) in items:
-            out = os.path.join(OUT_DIR, os.path.basename(path))
+            out = output_path(os.path.basename(path))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
             stylize(rgb, mask, green_cuts, other_cuts, palettes).save(out, optimize=True)
             print("wrote", out)
+
+
+def output_path(name):
+    for prefix, directory in OUTPUT_BY_PREFIX.items():
+        if name.startswith(prefix):
+            return os.path.join(directory, name[len(prefix):])
+    return os.path.join(OUT_DIR, name)
 
 
 def stylize_ground(packs):
