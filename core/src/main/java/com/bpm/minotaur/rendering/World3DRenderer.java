@@ -216,6 +216,8 @@ public class World3DRenderer implements Disposable {
     private static final float SHAFT_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE;
     /** Ground scatter is ankle-high: past the trail fog it is a speck, not worth a draw. */
     private static final float SCATTER_RANGE = ForestAtmosphere.TRAIL_FOG_DISTANCE + 2f;
+    /** Desert basins see twice as far, so their ground cover is drawn further out before it would pop in. */
+    private static final float DESERT_SCATTER_RANGE = 14f;
 
     // Strata darkness scaling: each dungeon level below the surface dims ambient
     // light and closes in fog further, down to a floor so it's never pitch black.
@@ -1748,7 +1750,8 @@ public class World3DRenderer implements Disposable {
             entities.add(sc);
         }
         for (Scenery backdrop : maze.getBackdropScenery()) {
-            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE : SCATTER_RANGE;
+            float range = backdrop.getType() == Scenery.SceneryType.TREE ? FOREST_TREE_RANGE
+                    : (maze.getBiome() == Biome.DESERT) ? DESERT_SCATTER_RANGE : SCATTER_RANGE;
             if (backdrop.getPosition().dst2(player.getPosition()) <= range * range) entities.add(backdrop);
         }
         if (maze.getShopkeeper() != null && maze.getShopkeeper().isAlive()) {

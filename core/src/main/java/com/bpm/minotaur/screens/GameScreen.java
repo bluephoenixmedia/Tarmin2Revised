@@ -1015,8 +1015,10 @@ public class GameScreen extends BaseScreen {
 
     /** Midday heat over the surface desert, for the CRT pass; 0 anywhere else. */
     private float heatShimmer() {
-        if (worldManager == null || maze == null || maze.getBiome() != com.bpm.minotaur.generation.Biome.DESERT
-                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null) {
+        if (worldManager == null || maze == null || player == null
+                || maze.getBiome() != com.bpm.minotaur.generation.Biome.DESERT
+                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null
+                || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
             return 0f;
         }
         com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
