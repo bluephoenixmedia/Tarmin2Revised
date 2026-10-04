@@ -222,6 +222,13 @@ public class World3DRenderer implements Disposable {
     private final Color rimScratchColor = new Color();
     private final Color overcastTint = new Color(0.68f, 0.74f, 0.84f, 1.0f);
 
+    // Under the surface forest's canopy (ForestAtmosphere). Eased so stepping
+    // from a trail into a glade opens the fog rather than snapping it.
+    private boolean wasUnderCanopy = false;
+    private float canopyGlade = 0f;
+    private final Color canopyFogColor = new Color();
+    private final Color canopyFogTarget = new Color();
+
     public World3DRenderer() {
         this.camera = new PerspectiveCamera(DebugManager.getInstance().getFov3d(), 1920f, 1080f);
         this.camera.near = 0.05f;
@@ -564,6 +571,32 @@ public class World3DRenderer implements Disposable {
             fogColor.set(biome.getFogColor());
         }
 
+        // The surface forest filters the volcanic light through its canopy: green-black fog
+        // closing to a few tiles on the trails, opening in the glades.
+        boolean underCanopy = currentLevel == 1 && !isIndoors && maze.getBiome() == Biome.FOREST;
+        Color fullSkyTint = (dnm != null) ? dnm.getSkyTint() : Color.WHITE;
+        if (underCanopy) {
+            float glade = ForestAtmosphere.gladeFactor(maze,
+                    (int) player.getPosition().x, (int) player.getPosition().y);
+            ForestAtmosphere.fogColor(
+                    (wm != null) ? wm.getCurrentWeather() : null,
+                    (wm != null) ? wm.getFogColor() : Color.WHITE,
+                    fullSkyTint, canopyFogTarget);
+            if (wasUnderCanopy) {
+                float ease = Math.min(1f, delta * 1.5f);
+                canopyGlade = MathUtils.lerp(canopyGlade, glade, ease);
+                canopyFogColor.lerp(canopyFogTarget, ease);
+            } else {
+                canopyGlade = glade;
+                canopyFogColor.set(canopyFogTarget);
+            }
+            fogEnabled = true;
+            fogDistance = ForestAtmosphere.fogDistance(canopyGlade,
+                    (wm != null) ? wm.getFogDistance() : Float.MAX_VALUE);
+            fogColor.set(canopyFogColor);
+        }
+        wasUnderCanopy = underCanopy;
+
         float bridgeIntegrity = DoomManager.getInstance().getBridgeIntegrity();
         float doomFactor = 1.0f - ((bridgeIntegrity / 100f) * 0.6f);
         if (bridgeIntegrity > 50) {
@@ -608,7 +641,11 @@ public class World3DRenderer implements Disposable {
         // Damped like the ambient: the rim tints surfaces, it does not repaint them.
         Color rimTint = (dnm != null) ? dnm.getWorldTint(rimScratchColor) : Color.WHITE;
         shader.setUniformf("u_skyRimColor", rimTint.r, rimTint.g, rimTint.b);
-        shader.setUniformf("u_skyRimStrength", skyOverhead ? 0.35f : 0f);
+        float rimStrength = skyOverhead ? 0.35f : 0f;
+        if (underCanopy) {
+            rimStrength = ForestAtmosphere.canopyScale(rimStrength, ForestAtmosphere.CANOPY_RIM_SHARE, canopyGlade);
+        }
+        shader.setUniformf("u_skyRimStrength", rimStrength);
 
         // --- AMBIENT & CELESTIAL LIGHT TARGET COMPUTATION ---
         if (isInsideHome) {
@@ -630,7 +667,14 @@ public class World3DRenderer implements Disposable {
 
             // During overcast storms/rain, ambient light takes on a cool slate-blue tint
             float overcastFactor = (wm != null && wm.isPrecipitation()) ? 0.65f : 0.0f;
-            targetAmbientColor.set(skyTint).lerp(overcastTint, overcastFactor);
+            if (underCanopy) {
+                ForestAtmosphere.ambientHue(fullSkyTint, targetAmbientColor);
+                // The canopy keeps its own colour in the rain; the slate overcast only greys it.
+                overcastFactor *= ForestAtmosphere.CANOPY_OVERCAST_SHARE;
+            } else {
+                targetAmbientColor.set(skyTint);
+            }
+            targetAmbientColor.lerp(overcastTint, overcastFactor);
 
             // Calibrated outdoor ambient intensity (soft, moody, never bleached):
             // - Night storm: ~0.10
@@ -638,6 +682,10 @@ public class World3DRenderer implements Disposable {
             // - Midday storm: ~0.35 - 0.38
             // - Clear midday: ~0.65 - 0.75
             float outdoorAmbientIntensity = MathUtils.clamp(dayAmbient * weatherDim * 0.72f, 0.08f, 0.75f);
+            if (underCanopy) {
+                outdoorAmbientIntensity = ForestAtmosphere.canopyScale(outdoorAmbientIntensity,
+                        ForestAtmosphere.CANOPY_AMBIENT_SHARE, canopyGlade);
+            }
             targetAmbientColor.mul(outdoorAmbientIntensity);
 
             // Directional Celestial Light (Sun in daytime, Moon at night)
@@ -648,10 +696,18 @@ public class World3DRenderer implements Disposable {
                     Color sunColor = dnm.getDirectionalLightColor(scratchColor);
                     // Clouds diffuse sunlight during storm, keeping directional light soft
                     float sunIntensity = MathUtils.clamp(sunElevation, 0.15f, 1.0f) * (wm != null && wm.isStormy() ? 0.18f : 0.50f);
+                    if (underCanopy) {
+                        sunIntensity = ForestAtmosphere.canopyScale(sunIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                    }
                     targetDirLightColor.set(sunColor).mul(sunIntensity);
                 } else {
                     dnm.getMoonDirection(targetDirLightDir);
                     float moonIntensity = (wm != null && wm.isStormy() ? 0.06f : 0.18f);
+                    if (underCanopy) {
+                        moonIntensity = ForestAtmosphere.canopyScale(moonIntensity,
+                                ForestAtmosphere.CANOPY_SUN_SHARE, canopyGlade);
+                    }
                     targetDirLightColor.set(0.35f, 0.45f, 0.65f, 1.0f).mul(moonIntensity);
                 }
             } else {
