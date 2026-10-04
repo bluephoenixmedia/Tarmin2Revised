@@ -11,6 +11,7 @@ import com.bpm.minotaur.rendering.RetroTheme;
 import org.junit.Test;
 
 import java.lang.reflect.Proxy;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -91,6 +92,34 @@ public class CanopyMeshBuilderTest {
             assertEquals("cliff at (0," + i + ")", 1f, cov[i][0], 0.001f);
             assertEquals("cliff at (" + (w - 1) + "," + i + ")", 1f, cov[i][w - 1], 0.001f);
         }
+    }
+
+    @Test
+    public void seamTilesAreTheTrailsUnderTheCanopyNotTheGladesOrTrees() {
+        List<GridPoint2> seam = CanopyMeshBuilder.seamTiles(mazeOf(TRAIL_INTO_CLEARING));
+
+        assertTrue("a trail tile is under the seam", seam.contains(new GridPoint2(4, 1)));
+        assertFalse("the middle of the clearing is open sky", seam.contains(new GridPoint2(3, 5)));
+        assertFalse("a tree is not", seam.contains(new GridPoint2(0, 0)));
+    }
+
+    @Test
+    public void lightShaftsFallOnAFewOfTheSeamTiles() {
+        if (Gdx.app == null) {
+            Gdx.app = (Application) Proxy.newProxyInstance(Application.class.getClassLoader(),
+                    new Class<?>[]{Application.class}, (proxy, method, args) -> null);
+        }
+        Maze maze = new ForestChunkGenerator().generateChunk(new GridPoint2(2, 2), 1, 1, Difficulty.MEDIUM,
+                GameMode.ADVANCED, RetroTheme.FOREST_THEME, RetroTheme.STANDARD_THEME,
+                null, null, null, null, null, 42L, 0);
+
+        List<GridPoint2> seam = CanopyMeshBuilder.seamTiles(maze);
+        List<GridPoint2> shafts = CanopyMeshBuilder.shaftTiles(maze);
+
+        assertTrue("every shaft stands in the seam", seam.containsAll(shafts));
+        assertTrue("a few shafts, not a curtain: " + shafts.size() + " of " + seam.size(),
+                shafts.size() > 0 && shafts.size() < seam.size() / 4);
+        assertEquals("shafts stay put between frames", shafts, CanopyMeshBuilder.shaftTiles(maze));
     }
 
     /** Rows are top-down as written; maze y=0 is the bottom row. '.' open, 'T' blocked. */

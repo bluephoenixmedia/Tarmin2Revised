@@ -11,6 +11,9 @@ import com.bpm.minotaur.gamedata.Scenery;
 import com.bpm.minotaur.generation.Biome;
 import com.bpm.minotaur.rendering.ForestAtmosphere;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The leaf ceiling over the surface forest.
  *
@@ -27,6 +30,10 @@ public final class CanopyMeshBuilder {
     public static final float CANOPY_Y = 3.0f;
     /** Coverage over a trail tile: under the 0.5 cutoff so the middle opens, high enough that the edges mostly close. */
     public static final float TRAIL_COVERAGE = 0.45f;
+    /** Below this a trail tile is opening into a glade, not part of the seam. */
+    private static final float SEAM_MIN_COVERAGE = 0.3f;
+    /** Share of seam tiles, in percent, that a light shaft falls on. */
+    private static final int SHAFT_PERCENT = 12;
     /** World units per texture repeat. */
     private static final float TEXTURE_SPAN = 2f;
     /** Vertex coverage times the densest frond alpha (1.0) has to reach the shader's cutoff. */
@@ -101,6 +108,34 @@ public final class CanopyMeshBuilder {
             }
         }
         return closed;
+    }
+
+    /**
+     * Trail tiles under the seam: open ground the canopy still mostly covers,
+     * as opposed to a glade, where it has opened to the sky.
+     */
+    public static List<GridPoint2> seamTiles(Maze maze) {
+        List<GridPoint2> seam = new ArrayList<>();
+        float[][] cov = tileCoverage(maze);
+        for (int y = 0; y < cov.length; y++) {
+            for (int x = 0; x < cov[0].length; x++) {
+                if (cov[y][x] > SEAM_MIN_COVERAGE && cov[y][x] < 1f) seam.add(new GridPoint2(x, y));
+            }
+        }
+        return seam;
+    }
+
+    /**
+     * The seam tiles a shaft of sky light falls on: a fixed few, chosen by a hash
+     * of the tile so they stay put from frame to frame and visit to visit.
+     */
+    public static List<GridPoint2> shaftTiles(Maze maze) {
+        List<GridPoint2> shafts = new ArrayList<>();
+        for (GridPoint2 t : seamTiles(maze)) {
+            int h = t.x * 73856093 ^ t.y * 19349663;
+            if (Math.floorMod(h, 100) < SHAFT_PERCENT) shafts.add(t);
+        }
+        return shafts;
     }
 
     /** Canopy coverage per tile, indexed [y][x]: 1 is closed, 0 is open sky. */

@@ -48,6 +48,7 @@ import com.bpm.minotaur.managers.DebugManager;
 import com.bpm.minotaur.managers.DoomManager;
 import com.bpm.minotaur.managers.WorldManager;
 import com.bpm.minotaur.weather.WeatherManager;
+import com.bpm.minotaur.rendering.mesh.CanopyMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkMeshBuilder;
 import com.bpm.minotaur.rendering.mesh.ChunkSubMesh;
 import com.bpm.minotaur.rendering.mesh.DynamicQuadBatcher;
@@ -131,6 +132,13 @@ public class World3DRenderer implements Disposable {
     private final Texture blankTexture;
     /** Soft round falloff for fog puffs, so a cloud is vapour rather than a grid of squares. */
     private final Texture fogPuffTexture;
+    /** Light shafts through the forest canopy's trail seam: chunky vertical gradient, tinted per frame. */
+    private final Texture shaftTexture;
+    private final TextureRegion shaftRegion;
+    private Maze shaftMaze;
+    private List<GridPoint2> shaftTiles = java.util.Collections.emptyList();
+    private final Vector3 shaftRight = new Vector3();
+    private final Color shaftColor = new Color();
     // Reused every puff: renderAreaEffects runs each frame over up to a 25x25 tile window with
     // three billboards a tile, so allocating a Color and a TextureRegion per puff would be
     // roughly two thousand short-lived objects a frame.
@@ -202,6 +210,10 @@ public class World3DRenderer implements Disposable {
     private static final Color OBSCURED_FOG_COLOR = new Color(0.62f, 0.64f, 0.67f, 1f);
     /** Tiles beyond which forest trees are skipped: just past the widest glade fog. */
     public static final float FOREST_TREE_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE + 2f;
+    /** Light shafts: faint, a little over half a tile wide, drawn within the glade fog. */
+    private static final float SHAFT_ALPHA = 0.22f;
+    private static final float SHAFT_WIDTH = 0.55f;
+    private static final float SHAFT_RANGE = ForestAtmosphere.GLADE_FOG_DISTANCE;
     /** Ground scatter is ankle-high: past the trail fog it is a speck, not worth a draw. */
     private static final float SCATTER_RANGE = ForestAtmosphere.TRAIL_FOG_DISTANCE + 2f;
 
@@ -329,6 +341,8 @@ public class World3DRenderer implements Disposable {
         pix.dispose();
 
         this.fogPuffTexture = buildFogPuffTexture();
+        this.shaftTexture = buildShaftTexture();
+        this.shaftRegion = new TextureRegion(shaftTexture);
 
         this.ladderDownTexture = new Texture(Gdx.files.internal("images/items/ladder.png"));
         this.ladderUpTexture = new Texture(Gdx.files.internal("images/items/ladder_up.png"));
@@ -855,6 +869,10 @@ public class World3DRenderer implements Disposable {
         // B. Entities: Monsters, Items, Ladders, Scenery
         renderEntities(maze, player, combatManager, isRetro, theme);
         renderProjectiles();
+
+        if (underCanopy && !isRetro) {
+            renderLightShafts(maze, player, fullSkyTint, (wm != null) ? wm.getGlobalLightDimmer() : 1f);
+        }
 
         // --- PASS 3: 3D PRECIPITATION & WEATHER PARTICLES ---
         // Weather particles and splashes spawn strictly on outdoor tiles (never under indoor roofs/shelters).
@@ -1425,6 +1443,59 @@ public class World3DRenderer implements Disposable {
     }
 
     /** A soft round alpha falloff. Reused for every puff. */
+    /**
+     * Sky light falling through the canopy's trail seam: a tall additive beam on a
+     * fixed few seam tiles, tinted by the sky so it burns ember-red at dawn and
+     * all but vanishes at night. It stands upright whatever the camera's pitch.
+     */
+    private void renderLightShafts(Maze maze, Player player, Color skyTint, float weatherDim) {
+        if (maze != shaftMaze) {
+            shaftMaze = maze;
+            shaftTiles = CanopyMeshBuilder.shaftTiles(maze);
+        }
+        if (shaftTiles.isEmpty()) return;
+
+        shaftRight.set(camera.direction.x, 0f, camera.direction.z).nor().crs(Vector3.Y).nor();
+        shaftColor.set(skyTint.r, skyTint.g * 0.85f, skyTint.b * 0.7f, SHAFT_ALPHA * weatherDim);
+
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        Gdx.gl.glDepthMask(false);
+        shader.setUniformf("u_unlit", 1f);
+        float range2 = SHAFT_RANGE * SHAFT_RANGE;
+        for (GridPoint2 t : shaftTiles) {
+            float cx = t.x + 0.5f;
+            float cy = t.y + 0.5f;
+            if (player.getPosition().dst2(cx, cy) > range2) continue;
+            dynamicBatcher.addBillboard(cx, 0f, -cy, SHAFT_WIDTH, CanopyMeshBuilder.CANOPY_Y, shaftRegion,
+                    shaftColor, shaftRight, Vector3.Y, camDir);
+        }
+        dynamicBatcher.flush(shader, shaftTexture);
+        shader.setUniformf("u_unlit", 0f);
+        Gdx.gl.glDepthMask(true);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    /** 8x32, brightest at the canopy and fading to the floor, in four hard steps so it reads as pixel art. */
+    private static Texture buildShaftTexture() {
+        int w = 8;
+        int h = 32;
+        Pixmap p = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                float down = 1f - y / (float) (h - 1);
+                float across = 1f - Math.abs(x - (w - 1) / 2f) / (w / 2f);
+                float a = down * down * across;
+                a = Math.round(a * 4f) / 4f;
+                p.setColor(1f, 1f, 1f, a);
+                p.drawPixel(x, y);
+            }
+        }
+        Texture t = new Texture(p);
+        t.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        p.dispose();
+        return t;
+    }
+
     private static Texture buildFogPuffTexture() {
         int size = 32;
         Pixmap p = new Pixmap(size, size, Pixmap.Format.RGBA8888);
@@ -2257,6 +2328,9 @@ public class World3DRenderer implements Disposable {
         blankTexture.dispose();
         if (fogPuffTexture != null) {
             fogPuffTexture.dispose();
+        }
+        if (shaftTexture != null) {
+            shaftTexture.dispose();
         }
         ladderDownTexture.dispose();
         ladderUpTexture.dispose();
