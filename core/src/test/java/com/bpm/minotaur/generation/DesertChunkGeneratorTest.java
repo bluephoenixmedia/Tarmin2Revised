@@ -155,7 +155,21 @@ public class DesertChunkGeneratorTest {
             }
         }
         assertTrue("most chunks raise a hoodoo, beast skull or arch in a side basin, " + withLandmark + "/20",
-                withLandmark >= 15);
+                withLandmark >= 19);
+    }
+
+    @Test
+    public void theBowlsCentrepieceIsAlwaysPlaced() {
+        for (long seed = 0; seed < 30; seed++) {
+            int archetype = (int) (Math.abs(seed) % 3);
+            if (archetype == 0) continue; // the nomad camp's fire is a catalogue prop
+            String wanted = (archetype == 1) ? "ruin_arch.png" : "titan_skull.png";
+            boolean found = false;
+            for (Scenery s : generate(seed).getScenery().values()) {
+                if (s.getTexturePath() != null && s.getTexturePath().endsWith(wanted)) found = true;
+            }
+            assertTrue("seed " + seed + ": the bowl lost its " + wanted, found);
+        }
     }
 
     @Test

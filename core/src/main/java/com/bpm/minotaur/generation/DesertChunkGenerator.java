@@ -59,6 +59,9 @@ public class DesertChunkGenerator implements IChunkGenerator {
     private record Sprite(String path, float width, float height) {
         void applyTo(Scenery s, float jitter) {
             s.scale.set(width * jitter, height * jitter);
+            // Baked sprites stand on the bottom edge of their canvas; the catalogue's
+            // offsets were tuned to sink the old art, which had margin below it.
+            s.setPixelOffsetY(0f);
         }
     }
 
@@ -567,13 +570,13 @@ public class DesertChunkGenerator implements IChunkGenerator {
             placeThemedProp(maze, "camp_tent", cx + 2, cy + 2, assetManager);
         } else if (archetype == 1) {
             // Sunken ruin
-            placeLandmark(maze, RUIN_ARCH, cx, cy + 3, assetManager);
+            placeInterior(maze, RUIN_ARCH, new GridPoint2(cx, cy + 3), assetManager);
             placeThemedProp(maze, "ruined_pillar", cx - 2, cy + 2, assetManager);
             placeThemedProp(maze, "ruined_pillar", cx + 2, cy + 2, assetManager);
-            placeLandmark(maze, RUIN_IDOL, cx + 2, cy - 2, assetManager);
+            placeInterior(maze, RUIN_IDOL, new GridPoint2(cx + 2, cy - 2), assetManager);
         } else {
             // Titan graveyard
-            placeLandmark(maze, TITAN_SKULL, cx, cy + 3, assetManager);
+            placeInterior(maze, TITAN_SKULL, new GridPoint2(cx, cy + 3), assetManager);
             placeThemedProp(maze, "skull_pile", cx - 2, cy, assetManager);
             placeThemedProp(maze, "bone_pile", cx + 2, cy - 1, assetManager);
         }
@@ -588,15 +591,18 @@ public class DesertChunkGenerator implements IChunkGenerator {
 
     /**
      * A solid landmark on a basin tile whose eight neighbours are all open sand,
-     * so it can never close a way through. Tries the basin centre, then the tiles
-     * around it.
+     * so it can never close a way through. Tries the given spot, then the tiles
+     * around it out to three away, and keeps off the bowl's centre where the
+     * player arrives.
      */
     private void placeInterior(Maze maze, Sprite sprite, GridPoint2 centre, AssetManager assetManager) {
-        for (int r = 0; r <= 2; r++) {
+        int mid = CHUNK_SIZE / 2;
+        for (int r = 0; r <= 3; r++) {
             for (int dy = -r; dy <= r; dy++) {
                 for (int dx = -r; dx <= r; dx++) {
                     int x = centre.x + dx;
                     int y = centre.y + dy;
+                    if (Math.abs(x - mid) <= 1 && Math.abs(y - mid) <= 1) continue;
                     if (surroundedByOpenGround(maze, x, y)) {
                         placeLandmark(maze, sprite, x, y, assetManager);
                         return;
