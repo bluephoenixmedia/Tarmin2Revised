@@ -80,7 +80,7 @@ public class ForestAtmosphereTest {
     }
 
     @Test
-    public void gladeFactorSeparatesTrailFromClearing() {
+    public void opennessSeparatesTrailFromClearing() {
         // 9x9 of trees with a 1-wide trail along x = 4 and a 5x5 clearing in the corner.
         String[] rows = {
                 "TTTTTTTTT",
@@ -95,8 +95,8 @@ public class ForestAtmosphereTest {
         };
         Maze maze = mazeOf(rows);
 
-        float clearing = ForestAtmosphere.gladeFactor(maze, 3, 5);
-        float trail = ForestAtmosphere.gladeFactor(maze, 4, 1);
+        float clearing = OpenGround.openness(maze, 3, 5);
+        float trail = OpenGround.openness(maze, 4, 1);
 
         assertEquals("centre of a clearing is a glade", 1f, clearing, 0.001f);
         assertEquals("a one-wide trail is not", 0f, trail, 0.001f);

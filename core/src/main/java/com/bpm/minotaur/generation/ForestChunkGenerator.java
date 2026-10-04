@@ -1,5 +1,6 @@
 package com.bpm.minotaur.generation;
 
+import com.bpm.minotaur.rendering.OpenGround;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
@@ -622,7 +623,7 @@ public class ForestChunkGenerator implements IChunkGenerator {
 
     private Scatter pickScatter(Maze maze, int x, int y) {
         int mid = CHUNK_SIZE / 2;
-        float glade = ForestAtmosphere.gladeFactor(maze, x, y);
+        float glade = OpenGround.openness(maze, x, y);
         boolean offMainTrails = Math.abs(x - mid) > MAIN_TRAIL_HALF_WIDTH && Math.abs(y - mid) > MAIN_TRAIL_HALF_WIDTH;
         float roll = backdropRandom.nextFloat();
         if (offMainTrails && glade < GLADE && roll < 0.06f) return GLOWCAP;
@@ -732,13 +733,8 @@ public class ForestChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                com.bpm.minotaur.gamedata.encounters.Encounter enc = encounterManager.getEncounter(encounterId);
-                String img = (enc != null) ? enc.imagePath : null;
-                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
-                if (img != null) {
-                    loadTextureSafely(statue, img, assetManager);
-                }
-                maze.addScenery(statue);
+                // No statue or marker: encounters are found by walking onto them,
+                // with no visual cue that one is there.
                 placed++;
             }
         }

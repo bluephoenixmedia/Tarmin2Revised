@@ -65,6 +65,9 @@ ADVENTURE = "POLYGON_Adventure_Pack_SourceFiles_v6"
 ALPINE_ATLAS = (ALPINE, "Textures/PolygonNatureBiomesS2_Alpine_Texture_01.png")
 ADVENTURE_ATLAS = (ADVENTURE, "Textures/PolyAdventureTexture_01.png")
 ALPINE_BUSH = (ALPINE, "Textures/Alpine_Bush_02.tga")
+GENERIC = "POLYGON_Generic_SourceFiles_v3"
+GENERIC_ATLAS = (GENERIC, "Textures/Alts/Generic_01_A.png")
+KENNEY_NATURE = "Kenney Game Assets 1 version 42/3D assets/Nature Kit/Models/glTF format"
 GOBLIN = "POLYGON_Goblin_War_Camp_SourceFiles_v3"
 VIKING = "POLYGON_Viking_Realm_SourceFiles_v3/SourceFiles"
 GOBLIN_ATLAS = (GOBLIN, "Textures/Alts/PolygonGoblinWarCamp_Texture_01_A.png")
@@ -115,6 +118,37 @@ MODELS = [
     Model("scatter_branch_02", "sized", (ALPINE, "FBX/Environment/SM_Env_Branch_02.fbx"), {}, ALPINE_ATLAS, (0.8, 0.3)),
     Model("scatter_mushroom", "sized", (ADVENTURE, "FBX/SM_Env_Mushroom_01.fbx"), {}, ADVENTURE_ATLAS, (0.4, 0.4)),
     Model("scatter_glowcap", "sized", ("models", "forest_other/luminescent_plants.glb"), None, None, (0.6, 0.5)),
+
+    # Desert: written to images/desert/. Kenney's cacti carry flat material colours; the
+    # boulder is the forest's rock model, recoloured into sandstone by the stylize pass.
+    Model("desert_cactus_tall", "sized", (KENNEY_NATURE, "cactus_tall.gltf"), None, None, (0.9, 2.4)),
+    Model("desert_cactus_large", "sized", (KENNEY_NATURE, "cactus_large.gltf"), None, None, (1.4, 2.2)),
+    Model("desert_cactus_short", "sized", (KENNEY_NATURE, "cactus_short.gltf"), None, None, (0.9, 1.2)),
+    Model("desert_rock_01", "sized", ("models", "forest_other/rock2.glb"), None, None, (1.2, 1.0)),
+    Model("desert_rock_02", "sized", (GENERIC, "Models/SM_Gen_Env_Rock_04.fbx"), {}, GENERIC_ATLAS, (1.2, 1.0)),
+    Model("desert_rock_03", "sized", (GOBLIN, "FBX/Environment/SM_Env_Rock_02.fbx"), {}, GOBLIN_ATLAS, (1.2, 1.0)),
+    Model("desert_tree_dead_01", "sized", (GENERIC, "Models/SM_Gen_Env_Tree_Dead_03.fbx"), {}, GENERIC_ATLAS, (1.8, 3.2)),
+    Model("desert_tree_dead_02", "sized", (ADVENTURE, "FBX/SM_Env_TreeDead_01.fbx"), {}, ADVENTURE_ATLAS, (1.8, 3.2)),
+    Model("desert_tree_agave", "sized", ("models", "forest_other/small_desert_Tree_Textured.glb"), None, None, (1.6, 1.6)),
+    Model("desert_palm_tall", "sized", ("models", "trees/tall_palm_Tree_Textured.glb"), None, None, (2.0, 3.6)),
+    Model("desert_palm_huge", "sized", ("models", "trees/huge_palm_Tree_Textured.glb"), None, None, (2.6, 4.0)),
+    Model("desert_palm_date", "sized", ("models", "trees/date_palm_Tree_Textured.glb"), None, None, (2.4, 3.2)),
+    Model("desert_reeds_01", "sized", (ADVENTURE, "FBX/SM_Env_Reeds_01.fbx"), {}, ADVENTURE_ATLAS, (0.6, 0.9)),
+    Model("desert_reeds_02", "sized", (ADVENTURE, "FBX/SM_Env_Reeds_02.fbx"), {}, ADVENTURE_ATLAS, (0.6, 0.9)),
+    Model("desert_hoodoo", "sized", (GENERIC, "Models/SM_Gen_Env_Cliff_Pillar_01.fbx"), {}, GENERIC_ATLAS, (1.1, 3.6)),
+    Model("desert_arch", "sized", (GENERIC, "Models/SM_Gen_Env_Cliff_Arch_02.fbx"), {}, GENERIC_ATLAS, (2.8, 2.2)),
+    Model("desert_bones_01", "sized", (GOBLIN, "FBX/Environment/SM_Env_Bones_01.fbx"), {}, GOBLIN_ATLAS, (0.8, 0.6)),
+    Model("desert_bones_rib", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Rib_01.fbx"), {}, GOBLIN_ATLAS, (0.9, 0.6)),
+    Model("desert_skull_pile", "sized", (GOBLIN, "FBX/Props/SM_Prop_Skull_Pile_01.fbx"), {}, GOBLIN_ATLAS, (0.9, 0.5)),
+    Model("desert_beast_skull", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Part_Bone_Skull_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.2)),
+    Model("desert_titan_skull", "sized", (GOBLIN, "FBX/Props/SM_Prop_Skull_01.fbx"), {}, GOBLIN_ATLAS, (2.6, 2.4)),
+    Model("desert_ruin_pillar", "sized", (GOBLIN, "FBX/Props/SM_Prop_Ruins_Pillar_02.fbx"), {}, GOBLIN_ATLAS, (0.8, 2.2)),
+    Model("desert_ruin_idol", "sized", (GOBLIN, "FBX/Props/SM_Prop_Idol_01.fbx"), {}, GOBLIN_ATLAS, (0.9, 1.4)),
+    Model("desert_ruin_arch", "sized", (GOBLIN, "FBX/Props/SM_Prop_Ruins_Archway_01.fbx"), {}, GOBLIN_ATLAS, (2.4, 1.6)),
+    Model("desert_campfire", "sized", (GOBLIN, "FBX/Props/SM_Prop_Camp_Fire_01.fbx"), {}, GOBLIN_ATLAS, (1.0, 0.7)),
+    Model("desert_camp_tent", "sized", (GOBLIN, "FBX/Buildings/SM_Bld_Tent_Medium_01.fbx"), {}, GOBLIN_ATLAS, (1.6, 1.4)),
+    Model("desert_scrub_01", "sized", (GENERIC, "Models/SM_Gen_Env_Bush_02.fbx"), {}, GENERIC_ATLAS, (0.7, 0.45)),
+    Model("desert_scrub_02", "sized", (GOBLIN, "FBX/Environment/SM_Env_Bush_03.fbx"), {}, GOBLIN_ATLAS, (0.7, 0.45)),
 ]
 
 

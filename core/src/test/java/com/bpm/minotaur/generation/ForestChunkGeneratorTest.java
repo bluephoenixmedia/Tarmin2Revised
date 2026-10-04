@@ -1,5 +1,6 @@
 package com.bpm.minotaur.generation;
 
+import com.bpm.minotaur.rendering.OpenGround;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.GridPoint2;
@@ -350,7 +351,7 @@ public class ForestChunkGeneratorTest {
                 assertTrue("scatter sits below item height", s.getScale().y <= 0.5f);
                 if ("scatter_flowers".equals(s.getPropId())) {
                     assertTrue("flowers grow only in glades",
-                            com.bpm.minotaur.rendering.ForestAtmosphere.gladeFactor(maze, x, y) >= 0.5f);
+                            OpenGround.openness(maze, x, y) >= 0.5f);
                 }
                 if ("scatter_glowcap".equals(s.getPropId())) {
                     glowcaps++;

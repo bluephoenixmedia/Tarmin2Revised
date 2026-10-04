@@ -18,6 +18,8 @@ uniform float u_glitchFactor;
 uniform float u_spellChromatic;
 uniform float u_sonarProgress;
 uniform float u_wisdomIrisIntensity;
+// Desert heat: the air over the sand wavers around the horizon at midday. 0 = off.
+uniform float u_heatShimmer;
 
 // --- TWEAKED VALUES FOR SUBTLE CRT ---
 const float curvature = 0.0;        // WAS 3.0. Now 0.3 for very slight curve. Set to 0.0 for perfectly flat.
@@ -34,6 +36,13 @@ void main() {
         if (slice > 0.6) {
             uv.x += sin(u_time * 65.0) * 0.04 * u_glitchFactor;
         }
+    }
+
+    // 0b. Heat shimmer: a fine horizontal waver, strongest just below the horizon
+    // where the hot sand meets the distance, fading out above and below.
+    if (u_heatShimmer > 0.001) {
+        float band = 1.0 - smoothstep(0.0, 0.22, abs(uv.y - 0.45));
+        uv.x += sin(uv.y * 140.0 + u_time * 5.0) * 0.0016 * u_heatShimmer * band;
     }
 
     // 1. Radial Shockwave

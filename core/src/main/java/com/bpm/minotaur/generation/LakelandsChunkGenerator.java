@@ -5,7 +5,6 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.GridPoint2;
 import com.bpm.minotaur.gamedata.*;
-import com.bpm.minotaur.gamedata.encounters.Encounter;
 import com.bpm.minotaur.gamedata.encounters.EncounterManager;
 import com.bpm.minotaur.gamedata.item.Item;
 import com.bpm.minotaur.gamedata.item.ItemColor;
@@ -495,13 +494,8 @@ public class LakelandsChunkGenerator implements IChunkGenerator {
             String encounterId = encounterManager.getRandomEncounterId();
             if (encounterId != null) {
                 maze.addEvent(pos.x, pos.y, encounterId);
-                Encounter enc = encounterManager.getEncounter(encounterId);
-                String img = (enc != null) ? enc.imagePath : null;
-                Scenery statue = new Scenery(Scenery.SceneryType.STATUE, pos.x, pos.y, img);
-                if (img != null && assetManager != null) {
-                    loadTextureSafely(statue, img, assetManager);
-                }
-                maze.addScenery(statue);
+                // No statue or marker: encounters are found by walking onto them,
+                // with no visual cue that one is there.
                 placed++;
             }
         }

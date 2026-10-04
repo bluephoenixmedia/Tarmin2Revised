@@ -889,6 +889,7 @@ public class GameScreen extends BaseScreen {
             if (useCrtFilter) {
                 postProcessBatch.setShader(crtShader);
                 crtShader.setUniformf("u_time", time);
+                crtShader.setUniformf("u_heatShimmer", heatShimmer());
                 if (spellPostProcessor != null) {
                     spellPostProcessor.applyUniforms(crtShader, time);
                 }
@@ -1010,6 +1011,20 @@ public class GameScreen extends BaseScreen {
             d.region = visorDropletTextures.get(com.badlogic.gdx.math.MathUtils.random(visorDropletTextures.size() - 1));
             visorDroplets.add(d);
         }
+    }
+
+    /** Midday heat over the surface desert, for the CRT pass; 0 anywhere else. */
+    private float heatShimmer() {
+        if (worldManager == null || maze == null || player == null
+                || maze.getBiome() != com.bpm.minotaur.generation.Biome.DESERT
+                || maze.getLevel() != 1 || worldManager.getDayNightManager() == null
+                || maze.isIndoors((int) player.getPosition().x, (int) player.getPosition().y)) {
+            return 0f;
+        }
+        com.bpm.minotaur.weather.WeatherManager wm = worldManager.getWeatherManager();
+        return com.bpm.minotaur.rendering.DesertAtmosphere.heatShimmer(
+                worldManager.getDayNightManager().getTimeOfDay(),
+                (wm != null) ? wm.getCurrentWeather() : null);
     }
 
     /**

@@ -181,7 +181,6 @@ public class Tarmin2 extends Game {
                 "images/forest/rock_boulder_02.png",
                 "images/forest/rock_boulder_03.png",
                 "images/forest/stump_pine_01.png",
-                "images/forest/tree_dead_01.png", // the desert's dead tree
                 "images/floor_forest.png",
                 "images/forest_cliff.png"
         };
@@ -190,6 +189,7 @@ public class Tarmin2 extends Game {
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.DEAD_TREE_TEXTURES);
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.propVariantTextures());
         java.util.Collections.addAll(forestQueue, com.bpm.minotaur.generation.ForestChunkGenerator.scatterTextures());
+        forestQueue.addAll(com.bpm.minotaur.generation.DesertChunkGenerator.textures());
         for (String assetPath : forestQueue) {
             if (Gdx.files.internal(assetPath).exists()) {
                 assetManager.load(assetPath, com.badlogic.gdx.graphics.Texture.class);
