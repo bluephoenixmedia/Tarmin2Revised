@@ -11,7 +11,7 @@ import java.util.List;
  */
 public final class DebugKeys {
 
-    public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL }
+    public enum Action { LEARN_ALL_SPELLS, LEVEL_UP, OPEN_ALL_ITEMS_CHEST, REFILL, FIRE_CHOICE_EVENT }
 
     public static final class Entry {
         public final int keycode;
@@ -34,6 +34,7 @@ public final class DebugKeys {
         new Entry(Input.Keys.PAGE_UP, "PgUp", "level up one level", Action.LEVEL_UP),
         new Entry(Input.Keys.HOME, "Home", "open a chest with one of every item", Action.OPEN_ALL_ITEMS_CHEST),
         new Entry(Input.Keys.END, "End", "refill HP, MP, food and water", Action.REFILL),
+        new Entry(Input.Keys.PAGE_DOWN, "PgDn", "open a random choice event for this place", Action.FIRE_CHOICE_EVENT),
     };
 
     /** Always available while developing; listed here for reference. */

@@ -264,6 +264,7 @@ public class Hud implements Disposable {
 
     private final WorldManager worldManager;
     private final EncounterWindow encounterWindow;
+    private final EventWindow eventWindow;
     private final ShopkeeperWindow shopkeeperWindow;
     private final BonesAwakenModal bonesAwakenModal;
     private final LevelUpModal levelUpModal;
@@ -824,6 +825,10 @@ public class Hud implements Disposable {
         bonesAwakenModal = new BonesAwakenModal(hudSkin);
         stage.addActor(bonesAwakenModal);
 
+        // Hidden choice events (data/events.json); the statues keep the EncounterWindow above.
+        eventWindow = new EventWindow(hudSkin);
+        stage.addActor(eventWindow);
+
         // Level-up attribute allocation modal
         levelUpModal = new LevelUpModal(hudSkin);
         levelUpModal.setOnOpenSkillTree(() -> {
@@ -844,6 +849,9 @@ public class Hud implements Disposable {
             public boolean keyDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, int keycode) {
                 if (encounterWindow.isVisible()) {
                     return encounterWindow.handleInput(keycode);
+                }
+                if (eventWindow.isVisible()) {
+                    return eventWindow.handleInput(keycode);
                 }
                 if (shopkeeperWindow.isVisible()) {
                     return shopkeeperWindow.handleInput(keycode);
@@ -1475,7 +1483,8 @@ public class Hud implements Disposable {
         stage.draw();
 
         // Draw the 2D inventory items AFTER stage to appear on top (unless modal encounter is open)
-        if (encounterWindow == null || !encounterWindow.isVisible()) {
+        if ((encounterWindow == null || !encounterWindow.isVisible())
+                && (eventWindow == null || !eventWindow.isVisible())) {
             drawInventory();
             drawPickupToast();
             drawStatusAlertToast();
@@ -3433,6 +3442,10 @@ public class Hud implements Disposable {
 
     public EncounterWindow getEncounterWindow() {
         return encounterWindow;
+    }
+
+    public EventWindow getEventWindow() {
+        return eventWindow;
     }
 
     // --- NEW: Confusion Scrambling Helper ---

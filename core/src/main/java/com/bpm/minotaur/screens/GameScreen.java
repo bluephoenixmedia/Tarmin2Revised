@@ -1231,6 +1231,10 @@ public class GameScreen extends BaseScreen {
             }
         }
 
+        while ((event = eventManager.findAndConsume(GameEvent.EventType.CHOICE_EVENT_TRIGGERED)) != null) {
+            openChoiceEvent((String) event.payload);
+        }
+
         while ((event = eventManager.findAndConsume(GameEvent.EventType.SHOPKEEPER_INTERACTION)) != null) {
             if (event.payload instanceof com.bpm.minotaur.gamedata.ShopkeeperNpc) {
                 com.bpm.minotaur.gamedata.ShopkeeperNpc shopkeeper = (com.bpm.minotaur.gamedata.ShopkeeperNpc) event.payload;
@@ -2622,6 +2626,12 @@ public class GameScreen extends BaseScreen {
         // --- Forward keyboard input to active EncounterWindow modal ---
         if (hud != null && hud.getEncounterWindow() != null && hud.getEncounterWindow().isVisible()) {
             hud.getEncounterWindow().handleInput(keycode);
+            return true;
+        }
+
+        // --- Forward keyboard input to an open choice event ---
+        if (hud != null && hud.getEventWindow() != null && hud.getEventWindow().isVisible()) {
+            hud.getEventWindow().handleInput(keycode);
             return true;
         }
 
@@ -4145,6 +4155,21 @@ public class GameScreen extends BaseScreen {
         game.getBatch().end();
     }
 
+    /** Opens a choice event (data/events.json) in the event window. */
+    private void openChoiceEvent(String eventId) {
+        com.bpm.minotaur.gamedata.events.EventDefinition def =
+                com.bpm.minotaur.gamedata.events.EventCatalog.getInstance().get(eventId);
+        if (def == null || hud == null || hud.getEventWindow() == null) {
+            return;
+        }
+        if (weaponOverlay != null) {
+            weaponOverlay.reset();
+        }
+        hud.getEventWindow().configure(player, maze, eventManager, game.getItemDataManager(),
+                game.getMonsterDataManager(), game.getAssetManager());
+        hud.getEventWindow().show(def, maze.getBiome().name());
+    }
+
     /** Runs a debug-only key when debug mode is on; returns whether the key was one. */
     private boolean handleDebugKey(int keycode) {
         boolean debugMode = com.bpm.minotaur.gamedata.progression.ShelterAltar.getInstance().isDebugAllUnlocked();
@@ -4176,6 +4201,17 @@ public class GameScreen extends BaseScreen {
                 com.bpm.minotaur.debug.DebugCheats.refill(player);
                 eventManager.addEvent(new GameEvent("Debug: HP, MP, food and water refilled", 2f));
                 return true;
+            case FIRE_CHOICE_EVENT: {
+                com.bpm.minotaur.gamedata.events.EventDefinition def = com.bpm.minotaur.debug.DebugCheats.choiceEventFor(
+                        com.bpm.minotaur.gamedata.events.EventCatalog.getInstance(), maze.getBiome().name(),
+                        maze.getLevel(), new java.util.Random());
+                if (def == null) {
+                    eventManager.addEvent(new GameEvent("Debug: no choice event fits this place", 2f));
+                } else {
+                    openChoiceEvent(def.id);
+                }
+                return true;
+            }
             default:
                 return false;
         }
